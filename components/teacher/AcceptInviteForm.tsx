@@ -1,0 +1,128 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+    acceptInviteSchema,
+    type AcceptInviteFormData,
+} from "@/lib/validations/teacher-invite.validation";
+import { acceptTeacherInvite } from "@/lib/actions/teacher-invite.actions";
+
+interface AcceptInviteFormProps {
+    token: string;
+    inviteData: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        school: { name: string };
+    };
+}
+
+export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
+    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<AcceptInviteFormData>({
+        resolver: zodResolver(acceptInviteSchema),
+        defaultValues: { token },
+    });
+
+    const onSubmit = async (data: AcceptInviteFormData) => {
+        setIsLoading(true);
+        setError("");
+
+        try {
+            const result = await acceptTeacherInvite(token, data.password);
+
+            if (!result.success) {
+                setError(result.message);
+                return;
+            }
+
+            // Redirect to sign in page
+            router.push("/signin?registered=true");
+        } catch (err) {
+            console.error("Accept invite error:", err);
+            setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Info Card */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">
+                    ข้อมูลของคุณ
+                </h3>
+                <p className="text-blue-800">
+                    ชื่อ: {inviteData.firstName} {inviteData.lastName}
+                </p>
+                <p className="text-blue-800">อีเมล: {inviteData.email}</p>
+                <p className="text-blue-800">
+                    โรงเรียน: {inviteData.school.name}
+                </p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {error && (
+                    <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+                        {error}
+                    </div>
+                )}
+
+                <input type="hidden" {...register("token")} />
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ตั้งรหัสผ่าน
+                    </label>
+                    <input
+                        {...register("password")}
+                        type="password"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="อย่างน้อย 6 ตัวอักษร"
+                    />
+                    {errors.password && (
+                        <p className="mt-1 text-sm text-red-600">
+                            {errors.password.message}
+                        </p>
+                    )}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ยืนยันรหัสผ่าน
+                    </label>
+                    <input
+                        {...register("confirmPassword")}
+                        type="password"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="กรอกรหัสผ่านอีกครั้ง"
+                    />
+                    {errors.confirmPassword && (
+                        <p className="mt-1 text-sm text-red-600">
+                            {errors.confirmPassword.message}
+                        </p>
+                    )}
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 transition-all duration-200 shadow-lg"
+                >
+                    {isLoading ? "กำลังลงทะเบียน..." : "ลงทะเบียน"}
+                </button>
+            </form>
+        </div>
+    );
+}

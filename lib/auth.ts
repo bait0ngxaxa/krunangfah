@@ -1,0 +1,157 @@
+import { auth } from "@/auth";
+import { hash } from "bcryptjs";
+import { prisma } from "@/lib/prisma";
+import type {
+    ExtendedUser,
+    SignUpCredentials,
+    AuthResponse,
+} from "@/types/auth.types";
+
+/**
+ * Get current session on server side
+ * @returns Session object or null
+ */
+export async function getServerSession() {
+    return await auth();
+}
+
+/**
+ * Require authentication - throws if not authenticated
+ * @returns Session object
+ * @throws Error if not authenticated
+ */
+export async function requireAuth() {
+    const session = await getServerSession();
+
+    if (!session || !session.user) {
+        throw new Error("Unauthorized");
+    }
+
+    return session;
+}
+
+/**
+ * Require admin role - throws if not system_admin
+ * @returns Session object
+ * @throws Error if not authenticated or not admin
+ */
+export async function requireAdmin() {
+    const session = await requireAuth();
+
+    if (session.user.role !== "system_admin") {
+        throw new Error("Forbidden: Admin access required");
+    }
+
+    return session;
+}
+
+/**
+ * Hash password using bcrypt
+ * @param password - Plain text password
+ * @returns Hashed password
+ */
+export async function hashPassword(password: string): Promise<string> {
+    return await hash(password, 12);
+}
+
+/**
+ * Create a new user
+ * @param credentials - User credentials
+ * @returns Authentication response
+ */
+export async function createUser(
+    credentials: SignUpCredentials,
+): Promise<AuthResponse> {
+    try {
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email: credentials.email },
+        });
+
+        if (existingUser) {
+            return {
+                success: false,
+                message: "User with this email already exists",
+            };
+        }
+
+        // Hash password
+        const hashedPassword = await hashPassword(credentials.password);
+
+        // Find or create school
+        let school = await prisma.school.findFirst({
+            where: { name: credentials.schoolName },
+        });
+
+        if (!school) {
+            school = await prisma.school.create({
+                data: { name: credentials.schoolName },
+            });
+        }
+
+        // Create user with school_admin role and link to school
+        const user = await prisma.user.create({
+            data: {
+                email: credentials.email,
+                name: credentials.name,
+                password: hashedPassword,
+                role: "school_admin",
+                schoolId: school.id,
+            },
+        });
+
+        return {
+            success: true,
+            message: "User created successfully",
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                image: user.image,
+                role: user.role as ExtendedUser["role"],
+                emailVerified: user.emailVerified,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+            },
+        };
+    } catch (error) {
+        console.error("Create user error:", error);
+        return {
+            success: false,
+            message: "Failed to create user",
+        };
+    }
+}
+
+/**
+ * Get user by ID
+ * @param userId - User ID
+ * @returns User object or null
+ */
+export async function getUserById(
+    userId: string,
+): Promise<ExtendedUser | null> {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            return null;
+        }
+
+        return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role as ExtendedUser["role"],
+            emailVerified: user.emailVerified,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        };
+    } catch (error) {
+        console.error("Get user by ID error:", error);
+        return null;
+    }
+}

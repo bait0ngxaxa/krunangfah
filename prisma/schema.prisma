@@ -1,0 +1,113 @@
+// Prisma Schema for NextAuth.js
+// Compatible with Prisma 6
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// School - โรงเรียน
+model School {
+  id        String    @id @default(cuid())
+  name      String    // ชื่อโรงเรียน
+  province  String?   // จังหวัด
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  users          User[]
+  teachers       Teacher[]
+  teacherInvites TeacherInvite[]
+
+  @@map("schools")
+}
+
+// User Model for JWT-based Authentication
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("school_admin") // user, school_admin, system_admin, class_teacher
+  schoolId      String?   // FK to School
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  school         School?         @relation(fields: [schoolId], references: [id])
+  teacher        Teacher?
+  teacherInvites TeacherInvite[]
+
+  @@map("users")
+  @@index([email])
+}
+
+// Academic Year - ปีการศึกษาและเทอม
+model AcademicYear {
+  id          String    @id @default(cuid())
+  year        Int       // ปีการศึกษา เช่น 2567
+  semester    Int       // เทอม: 1 หรือ 2
+  startDate   DateTime  // วันเริ่มเทอม
+  endDate     DateTime  // วันสิ้นสุดเทอม
+  isCurrent   Boolean   @default(false) // เทอมปัจจุบัน
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  teachers       Teacher[]
+  teacherInvites TeacherInvite[]
+
+  @@unique([year, semester]) // ห้ามซ้ำ ปี+เทอม
+  @@map("academic_years")
+}
+
+// Teacher profile - ข้อมูลครู
+model Teacher {
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  firstName       String        // ชื่อ
+  lastName        String        // สกุล
+  age             Int           // อายุ
+  advisoryClass   String        // ชั้นที่ปรึกษา เช่น "ม.1/1"
+  academicYearId  String        // FK to AcademicYear
+  schoolId        String        // FK to School
+  schoolRole      String        // บทบาทหน้าที่ในโรงเรียน
+  projectRole     String        // บทบาทหน้าที่ในโครงการครูนางฟ้า: lead, care, coordinate
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  academicYear    AcademicYear  @relation(fields: [academicYearId], references: [id])
+  school          School        @relation(fields: [schoolId], references: [id])
+
+  @@map("teachers")
+}
+
+// Teacher Invite - คำเชิญครูผู้ดูแล
+model TeacherInvite {
+  id              String    @id @default(cuid())
+  token           String    @unique
+  email           String
+  firstName       String
+  lastName        String
+  age             Int
+  advisoryClass   String
+  academicYearId  String
+  schoolId        String
+  schoolRole      String
+  projectRole     String    // lead, care, coordinate
+  invitedById     String
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
+  school          School       @relation(fields: [schoolId], references: [id])
+  invitedBy       User         @relation(fields: [invitedById], references: [id])
+
+  @@map("teacher_invites")
+}
+
