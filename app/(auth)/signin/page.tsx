@@ -15,21 +15,28 @@ export default async function SignInPage({
     const { callbackUrl } = await searchParams;
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-cyan-50 px-4">
-            <div className="max-w-md w-full space-y-8">
+        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 relative overflow-hidden px-4">
+            {/* Decorative Background Elements */}
+            <div className="absolute top-20 left-10 w-64 h-64 bg-pink-200 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-pulse delay-75" />
+            <div className="absolute bottom-20 right-10 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-pulse delay-150" />
+
+            <div className="max-w-md w-full space-y-8 relative z-10">
                 <div className="text-center">
-                    <h1 className="text-4xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                    <div className="mb-4 inline-block p-3 rounded-full bg-white/50 backdrop-blur-xs shadow-sm">
+                        <span className="text-3xl">🧚‍♀️</span>
+                    </div>
+                    <h1 className="text-4xl font-bold bg-linear-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
                         Krunangfah
                     </h1>
-                    <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-                        Sign in to your account
+                    <h2 className="mt-4 text-2xl font-bold text-gray-900">
+                        เข้าสู่ระบบ
                     </h2>
                     <p className="mt-2 text-sm text-gray-600">
-                        Welcome back! Please enter your credentials.
+                        ยินดีต้อนรับกลับมาค่ะ กรุณาเข้าสู่ระบบ
                     </p>
                 </div>
 
-                <div className="mt-8 bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
+                <div className="bg-white/80 backdrop-blur-md py-8 px-6 shadow-xl rounded-2xl border border-white/50">
                     <SignInForm callbackUrl={callbackUrl} />
 
                     <div className="mt-6 text-center">
@@ -37,7 +44,7 @@ export default async function SignInPage({
                             ยังไม่มีบัญชี?{" "}
                             <Link
                                 href="/signup"
-                                className="font-medium text-blue-600 hover:text-blue-500"
+                                className="font-semibold text-pink-500 hover:text-pink-600 transition-colors"
                             >
                                 ลงทะเบียน
                             </Link>
@@ -45,7 +52,7 @@ export default async function SignInPage({
                     </div>
                 </div>
 
-                <p className="text-center text-sm text-gray-600">
+                <p className="text-center text-xs text-gray-400">
                     Protected by NextAuth.js
                 </p>
             </div>

@@ -64,9 +64,9 @@ export function SignUpForm() {
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl text-center">
                     {error}
                 </div>
             )}
@@ -74,7 +74,7 @@ export function SignUpForm() {
             <div>
                 <label
                     htmlFor="name"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
                     ชื่อ
                 </label>
@@ -82,11 +82,11 @@ export function SignUpForm() {
                     {...register("name")}
                     type="text"
                     id="name"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all outline-none"
                     placeholder="กรอกชื่อของคุณ"
                 />
                 {errors.name && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.name.message}
                     </p>
                 )}
@@ -95,7 +95,7 @@ export function SignUpForm() {
             <div>
                 <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
                     อีเมล
                 </label>
@@ -103,11 +103,11 @@ export function SignUpForm() {
                     {...register("email")}
                     type="email"
                     id="email"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all outline-none"
                     placeholder="example@email.com"
                 />
                 {errors.email && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.email.message}
                     </p>
                 )}
@@ -116,7 +116,7 @@ export function SignUpForm() {
             <div>
                 <label
                     htmlFor="schoolName"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
                     ชื่อโรงเรียน
                 </label>
@@ -124,11 +124,11 @@ export function SignUpForm() {
                     {...register("schoolName")}
                     type="text"
                     id="schoolName"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all outline-none"
                     placeholder="เช่น โรงเรียนสาธิต"
                 />
                 {errors.schoolName && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.schoolName.message}
                     </p>
                 )}
@@ -137,7 +137,7 @@ export function SignUpForm() {
             <div>
                 <label
                     htmlFor="password"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
                     รหัสผ่าน
                 </label>
@@ -145,11 +145,11 @@ export function SignUpForm() {
                     {...register("password")}
                     type="password"
                     id="password"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all outline-none"
                     placeholder="อย่างน้อย 6 ตัวอักษร"
                 />
                 {errors.password && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.password.message}
                     </p>
                 )}
@@ -158,7 +158,7 @@ export function SignUpForm() {
             <div>
                 <label
                     htmlFor="confirmPassword"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
                     ยืนยันรหัสผ่าน
                 </label>
@@ -166,11 +166,11 @@ export function SignUpForm() {
                     {...register("confirmPassword")}
                     type="password"
                     id="confirmPassword"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all outline-none"
                     placeholder="กรอกรหัสผ่านอีกครั้ง"
                 />
                 {errors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.confirmPassword.message}
                     </p>
                 )}
@@ -179,7 +179,7 @@ export function SignUpForm() {
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 bg-linear-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
+                className="w-full py-3.5 px-4 bg-linear-to-r from-pink-400 to-purple-400 text-white text-lg font-bold rounded-full hover:from-pink-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-pink-200"
             >
                 {isLoading ? "กำลังลงทะเบียน..." : "ลงทะเบียน"}
             </button>

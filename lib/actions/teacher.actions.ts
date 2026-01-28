@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
+import { getAcademicYears as getAcademicYearsAction } from "./academic-year.actions";
 import type {
     CreateTeacherInput,
     TeacherResponse,
@@ -28,16 +29,11 @@ export async function getTeacherProfile(
     }
 }
 
+/**
+ * ดึงรายการปีการศึกษา พร้อม auto-create ถ้าปีปัจจุบันยังไม่มี
+ */
 export async function getAcademicYears(): Promise<AcademicYear[]> {
-    try {
-        const academicYears = await prisma.academicYear.findMany({
-            orderBy: [{ year: "desc" }, { semester: "desc" }],
-        });
-        return academicYears;
-    } catch (error) {
-        console.error("Get academic years error:", error);
-        return [];
-    }
+    return getAcademicYearsAction();
 }
 
 export async function createTeacherProfile(

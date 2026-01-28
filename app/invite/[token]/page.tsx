@@ -18,7 +18,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
 
     if (!result.success || !result.invite) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center py-8 px-4">
+            <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center py-8 px-4">
                 <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
                     <div className="text-6xl mb-4">❌</div>
                     <h1 className="text-2xl font-bold text-gray-800 mb-4">
@@ -37,7 +37,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center py-8 px-4">
+        <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center py-8 px-4">
             <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
                 <div className="text-center mb-6">
                     <h1 className="text-2xl font-bold text-gray-800">

@@ -284,7 +284,7 @@ export function AddTeacherForm() {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 transition-all duration-200 shadow-lg"
+                    className="flex-1 py-3 px-4 bg-linear-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 transition-all duration-200 shadow-lg"
                 >
                     {isLoading ? "กำลังสร้างคำเชิญ..." : "สร้างคำเชิญ"}
                 </button>

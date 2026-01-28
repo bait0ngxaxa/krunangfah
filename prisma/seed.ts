@@ -1,33 +1,53 @@
 import { PrismaClient } from "@prisma/client";
+import {
+    getCurrentAcademicYear,
+    generateAcademicYearData,
+} from "../lib/utils/academic-year";
 
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log("🌱 Starting seed...");
+    console.warn("🌱 Starting seed...");
+
+    // คำนวณปีการศึกษาปัจจุบันจากวันที่จริง
+    const current = getCurrentAcademicYear();
+    console.warn(
+        `📅 Current academic year: ${current.semester}/${current.year}`,
+    );
+
+    // สร้างข้อมูลปีการศึกษาปัจจุบัน (ทั้ง 2 เทอม)
+    const academicYearData = generateAcademicYearData(current.year);
 
     // Create Academic Years
-    const academicYears = await prisma.academicYear.createMany({
-        data: [
-            {
-                year: 2569,
-                semester: 1,
-                startDate: new Date("2026-05-15"),
-                endDate: new Date("2026-10-15"),
-                isCurrent: true, // เทอมปัจจุบัน
+    for (const yearData of academicYearData) {
+        await prisma.academicYear.upsert({
+            where: {
+                year_semester: {
+                    year: yearData.year,
+                    semester: yearData.semester,
+                },
             },
-            {
-                year: 2569,
-                semester: 2,
-                startDate: new Date("2026-11-01"),
-                endDate: new Date("2027-03-31"),
-                isCurrent: false,
+            update: {
+                startDate: yearData.startDate,
+                endDate: yearData.endDate,
+                isCurrent:
+                    yearData.semester === current.semester &&
+                    yearData.year === current.year,
             },
-        ],
-        skipDuplicates: true,
-    });
+            create: {
+                year: yearData.year,
+                semester: yearData.semester,
+                startDate: yearData.startDate,
+                endDate: yearData.endDate,
+                isCurrent:
+                    yearData.semester === current.semester &&
+                    yearData.year === current.year,
+            },
+        });
+    }
 
-    console.log(`✅ Created ${academicYears.count} academic years`);
-    console.log("✨ Seed completed!");
+    console.warn(`✅ Created/Updated academic years for ${current.year}`);
+    console.warn("✨ Seed completed!");
 }
 
 main()

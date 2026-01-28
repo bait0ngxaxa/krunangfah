@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { RiskPieChart } from "./RiskPieChart";
 import { RiskGroupSection } from "./RiskGroupSection";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import { Users } from "lucide-react";
 
 interface Student {
     id: string;
@@ -119,19 +120,7 @@ export function StudentDashboard({ students }: StudentDashboardProps) {
             {selectedClass === "all" && classes.length > 1 ? (
                 <div className="bg-white rounded-xl shadow-md p-8 text-center">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-                        <svg
-                            className="w-8 h-8 text-blue-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
+                        <Users className="w-8 h-8 text-blue-500" />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">
                         กรุณาเลือกห้องเรียนเพื่อดูรายละเอียด
@@ -143,6 +132,25 @@ export function StudentDashboard({ students }: StudentDashboardProps) {
                 </div>
             ) : (
                 <div className="space-y-6">
+                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-pink-100 shadow-sm">
+                        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <span className="text-2xl">🏫</span>
+                            <span>
+                                สรุปผลการคัดกรอง:{" "}
+                                <span className="text-pink-600">
+                                    {selectedClass === "all"
+                                        ? classes.length === 1
+                                            ? `ห้อง ${classes[0]}`
+                                            : "ทุกห้องเรียน"
+                                        : `ห้อง ${selectedClass}`}
+                                </span>
+                            </span>
+                        </h3>
+                        <span className="text-sm font-medium text-gray-600 bg-white/50 px-3 py-1 rounded-full border border-gray-100">
+                            นักเรียน {filteredStudents.length} คน
+                        </span>
+                    </div>
+
                     {riskLevels.map((level) => (
                         <RiskGroupSection
                             key={level}

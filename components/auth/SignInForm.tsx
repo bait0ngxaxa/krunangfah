@@ -68,11 +68,11 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                     id="email"
                     autoComplete="email"
                     disabled={isLoading}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none"
                     placeholder="your@email.com"
                 />
                 {errors.email && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.email.message}
                     </p>
                 )}
@@ -91,26 +91,26 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                     id="password"
                     autoComplete="current-password"
                     disabled={isLoading}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none"
                     placeholder="••••••••"
                 />
                 {errors.password && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.password.message}
                     </p>
                 )}
             </div>
 
             {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-600">{error}</p>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                    <p className="text-sm text-red-600 text-center">{error}</p>
                 </div>
             )}
 
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-linear-to-r from-blue-600 to-cyan-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
+                className="w-full bg-linear-to-r from-pink-400 to-purple-400 text-white text-lg font-bold py-3.5 px-4 rounded-full hover:from-pink-500 hover:to-purple-500 focus:outline-none focus:ring-4 focus:ring-pink-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
                 {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </button>
