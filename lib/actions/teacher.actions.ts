@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type {
     CreateTeacherInput,
     TeacherResponse,
@@ -78,7 +79,7 @@ export async function createTeacherProfile(
                 firstName: input.firstName,
                 lastName: input.lastName,
                 age: input.age,
-                advisoryClass: input.advisoryClass,
+                advisoryClass: normalizeClassName(input.advisoryClass),
                 academicYearId: input.academicYearId,
                 schoolId: user.schoolId,
                 schoolRole: input.schoolRole,

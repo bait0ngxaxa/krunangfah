@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ActionCard } from "@/components/dashboard/ActionCard";
 import { StudentSearch } from "@/components/dashboard/StudentSearch";
+import { TeacherProfileCard } from "@/components/dashboard/TeacherProfileCard";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import type { Metadata } from "next";
 
@@ -22,6 +23,18 @@ export default async function DashboardPage() {
             school: true,
         },
     });
+
+    // Count students for this teacher
+    const studentCount = teacher
+        ? await prisma.student.count({
+              where: {
+                  schoolId: teacher.schoolId,
+                  ...(session.user.role === "class_teacher" && {
+                      class: teacher.advisoryClass,
+                  }),
+              },
+          })
+        : 0;
 
     // If no teacher profile, show prompt to create one
     if (!teacher) {
@@ -69,6 +82,12 @@ export default async function DashboardPage() {
                 />
 
                 <div className="space-y-6">
+                    {/* ข้อมูลครู */}
+                    <TeacherProfileCard
+                        teacher={teacher}
+                        userRole={session.user.role}
+                    />
+
                     {/* เพิ่มข้อมูลคุณครู - เฉพาะ school_admin */}
                     {session.user.role === "school_admin" && (
                         <ActionCard
@@ -96,6 +115,16 @@ export default async function DashboardPage() {
                             variant="primary"
                         />
                     </div>
+
+                    {/* นักเรียนของฉัน - แสดงเมื่อมีนักเรียนแล้ว */}
+                    {studentCount > 0 && (
+                        <ActionCard
+                            title="นักเรียนของฉัน"
+                            buttonText={`ดูรายชื่อนักเรียน (${studentCount} คน)`}
+                            href="/students"
+                            variant="primary"
+                        />
+                    )}
 
                     {/* ดูข้อมูลนักเรียนรายบุคคล */}
                     <StudentSearch />

@@ -1,5 +1,3 @@
-import { getServerSession } from "@/lib/auth";
-
 interface DashboardHeaderProps {
     teacherName: string;
     schoolName: string;

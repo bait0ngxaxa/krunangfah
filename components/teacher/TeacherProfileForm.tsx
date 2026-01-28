@@ -26,6 +26,9 @@ export function TeacherProfileForm() {
         formState: { errors },
     } = useForm<TeacherProfileFormData>({
         resolver: zodResolver(teacherProfileSchema),
+        defaultValues: {
+            advisoryClass: "ทุกห้อง",
+        },
     });
 
     useEffect(() => {
@@ -133,26 +136,12 @@ export function TeacherProfileForm() {
                 )}
             </div>
 
-            <div>
-                <label
-                    htmlFor="advisoryClass"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                    ชั้นที่ปรึกษา <span className="text-red-500">*</span>
-                </label>
-                <input
-                    {...register("advisoryClass")}
-                    type="text"
-                    id="advisoryClass"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="เช่น ม.1/1"
-                />
-                {errors.advisoryClass && (
-                    <p className="mt-1 text-sm text-red-600">
-                        {errors.advisoryClass.message}
-                    </p>
-                )}
-            </div>
+            {/* Hidden field for advisoryClass - school_admin ไม่ต้องเลือกห้อง */}
+            <input
+                type="hidden"
+                {...register("advisoryClass")}
+                value="ทุกห้อง"
+            />
 
             <div>
                 <label

@@ -10,6 +10,7 @@ import {
 } from "@/lib/validations/teacher-invite.validation";
 import { createTeacherInvite } from "@/lib/actions/teacher-invite.actions";
 import { getAcademicYears } from "@/lib/actions/teacher.actions";
+import { ClassSelector } from "@/components/ui/ClassSelector";
 
 interface AcademicYear {
     id: string;
@@ -36,9 +37,13 @@ export function AddTeacherForm() {
         handleSubmit,
         reset,
         formState: { errors },
+        setValue,
+        watch,
     } = useForm<TeacherInviteFormData>({
         resolver: zodResolver(teacherInviteSchema),
     });
+
+    const advisoryClassValue = watch("advisoryClass") || "";
 
     useEffect(() => {
         const loadAcademicYears = async () => {
@@ -194,17 +199,15 @@ export function AddTeacherForm() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                         ชั้นที่ปรึกษา
                     </label>
-                    <input
-                        {...register("advisoryClass")}
-                        type="text"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="เช่น ม.1/1"
+                    <ClassSelector
+                        value={advisoryClassValue}
+                        onChange={(val) =>
+                            setValue("advisoryClass", val, {
+                                shouldValidate: true,
+                            })
+                        }
+                        error={errors.advisoryClass?.message}
                     />
-                    {errors.advisoryClass && (
-                        <p className="mt-1 text-sm text-red-600">
-                            {errors.advisoryClass.message}
-                        </p>
-                    )}
                 </div>
 
                 {/* Academic Year */}

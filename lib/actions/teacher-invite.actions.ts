@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, hashPassword } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
+import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
 
 export interface TeacherInvite {
@@ -97,7 +98,7 @@ export async function createTeacherInvite(
                 firstName: input.firstName,
                 lastName: input.lastName,
                 age: Number(input.age), // Convert string to number
-                advisoryClass: input.advisoryClass,
+                advisoryClass: normalizeClassName(input.advisoryClass),
                 academicYearId: input.academicYearId,
                 schoolId: user.schoolId,
                 schoolRole: input.schoolRole,

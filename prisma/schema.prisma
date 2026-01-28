@@ -21,6 +21,7 @@ model School {
   users          User[]
   teachers       Teacher[]
   teacherInvites TeacherInvite[]
+  students       Student[]
 
   @@map("schools")
 }
@@ -41,6 +42,7 @@ model User {
   school         School?         @relation(fields: [schoolId], references: [id])
   teacher        Teacher?
   teacherInvites TeacherInvite[]
+  phqResults     PhqResult[]
 
   @@map("users")
   @@index([email])
@@ -59,6 +61,7 @@ model AcademicYear {
 
   teachers       Teacher[]
   teacherInvites TeacherInvite[]
+  phqResults     PhqResult[]
 
   @@unique([year, semester]) // ห้ามซ้ำ ปี+เทอม
   @@map("academic_years")
@@ -111,3 +114,55 @@ model TeacherInvite {
   @@map("teacher_invites")
 }
 
+// Student - นักเรียน
+model Student {
+  id            String   @id @default(cuid())
+  studentId     String?  // รหัสนักเรียน (optional)
+  firstName     String   // ชื่อ
+  lastName      String   // สกุล
+  class         String   // ห้อง เช่น "ม.1/1"
+  schoolId      String   // FK to School
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  school        School       @relation(fields: [schoolId], references: [id])
+  phqResults    PhqResult[]
+
+  @@unique([firstName, lastName, class, schoolId]) // ป้องกันซ้ำ
+  @@map("students")
+}
+
+// PHQ-A Result - ผลคัดกรองสุขภาพจิต
+model PhqResult {
+  id              String   @id @default(cuid())
+  studentId       String   // FK to Student
+  academicYearId  String   // FK to AcademicYear
+  importedById    String   // FK to User (ครูที่ import)
+  
+  // คะแนนแต่ละข้อ (0-3)
+  q1              Int
+  q2              Int
+  q3              Int
+  q4              Int
+  q5              Int
+  q6              Int
+  q7              Int
+  q8              Int
+  q9              Int
+  
+  // ข้อพิเศษ (ตอบใช่/ไม่ใช่)
+  q9a             Boolean  @default(false) // ความคิดทำร้ายตัวเอง
+  q9b             Boolean  @default(false) // ความคิดทำร้ายผู้อื่น
+  
+  // ผลคำนวณ
+  totalScore      Int      // รวมคะแนน q1-q9
+  riskLevel       String   // blue, green, yellow, orange, red
+  
+  createdAt       DateTime @default(now())
+
+  student         Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
+  importedBy      User         @relation(fields: [importedById], references: [id])
+
+  @@map("phq_results")
+}

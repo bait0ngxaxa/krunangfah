@@ -1,7 +1,11 @@
 /**
  * User roles in the system
  */
-export type UserRole = "user" | "school_admin" | "system_admin";
+export type UserRole =
+    | "user"
+    | "school_admin"
+    | "system_admin"
+    | "class_teacher";
 
 /**
  * Extended User interface
@@ -25,6 +29,7 @@ declare module "next-auth" {
         user: ExtendedUser;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface User extends ExtendedUser {}
 }
 
