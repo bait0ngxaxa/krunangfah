@@ -109,8 +109,8 @@ export default async function DashboardPage() {
                             📝 จัดการข้อมูลนักเรียน
                         </h3>
                         <ActionCard
-                            title="เพิ่มนักเรียน + PHQ-A (Import Excel/CSV)"
-                            buttonText="Import Excel/CSV"
+                            title="เพิ่มนักเรียน + PHQ-A (Import Excel)"
+                            buttonText="Import Excel"
                             href="/students/import"
                             variant="primary"
                         />

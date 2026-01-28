@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * Import Preview Component
- * Shows parsed data before saving to database
- */
-
 import { useState, useEffect } from "react";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import {
@@ -38,12 +33,33 @@ export function ImportPreview({
         { id: string; year: number; semester: number }[]
     >([]);
     const [selectedYearId, setSelectedYearId] = useState<string>("");
+    const [assessmentRound, setAssessmentRound] = useState<number>(1);
+    const [teacherProfile, setTeacherProfile] = useState<{
+        role: string;
+        advisoryClass: string | null;
+    } | null>(null);
 
     // Calculate scores for all students
-    const previewData: PreviewStudent[] = data.map((student) => {
+    const allPreviewData: PreviewStudent[] = data.map((student) => {
         const { totalScore, riskLevel } = calculateRiskLevel(student.scores);
         return { ...student, totalScore, riskLevel };
     });
+
+    // Filter data based on teacher role
+    const previewData =
+        teacherProfile?.role === "class_teacher" && teacherProfile.advisoryClass
+            ? allPreviewData.filter(
+                  (s) => s.class === teacherProfile.advisoryClass,
+              )
+            : allPreviewData;
+
+    // Get filtered out students (for class_teacher only)
+    const filteredOutStudents =
+        teacherProfile?.role === "class_teacher" && teacherProfile.advisoryClass
+            ? allPreviewData.filter(
+                  (s) => s.class !== teacherProfile.advisoryClass,
+              )
+            : [];
 
     // Count by risk level
     const riskCounts = previewData.reduce(
@@ -58,18 +74,32 @@ export function ImportPreview({
     );
 
     useEffect(() => {
-        const loadYears = async () => {
+        const loadData = async () => {
+            // Load academic years
             const years = await getAcademicYears();
             setAcademicYears(years);
-            // Select current year by default
             const current = years.find((y) => y.isCurrent);
             if (current) {
                 setSelectedYearId(current.id);
             } else if (years.length > 0) {
                 setSelectedYearId(years[0].id);
             }
+
+            // Load teacher profile
+            try {
+                const response = await fetch("/api/teacher/profile");
+                if (response.ok) {
+                    const profile = await response.json();
+                    setTeacherProfile({
+                        role: profile.user.role,
+                        advisoryClass: profile.advisoryClass,
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load teacher profile:", err);
+            }
         };
-        loadYears();
+        loadData();
     }, []);
 
     const handleSave = async () => {
@@ -82,7 +112,11 @@ export function ImportPreview({
         setError(null);
 
         try {
-            const result = await importStudents(data, selectedYearId);
+            const result = await importStudents(
+                data,
+                selectedYearId,
+                assessmentRound,
+            );
 
             if (result.success) {
                 onSuccess();
@@ -129,23 +163,82 @@ export function ImportPreview({
                     ))}
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <label className="text-gray-700 font-medium">
-                        ปีการศึกษา:
-                    </label>
-                    <select
-                        value={selectedYearId}
-                        onChange={(e) => setSelectedYearId(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="">เลือกปีการศึกษา</option>
-                        {academicYears.map((year) => (
-                            <option key={year.id} value={year.id}>
-                                {year.year} เทอม {year.semester}
-                            </option>
-                        ))}
-                    </select>
+                <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                        <label className="text-gray-700 font-medium min-w-[120px]">
+                            ปีการศึกษา:
+                        </label>
+                        <select
+                            value={selectedYearId}
+                            onChange={(e) => setSelectedYearId(e.target.value)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                            <option value="">เลือกปีการศึกษา</option>
+                            {academicYears.map((year) => (
+                                <option key={year.id} value={year.id}>
+                                    {year.year} เทอม {year.semester}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <label className="text-gray-700 font-medium min-w-[120px]">
+                            รอบการประเมิน:
+                        </label>
+                        <select
+                            value={assessmentRound}
+                            onChange={(e) =>
+                                setAssessmentRound(Number(e.target.value))
+                            }
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                            <option value={1}>ครั้งที่ 1</option>
+                            <option value={2}>ครั้งที่ 2</option>
+                        </select>
+                    </div>
                 </div>
+
+                {/* Warning for filtered students */}
+                {filteredOutStudents.length > 0 && (
+                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div className="flex items-start gap-3">
+                            <div className="text-amber-600 text-xl mt-0.5">
+                                ⚠️
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-semibold text-amber-800 mb-2">
+                                    พบนักเรียนที่ไม่ตรงกับห้องที่คุณดูแล (
+                                    {filteredOutStudents.length} คน)
+                                </p>
+                                <p className="text-sm text-amber-700 mb-2">
+                                    นักเรียนต่อไปนี้จะไม่ถูกนำเข้าเพราะไม่ใช่ห้อง{" "}
+                                    <span className="font-bold">
+                                        {teacherProfile?.advisoryClass}
+                                    </span>
+                                    :
+                                </p>
+                                <div className="max-h-32 overflow-y-auto bg-white/50 rounded p-2">
+                                    <ul className="text-sm text-amber-800 space-y-1">
+                                        {filteredOutStudents.map(
+                                            (student, idx) => (
+                                                <li
+                                                    key={idx}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <span className="w-2 h-2 bg-amber-400 rounded-full" />
+                                                    {student.firstName}{" "}
+                                                    {student.lastName} - ห้อง{" "}
+                                                    {student.class}
+                                                </li>
+                                            ),
+                                        )}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Data Table */}
@@ -220,7 +313,9 @@ export function ImportPreview({
                 <button
                     type="button"
                     onClick={handleSave}
-                    disabled={isLoading || !selectedYearId}
+                    disabled={
+                        isLoading || !selectedYearId || previewData.length === 0
+                    }
                     className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                     {isLoading ? (
@@ -229,7 +324,7 @@ export function ImportPreview({
                             กำลังบันทึก...
                         </>
                     ) : (
-                        <>บันทึกข้อมูล ({data.length} คน)</>
+                        <>บันทึกข้อมูล ({previewData.length} คน)</>
                     )}
                 </button>
             </div>

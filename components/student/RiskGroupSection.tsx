@@ -106,7 +106,7 @@ export function RiskGroupSection({
                                     <span
                                         className={`px-3 py-1 rounded-full text-sm font-medium ${config.headerBg} ${config.textColor}`}
                                     >
-                                        ดำเนินการดูแลด้านจิตสุขภาพจิต
+                                        เข้าสู่ระบบช่วยเหลือนักเรียนรายบุคคล
                                     </span>
                                 </td>
                             </tr>

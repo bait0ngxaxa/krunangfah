@@ -9,7 +9,7 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
     return (
         <div className="text-center mb-10 relative z-10">
-            <h1 className="text-3xl md:text-5xl font-bold bg-linear-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-4 drop-shadow-sm">
+            <h1 className="text-3xl md:text-5xl font-bold bg-linear-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-4 drop-shadow-sm py-2 leading-tight">
                 สวัสดีคุณครูนางฟ้า 🧚‍♀️
             </h1>
             <div className="inline-block bg-white/60 backdrop-blur-sm px-6 py-2 rounded-full shadow-sm border border-white">

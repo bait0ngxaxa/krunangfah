@@ -23,7 +23,7 @@ export default async function Home() {
                     <span className="text-4xl">🧚‍♀️</span>
                 </div>
 
-                <h1 className="text-5xl md:text-7xl font-bold bg-linear-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-6 drop-shadow-sm">
+                <h1 className="text-5xl md:text-7xl font-bold bg-linear-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-6 drop-shadow-sm py-2 leading-tight">
                     โครงการครูนางฟ้า
                 </h1>
 

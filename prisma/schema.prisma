@@ -138,6 +138,7 @@ model PhqResult {
   studentId       String   // FK to Student
   academicYearId  String   // FK to AcademicYear
   importedById    String   // FK to User (ครูที่ import)
+  assessmentRound Int      @default(1) // ครั้งที่ 1 หรือ 2
   
   // คะแนนแต่ละข้อ (0-3)
   q1              Int
@@ -164,5 +165,6 @@ model PhqResult {
   academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
   importedBy      User         @relation(fields: [importedById], references: [id])
 
+  @@unique([studentId, academicYearId, assessmentRound]) // ป้องกันซ้ำ
   @@map("phq_results")
 }

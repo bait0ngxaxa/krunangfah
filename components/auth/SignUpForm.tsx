@@ -76,14 +76,14 @@ export function SignUpForm() {
                     htmlFor="name"
                     className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
-                    ชื่อ
+                    ชื่อผู้ใช้
                 </label>
                 <input
                     {...register("name")}
                     type="text"
                     id="name"
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all outline-none"
-                    placeholder="กรอกชื่อของคุณ"
+                    placeholder="กรอกชื่อผู้ใช้ของคุณ"
                 />
                 {errors.name && (
                     <p className="mt-1 text-sm text-red-500 font-medium">
