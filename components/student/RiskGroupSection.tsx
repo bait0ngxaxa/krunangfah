@@ -1,10 +1,6 @@
 "use client";
 
-/**
- * Risk Group Section Component
- * แสดงนักเรียนแยกตามกลุ่มสี
- */
-
+import Link from "next/link";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 
 interface Student {
@@ -103,11 +99,15 @@ export function RiskGroupSection({
                                     {student.lastName}
                                 </td>
                                 <td className="px-4 py-3 text-right">
-                                    <span
-                                        className={`px-3 py-1 rounded-full text-sm font-medium ${config.headerBg} ${config.textColor}`}
+                                    <Link
+                                        href={`/students/${student.id}/help`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${config.headerBg} ${config.textColor} hover:opacity-90 transition-opacity shadow-sm`}
                                     >
-                                        เข้าสู่ระบบช่วยเหลือนักเรียนรายบุคคล
-                                    </span>
+                                        {level === "red" || level === "blue"
+                                            ? "หลักการพูดคุย"
+                                            : "เข้าสู่ระบบใบงาน"}
+                                    </Link>
                                 </td>
                             </tr>
                         ))}

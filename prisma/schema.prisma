@@ -39,10 +39,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  school         School?         @relation(fields: [schoolId], references: [id])
-  teacher        Teacher?
-  teacherInvites TeacherInvite[]
-  phqResults     PhqResult[]
+  school              School?           @relation(fields: [schoolId], references: [id])
+  teacher             Teacher?
+  teacherInvites      TeacherInvite[]
+  phqResults          PhqResult[]
+  assignedActivities  ActivityProgress[] @relation("TeacherActivities")
+  worksheetUploads    WorksheetUpload[]
 
   @@map("users")
   @@index([email])
@@ -125,8 +127,9 @@ model Student {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  school        School       @relation(fields: [schoolId], references: [id])
-  phqResults    PhqResult[]
+  school           School             @relation(fields: [schoolId], references: [id])
+  phqResults       PhqResult[]
+  activityProgress ActivityProgress[]
 
   @@unique([firstName, lastName, class, schoolId]) // ป้องกันซ้ำ
   @@map("students")
@@ -161,10 +164,66 @@ model PhqResult {
   
   createdAt       DateTime @default(now())
 
-  student         Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
-  importedBy      User         @relation(fields: [importedById], references: [id])
+  student         Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear    AcademicYear       @relation(fields: [academicYearId], references: [id])
+  importedBy      User               @relation(fields: [importedById], references: [id])
+  activityProgress ActivityProgress[]
 
   @@unique([studentId, academicYearId, assessmentRound]) // ป้องกันซ้ำ
   @@map("phq_results")
 }
+
+// Activity Progress - ความคืบหน้ากิจกรรมช่วยเหลือนักเรียน
+model ActivityProgress {
+  id              String    @id @default(cuid())
+  studentId       String    // FK to Student
+  phqResultId     String    // FK to PhqResult (ผลคัดกรองที่ใช้)
+  activityNumber  Int       // 1, 2, 3, 4, 5
+  
+  // สถานะ: locked, in_progress, pending_assessment, completed
+  status          String    @default("locked")
+  unlockedAt      DateTime? // วันที่ปลดล็อค
+  completedAt     DateTime? // วันที่เสร็จสิ้น
+  
+  // ข้อมูลครู
+  scheduledDate   DateTime? // วันที่นัดหมาย
+  teacherId       String?   // FK to User (ครูผู้ทำกิจกรรม)
+  teacherNotes    String?   // บันทึกของครู
+  
+  // แบบประเมินจากใบงาน
+  internalProblems String?  // ปัญหาภายใน
+  externalProblems String?  // ปัญหาภายนอก
+  problemType      String?  // internal หรือ external
+  assessedAt       DateTime? // วันที่ทำแบบประเมิน
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  student          Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  phqResult        PhqResult         @relation(fields: [phqResultId], references: [id])
+  teacher          User?             @relation("TeacherActivities", fields: [teacherId], references: [id])
+  worksheetUploads WorksheetUpload[]
+
+  @@unique([studentId, phqResultId, activityNumber])
+  @@map("activity_progress")
+}
+
+// Worksheet Upload - ใบงานที่อัปโหลด
+model WorksheetUpload {
+  id                  String   @id @default(cuid())
+  activityProgressId  String   // FK to ActivityProgress
+  
+  fileName            String   // ชื่อไฟล์
+  fileUrl             String   // URL ของไฟล์ (path ใน public/uploads)
+  fileType            String   // image/jpeg, image/png, application/pdf
+  fileSize            Int      // ขนาดไฟล์ (bytes)
+  
+  uploadedById        String   // FK to User (ครูที่อัปโหลด)
+  uploadedAt          DateTime @default(now())
+
+  activityProgress    ActivityProgress @relation(fields: [activityProgressId], references: [id], onDelete: Cascade)
+  uploadedBy          User             @relation(fields: [uploadedById], references: [id])
+
+  @@map("worksheet_uploads")
+}
+

@@ -6,16 +6,25 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
-export function Navbar() {
+interface NavbarProps {
+    hasStudents: boolean;
+}
+
+export function Navbar({ hasStudents }: NavbarProps) {
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const isActive = (path: string) => pathname?.startsWith(path);
 
-    const navLinks = [
+    const allNavLinks = [
         { href: "/dashboard", label: "หน้าหลัก" },
-        { href: "/students", label: "นักเรียนของฉัน" },
+        { href: "/students", label: "นักเรียนของฉัน", requiresStudents: true },
     ];
+
+    // Filter links based on whether teacher has students
+    const navLinks = allNavLinks.filter(
+        (link) => !link.requiresStudents || hasStudents,
+    );
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-pink-100 shadow-sm">

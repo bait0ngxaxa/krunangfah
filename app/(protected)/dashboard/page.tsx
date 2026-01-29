@@ -119,7 +119,7 @@ export default async function DashboardPage() {
                     {/* นักเรียนของฉัน - แสดงเมื่อมีนักเรียนแล้ว */}
                     {studentCount > 0 && (
                         <ActionCard
-                            title="นักเรียนของฉัน"
+                            title="รายชื่อนักเรียนทั้งหมด"
                             buttonText={`ดูรายชื่อนักเรียน (${studentCount} คน)`}
                             href="/students"
                             variant="primary"

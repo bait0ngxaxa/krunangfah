@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/auth";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { calculateRiskLevel } from "@/lib/utils/phq-scoring";
@@ -24,7 +25,6 @@ export async function importStudents(
     try {
         const session = await requireAuth();
         const userId = session.user.id;
-        const userRole = session.user.role;
 
         // Get user's school and teacher profile
         const user = await prisma.user.findUnique({
@@ -47,23 +47,15 @@ export async function importStudents(
         }
 
         const schoolId = user.schoolId;
-        const advisoryClass = user.teacher?.advisoryClass;
         const errors: string[] = [];
         let importedCount = 0;
-        let skippedCount = 0;
+        const skippedCount = 0;
 
         // Process each student
         for (const studentData of students) {
             try {
-                // Filter by advisory class for class_teacher
-                if (
-                    userRole === "class_teacher" &&
-                    advisoryClass &&
-                    studentData.class !== advisoryClass
-                ) {
-                    skippedCount++;
-                    continue;
-                }
+                // Removed advisory class check - class_teacher can import any student
+                // and they will see them because of importedById check
                 // Find or create student
                 let student = await prisma.student.findFirst({
                     where: {
@@ -108,7 +100,7 @@ export async function importStudents(
                 }
 
                 // Create PHQ result
-                await prisma.phqResult.create({
+                const phqResult = await prisma.phqResult.create({
                     data: {
                         studentId: student.id,
                         academicYearId,
@@ -129,6 +121,17 @@ export async function importStudents(
                         riskLevel,
                     },
                 });
+
+                // Initialize activity progress for orange/yellow/green students
+                if (["orange", "yellow", "green"].includes(riskLevel)) {
+                    const { initializeActivityProgress } =
+                        await import("./activity.actions");
+                    await initializeActivityProgress(
+                        student.id,
+                        phqResult.id,
+                        riskLevel,
+                    );
+                }
 
                 importedCount++;
             } catch (err) {
@@ -178,18 +181,35 @@ export async function getStudents() {
             where: { userId: user.id },
         });
 
-        if (!teacher) {
+        // if (!teacher) {
+        //    return [];
+        // }
+
+        // Fetch full user data to get schoolId if teacher profile is missing
+        const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { schoolId: true },
+        });
+
+        // school_admin sees all students in school
+        // class_teacher sees only students they imported
+        const schoolId = teacher?.schoolId || dbUser?.schoolId;
+
+        if (!schoolId) {
             return [];
         }
 
-        // school_admin sees all students in school
-        // class_teacher sees only their advisory class
-        const whereClause: { schoolId: string; class?: string } = {
-            schoolId: teacher.schoolId,
+        const whereClause: Prisma.StudentWhereInput = {
+            schoolId,
         };
 
         if (user.role === "class_teacher") {
-            whereClause.class = teacher.advisoryClass;
+            // Class teacher sees only students they imported
+            whereClause.phqResults = {
+                some: {
+                    importedById: user.id,
+                },
+            };
         }
 
         const students = await prisma.student.findMany({
@@ -223,21 +243,25 @@ export async function searchStudents(query: string) {
             where: { userId: user.id },
         });
 
-        if (!teacher) {
+        // if (!teacher) {
+        //    return [];
+        // }
+
+        // Fetch full user data to get schoolId if teacher profile is missing
+        const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { schoolId: true },
+        });
+
+        const schoolId = teacher?.schoolId || dbUser?.schoolId;
+
+        if (!schoolId) {
             return [];
         }
 
         // Build where clause with school filter
-        const whereClause: {
-            schoolId: string;
-            class?: string;
-            OR?: Array<{
-                firstName?: { contains: string; mode: "insensitive" };
-                lastName?: { contains: string; mode: "insensitive" };
-                studentId?: { contains: string; mode: "insensitive" };
-            }>;
-        } = {
-            schoolId: teacher.schoolId,
+        const whereClause: Prisma.StudentWhereInput = {
+            schoolId,
             OR: [
                 { firstName: { contains: query, mode: "insensitive" } },
                 { lastName: { contains: query, mode: "insensitive" } },
@@ -245,9 +269,13 @@ export async function searchStudents(query: string) {
             ],
         };
 
-        // class_teacher sees only their advisory class
+        // class_teacher sees only students they imported
         if (user.role === "class_teacher") {
-            whereClause.class = teacher.advisoryClass;
+            whereClause.phqResults = {
+                some: {
+                    importedById: user.id,
+                },
+            };
         }
 
         const students = await prisma.student.findMany({
@@ -282,19 +310,35 @@ export async function getStudentDetail(studentId: string) {
             where: { userId: user.id },
         });
 
-        if (!teacher) {
+        // if (!teacher) {
+        //     return null;
+        // }
+
+        // Fetch full user data to get schoolId if teacher profile is missing
+        const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { schoolId: true },
+        });
+
+        const schoolId = teacher?.schoolId || dbUser?.schoolId;
+
+        if (!schoolId) {
             return null;
         }
 
         // Build where clause with security check
-        const whereClause: { id: string; schoolId: string; class?: string } = {
+        const whereClause: Prisma.StudentWhereInput = {
             id: studentId,
-            schoolId: teacher.schoolId, // Security: same school only
+            schoolId, // Security: same school only
         };
 
-        // class_teacher sees only their advisory class
+        // class_teacher sees only students they imported
         if (user.role === "class_teacher") {
-            whereClause.class = teacher.advisoryClass;
+            whereClause.phqResults = {
+                some: {
+                    importedById: user.id,
+                },
+            };
         }
 
         const student = await prisma.student.findFirst({

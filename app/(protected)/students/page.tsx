@@ -30,7 +30,7 @@ export default async function MyStudentsPage() {
                 <div className="flex justify-between items-center mb-8 bg-white/60 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white/50">
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
-                            นักเรียนของฉัน
+                            นักเรียนทั้งหมด
                         </h1>
                         <p className="text-gray-600 mt-1 text-sm font-medium">
                             ข้อมูลนักเรียนและผลคัดกรอง PHQ-A

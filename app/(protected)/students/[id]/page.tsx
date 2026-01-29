@@ -5,6 +5,8 @@ import { getStudentDetail } from "@/lib/actions/student.actions";
 import { StudentProfileCard } from "@/components/student/StudentProfileCard";
 import { PHQHistoryTable } from "@/components/student/PHQHistoryTable";
 import { PHQTrendChart } from "@/components/student/PHQTrendChart";
+import { ActivityProgressTable } from "@/components/student/ActivityProgressTable";
+import type { RiskLevel } from "@/lib/utils/phq-scoring";
 
 interface StudentDetailPageProps {
     params: Promise<{ id: string }>;
@@ -47,6 +49,15 @@ export default async function StudentDetailPage({
                         student={student}
                         latestResult={latestResult}
                     />
+
+                    {/* Activity Progress Table */}
+                    {latestResult && (
+                        <ActivityProgressTable
+                            studentId={id}
+                            phqResultId={latestResult.id}
+                            riskLevel={latestResult.riskLevel as RiskLevel}
+                        />
+                    )}
 
                     {/* Trend Chart */}
                     {student.phqResults.length > 0 && (
