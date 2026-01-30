@@ -3,7 +3,6 @@ import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { getStudentDetail } from "@/lib/actions/student.actions";
-import { getActivityProgress } from "@/lib/actions/activity.actions";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 
 // Activity configuration
@@ -119,22 +118,7 @@ export default async function StudentHelpPage({ params }: PageProps) {
         );
     }
 
-    // Check if student already has activity progress
-    const progressResult = await getActivityProgress(
-        studentId,
-        latestResult.id,
-    );
-    const hasProgress =
-        progressResult.success &&
-        progressResult.data &&
-        progressResult.data.length > 0;
-
-    // If student already started activities, redirect to activity workspace
-    if (hasProgress) {
-        redirect(`/students/${studentId}/help/start`);
-    }
-
-    // Orange, Yellow, Green - Worksheet introduction with activity cards (first time only)
+    // Orange, Yellow, Green - Always show worksheet introduction
     const activityIndices = ACTIVITY_INDICES[riskLevel] || [0, 1, 4];
     const activities = activityIndices.map((index) => ACTIVITIES[index]);
     const activityCount = activities.length;

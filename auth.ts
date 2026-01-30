@@ -46,12 +46,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         return null;
                     }
 
+                    // Check if user has a teacher profile
+                    const teacherProfile = await prisma.teacher.findUnique({
+                        where: { userId: user.id },
+                        select: { id: true },
+                    });
+
                     return {
                         id: user.id,
                         email: user.email,
                         name: user.name,
                         image: user.image,
                         role: user.role as UserRole,
+                        hasTeacherProfile: !!teacherProfile,
                         emailVerified: user.emailVerified,
                         createdAt: user.createdAt,
                         updatedAt: user.updatedAt,
@@ -64,17 +71,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
     ],
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger }) {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
+                token.hasTeacherProfile = user.hasTeacherProfile;
             }
+
+            // Re-check hasTeacherProfile on session update
+            if (trigger === "update" && token.id) {
+                const teacherProfile = await prisma.teacher.findUnique({
+                    where: { userId: token.id as string },
+                    select: { id: true },
+                });
+                token.hasTeacherProfile = !!teacherProfile;
+            }
+
             return token;
         },
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as UserRole;
+                session.user.hasTeacherProfile = token.hasTeacherProfile as boolean;
             }
             return session;
         },

@@ -1,7 +1,8 @@
-import { FileText, Eye, CheckCircle2 } from "lucide-react";
+import { FileText, CheckCircle2 } from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { getActivityProgress } from "@/lib/actions/activity.actions";
 import Link from "next/link";
+import { WorksheetPreviewButton } from "./WorksheetPreviewButton";
 
 // Activity configuration
 const ACTIVITIES = [
@@ -169,41 +170,23 @@ export async function ActivityProgressTable({
                                     </td>
                                     <td className="px-4 py-4">
                                         <span className="text-gray-700">
-                                            {progress.teacher?.name ||
-                                                progress.teacherNotes ||
-                                                "ยังไม่ได้กำหนด"}
+                                            {progress.teacher?.teacher
+                                                ? `${progress.teacher.teacher.firstName} ${progress.teacher.teacher.lastName}`
+                                                : "ยังไม่ได้กำหนด"}
                                         </span>
                                     </td>
                                     <td className="px-4 py-4 text-center">
-                                        <span
-                                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
-                                                isCompleted
-                                                    ? "bg-green-100 text-green-700"
-                                                    : isLocked
-                                                      ? "bg-gray-100 text-gray-500"
-                                                      : "bg-yellow-100 text-yellow-700"
-                                            }`}
-                                        >
-                                            {isCompleted ? (
-                                                <>
-                                                    <CheckCircle2 className="w-3 h-3" />
-                                                    เสร็จแล้ว
-                                                </>
-                                            ) : isLocked ? (
-                                                "ล็อค"
-                                            ) : (
-                                                "กำลังทำ"
-                                            )}
-                                        </span>
-                                        {progress.worksheetUploads.length >
-                                            0 && (
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                {
+                                        {isLocked ? (
+                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                                ล็อค
+                                            </span>
+                                        ) : (
+                                            <WorksheetPreviewButton
+                                                uploads={
                                                     progress.worksheetUploads
-                                                        .length
-                                                }{" "}
-                                                ไฟล์
-                                            </p>
+                                                }
+                                                isCompleted={isCompleted}
+                                            />
                                         )}
                                     </td>
                                 </tr>
@@ -290,21 +273,24 @@ export async function ActivityProgressTable({
                                             <span className="font-medium">
                                                 ครู:
                                             </span>{" "}
-                                            {progress.teacher?.name ||
-                                                progress.teacherNotes ||
-                                                "ยังไม่ได้กำหนด"}
+                                            {progress.teacher?.teacher
+                                                ? `${progress.teacher.teacher.firstName} ${progress.teacher.teacher.lastName}`
+                                                : "ยังไม่ได้กำหนด"}
                                         </p>
-                                        {progress.worksheetUploads.length >
-                                            0 && (
-                                            <p className="text-green-600">
-                                                📄{" "}
-                                                {
-                                                    progress.worksheetUploads
-                                                        .length
-                                                }{" "}
-                                                ไฟล์อัปโหลดแล้ว
-                                            </p>
-                                        )}
+                                        {isCompleted &&
+                                            progress.worksheetUploads.length >
+                                                0 && (
+                                                <div className="mt-2">
+                                                    <WorksheetPreviewButton
+                                                        uploads={
+                                                            progress.worksheetUploads
+                                                        }
+                                                        isCompleted={
+                                                            isCompleted
+                                                        }
+                                                    />
+                                                </div>
+                                            )}
                                     </div>
                                 </div>
                             </div>

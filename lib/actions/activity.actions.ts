@@ -80,6 +80,12 @@ export async function getActivityProgress(
                     select: {
                         name: true,
                         email: true,
+                        teacher: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                            },
+                        },
                     },
                 },
             },
@@ -163,8 +169,8 @@ export async function uploadWorksheet(
         const buffer = Buffer.from(bytes);
         await writeFile(filePath, buffer);
 
-        // Save to database
-        const fileUrl = `/uploads/worksheets/${fileName}`;
+        // Save to database - use API route instead of static file
+        const fileUrl = `/api/uploads/worksheets/${fileName}`;
         const upload = await prisma.worksheetUpload.create({
             data: {
                 activityProgressId,
@@ -336,5 +342,41 @@ export async function scheduleActivity(
     } catch (error) {
         console.error("Error scheduling activity:", error);
         return { success: false, error: "Failed to schedule activity" };
+    }
+}
+
+/**
+ * Update teacher notes for an activity
+ */
+export async function updateTeacherNotes(
+    activityProgressId: string,
+    notes: string,
+) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const activityProgress = await prisma.activityProgress.findUnique({
+            where: { id: activityProgressId },
+        });
+
+        if (!activityProgress) {
+            return { success: false, error: "Activity not found" };
+        }
+
+        const updated = await prisma.activityProgress.update({
+            where: { id: activityProgressId },
+            data: {
+                teacherNotes: notes,
+                teacherId: activityProgress.teacherId || session.user.id,
+            },
+        });
+
+        return { success: true, data: updated };
+    } catch (error) {
+        console.error("Error updating teacher notes:", error);
+        return { success: false, error: "Failed to update notes" };
     }
 }

@@ -16,6 +16,7 @@ export interface ExtendedUser {
     name: string | null;
     image: string | null;
     role: UserRole;
+    hasTeacherProfile?: boolean;
     emailVerified?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
@@ -42,12 +43,10 @@ export interface SignInCredentials {
 }
 
 /**
- * Sign up credentials
+ * Sign up credentials - Basic registration (email + password only)
+ * Additional profile info (name, school, etc.) will be collected later
  */
-export interface SignUpCredentials extends SignInCredentials {
-    name: string;
-    schoolName: string;
-}
+export type SignUpCredentials = SignInCredentials;
 
 /**
  * Authentication response

@@ -55,18 +55,30 @@ export async function createTeacherProfile(
             };
         }
 
-        // Get user's schoolId
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { schoolId: true },
+        // Find or create school
+        let school = await prisma.school.findFirst({
+            where: {
+                name: {
+                    equals: input.schoolName,
+                    mode: "insensitive",
+                },
+            },
         });
 
-        if (!user?.schoolId) {
-            return {
-                success: false,
-                message: "User does not have a school assigned",
-            };
+        if (!school) {
+            school = await prisma.school.create({
+                data: { name: input.schoolName },
+            });
         }
+
+        // Update User with name and schoolId
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                name: `${input.firstName} ${input.lastName}`,
+                schoolId: school.id,
+            },
+        });
 
         // Create teacher profile (role ได้จาก signup แล้ว)
         const teacher = await prisma.teacher.create({
@@ -77,7 +89,7 @@ export async function createTeacherProfile(
                 age: input.age,
                 advisoryClass: normalizeClassName(input.advisoryClass),
                 academicYearId: input.academicYearId,
-                schoolId: user.schoolId,
+                schoolId: school.id,
                 schoolRole: input.schoolRole,
                 projectRole: input.projectRole,
             },

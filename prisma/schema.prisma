@@ -99,6 +99,7 @@ model TeacherInvite {
   firstName       String
   lastName        String
   age             Int
+  userRole        String    // school_admin or class_teacher
   advisoryClass   String
   academicYearId  String
   schoolId        String

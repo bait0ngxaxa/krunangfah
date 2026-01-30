@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 import "./globals.css";
 
 const googleSans = localFont({
@@ -21,7 +22,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${googleSans.variable} antialiased`}>
-                {children}
+                <SessionProvider>{children}</SessionProvider>
             </body>
         </html>
     );

@@ -42,7 +42,7 @@ const ACTIVITY_NAMES: Record<number, string> = {
 };
 
 export function ActivityCompletionPage({
-    studentId,
+    studentId: _studentId,
     studentName,
     riskLevel,
     activityNumber,

@@ -44,6 +44,7 @@ export function AddTeacherForm() {
     });
 
     const advisoryClassValue = watch("advisoryClass") || "";
+    const userRoleValue = watch("userRole") || "";
 
     useEffect(() => {
         const loadAcademicYears = async () => {
@@ -52,6 +53,15 @@ export function AddTeacherForm() {
         };
         loadAcademicYears();
     }, []);
+
+    // Auto-set advisoryClass based on role
+    useEffect(() => {
+        if (userRoleValue === "school_admin") {
+            setValue("advisoryClass", "ทุกห้อง", { shouldValidate: true });
+        } else if (userRoleValue === "class_teacher" && advisoryClassValue === "ทุกห้อง") {
+            setValue("advisoryClass", "", { shouldValidate: false });
+        }
+    }, [userRoleValue, setValue, advisoryClassValue]);
 
     const onSubmit = async (data: TeacherInviteFormData) => {
         setIsLoading(true);
@@ -194,21 +204,52 @@ export function AddTeacherForm() {
                     )}
                 </div>
 
-                {/* Advisory Class */}
+                {/* User Role */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ชั้นที่ปรึกษา
+                        ประเภทครู
                     </label>
-                    <ClassSelector
-                        value={advisoryClassValue}
-                        onChange={(val) =>
-                            setValue("advisoryClass", val, {
-                                shouldValidate: true,
-                            })
-                        }
-                        error={errors.advisoryClass?.message}
-                    />
+                    <select
+                        {...register("userRole")}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="">เลือกประเภทครู</option>
+                        <option value="school_admin">ครูนางฟ้า</option>
+                        <option value="class_teacher">ครูประจำชั้น</option>
+                    </select>
+                    {errors.userRole && (
+                        <p className="mt-1 text-sm text-red-600">
+                            {errors.userRole.message}
+                        </p>
+                    )}
                 </div>
+
+                {/* Advisory Class - Only show for class_teacher */}
+                {userRoleValue === "class_teacher" && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            ชั้นที่ปรึกษา
+                        </label>
+                        <ClassSelector
+                            value={advisoryClassValue}
+                            onChange={(val) =>
+                                setValue("advisoryClass", val, {
+                                    shouldValidate: true,
+                                })
+                            }
+                            error={errors.advisoryClass?.message}
+                        />
+                    </div>
+                )}
+
+                {/* Hidden field for school_admin */}
+                {userRoleValue === "school_admin" && (
+                    <input
+                        type="hidden"
+                        {...register("advisoryClass")}
+                        value="ทุกห้อง"
+                    />
+                )}
 
                 {/* Academic Year */}
                 <div>

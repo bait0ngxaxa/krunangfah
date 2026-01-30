@@ -30,10 +30,8 @@ export function SignUpForm() {
 
         try {
             const result = await registerUser({
-                name: data.name,
                 email: data.email,
                 password: data.password,
-                schoolName: data.schoolName,
             });
 
             if (!result.success) {
@@ -53,7 +51,7 @@ export function SignUpForm() {
                 return;
             }
 
-            router.push("/dashboard");
+            router.push("/teacher-profile");
             router.refresh();
         } catch (err) {
             console.error("Sign up error:", err);
@@ -73,27 +71,6 @@ export function SignUpForm() {
 
             <div>
                 <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-gray-700 mb-1.5"
-                >
-                    ชื่อผู้ใช้
-                </label>
-                <input
-                    {...register("name")}
-                    type="text"
-                    id="name"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all outline-none"
-                    placeholder="กรอกชื่อผู้ใช้ของคุณ"
-                />
-                {errors.name && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
-                        {errors.name.message}
-                    </p>
-                )}
-            </div>
-
-            <div>
-                <label
                     htmlFor="email"
                     className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
@@ -109,27 +86,6 @@ export function SignUpForm() {
                 {errors.email && (
                     <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.email.message}
-                    </p>
-                )}
-            </div>
-
-            <div>
-                <label
-                    htmlFor="schoolName"
-                    className="block text-sm font-medium text-gray-700 mb-1.5"
-                >
-                    ชื่อโรงเรียน
-                </label>
-                <input
-                    {...register("schoolName")}
-                    type="text"
-                    id="schoolName"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all outline-none"
-                    placeholder="เช่น โรงเรียนสาธิต"
-                />
-                {errors.schoolName && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
-                        {errors.schoolName.message}
                     </p>
                 )}
             </div>

@@ -14,6 +14,7 @@ export interface TeacherInvite {
     firstName: string;
     lastName: string;
     age: number;
+    userRole: string;
     advisoryClass: string;
     academicYearId: string;
     schoolId: string;
@@ -98,6 +99,7 @@ export async function createTeacherInvite(
                 firstName: input.firstName,
                 lastName: input.lastName,
                 age: Number(input.age), // Convert string to number
+                userRole: input.userRole,
                 advisoryClass: normalizeClassName(input.advisoryClass),
                 academicYearId: input.academicYearId,
                 schoolId: user.schoolId,
@@ -195,7 +197,7 @@ export async function acceptTeacherInvite(
                     email: invite.email,
                     name: `${invite.firstName} ${invite.lastName}`,
                     password: hashedPassword,
-                    role: "class_teacher",
+                    role: invite.userRole,
                     schoolId: invite.schoolId,
                 },
             }),

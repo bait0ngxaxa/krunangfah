@@ -1,5 +1,4 @@
 import { getStudentDetail } from "@/lib/actions/student.actions";
-import { getActivityProgress } from "@/lib/actions/activity.actions";
 import { redirect, notFound } from "next/navigation";
 import { EncouragementPage } from "@/components/activity";
 

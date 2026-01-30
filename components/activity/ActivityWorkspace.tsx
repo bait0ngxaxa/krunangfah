@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -15,7 +15,10 @@ import {
     Loader2,
     ClipboardCheck,
 } from "lucide-react";
-import { uploadWorksheet } from "@/lib/actions/activity.actions";
+import {
+    uploadWorksheet,
+    updateTeacherNotes,
+} from "@/lib/actions/activity.actions";
 import { useRouter } from "next/navigation";
 
 // Activity configuration
@@ -83,6 +86,7 @@ interface ActivityProgressData {
     id: string;
     activityNumber: number;
     status: string;
+    teacherNotes?: string | null;
     worksheetUploads: {
         id: string;
         fileName: string;
@@ -109,6 +113,8 @@ export function ActivityWorkspace({
         url: string;
         name: string;
     } | null>(null);
+    const [teacherNotes, setTeacherNotes] = useState<string>("");
+    const [savingNotes, setSavingNotes] = useState(false);
 
     const config = COLOR_CONFIG[riskLevel];
     const activityNumbers = ACTIVITY_INDICES[riskLevel];
@@ -139,14 +145,8 @@ export function ActivityWorkspace({
             const result = await uploadWorksheet(progressId, formData);
 
             if (result.success) {
-                // If all worksheets uploaded, redirect to assessment
-                if (result.needsAssessment) {
-                    router.push(
-                        `/students/${studentId}/help/start/assessment?activity=${currentActivityNumber}`,
-                    );
-                } else {
-                    router.refresh();
-                }
+                // Always refresh, let the UI show the assessment button
+                router.refresh();
             } else {
                 alert(result.error || "เกิดข้อผิดพลาดในการอัปโหลด");
             }
@@ -170,6 +170,37 @@ export function ActivityWorkspace({
         };
         input.click();
     };
+
+    const handleSaveNotes = async () => {
+        if (!currentProgress) return;
+
+        setSavingNotes(true);
+        try {
+            const result = await updateTeacherNotes(
+                currentProgress.id,
+                teacherNotes,
+            );
+
+            if (result.success) {
+                alert("บันทึกโน๊ตสำเร็จ");
+                router.refresh();
+            } else {
+                alert(result.error || "เกิดข้อผิดพลาดในการบันทึก");
+            }
+        } catch (error) {
+            console.error("Save notes error:", error);
+            alert("เกิดข้อผิดพลาดในการบันทึก");
+        } finally {
+            setSavingNotes(false);
+        }
+    };
+
+    // Initialize teacher notes from current progress
+    useEffect(() => {
+        if (currentProgress?.teacherNotes) {
+            setTeacherNotes(currentProgress.teacherNotes);
+        }
+    }, [currentProgress]);
 
     return (
         <>
@@ -414,6 +445,44 @@ export function ActivityWorkspace({
                                     );
                                 })()}
                         </div>
+
+                        {/* Teacher Notes Section */}
+                        {currentProgress && (
+                            <div className="mb-8 bg-blue-50 border border-blue-200 p-6 rounded-xl">
+                                <h3 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                                    📝 บันทึกของครู
+                                </h3>
+                                <p className="text-sm text-blue-600 mb-3">
+                                    บันทึกข้อสังเกต ความคืบหน้า
+                                    หรือข้อมูลเพิ่มเติมเกี่ยวกับกิจกรรมนี้
+                                </p>
+                                <textarea
+                                    value={teacherNotes}
+                                    onChange={(e) =>
+                                        setTeacherNotes(e.target.value)
+                                    }
+                                    placeholder="พิมพ์บันทึกของคุณที่นี่..."
+                                    className="w-full p-4 border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    rows={5}
+                                />
+                                <button
+                                    onClick={handleSaveNotes}
+                                    disabled={savingNotes || !teacherNotes.trim()}
+                                    className="mt-3 px-6 py-2 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {savingNotes ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            กำลังบันทึก...
+                                        </>
+                                    ) : (
+                                        <>
+                                            💾 บันทึกโน๊ต
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
 
                         {/* Progress Indicator */}
                         <div className="mb-8 bg-gray-50 rounded-xl p-6">

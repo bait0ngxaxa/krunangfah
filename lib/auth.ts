@@ -55,8 +55,9 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 /**
- * Create a new user
- * @param credentials - User credentials
+ * Create a new user (Basic registration with email + password only)
+ * School and teacher profile will be created later via TeacherProfileForm
+ * @param credentials - User credentials (email + password)
  * @returns Authentication response
  */
 export async function createUser(
@@ -78,31 +79,21 @@ export async function createUser(
         // Hash password
         const hashedPassword = await hashPassword(credentials.password);
 
-        // Find or create school
-        let school = await prisma.school.findFirst({
-            where: { name: credentials.schoolName },
-        });
-
-        if (!school) {
-            school = await prisma.school.create({
-                data: { name: credentials.schoolName },
-            });
-        }
-
-        // Create user with school_admin role and link to school
+        // Create user with basic info only (no name, no school yet)
+        // Name and school will be set when creating Teacher profile
         const user = await prisma.user.create({
             data: {
                 email: credentials.email,
-                name: credentials.name,
                 password: hashedPassword,
-                role: "school_admin",
-                schoolId: school.id,
+                role: "school_admin", // Default role for new signups
+                // name: null (will be set in Teacher profile)
+                // schoolId: null (will be set in Teacher profile)
             },
         });
 
         return {
             success: true,
-            message: "User created successfully",
+            message: "User created successfully. Please complete your profile.",
             user: {
                 id: user.id,
                 email: user.email,
