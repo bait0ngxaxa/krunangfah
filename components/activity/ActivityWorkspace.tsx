@@ -13,7 +13,6 @@ import {
     Eye,
     X,
     Loader2,
-    ClipboardCheck,
 } from "lucide-react";
 import {
     uploadWorksheet,
@@ -145,8 +144,23 @@ export function ActivityWorkspace({
             const result = await uploadWorksheet(progressId, formData);
 
             if (result.success) {
-                // Always refresh, let the UI show the assessment button
-                router.refresh();
+                // If activity is completed, redirect to assessment/encouragement
+                if (result.completed && result.activityNumber) {
+                    if (result.activityNumber === 1) {
+                        // Activity 1: Go to assessment
+                        router.push(
+                            `/students/${studentId}/help/start/assessment?activity=${result.activityNumber}`,
+                        );
+                    } else {
+                        // Activities 2-5: Go to encouragement
+                        router.push(
+                            `/students/${studentId}/help/start/encouragement?activity=${result.activityNumber}`,
+                        );
+                    }
+                } else {
+                    // Not completed yet, just refresh
+                    router.refresh();
+                }
             } else {
                 alert(result.error || "เกิดข้อผิดพลาดในการอัปโหลด");
             }
@@ -426,15 +440,6 @@ export function ActivityWorkspace({
                                                         )}
                                                     </button>
                                                 </>
-                                            ) : currentProgress.status ===
-                                              "pending_assessment" ? (
-                                                <Link
-                                                    href={`/students/${studentId}/help/start/assessment?activity=${currentActivityNumber}`}
-                                                    className="w-full py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
-                                                >
-                                                    <ClipboardCheck className="w-5 h-5" />
-                                                    ทำแบบประเมินเพื่อเสร็จสิ้นกิจกรรม
-                                                </Link>
                                             ) : (
                                                 <div className="flex items-center gap-2 text-green-700 font-medium">
                                                     <CheckCircle2 className="w-5 h-5" />
@@ -467,7 +472,9 @@ export function ActivityWorkspace({
                                 />
                                 <button
                                     onClick={handleSaveNotes}
-                                    disabled={savingNotes || !teacherNotes.trim()}
+                                    disabled={
+                                        savingNotes || !teacherNotes.trim()
+                                    }
                                     className="mt-3 px-6 py-2 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {savingNotes ? (
@@ -476,9 +483,7 @@ export function ActivityWorkspace({
                                             กำลังบันทึก...
                                         </>
                                     ) : (
-                                        <>
-                                            💾 บันทึกโน๊ต
-                                        </>
+                                        <>💾 บันทึกโน๊ต</>
                                     )}
                                 </button>
                             </div>

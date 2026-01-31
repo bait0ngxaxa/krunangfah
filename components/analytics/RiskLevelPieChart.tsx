@@ -1,6 +1,13 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import {
+    PieChart,
+    Pie,
+    Cell,
+    ResponsiveContainer,
+    Legend,
+    Tooltip,
+} from "recharts";
 import type { RiskLevelSummary } from "@/lib/actions/analytics.actions";
 
 interface RiskLevelPieChartProps {
@@ -17,7 +24,7 @@ interface ChartDataItem {
 
 export function RiskLevelPieChart({
     riskLevelSummary,
-    totalStudents,
+    totalStudents: _totalStudents,
 }: RiskLevelPieChartProps) {
     // Filter out zero counts and prepare data
     const chartData: ChartDataItem[] = riskLevelSummary
@@ -72,7 +79,8 @@ export function RiskLevelPieChart({
                     </Pie>
                     <Tooltip
                         formatter={(value: unknown) => {
-                            const numValue = typeof value === "number" ? value : 0;
+                            const numValue =
+                                typeof value === "number" ? value : 0;
                             return [`${numValue} คน`, "จำนวน"];
                         }}
                     />
@@ -80,9 +88,12 @@ export function RiskLevelPieChart({
                         verticalAlign="bottom"
                         height={36}
                         formatter={(value: string, entry: unknown) => {
-                            const payload = entry as { payload?: ChartDataItem };
+                            const payload = entry as {
+                                payload?: ChartDataItem;
+                            };
                             const count = payload.payload?.value || 0;
-                            const percent = payload.payload?.percentage?.toFixed(1) || 0;
+                            const percent =
+                                payload.payload?.percentage?.toFixed(1) || 0;
                             return `${value}: ${count} คน (${percent}%)`;
                         }}
                     />

@@ -203,13 +203,21 @@ export async function uploadWorksheet(
         }
 
         if (shouldComplete) {
-            // When all worksheets uploaded, set to pending_assessment (not completed yet)
+            // When all worksheets uploaded, mark as completed immediately
             await prisma.activityProgress.update({
                 where: { id: activityProgressId },
                 data: {
-                    status: "pending_assessment",
+                    status: "completed",
+                    completedAt: new Date(),
                 },
             });
+
+            // Unlock next activity
+            await unlockNextActivity(
+                activityProgress.studentId,
+                activityProgress.phqResultId,
+                activityProgress.activityNumber,
+            );
         }
 
         return {
@@ -217,7 +225,8 @@ export async function uploadWorksheet(
             data: upload,
             uploadedCount: currentUploadCount,
             requiredCount,
-            needsAssessment: shouldComplete,
+            completed: shouldComplete,
+            activityNumber: activityProgress.activityNumber,
         };
     } catch (error) {
         console.error("Error uploading worksheet:", error);
@@ -250,26 +259,16 @@ export async function submitTeacherAssessment(
             return { success: false, error: "Activity not found" };
         }
 
-        // Update with assessment data and complete the activity
+        // Save assessment data (activity is already completed from upload)
         await prisma.activityProgress.update({
             where: { id: activityProgressId },
             data: {
-                teacherId: session.user.id,
                 internalProblems: data.internalProblems,
                 externalProblems: data.externalProblems,
                 problemType: data.problemType,
                 assessedAt: new Date(),
-                status: "completed",
-                completedAt: new Date(),
             },
         });
-
-        // Unlock next activity
-        await unlockNextActivity(
-            activityProgress.studentId,
-            activityProgress.phqResultId,
-            activityProgress.activityNumber,
-        );
 
         return { success: true };
     } catch (error) {
