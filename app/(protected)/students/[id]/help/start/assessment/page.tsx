@@ -65,6 +65,14 @@ export default async function TeacherAssessmentPage({
         redirect(`/students/${studentId}/help/start`);
     }
 
+    // Assessment page only for Activity 1
+    // Activities 2-5 skip directly to encouragement
+    if (currentProgress.activityNumber !== 1) {
+        redirect(
+            `/students/${studentId}/help/start/encouragement?activity=${currentProgress.activityNumber}`,
+        );
+    }
+
     const activity = ACTIVITIES.find(
         (a) => a.number === currentProgress.activityNumber,
     );
