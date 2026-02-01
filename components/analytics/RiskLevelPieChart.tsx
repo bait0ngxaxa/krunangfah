@@ -57,16 +57,16 @@ export function RiskLevelPieChart({
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 pb-8">
             <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
                 ข้อมูลนักเรียน (ห้องที่ปรึกษา)
             </h2>
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={380}>
                 <PieChart>
                     <Pie
                         data={chartData}
                         cx="50%"
-                        cy="50%"
+                        cy="45%"
                         labelLine={false}
                         label={renderLabel}
                         outerRadius={120}

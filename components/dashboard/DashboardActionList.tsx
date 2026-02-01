@@ -32,16 +32,19 @@ export function DashboardActionList({
             />
 
             {/* เพิ่มนักเรียน + PHQ-A */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm p-6 border-2 border-pink-200 hover:border-pink-300 transition-colors">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
-                    📝 จัดการข้อมูลนักเรียน
-                </h3>
-                <ActionCard
-                    title="เพิ่มนักเรียน + PHQ-A (Import Excel)"
-                    buttonText="Import Excel"
-                    href="/students/import"
-                    variant="primary"
-                />
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-pink-500/10 p-6 border-2 border-white relative overflow-hidden group hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-300">
+                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-pink-400 via-purple-400 to-indigo-400 opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="relative z-10">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
+                        📝 จัดการข้อมูลนักเรียน
+                    </h3>
+                    <ActionCard
+                        title="เพิ่มนักเรียน + PHQ-A (Import Excel)"
+                        buttonText="Import Excel"
+                        href="/students/import"
+                        variant="primary"
+                    />
+                </div>
             </div>
 
             {/* นักเรียนของฉัน - แสดงเมื่อมีนักเรียนแล้ว */}
@@ -55,11 +58,14 @@ export function DashboardActionList({
             )}
 
             {/* ดูข้อมูลนักเรียนรายบุคคล */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-pink-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">
-                    🔍 ค้นหานักเรียน
-                </h3>
-                <StudentSearch />
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-pink-500/10 p-6 border-2 border-white relative overflow-hidden group hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-300">
+                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-pink-400 via-purple-400 to-indigo-400 opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="relative z-10">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">
+                        🔍 ค้นหานักเรียน
+                    </h3>
+                    <StudentSearch />
+                </div>
             </div>
 
             {/* ดูสรุปข้อมูล */}

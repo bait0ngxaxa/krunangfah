@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { getServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Kru Nangfah - ระบบดูแลช่วยเหลือนักเรียน",
+    description:
+        "ระบบจัดการข้อมูลและติดตามผลโครงการเพื่อการดูแลนักเรียนอย่างใกล้ชิดและอบอุ่น",
+};
 
 export default async function Home() {
     const session = await getServerSession();
 
-    // If logged in, go to dashboard
     if (session?.user) {
         redirect("/dashboard");
     }
@@ -19,21 +25,21 @@ export default async function Home() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50" />
 
             <div className="max-w-4xl w-full px-6 py-12 text-center relative z-10">
-                <div className="mb-6 inline-block p-4 rounded-full bg-white/50 backdrop-blur-xs shadow-sm">
+                <div className="mb-6 inline-block p-4 rounded-full bg-white/50 backdrop-blur-xs shadow-sm animate-fade-in-up">
                     <span className="text-4xl">🧚‍♀️</span>
                 </div>
 
-                <h1 className="text-5xl md:text-7xl font-bold bg-linear-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-6 drop-shadow-sm py-2 leading-tight">
+                <h1 className="text-5xl md:text-7xl font-bold bg-linear-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-6 drop-shadow-sm py-2 leading-tight animate-fade-in-up animation-delay-200">
                     โครงการครูนางฟ้า
                 </h1>
 
-                <p className="text-lg md:text-xl text-gray-600 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
+                <p className="text-lg md:text-xl text-gray-600 mb-12 max-w-2xl mx-auto font-medium leading-relaxed animate-fade-in-up animation-delay-400">
                     ระบบจัดการข้อมูลและติดตามผลโครงการ{" "}
                     <br className="hidden md:block" />
                     เพื่อการดูแลนักเรียนอย่างใกล้ชิดและอบอุ่น
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up animation-delay-600">
                     <Link
                         href="/signin"
                         className="w-full sm:w-auto px-10 py-4 bg-linear-to-r from-pink-400 to-purple-400 text-white text-lg font-bold rounded-full hover:from-pink-500 hover:to-purple-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1"

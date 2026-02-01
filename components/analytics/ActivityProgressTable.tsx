@@ -46,22 +46,22 @@ export function ActivityProgressTable({
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                     <thead>
-                        <tr className="bg-gray-800 text-white">
-                            <th className="px-4 py-3 text-center text-sm font-semibold border border-gray-600">
+                        <tr className="bg-linear-to-r from-indigo-600 to-purple-600 text-white">
+                            <th className="px-4 py-3 text-center text-sm font-semibold border border-indigo-500">
                                 กลุ่มสี
                             </th>
-                            <th className="px-4 py-3 text-center text-sm font-semibold border border-gray-600">
+                            <th className="px-4 py-3 text-center text-sm font-semibold border border-indigo-500">
                                 จำนวนนักเรียน
                                 <br />
                                 (คน)
                             </th>
-                            <th className="px-4 py-3 text-center text-sm font-semibold border border-gray-600">
+                            <th className="px-4 py-3 text-center text-sm font-semibold border border-indigo-500">
                                 ยังไม่ทำกิจกรรม
                             </th>
                             {ACTIVITY_LABELS.map((label, index) => (
                                 <th
                                     key={index}
-                                    className="px-4 py-3 text-center text-sm font-semibold border border-gray-600"
+                                    className="px-4 py-3 text-center text-sm font-semibold border border-indigo-500"
                                 >
                                     {label}
                                 </th>

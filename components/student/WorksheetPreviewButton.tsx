@@ -53,7 +53,7 @@ export function WorksheetPreviewButton({
                 typeof document !== "undefined" &&
                 createPortal(
                     <div
-                        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4"
+                        className="fixed inset-0 z-9999 flex items-center justify-center bg-black/70 p-4"
                         onClick={() => setPreviewFile(null)}
                     >
                         <div
@@ -105,32 +105,25 @@ export function WorksheetPreviewButton({
                 )}
 
             {/* File List */}
-            <div className="space-y-1">
-                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 mb-2">
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                     <span className="w-3 h-3">✓</span>
                     เสร็จแล้ว
-                </div>
+                </span>
                 {uploads.map((upload, index) => (
-                    <div
+                    <button
                         key={upload.id}
-                        className="flex items-center gap-2 text-xs"
+                        onClick={() =>
+                            setPreviewFile({
+                                url: upload.fileUrl,
+                                name: upload.fileName,
+                            })
+                        }
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors text-xs font-medium"
                     >
-                        <span className="text-gray-600">
-                            ใบงานที่ {index + 1}
-                        </span>
-                        <button
-                            onClick={() =>
-                                setPreviewFile({
-                                    url: upload.fileUrl,
-                                    name: upload.fileName,
-                                })
-                            }
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
-                        >
-                            <Eye className="w-3 h-3" />
-                            พรีวิว
-                        </button>
-                    </div>
+                        <Eye className="w-3 h-3" />
+                        ใบงานที่ {index + 1}
+                    </button>
                 ))}
             </div>
         </>

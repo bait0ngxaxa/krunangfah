@@ -124,32 +124,34 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
             </div>
 
             {/* Student List by Class */}
-            {Object.keys(groupedStudents).length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                    <p>ไม่พบข้อมูลนักเรียน</p>
-                </div>
-            ) : (
-                Object.entries(groupedStudents)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([className, classStudents]) => (
-                        <div key={className} className="space-y-3">
-                            <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                                {className} ({classStudents.length} คน)
-                            </h3>
-                            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                                {classStudents.map((student) => (
-                                    <StudentCard
-                                        key={student.id}
-                                        student={student}
-                                        onClick={() =>
-                                            onStudentClick?.(student)
-                                        }
-                                    />
-                                ))}
+            <div className="max-h-[600px] overflow-y-auto pr-2 space-y-4 rounded-lg border border-gray-200 bg-white/50 p-4">
+                {Object.keys(groupedStudents).length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                        <p>ไม่พบข้อมูลนักเรียน</p>
+                    </div>
+                ) : (
+                    Object.entries(groupedStudents)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([className, classStudents]) => (
+                            <div key={className} className="space-y-3">
+                                <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 sticky top-0 bg-white/90 backdrop-blur-sm z-10">
+                                    {className} ({classStudents.length} คน)
+                                </h3>
+                                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                                    {classStudents.map((student) => (
+                                        <StudentCard
+                                            key={student.id}
+                                            student={student}
+                                            onClick={() =>
+                                                onStudentClick?.(student)
+                                            }
+                                        />
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))
-            )}
+                        ))
+                )}
+            </div>
         </div>
     );
 }

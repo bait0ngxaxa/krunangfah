@@ -92,7 +92,7 @@ export async function ActivityProgressTable({
             <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                     <thead>
-                        <tr className="bg-gray-800 text-white">
+                        <tr className="bg-linear-to-r from-indigo-600 to-purple-600 text-white">
                             <th className="px-4 py-3 text-left rounded-tl-xl">
                                 กิจกรรมที่ต้องทำ
                             </th>

@@ -6,6 +6,9 @@ import { StudentProfileCard } from "@/components/student/StudentProfileCard";
 import { PHQHistoryTable } from "@/components/student/PHQHistoryTable";
 import { PHQTrendChart } from "@/components/student/PHQTrendChart";
 import { ActivityProgressTable } from "@/components/student/ActivityProgressTable";
+import { CounselingLogTable } from "@/components/student/CounselingLogTable";
+import { getCounselingSessions } from "@/lib/actions/counseling.actions";
+import { Tabs } from "@/components/ui/Tabs";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 
 interface StudentDetailPageProps {
@@ -23,6 +26,50 @@ export default async function StudentDetailPage({
     }
 
     const latestResult = student.phqResults[0] || null;
+    const counselingSessions = await getCounselingSessions(id);
+
+    // Tab 1: PHQ Results (Chart + History)
+    const phqResultsTab = (
+        <div className="space-y-6">
+            {/* Trend Chart */}
+            {student.phqResults.length > 0 && (
+                <PHQTrendChart results={student.phqResults} />
+            )}
+
+            {/* History Table */}
+            <PHQHistoryTable results={student.phqResults} />
+        </div>
+    );
+
+    // Tab 2: Activities (Activity Progress + Counseling Log)
+    const activitiesTab = (
+        <div className="space-y-6">
+            {/* Activity Progress Table */}
+            {latestResult && (
+                <ActivityProgressTable
+                    studentId={id}
+                    phqResultId={latestResult.id}
+                    riskLevel={latestResult.riskLevel as RiskLevel}
+                />
+            )}
+
+            {/* Counseling Log Table */}
+            <CounselingLogTable sessions={counselingSessions} studentId={id} />
+        </div>
+    );
+
+    const tabs = [
+        {
+            id: "phq-results",
+            label: "📊 ผลการคัดกรอง",
+            content: phqResultsTab,
+        },
+        {
+            id: "activities",
+            label: "🎯 กิจกรรมและบันทึกการพูดคุย",
+            content: activitiesTab,
+        },
+    ];
 
     return (
         <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 py-8 px-4 relative overflow-hidden">
@@ -50,22 +97,8 @@ export default async function StudentDetailPage({
                         latestResult={latestResult}
                     />
 
-                    {/* Activity Progress Table */}
-                    {latestResult && (
-                        <ActivityProgressTable
-                            studentId={id}
-                            phqResultId={latestResult.id}
-                            riskLevel={latestResult.riskLevel as RiskLevel}
-                        />
-                    )}
-
-                    {/* Trend Chart */}
-                    {student.phqResults.length > 0 && (
-                        <PHQTrendChart results={student.phqResults} />
-                    )}
-
-                    {/* History Table */}
-                    <PHQHistoryTable results={student.phqResults} />
+                    {/* Tabs */}
+                    <Tabs tabs={tabs} defaultTab="phq-results" />
                 </div>
             </div>
         </div>

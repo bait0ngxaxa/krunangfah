@@ -59,15 +59,15 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
     return (
         <div className="space-y-6">
             {/* Info Card */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">
+            <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                <h3 className="font-semibold text-pink-900 mb-2">
                     ข้อมูลของคุณ
                 </h3>
-                <p className="text-blue-800">
+                <p className="text-pink-800">
                     ชื่อ: {inviteData.firstName} {inviteData.lastName}
                 </p>
-                <p className="text-blue-800">อีเมล: {inviteData.email}</p>
-                <p className="text-blue-800">
+                <p className="text-pink-800">อีเมล: {inviteData.email}</p>
+                <p className="text-pink-800">
                     โรงเรียน: {inviteData.school.name}
                 </p>
             </div>
@@ -88,7 +88,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                     <input
                         {...register("password")}
                         type="password"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                         placeholder="อย่างน้อย 6 ตัวอักษร"
                     />
                     {errors.password && (
@@ -105,7 +105,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                     <input
                         {...register("confirmPassword")}
                         type="password"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                         placeholder="กรอกรหัสผ่านอีกครั้ง"
                     />
                     {errors.confirmPassword && (
@@ -118,7 +118,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3 px-4 bg-linear-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 transition-all duration-200 shadow-lg"
+                    className="w-full py-3 px-4 bg-linear-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-lg hover:from-pink-600 hover:to-purple-700 disabled:opacity-50 transition-all duration-200 shadow-lg shadow-pink-500/20"
                 >
                     {isLoading ? "กำลังลงทะเบียน..." : "ลงทะเบียน"}
                 </button>

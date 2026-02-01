@@ -27,7 +27,8 @@ export function Navbar({ hasStudents }: NavbarProps) {
     );
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-pink-100 shadow-sm">
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-lg shadow-pink-500/5 transition-all duration-300">
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-pink-200 to-transparent opacity-50" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     {/* Logo & Brand */}
