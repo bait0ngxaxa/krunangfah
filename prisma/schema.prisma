@@ -164,6 +164,7 @@ model PhqResult {
   // ผลคำนวณ
   totalScore      Int      // รวมคะแนน q1-q9
   riskLevel       String   // blue, green, yellow, orange, red
+  referredToHospital Boolean @default(false) // ส่งต่อโรงพยาบาล
   
   createdAt       DateTime @default(now())
 

@@ -39,9 +39,6 @@ export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
                     </thead>
                     <tbody>
                         {orderedSummary.map((item) => {
-                            const shouldRefer = ["yellow", "orange", "red"].includes(
-                                item.riskLevel,
-                            );
                             return (
                                 <tr
                                     key={item.riskLevel}
@@ -62,8 +59,8 @@ export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
                                     <td className="px-4 py-3 text-center text-2xl font-bold text-gray-800">
                                         {item.count}
                                     </td>
-                                    <td className="px-4 py-3 text-center text-sm text-gray-600">
-                                        {shouldRefer ? "สั่งต่อโรงพยาบาล" : "-"}
+                                    <td className="px-4 py-3 text-center text-lg font-semibold text-gray-800">
+                                        {item.referralCount}
                                     </td>
                                 </tr>
                             );

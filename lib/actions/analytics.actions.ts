@@ -9,6 +9,7 @@ export interface RiskLevelSummary {
     label: string;
     color: string;
     percentage: number;
+    referralCount: number; // จำนวนที่ส่งต่อโรงพยาบาล
 }
 
 export interface TrendDataPoint {
@@ -36,6 +37,21 @@ export interface ActivityProgressByRisk {
     activity5: number; // กิจกรรม 5
 }
 
+export interface GradeRiskData {
+    grade: string; // "ม.5", "ม.6", etc.
+    red: number;
+    orange: number;
+    yellow: number;
+    green: number;
+    blue: number;
+    total: number;
+}
+
+export interface HospitalReferralByGrade {
+    grade: string; // "ม.5", "ม.6", etc.
+    referralCount: number;
+}
+
 export interface AnalyticsData {
     totalStudents: number;
     riskLevelSummary: RiskLevelSummary[];
@@ -45,6 +61,9 @@ export interface AnalyticsData {
     currentClass?: string;
     trendData: TrendDataPoint[];
     activityProgressByRisk: ActivityProgressByRisk[];
+    gradeRiskData: GradeRiskData[];
+    hospitalReferralsByGrade: HospitalReferralByGrade[];
+    totalReferrals: number;
 }
 
 const RISK_LEVEL_CONFIG = {
@@ -191,6 +210,25 @@ export async function getAnalyticsSummary(
         const studentsWithoutAssessment =
             totalStudents - studentsWithAssessment;
 
+        // Count referrals by risk level
+        const referralCountsByLevel = {
+            blue: 0,
+            green: 0,
+            yellow: 0,
+            orange: 0,
+            red: 0,
+        };
+
+        studentLatestAssessment.forEach((result) => {
+            if (result.referredToHospital) {
+                const level =
+                    result.riskLevel as keyof typeof referralCountsByLevel;
+                if (level in referralCountsByLevel) {
+                    referralCountsByLevel[level]++;
+                }
+            }
+        });
+
         // Calculate percentages and create summary
         const riskLevelSummary: RiskLevelSummary[] = Object.entries(
             riskLevelCounts,
@@ -206,6 +244,10 @@ export async function getAnalyticsSummary(
                     studentsWithAssessment > 0
                         ? (count / studentsWithAssessment) * 100
                         : 0,
+                referralCount:
+                    referralCountsByLevel[
+                        level as keyof typeof referralCountsByLevel
+                    ],
             };
         });
 
@@ -363,6 +405,104 @@ export async function getAnalyticsSummary(
             };
         });
 
+        // Create grade-level risk data
+        const gradeRiskMap = new Map<
+            string,
+            {
+                red: number;
+                orange: number;
+                yellow: number;
+                green: number;
+                blue: number;
+            }
+        >();
+
+        // Group students by grade (extract grade from class like "ม.5/1" -> "ม.5")
+        studentLatestAssessment.forEach((result) => {
+            const student = result.student;
+            // Extract grade level (e.g., "ม.5/1" -> "ม.5")
+            const gradeMatch = student.class.match(/^(ม\.\d+)/);
+            const grade = gradeMatch ? gradeMatch[1] : student.class;
+
+            if (!gradeRiskMap.has(grade)) {
+                gradeRiskMap.set(grade, {
+                    red: 0,
+                    orange: 0,
+                    yellow: 0,
+                    green: 0,
+                    blue: 0,
+                });
+            }
+
+            const gradeData = gradeRiskMap.get(grade);
+            if (gradeData) {
+                const riskLevel = result.riskLevel as keyof typeof gradeData;
+                if (riskLevel in gradeData) {
+                    gradeData[riskLevel]++;
+                }
+            }
+        });
+
+        // Convert to array and sort naturally
+        const gradeRiskData: GradeRiskData[] = Array.from(
+            gradeRiskMap.entries(),
+        )
+            .map(([grade, counts]) => ({
+                grade,
+                red: counts.red,
+                orange: counts.orange,
+                yellow: counts.yellow,
+                green: counts.green,
+                blue: counts.blue,
+                total:
+                    counts.red +
+                    counts.orange +
+                    counts.yellow +
+                    counts.green +
+                    counts.blue,
+            }))
+            .sort((a, b) => {
+                // Natural sort for Thai grade levels (ม.1, ม.2, ..., ม.6)
+                const gradeA = parseInt(a.grade.match(/\d+/)?.[0] || "0");
+                const gradeB = parseInt(b.grade.match(/\d+/)?.[0] || "0");
+                return gradeA - gradeB;
+            });
+
+        // Create hospital referral data by grade
+        const hospitalReferralMap = new Map<string, number>();
+        let totalReferrals = 0;
+
+        // Count referrals from latest assessments
+        studentLatestAssessment.forEach((result) => {
+            if (result.referredToHospital) {
+                totalReferrals++;
+                const student = result.student;
+                // Extract grade level (e.g., "ม.5/1" -> "ม.5")
+                const gradeMatch = student.class.match(/^(ม\.\d+)/);
+                const grade = gradeMatch ? gradeMatch[1] : student.class;
+
+                hospitalReferralMap.set(
+                    grade,
+                    (hospitalReferralMap.get(grade) || 0) + 1,
+                );
+            }
+        });
+
+        // Convert to array and sort naturally
+        const hospitalReferralsByGrade: HospitalReferralByGrade[] = Array.from(
+            hospitalReferralMap.entries(),
+        )
+            .map(([grade, referralCount]) => ({
+                grade,
+                referralCount,
+            }))
+            .sort((a, b) => {
+                // Natural sort for Thai grade levels (ม.1, ม.2, ..., ม.6)
+                const gradeA = parseInt(a.grade.match(/\d+/)?.[0] || "0");
+                const gradeB = parseInt(b.grade.match(/\d+/)?.[0] || "0");
+                return gradeA - gradeB;
+            });
+
         return {
             totalStudents,
             riskLevelSummary,
@@ -372,6 +512,9 @@ export async function getAnalyticsSummary(
             currentClass: targetClass,
             trendData,
             activityProgressByRisk,
+            gradeRiskData,
+            hospitalReferralsByGrade,
+            totalReferrals,
         };
     } catch (error) {
         console.error("Get analytics summary error:", error);

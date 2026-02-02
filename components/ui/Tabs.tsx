@@ -27,11 +27,11 @@ export function Tabs({ tabs, defaultTab }: TabsProps) {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`
-                            px-6 py-3 font-bold text-base rounded-t-lg transition-all duration-300
+                            px-6 py-3 font-bold text-base rounded-t-lg transition-all duration-300 border-2
                             ${
                                 activeTab === tab.id
-                                    ? "bg-gradient-to-r from-pink-400 to-purple-400 text-white shadow-md transform -translate-y-0.5"
-                                    : "bg-white/50 text-gray-600 hover:bg-white/80 hover:text-gray-800"
+                                    ? "bg-gradient-to-r from-pink-400 to-purple-400 text-white shadow-md transform -translate-y-0.5 border-pink-400"
+                                    : "bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-800 border-gray-200 hover:border-gray-300"
                             }
                         `}
                     >

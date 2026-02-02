@@ -5,11 +5,12 @@ import { ClassFilter } from "./ClassFilter";
 import { PhqSummaryTable } from "./PhqSummaryTable";
 import { RiskLevelPieChart } from "./RiskLevelPieChart";
 import { RiskLevelTrendChart } from "./RiskLevelTrendChart";
+import { RiskLevelByGradeChart } from "./RiskLevelByGradeChart";
+import { HospitalReferralTable } from "./HospitalReferralTable";
 import { ActivityProgressTable } from "./ActivityProgressTable";
 import { getAnalyticsSummary } from "@/lib/actions/analytics.actions";
 import type { AnalyticsData } from "@/lib/actions/analytics.actions";
-
-type TabType = "trend" | "summary" | "progress";
+import { Tabs, type Tab } from "@/components/ui/Tabs";
 
 interface AnalyticsContentProps {
     initialData: AnalyticsData;
@@ -21,7 +22,6 @@ export function AnalyticsContent({
     isSchoolAdmin,
 }: AnalyticsContentProps) {
     const [data, setData] = useState<AnalyticsData>(initialData);
-    const [activeTab, setActiveTab] = useState<TabType>("summary");
     const [isPending, startTransition] = useTransition();
 
     const handleClassChange = (classValue: string) => {
@@ -34,6 +34,48 @@ export function AnalyticsContent({
             }
         });
     };
+
+    const tabs: Tab[] = [
+        {
+            id: "summary",
+            label: "📊 สรุปผลรวม",
+            content: (
+                <>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <PhqSummaryTable
+                            riskLevelSummary={data.riskLevelSummary}
+                        />
+                        <RiskLevelPieChart
+                            riskLevelSummary={data.riskLevelSummary}
+                            totalStudents={data.studentsWithAssessment}
+                        />
+                    </div>
+                    <HospitalReferralTable
+                        hospitalReferralsByGrade={data.hospitalReferralsByGrade}
+                    />
+                </>
+            ),
+        },
+        {
+            id: "trend",
+            label: "📈 กราฟแนวโน้ม",
+            content: (
+                <div className="space-y-6">
+                    <RiskLevelTrendChart trendData={data.trendData} />
+                    <RiskLevelByGradeChart gradeRiskData={data.gradeRiskData} />
+                </div>
+            ),
+        },
+        {
+            id: "progress",
+            label: "🎯 กิจกรรมช่วยเหลือ",
+            content: (
+                <ActivityProgressTable
+                    activityProgressByRisk={data.activityProgressByRisk}
+                />
+            ),
+        },
+    ];
 
     return (
         <>
@@ -59,8 +101,7 @@ export function AnalyticsContent({
                         <div>
                             <p className="text-sm text-gray-600">
                                 นักเรียนทั้งหมด
-                                {data.currentClass &&
-                                    ` (${data.currentClass})`}
+                                {data.currentClass && ` (${data.currentClass})`}
                             </p>
                             <p className="text-3xl font-bold text-blue-600">
                                 {data.totalStudents}
@@ -150,64 +191,8 @@ export function AnalyticsContent({
                 </div>
             )}
 
-            {/* Tab Navigation */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2">
-                <div className="grid grid-cols-3 gap-2">
-                    <button
-                        onClick={() => setActiveTab("summary")}
-                        className={`px-4 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                            activeTab === "summary"
-                                ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-md"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                    >
-                        📊 สรุปผลรวม
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("trend")}
-                        className={`px-4 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                            activeTab === "trend"
-                                ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-md"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                    >
-                        📈 กราฟแนวโน้ม
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("progress")}
-                        className={`px-4 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                            activeTab === "progress"
-                                ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-md"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                    >
-                        🎯 กิจกรรมช่วยเหลือ
-                    </button>
-                </div>
-            </div>
-
-            {/* Tab Content */}
-            {activeTab === "trend" ? (
-                /* Trend Chart Tab */
-                <RiskLevelTrendChart trendData={data.trendData} />
-            ) : activeTab === "summary" ? (
-                /* Summary Tab */
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* PHQ Summary Table */}
-                    <PhqSummaryTable riskLevelSummary={data.riskLevelSummary} />
-
-                    {/* Risk Level Pie Chart */}
-                    <RiskLevelPieChart
-                        riskLevelSummary={data.riskLevelSummary}
-                        totalStudents={data.studentsWithAssessment}
-                    />
-                </div>
-            ) : (
-                /* Activity Progress Tab */
-                <ActivityProgressTable
-                    activityProgressByRisk={data.activityProgressByRisk}
-                />
-            )}
+            {/* Tabs */}
+            <Tabs tabs={tabs} defaultTab="summary" />
         </>
     );
 }
