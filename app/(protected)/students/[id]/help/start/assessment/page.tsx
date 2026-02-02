@@ -1,5 +1,5 @@
-import { getStudentDetail } from "@/lib/actions/student.actions";
-import { getActivityProgress } from "@/lib/actions/activity.actions";
+import { getStudentDetail } from "@/lib/actions/student";
+import { getActivityProgress } from "@/lib/actions/activity";
 import { redirect, notFound } from "next/navigation";
 import { TeacherAssessmentForm } from "@/components/activity";
 

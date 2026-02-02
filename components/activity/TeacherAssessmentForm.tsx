@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ClipboardCheck, Loader2 } from "lucide-react";
-import { submitTeacherAssessment } from "@/lib/actions/activity.actions";
+import { submitTeacherAssessment } from "@/lib/actions/activity";
 
 interface TeacherAssessmentFormProps {
     studentId: string;

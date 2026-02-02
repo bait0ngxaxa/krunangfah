@@ -1,9 +1,11 @@
 import { requireAuth } from "@/lib/auth";
 import { getDashboardData } from "@/lib/actions/dashboard.actions";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { ActionCard } from "@/components/dashboard/ActionCard";
-import { TeacherProfileCard } from "@/components/dashboard/TeacherProfileCard";
-import { DashboardActionList } from "@/components/dashboard/DashboardActionList";
+import {
+    DashboardHeader,
+    ActionCard,
+    TeacherProfileCard,
+    DashboardActionList,
+} from "@/components/dashboard";
 
 import type { Metadata } from "next";
 
@@ -47,7 +49,7 @@ export default async function DashboardPage() {
     }
 
     const teacherName = `${teacher.firstName} ${teacher.lastName}`;
-    const schoolName = teacher.school.name;
+    const schoolName = teacher.user.school?.name || "ไม่ระบุ";
 
     return (
         <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 py-8 px-4 relative overflow-hidden">

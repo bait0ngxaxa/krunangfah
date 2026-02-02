@@ -1,12 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getStudentDetail } from "@/lib/actions/student.actions";
-import { StudentProfileCard } from "@/components/student/StudentProfileCard";
-import { PHQHistoryTable } from "@/components/student/PHQHistoryTable";
-import { PHQTrendChart } from "@/components/student/PHQTrendChart";
-import { ActivityProgressTable } from "@/components/student/ActivityProgressTable";
-import { CounselingLogTable } from "@/components/student/CounselingLogTable";
+import { getStudentDetail } from "@/lib/actions/student";
+import {
+    StudentProfileCard,
+    PHQHistoryTable,
+    PHQTrendChart,
+    ActivityProgressTable,
+    CounselingLogTable,
+} from "@/components/student";
 import { getCounselingSessions } from "@/lib/actions/counseling.actions";
 import { Tabs } from "@/components/ui/Tabs";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";

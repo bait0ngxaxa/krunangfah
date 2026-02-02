@@ -36,6 +36,43 @@ export async function getAcademicYears(): Promise<AcademicYear[]> {
     return getAcademicYearsAction();
 }
 
+/**
+ * Get current teacher's profile with role (for client components)
+ * Replaces /api/teacher/profile
+ */
+export async function getCurrentTeacherProfile() {
+    try {
+        const session = await requireAuth();
+        const userId = session.user.id;
+
+        const teacher = await prisma.teacher.findUnique({
+            where: { userId },
+            select: {
+                advisoryClass: true,
+                user: {
+                    select: {
+                        role: true,
+                    },
+                },
+            },
+        });
+
+        if (!teacher) {
+            return null;
+        }
+
+        return {
+            advisoryClass: teacher.advisoryClass,
+            user: {
+                role: teacher.user.role,
+            },
+        };
+    } catch (error) {
+        console.error("Get current teacher profile error:", error);
+        return null;
+    }
+}
+
 export async function createTeacherProfile(
     input: CreateTeacherInput,
 ): Promise<TeacherResponse> {
@@ -89,13 +126,14 @@ export async function createTeacherProfile(
                 age: input.age,
                 advisoryClass: normalizeClassName(input.advisoryClass),
                 academicYearId: input.academicYearId,
-                schoolId: school.id,
                 schoolRole: input.schoolRole,
                 projectRole: input.projectRole,
             },
             include: {
                 academicYear: true,
-                school: true,
+                user: {
+                    include: { school: true },
+                },
             },
         });
 
@@ -106,7 +144,10 @@ export async function createTeacherProfile(
         return {
             success: true,
             message: "Teacher profile created",
-            teacher,
+            teacher: {
+                ...teacher,
+                school: teacher.user.school ?? undefined,
+            },
             newRole: "school_admin",
         };
     } catch (error) {

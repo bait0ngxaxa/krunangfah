@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExcelUploader } from "@/components/student/ExcelUploader";
-import { ImportPreview } from "@/components/student/ImportPreview";
+import { ExcelUploader, ImportPreview } from "@/components/student";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { ArrowLeft, Check } from "lucide-react";
 import Link from "next/link";

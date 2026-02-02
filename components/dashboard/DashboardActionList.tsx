@@ -1,4 +1,4 @@
-import { ActionCard } from "@/components/dashboard/ActionCard";
+import { ActionCard } from "@/components/dashboard/cards/ActionCard";
 import { StudentSearch } from "@/components/dashboard/StudentSearch";
 import { type UserRole } from "@/types/auth.types";
 

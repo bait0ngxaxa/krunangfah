@@ -1,13 +1,12 @@
 import { notFound, redirect } from "next/navigation";
-import { getStudentDetail } from "@/lib/actions/student.actions";
+import { getStudentDetail } from "@/lib/actions/student";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import {
     ACTIVITIES,
     ACTIVITY_INDICES,
     COLOR_CONFIG,
 } from "@/lib/config/help-page-config";
-import { ConversationView } from "@/components/student/help/ConversationView";
-import { ActivityView } from "@/components/student/help/ActivityView";
+import { ConversationView, ActivityView } from "@/components/student";
 
 interface PageProps {
     params: Promise<{ id: string }>;
