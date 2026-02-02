@@ -1,6 +1,5 @@
 import { Tabs, type Tab } from "@/components/ui/Tabs";
-import { VideoUpskillTab } from "@/components/teacher/VideoUpskillTab";
-import { ToolsIntroTab } from "@/components/teacher/ToolsIntroTab";
+import { VideoUpskillTab, ToolsIntroTab } from "@/components/teacher";
 
 /**
  * Teacher Skill Development Page

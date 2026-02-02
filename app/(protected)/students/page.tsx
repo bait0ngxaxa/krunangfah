@@ -1,6 +1,6 @@
 import { ArrowLeft, Upload } from "lucide-react";
 import { getStudents } from "@/lib/actions/student";
-import { StudentDashboard } from "@/components/student/StudentDashboard";
+import { StudentDashboard } from "@/components/student";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";

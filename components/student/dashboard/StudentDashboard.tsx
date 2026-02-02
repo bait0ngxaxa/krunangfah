@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { RiskPieChart } from "./RiskPieChart";
-import { RiskGroupSection } from "./RiskGroupSection";
+import { RiskPieChart } from "../phq/RiskPieChart";
+import { RiskGroupSection } from "../phq/RiskGroupSection";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { Users } from "lucide-react";
 

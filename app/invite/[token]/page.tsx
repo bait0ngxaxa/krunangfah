@@ -1,5 +1,5 @@
 import { getTeacherInvite } from "@/lib/actions/teacher-invite";
-import { AcceptInviteForm } from "@/components/teacher/AcceptInviteForm";
+import { AcceptInviteForm } from "@/components/teacher";
 import Link from "next/link";
 import type { Metadata } from "next";
 

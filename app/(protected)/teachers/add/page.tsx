@@ -1,5 +1,5 @@
 import { requireAuth } from "@/lib/auth";
-import { AddTeacherForm } from "@/components/teacher/AddTeacherForm";
+import { AddTeacherForm } from "@/components/teacher";
 
 import Link from "next/link";
 import type { Metadata } from "next";

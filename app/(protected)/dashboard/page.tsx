@@ -1,9 +1,11 @@
 import { requireAuth } from "@/lib/auth";
 import { getDashboardData } from "@/lib/actions/dashboard.actions";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { ActionCard } from "@/components/dashboard/ActionCard";
-import { TeacherProfileCard } from "@/components/dashboard/TeacherProfileCard";
-import { DashboardActionList } from "@/components/dashboard/DashboardActionList";
+import {
+    DashboardHeader,
+    ActionCard,
+    TeacherProfileCard,
+    DashboardActionList,
+} from "@/components/dashboard";
 
 import type { Metadata } from "next";
 

@@ -1,7 +1,7 @@
 import { requireAuth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
-import { AnalyticsContent } from "@/components/analytics/AnalyticsContent";
+import { AnalyticsContent } from "@/components/analytics";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

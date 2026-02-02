@@ -1,4 +1,4 @@
-import { TeacherProfileForm } from "@/components/teacher/TeacherProfileForm";
+import { TeacherProfileForm } from "@/components/teacher";
 import { requireAuth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getTeacherProfile } from "@/lib/actions/teacher.actions";

@@ -14,7 +14,7 @@ const ACTIVITY_LABELS = [
     "ตามติดเพื่อไปต่อ",
 ];
 
-export function ActivityProgressTable({
+export function ActivitySummaryTable({
     activityProgressByRisk,
 }: ActivityProgressTableProps) {
     // Order: red, orange, yellow, green, blue
