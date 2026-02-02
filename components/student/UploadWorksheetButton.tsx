@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Upload, Loader2 } from "lucide-react";
-import { uploadWorksheet } from "@/lib/actions/activity.actions";
+import { uploadWorksheet } from "@/lib/actions/activity";
 import { useRouter } from "next/navigation";
 
 interface UploadWorksheetButtonProps {

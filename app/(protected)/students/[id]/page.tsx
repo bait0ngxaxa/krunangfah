@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getStudentDetail } from "@/lib/actions/student.actions";
+import { getStudentDetail } from "@/lib/actions/student";
 import { StudentProfileCard } from "@/components/student/StudentProfileCard";
 import { PHQHistoryTable } from "@/components/student/PHQHistoryTable";
 import { PHQTrendChart } from "@/components/student/PHQTrendChart";

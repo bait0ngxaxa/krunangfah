@@ -8,7 +8,7 @@ import {
     teacherInviteSchema,
     type TeacherInviteFormData,
 } from "@/lib/validations/teacher-invite.validation";
-import { createTeacherInvite } from "@/lib/actions/teacher-invite.actions";
+import { createTeacherInvite } from "@/lib/actions/teacher-invite";
 import { getAcademicYears } from "@/lib/actions/teacher.actions";
 import { ClassSelector } from "@/components/ui/ClassSelector";
 
@@ -58,7 +58,10 @@ export function AddTeacherForm() {
     useEffect(() => {
         if (userRoleValue === "school_admin") {
             setValue("advisoryClass", "ทุกห้อง", { shouldValidate: true });
-        } else if (userRoleValue === "class_teacher" && advisoryClassValue === "ทุกห้อง") {
+        } else if (
+            userRoleValue === "class_teacher" &&
+            advisoryClassValue === "ทุกห้อง"
+        ) {
             setValue("advisoryClass", "", { shouldValidate: false });
         }
     }, [userRoleValue, setValue, advisoryClassValue]);

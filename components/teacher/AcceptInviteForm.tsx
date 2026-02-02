@@ -8,7 +8,7 @@ import {
     acceptInviteSchema,
     type AcceptInviteFormData,
 } from "@/lib/validations/teacher-invite.validation";
-import { acceptTeacherInvite } from "@/lib/actions/teacher-invite.actions";
+import { acceptTeacherInvite } from "@/lib/actions/teacher-invite";
 
 interface AcceptInviteFormProps {
     token: string;

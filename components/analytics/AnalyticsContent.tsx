@@ -8,8 +8,8 @@ import { RiskLevelTrendChart } from "./RiskLevelTrendChart";
 import { RiskLevelByGradeChart } from "./RiskLevelByGradeChart";
 import { HospitalReferralTable } from "./HospitalReferralTable";
 import { ActivityProgressTable } from "./ActivityProgressTable";
-import { getAnalyticsSummary } from "@/lib/actions/analytics.actions";
-import type { AnalyticsData } from "@/lib/actions/analytics.actions";
+import { getAnalyticsSummary } from "@/lib/actions/analytics";
+import type { AnalyticsData } from "@/lib/actions/analytics";
 import { Tabs, type Tab } from "@/components/ui/Tabs";
 
 interface AnalyticsContentProps {

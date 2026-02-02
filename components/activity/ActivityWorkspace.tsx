@@ -14,10 +14,7 @@ import {
     X,
     Loader2,
 } from "lucide-react";
-import {
-    uploadWorksheet,
-    updateTeacherNotes,
-} from "@/lib/actions/activity.actions";
+import { uploadWorksheet, updateTeacherNotes } from "@/lib/actions/activity";
 import { useRouter } from "next/navigation";
 
 // Activity configuration

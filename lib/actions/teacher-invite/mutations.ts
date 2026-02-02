@@ -6,32 +6,7 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
-
-export interface TeacherInvite {
-    id: string;
-    token: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    age: number;
-    userRole: string;
-    advisoryClass: string;
-    academicYearId: string;
-    schoolId: string;
-    schoolRole: string;
-    projectRole: string;
-    invitedById: string;
-    expiresAt: Date;
-    acceptedAt: Date | null;
-    createdAt: Date;
-}
-
-interface InviteResponse {
-    success: boolean;
-    message: string;
-    invite?: TeacherInvite;
-    inviteLink?: string;
-}
+import type { InviteResponse } from "./types";
 
 /**
  * สร้าง invite สำหรับครูผู้ดูแล
@@ -108,6 +83,10 @@ export async function createTeacherInvite(
                 invitedById: userId,
                 expiresAt,
             },
+            include: {
+                school: true,
+                academicYear: true,
+            },
         });
 
         const inviteLink = `${process.env.NEXTAUTH_URL}/invite/${token}`;
@@ -126,38 +105,6 @@ export async function createTeacherInvite(
             success: false,
             message: "เกิดข้อผิดพลาดในการสร้างคำเชิญ",
         };
-    }
-}
-
-/**
- * ดึงข้อมูล invite จาก token
- */
-export async function getTeacherInvite(token: string) {
-    try {
-        const invite = await prisma.teacherInvite.findUnique({
-            where: { token },
-            include: {
-                school: true,
-                academicYear: true,
-            },
-        });
-
-        if (!invite) {
-            return { success: false, message: "ไม่พบคำเชิญ" };
-        }
-
-        if (invite.acceptedAt) {
-            return { success: false, message: "คำเชิญนี้ถูกใช้งานแล้ว" };
-        }
-
-        if (invite.expiresAt < new Date()) {
-            return { success: false, message: "คำเชิญหมดอายุแล้ว" };
-        }
-
-        return { success: true, invite };
-    } catch (error) {
-        console.error("Get teacher invite error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาด" };
     }
 }
 
@@ -239,27 +186,5 @@ export async function acceptTeacherInvite(
             success: false,
             message: "เกิดข้อผิดพลาดในการลงทะเบียน",
         };
-    }
-}
-
-/**
- * ดึงรายการ invites ทั้งหมดที่สร้างโดย user
- */
-export async function getMyTeacherInvites() {
-    try {
-        const session = await requireAuth();
-
-        const invites = await prisma.teacherInvite.findMany({
-            where: { invitedById: session.user.id },
-            include: {
-                academicYear: true,
-            },
-            orderBy: { createdAt: "desc" },
-        });
-
-        return { success: true, invites };
-    } catch (error) {
-        console.error("Get my teacher invites error:", error);
-        return { success: false, invites: [] };
     }
 }

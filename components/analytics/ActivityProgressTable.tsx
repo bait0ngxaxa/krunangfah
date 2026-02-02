@@ -1,6 +1,6 @@
 "use client";
 
-import type { ActivityProgressByRisk } from "@/lib/actions/analytics.actions";
+import type { ActivityProgressByRisk } from "@/lib/actions/analytics";
 
 interface ActivityProgressTableProps {
     activityProgressByRisk: ActivityProgressByRisk[];

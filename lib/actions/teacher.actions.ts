@@ -36,6 +36,43 @@ export async function getAcademicYears(): Promise<AcademicYear[]> {
     return getAcademicYearsAction();
 }
 
+/**
+ * Get current teacher's profile with role (for client components)
+ * Replaces /api/teacher/profile
+ */
+export async function getCurrentTeacherProfile() {
+    try {
+        const session = await requireAuth();
+        const userId = session.user.id;
+
+        const teacher = await prisma.teacher.findUnique({
+            where: { userId },
+            select: {
+                advisoryClass: true,
+                user: {
+                    select: {
+                        role: true,
+                    },
+                },
+            },
+        });
+
+        if (!teacher) {
+            return null;
+        }
+
+        return {
+            advisoryClass: teacher.advisoryClass,
+            user: {
+                role: teacher.user.role,
+            },
+        };
+    } catch (error) {
+        console.error("Get current teacher profile error:", error);
+        return null;
+    }
+}
+
 export async function createTeacherProfile(
     input: CreateTeacherInput,
 ): Promise<TeacherResponse> {

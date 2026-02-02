@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getStudentDetail } from "@/lib/actions/student.actions";
+import { getStudentDetail } from "@/lib/actions/student";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import {
     ACTIVITIES,

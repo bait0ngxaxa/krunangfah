@@ -8,7 +8,7 @@ import {
     Legend,
     Tooltip,
 } from "recharts";
-import type { RiskLevelSummary } from "@/lib/actions/analytics.actions";
+import type { RiskLevelSummary } from "@/lib/actions/analytics";
 
 interface RiskLevelPieChartProps {
     riskLevelSummary: RiskLevelSummary[];

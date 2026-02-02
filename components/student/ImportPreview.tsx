@@ -8,8 +8,11 @@ import {
     RISK_BG_CLASSES,
     type RiskLevel,
 } from "@/lib/utils/phq-scoring";
-import { importStudents } from "@/lib/actions/student.actions";
-import { getAcademicYears } from "@/lib/actions/teacher.actions";
+import { importStudents } from "@/lib/actions/student";
+import {
+    getAcademicYears,
+    getCurrentTeacherProfile,
+} from "@/lib/actions/teacher.actions";
 
 interface ImportPreviewProps {
     data: ParsedStudent[];
@@ -87,9 +90,8 @@ export function ImportPreview({
 
             // Load teacher profile
             try {
-                const response = await fetch("/api/teacher/profile");
-                if (response.ok) {
-                    const profile = await response.json();
+                const profile = await getCurrentTeacherProfile();
+                if (profile) {
                     setTeacherProfile({
                         role: profile.user.role,
                         advisoryClass: profile.advisoryClass,

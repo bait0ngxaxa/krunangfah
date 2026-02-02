@@ -1,6 +1,6 @@
 "use client";
 
-import type { HospitalReferralByGrade } from "@/lib/actions/analytics.actions";
+import type { HospitalReferralByGrade } from "@/lib/actions/analytics";
 
 interface HospitalReferralTableProps {
     hospitalReferralsByGrade: HospitalReferralByGrade[];

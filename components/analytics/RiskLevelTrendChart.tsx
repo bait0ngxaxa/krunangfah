@@ -10,15 +10,13 @@ import {
     Legend,
     ResponsiveContainer,
 } from "recharts";
-import type { TrendDataPoint } from "@/lib/actions/analytics.actions";
+import type { TrendDataPoint } from "@/lib/actions/analytics";
 
 interface RiskLevelTrendChartProps {
     trendData: TrendDataPoint[];
 }
 
-export function RiskLevelTrendChart({
-    trendData,
-}: RiskLevelTrendChartProps) {
+export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
     if (trendData.length === 0) {
         return (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -60,11 +58,13 @@ export function RiskLevelTrendChart({
                     />
                     <Tooltip
                         formatter={(value: unknown) => {
-                            const numValue = typeof value === "number" ? value : 0;
+                            const numValue =
+                                typeof value === "number" ? value : 0;
                             return [`${numValue} คน`, ""];
                         }}
                         labelFormatter={(label: unknown) => {
-                            const strLabel = typeof label === "string" ? label : "";
+                            const strLabel =
+                                typeof label === "string" ? label : "";
                             return `เทอม: ${strLabel}`;
                         }}
                     />

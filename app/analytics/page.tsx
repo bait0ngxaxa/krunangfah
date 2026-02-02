@@ -1,6 +1,6 @@
 import { requireAuth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getAnalyticsSummary } from "@/lib/actions/analytics.actions";
+import { getAnalyticsSummary } from "@/lib/actions/analytics";
 import { AnalyticsContent } from "@/components/analytics/AnalyticsContent";
 import type { Metadata } from "next";
 

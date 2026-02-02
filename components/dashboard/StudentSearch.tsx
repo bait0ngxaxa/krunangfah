@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Users } from "lucide-react";
-import { searchStudents } from "@/lib/actions/student.actions";
+import { searchStudents } from "@/lib/actions/student";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 
 type Student = {

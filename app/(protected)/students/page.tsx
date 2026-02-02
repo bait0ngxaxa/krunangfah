@@ -1,5 +1,5 @@
 import { ArrowLeft, Upload } from "lucide-react";
-import { getStudents } from "@/lib/actions/student.actions";
+import { getStudents } from "@/lib/actions/student";
 import { StudentDashboard } from "@/components/student/StudentDashboard";
 import Link from "next/link";
 

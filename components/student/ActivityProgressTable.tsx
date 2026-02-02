@@ -1,6 +1,6 @@
 import { FileText, CheckCircle2 } from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
-import { getActivityProgress } from "@/lib/actions/activity.actions";
+import { getActivityProgress } from "@/lib/actions/activity";
 import Link from "next/link";
 import { WorksheetPreviewButton } from "./WorksheetPreviewButton";
 

@@ -10,7 +10,7 @@ import {
     Legend,
     ResponsiveContainer,
 } from "recharts";
-import type { GradeRiskData } from "@/lib/actions/analytics.actions";
+import type { GradeRiskData } from "@/lib/actions/analytics";
 
 interface RiskLevelByGradeChartProps {
     gradeRiskData: GradeRiskData[];

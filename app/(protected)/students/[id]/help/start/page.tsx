@@ -1,8 +1,8 @@
-import { getStudentDetail } from "@/lib/actions/student.actions";
+import { getStudentDetail } from "@/lib/actions/student";
 import {
     getActivityProgress,
     initializeActivityProgress,
-} from "@/lib/actions/activity.actions";
+} from "@/lib/actions/activity";
 import { redirect, notFound } from "next/navigation";
 import { ActivityWorkspace } from "@/components/activity";
 

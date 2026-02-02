@@ -1,6 +1,6 @@
 "use client";
 
-import type { RiskLevelSummary } from "@/lib/actions/analytics.actions";
+import type { RiskLevelSummary } from "@/lib/actions/analytics";
 
 interface PhqSummaryTableProps {
     riskLevelSummary: RiskLevelSummary[];
