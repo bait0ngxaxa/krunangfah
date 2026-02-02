@@ -9,7 +9,9 @@ export async function getDashboardData(userId: string, role: UserRole) {
         where: { userId },
         include: {
             academicYear: true,
-            school: true,
+            user: {
+                include: { school: true },
+            },
         },
     });
 
@@ -17,10 +19,15 @@ export async function getDashboardData(userId: string, role: UserRole) {
         return { teacher: null, studentCount: 0 };
     }
 
+    // Ensure teacher has a school
+    if (!teacher.user.schoolId) {
+        return { teacher, studentCount: 0 };
+    }
+
     // Count students for this teacher
     const studentCount = await prisma.student.count({
         where: {
-            schoolId: teacher.schoolId,
+            schoolId: teacher.user.schoolId,
             ...(role === "class_teacher" && {
                 class: teacher.advisoryClass,
             }),

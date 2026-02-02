@@ -10,6 +10,43 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==================== Enums ====================
+
+enum UserRole {
+  school_admin
+  class_teacher
+}
+
+enum ProjectRole {
+  lead
+  care
+  coordinate
+}
+
+enum RiskLevel {
+  blue
+  green
+  yellow
+  orange
+  red
+}
+
+enum ActivityStatus {
+  locked
+  in_progress
+  pending_assessment
+  completed
+}
+
+enum ProblemType {
+  internal
+  external
+}
+
+// ==================== Models ====================
+
+
+
 // School - โรงเรียน
 model School {
   id        String    @id @default(cuid())
@@ -19,7 +56,6 @@ model School {
   updatedAt DateTime  @updatedAt
 
   users          User[]
-  teachers       Teacher[]
   teacherInvites TeacherInvite[]
   students       Student[]
 
@@ -34,7 +70,7 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          String    @default("school_admin") // user, school_admin, system_admin, class_teacher
+  role          UserRole  @default(class_teacher) // user, school_admin, system_admin, class_teacher
   schoolId      String?   // FK to School
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -79,15 +115,13 @@ model Teacher {
   age             Int           // อายุ
   advisoryClass   String        // ชั้นที่ปรึกษา เช่น "ม.1/1"
   academicYearId  String        // FK to AcademicYear
-  schoolId        String        // FK to School
   schoolRole      String        // บทบาทหน้าที่ในโรงเรียน
-  projectRole     String        // บทบาทหน้าที่ในโครงการครูนางฟ้า: lead, care, coordinate
+  projectRole     ProjectRole        // บทบาทหน้าที่ในโครงการครูนางฟ้า: LEAD, CARE, COORDINATE
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   academicYear    AcademicYear  @relation(fields: [academicYearId], references: [id])
-  school          School        @relation(fields: [schoolId], references: [id])
 
   @@map("teachers")
 }
@@ -100,12 +134,12 @@ model TeacherInvite {
   firstName       String
   lastName        String
   age             Int
-  userRole        String    // school_admin or class_teacher
+  userRole        UserRole  // SCHOOL_ADMIN or CLASS_TEACHER
   advisoryClass   String
   academicYearId  String
   schoolId        String
   schoolRole      String
-  projectRole     String    // lead, care, coordinate
+  projectRole     ProjectRole    // lead, care, coordinate
   invitedById     String
   expiresAt       DateTime
   acceptedAt      DateTime?
@@ -121,7 +155,7 @@ model TeacherInvite {
 // Student - นักเรียน
 model Student {
   id            String   @id @default(cuid())
-  studentId     String?  // รหัสนักเรียน (optional)
+  studentId     String   // รหัสนักเรียน (required)
   firstName     String   // ชื่อ
   lastName      String   // สกุล
   class         String   // ห้อง เช่น "ม.1/1"
@@ -134,7 +168,7 @@ model Student {
   activityProgress ActivityProgress[]
   counselingSessions CounselingSession[]
 
-  @@unique([firstName, lastName, class, schoolId]) // ป้องกันซ้ำ
+  @@unique([studentId, schoolId]) // ป้องกันซ้ำ: รหัสนักเรียน + โรงเรียน
   @@map("students")
 }
 
@@ -163,7 +197,7 @@ model PhqResult {
   
   // ผลคำนวณ
   totalScore      Int      // รวมคะแนน q1-q9
-  riskLevel       String   // blue, green, yellow, orange, red
+  riskLevel       RiskLevel   // BLUE, GREEN, YELLOW, ORANGE, RED
   referredToHospital Boolean @default(false) // ส่งต่อโรงพยาบาล
   
   createdAt       DateTime @default(now())
@@ -185,7 +219,7 @@ model ActivityProgress {
   activityNumber  Int       // 1, 2, 3, 4, 5
   
   // สถานะ: locked, in_progress, pending_assessment, completed
-  status          String    @default("locked")
+  status          ActivityStatus    @default(locked)
   unlockedAt      DateTime? // วันที่ปลดล็อค
   completedAt     DateTime? // วันที่เสร็จสิ้น
   
@@ -197,7 +231,7 @@ model ActivityProgress {
   // แบบประเมินจากใบงาน
   internalProblems String?  // ปัญหาภายใน
   externalProblems String?  // ปัญหาภายนอก
-  problemType      String?  // internal หรือ external
+  problemType      ProblemType?  // INTERNAL หรือ EXTERNAL
   assessedAt       DateTime? // วันที่ทำแบบประเมิน
   
   createdAt       DateTime  @default(now())

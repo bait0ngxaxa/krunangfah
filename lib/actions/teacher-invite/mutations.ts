@@ -169,7 +169,6 @@ export async function acceptTeacherInvite(
                     age: invite.age,
                     advisoryClass: invite.advisoryClass,
                     academicYearId: invite.academicYearId,
-                    schoolId: invite.schoolId,
                     schoolRole: invite.schoolRole,
                     projectRole: invite.projectRole,
                 },

@@ -6,8 +6,10 @@ interface TeacherProfileCardProps {
         advisoryClass: string;
         schoolRole: string;
         projectRole: string;
-        school: {
-            name: string;
+        user: {
+            school: {
+                name: string;
+            } | null;
         };
         academicYear: {
             year: number;
@@ -73,7 +75,7 @@ export function TeacherProfileCard({
                     <div className="bg-white p-3 rounded-xl border border-pink-100 shadow-sm hover:shadow-md hover:border-pink-200 transition-all">
                         <p className="text-xs text-gray-500 mb-1">โรงเรียน</p>
                         <p className="text-sm font-bold text-gray-700">
-                            {teacher.school.name}
+                            {teacher.user.school?.name || "ไม่ระบุ"}
                         </p>
                     </div>
                     <div className="bg-white p-3 rounded-xl border border-purple-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all">

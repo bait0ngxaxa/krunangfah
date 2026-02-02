@@ -12,10 +12,7 @@ export async function getStudents() {
         const session = await requireAuth();
         const user = session.user;
 
-        // Get teacher profile
-        const teacher = await prisma.teacher.findUnique({
-            where: { userId: user.id },
-        });
+        // Note: Teacher profile not needed anymore since we get schoolId from user
 
         // Fetch full user data to get schoolId if teacher profile is missing
         const dbUser = await prisma.user.findUnique({
@@ -25,7 +22,7 @@ export async function getStudents() {
 
         // school_admin sees all students in school
         // class_teacher sees only students they imported
-        const schoolId = teacher?.schoolId || dbUser?.schoolId;
+        const schoolId = dbUser?.schoolId;
 
         if (!schoolId) {
             return [];
@@ -70,10 +67,7 @@ export async function searchStudents(query: string) {
         const session = await requireAuth();
         const user = session.user;
 
-        // Get teacher profile
-        const teacher = await prisma.teacher.findUnique({
-            where: { userId: user.id },
-        });
+        // Note: Teacher profile not needed anymore since we get schoolId from user
 
         // Fetch full user data to get schoolId if teacher profile is missing
         const dbUser = await prisma.user.findUnique({
@@ -81,7 +75,7 @@ export async function searchStudents(query: string) {
             select: { schoolId: true },
         });
 
-        const schoolId = teacher?.schoolId || dbUser?.schoolId;
+        const schoolId = dbUser?.schoolId;
 
         if (!schoolId) {
             return [];
@@ -133,10 +127,7 @@ export async function getStudentDetail(studentId: string) {
         const session = await requireAuth();
         const user = session.user;
 
-        // Get teacher profile
-        const teacher = await prisma.teacher.findUnique({
-            where: { userId: user.id },
-        });
+        // Note: Teacher profile not needed anymore since we get schoolId from user
 
         // Fetch full user data to get schoolId if teacher profile is missing
         const dbUser = await prisma.user.findUnique({
@@ -144,7 +135,7 @@ export async function getStudentDetail(studentId: string) {
             select: { schoolId: true },
         });
 
-        const schoolId = teacher?.schoolId || dbUser?.schoolId;
+        const schoolId = dbUser?.schoolId;
 
         if (!schoolId) {
             return null;

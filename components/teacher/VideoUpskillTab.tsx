@@ -33,7 +33,7 @@ export function VideoUpskillTab() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border-2 border-pink-200">
+            <div className="bg-linear-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border-2 border-pink-200">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
                     📚 อัพสกิลคุณครูผ่านวิดีโอ
                 </h2>

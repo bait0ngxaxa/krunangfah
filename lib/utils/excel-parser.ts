@@ -3,7 +3,7 @@ import { type PhqScores } from "./phq-scoring";
 import { normalizeClassName } from "./class-normalizer";
 
 export interface ParsedStudent {
-    studentId?: string;
+    studentId: string;
     firstName: string;
     lastName: string;
     class: string;
@@ -87,6 +87,7 @@ export async function parseExcelBuffer(
                 const firstName = getCell("ชื่อ");
                 const lastName = getCell("นามสกุล");
                 const studentClass = getCell("ห้อง");
+                const studentId = getCell("รหัสนักเรียน");
 
                 // Skip empty rows
                 if (!firstName && !lastName) return;
@@ -104,9 +105,13 @@ export async function parseExcelBuffer(
                     errors.push(`แถว ${rowNumber}: ไม่มีห้อง`);
                     return;
                 }
+                if (!studentId) {
+                    errors.push(`แถว ${rowNumber}: ไม่มีรหัสนักเรียน`);
+                    return;
+                }
 
                 const student: ParsedStudent = {
-                    studentId: getCell("รหัสนักเรียน") || undefined,
+                    studentId,
                     firstName,
                     lastName,
                     class: normalizeClassName(studentClass),
@@ -130,6 +135,26 @@ export async function parseExcelBuffer(
                 errors.push(`แถว ${rowNumber}: เกิดข้อผิดพลาดในการอ่านข้อมูล`);
             }
         });
+
+        // Check for duplicate studentId within the Excel file
+        const studentIdSet = new Set<string>();
+        const duplicateStudentIds: string[] = [];
+
+        data.forEach((student) => {
+            if (studentIdSet.has(student.studentId)) {
+                if (!duplicateStudentIds.includes(student.studentId)) {
+                    duplicateStudentIds.push(student.studentId);
+                }
+            } else {
+                studentIdSet.add(student.studentId);
+            }
+        });
+
+        if (duplicateStudentIds.length > 0) {
+            errors.push(
+                `พบรหัสนักเรียนซ้ำในไฟล์: ${duplicateStudentIds.join(", ")}`,
+            );
+        }
 
         return {
             success: errors.length === 0,

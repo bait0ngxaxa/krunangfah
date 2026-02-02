@@ -13,7 +13,7 @@ export function ToolsIntroTab() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
+            <div className="bg-linear-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
                     🧰 เครื่องมือใน Healthy Emotion Box
                 </h2>
@@ -32,7 +32,7 @@ export function ToolsIntroTab() {
                         {/* Tool Header */}
                         <div className="flex flex-col items-center mb-4">
                             <div
-                                className={`text-5xl mb-3 p-4 rounded-xl bg-gradient-to-br ${COLOR_STYLES[tool.color]} bg-opacity-10`}
+                                className={`text-5xl mb-3 p-4 rounded-xl bg-linear-to-br ${COLOR_STYLES[tool.color]} bg-opacity-10`}
                             >
                                 {tool.icon}
                             </div>

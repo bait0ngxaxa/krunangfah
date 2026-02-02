@@ -47,15 +47,13 @@ export async function importStudents(
         // Process each student
         for (const studentData of students) {
             try {
-                // Removed advisory class check - class_teacher can import any student
-                // and they will see them because of importedById check
-                // Find or create student
-                let student = await prisma.student.findFirst({
+                // Find or create student by studentId + schoolId
+                let student = await prisma.student.findUnique({
                     where: {
-                        firstName: studentData.firstName,
-                        lastName: studentData.lastName,
-                        class: studentData.class,
-                        schoolId,
+                        studentId_schoolId: {
+                            studentId: studentData.studentId,
+                            schoolId,
+                        },
                     },
                 });
 
@@ -76,7 +74,7 @@ export async function importStudents(
                     studentData.scores,
                 );
 
-                // Check for duplicate assessment
+                // Check for duplicate assessment in same round
                 const existingResult = await prisma.phqResult.findFirst({
                     where: {
                         studentId: student.id,
@@ -87,7 +85,7 @@ export async function importStudents(
 
                 if (existingResult) {
                     errors.push(
-                        `${studentData.firstName} ${studentData.lastName}: มีข้อมูลการประเมินครั้งที่ ${assessmentRound} อยู่แล้ว`,
+                        `${studentData.firstName} ${studentData.lastName} (${studentData.studentId}): มีข้อมูลการประเมินครั้งที่ ${assessmentRound} อยู่แล้ว`,
                     );
                     continue;
                 }
@@ -138,17 +136,27 @@ export async function importStudents(
         revalidatePath("/dashboard");
         revalidatePath("/students");
 
-        const successMessage =
-            skippedCount > 0
-                ? `นำเข้าสำเร็จ ${importedCount} คน (ข้าม ${skippedCount} คนที่ไม่ใช่ห้องที่คุณดูแล)`
-                : `นำเข้าสำเร็จ ${importedCount} คน`;
+        const failedCount = errors.length;
+
+        let message = "";
+        if (errors.length === 0) {
+            // All success
+            message =
+                skippedCount > 0
+                    ? `นำเข้าสำเร็จ ${importedCount} คน (ข้าม ${skippedCount} คนที่ไม่ใช่ห้องที่คุณดูแล)`
+                    : `นำเข้าสำเร็จทั้งหมด ${importedCount} คน`;
+        } else {
+            // Partial success
+            if (importedCount > 0) {
+                message = `นำเข้าสำเร็จ ${importedCount} คน, ไม่สามารถนำเข้าได้ ${failedCount} คน (มีข้อมูลการประเมินอยู่แล้ว)`;
+            } else {
+                message = `ไม่สามารถนำเข้าได้ทั้งหมด ${failedCount} คน (มีข้อมูลการประเมินอยู่แล้ว)`;
+            }
+        }
 
         return {
             success: errors.length === 0,
-            message:
-                errors.length === 0
-                    ? successMessage
-                    : `นำเข้าสำเร็จบางส่วน: ${importedCount}/${students.length} คน`,
+            message,
             imported: importedCount,
             errors: errors.length > 0 ? errors : undefined,
         };

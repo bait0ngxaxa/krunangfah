@@ -31,7 +31,6 @@ export interface TeacherProfile {
     age: number;
     advisoryClass: string;
     academicYearId: string;
-    schoolId: string;
     schoolRole: string;
     projectRole: string; // Changed from ProjectRole to string to match Prisma
     createdAt: Date;

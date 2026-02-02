@@ -126,13 +126,14 @@ export async function createTeacherProfile(
                 age: input.age,
                 advisoryClass: normalizeClassName(input.advisoryClass),
                 academicYearId: input.academicYearId,
-                schoolId: school.id,
                 schoolRole: input.schoolRole,
                 projectRole: input.projectRole,
             },
             include: {
                 academicYear: true,
-                school: true,
+                user: {
+                    include: { school: true },
+                },
             },
         });
 
@@ -143,7 +144,10 @@ export async function createTeacherProfile(
         return {
             success: true,
             message: "Teacher profile created",
-            teacher,
+            teacher: {
+                ...teacher,
+                school: teacher.user.school ?? undefined,
+            },
             newRole: "school_admin",
         };
     } catch (error) {

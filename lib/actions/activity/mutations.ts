@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { ActivityStatus } from "@prisma/client";
 import { ACTIVITY_INDICES } from "./constants";
 import type { SubmitAssessmentData, ScheduleActivityData } from "./types";
 
@@ -27,7 +28,10 @@ export async function initializeActivityProgress(
             studentId,
             phqResultId,
             activityNumber,
-            status: index === 0 ? "in_progress" : "locked", // First activity unlocked
+            status:
+                index === 0
+                    ? ActivityStatus.in_progress
+                    : ActivityStatus.locked, // First activity unlocked
             unlockedAt: index === 0 ? new Date() : null,
         }));
 
@@ -97,7 +101,7 @@ export async function unlockNextActivity(
                 studentId,
                 phqResultId,
                 activityNumber: { gt: currentActivityNumber },
-                status: "locked",
+                status: ActivityStatus.locked,
             },
             orderBy: { activityNumber: "asc" },
         });
@@ -106,7 +110,7 @@ export async function unlockNextActivity(
             await prisma.activityProgress.update({
                 where: { id: nextActivity.id },
                 data: {
-                    status: "in_progress",
+                    status: ActivityStatus.in_progress,
                     unlockedAt: new Date(),
                 },
             });
