@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+    experimental: {
+        serverActions: {
+            bodySizeLimit: "10mb", // เพิ่ม limit เป็น 10MB สำหรับอัปโหลดไฟล์
+        },
+    },
     async headers() {
         return [
             {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ClipboardCheck, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { submitTeacherAssessment } from "@/lib/actions/activity";
 import {
     COLOR_CONFIG,
@@ -58,11 +59,11 @@ export function TeacherAssessmentForm({
                     `/students/${studentId}/help/start/encouragement?type=${problemType}&activity=${activityNumber}`,
                 );
             } else {
-                alert(result.error || "เกิดข้อผิดพลาด");
+                toast.error(result.error || "เกิดข้อผิดพลาด");
             }
         } catch (error) {
             console.error("Submit error:", error);
-            alert("เกิดข้อผิดพลาดในการบันทึก");
+            toast.error("เกิดข้อผิดพลาดในการบันทึก");
         } finally {
             setSubmitting(false);
         }

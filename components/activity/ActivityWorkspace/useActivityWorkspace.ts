@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { uploadWorksheet, updateTeacherNotes } from "@/lib/actions/activity";
 import { ACTIVITIES, ACTIVITY_INDICES, COLOR_CONFIG } from "./constants";
 import type {
@@ -64,12 +65,20 @@ export function useActivityWorkspace({
             const result = await uploadWorksheet(progressId, formData);
 
             if (result.success) {
+                // แสดง toast success
+                toast.success("อัปโหลดใบงานสำเร็จ");
+
                 if (result.completed && result.activityNumber) {
+                    // หน่วงเวลา 1.5 วินาที เพื่อให้เห็น toast ก่อน redirect
+                    await new Promise((resolve) => setTimeout(resolve, 1500));
+
                     if (result.activityNumber === 1) {
+                        // กิจกรรมที่ 1: ไป assessment ก่อน
                         router.push(
                             `/students/${studentId}/help/start/assessment?activity=${result.activityNumber}`,
                         );
                     } else {
+                        // กิจกรรม 2+: ไป encouragement (จะแสดง completion page โดยตรง)
                         router.push(
                             `/students/${studentId}/help/start/encouragement?activity=${result.activityNumber}`,
                         );
@@ -78,11 +87,11 @@ export function useActivityWorkspace({
                     router.refresh();
                 }
             } else {
-                alert(result.error || "เกิดข้อผิดพลาดในการอัปโหลด");
+                toast.error(result.error || "เกิดข้อผิดพลาดในการอัปโหลด");
             }
         } catch (error) {
             console.error("Upload error:", error);
-            alert("เกิดข้อผิดพลาดในการอัปโหลด");
+            toast.error("เกิดข้อผิดพลาดในการอัปโหลด");
         } finally {
             setUploading(null);
         }
@@ -112,14 +121,15 @@ export function useActivityWorkspace({
             );
 
             if (result.success) {
-                alert("บันทึกโน๊ตสำเร็จ");
+                toast.success("บันทึกโน๊ตสำเร็จ");
+                setTeacherNotes("");
                 router.refresh();
             } else {
-                alert(result.error || "เกิดข้อผิดพลาดในการบันทึก");
+                toast.error(result.error || "เกิดข้อผิดพลาดในการบันทึก");
             }
         } catch (error) {
             console.error("Save notes error:", error);
-            alert("เกิดข้อผิดพลาดในการบันทึก");
+            toast.error("เกิดข้อผิดพลาดในการบันทึก");
         } finally {
             setSavingNotes(false);
         }

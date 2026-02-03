@@ -25,7 +25,9 @@ export function EncouragementPage({
     activityNumber,
     hasNextActivity = true,
 }: EncouragementPageProps) {
-    const [step, setStep] = useState<1 | 2>(1);
+    // กิจกรรม 2+ ข้าม encouragement messages ไปแสดง completion page เลย
+    const initialStep = activityNumber === 1 ? 1 : 2;
+    const [step, setStep] = useState<1 | 2>(initialStep);
     const [visibleLines, setVisibleLines] = useState<number[]>([]);
     const [showTips, setShowTips] = useState(false);
     const [showButton, setShowButton] = useState(false);

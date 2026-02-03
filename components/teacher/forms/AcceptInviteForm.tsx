@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import {
     acceptInviteSchema,
     type AcceptInviteFormData,
@@ -42,15 +43,18 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
             const result = await acceptTeacherInvite(token, data.password);
 
             if (!result.success) {
-                setError(result.message);
+                toast.error(result.message);
                 return;
             }
 
+            toast.success("ลงทะเบียนสำเร็จ");
+            // รอ 1 วินาทีเพื่อให้เห็น toast
+            await new Promise((resolve) => setTimeout(resolve, 1000));
             // Redirect to sign in page
             router.push("/signin?registered=true");
         } catch (err) {
             console.error("Accept invite error:", err);
-            setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+            toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
         } finally {
             setIsLoading(false);
         }
