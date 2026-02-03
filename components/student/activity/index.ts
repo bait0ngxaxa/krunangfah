@@ -1,4 +1,3 @@
-export { ActivityProgressTable } from "./ActivityProgressTable";
-export { UploadWorksheetButton } from "./UploadWorksheetButton";
+export { ActivityProgressTable } from "./ActivityProgressTable/ActivityProgressTable";
 export { WorksheetPreviewButton } from "./WorksheetPreviewButton";
 export { WorksheetPreviewModal } from "./WorksheetPreviewModal";

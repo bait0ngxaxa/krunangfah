@@ -4,7 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ClipboardCheck, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { submitTeacherAssessment } from "@/lib/actions/activity";
+import {
+    COLOR_CONFIG,
+    ASSESSMENT_COLOR_CONFIG,
+} from "./ActivityWorkspace/constants";
 
 interface TeacherAssessmentFormProps {
     studentId: string;
@@ -14,27 +19,6 @@ interface TeacherAssessmentFormProps {
     activityTitle: string;
     riskLevel: "orange" | "yellow" | "green";
 }
-
-const COLOR_CONFIG: Record<
-    string,
-    { gradient: string; bg: string; text: string }
-> = {
-    orange: {
-        gradient: "from-orange-500 to-amber-500",
-        bg: "bg-orange-500",
-        text: "สีส้ม",
-    },
-    yellow: {
-        gradient: "from-yellow-400 to-amber-400",
-        bg: "bg-yellow-400",
-        text: "สีเหลือง",
-    },
-    green: {
-        gradient: "from-green-500 to-emerald-500",
-        bg: "bg-green-500",
-        text: "สีเขียว",
-    },
-};
 
 export function TeacherAssessmentForm({
     studentId,
@@ -46,6 +30,7 @@ export function TeacherAssessmentForm({
 }: TeacherAssessmentFormProps) {
     const router = useRouter();
     const config = COLOR_CONFIG[riskLevel];
+    const assessmentColors = ASSESSMENT_COLOR_CONFIG[riskLevel];
 
     const [internalProblems, setInternalProblems] = useState("");
     const [externalProblems, setExternalProblems] = useState("");
@@ -74,11 +59,11 @@ export function TeacherAssessmentForm({
                     `/students/${studentId}/help/start/encouragement?type=${problemType}&activity=${activityNumber}`,
                 );
             } else {
-                alert(result.error || "เกิดข้อผิดพลาด");
+                toast.error(result.error || "เกิดข้อผิดพลาด");
             }
         } catch (error) {
             console.error("Submit error:", error);
-            alert("เกิดข้อผิดพลาดในการบันทึก");
+            toast.error("เกิดข้อผิดพลาดในการบันทึก");
         } finally {
             setSubmitting(false);
         }
@@ -117,8 +102,12 @@ export function TeacherAssessmentForm({
                     </div>
 
                     {/* Part 1: Problem Assessment */}
-                    <div className="bg-blue-50 rounded-2xl p-6 md:p-8 mb-6">
-                        <h2 className="text-xl font-bold text-blue-800 text-center mb-6">
+                    <div
+                        className={`${assessmentColors.bgLight} rounded-2xl p-6 md:p-8 mb-6`}
+                    >
+                        <h2
+                            className={`text-xl font-bold ${assessmentColors.textDark} text-center mb-6`}
+                        >
                             จากใบงานทั้ง 2 ใบ
                             <br />
                             คุณครูคิดว่าเด็กคนนี้มีปัญหาอะไรบ้าง
@@ -127,10 +116,14 @@ export function TeacherAssessmentForm({
                         {/* Internal Problems */}
                         <div className="mb-6">
                             <div className="mb-3">
-                                <span className="text-blue-700 font-bold">
+                                <span
+                                    className={`${assessmentColors.textDark} font-bold`}
+                                >
                                     ปัญหาภายใน
                                 </span>
-                                <span className="text-blue-600 text-sm ml-2">
+                                <span
+                                    className={`${assessmentColors.text} text-sm ml-2`}
+                                >
                                     หมายถึง ปัญหาที่เกิดขึ้นจากความคิด
                                     ความรู้สึก และโลกภายในจิตใจของเด็ก เช่น
                                     การขาดความมั่นใจในตนเอง
@@ -144,17 +137,21 @@ export function TeacherAssessmentForm({
                                     setInternalProblems(e.target.value)
                                 }
                                 placeholder="กรอกข้อความ"
-                                className="w-full h-32 p-4 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:outline-none resize-none"
+                                className={`w-full h-32 p-4 border-2 ${assessmentColors.border} rounded-xl ${assessmentColors.borderFocus} focus:outline-none resize-none`}
                             />
                         </div>
 
                         {/* External Problems */}
                         <div>
                             <div className="mb-3">
-                                <span className="text-blue-700 font-bold">
+                                <span
+                                    className={`${assessmentColors.textDark} font-bold`}
+                                >
                                     ปัญหาภายนอก
                                 </span>
-                                <span className="text-blue-600 text-sm ml-2">
+                                <span
+                                    className={`${assessmentColors.text} text-sm ml-2`}
+                                >
                                     หมายถึง
                                     ปัญหาที่เกิดจากสภาพแวดล้อมและปัจจัยรอบตัวเด็ก
                                     เช่น การถูกเพื่อนล้อเลียนหรือกลั่นแกล้ง
@@ -167,7 +164,7 @@ export function TeacherAssessmentForm({
                                     setExternalProblems(e.target.value)
                                 }
                                 placeholder="กรอกข้อความ"
-                                className="w-full h-32 p-4 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:outline-none resize-none"
+                                className={`w-full h-32 p-4 border-2 ${assessmentColors.border} rounded-xl ${assessmentColors.borderFocus} focus:outline-none resize-none`}
                             />
                         </div>
                     </div>
@@ -187,8 +184,8 @@ export function TeacherAssessmentForm({
                                 onClick={() => setProblemType("internal")}
                                 className={`py-4 px-8 rounded-xl font-bold text-lg transition-all ${
                                     problemType === "internal"
-                                        ? "bg-blue-600 text-white ring-4 ring-blue-300"
-                                        : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                        ? `${assessmentColors.button} text-white ring-4 ${assessmentColors.buttonRing}`
+                                        : `${assessmentColors.bgLight} ${assessmentColors.textDark} ${assessmentColors.buttonHover}`
                                 }`}
                             >
                                 ปัญหาภายใน
@@ -197,8 +194,8 @@ export function TeacherAssessmentForm({
                                 onClick={() => setProblemType("external")}
                                 className={`py-4 px-8 rounded-xl font-bold text-lg transition-all ${
                                     problemType === "external"
-                                        ? "bg-blue-600 text-white ring-4 ring-blue-300"
-                                        : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                        ? `${assessmentColors.button} text-white ring-4 ${assessmentColors.buttonRing}`
+                                        : `${assessmentColors.bgLight} ${assessmentColors.textDark} ${assessmentColors.buttonHover}`
                                 }`}
                             >
                                 ปัญหาภายนอก

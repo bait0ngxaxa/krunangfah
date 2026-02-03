@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import {
     signUpSchema,
     type SignUpFormData,
@@ -35,7 +36,7 @@ export function SignUpForm() {
             });
 
             if (!result.success) {
-                setError(result.message);
+                toast.error(result.message);
                 return;
             }
 
@@ -47,15 +48,16 @@ export function SignUpForm() {
             });
 
             if (signInResult?.error) {
-                setError("ลงทะเบียนสำเร็จ แต่เข้าสู่ระบบไม่ได้");
+                toast.error("ลงทะเบียนสำเร็จ แต่เข้าสู่ระบบไม่ได้");
                 return;
             }
 
+            toast.success("ลงทะเบียนสำเร็จ");
             router.push("/teacher-profile");
             router.refresh();
         } catch (err) {
             console.error("Sign up error:", err);
-            setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+            toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
         } finally {
             setIsLoading(false);
         }

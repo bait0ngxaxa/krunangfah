@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
     signInSchema,
     type SignInFormData,
@@ -39,15 +40,16 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
             });
 
             if (result?.error) {
-                setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+                toast.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
                 return;
             }
 
+            toast.success("เข้าสู่ระบบสำเร็จ");
             router.push(callbackUrl);
             router.refresh();
         } catch (err) {
             console.error("Sign in error:", err);
-            setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+            toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
         } finally {
             setIsLoading(false);
         }

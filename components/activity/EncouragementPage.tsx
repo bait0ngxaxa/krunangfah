@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { Heart, Sparkles, ArrowRight } from "lucide-react";
 import { ActivityCompletionPage } from "./ActivityCompletionPage";
+import {
+    COLOR_CONFIG,
+    ENCOURAGEMENT_MESSAGES,
+} from "./ActivityWorkspace/constants";
 
 interface EncouragementPageProps {
     studentId: string;
@@ -13,50 +17,6 @@ interface EncouragementPageProps {
     hasNextActivity?: boolean;
 }
 
-const COLOR_CONFIG: Record<
-    string,
-    { gradient: string; bg: string; bgLight: string }
-> = {
-    orange: {
-        gradient: "from-orange-500 to-amber-500",
-        bg: "bg-orange-500",
-        bgLight: "bg-orange-50",
-    },
-    yellow: {
-        gradient: "from-yellow-400 to-amber-400",
-        bg: "bg-yellow-400",
-        bgLight: "bg-yellow-50",
-    },
-    green: {
-        gradient: "from-green-500 to-emerald-500",
-        bg: "bg-green-500",
-        bgLight: "bg-green-50",
-    },
-};
-
-const MESSAGES = {
-    internal: [
-        "ใช่เลย",
-        "หลายอย่างเกิดจากภายในตัวเด็กเอง",
-        "ถ้าเด็กก้าวผ่านจุดนี้ไปได้",
-        "เขาจะเติบโตและงอกงามได้",
-        "เรามาชวนเขาทำใบงานเหล่านี้กันนะ",
-    ],
-    external: [
-        "เข้าใจเลย",
-        "บางปัญหาเราไม่สามารถแก้ไขให้เขาได้",
-        "เช่น ปัญหาการเงิน ปัญหาครอบครัว",
-        "ชวนเด็กมองสิ่งที่ทำให้เขายิ้มได้ในตอนนี้",
-        "เสริมพลังใจให้เขาผ่านกิจกรรมเหล่านี้กันนะ",
-    ],
-    tips: [
-        "ถ้านักเรียนมีปัญหาเรื่องใหญ่แก้ยาก",
-        "อยากให้คุณครูให้เขาโฟกัสกับสิ่งนั้นดูก่อน",
-        "เพื่อให้มีพลังใจมากขึ้น",
-        "คุณครูลองทำตามขั้นตอนที่ระบบแนะนำดูนะ",
-    ],
-};
-
 export function EncouragementPage({
     studentId,
     studentName,
@@ -65,14 +25,16 @@ export function EncouragementPage({
     activityNumber,
     hasNextActivity = true,
 }: EncouragementPageProps) {
-    const [step, setStep] = useState<1 | 2>(1);
+    // กิจกรรม 2+ ข้าม encouragement messages ไปแสดง completion page เลย
+    const initialStep = activityNumber === 1 ? 1 : 2;
+    const [step, setStep] = useState<1 | 2>(initialStep);
     const [visibleLines, setVisibleLines] = useState<number[]>([]);
     const [showTips, setShowTips] = useState(false);
     const [showButton, setShowButton] = useState(false);
 
     const config = COLOR_CONFIG[riskLevel];
-    const mainMessages = MESSAGES[problemType];
-    const tipMessages = MESSAGES.tips;
+    const mainMessages = ENCOURAGEMENT_MESSAGES[problemType];
+    const tipMessages = ENCOURAGEMENT_MESSAGES.tips;
 
     // Step 1 animations
     useEffect(() => {

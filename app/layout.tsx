@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const googleSans = localFont({
@@ -23,6 +24,21 @@ export default function RootLayout({
         <html lang="en">
             <body className={`${googleSans.variable} antialiased`}>
                 <SessionProvider>{children}</SessionProvider>
+                <Toaster
+                    position="top-center"
+                    richColors
+                    expand={true}
+                    closeButton
+                    toastOptions={{
+                        className: "font-sans",
+                        style: {
+                            borderRadius: "12px",
+                            padding: "16px",
+                            fontFamily:
+                                "var(--font-google-sans), system-ui, -apple-system, sans-serif",
+                        },
+                    }}
+                />
             </body>
         </html>
     );
