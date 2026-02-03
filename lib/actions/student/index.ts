@@ -1,7 +1,24 @@
-// Student actions - Re-exports for backward compatibility
+/**
+ * Student Actions - Public API
+ * Re-exports for clean module interface
+ */
 
-export type { ImportResult } from "./types";
+// Types
+export type {
+    StudentWithLatestPhq,
+    StudentListResponse,
+    RiskCountsResponse,
+    GetStudentsOptions,
+    ImportResult,
+} from "./types";
 
-export { getStudents, searchStudents, getStudentDetail } from "./queries";
+// Main functions (with authentication)
+export {
+    getStudents,
+    searchStudents,
+    getStudentDetail,
+    getStudentRiskCounts,
+} from "./main";
 
+// Mutations
 export { importStudents } from "./mutations";

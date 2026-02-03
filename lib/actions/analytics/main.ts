@@ -2,97 +2,23 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import {
+    getRiskLevelCounts,
+    getTrendData,
+    getGradeRiskData,
+    getActivityProgressByRisk,
+    getHospitalReferralsByGrade,
+} from "./queries";
+import {
+    transformRiskLevelCounts,
+    transformTrendData,
+    transformGradeRiskData,
+    transformActivityProgress,
+    transformHospitalReferrals,
+} from "./transforms";
+import { RISK_LEVEL_CONFIG } from "./constants";
 
-export interface RiskLevelSummary {
-    riskLevel: string;
-    count: number;
-    label: string;
-    color: string;
-    percentage: number;
-    referralCount: number; // จำนวนที่ส่งต่อโรงพยาบาล
-}
-
-export interface TrendDataPoint {
-    period: string; // "ต้นเทอม/1", "ปลายเทอม/1", etc.
-    academicYear: number; // ปีการศึกษา
-    semester: number; // 1 or 2
-    round: number; // 1 or 2
-    blue: number;
-    green: number;
-    yellow: number;
-    orange: number;
-    red: number;
-}
-
-export interface ActivityProgressByRisk {
-    riskLevel: string;
-    label: string;
-    color: string;
-    totalStudents: number;
-    noActivity: number; // ยังไม่ทำกิจกรรม
-    activity1: number; // กิจกรรม 1
-    activity2: number; // กิจกรรม 2
-    activity3: number; // กิจกรรม 3
-    activity4: number; // กิจกรรม 4
-    activity5: number; // กิจกรรม 5
-}
-
-export interface GradeRiskData {
-    grade: string; // "ม.5", "ม.6", etc.
-    red: number;
-    orange: number;
-    yellow: number;
-    green: number;
-    blue: number;
-    total: number;
-}
-
-export interface HospitalReferralByGrade {
-    grade: string; // "ม.5", "ม.6", etc.
-    referralCount: number;
-}
-
-export interface AnalyticsData {
-    totalStudents: number;
-    riskLevelSummary: RiskLevelSummary[];
-    studentsWithAssessment: number;
-    studentsWithoutAssessment: number;
-    availableClasses: string[];
-    currentClass?: string;
-    trendData: TrendDataPoint[];
-    activityProgressByRisk: ActivityProgressByRisk[];
-    gradeRiskData: GradeRiskData[];
-    hospitalReferralsByGrade: HospitalReferralByGrade[];
-    totalReferrals: number;
-}
-
-const RISK_LEVEL_CONFIG = {
-    blue: {
-        label: "สีฟ้า (ปกติ)",
-        color: "#3B82F6",
-        referToNurse: false,
-    },
-    green: {
-        label: "สีเขียว (เสี่ยงเล็กน้อย)",
-        color: "#10B981",
-        referToNurse: false,
-    },
-    yellow: {
-        label: "สีเหลือง (มีปัญหา)",
-        color: "#FCD34D",
-        referToNurse: true,
-    },
-    orange: {
-        label: "สีส้ม (เสี่ยงรุนแรง)",
-        color: "#F97316",
-        referToNurse: true,
-    },
-    red: {
-        label: "สีแดง (รุนแรง)",
-        color: "#EF4444",
-        referToNurse: true,
-    },
-} as const;
+import type { AnalyticsData } from "./types";
 
 /**
  * Get analytics summary for current teacher's students
@@ -165,343 +91,46 @@ export async function getAnalyticsSummary(
             availableClasses = classes.map((c) => c.class);
         }
 
-        // Get latest PHQ results for each student
-        const phqResults = await prisma.phqResult.findMany({
-            where: {
-                student: studentWhere,
-            },
-            include: {
-                student: true,
-                academicYear: true,
-            },
-            orderBy: {
-                createdAt: "desc",
-            },
-        });
+        // ✅ Use database aggregation instead of JavaScript loops
+        const [
+            riskLevelCountsRaw,
+            trendDataRaw,
+            gradeRiskDataRaw,
+            activityProgressRaw,
+            hospitalReferralsRaw,
+        ] = await Promise.all([
+            getRiskLevelCounts(user.schoolId, targetClass),
+            getTrendData(user.schoolId, targetClass),
+            getGradeRiskData(user.schoolId, targetClass),
+            getActivityProgressByRisk(user.schoolId, targetClass),
+            getHospitalReferralsByGrade(user.schoolId, targetClass),
+        ]);
 
-        // Get unique students with latest assessment
-        const studentLatestAssessment = new Map<
-            string,
-            (typeof phqResults)[0]
-        >();
-        phqResults.forEach((result) => {
-            if (!studentLatestAssessment.has(result.studentId)) {
-                studentLatestAssessment.set(result.studentId, result);
-            }
-        });
-
-        // Count by risk level
-        const riskLevelCounts = {
-            blue: 0,
-            green: 0,
-            yellow: 0,
-            orange: 0,
-            red: 0,
-        };
-
-        studentLatestAssessment.forEach((result) => {
-            const level = result.riskLevel as keyof typeof riskLevelCounts;
-            if (level in riskLevelCounts) {
-                riskLevelCounts[level]++;
-            }
-        });
-
-        const studentsWithAssessment = studentLatestAssessment.size;
+        // Calculate total students with assessment from risk level counts
+        const studentsWithAssessment = riskLevelCountsRaw.reduce(
+            (sum, r) => sum + Number(r.count),
+            0,
+        );
         const studentsWithoutAssessment =
             totalStudents - studentsWithAssessment;
 
-        // Count referrals by risk level
-        const referralCountsByLevel = {
-            blue: 0,
-            green: 0,
-            yellow: 0,
-            orange: 0,
-            red: 0,
-        };
-
-        studentLatestAssessment.forEach((result) => {
-            if (result.referredToHospital) {
-                const level =
-                    result.riskLevel as keyof typeof referralCountsByLevel;
-                if (level in referralCountsByLevel) {
-                    referralCountsByLevel[level]++;
-                }
-            }
-        });
-
-        // Calculate percentages and create summary
-        const riskLevelSummary: RiskLevelSummary[] = Object.entries(
-            riskLevelCounts,
-        ).map(([level, count]) => {
-            const config =
-                RISK_LEVEL_CONFIG[level as keyof typeof RISK_LEVEL_CONFIG];
-            return {
-                riskLevel: level,
-                count,
-                label: config.label,
-                color: config.color,
-                percentage:
-                    studentsWithAssessment > 0
-                        ? (count / studentsWithAssessment) * 100
-                        : 0,
-                referralCount:
-                    referralCountsByLevel[
-                        level as keyof typeof referralCountsByLevel
-                    ],
-            };
-        });
-
-        // Create trend data grouped by academic year, semester, and round
-        // Track unique students per period to avoid duplicates
-        const trendMap = new Map<
-            string,
-            {
-                academicYear: number;
-                semester: number;
-                round: number;
-                studentResults: Map<string, string>; // studentId -> riskLevel
-            }
-        >();
-
-        phqResults.forEach((result) => {
-            const key = `${result.academicYearId}-${result.assessmentRound}`;
-            if (!trendMap.has(key)) {
-                trendMap.set(key, {
-                    academicYear: result.academicYear.year,
-                    semester: result.academicYear.semester,
-                    round: result.assessmentRound,
-                    studentResults: new Map(),
-                });
-            }
-
-            const entry = trendMap.get(key);
-            if (entry) {
-                // Keep only latest result per student (phqResults is already sorted by createdAt desc)
-                if (!entry.studentResults.has(result.studentId)) {
-                    entry.studentResults.set(
-                        result.studentId,
-                        result.riskLevel,
-                    );
-                }
-            }
-        });
-
-        // Convert to array and sort by year, semester, round
-        const trendData: TrendDataPoint[] = Array.from(trendMap.values())
-            .sort((a, b) => {
-                if (a.academicYear !== b.academicYear) {
-                    return a.academicYear - b.academicYear;
-                }
-                if (a.semester !== b.semester) {
-                    return a.semester - b.semester;
-                }
-                return a.round - b.round;
-            })
-            .map((entry) => {
-                const roundLabel = entry.round === 1 ? "ต้นเทอม" : "ปลายเทอม";
-
-                // Count risk levels from unique students
-                const counts = {
-                    blue: 0,
-                    green: 0,
-                    yellow: 0,
-                    orange: 0,
-                    red: 0,
-                };
-                entry.studentResults.forEach((riskLevel) => {
-                    if (riskLevel in counts) {
-                        counts[riskLevel as keyof typeof counts]++;
-                    }
-                });
-
-                return {
-                    period: `${roundLabel}/${entry.semester}`,
-                    academicYear: entry.academicYear,
-                    semester: entry.semester,
-                    round: entry.round,
-                    blue: counts.blue,
-                    green: counts.green,
-                    yellow: counts.yellow,
-                    orange: counts.orange,
-                    red: counts.red,
-                };
-            });
-
-        // Get activity progress for students with latest assessment
-        const studentIdsWithAssessment = Array.from(
-            studentLatestAssessment.keys(),
+        // Calculate total referrals from risk level counts
+        const totalReferrals = riskLevelCountsRaw.reduce(
+            (sum, r) => sum + Number(r.referral_count),
+            0,
         );
 
-        const activityProgress = await prisma.activityProgress.findMany({
-            where: {
-                studentId: { in: studentIdsWithAssessment },
-            },
-            select: {
-                studentId: true,
-                phqResultId: true,
-                activityNumber: true,
-                status: true,
-            },
-        });
-
-        // Create activity progress summary by risk level
-        const activityProgressByRisk: ActivityProgressByRisk[] = Object.entries(
-            riskLevelCounts,
-        ).map(([level, totalCount]) => {
-            const config =
-                RISK_LEVEL_CONFIG[level as keyof typeof RISK_LEVEL_CONFIG];
-
-            // Count activity progress for students in this level
-            const activityCounts = {
-                activity1: 0,
-                activity2: 0,
-                activity3: 0,
-                activity4: 0,
-                activity5: 0,
-            };
-
-            // Track which students have started activities
-            const studentsWithActivity = new Set<string>();
-
-            activityProgress.forEach((progress) => {
-                // Get the student's latest assessment
-                const latestAssessment = studentLatestAssessment.get(
-                    progress.studentId,
-                );
-
-                // Only count if this progress is for the latest assessment AND matches this risk level AND completed
-                if (
-                    latestAssessment &&
-                    latestAssessment.id === progress.phqResultId &&
-                    latestAssessment.riskLevel === level &&
-                    progress.status === "completed"
-                ) {
-                    studentsWithActivity.add(progress.studentId);
-
-                    if (
-                        progress.activityNumber >= 1 &&
-                        progress.activityNumber <= 5
-                    ) {
-                        const key =
-                            `activity${progress.activityNumber}` as keyof typeof activityCounts;
-                        activityCounts[key]++;
-                    }
-                }
-            });
-
-            const noActivity = totalCount - studentsWithActivity.size;
-
-            return {
-                riskLevel: level,
-                label: config.label,
-                color: config.color,
-                totalStudents: totalCount,
-                noActivity,
-                activity1: activityCounts.activity1,
-                activity2: activityCounts.activity2,
-                activity3: activityCounts.activity3,
-                activity4: activityCounts.activity4,
-                activity5: activityCounts.activity5,
-            };
-        });
-
-        // Create grade-level risk data
-        const gradeRiskMap = new Map<
-            string,
-            {
-                red: number;
-                orange: number;
-                yellow: number;
-                green: number;
-                blue: number;
-            }
-        >();
-
-        // Group students by grade (extract grade from class like "ม.5/1" -> "ม.5")
-        studentLatestAssessment.forEach((result) => {
-            const student = result.student;
-            // Extract grade level (e.g., "ม.5/1" -> "ม.5")
-            const gradeMatch = student.class.match(/^(ม\.\d+)/);
-            const grade = gradeMatch ? gradeMatch[1] : student.class;
-
-            if (!gradeRiskMap.has(grade)) {
-                gradeRiskMap.set(grade, {
-                    red: 0,
-                    orange: 0,
-                    yellow: 0,
-                    green: 0,
-                    blue: 0,
-                });
-            }
-
-            const gradeData = gradeRiskMap.get(grade);
-            if (gradeData) {
-                const riskLevel = result.riskLevel as keyof typeof gradeData;
-                if (riskLevel in gradeData) {
-                    gradeData[riskLevel]++;
-                }
-            }
-        });
-
-        // Convert to array and sort naturally
-        const gradeRiskData: GradeRiskData[] = Array.from(
-            gradeRiskMap.entries(),
-        )
-            .map(([grade, counts]) => ({
-                grade,
-                red: counts.red,
-                orange: counts.orange,
-                yellow: counts.yellow,
-                green: counts.green,
-                blue: counts.blue,
-                total:
-                    counts.red +
-                    counts.orange +
-                    counts.yellow +
-                    counts.green +
-                    counts.blue,
-            }))
-            .sort((a, b) => {
-                // Natural sort for Thai grade levels (ม.1, ม.2, ..., ม.6)
-                const gradeA = parseInt(a.grade.match(/\d+/)?.[0] || "0");
-                const gradeB = parseInt(b.grade.match(/\d+/)?.[0] || "0");
-                return gradeA - gradeB;
-            });
-
-        // Create hospital referral data by grade
-        const hospitalReferralMap = new Map<string, number>();
-        let totalReferrals = 0;
-
-        // Count referrals from latest assessments
-        studentLatestAssessment.forEach((result) => {
-            if (result.referredToHospital) {
-                totalReferrals++;
-                const student = result.student;
-                // Extract grade level (e.g., "ม.5/1" -> "ม.5")
-                const gradeMatch = student.class.match(/^(ม\.\d+)/);
-                const grade = gradeMatch ? gradeMatch[1] : student.class;
-
-                hospitalReferralMap.set(
-                    grade,
-                    (hospitalReferralMap.get(grade) || 0) + 1,
-                );
-            }
-        });
-
-        // Convert to array and sort naturally
-        const hospitalReferralsByGrade: HospitalReferralByGrade[] = Array.from(
-            hospitalReferralMap.entries(),
-        )
-            .map(([grade, referralCount]) => ({
-                grade,
-                referralCount,
-            }))
-            .sort((a, b) => {
-                // Natural sort for Thai grade levels (ม.1, ม.2, ..., ม.6)
-                const gradeA = parseInt(a.grade.match(/\d+/)?.[0] || "0");
-                const gradeB = parseInt(b.grade.match(/\d+/)?.[0] || "0");
-                return gradeA - gradeB;
-            });
+        // Transform raw results to API interfaces
+        const riskLevelSummary = transformRiskLevelCounts(
+            riskLevelCountsRaw,
+            studentsWithAssessment,
+        );
+        const trendData = transformTrendData(trendDataRaw);
+        const gradeRiskData = transformGradeRiskData(gradeRiskDataRaw);
+        const activityProgressByRisk =
+            transformActivityProgress(activityProgressRaw);
+        const hospitalReferralsByGrade =
+            transformHospitalReferrals(hospitalReferralsRaw);
 
         return {
             totalStudents,
