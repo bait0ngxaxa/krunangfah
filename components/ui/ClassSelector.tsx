@@ -85,7 +85,7 @@ export function ClassSelector({
                     <select
                         value={grade}
                         onChange={(e) => handleGradeChange(e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400"
                     >
                         <option value="">เลือกระดับชั้น</option>
                         {GRADE_LEVELS.map((g) => (
@@ -105,7 +105,7 @@ export function ClassSelector({
                     <select
                         value={room}
                         onChange={(e) => handleRoomChange(e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400"
                     >
                         <option value="">เลือกห้อง</option>
                         {ROOM_NUMBERS.map((r) => (

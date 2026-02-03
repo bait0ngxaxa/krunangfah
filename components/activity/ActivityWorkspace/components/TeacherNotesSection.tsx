@@ -29,7 +29,7 @@ export function TeacherNotesSection({
                 value={notes}
                 onChange={(e) => onNotesChange(e.target.value)}
                 placeholder="พิมพ์บันทึกของคุณที่นี่..."
-                className="w-full p-4 border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full p-4 border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-200 focus:border-pink-400 resize-none"
                 rows={5}
             />
             <button

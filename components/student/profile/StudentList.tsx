@@ -107,7 +107,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                     <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
                     >
                         <option value="all">ทั้งหมด</option>
                         {classes.map((cls) => (

@@ -10,6 +10,7 @@ import {
     HospitalReferralTable,
     ActivitySummaryTable,
 } from "./index";
+import { AnalyticsSkeleton } from "./AnalyticsSkeleton";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
 import type { AnalyticsData } from "@/lib/actions/analytics";
 import { Tabs, type Tab } from "@/components/ui/Tabs";
@@ -179,22 +180,12 @@ export function AnalyticsContent({
                 />
             )}
 
-            {/* Loading overlay */}
-            {isPending && (
-                <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 shadow-xl">
-                        <div className="flex items-center gap-3">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600" />
-                            <p className="text-gray-700 font-medium">
-                                กำลังโหลดข้อมูล...
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            {/* Tabs - Show skeleton when loading */}
+            {isPending ? (
+                <AnalyticsSkeleton />
+            ) : (
+                <Tabs tabs={tabs} defaultTab="summary" />
             )}
-
-            {/* Tabs */}
-            <Tabs tabs={tabs} defaultTab="summary" />
         </>
     );
 }

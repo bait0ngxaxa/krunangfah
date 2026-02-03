@@ -14,7 +14,7 @@ export function PersonalInfoFields({
                 <input
                     {...register("email")}
                     type="email"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
                     placeholder="example@email.com"
                 />
                 {errors.email && (
@@ -32,7 +32,7 @@ export function PersonalInfoFields({
                 <input
                     {...register("firstName")}
                     type="text"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
                     placeholder="กรอกชื่อ"
                 />
                 {errors.firstName && (
@@ -50,7 +50,7 @@ export function PersonalInfoFields({
                 <input
                     {...register("lastName")}
                     type="text"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
                     placeholder="กรอกสกุล"
                 />
                 {errors.lastName && (
@@ -68,7 +68,7 @@ export function PersonalInfoFields({
                 <input
                     {...register("age")}
                     type="number"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
                     placeholder="อายุ"
                 />
                 {errors.age && (

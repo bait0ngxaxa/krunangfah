@@ -90,7 +90,7 @@ export function AddCounselingModal({
                                     sessionDate: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-colors outline-none"
                         />
                     </div>
 
@@ -114,7 +114,7 @@ export function AddCounselingModal({
                                     counselorName: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-colors outline-none"
                         />
                     </div>
 
@@ -139,7 +139,7 @@ export function AddCounselingModal({
                                     summary: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-colors resize-none outline-none"
                         />
                         <p className="text-xs text-gray-500 mt-1">
                             ระบุรายละเอียดการพูดคุย ปัญหาที่พบ

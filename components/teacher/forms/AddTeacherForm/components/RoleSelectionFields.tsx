@@ -18,7 +18,7 @@ export function RoleSelectionFields({
                 </label>
                 <select
                     {...register("userRole")}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
                 >
                     <option value="">เลือกประเภทครู</option>
                     {USER_ROLES.map((role) => (

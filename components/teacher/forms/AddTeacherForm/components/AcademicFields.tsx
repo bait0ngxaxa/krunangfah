@@ -14,7 +14,7 @@ export function AcademicFields({
                 </label>
                 <select
                     {...register("academicYearId")}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
                 >
                     <option value="">เลือกปีการศึกษา</option>
                     {academicYears.map((year) => (
@@ -38,7 +38,7 @@ export function AcademicFields({
                 <input
                     {...register("schoolRole")}
                     type="text"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
                     placeholder="เช่น ครูประจำชั้น"
                 />
                 {errors.schoolRole && (

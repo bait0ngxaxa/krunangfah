@@ -28,7 +28,7 @@ export function ImportSettings({
                 <select
                     value={selectedYearId}
                     onChange={(e) => onYearChange(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
                 >
                     <option value="">เลือกปีการศึกษา</option>
                     {academicYears.map((year) => (
@@ -47,7 +47,7 @@ export function ImportSettings({
                 <select
                     value={assessmentRound}
                     onChange={(e) => onRoundChange(Number(e.target.value))}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
                 >
                     <option value={1}>ครั้งที่ 1</option>
                     <option value={2}>ครั้งที่ 2</option>

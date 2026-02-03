@@ -28,7 +28,7 @@ export function ClassFilter({
                     id="class-filter"
                     value={currentClass || "all"}
                     onChange={(e) => onClassChange(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-all outline-none"
                 >
                     <option value="all">ทุกห้อง</option>
                     {availableClasses.map((className) => (

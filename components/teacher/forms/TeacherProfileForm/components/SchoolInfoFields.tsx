@@ -17,7 +17,7 @@ export function SchoolInfoFields({
                     {...register("schoolName")}
                     type="text"
                     id="schoolName"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-all outline-none"
                     placeholder="กรอกชื่อโรงเรียน"
                 />
                 {errors.schoolName && (
@@ -40,7 +40,7 @@ export function SchoolInfoFields({
                     id="age"
                     min="18"
                     max="100"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-all outline-none"
                     placeholder="กรอกอายุ"
                 />
                 {errors.age && (
@@ -55,13 +55,14 @@ export function SchoolInfoFields({
                     htmlFor="schoolRole"
                     className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                    บทบาทหน้าที่ในโรงเรียน <span className="text-red-500">*</span>
+                    บทบาทหน้าที่ในโรงเรียน{" "}
+                    <span className="text-red-500">*</span>
                 </label>
                 <input
                     {...register("schoolRole")}
                     type="text"
                     id="schoolRole"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-all outline-none"
                     placeholder="เช่น ครูประจำชั้น, หัวหน้ากลุ่มสาระ"
                 />
                 {errors.schoolRole && (
