@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Calendar, PartyPopper } from "lucide-react";
+import { COLOR_CONFIG, ACTIVITY_NAMES } from "./ActivityWorkspace/constants";
 
 interface ActivityCompletionPageProps {
     studentId: string;
@@ -11,35 +12,6 @@ interface ActivityCompletionPageProps {
     activityNumber: number;
     hasNextActivity?: boolean;
 }
-
-const COLOR_CONFIG: Record<
-    string,
-    { gradient: string; bg: string; bgLight: string }
-> = {
-    orange: {
-        gradient: "from-orange-500 to-amber-500",
-        bg: "bg-orange-500",
-        bgLight: "bg-orange-50",
-    },
-    yellow: {
-        gradient: "from-yellow-400 to-amber-400",
-        bg: "bg-yellow-400",
-        bgLight: "bg-yellow-50",
-    },
-    green: {
-        gradient: "from-green-500 to-emerald-500",
-        bg: "bg-green-500",
-        bgLight: "bg-green-50",
-    },
-};
-
-const ACTIVITY_NAMES: Record<number, string> = {
-    1: "รู้จักตัวเอง",
-    2: "ค้นหาคุณค่าที่ฉันมี",
-    3: "ปรับความคิด ชีวิตเปลี่ยน",
-    4: "รู้จักตัวกระตุ้น",
-    5: "ตามติดเพื่อไปต่อ",
-};
 
 export function ActivityCompletionPage({
     studentId: _studentId,
