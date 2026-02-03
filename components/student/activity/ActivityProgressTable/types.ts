@@ -40,38 +40,3 @@ export interface ActivityProgressTableProps {
     phqResultId: string;
     riskLevel: RiskLevel;
 }
-
-export interface TableHeaderProps {
-    studentId: string;
-    riskLevel: RiskLevel;
-    completedCount: number;
-    totalCount: number;
-}
-
-export interface DesktopTableProps {
-    progressData: ActivityProgress[];
-}
-
-export interface MobileCardsProps {
-    progressData: ActivityProgress[];
-}
-
-export interface ActivityRowProps {
-    progress: ActivityProgress;
-    index: number;
-}
-
-export interface ActivityCardProps {
-    progress: ActivityProgress;
-    index: number;
-}
-
-export interface ActivityStatusBadgeProps {
-    status: string;
-}
-
-export interface ActivityIconProps {
-    status: string;
-    index: number;
-    isLocked: boolean;
-}
