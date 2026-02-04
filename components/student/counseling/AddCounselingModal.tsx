@@ -53,7 +53,7 @@ export function AddCounselingModal({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-9999 p-4 overflow-y-auto">
             <div className="bg-white rounded-2xl w-full max-w-2xl my-8 shadow-2xl">
                 {/* Header */}
-                <div className="bg-linear-to-r from-indigo-600 to-purple-600 px-8 py-6 rounded-t-2xl">
+                <div className="bg-linear-to-r from-pink-500 to-purple-500 px-8 py-6 rounded-t-2xl">
                     <h3 className="text-2xl font-bold text-white">
                         เพิ่มบันทึกการให้คำปรึกษา
                     </h3>
@@ -62,7 +62,7 @@ export function AddCounselingModal({
                 {/* Form */}
                 <form
                     onSubmit={handleSubmit}
-                    className="p-8 space-y-6 max-h-[calc(90vh-120px)] overflow-y-auto"
+                    className="p-6 space-y-4 overflow-y-auto flex-1"
                 >
                     {/* Error Message */}
                     {error && (
@@ -130,7 +130,7 @@ export function AddCounselingModal({
                         <textarea
                             id="summary"
                             required
-                            rows={6}
+                            rows={4}
                             placeholder="บันทึกสรุปประเด็นที่พูดคุย..."
                             value={formData.summary}
                             onChange={(e) =>
@@ -148,7 +148,7 @@ export function AddCounselingModal({
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-2">
+                    <div className="flex gap-3 pt-2 bg-white">
                         <button
                             type="button"
                             onClick={onClose}
@@ -160,7 +160,7 @@ export function AddCounselingModal({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 px-6 py-3 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-6 py-3 bg-linear-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:opacity-90 transition-opacity font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? "กำลังบันทึก..." : "บันทึก"}
                         </button>

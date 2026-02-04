@@ -5,3 +5,4 @@ export { WorksheetGallery } from "./WorksheetGallery";
 export { UploadSection } from "./UploadSection";
 export { TeacherNotesSection } from "./TeacherNotesSection";
 export { ProgressIndicator } from "./ProgressIndicator";
+export { DownloadModal } from "./DownloadModal";

@@ -13,6 +13,7 @@ import type { RiskLevelSummary } from "@/lib/actions/analytics";
 interface RiskLevelPieChartProps {
     riskLevelSummary: RiskLevelSummary[];
     totalStudents: number;
+    selectedClass?: string;
 }
 
 interface ChartDataItem {
@@ -25,6 +26,7 @@ interface ChartDataItem {
 export function RiskLevelPieChart({
     riskLevelSummary,
     totalStudents: _totalStudents,
+    selectedClass,
 }: RiskLevelPieChartProps) {
     // Filter out zero counts and prepare data
     const chartData: ChartDataItem[] = riskLevelSummary
@@ -43,11 +45,16 @@ export function RiskLevelPieChart({
         return `${percent}%`;
     };
 
+    // Dynamic title based on selected class
+    const chartTitle = selectedClass
+        ? `ข้อมูลนักเรียน (ห้อง ${selectedClass})`
+        : "ข้อมูลนักเรียน (ทั้งหมด)";
+
     if (chartData.length === 0) {
         return (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
-                    ข้อมูลนักเรียน (ห้องที่ปรึกษา)
+                    {chartTitle}
                 </h2>
                 <div className="flex items-center justify-center h-64 text-gray-500">
                     ยังไม่มีข้อมูลการคัดกรอง
@@ -59,7 +66,7 @@ export function RiskLevelPieChart({
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 pb-8">
             <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
-                ข้อมูลนักเรียน (ห้องที่ปรึกษา)
+                {chartTitle}
             </h2>
             <ResponsiveContainer width="100%" height={380}>
                 <PieChart>

@@ -25,10 +25,12 @@ export function AnalyticsContent({
     isSchoolAdmin,
 }: AnalyticsContentProps) {
     const [data, setData] = useState<AnalyticsData>(initialData);
+    const [selectedClass, setSelectedClass] = useState<string>("all");
     const [isPending, startTransition] = useTransition();
 
     const handleClassChange = (classValue: string) => {
         const filterValue = classValue === "all" ? undefined : classValue;
+        setSelectedClass(classValue);
 
         startTransition(async () => {
             const newData = await getAnalyticsSummary(filterValue);
@@ -51,6 +53,11 @@ export function AnalyticsContent({
                         <RiskLevelPieChart
                             riskLevelSummary={data.riskLevelSummary}
                             totalStudents={data.studentsWithAssessment}
+                            selectedClass={
+                                selectedClass === "all"
+                                    ? undefined
+                                    : selectedClass
+                            }
                         />
                     </div>
                     <HospitalReferralTable

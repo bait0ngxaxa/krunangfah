@@ -8,6 +8,8 @@ import {
     PHQTrendChart,
     ActivityProgressTable,
     CounselingLogTable,
+    AcademicYearFilter,
+    HospitalReferralButton,
 } from "@/components/student";
 import { getCounselingSessions } from "@/lib/actions/counseling.actions";
 import { Tabs } from "@/components/ui/Tabs";
@@ -15,31 +17,55 @@ import type { RiskLevel } from "@/lib/utils/phq-scoring";
 
 interface StudentDetailPageProps {
     params: Promise<{ id: string }>;
+    searchParams: Promise<{ year?: string }>;
 }
 
 export default async function StudentDetailPage({
     params,
+    searchParams,
 }: StudentDetailPageProps) {
     const { id } = await params;
+    const { year: selectedYearId } = await searchParams;
+
     const student = await getStudentDetail(id);
 
     if (!student) {
         notFound();
     }
 
-    const latestResult = student.phqResults[0] || null;
+    // Extract unique academic years from PHQ results
+    const uniqueYears = Array.from(
+        new Map(
+            student.phqResults
+                .filter((r) => r.academicYear)
+                .map((r) => [r.academicYear.id, r.academicYear]),
+        ).values(),
+    ).sort((a, b) => {
+        // Sort by year desc, then semester desc
+        if (a.year !== b.year) return b.year - a.year;
+        return b.semester - a.semester;
+    });
+
+    // Filter PHQ results by selected year
+    const filteredPhqResults = selectedYearId
+        ? student.phqResults.filter(
+              (r) => r.academicYear?.id === selectedYearId,
+          )
+        : student.phqResults;
+
+    const latestResult = filteredPhqResults[0] || null;
     const counselingSessions = await getCounselingSessions(id);
 
     // Tab 1: PHQ Results (Chart + History)
     const phqResultsTab = (
         <div className="space-y-6">
             {/* Trend Chart */}
-            {student.phqResults.length > 0 && (
-                <PHQTrendChart results={student.phqResults} />
+            {filteredPhqResults.length > 0 && (
+                <PHQTrendChart results={filteredPhqResults} />
             )}
 
             {/* History Table */}
-            <PHQHistoryTable results={student.phqResults} />
+            <PHQHistoryTable results={filteredPhqResults} />
         </div>
     );
 
@@ -98,6 +124,24 @@ export default async function StudentDetailPage({
                         student={student}
                         latestResult={latestResult}
                     />
+
+                    {/* Hospital Referral Button */}
+                    {latestResult && (
+                        <div className="flex justify-end">
+                            <HospitalReferralButton
+                                phqResultId={latestResult.id}
+                                initialStatus={latestResult.referredToHospital}
+                            />
+                        </div>
+                    )}
+
+                    {/* Academic Year Filter */}
+                    {uniqueYears.length > 1 && (
+                        <AcademicYearFilter
+                            academicYears={uniqueYears}
+                            currentYearId={selectedYearId}
+                        />
+                    )}
 
                     {/* Tabs */}
                     <Tabs tabs={tabs} defaultTab="phq-results" />

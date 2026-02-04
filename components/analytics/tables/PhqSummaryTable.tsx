@@ -56,10 +56,10 @@ export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
                                     >
                                         {item.label}
                                     </td>
-                                    <td className="px-4 py-3 text-center text-2xl font-bold text-gray-800">
+                                    <td className="px-4 py-3 text-center text-2xl font-semibold text-gray-800">
                                         {item.count}
                                     </td>
-                                    <td className="px-4 py-3 text-center text-lg font-semibold text-gray-800">
+                                    <td className="px-4 py-3 text-center text-2xl font-semibold text-gray-800">
                                         {item.referralCount}
                                     </td>
                                 </tr>

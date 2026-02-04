@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Eye, X } from "lucide-react";
+import { WORKSHEET_NAMES } from "@/components/activity/ActivityWorkspace/constants";
 
 interface WorksheetUpload {
     id: string;
@@ -14,11 +15,13 @@ interface WorksheetUpload {
 interface WorksheetPreviewButtonProps {
     uploads: WorksheetUpload[];
     isCompleted: boolean;
+    activityNumber: number;
 }
 
 export function WorksheetPreviewButton({
     uploads,
     isCompleted,
+    activityNumber,
 }: WorksheetPreviewButtonProps) {
     const [previewFile, setPreviewFile] = useState<{
         url: string;
@@ -110,21 +113,29 @@ export function WorksheetPreviewButton({
                     <span className="w-3 h-3">✓</span>
                     เสร็จแล้ว
                 </span>
-                {uploads.map((upload, index) => (
-                    <button
-                        key={upload.id}
-                        onClick={() =>
-                            setPreviewFile({
-                                url: upload.fileUrl,
-                                name: upload.fileName,
-                            })
-                        }
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors text-xs font-medium"
-                    >
-                        <Eye className="w-3 h-3" />
-                        ใบงานที่ {index + 1}
-                    </button>
-                ))}
+                {uploads.map((upload, index) => {
+                    const worksheetNames =
+                        WORKSHEET_NAMES[activityNumber] || [];
+                    const worksheetName = worksheetNames[index];
+
+                    return (
+                        <button
+                            key={upload.id}
+                            onClick={() =>
+                                setPreviewFile({
+                                    url: upload.fileUrl,
+                                    name: upload.fileName,
+                                })
+                            }
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-linear-to-r from-blue-500 to-cyan-500 text-white rounded-full hover:from-blue-600 hover:to-cyan-600 transition-all shadow-sm hover:shadow-md text-xs font-medium"
+                        >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="font-medium">
+                                {worksheetName || `ใบงานที่ ${index + 1}`}
+                            </span>
+                        </button>
+                    );
+                })}
             </div>
         </>
     );

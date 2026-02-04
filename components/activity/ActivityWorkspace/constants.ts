@@ -210,3 +210,25 @@ export const UPLOAD_COLOR_CONFIG: Record<
         completeText: "text-green-700",
     },
 };
+
+/**
+ * Download URLs for worksheet PDFs by activity number
+ */
+export const DOWNLOAD_URLS: Record<number, string[]> = {
+    1: ["/download/a1/d1-1.pdf", "/download/a1/d1-2.pdf"],
+    2: ["/download/a2/d2-1.pdf", "/download/a2/d2-2.pdf"],
+    3: ["/download/a3/d3-1.pdf", "/download/a3/d3-2.pdf"],
+    4: ["/download/a4/d4-1.pdf", "/download/a4/d4-2.pdf"],
+    5: ["/download/a5/d5.pdf"],
+};
+
+/**
+ * Worksheet names by activity number
+ */
+export const WORKSHEET_NAMES: Record<number, string[]> = {
+    1: ["ฉันชอบตัวเอง", "กราฟวัดจมลอย"],
+    2: ["ค้นหาคุณค่าที่ฉันมี", "เสริมสร้างพลังใจ"],
+    3: ["ปรับความคิดชีวิตเปลี่ยน", "ตั้งเป้าหมาย"],
+    4: ["ตามหาสิ่งกระตุ้น", "แผนการจัดการใจ"],
+    5: ["เวลาไม่ไหวจะทำยังไงดี"],
+};

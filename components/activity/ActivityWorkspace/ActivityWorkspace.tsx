@@ -11,6 +11,7 @@ import {
     TeacherNotesSection,
     ProgressIndicator,
 } from "./components";
+import { DOWNLOAD_URLS } from "./constants";
 import type { ActivityWorkspaceProps } from "./types";
 
 /**
@@ -36,10 +37,14 @@ export function ActivityWorkspace({
         currentProgress,
         currentActivityNumber,
         currentActivity,
-        handleDownload,
         handleFileSelect,
         handleSaveNotes,
     } = useActivityWorkspace({ studentId, riskLevel, activityProgress });
+
+    // Get download URLs for current activity
+    const downloadUrls = currentActivityNumber
+        ? DOWNLOAD_URLS[currentActivityNumber] || []
+        : [];
 
     if (!currentActivity) {
         return null;
@@ -70,11 +75,9 @@ export function ActivityWorkspace({
                         {/* Action Buttons */}
                         <ActionButtons
                             studentId={studentId}
-                            firstWorksheetUrl={
-                                currentActivity.worksheets[0] || ""
-                            }
                             config={config}
-                            onDownload={handleDownload}
+                            activityNumber={currentActivityNumber}
+                            downloadUrls={downloadUrls}
                         />
 
                         {/* Worksheets */}

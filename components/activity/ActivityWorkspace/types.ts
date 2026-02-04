@@ -54,7 +54,6 @@ export interface UseActivityWorkspaceReturn {
     currentActivity: Activity | undefined;
 
     // Handlers
-    handleDownload: (worksheetUrl: string) => void;
     handleFileSelect: (progressId: string) => void;
     handleSaveNotes: () => Promise<void>;
 }

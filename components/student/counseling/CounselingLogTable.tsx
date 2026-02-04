@@ -32,7 +32,7 @@ export function CounselingLogTable({
     return (
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
             {/* Header */}
-            <div className="bg-linear-to-r from-indigo-600 to-purple-600 px-6 py-4">
+            <div className="bg-linear-to-r from-pink-500 to-purple-500 px-6 py-4">
                 <h2 className="text-lg font-bold text-white">
                     บันทึกการให้คำปรึกษารายบุคคล
                 </h2>
@@ -101,7 +101,7 @@ export function CounselingLogTable({
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="px-6 py-3 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all font-bold shadow-md hover:shadow-lg flex items-center gap-2"
+                    className="px-6 py-3 bg-linear-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:opacity-90 transition-opacity font-bold shadow-md hover:shadow-lg flex items-center gap-2"
                 >
                     <span>➕</span>
                     เพิ่มบันทึกการให้คำปรึกษา

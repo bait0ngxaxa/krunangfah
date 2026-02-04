@@ -63,7 +63,7 @@ export async function ActivityProgressTable({
             {/* Header Section */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white">
+                    <div className="w-12 h-12 bg-linear-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center text-white shadow-md">
                         <FileText className="w-6 h-6" />
                     </div>
                     <div>
@@ -79,7 +79,7 @@ export async function ActivityProgressTable({
                 </div>
                 <Link
                     href={`/students/${studentId}/help/start`}
-                    className="px-4 py-2 bg-purple-500 text-white rounded-full text-sm font-medium hover:bg-purple-600 transition-colors"
+                    className="px-4 py-2 bg-linear-to-r from-pink-500 to-purple-500 text-white rounded-full text-sm font-medium hover:opacity-90 transition-opacity shadow-md"
                 >
                     ทำกิจกรรม
                 </Link>
@@ -90,7 +90,7 @@ export async function ActivityProgressTable({
                 <table className="w-full">
                     {/* Desktop Header - Hidden on Mobile */}
                     <thead className="hidden md:table-header-group">
-                        <tr className="bg-linear-to-r from-indigo-600 to-purple-600 text-white">
+                        <tr className="bg-linear-to-r from-pink-500 to-purple-500 text-white">
                             <th className="px-4 py-3 text-left rounded-tl-xl">
                                 กิจกรรมที่ต้องทำ
                             </th>
@@ -246,6 +246,7 @@ function ActivityRow({
                         <WorksheetPreviewButton
                             uploads={progress.worksheetUploads}
                             isCompleted={isCompleted}
+                            activityNumber={progress.activityNumber}
                         />
                     )}
                 </div>
@@ -258,6 +259,7 @@ function ActivityRow({
                             <WorksheetPreviewButton
                                 uploads={progress.worksheetUploads}
                                 isCompleted={isCompleted}
+                                activityNumber={progress.activityNumber}
                             />
                         </div>
                     )}

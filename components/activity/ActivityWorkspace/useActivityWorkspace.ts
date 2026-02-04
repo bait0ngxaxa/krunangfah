@@ -51,11 +51,6 @@ export function useActivityWorkspace({
         }
     }, [currentProgress]);
 
-    // Handlers
-    const handleDownload = (worksheetUrl: string) => {
-        window.open(worksheetUrl, "_blank");
-    };
-
     const handleUpload = async (progressId: string, file: File) => {
         setUploading(progressId);
         try {
@@ -123,7 +118,6 @@ export function useActivityWorkspace({
             if (result.success) {
                 toast.success("บันทึกโน๊ตสำเร็จ");
                 setTeacherNotes("");
-                router.refresh();
             } else {
                 toast.error(result.error || "เกิดข้อผิดพลาดในการบันทึก");
             }
@@ -153,7 +147,6 @@ export function useActivityWorkspace({
         currentActivity,
 
         // Handlers
-        handleDownload,
         handleFileSelect,
         handleSaveNotes,
     };
