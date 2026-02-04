@@ -34,22 +34,22 @@ export function TeacherProfileCard({
         PROJECT_ROLE_LABELS[teacher.projectRole] || teacher.projectRole;
 
     return (
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-pink-500/10 p-6 border-2 border-white relative overflow-hidden group hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-300">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-white/60 relative overflow-hidden group hover:shadow-xl hover:shadow-pink-200/40 transition-all duration-300 ring-1 ring-pink-50">
             {/* Gradient Border Overlay */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-pink-400 via-purple-400 to-indigo-400" />
+            <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-rose-300 via-pink-300 to-orange-200" />
 
             <div className="flex items-start justify-between mb-6 relative z-10">
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <span className="p-2 bg-pink-50 rounded-lg shadow-sm">
+                    <span className="p-2 bg-pink-50 rounded-lg shadow-sm text-xl">
                         👤
                     </span>{" "}
                     ข้อมูลส่วนตัว
                 </h3>
                 <span
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-md ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${
                         isClassTeacher
                             ? "bg-linear-to-r from-purple-50 to-purple-100 text-purple-700 ring-1 ring-purple-200"
-                            : "bg-linear-to-r from-pink-50 to-pink-100 text-pink-700 ring-1 ring-pink-200"
+                            : "bg-linear-to-r from-rose-50 to-pink-50 text-pink-700 ring-1 ring-pink-200"
                     }`}
                 >
                     {isClassTeacher ? "ครูประจำชั้น" : "ครูนางฟ้า"}
@@ -58,7 +58,7 @@ export function TeacherProfileCard({
 
             <div className="space-y-6 relative z-10">
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-linear-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white font-bold text-2xl shadow-lg ring-4 ring-white">
+                    <div className="w-16 h-16 rounded-full bg-linear-to-br from-rose-400 to-pink-400 flex items-center justify-center text-white font-bold text-2xl shadow-md shadow-pink-200 ring-4 ring-white/80">
                         {teacher.firstName.charAt(0)}
                     </div>
                     <div>

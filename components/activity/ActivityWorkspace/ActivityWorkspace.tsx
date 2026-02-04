@@ -58,8 +58,14 @@ export function ActivityWorkspace({
                 onClose={() => setPreviewFile(null)}
             />
 
-            <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 py-8 px-4">
-                <div className="max-w-4xl mx-auto">
+            <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
+                {/* Decorative Background Elements */}
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+                    <div className="absolute top-10 right-10 w-64 h-64 bg-rose-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
+                    <div className="absolute bottom-10 left-10 w-64 h-64 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
+                </div>
+
+                <div className="max-w-4xl mx-auto relative z-10">
                     <WorkspaceHeader
                         studentId={studentId}
                         studentName={studentName}
@@ -67,9 +73,9 @@ export function ActivityWorkspace({
                         config={config}
                     />
 
-                    <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl p-6 md:p-8 border border-white/50 relative overflow-hidden">
+                    <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-pink-100 relative overflow-hidden animate-fade-in-up">
                         <div
-                            className={`absolute top-0 left-0 w-full h-2 bg-linear-to-r ${config.gradient}`}
+                            className={`absolute top-0 left-0 w-full h-1.5 bg-linear-to-r ${config.gradient}`}
                         />
 
                         {/* Action Buttons */}
@@ -118,12 +124,15 @@ export function ActivityWorkspace({
                         />
 
                         {/* Conversation Button */}
-                        <div className="pt-6 border-t border-gray-200">
+                        <div className="pt-6 border-t border-pink-100 mt-8">
                             <Link
                                 href={`/students/${studentId}/help/conversation`}
-                                className="block w-full py-4 bg-linear-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity text-center text-lg"
+                                className="w-full py-4 bg-linear-to-r from-rose-500 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all text-center text-lg shadow-md flex items-center justify-center gap-2 group"
                             >
-                                💬 หลักการพูดคุย
+                                <span className="group-hover:scale-110 transition-transform">
+                                    💬
+                                </span>
+                                หลักการพูดคุย
                             </Link>
                         </div>
                     </div>

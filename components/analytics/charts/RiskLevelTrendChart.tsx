@@ -19,20 +19,35 @@ interface RiskLevelTrendChartProps {
 export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
     if (trendData.length === 0) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex flex-col items-center justify-center min-h-[400px]">
                 <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
                     กราฟแนวโน้มระดับความเสี่ยง
                 </h2>
-                <div className="flex items-center justify-center h-96 text-gray-500">
-                    ยังไม่มีข้อมูลการคัดกรอง
+                <div className="text-gray-400 flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
+                        <svg
+                            className="w-8 h-8"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+                            />
+                        </svg>
+                    </div>
+                    <span>ยังไม่มีข้อมูลการคัดกรอง</span>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-6">
+            <h2 className="text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-6 text-center">
                 กราฟแนวโน้มระดับความเสี่ยง
             </h2>
             <ResponsiveContainer width="100%" height={400}>
@@ -40,23 +55,36 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                     data={trendData}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#FCE7F3" />
                     <XAxis
                         dataKey="period"
                         label={{
                             value: "เทอม",
                             position: "insideBottom",
                             offset: -5,
+                            fill: "#9CA3AF",
                         }}
+                        tick={{ fill: "#6B7280" }}
+                        axisLine={{ stroke: "#FBCFE8" }}
                     />
                     <YAxis
                         label={{
                             value: "จำนวนนักเรียน (คน)",
                             angle: -90,
                             position: "insideLeft",
+                            fill: "#9CA3AF",
                         }}
+                        tick={{ fill: "#6B7280" }}
+                        axisLine={{ stroke: "#FBCFE8" }}
                     />
                     <Tooltip
+                        contentStyle={{
+                            backgroundColor: "rgba(255, 255, 255, 0.95)",
+                            borderRadius: "1rem",
+                            border: "1px solid #FCE7F3",
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                            padding: "12px",
+                        }}
                         formatter={(value: unknown) => {
                             const numValue =
                                 typeof value === "number" ? value : 0;
@@ -85,42 +113,67 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                     <Line
                         type="monotone"
                         dataKey="red"
-                        stroke="#EF4444"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
+                        stroke="#F43F5E"
+                        strokeWidth={3}
+                        dot={{
+                            r: 4,
+                            fill: "#F43F5E",
+                            strokeWidth: 2,
+                            stroke: "#fff",
+                        }}
+                        activeDot={{ r: 6, stroke: "#F43F5E", strokeWidth: 0 }}
                     />
                     <Line
                         type="monotone"
                         dataKey="orange"
                         stroke="#F97316"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={3}
+                        dot={{
+                            r: 4,
+                            fill: "#F97316",
+                            strokeWidth: 2,
+                            stroke: "#fff",
+                        }}
+                        activeDot={{ r: 6, stroke: "#F97316", strokeWidth: 0 }}
                     />
                     <Line
                         type="monotone"
                         dataKey="yellow"
-                        stroke="#FCD34D"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
+                        stroke="#FBBF24"
+                        strokeWidth={3}
+                        dot={{
+                            r: 4,
+                            fill: "#FBBF24",
+                            strokeWidth: 2,
+                            stroke: "#fff",
+                        }}
+                        activeDot={{ r: 6, stroke: "#FBBF24", strokeWidth: 0 }}
                     />
                     <Line
                         type="monotone"
                         dataKey="green"
-                        stroke="#10B981"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
+                        stroke="#34D399"
+                        strokeWidth={3}
+                        dot={{
+                            r: 4,
+                            fill: "#34D399",
+                            strokeWidth: 2,
+                            stroke: "#fff",
+                        }}
+                        activeDot={{ r: 6, stroke: "#34D399", strokeWidth: 0 }}
                     />
                     <Line
                         type="monotone"
                         dataKey="blue"
-                        stroke="#3B82F6"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
+                        stroke="#60A5FA"
+                        strokeWidth={3}
+                        dot={{
+                            r: 4,
+                            fill: "#60A5FA",
+                            strokeWidth: 2,
+                            stroke: "#fff",
+                        }}
+                        activeDot={{ r: 6, stroke: "#60A5FA", strokeWidth: 0 }}
                     />
                 </LineChart>
             </ResponsiveContainer>

@@ -9,7 +9,7 @@ export function NameFields({
             <div>
                 <label
                     htmlFor="firstName"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-bold text-gray-700 mb-2"
                 >
                     ชื่อ <span className="text-red-500">*</span>
                 </label>
@@ -17,11 +17,11 @@ export function NameFields({
                     {...register("firstName")}
                     type="text"
                     id="firstName"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-all outline-none"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 transition-all outline-none placeholder:text-gray-400 hover:border-pink-300"
                     placeholder="กรอกชื่อ"
                 />
                 {errors.firstName && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.firstName.message}
                     </p>
                 )}
@@ -30,7 +30,7 @@ export function NameFields({
             <div>
                 <label
                     htmlFor="lastName"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-bold text-gray-700 mb-2"
                 >
                     สกุล <span className="text-red-500">*</span>
                 </label>
@@ -38,11 +38,11 @@ export function NameFields({
                     {...register("lastName")}
                     type="text"
                     id="lastName"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-all outline-none"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 transition-all outline-none placeholder:text-gray-400 hover:border-pink-300"
                     placeholder="กรอกนามสกุล"
                 />
                 {errors.lastName && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.lastName.message}
                     </p>
                 )}

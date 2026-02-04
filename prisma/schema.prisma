@@ -169,6 +169,8 @@ model Student {
   counselingSessions CounselingSession[]
 
   @@unique([studentId, schoolId]) // ป้องกันซ้ำ: รหัสนักเรียน + โรงเรียน
+  @@index([schoolId, class]) // For filtering by school and class
+  @@index([firstName, lastName]) // For name search
   @@map("students")
 }
 

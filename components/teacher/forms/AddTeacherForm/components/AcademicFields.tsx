@@ -9,12 +9,12 @@ export function AcademicFields({
         <>
             {/* Academic Year */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ปีการศึกษา
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                    ปีการศึกษา <span className="text-red-500">*</span>
                 </label>
                 <select
                     {...register("academicYearId")}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none bg-white transition-all hover:border-pink-300"
                 >
                     <option value="">เลือกปีการศึกษา</option>
                     {academicYears.map((year) => (
@@ -24,7 +24,7 @@ export function AcademicFields({
                     ))}
                 </select>
                 {errors.academicYearId && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.academicYearId.message}
                     </p>
                 )}
@@ -32,17 +32,18 @@ export function AcademicFields({
 
             {/* School Role */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    บทบาทหน้าที่ในโรงเรียน
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                    บทบาทหน้าที่ในโรงเรียน{" "}
+                    <span className="text-red-500">*</span>
                 </label>
                 <input
                     {...register("schoolRole")}
                     type="text"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 hover:border-pink-300"
                     placeholder="เช่น ครูประจำชั้น"
                 />
                 {errors.schoolRole && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.schoolRole.message}
                     </p>
                 )}

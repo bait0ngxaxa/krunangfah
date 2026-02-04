@@ -72,15 +72,16 @@ export function RiskPieChart({ data }: RiskPieChartProps) {
 
     if (total === 0) {
         return (
-            <div className="flex items-center justify-center h-64 bg-gray-50 rounded-xl">
-                <p className="text-gray-500">ไม่มีข้อมูลนักเรียน</p>
+            <div className="flex items-center justify-center h-64 bg-white/50 backdrop-blur-sm rounded-2xl border border-pink-100">
+                <p className="text-gray-500 font-medium">ไม่มีข้อมูลนักเรียน</p>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-lg p-6 border-4 border-purple-400">
-            <h3 className="text-lg font-semibold text-gray-800 text-center mb-4">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-white/60 relative overflow-hidden ring-1 ring-pink-50">
+            <h3 className="text-lg font-bold text-gray-800 text-center mb-4 flex items-center justify-center gap-2">
+                <span className="text-xl">📊</span>
                 สรุปภาพรวมนักเรียน ({total} คน)
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -98,10 +99,23 @@ export function RiskPieChart({ data }: RiskPieChartProps) {
                         dataKey="value"
                     >
                         {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
+                            <Cell
+                                key={`cell-${index}`}
+                                fill={entry.color}
+                                stroke="#fff"
+                                strokeWidth={2}
+                            />
                         ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`${value} คน`, "จำนวน"]} />
+                    <Tooltip
+                        formatter={(value) => [`${value} คน`, "จำนวน"]}
+                        contentStyle={{
+                            backgroundColor: "rgba(255, 255, 255, 0.9)",
+                            borderRadius: "12px",
+                            border: "1px solid #fce7f3",
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                        }}
+                    />
                 </PieChart>
             </ResponsiveContainer>
         </div>

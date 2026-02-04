@@ -90,12 +90,13 @@ export function AnalyticsContent({
     return (
         <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-blue-100 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-blue-100 p-6 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
+                    <div className="relative flex items-center gap-4">
+                        <div className="p-4 bg-blue-50 rounded-2xl text-blue-600 shadow-sm border border-blue-100 group-hover:bg-blue-100 transition-colors">
                             <svg
-                                className="w-8 h-8 text-blue-600"
+                                className="w-8 h-8"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -109,23 +110,28 @@ export function AnalyticsContent({
                             </svg>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm font-medium text-gray-500 mb-1">
                                 นักเรียนทั้งหมด
                                 {data.currentClass && ` (${data.currentClass})`}
                             </p>
-                            <p className="text-3xl font-bold text-blue-600">
-                                {data.totalStudents}
-                            </p>
-                            <p className="text-xs text-gray-500">คน</p>
+                            <div className="flex items-baseline gap-2">
+                                <p className="text-4xl font-bold text-gray-800">
+                                    {data.totalStudents}
+                                </p>
+                                <p className="text-sm text-gray-500 font-medium">
+                                    คน
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-green-100 rounded-lg">
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
+                    <div className="relative flex items-center gap-4">
+                        <div className="p-4 bg-emerald-50 rounded-2xl text-emerald-600 shadow-sm border border-emerald-100 group-hover:bg-emerald-100 transition-colors">
                             <svg
-                                className="w-8 h-8 text-green-600"
+                                className="w-8 h-8"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -139,20 +145,27 @@ export function AnalyticsContent({
                             </svg>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">คัดกรองแล้ว</p>
-                            <p className="text-3xl font-bold text-green-600">
-                                {data.studentsWithAssessment}
+                            <p className="text-sm font-medium text-gray-500 mb-1">
+                                คัดกรองแล้ว
                             </p>
-                            <p className="text-xs text-gray-500">คน</p>
+                            <div className="flex items-baseline gap-2">
+                                <p className="text-4xl font-bold text-emerald-600">
+                                    {data.studentsWithAssessment}
+                                </p>
+                                <p className="text-sm text-gray-500 font-medium">
+                                    คน
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-orange-200 p-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-orange-100 rounded-lg">
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-orange-100 p-6 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
+                    <div className="relative flex items-center gap-4">
+                        <div className="p-4 bg-orange-50 rounded-2xl text-orange-600 shadow-sm border border-orange-100 group-hover:bg-orange-100 transition-colors">
                             <svg
-                                className="w-8 h-8 text-orange-600"
+                                className="w-8 h-8"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -166,13 +179,17 @@ export function AnalyticsContent({
                             </svg>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm font-medium text-gray-500 mb-1">
                                 ยังไม่ได้คัดกรอง
                             </p>
-                            <p className="text-3xl font-bold text-orange-600">
-                                {data.studentsWithoutAssessment}
-                            </p>
-                            <p className="text-xs text-gray-500">คน</p>
+                            <div className="flex items-baseline gap-2">
+                                <p className="text-4xl font-bold text-orange-600">
+                                    {data.studentsWithoutAssessment}
+                                </p>
+                                <p className="text-sm text-gray-500 font-medium">
+                                    คน
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

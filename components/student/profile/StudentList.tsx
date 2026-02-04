@@ -73,9 +73,9 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
     }, [students]);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Summary Cards */}
-            <div className="grid grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {(
                     ["blue", "green", "yellow", "orange", "red"] as RiskLevel[]
                 ).map((level) => (
@@ -86,30 +86,36 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                                 selectedRisk === level ? "all" : level,
                             )
                         }
-                        className={`${RISK_BG_CLASSES[level]} rounded-lg p-3 text-white text-center transition-all ${
+                        className={`${RISK_BG_CLASSES[level]} relative overflow-hidden rounded-2xl p-4 text-white text-center transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 ${
                             selectedRisk === level
-                                ? "ring-4 ring-offset-2 ring-gray-400"
-                                : ""
+                                ? "ring-4 ring-offset-2 ring-pink-200 scale-105 z-10 shadow-xl"
+                                : "opacity-90 hover:opacity-100"
                         }`}
                     >
-                        <p className="text-2xl font-bold">
+                        <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity" />
+                        <p className="text-3xl font-bold mb-1 drop-shadow-sm">
                             {riskCounts[level]}
                         </p>
-                        <p className="text-xs opacity-90">คน</p>
+                        <p className="text-xs font-bold opacity-90 uppercase tracking-wider">
+                            คน
+                        </p>
                     </button>
                 ))}
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-4 items-center">
-                <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-600">ห้อง:</label>
+            <div className="flex flex-wrap gap-6 items-center bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                        <span className="text-lg">🏫</span>
+                        กรองตามห้องเรียน:
+                    </label>
                     <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
+                        className="px-4 py-2 bg-white/80 border border-gray-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all cursor-pointer hover:border-pink-200"
                     >
-                        <option value="all">ทั้งหมด</option>
+                        <option value="all">แสดงทั้งหมด</option>
                         {classes.map((cls) => (
                             <option key={cls} value={cls}>
                                 {cls}
@@ -118,26 +124,44 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                     </select>
                 </div>
 
-                <div className="text-sm text-gray-500">
-                    แสดง {filteredStudents.length} จาก {students.length} คน
+                <div className="h-8 w-px bg-gray-300/50 hidden md:block" />
+
+                <div className="text-sm text-gray-600 font-medium">
+                    แสดง{" "}
+                    <span className="text-pink-600 font-bold">
+                        {filteredStudents.length}
+                    </span>{" "}
+                    จาก <span className="font-bold">{students.length}</span> คน
                 </div>
             </div>
 
             {/* Student List by Class */}
-            <div className="max-h-[600px] overflow-y-auto pr-2 space-y-4 rounded-lg border border-gray-200 bg-white/50 p-4">
+            <div className="max-h-[600px] overflow-y-auto pr-2 space-y-6 rounded-2xl border border-white/60 bg-white/30 p-6 backdrop-blur-sm custom-scrollbar shadow-inner">
                 {Object.keys(groupedStudents).length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                        <p>ไม่พบข้อมูลนักเรียน</p>
+                    <div className="text-center py-20 text-gray-500">
+                        <div className="text-4xl mb-4 opacity-50">📋</div>
+                        <p className="font-medium text-lg">
+                            ไม่พบข้อมูลนักเรียน
+                        </p>
+                        <p className="text-sm opacity-70">ลองปรับตัวกรองใหม่</p>
                     </div>
                 ) : (
                     Object.entries(groupedStudents)
                         .sort(([a], [b]) => a.localeCompare(b))
                         .map(([className, classStudents]) => (
-                            <div key={className} className="space-y-3">
-                                <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 sticky top-0 bg-white/90 backdrop-blur-sm z-10">
-                                    {className} ({classStudents.length} คน)
+                            <div key={className} className="space-y-4">
+                                <h3 className="text-lg font-bold text-gray-700 border-b-2 border-pink-100 pb-2 sticky top-0 bg-white/95 backdrop-blur-md z-10 px-2 py-3 rounded-lg shadow-sm flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-pink-500">
+                                            📚
+                                        </span>
+                                        ห้อง {className}
+                                    </div>
+                                    <span className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded-full">
+                                        {classStudents.length} คน
+                                    </span>
                                 </h3>
-                                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                     {classStudents.map((student) => (
                                         <StudentCard
                                             key={student.id}

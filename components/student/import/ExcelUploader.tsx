@@ -87,12 +87,12 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                 onDragLeave={handleDragLeave}
                 onClick={() => fileInputRef.current?.click()}
                 className={`
-                    border-2 border-dashed rounded-xl p-12 text-center cursor-pointer
-                    transition-all duration-200
+                    border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer
+                    transition-all duration-300 transform
                     ${
                         isDragging
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                            ? "border-pink-500 bg-pink-50 scale-102 shadow-lg shadow-pink-100"
+                            : "border-pink-200 hover:border-pink-400 hover:bg-pink-50/50 hover:shadow-md"
                     }
                 `}
             >
@@ -106,19 +106,25 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
 
                 {isLoading ? (
                     <div className="flex flex-col items-center gap-4">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-                        <p className="text-gray-600">กำลังอ่านไฟล์...</p>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500" />
+                        <p className="text-gray-600 font-medium">
+                            กำลังอ่านไฟล์...
+                        </p>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                            <Upload className="w-8 h-8 text-blue-600" />
+                        <div
+                            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isDragging ? "bg-pink-100 scale-110" : "bg-pink-50"}`}
+                        >
+                            <Upload
+                                className={`w-10 h-10 transition-colors ${isDragging ? "text-pink-600" : "text-pink-400"}`}
+                            />
                         </div>
                         <div>
-                            <p className="text-lg font-medium text-gray-700">
+                            <p className="text-xl font-bold text-gray-700 mb-2">
                                 ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์
                             </p>
-                            <p className="text-sm text-gray-500 mt-1">
+                            <p className="text-sm text-gray-500 bg-white/60 px-4 py-1 rounded-full border border-pink-100 inline-block">
                                 รองรับไฟล์ .xlsx เท่านั้น
                             </p>
                         </div>
@@ -127,31 +133,35 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
             </div>
 
             {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-600 whitespace-pre-line">
+                <div className="p-4 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-xl animate-fade-in-up">
+                    <p className="text-sm text-red-600 whitespace-pre-line font-medium text-center">
                         {error}
                     </p>
                 </div>
             )}
 
             {/* Template download info */}
-            <div className="p-4 bg-gray-50 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="p-6 bg-linear-to-r from-blue-50/80 to-purple-50/80 backdrop-blur-md rounded-2xl border border-blue-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
                 <div>
-                    <h4 className="font-medium text-gray-700 mb-2">
-                        รูปแบบไฟล์ที่รองรับ:
+                    <h4 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                        <span className="text-blue-500">ℹ️</span>{" "}
+                        รูปแบบไฟล์ที่รองรับ
                     </h4>
-                    <p className="text-sm text-gray-600">
-                        คอลัมน์: รหัสนักเรียน, ชื่อ, นามสกุล, ห้อง, ข้อ1-ข้อ9,
-                        ข้อ9a, ข้อ9b
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                        คอลัมน์:{" "}
+                        <span className="font-medium text-gray-800">
+                            รหัสนักเรียน, ชื่อ, นามสกุล, ห้อง, ข้อ1-ข้อ9, ข้อ9a,
+                            ข้อ9b
+                        </span>
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 mt-2 bg-white/50 inline-block px-2 py-1 rounded-md border border-white/50">
                         * ข้อ1-ข้อ9: ค่า 0-3 | ข้อ9a, ข้อ9b: ใช่/ไม่ใช่
                     </p>
                 </div>
                 <a
                     href="/api/template"
                     download="phq-a-template.xlsx"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium whitespace-nowrap"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 border border-blue-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all text-sm font-bold whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5"
                 >
                     <Download className="w-5 h-5" />
                     ดาวน์โหลดไฟล์ตัวอย่าง

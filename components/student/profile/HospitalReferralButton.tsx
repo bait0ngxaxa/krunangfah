@@ -38,15 +38,15 @@ export function HospitalReferralButton({
             onClick={handleToggle}
             disabled={isPending}
             className={`
-                px-6 py-3 rounded-xl font-semibold transition-all
-                flex items-center gap-2.5 justify-center
-                shadow-md hover:shadow-lg active:scale-95
+                px-6 py-3 rounded-2xl font-bold transition-all duration-300
+                flex items-center gap-3 justify-center
+                shadow-lg hover:shadow-xl active:scale-95 hover:-translate-y-0.5 border border-white/20 relative overflow-hidden group
                 ${
                     isReferred
-                        ? "bg-linear-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
-                        : "bg-linear-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600"
+                        ? "bg-linear-to-r from-emerald-400 to-green-500 text-white shadow-green-200 hover:shadow-green-300"
+                        : "bg-linear-to-r from-pink-400 to-rose-500 text-white shadow-pink-200 hover:shadow-pink-300"
                 }
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md disabled:active:scale-100
+                disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:active:scale-100 disabled:hover:translate-y-0
             `}
         >
             {isPending ? (

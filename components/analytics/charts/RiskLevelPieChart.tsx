@@ -52,20 +52,35 @@ export function RiskLevelPieChart({
 
     if (chartData.length === 0) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex flex-col items-center justify-center min-h-[400px]">
                 <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
                     {chartTitle}
                 </h2>
-                <div className="flex items-center justify-center h-64 text-gray-500">
-                    ยังไม่มีข้อมูลการคัดกรอง
+                <div className="text-gray-400 flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
+                        <svg
+                            className="w-8 h-8"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                            />
+                        </svg>
+                    </div>
+                    <span>ยังไม่มีข้อมูลการคัดกรอง</span>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 pb-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-6 pb-8">
+            <h2 className="text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-6 text-center">
                 {chartTitle}
             </h2>
             <ResponsiveContainer width="100%" height={380}>
@@ -81,10 +96,23 @@ export function RiskLevelPieChart({
                         dataKey="value"
                     >
                         {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
+                            <Cell
+                                key={`cell-${index}`}
+                                fill={entry.color}
+                                stroke="white"
+                                strokeWidth={2}
+                            />
                         ))}
                     </Pie>
                     <Tooltip
+                        contentStyle={{
+                            backgroundColor: "rgba(255, 255, 255, 0.95)",
+                            borderRadius: "1rem",
+                            border: "1px solid #FCE7F3",
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                            padding: "12px",
+                        }}
+                        itemStyle={{ color: "#4B5563", fontWeight: 500 }}
                         formatter={(value: unknown) => {
                             const numValue =
                                 typeof value === "number" ? value : 0;

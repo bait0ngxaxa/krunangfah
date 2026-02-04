@@ -15,17 +15,20 @@ export default async function SignInPage({
     const { callbackUrl } = await searchParams;
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 relative overflow-hidden px-4">
+        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-rose-50 via-white to-pink-100 relative overflow-hidden px-4">
             {/* Decorative Background Elements */}
-            <div className="absolute top-20 left-10 w-64 h-64 bg-pink-200 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-pulse delay-75" />
-            <div className="absolute bottom-20 right-10 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-pulse delay-150" />
+            <div className="absolute top-20 left-10 w-72 h-72 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-pulse delay-75" />
+            <div className="absolute bottom-20 right-10 w-72 h-72 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-pulse delay-150" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse" />
 
             <div className="max-w-md w-full space-y-8 relative z-10">
                 <div className="text-center">
-                    <div className="mb-4 inline-block p-3 rounded-full bg-white/50 backdrop-blur-xs shadow-sm">
-                        <span className="text-3xl">🧚‍♀️</span>
+                    <div className="mb-4 inline-block p-4 rounded-full bg-white/80 backdrop-blur-sm shadow-sm ring-1 ring-pink-100">
+                        <span className="text-4xl filter drop-shadow-sm">
+                            🧚‍♀️
+                        </span>
                     </div>
-                    <h1 className="text-4xl font-bold bg-linear-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+                    <h1 className="text-4xl font-bold bg-linear-to-r from-rose-400 to-pink-600 bg-clip-text text-transparent drop-shadow-sm">
                         Krunangfah
                     </h1>
                     <h2 className="mt-4 text-2xl font-bold text-gray-900">
@@ -36,7 +39,7 @@ export default async function SignInPage({
                     </p>
                 </div>
 
-                <div className="bg-white/80 backdrop-blur-md py-8 px-6 shadow-xl rounded-2xl border border-white/50">
+                <div className="bg-linear-to-b from-white/95 to-pink-50/90 backdrop-blur-xl py-8 px-6 shadow-2xl shadow-pink-200/40 rounded-3xl border border-white/60 ring-1 ring-pink-100/50">
                     <SignInForm callbackUrl={callbackUrl} />
 
                     <div className="mt-6 text-center">

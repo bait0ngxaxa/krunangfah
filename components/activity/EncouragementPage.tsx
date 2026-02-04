@@ -98,27 +98,28 @@ export function EncouragementPage({
     }
 
     // Step 1: Encouragement messages
+
     return (
         <div
-            className={`min-h-screen ${config.bgLight} flex items-center justify-center py-12 px-4`}
+            className={`min-h-screen ${config.bgLight} flex items-center justify-center py-12 px-4 bg-pattern-grid`}
         >
-            <div className="max-w-2xl mx-auto text-center">
+            <div className="max-w-2xl mx-auto text-center w-full">
                 {/* Decorative icon */}
                 <div
-                    className={`w-24 h-24 ${config.bg} rounded-full flex items-center justify-center text-white mx-auto mb-8 animate-pulse`}
+                    className={`w-28 h-28 ${config.bg} rounded-full flex items-center justify-center text-white mx-auto mb-10 animate-pulse shadow-xl shadow-pink-100`}
                 >
-                    <Heart className="w-12 h-12" />
+                    <Heart className="w-14 h-14" />
                 </div>
 
                 {/* Main Messages */}
-                <div className="space-y-4 mb-12">
+                <div className="space-y-6 mb-16 px-4">
                     {mainMessages.map((message, index) => (
                         <p
                             key={index}
-                            className={`text-2xl md:text-3xl font-bold text-gray-800 transition-all duration-1000 ${
+                            className={`text-2xl md:text-4xl font-bold text-gray-800 transition-all duration-1000 leading-normal ${
                                 visibleLines.includes(index)
-                                    ? "opacity-100 translate-y-0"
-                                    : "opacity-0 translate-y-4"
+                                    ? "opacity-100 translate-y-0 blur-0"
+                                    : "opacity-0 translate-y-8 blur-sm"
                             }`}
                         >
                             {message}
@@ -128,33 +129,48 @@ export function EncouragementPage({
 
                 {/* Tips Section */}
                 <div
-                    className={`bg-white/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-lg mb-8 transition-all duration-1000 ${
+                    className={`bg-white/70 backdrop-blur-xl rounded-3xl p-8 md:p-10 shadow-2xl border border-white/60 mb-12 transition-all duration-1000 mx-4 transform hover:scale-[1.02] ${
                         showTips
                             ? "opacity-100 translate-y-0"
-                            : "opacity-0 translate-y-4"
+                            : "opacity-0 translate-y-8"
                     }`}
                 >
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                        <Sparkles className="w-5 h-5 text-amber-500" />
-                        <span className="text-amber-600 font-bold">
+                    <div className="flex items-center justify-center gap-3 mb-8">
+                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-amber-500" />
+                        </div>
+                        <span className="text-xl font-bold bg-linear-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
                             คำแนะนำสำหรับคุณครู
                         </span>
-                        <Sparkles className="w-5 h-5 text-amber-500" />
+                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-amber-500" />
+                        </div>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-6 text-left relative">
+                        {/* Decorative quote marks */}
+                        <div className="absolute -top-4 -left-2 text-6xl text-amber-200 opacity-50 font-serif">
+                            &ldquo;
+                        </div>
+                        <div className="absolute -bottom-8 -right-2 text-6xl text-amber-200 opacity-50 font-serif rotate-180">
+                            &rdquo;
+                        </div>
+
                         {tipMessages.map((message, index) => (
-                            <p
+                            <div
                                 key={index}
-                                className={`text-gray-700 text-lg transition-all duration-1000 ${
+                                className={`flex gap-4 items-start transition-all duration-1000 ${
                                     visibleLines.includes(
                                         mainMessages.length + index,
                                     )
-                                        ? "opacity-100 translate-y-0"
-                                        : "opacity-0 translate-y-4"
+                                        ? "opacity-100 translate-x-0"
+                                        : "opacity-0 -translate-x-4"
                                 }`}
                             >
-                                {message}
-                            </p>
+                                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2.5 shrink-0" />
+                                <p className="text-gray-700 text-lg md:text-xl font-medium leading-relaxed">
+                                    {message}
+                                </p>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -162,14 +178,15 @@ export function EncouragementPage({
                 {/* Continue Button */}
                 <button
                     onClick={handleContinue}
-                    className={`inline-flex items-center gap-3 px-8 py-4 bg-linear-to-r ${config.gradient} text-white rounded-full font-bold text-lg shadow-lg hover:opacity-90 transition-all duration-1000 ${
+                    className={`inline-flex items-center gap-3 px-10 py-5 bg-linear-to-r ${config.gradient} text-white rounded-full font-bold text-xl shadow-lg hover:shadow-xl hover:shadow-pink-200/50 hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
                         showButton
                             ? "opacity-100 translate-y-0"
-                            : "opacity-0 translate-y-4"
+                            : "opacity-0 translate-y-8"
                     }`}
                 >
-                    ถัดไป
-                    <ArrowRight className="w-5 h-5" />
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                    <span className="relative">ถัดไป</span>
+                    <ArrowRight className="w-6 h-6 relative group-hover:translate-x-1 transition-transform" />
                 </button>
             </div>
         </div>

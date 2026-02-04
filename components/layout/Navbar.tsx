@@ -27,21 +27,21 @@ export function Navbar({ hasStudents }: NavbarProps) {
     );
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-lg shadow-pink-500/5 transition-all duration-300">
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-pink-200 to-transparent opacity-50" />
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-white/40 shadow-sm shadow-pink-100/50 transition-all duration-300 supports-backdrop-filter:bg-white/60">
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-pink-200/50 to-transparent opacity-50" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     {/* Logo & Brand */}
                     <div className="flex items-center">
                         <Link
                             href="/dashboard"
-                            className="shrink-0 flex items-center gap-2"
+                            className="shrink-0 flex items-center gap-2 group"
                         >
-                            <div className="w-8 h-8 rounded-full bg-linear-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white font-bold shadow-sm">
+                            <div className="w-9 h-9 rounded-full bg-linear-to-br from-rose-400 to-pink-400 flex items-center justify-center text-white font-bold shadow-md shadow-pink-200 group-hover:scale-105 transition-transform duration-300">
                                 🧚‍♀️
                             </div>
-                            <span className="font-bold text-xl bg-linear-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
-                                Kru Nangfah
+                            <span className="font-bold text-xl bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
+                                Krunangfah
                             </span>
                         </Link>
 
@@ -51,10 +51,10 @@ export function Navbar({ hasStudents }: NavbarProps) {
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                                         isActive(link.href)
-                                            ? "bg-pink-50 text-pink-600 shadow-sm ring-1 ring-pink-200"
-                                            : "text-gray-600 hover:text-pink-500 hover:bg-pink-50/50"
+                                            ? "bg-linear-to-r from-pink-50 to-white text-pink-600 shadow-sm shadow-pink-100 ring-1 ring-pink-100"
+                                            : "text-gray-600 hover:text-pink-500 hover:bg-white/50"
                                     }`}
                                 >
                                     {link.label}

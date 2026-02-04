@@ -11,14 +11,14 @@ export function ProjectFields({
             <div>
                 <label
                     htmlFor="academicYearId"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-bold text-gray-700 mb-2"
                 >
                     ปีการศึกษา/เทอม <span className="text-red-500">*</span>
                 </label>
                 <select
                     {...register("academicYearId")}
                     id="academicYearId"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-all outline-none"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 transition-all outline-none bg-white hover:border-pink-300"
                 >
                     <option value="">เลือกปีการศึกษา/เทอม</option>
                     {academicYears.map((year) => (
@@ -29,7 +29,7 @@ export function ProjectFields({
                     ))}
                 </select>
                 {errors.academicYearId && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.academicYearId.message}
                     </p>
                 )}
@@ -38,7 +38,7 @@ export function ProjectFields({
             <div>
                 <label
                     htmlFor="projectRole"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-bold text-gray-700 mb-2"
                 >
                     บทบาทหน้าที่ในโครงการครูนางฟ้า{" "}
                     <span className="text-red-500">*</span>
@@ -46,7 +46,7 @@ export function ProjectFields({
                 <select
                     {...register("projectRole")}
                     id="projectRole"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-all outline-none"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 transition-all outline-none bg-white hover:border-pink-300"
                 >
                     <option value="">เลือกบทบาท</option>
                     {PROJECT_ROLES.map((role) => (
@@ -56,7 +56,7 @@ export function ProjectFields({
                     ))}
                 </select>
                 {errors.projectRole && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.projectRole.message}
                     </p>
                 )}

@@ -34,17 +34,18 @@ export function ProgressIndicator({
     };
 
     return (
-        <div className="mb-8 bg-white/50 backdrop-blur-sm rounded-xl p-6 border border-white/50">
-            <h3 className="text-lg font-bold text-gray-800 mb-8">
+        <div className="mb-10 bg-white/60 backdrop-blur-md rounded-2xl p-8 border border-white/80 shadow-lg shadow-pink-50/50">
+            <h3 className="text-xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-10 flex items-center gap-2">
+                <span className="text-2xl">📊</span>
                 ความคืบหน้า
             </h3>
             <div className="relative">
                 {/* Background Line */}
-                <div className="absolute top-4 left-0 w-full h-1 bg-gray-200 rounded-full -z-10" />
+                <div className="absolute top-4 left-0 w-full h-1.5 bg-gray-100 rounded-full -z-10" />
 
                 {/* Progress Line */}
                 <div
-                    className="absolute top-4 left-0 h-1 bg-green-400 rounded-full -z-10 transition-all duration-500"
+                    className="absolute top-4 left-0 h-1.5 bg-linear-to-r from-green-400 to-emerald-500 rounded-full -z-10 transition-all duration-1000 ease-out shadow-sm"
                     style={{ width: `${progressPercentage}%` }}
                 />
 
@@ -60,28 +61,28 @@ export function ProgressIndicator({
 
                         // Determine circle style
                         let circleClass =
-                            "bg-white border-2 border-gray-300 text-gray-400";
+                            "bg-white border-2 border-gray-200 text-gray-300";
                         if (isCompleted) {
                             circleClass =
-                                "bg-green-500 border-green-500 text-white shadow-md shadow-green-200";
+                                "bg-linear-to-br from-green-400 to-emerald-500 border-transparent text-white shadow-lg shadow-green-200 scale-110";
                         } else if (isCurrent) {
                             const activeStyle =
                                 colorMap[riskLevel] ||
                                 "border-gray-500 text-gray-600 ring-gray-100";
-                            circleClass = `bg-white border-2 ${activeStyle} shadow-md ring-2`;
+                            circleClass = `bg-white border-4 ${activeStyle} shadow-lg ring-4 scale-110`;
                         }
 
                         return (
                             <div
                                 key={activity.id}
-                                className="flex flex-col items-center gap-3 w-1/5 relative group cursor-default"
+                                className="flex flex-col items-center gap-4 w-1/5 relative group cursor-default"
                             >
                                 {/* Circle */}
                                 <div
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 z-10 ${circleClass}`}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 z-10 ${circleClass}`}
                                 >
                                     {isCompleted ? (
-                                        <CheckCircle2 className="w-5 h-5" />
+                                        <CheckCircle2 className="w-6 h-6" />
                                     ) : isLocked ? (
                                         <Lock className="w-4 h-4" />
                                     ) : (
@@ -93,10 +94,10 @@ export function ProgressIndicator({
 
                                 {/* Label */}
                                 <div
-                                    className={`text-center transition-all duration-300 flex flex-col items-center ${isCurrent ? "scale-105" : "opacity-80 group-hover:opacity-100"}`}
+                                    className={`text-center transition-all duration-300 flex flex-col items-center ${isCurrent ? "scale-105" : "opacity-60 group-hover:opacity-100"}`}
                                 >
                                     <span
-                                        className={`text-xs font-bold mb-1 ${isCurrent ? "text-gray-800" : "text-gray-500"}`}
+                                        className={`text-xs font-bold mb-1.5 ${isCurrent ? "text-gray-800" : "text-gray-500"}`}
                                     >
                                         กิจกรรมที่{" "}
                                         {activityNumbers.indexOf(
@@ -106,12 +107,12 @@ export function ProgressIndicator({
 
                                     {/* Status Badge */}
                                     <span
-                                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 ${
+                                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold mb-1.5 shadow-sm ${
                                             isCompleted
-                                                ? "bg-green-100 text-green-700"
+                                                ? "bg-green-100 text-green-700 border border-green-100"
                                                 : isCurrent
-                                                  ? "bg-yellow-100 text-yellow-700"
-                                                  : "bg-gray-100 text-gray-500"
+                                                  ? "bg-yellow-100 text-yellow-700 border border-yellow-100"
+                                                  : "bg-gray-100 text-gray-500 border border-gray-100"
                                         }`}
                                     >
                                         {isCompleted
@@ -122,7 +123,7 @@ export function ProgressIndicator({
                                     </span>
 
                                     <span
-                                        className={`text-[10px] md:text-xs leading-tight line-clamp-2 max-w-[80px] md:max-w-full text-center ${isCurrent ? "text-gray-600 font-medium" : "text-gray-400"}`}
+                                        className={`text-[10px] md:text-xs leading-tight line-clamp-2 max-w-[80px] md:max-w-full text-center ${isCurrent ? "text-gray-600 font-bold" : "text-gray-400"}`}
                                     >
                                         {activity.title.split(": ")[1] ||
                                             activity.title}

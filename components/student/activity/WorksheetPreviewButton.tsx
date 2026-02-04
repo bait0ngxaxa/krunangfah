@@ -56,41 +56,49 @@ export function WorksheetPreviewButton({
                 typeof document !== "undefined" &&
                 createPortal(
                     <div
-                        className="fixed inset-0 z-9999 flex items-center justify-center bg-black/70 p-4"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
                         onClick={() => setPreviewFile(null)}
                     >
                         <div
-                            className="bg-white rounded-2xl max-w-4xl max-h-[90vh] overflow-hidden w-full"
+                            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-5xl max-h-[90vh] overflow-hidden w-full border border-white/50 animate-zoom-in"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="flex items-center justify-between p-4 border-b">
-                                <h3 className="font-bold text-gray-800 truncate">
+                            <div className="flex items-center justify-between px-8 py-5 border-b border-pink-100 bg-linear-to-r from-white to-pink-50/50">
+                                <h3 className="font-bold text-gray-800 truncate flex items-center gap-3 text-lg">
+                                    <span className="p-2 bg-pink-100 rounded-lg text-pink-600">
+                                        {previewFile.name
+                                            .toLowerCase()
+                                            .endsWith(".pdf")
+                                            ? "📄"
+                                            : "🖼️"}
+                                    </span>
                                     {previewFile.name}
                                 </h3>
                                 <button
                                     onClick={() => setPreviewFile(null)}
-                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                    className="p-2.5 hover:bg-pink-100/50 text-gray-500 hover:text-pink-600 rounded-full transition-all hover:rotate-90 duration-300"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-6 h-6" />
                                 </button>
                             </div>
-                            <div className="p-4 overflow-auto max-h-[70vh]">
+                            <div className="p-6 overflow-auto max-h-[80vh] bg-gray-50/50">
                                 {previewFile.url
                                     .toLowerCase()
                                     .endsWith(".pdf") ? (
                                     <iframe
                                         src={previewFile.url}
-                                        className="w-full h-[60vh]"
+                                        className="w-full h-[70vh] rounded-xl border border-gray-200 shadow-inner"
                                         title="PDF Preview"
                                     />
                                 ) : (
-                                    <div className="relative w-full min-h-[400px]">
+                                    <div className="flex justify-center">
                                         <Image
                                             src={previewFile.url}
                                             alt={previewFile.name}
-                                            width={800}
-                                            height={600}
-                                            className="w-full h-auto rounded-lg"
+                                            width={1200}
+                                            height={900}
+                                            className="w-auto h-auto max-h-[70vh] rounded-xl shadow-lg"
+                                            style={{ objectFit: "contain" }}
                                             unoptimized
                                             onError={(_e) => {
                                                 console.error(
@@ -108,9 +116,11 @@ export function WorksheetPreviewButton({
                 )}
 
             {/* File List */}
-            <div className="flex items-center gap-2 flex-wrap justify-center">
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                    <span className="w-3 h-3">✓</span>
+            <div className="flex items-center gap-3 flex-wrap justify-center">
+                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200 shadow-sm">
+                    <span className="w-4 h-4 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px]">
+                        ✓
+                    </span>
                     เสร็จแล้ว
                 </span>
                 {uploads.map((upload, index) => {
@@ -127,10 +137,10 @@ export function WorksheetPreviewButton({
                                     name: upload.fileName,
                                 })
                             }
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-linear-to-r from-blue-500 to-cyan-500 text-white rounded-full hover:from-blue-600 hover:to-cyan-600 transition-all shadow-sm hover:shadow-md text-xs font-medium"
+                            className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-pink-200 text-pink-600 rounded-full hover:bg-pink-50 hover:border-pink-300 transition-all shadow-sm hover:shadow-md text-xs font-bold group"
                         >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span className="font-medium">
+                            <Eye className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                            <span>
                                 {worksheetName || `ใบงานที่ ${index + 1}`}
                             </span>
                         </button>

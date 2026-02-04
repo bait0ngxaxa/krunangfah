@@ -30,10 +30,10 @@ export default function StudentImportPage() {
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 py-8 px-4 relative overflow-hidden">
+        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
             {/* Decorative Background Elements */}
-            <div className="absolute top-20 right-0 w-80 h-80 bg-pink-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 translate-x-1/3 pointer-events-none" />
-            <div className="absolute bottom-10 left-0 w-80 h-80 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 -translate-x-1/3 pointer-events-none" />
+            <div className="absolute top-20 right-0 w-80 h-80 bg-rose-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 translate-x-1/3 pointer-events-none" />
+            <div className="absolute bottom-10 left-0 w-80 h-80 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 -translate-x-1/3 pointer-events-none" />
 
             <div className="max-w-6xl mx-auto relative z-10">
                 {/* Back Button */}
@@ -48,9 +48,9 @@ export default function StudentImportPage() {
                 </div>
 
                 {/* Header */}
-                <div className="flex justify-between items-center mb-8 bg-white/60 backdrop-blur-sm p-5 rounded-2xl shadow-sm border border-white/50">
+                <div className="flex justify-between items-center mb-8 bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-lg shadow-pink-100/50 border border-white/60">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+                        <h1 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                             นำเข้าข้อมูลนักเรียน
                         </h1>
                         <p className="text-gray-600 mt-1 font-medium text-sm">
@@ -75,8 +75,8 @@ export default function StudentImportPage() {
                 )}
 
                 {/* Main Content */}
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl p-6 md:p-8 border border-white/50 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-pink-300 via-purple-300 to-blue-300" />
+                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-white/60 relative overflow-hidden ring-1 ring-pink-50">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
                     {!parsedData ? (
                         <ExcelUploader onDataParsed={handleDataParsed} />
                     ) : (

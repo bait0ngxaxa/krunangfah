@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { createCounselingSession } from "@/lib/actions/counseling.actions";
 
 interface AddCounselingModalProps {
@@ -16,12 +17,24 @@ export function AddCounselingModal({
 }: AddCounselingModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [mounted, setMounted] = useState(false);
 
     const [formData, setFormData] = useState({
         sessionDate: new Date().toISOString().split("T")[0], // Today's date in YYYY-MM-DD
         counselorName: "",
         summary: "",
     });
+
+    // Ensure component is mounted before rendering portal
+    useEffect(() => {
+        setMounted(true);
+        // Prevent body scroll when modal is open
+        document.body.style.overflow = "hidden";
+
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,12 +62,26 @@ export function AddCounselingModal({
         }
     };
 
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-9999 p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl w-full max-w-2xl my-8 shadow-2xl">
+    // Prevent SSR issues - only render on client after mount
+    if (!mounted) {
+        return null;
+    }
+
+    const modalContent = (
+        <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-9999 p-4 overflow-y-auto"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-2xl my-8 shadow-2xl border border-white/50 animate-fade-in-up"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
-                <div className="bg-linear-to-r from-pink-500 to-purple-500 px-8 py-6 rounded-t-2xl">
-                    <h3 className="text-2xl font-bold text-white">
+                <div className="bg-linear-to-r from-rose-500 to-pink-600 px-8 py-6 rounded-t-3xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2" />
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
+                    <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
+                        <span className="text-2xl">💬</span>
                         เพิ่มบันทึกการให้คำปรึกษา
                     </h3>
                 </div>
@@ -62,12 +89,13 @@ export function AddCounselingModal({
                 {/* Form */}
                 <form
                     onSubmit={handleSubmit}
-                    className="p-6 space-y-4 overflow-y-auto flex-1"
+                    className="p-8 space-y-6 overflow-y-auto flex-1"
                 >
                     {/* Error Message */}
                     {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                            <p className="text-red-800 text-sm">{error}</p>
+                        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center gap-2 text-rose-700">
+                            <span className="text-xl">⚠️</span>
+                            <p className="text-sm font-medium">{error}</p>
                         </div>
                     )}
 
@@ -77,7 +105,7 @@ export function AddCounselingModal({
                             htmlFor="sessionDate"
                             className="block text-sm font-bold text-gray-700 mb-2"
                         >
-                            วันที่ <span className="text-red-500">*</span>
+                            วันที่ <span className="text-rose-500">*</span>
                         </label>
                         <input
                             type="date"
@@ -90,7 +118,7 @@ export function AddCounselingModal({
                                     sessionDate: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-colors outline-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 focus:bg-white transition-all outline-none font-medium"
                         />
                     </div>
 
@@ -100,7 +128,8 @@ export function AddCounselingModal({
                             htmlFor="counselorName"
                             className="block text-sm font-bold text-gray-700 mb-2"
                         >
-                            ครูที่พูดคุย <span className="text-red-500">*</span>
+                            ครูที่พูดคุย{" "}
+                            <span className="text-rose-500">*</span>
                         </label>
                         <input
                             type="text"
@@ -114,7 +143,7 @@ export function AddCounselingModal({
                                     counselorName: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-colors outline-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 focus:bg-white transition-all outline-none font-medium"
                         />
                     </div>
 
@@ -125,7 +154,7 @@ export function AddCounselingModal({
                             className="block text-sm font-bold text-gray-700 mb-2"
                         >
                             สรุปประเด็นที่พูดคุย{" "}
-                            <span className="text-red-500">*</span>
+                            <span className="text-rose-500">*</span>
                         </label>
                         <textarea
                             id="summary"
@@ -139,34 +168,47 @@ export function AddCounselingModal({
                                     summary: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-colors resize-none outline-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 focus:bg-white transition-all resize-none outline-none font-medium"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                            <span>ℹ️</span>
                             ระบุรายละเอียดการพูดคุย ปัญหาที่พบ
                             และแนวทางการช่วยเหลือ
                         </p>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-3 pt-2 bg-white">
+                    <div className="flex gap-4 pt-4 border-t border-gray-100">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             ยกเลิก
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 px-6 py-3 bg-linear-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:opacity-90 transition-opacity font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-6 py-3 bg-linear-to-r from-rose-500 to-pink-600 text-white rounded-xl hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                            {isSubmitting ? "กำลังบันทึก..." : "บันทึก"}
+                            {isSubmitting ? (
+                                <>
+                                    <span className="animate-spin">⏳</span>
+                                    กำลังบันทึก...
+                                </>
+                            ) : (
+                                <>
+                                    <span>💾</span>
+                                    บันทึกข้อมูล
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 }

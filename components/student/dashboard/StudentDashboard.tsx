@@ -94,7 +94,7 @@ export function StudentDashboard({ students }: StudentDashboardProps) {
                     <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
-                        className="w-full md:w-64 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
+                        className="w-full md:w-64 px-4 py-2.5 border border-pink-100 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none bg-white/50 backdrop-blur-sm transition-all"
                     >
                         <option value="all">
                             ทุกห้อง ({students.length} คน)
@@ -118,11 +118,11 @@ export function StudentDashboard({ students }: StudentDashboardProps) {
 
             {/* Student Groups - แสดงเฉพาะเมื่อเลือกห้องเฉพาะ */}
             {selectedClass === "all" && classes.length > 1 ? (
-                <div className="bg-white rounded-xl shadow-md p-8 text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Users className="w-8 h-8 text-blue-500" />
+                <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg shadow-pink-100/40 p-8 text-center border border-white/60">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-blue-50 to-indigo-50 flex items-center justify-center border-2 border-white shadow-sm">
+                        <Users className="w-8 h-8 text-blue-400" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    <h3 className="text-lg font-bold text-gray-800 mb-2">
                         กรุณาเลือกห้องเรียนเพื่อดูรายละเอียด
                     </h3>
                     <p className="text-gray-500">
@@ -132,12 +132,14 @@ export function StudentDashboard({ students }: StudentDashboardProps) {
                 </div>
             ) : (
                 <div className="space-y-6">
-                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-pink-100 shadow-sm">
-                        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <span className="text-2xl">🏫</span>
+                    <div className="flex items-center justify-between bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-lg shadow-pink-100/40">
+                        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
+                            <span className="text-3xl p-2 bg-pink-50 rounded-lg">
+                                🏫
+                            </span>
                             <span>
                                 สรุปผลการคัดกรอง:{" "}
-                                <span className="text-pink-600">
+                                <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                                     {selectedClass === "all"
                                         ? classes.length === 1
                                             ? `ห้อง ${classes[0]}`

@@ -15,39 +15,47 @@ export function PreviewModal({ file, onClose }: PreviewModalProps) {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
             onClick={onClose}
         >
             <div
-                className="bg-white rounded-2xl max-w-4xl max-h-[90vh] overflow-hidden w-full"
+                className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-5xl max-h-[90vh] overflow-hidden w-full border border-white/50 animate-zoom-in"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between p-4 border-b">
-                    <h3 className="font-bold text-gray-800 truncate">
+                <div className="flex items-center justify-between px-8 py-5 border-b border-pink-100 bg-linear-to-r from-white to-pink-50/50">
+                    <h3 className="font-bold text-gray-800 truncate flex items-center gap-3 text-lg">
+                        <span className="p-2 bg-pink-100 rounded-lg text-pink-600">
+                            {file.name.toLowerCase().endsWith(".pdf")
+                                ? "📄"
+                                : "🖼️"}
+                        </span>
                         {file.name}
                     </h3>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2.5 hover:bg-pink-100/50 text-gray-500 hover:text-pink-600 rounded-full transition-all hover:rotate-90 duration-300"
                     >
-                        <X className="w-5 h-5" />
+                        <X className="w-6 h-6" />
                     </button>
                 </div>
-                <div className="p-4 overflow-auto max-h-[70vh]">
+                <div className="p-6 overflow-auto max-h-[80vh] bg-gray-50/50">
                     {file.url.toLowerCase().endsWith(".pdf") ? (
                         <iframe
                             src={file.url}
-                            className="w-full h-[60vh]"
+                            className="w-full h-[70vh] rounded-xl border border-gray-200 shadow-inner"
                             title="PDF Preview"
                         />
                     ) : (
-                        <Image
-                            src={file.url}
-                            alt={file.name}
-                            width={800}
-                            height={600}
-                            className="w-full h-auto"
-                        />
+                        <div className="flex justify-center">
+                            <Image
+                                src={file.url}
+                                alt={file.name}
+                                width={1200}
+                                height={900}
+                                className="w-auto h-auto max-h-[70vh] rounded-xl shadow-lg"
+                                style={{ objectFit: "contain" }}
+                            />
+                        </div>
                     )}
                 </div>
             </div>

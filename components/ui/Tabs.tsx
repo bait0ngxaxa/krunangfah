@@ -21,21 +21,29 @@ export function Tabs({ tabs, defaultTab }: TabsProps) {
     return (
         <div className="w-full">
             {/* Tab Navigation */}
-            <div className="flex gap-2 mb-6 border-b-2 border-pink-100">
+            <div className="flex gap-2 mb-6 border-b border-pink-200/60 relative">
+                <div className="absolute bottom-0 left-0 w-full h-px bg-linear-to-r from-transparent via-pink-200 to-transparent" />
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`
-                            px-6 py-3 font-bold text-base rounded-t-lg transition-all duration-300 border-2
+                            px-6 py-3 font-bold text-base rounded-t-xl transition-all duration-300 relative overflow-hidden group
                             ${
                                 activeTab === tab.id
-                                    ? "bg-linear-to-r from-pink-400 to-purple-400 text-white shadow-md transform -translate-y-0.5 border-pink-400"
-                                    : "bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-800 border-gray-200 hover:border-gray-300"
+                                    ? "text-white shadow-lg shadow-pink-200/50 -translate-y-1"
+                                    : "text-gray-500 hover:text-pink-600 hover:bg-white/60"
                             }
                         `}
                     >
-                        {tab.label}
+                        {activeTab === tab.id && (
+                            <div className="absolute inset-0 bg-linear-to-r from-rose-400 to-pink-500" />
+                        )}
+                        <span className="relative z-10">{tab.label}</span>
+                        {/* Active Indicator Line for clean look */}
+                        {activeTab === tab.id && (
+                            <div className="absolute bottom-0 left-0 w-full h-1 bg-pink-600/20" />
+                        )}
                     </button>
                 ))}
             </div>

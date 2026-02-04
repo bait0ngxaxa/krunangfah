@@ -17,12 +17,12 @@ export function ImportActions({
     studentCount,
 }: ImportActionsProps) {
     return (
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-end gap-4 pt-4">
             <button
                 type="button"
                 onClick={onCancel}
                 disabled={isLoading}
-                className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="px-8 py-3 rounded-2xl text-gray-600 font-bold hover:bg-white/50 hover:text-gray-800 transition-all disabled:opacity-50 border border-transparent hover:border-gray-200"
             >
                 ยกเลิก
             </button>
@@ -30,7 +30,7 @@ export function ImportActions({
                 type="button"
                 onClick={onSave}
                 disabled={!canSave || isLoading}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-8 py-3 bg-linear-to-r from-pink-500 to-rose-500 text-white rounded-2xl font-bold shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 hover:-translate-y-1 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
             >
                 {isLoading ? (
                     <>
@@ -38,7 +38,12 @@ export function ImportActions({
                         กำลังบันทึก...
                     </>
                 ) : (
-                    <>บันทึกข้อมูล ({studentCount} คน)</>
+                    <>
+                        <span>บันทึกข้อมูล</span>
+                        <span className="bg-white/20 px-2 py-0.5 rounded-lg text-sm">
+                            {studentCount} คน
+                        </span>
+                    </>
                 )}
             </button>
         </div>

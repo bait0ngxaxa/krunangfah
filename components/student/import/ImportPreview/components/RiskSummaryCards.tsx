@@ -26,10 +26,14 @@ export function RiskSummaryCards({ riskCounts }: RiskSummaryCardsProps) {
             {riskLevels.map((level) => (
                 <div
                     key={level}
-                    className={`${RISK_BG_CLASSES[level]} rounded-lg p-4 text-white text-center`}
+                    className={`${RISK_BG_CLASSES[level]} rounded-2xl p-4 text-white text-center shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl`}
                 >
-                    <p className="text-2xl font-bold">{riskCounts[level]}</p>
-                    <p className="text-sm opacity-90">{RISK_LABELS[level]}</p>
+                    <p className="text-3xl font-bold mb-1">
+                        {riskCounts[level]}
+                    </p>
+                    <p className="text-sm font-medium opacity-90">
+                        {RISK_LABELS[level]}
+                    </p>
                 </div>
             ))}
         </div>

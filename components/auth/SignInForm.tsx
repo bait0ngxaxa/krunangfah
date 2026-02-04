@@ -60,7 +60,7 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
             <div>
                 <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-600 mb-2"
                 >
                     อีเมล
                 </label>
@@ -70,7 +70,7 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                     id="email"
                     autoComplete="email"
                     disabled={isLoading}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none"
+                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none"
                     placeholder="your@email.com"
                 />
                 {errors.email && (
@@ -93,7 +93,7 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                     id="password"
                     autoComplete="current-password"
                     disabled={isLoading}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none"
+                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none"
                     placeholder="••••••••"
                 />
                 {errors.password && (
@@ -112,7 +112,7 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-linear-to-r from-pink-400 to-purple-400 text-white text-lg font-bold py-3.5 px-4 rounded-full hover:from-pink-500 hover:to-purple-500 focus:outline-none focus:ring-4 focus:ring-pink-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                className="w-full bg-linear-to-r from-pink-50 to-white text-pink-600 text-lg font-bold py-3.5 px-4 rounded-full border border-pink-200 hover:from-pink-100 hover:to-white focus:outline-none focus:ring-4 focus:ring-pink-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-pink-100 hover:shadow-xl hover:shadow-pink-200 hover:-translate-y-0.5"
             >
                 {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </button>

@@ -91,10 +91,10 @@ export function RiskGroupSection({
                         {students.map((student, index) => (
                             <tr
                                 key={student.id}
-                                className={`border-b border-gray-200 last:border-0 hover:bg-white/50 cursor-pointer transition-colors`}
+                                className={`border-b border-gray-100 last:border-0 hover:bg-pink-50/30 cursor-pointer transition-all duration-200 group`}
                                 onClick={() => onStudentClick?.(student.id)}
                             >
-                                <td className="px-4 py-3 text-gray-700">
+                                <td className="px-4 py-3 text-gray-700 font-medium group-hover:text-pink-700 transition-colors">
                                     {index + 1}. {student.firstName}{" "}
                                     {student.lastName}
                                 </td>
@@ -102,7 +102,14 @@ export function RiskGroupSection({
                                     <Link
                                         href={`/students/${student.id}/help`}
                                         onClick={(e) => e.stopPropagation()}
-                                        className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${config.headerBg} ${config.textColor} hover:opacity-90 transition-opacity shadow-sm`}
+                                        className={`inline-block px-4 py-1.5 rounded-full text-sm font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all
+                                            ${
+                                                level === "red" ||
+                                                level === "blue"
+                                                    ? "bg-white text-red-500 border border-red-200 hover:bg-red-50"
+                                                    : config.headerBg +
+                                                      " text-white opacity-90 hover:opacity-100"
+                                            }`}
                                     >
                                         {level === "red" || level === "blue"
                                             ? "หลักการพูดคุย"

@@ -13,12 +13,12 @@ export function RoleSelectionFields({
         <>
             {/* User Role */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ประเภทครู
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                    ประเภทครู <span className="text-red-500">*</span>
                 </label>
                 <select
                     {...register("userRole")}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none bg-white transition-all hover:border-pink-300"
                 >
                     <option value="">เลือกประเภทครู</option>
                     {USER_ROLES.map((role) => (
@@ -28,7 +28,7 @@ export function RoleSelectionFields({
                     ))}
                 </select>
                 {errors.userRole && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.userRole.message}
                     </p>
                 )}
@@ -59,27 +59,46 @@ export function RoleSelectionFields({
 
             {/* Project Role */}
             <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    บทบาทหน้าที่ในโครงการครูนางฟ้า
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                    บทบาทหน้าที่ในโครงการครูนางฟ้า{" "}
+                    <span className="text-red-500">*</span>
                 </label>
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-4 bg-pink-50/50 p-4 rounded-xl border border-pink-100">
                     {PROJECT_ROLES.map((role) => (
                         <label
                             key={role.value}
-                            className="flex items-center gap-2 cursor-pointer"
+                            className="flex items-center gap-2 cursor-pointer group"
                         >
-                            <input
-                                {...register("projectRole")}
-                                type="radio"
-                                value={role.value}
-                                className="w-4 h-4 text-blue-600"
-                            />
-                            <span>{role.label}</span>
+                            <div className="relative flex items-center">
+                                <input
+                                    {...register("projectRole")}
+                                    type="radio"
+                                    value={role.value}
+                                    className="peer h-4 w-4 cursor-pointer appearance-none rounded-full border border-pink-300 shadow-sm transition-all checked:border-pink-500 checked:bg-pink-500 hover:border-pink-400"
+                                />
+                                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform text-white opacity-0 peer-checked:opacity-100">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-2.5 w-2.5"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </span>
+                            </div>
+                            <span className="text-gray-700 group-hover:text-pink-600 transition-colors font-medium">
+                                {role.label}
+                            </span>
                         </label>
                     ))}
                 </div>
                 {errors.projectRole && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-500 font-medium">
                         {errors.projectRole.message}
                     </p>
                 )}

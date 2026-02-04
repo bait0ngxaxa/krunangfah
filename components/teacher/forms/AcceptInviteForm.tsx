@@ -63,22 +63,36 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
     return (
         <div className="space-y-6">
             {/* Info Card */}
-            <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
-                <h3 className="font-semibold text-pink-900 mb-2">
-                    ข้อมูลของคุณ
+            <div className="bg-white/80 backdrop-blur-sm border border-pink-200 rounded-2xl p-6 shadow-sm shadow-pink-100 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-linear-to-bl from-pink-100 to-transparent rounded-bl-full opacity-50 pointer-events-none" />
+                <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span className="text-xl">👋</span> ข้อมูลของคุณ
                 </h3>
-                <p className="text-pink-800">
-                    ชื่อ: {inviteData.firstName} {inviteData.lastName}
-                </p>
-                <p className="text-pink-800">อีเมล: {inviteData.email}</p>
-                <p className="text-pink-800">
-                    โรงเรียน: {inviteData.school.name}
-                </p>
+                <div className="space-y-2 text-gray-600">
+                    <p className="flex items-center gap-2">
+                        <span className="font-semibold text-pink-500 w-16">
+                            ชื่อ:
+                        </span>
+                        {inviteData.firstName} {inviteData.lastName}
+                    </p>
+                    <p className="flex items-center gap-2">
+                        <span className="font-semibold text-pink-500 w-16">
+                            อีเมล:
+                        </span>
+                        {inviteData.email}
+                    </p>
+                    <p className="flex items-center gap-2">
+                        <span className="font-semibold text-pink-500 w-16">
+                            โรงเรียน:
+                        </span>
+                        {inviteData.school.name}
+                    </p>
+                </div>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {error && (
-                    <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl font-medium animate-shake">
                         {error}
                     </div>
                 )}
@@ -86,34 +100,34 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                 <input type="hidden" {...register("token")} />
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ตั้งรหัสผ่าน
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                        ตั้งรหัสผ่าน <span className="text-red-500">*</span>
                     </label>
                     <input
                         {...register("password")}
                         type="password"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 hover:border-pink-300"
                         placeholder="อย่างน้อย 6 ตัวอักษร"
                     />
                     {errors.password && (
-                        <p className="mt-1 text-sm text-red-600">
+                        <p className="mt-1 text-sm text-red-500 font-medium">
                             {errors.password.message}
                         </p>
                     )}
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ยืนยันรหัสผ่าน
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                        ยืนยันรหัสผ่าน <span className="text-red-500">*</span>
                     </label>
                     <input
                         {...register("confirmPassword")}
                         type="password"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 hover:border-pink-300"
                         placeholder="กรอกรหัสผ่านอีกครั้ง"
                     />
                     {errors.confirmPassword && (
-                        <p className="mt-1 text-sm text-red-600">
+                        <p className="mt-1 text-sm text-red-500 font-medium">
                             {errors.confirmPassword.message}
                         </p>
                     )}
@@ -122,9 +136,16 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3 px-4 bg-linear-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-lg hover:from-pink-600 hover:to-purple-700 disabled:opacity-50 transition-all duration-200 shadow-lg shadow-pink-500/20"
+                    className="w-full py-3.5 px-4 bg-linear-to-r from-rose-400 to-pink-500 text-white font-bold rounded-xl hover:from-rose-500 hover:to-pink-600 disabled:opacity-50 transition-all duration-200 shadow-md shadow-pink-200 hover:shadow-lg hover:shadow-pink-300 transform hover:-translate-y-0.5"
                 >
-                    {isLoading ? "กำลังลงทะเบียน..." : "ลงทะเบียน"}
+                    {isLoading ? (
+                        <span className="flex items-center justify-center gap-2">
+                            <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                            กำลังลงทะเบียน...
+                        </span>
+                    ) : (
+                        "ลงทะเบียนเข้าร่วมโครงการ"
+                    )}
                 </button>
             </form>
         </div>

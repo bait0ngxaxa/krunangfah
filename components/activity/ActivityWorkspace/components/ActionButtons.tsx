@@ -50,25 +50,25 @@ export function ActionButtons({
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <Link
                 href={`/students/${studentId}/help/guidelines`}
-                className={`flex items-center justify-center gap-3 py-4 px-6 bg-linear-to-r ${config.gradient} text-white rounded-xl font-medium hover:opacity-90 transition-opacity shadow-md`}
+                className={`group flex items-center justify-center gap-3 py-4 px-6 bg-linear-to-r ${config.gradient} text-white rounded-xl font-bold hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all shadow-md`}
             >
-                <BookOpen className="w-5 h-5" />
-                หลักการใช้ใบงาน
+                <BookOpen className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                <span className="text-lg">หลักการใช้ใบงาน</span>
             </Link>
 
             {/* Download Button with Dropdown */}
             <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-linear-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity shadow-md"
+                    className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-linear-to-r from-blue-500 via-cyan-500 to-teal-400 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-cyan-200 hover:-translate-y-0.5 transition-all shadow-md group"
                 >
-                    <Download className="w-5 h-5" />
-                    ดาวน์โหลดใบงาน
+                    <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                    <span className="text-lg">ดาวน์โหลดใบงาน</span>
                     <ChevronDown
-                        className={`w-4 h-4 transition-transform ${
+                        className={`w-5 h-5 transition-transform duration-300 ${
                             isDropdownOpen ? "rotate-180" : ""
                         }`}
                     />
@@ -76,7 +76,7 @@ export function ActionButtons({
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                    <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-10">
+                    <div className="absolute top-full mt-3 left-0 right-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-pink-100 overflow-hidden z-50 animate-fade-in-up">
                         {downloadUrls.map((url, index) => {
                             const worksheetNames =
                                 WORKSHEET_NAMES[activityNumber] || [];
@@ -86,25 +86,30 @@ export function ActionButtons({
                                 <button
                                     key={url}
                                     onClick={() => handleDownload(url)}
-                                    className="w-full px-6 py-3 text-left hover:bg-blue-50 transition-colors flex items-center gap-3 border-b last:border-b-0 border-gray-100"
+                                    className="w-full px-6 py-4 text-left hover:bg-pink-50 transition-colors flex items-center gap-4 border-b last:border-b-0 border-pink-50/50 group"
                                 >
-                                    <span className="text-xl">📄</span>
+                                    <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                                        📄
+                                    </div>
                                     <div className="flex-1">
                                         {downloadUrls.length > 1 ? (
                                             <>
-                                                <div className="font-medium text-gray-700">
+                                                <div className="font-bold text-gray-800">
                                                     ใบงานที่ {index + 1}
                                                 </div>
-                                                <div className="text-sm text-gray-500">
+                                                <div className="text-sm text-gray-500 font-medium group-hover:text-pink-600 transition-colors">
                                                     {worksheetName}
                                                 </div>
                                             </>
                                         ) : (
-                                            <div className="font-medium text-gray-700">
+                                            <div className="font-bold text-gray-800 group-hover:text-pink-600 transition-colors">
                                                 {worksheetName ||
                                                     "ดาวน์โหลดใบงาน"}
                                             </div>
                                         )}
+                                    </div>
+                                    <div className="text-gray-300 group-hover:text-pink-500 transition-colors">
+                                        ⬇️
                                     </div>
                                 </button>
                             );

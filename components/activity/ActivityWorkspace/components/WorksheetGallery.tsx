@@ -13,15 +13,16 @@ export function WorksheetGallery({
     worksheets,
 }: WorksheetGalleryProps) {
     return (
-        <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
+        <div className="mb-10">
+            <h2 className="text-xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-6 flex items-center gap-2">
+                <span className="text-2xl">🖼️</span>
                 ใบงาน{activityTitle}
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                 {worksheets.map((worksheet, wIndex) => (
-                    <div key={wIndex} className="relative">
-                        <div className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                    <div key={wIndex} className="relative group">
+                        <div className="bg-white rounded-2xl overflow-hidden shadow-lg shadow-pink-100/50 border-4 border-white transition-all transform group-hover:scale-[1.02] group-hover:shadow-xl group-hover:shadow-pink-200 group-hover:rotate-1">
                             <Image
                                 src={worksheet}
                                 alt={`${activityTitle} ใบงาน ${wIndex + 1}`}
@@ -29,8 +30,14 @@ export function WorksheetGallery({
                                 height={500}
                                 className="w-full h-auto object-cover"
                             />
+                            {/* Overlay */}
+                            <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-6">
+                                <span className="text-white font-bold bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/50">
+                                    🔍 คลิกเพื่อดูรูปขยาย
+                                </span>
+                            </div>
                         </div>
-                        <div className="absolute top-3 right-3 bg-white/95 text-gray-700 text-sm px-3 py-1.5 rounded-full shadow-md font-medium">
+                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md text-pink-600 border border-pink-100 px-4 py-1.5 rounded-full shadow-lg font-bold z-10">
                             ใบที่ {wIndex + 1}
                         </div>
                     </div>

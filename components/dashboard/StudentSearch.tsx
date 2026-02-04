@@ -82,51 +82,78 @@ export function StudentSearch() {
     return (
         <div>
             {/* Search Input */}
-            <div className="relative mb-4">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <div className="relative mb-6 group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Search className="w-5 h-5 text-gray-400 group-focus-within:text-pink-500 transition-colors" />
+                </div>
                 <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="พิมพ์ชื่อ, นามสกุล หรือรหัสนักเรียน..."
-                    className="w-full pl-12 pr-10 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
+                    className="w-full pl-12 pr-12 py-4 bg-white/50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 shadow-sm hover:shadow-md hover:border-pink-200 backdrop-blur-sm"
                 />
-                {isSearching && (
+                {isSearching ? (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600" />
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-200 border-b-pink-600" />
                     </div>
+                ) : (
+                    query && (
+                        <button
+                            onClick={() => setQuery("")}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors"
+                        >
+                            <span className="sr-only">Clear</span>
+                            <div className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-pink-50">
+                                ×
+                            </div>
+                        </button>
+                    )
                 )}
             </div>
 
             {/* Empty State */}
             {!query.trim() && (
-                <div className="text-center py-8 text-gray-500">
-                    <Search className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm">พิมพ์เพื่อค้นหานักเรียน</p>
+                <div className="text-center py-12 text-gray-500 bg-white/30 rounded-3xl border border-white/50 backdrop-blur-sm">
+                    <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-slow">
+                        <Search className="w-8 h-8 text-pink-300" />
+                    </div>
+                    <p className="text-lg font-medium text-gray-700">
+                        พิมพ์เพื่อค้นหานักเรียน
+                    </p>
+                    <p className="text-sm text-gray-400 mt-1">
+                        ค้นหาได้ทั้งชื่อ และรหัสนักเรียน
+                    </p>
                 </div>
             )}
 
             {/* No Results */}
             {query.trim() && !isSearching && results.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm font-medium">ไม่พบนักเรียน</p>
-                    <p className="text-xs mt-1">ลองค้นหาด้วยคำอื่น</p>
+                <div className="text-center py-12 text-gray-500 bg-white/30 rounded-3xl border border-white/50 backdrop-blur-sm">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Users className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-lg font-medium text-gray-800">
+                        ไม่พบนักเรียน
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                        ลองค้นหาด้วยคำอื่น หรือตรวจสอบตัวสะกด
+                    </p>
                 </div>
             )}
 
             {/* Results */}
             {results.length > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-4 animate-fade-in-up">
                     {/* Limit Indicator */}
                     {results.length === 50 && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2">
-                            <span className="text-yellow-600 text-lg">⚠️</span>
+                        <div className="bg-yellow-50/80 border border-yellow-200 rounded-2xl p-4 flex items-start gap-3 shadow-sm backdrop-blur-sm">
+                            <span className="text-2xl mt-0.5">⚠️</span>
                             <div className="flex-1">
-                                <p className="text-sm font-medium text-yellow-800">
+                                <p className="font-bold text-yellow-800">
                                     แสดง 50 รายการแรก
                                 </p>
-                                <p className="text-xs text-yellow-700 mt-0.5">
+                                <p className="text-sm text-yellow-700 mt-1">
                                     พิมพ์ชื่อให้ชัดเจนขึ้นเพื่อค้นหาที่แม่นยำยิ่งขึ้น
                                 </p>
                             </div>
@@ -134,12 +161,17 @@ export function StudentSearch() {
                     )}
 
                     {/* Results Count */}
-                    <div className="text-sm text-gray-600 font-medium px-1">
-                        พบ {results.length} รายการ
+                    <div className="flex items-center justify-between px-2">
+                        <div className="text-sm text-gray-500 font-medium">
+                            ผลการค้นหา
+                        </div>
+                        <div className="text-sm text-pink-600 font-bold bg-pink-50 px-3 py-1 rounded-full">
+                            พบ {results.length} รายการ
+                        </div>
                     </div>
 
                     {/* Results List */}
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                         {results.map((student) => {
                             const latestResult = student.phqResults[0];
                             const risk = latestResult
@@ -154,29 +186,34 @@ export function StudentSearch() {
                                     onClick={() =>
                                         handleStudentClick(student.id)
                                     }
-                                    className="w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all text-left group"
+                                    className="w-full p-4 bg-white hover:bg-pink-50/30 rounded-2xl border border-gray-100 hover:border-pink-200 transition-all text-left group shadow-sm hover:shadow-md hover:-translate-y-0.5 relative overflow-hidden"
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-linear-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white font-bold text-sm">
+                                    <div className="flex items-center justify-between relative z-10">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-transform duration-300">
                                                 {student.firstName.charAt(0)}
                                             </div>
                                             <div>
-                                                <h4 className="font-semibold text-gray-800 group-hover:text-purple-600 transition-colors">
+                                                <h4 className="font-bold text-gray-800 group-hover:text-pink-700 transition-colors text-lg">
                                                     {student.firstName}{" "}
                                                     {student.lastName}
                                                 </h4>
-                                                <p className="text-xs text-gray-500">
-                                                    ห้อง {student.class}
-                                                    {student.studentId &&
-                                                        ` • รหัส ${student.studentId}`}
-                                                </p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-xs font-medium">
+                                                        ห้อง {student.class}
+                                                    </span>
+                                                    {student.studentId && (
+                                                        <span className="text-xs text-gray-400">
+                                                            #{student.studentId}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
 
                                         {risk && (
                                             <div
-                                                className={`px-3 py-1 rounded-full text-xs font-medium ${risk.bgColor} ${risk.textColor}`}
+                                                className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${risk.bgColor} ${risk.textColor} border border-white/50`}
                                             >
                                                 {risk.label}
                                             </div>

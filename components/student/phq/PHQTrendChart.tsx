@@ -104,11 +104,11 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
     const lineColor = riskColors[latestRisk] || riskColors.blue;
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl p-6 md:p-8 border border-white/50 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-blue-300 to-purple-300" />
+        <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-pink-100 relative overflow-hidden group hover:shadow-2xl transition-all duration-300">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
 
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                <span className="text-2xl">📈</span>
+            <h2 className="text-2xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-6 flex items-center gap-2">
+                <span className="text-2xl filter drop-shadow-sm">📈</span>
                 กราฟแนวโน้มคะแนน PHQ-A
             </h2>
 
@@ -118,10 +118,10 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                         data={chartData}
                         margin={{ top: 10, right: 30, left: 20, bottom: 60 }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#FCE7F3" />
                         <XAxis
                             dataKey="academicYear"
-                            stroke="#6b7280"
+                            stroke="#9CA3AF"
                             style={{ fontSize: "11px" }}
                             angle={-45}
                             textAnchor="end"
@@ -133,14 +133,16 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                                 style: {
                                     fontSize: "13px",
                                     fontWeight: "bold",
-                                    fill: "#374151",
+                                    fill: "#6B7280",
                                 },
                             }}
+                            tick={{ fill: "#6B7280" }}
+                            axisLine={{ stroke: "#FBCFE8" }}
                         />
                         <YAxis
                             domain={[0, 27]}
                             ticks={[0, 5, 10, 15, 20, 25, 27]}
-                            stroke="#6b7280"
+                            stroke="#9CA3AF"
                             style={{ fontSize: "12px" }}
                             label={{
                                 value: "คะแนน PHQ-A",
@@ -149,9 +151,11 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                                 style: {
                                     fontSize: "13px",
                                     fontWeight: "bold",
-                                    fill: "#374151",
+                                    fill: "#6B7280",
                                 },
                             }}
+                            tick={{ fill: "#6B7280" }}
+                            axisLine={{ stroke: "#FBCFE8" }}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Line
@@ -171,10 +175,12 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                 </ResponsiveContainer>
             </div>
 
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">
-                    <span className="font-semibold">หมายเหตุ:</span> คะแนนรวม
-                    0-27 คะแนน | กราฟแสดงแนวโน้มจากเก่าสุด → ใหม่สุด
+            <div className="mt-4 p-4 bg-pink-50/50 rounded-xl border border-pink-100">
+                <p className="text-sm text-gray-600 flex items-center gap-2">
+                    <span className="font-semibold text-pink-600">
+                        หมายเหตุ:
+                    </span>{" "}
+                    คะแนนรวม 0-27 คะแนน | กราฟแสดงแนวโน้มจากเก่าสุด → ใหม่สุด
                 </p>
             </div>
         </div>

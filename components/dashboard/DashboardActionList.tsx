@@ -32,8 +32,8 @@ export function DashboardActionList({
             />
 
             {/* เพิ่มนักเรียน + PHQ-A */}
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-pink-500/10 p-6 border-2 border-white relative overflow-hidden group hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-300">
-                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-pink-400 via-purple-400 to-indigo-400 opacity-50 group-hover:opacity-100 transition-opacity" />
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-white/60 relative overflow-hidden group hover:shadow-xl hover:shadow-pink-200/40 transition-all duration-300 ring-1 ring-pink-50">
+                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-rose-300 via-pink-300 to-orange-200 opacity-60 group-hover:opacity-100 transition-opacity" />
                 <div className="relative z-10">
                     <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
                         📝 จัดการข้อมูลนักเรียน
@@ -58,8 +58,8 @@ export function DashboardActionList({
             )}
 
             {/* ดูข้อมูลนักเรียนรายบุคคล */}
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-pink-500/10 p-6 border-2 border-white relative overflow-hidden group hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-300">
-                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-pink-400 via-purple-400 to-indigo-400 opacity-50 group-hover:opacity-100 transition-opacity" />
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-white/60 relative overflow-hidden group hover:shadow-xl hover:shadow-pink-200/40 transition-all duration-300 ring-1 ring-pink-50">
+                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-rose-300 via-pink-300 to-orange-200 opacity-60 group-hover:opacity-100 transition-opacity" />
                 <div className="relative z-10">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">
                         🔍 ค้นหานักเรียน
