@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/lib/session";
 import { AddTeacherForm } from "@/components/teacher";
 
 import Link from "next/link";

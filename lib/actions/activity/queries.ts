@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/session";
 
 /**
  * Get activity progress for a student
@@ -10,6 +11,7 @@ export async function getActivityProgress(
     phqResultId: string,
 ) {
     try {
+        await requireAuth();
         const progress = await prisma.activityProgress.findMany({
             where: {
                 studentId,

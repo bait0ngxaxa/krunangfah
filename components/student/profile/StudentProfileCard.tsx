@@ -23,37 +23,37 @@ interface StudentProfileCardProps {
 
 const riskConfig: Record<
     RiskLevel,
-    { label: string; bgColor: string; textColor: string; emoji: string }
+    { label: string; bgColor: string; textColor: string; circleColor: string }
 > = {
     blue: {
         label: "ไม่มีความเสี่ยง",
         bgColor: "bg-blue-100",
         textColor: "text-blue-700",
-        emoji: "😊",
+        circleColor: "bg-blue-500",
     },
     green: {
         label: "เสี่ยงน้อย",
         bgColor: "bg-green-100",
         textColor: "text-green-700",
-        emoji: "🙂",
+        circleColor: "bg-green-500",
     },
     yellow: {
         label: "เสี่ยงปานกลาง",
         bgColor: "bg-yellow-100",
         textColor: "text-yellow-700",
-        emoji: "😐",
+        circleColor: "bg-yellow-500",
     },
     orange: {
         label: "เสี่ยงสูง",
         bgColor: "bg-orange-100",
         textColor: "text-orange-700",
-        emoji: "😟",
+        circleColor: "bg-orange-500",
     },
     red: {
         label: "เสี่ยงสูงมาก",
         bgColor: "bg-red-100",
         textColor: "text-red-700",
-        emoji: "😰",
+        circleColor: "bg-red-500",
     },
 };
 
@@ -104,9 +104,9 @@ export function StudentProfileCard({
                         <div
                             className={`${risk.bgColor} ${risk.textColor} pl-4 pr-6 py-3 rounded-2xl font-bold text-lg shadow-sm border border-white/50 flex items-center gap-3 backdrop-blur-sm transition-transform hover:scale-105`}
                         >
-                            <span className="text-3xl filter drop-shadow-sm">
-                                {risk.emoji}
-                            </span>
+                            <div
+                                className={`w-4 h-4 rounded-full ${risk.circleColor} ring-4 ring-white/50 shadow-sm`}
+                            />
                             <span>{risk.label}</span>
                         </div>
                         <div className="flex flex-col items-end gap-1">

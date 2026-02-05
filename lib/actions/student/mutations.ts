@@ -1,14 +1,19 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/lib/session";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { calculateRiskLevel } from "@/lib/utils/phq-scoring";
+import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { revalidatePath } from "next/cache";
 import type { ImportResult } from "./types";
 
 /**
  * Import students with PHQ-A results
+ *
+ * Access control:
+ * - school_admin: import ได้ทุกห้อง
+ * - class_teacher: import ได้เฉพาะห้องที่ตัวเองดูแล (advisoryClass)
  */
 export async function importStudents(
     students: ParsedStudent[],
@@ -18,6 +23,7 @@ export async function importStudents(
     try {
         const session = await requireAuth();
         const userId = session.user.id;
+        const userRole = session.user.role;
 
         // Get user's school and teacher profile
         const user = await prisma.user.findUnique({
@@ -40,13 +46,33 @@ export async function importStudents(
         }
 
         const schoolId = user.schoolId;
+        const advisoryClass = user.teacher?.advisoryClass;
+        const isClassTeacher = userRole === "class_teacher";
+
+        // class_teacher ต้องมี advisoryClass
+        if (isClassTeacher && !advisoryClass) {
+            return {
+                success: false,
+                message: "ไม่พบข้อมูลห้องที่คุณดูแล กรุณาตั้งค่าโปรไฟล์ก่อน",
+            };
+        }
+
         const errors: string[] = [];
         let importedCount = 0;
-        const skippedCount = 0;
+        let skippedCount = 0;
 
         // Process each student
         for (const studentData of students) {
             try {
+                // ตรวจสิทธิ์ห้อง: class_teacher import ได้เฉพาะห้องตัวเอง
+                if (isClassTeacher && advisoryClass) {
+                    const studentClass = normalizeClassName(studentData.class);
+                    if (studentClass !== advisoryClass) {
+                        skippedCount++;
+                        continue;
+                    }
+                }
+
                 // Find or create student by studentId + schoolId
                 let student = await prisma.student.findUnique({
                     where: {
@@ -140,15 +166,17 @@ export async function importStudents(
 
         let message = "";
         if (errors.length === 0) {
-            // All success
             message =
                 skippedCount > 0
                     ? `นำเข้าสำเร็จ ${importedCount} คน (ข้าม ${skippedCount} คนที่ไม่ใช่ห้องที่คุณดูแล)`
                     : `นำเข้าสำเร็จทั้งหมด ${importedCount} คน`;
         } else {
-            // Partial success
             if (importedCount > 0) {
-                message = `นำเข้าสำเร็จ ${importedCount} คน, ไม่สามารถนำเข้าได้ ${failedCount} คน (มีข้อมูลการประเมินอยู่แล้ว)`;
+                const skippedMsg =
+                    skippedCount > 0
+                        ? `, ข้าม ${skippedCount} คนที่ไม่ใช่ห้องที่คุณดูแล`
+                        : "";
+                message = `นำเข้าสำเร็จ ${importedCount} คน, ไม่สามารถนำเข้าได้ ${failedCount} คน (มีข้อมูลการประเมินอยู่แล้ว)${skippedMsg}`;
             } else {
                 message = `ไม่สามารถนำเข้าได้ทั้งหมด ${failedCount} คน (มีข้อมูลการประเมินอยู่แล้ว)`;
             }
@@ -158,6 +186,7 @@ export async function importStudents(
             success: errors.length === 0,
             message,
             imported: importedCount,
+            skipped: skippedCount,
             errors: errors.length > 0 ? errors : undefined,
         };
     } catch (error) {

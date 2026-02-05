@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
 import { AnalyticsContent } from "@/components/analytics";

@@ -56,25 +56,46 @@ export const ACTIVITY_INDICES: Record<string, number[]> = {
  */
 export const COLOR_CONFIG: Record<
     string,
-    { gradient: string; bg: string; bgLight: string; text: string }
+    {
+        gradient: string;
+        bg: string;
+        bgLight: string;
+        text: string;
+        textColor: string;
+        borderColor: string;
+        glowBg: string;
+        separatorColor: string;
+    }
 > = {
     orange: {
         gradient: "from-orange-500 to-amber-500",
         bg: "bg-orange-500",
         bgLight: "bg-orange-50",
         text: "สีส้ม",
+        textColor: "text-orange-600",
+        borderColor: "border-orange-100",
+        glowBg: "bg-orange-200",
+        separatorColor: "text-orange-300",
     },
     yellow: {
         gradient: "from-yellow-400 to-amber-400",
         bg: "bg-yellow-400",
         bgLight: "bg-yellow-50",
         text: "สีเหลือง",
+        textColor: "text-yellow-600",
+        borderColor: "border-yellow-100",
+        glowBg: "bg-yellow-200",
+        separatorColor: "text-yellow-300",
     },
     green: {
         gradient: "from-green-500 to-emerald-500",
         bg: "bg-green-500",
         bgLight: "bg-green-50",
         text: "สีเขียว",
+        textColor: "text-green-600",
+        borderColor: "border-green-100",
+        glowBg: "bg-green-200",
+        separatorColor: "text-green-300",
     },
 };
 

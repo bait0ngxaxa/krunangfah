@@ -1,9 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { type UserRole } from "@/types/auth.types";
+import { requireAuth } from "@/lib/session";
 
-export async function getDashboardData(userId: string, role: UserRole) {
+export async function getDashboardData() {
+    const session = await requireAuth();
+    const userId = session.user.id;
+    const role = session.user.role;
+
     // Check if user has teacher profile
     const teacher = await prisma.teacher.findUnique({
         where: { userId },

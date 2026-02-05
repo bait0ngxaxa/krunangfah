@@ -6,7 +6,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 export interface CounselingSession {
@@ -25,6 +25,8 @@ export async function getCounselingSessions(
     studentId: string,
 ): Promise<CounselingSession[]> {
     try {
+        await requireAuth();
+
         const sessions = await prisma.counselingSession.findMany({
             where: { studentId },
             orderBy: { sessionNumber: "asc" },
@@ -99,12 +101,13 @@ export async function updateCounselingSession(
     },
 ) {
     try {
+        await requireAuth();
+
         const session = await prisma.counselingSession.update({
             where: { id },
             data,
         });
 
-        // Revalidate the student page
         revalidatePath(`/students/${session.studentId}`);
 
         return { success: true, session };
@@ -119,6 +122,8 @@ export async function updateCounselingSession(
  */
 export async function deleteCounselingSession(id: string) {
     try {
+        await requireAuth();
+
         const session = await prisma.counselingSession.findUnique({
             where: { id },
             select: { studentId: true },

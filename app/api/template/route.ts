@@ -1,8 +1,14 @@
 import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 
 export async function GET() {
     try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
 

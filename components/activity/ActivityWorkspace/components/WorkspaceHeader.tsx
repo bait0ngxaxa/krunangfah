@@ -5,7 +5,15 @@ interface WorkspaceHeaderProps {
     studentId: string;
     studentName: string;
     activityTitle: string;
-    config: { gradient: string; bg: string; text: string };
+    config: {
+        gradient: string;
+        bg: string;
+        text: string;
+        textColor: string;
+        borderColor: string;
+        glowBg: string;
+        separatorColor: string;
+    };
 }
 
 /**
@@ -31,7 +39,9 @@ export function WorkspaceHeader({
             {/* Activity Header */}
             <div className="text-center mb-10">
                 <div className="relative inline-block mb-6">
-                    <div className="absolute inset-0 bg-pink-200 rounded-full blur-xl opacity-50 animate-pulse-slow" />
+                    <div
+                        className={`absolute inset-0 ${config.glowBg} rounded-full blur-xl opacity-50 animate-pulse-slow`}
+                    />
                     <div
                         className={`w-24 h-24 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-4xl shadow-lg relative z-10 transition-transform hover:rotate-6 hover:scale-110`}
                     >
@@ -43,12 +53,14 @@ export function WorkspaceHeader({
                     {activityTitle}
                 </h1>
 
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 rounded-full border border-pink-100 shadow-sm backdrop-blur-sm">
+                <div
+                    className={`inline-flex items-center gap-2 px-4 py-2 bg-white/50 rounded-full border ${config.borderColor} shadow-sm backdrop-blur-sm`}
+                >
                     <span className="font-bold text-gray-700">
                         {studentName}
                     </span>
-                    <span className="text-pink-300">•</span>
-                    <span className="text-pink-600 font-medium">
+                    <span className={config.separatorColor}>•</span>
+                    <span className={`${config.textColor} font-medium`}>
                         {config.text}
                     </span>
                 </div>

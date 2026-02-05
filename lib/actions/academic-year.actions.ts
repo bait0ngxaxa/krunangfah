@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/session";
 import {
     getCurrentAcademicYear,
     generateAcademicYearData,
@@ -12,6 +13,8 @@ import type { AcademicYear } from "@/types/teacher.types";
  */
 export async function getAcademicYears(): Promise<AcademicYear[]> {
     try {
+        await requireAuth();
+
         // 1. คำนวณปีการศึกษาปัจจุบัน
         const current = getCurrentAcademicYear();
 
@@ -50,6 +53,8 @@ export async function getAcademicYears(): Promise<AcademicYear[]> {
  */
 export async function getCurrentAcademicYearRecord(): Promise<AcademicYear | null> {
     try {
+        await requireAuth();
+
         const current = getCurrentAcademicYear();
 
         // ใช้ upsert เพื่อให้แน่ใจว่ามีอยู่

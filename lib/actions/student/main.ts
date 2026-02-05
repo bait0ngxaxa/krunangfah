@@ -6,7 +6,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/lib/session";
 import {
     getRiskLevelCountsQuery,
     getDistinctClassesQuery,

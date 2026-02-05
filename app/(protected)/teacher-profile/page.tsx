@@ -1,5 +1,5 @@
 import { TeacherProfileForm } from "@/components/teacher";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { getTeacherProfile } from "@/lib/actions/teacher.actions";
 import type { Metadata } from "next";

@@ -1,4 +1,10 @@
-import { auth } from "@/auth";
+/**
+ * User management - สร้าง/ค้นหา/จัดการข้อมูลผู้ใช้
+ *
+ * ฟังก์ชันที่เกี่ยวกับ User record ใน database
+ * สำหรับ session/auth ให้ใช้ @/lib/session แทน
+ */
+
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import type {
@@ -6,44 +12,6 @@ import type {
     SignUpCredentials,
     AuthResponse,
 } from "@/types/auth.types";
-
-/**
- * Get current session on server side
- * @returns Session object or null
- */
-export async function getServerSession() {
-    return await auth();
-}
-
-/**
- * Require authentication - throws if not authenticated
- * @returns Session object
- * @throws Error if not authenticated
- */
-export async function requireAuth() {
-    const session = await getServerSession();
-
-    if (!session || !session.user) {
-        throw new Error("Unauthorized");
-    }
-
-    return session;
-}
-
-/**
- * Require admin role - throws if not system_admin
- * @returns Session object
- * @throws Error if not authenticated or not admin
- */
-export async function requireAdmin() {
-    const session = await requireAuth();
-
-    if (session.user.role !== "system_admin") {
-        throw new Error("Forbidden: Admin access required");
-    }
-
-    return session;
-}
 
 /**
  * Hash password using bcrypt
@@ -86,8 +54,6 @@ export async function createUser(
                 email: credentials.email,
                 password: hashedPassword,
                 role: "school_admin", // Default role for new signups
-                // name: null (will be set in Teacher profile)
-                // schoolId: null (will be set in Teacher profile)
             },
         });
 

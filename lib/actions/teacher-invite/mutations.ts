@@ -1,7 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth, hashPassword } from "@/lib/auth";
+import { requireAuth } from "@/lib/session";
+import { hashPassword } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";

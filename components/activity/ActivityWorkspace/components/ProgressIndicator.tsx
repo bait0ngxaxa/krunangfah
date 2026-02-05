@@ -1,4 +1,4 @@
-import { CheckCircle2, Lock } from "lucide-react";
+import { CheckCircle2, Lock, BarChart3 } from "lucide-react";
 import type { Activity } from "../constants";
 import type { ActivityProgressData } from "../types";
 
@@ -36,7 +36,9 @@ export function ProgressIndicator({
     return (
         <div className="mb-10 bg-white/60 backdrop-blur-md rounded-2xl p-8 border border-white/80 shadow-lg shadow-pink-50/50">
             <h3 className="text-xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-10 flex items-center gap-2">
-                <span className="text-2xl">📊</span>
+                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white shadow-md shadow-pink-200">
+                    <BarChart3 className="w-6 h-6" />
+                </div>
                 ความคืบหน้า
             </h3>
             <div className="relative">

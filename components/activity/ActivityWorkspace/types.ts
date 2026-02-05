@@ -46,7 +46,15 @@ export interface UseActivityWorkspaceReturn {
     savingNotes: boolean;
 
     // Computed values
-    config: { gradient: string; bg: string; text: string };
+    config: {
+        gradient: string;
+        bg: string;
+        text: string;
+        textColor: string;
+        borderColor: string;
+        glowBg: string;
+        separatorColor: string;
+    };
     activityNumbers: number[];
     activities: Activity[];
     currentProgress: ActivityProgressData | undefined;

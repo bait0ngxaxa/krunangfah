@@ -1,5 +1,23 @@
+/**
+ * Next.js Proxy (Middleware) - Route protection & rate limiting
+ *
+ * Handles:
+ * 1. Rate limiting for auth API routes (POST only)
+ * 2. Route protection (auth guards, role-based access)
+ */
+
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
+import type { RateLimitResult } from "@/types/rate-limit.types";
+import {
+    RATE_LIMIT_AUTH_SIGNIN,
+    RATE_LIMIT_AUTH_GENERAL,
+} from "@/constants/rate-limit";
+
+// Rate limiter singletons (persist across requests)
+const signinLimiter = createRateLimiter(RATE_LIMIT_AUTH_SIGNIN);
+const generalAuthLimiter = createRateLimiter(RATE_LIMIT_AUTH_GENERAL);
 
 // Routes ที่ต้อง login
 const protectedRoutes = [
@@ -16,9 +34,72 @@ const adminOnlyRoutes = ["/teachers/add", "/teachers/manage"];
 // Routes สำหรับ guest เท่านั้น (ถ้า login แล้วจะ redirect ไป dashboard)
 const guestOnlyRoutes = ["/signin", "/signup"];
 
+/**
+ * Build a 429 Too Many Requests response with rate limit headers
+ */
+function buildRateLimitResponse(result: RateLimitResult): NextResponse {
+    return NextResponse.json(
+        {
+            error: {
+                code: "RATE_LIMIT_EXCEEDED",
+                message: "Too many requests. Please try again later.",
+            },
+        },
+        {
+            status: 429,
+            headers: {
+                "Retry-After": result.retryAfterSeconds.toString(),
+                "X-RateLimit-Limit": result.limit.toString(),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": result.resetAt.toString(),
+            },
+        },
+    );
+}
+
+/**
+ * Attach rate limit info headers to an allowed response
+ */
+function attachRateLimitHeaders(
+    response: NextResponse,
+    result: RateLimitResult,
+): NextResponse {
+    response.headers.set("X-RateLimit-Limit", result.limit.toString());
+    response.headers.set(
+        "X-RateLimit-Remaining",
+        result.remaining.toString(),
+    );
+    response.headers.set("X-RateLimit-Reset", result.resetAt.toString());
+    return response;
+}
+
 export default auth((req) => {
     const { nextUrl, auth: session } = req;
     const pathname = nextUrl.pathname;
+
+    // ─── Rate Limiting: Auth API routes (POST only) ───
+    if (pathname.startsWith("/api/auth/") && req.method === "POST") {
+        const ip = extractClientIp((name) => req.headers.get(name));
+
+        // Stricter limit for credential login attempts
+        if (pathname === "/api/auth/callback/credentials") {
+            const result = signinLimiter.check(ip);
+            if (!result.allowed) {
+                return buildRateLimitResponse(result);
+            }
+            return attachRateLimitHeaders(NextResponse.next(), result);
+        }
+
+        // General limit for other auth POST requests
+        const result = generalAuthLimiter.check(ip);
+        if (!result.allowed) {
+            return buildRateLimitResponse(result);
+        }
+        return attachRateLimitHeaders(NextResponse.next(), result);
+    }
+
+    // ─── Route Protection ───
+
     const isLoggedIn = !!session;
     const userRole = session?.user?.role;
 
@@ -56,14 +137,9 @@ export default auth((req) => {
 
 export const config = {
     matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - api (API routes)
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * - public files
-         */
+        // Page routes (exclude static assets and non-auth API routes)
         "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+        // Auth API routes (for rate limiting)
+        "/api/auth/:path*",
     ],
 };

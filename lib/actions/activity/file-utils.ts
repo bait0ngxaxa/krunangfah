@@ -8,14 +8,40 @@ import { existsSync } from "fs";
 import {
     REQUIRED_WORKSHEETS,
     ALLOWED_FILE_TYPES,
+    ALLOWED_EXTENSIONS,
+    MAGIC_BYTES,
     MAX_FILE_SIZE,
 } from "./constants";
 import { unlockNextActivity } from "./mutations";
 import type { UploadWorksheetResult } from "./types";
 
 /**
- * Upload worksheet file
+ * Validate file content by checking magic bytes (file signature)
+ * Prevents uploading disguised files (e.g. .exe renamed to .jpg)
  */
+function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
+    const signature = MAGIC_BYTES.find((m) => m.mime === mimeType);
+    if (!signature) {
+        return false;
+    }
+
+    if (buffer.length < signature.bytes.length) {
+        return false;
+    }
+
+    return signature.bytes.every((byte, i) => buffer[i] === byte);
+}
+
+function getValidExtension(fileName: string): string | null {
+    const parts = fileName.split(".");
+    if (parts.length < 2) {
+        return null;
+    }
+
+    const ext = parts.pop()?.toLowerCase() ?? "";
+    return ALLOWED_EXTENSIONS.has(ext) ? ext : null;
+}
+
 export async function uploadWorksheet(
     activityProgressId: string,
     formData: FormData,
@@ -31,14 +57,39 @@ export async function uploadWorksheet(
             return { success: false, message: "No file provided" };
         }
 
-        // Validate file type
-        if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-            return { success: false, message: "Invalid file type" };
-        }
-
         // Validate file size
         if (file.size > MAX_FILE_SIZE) {
-            return { success: false, message: "File too large (max 10MB)" };
+            return { success: false, message: "ไฟล์ใหญ่เกินไป (สูงสุด 10MB)" };
+        }
+
+        // Validate MIME type
+        if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+            return {
+                success: false,
+                message: "ประเภทไฟล์ไม่ถูกต้อง (รองรับ JPG, PNG, PDF เท่านั้น)",
+            };
+        }
+
+        // Validate file extension
+        const ext = getValidExtension(file.name);
+        if (!ext) {
+            return {
+                success: false,
+                message:
+                    "นามสกุลไฟล์ไม่ถูกต้อง (รองรับ .jpg, .jpeg, .png, .pdf เท่านั้น)",
+            };
+        }
+
+        // Read file content
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Validate magic bytes (actual file content)
+        if (!validateMagicBytes(buffer, file.type)) {
+            return {
+                success: false,
+                message: "เนื้อหาไฟล์ไม่ตรงกับประเภทที่ระบุ",
+            };
         }
 
         // Get activity progress
@@ -65,15 +116,12 @@ export async function uploadWorksheet(
             await mkdir(uploadDir, { recursive: true });
         }
 
-        // Generate unique filename
+        // Generate unique filename using validated extension
         const timestamp = Date.now();
-        const ext = file.name.split(".").pop();
         const fileName = `${activityProgress.studentId}_activity${activityProgress.activityNumber}_${timestamp}.${ext}`;
         const filePath = join(uploadDir, fileName);
 
         // Save file
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
         await writeFile(filePath, buffer);
 
         // Save to database - use API route instead of static file
@@ -90,10 +138,9 @@ export async function uploadWorksheet(
         });
 
         // Check if activity should be completed
-        // Activity is completed when all required worksheets are uploaded
         const requiredCount =
             REQUIRED_WORKSHEETS[activityProgress.activityNumber] || 2;
-        const currentUploadCount = activityProgress.worksheetUploads.length + 1; // +1 for the new upload
+        const currentUploadCount = activityProgress.worksheetUploads.length + 1;
 
         const shouldComplete =
             activityProgress.status !== "completed" &&
@@ -110,7 +157,6 @@ export async function uploadWorksheet(
         }
 
         if (shouldComplete) {
-            // When all worksheets uploaded, mark as completed immediately
             await prisma.activityProgress.update({
                 where: { id: activityProgressId },
                 data: {

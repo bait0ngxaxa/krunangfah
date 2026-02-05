@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/lib/session";
 import { getDashboardData } from "@/lib/actions/dashboard.actions";
 import {
     DashboardHeader,
@@ -17,10 +17,7 @@ export const metadata: Metadata = {
 export default async function DashboardPage() {
     const session = await requireAuth();
 
-    const { teacher, studentCount } = await getDashboardData(
-        session.user.id,
-        session.user.role,
-    );
+    const { teacher, studentCount } = await getDashboardData();
 
     // If no teacher profile, show prompt to create one
     if (!teacher) {

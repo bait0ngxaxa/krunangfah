@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { getAcademicYears as getAcademicYearsAction } from "./academic-year.actions";
@@ -16,6 +16,8 @@ export async function getTeacherProfile(
     userId: string,
 ): Promise<TeacherProfile | null> {
     try {
+        await requireAuth();
+
         const teacher = await prisma.teacher.findUnique({
             where: { userId },
             include: {
