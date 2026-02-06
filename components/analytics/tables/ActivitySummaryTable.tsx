@@ -60,32 +60,32 @@ export function ActivitySummaryTable({
             <h2 className="text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-6 text-center">
                 กระบวนการช่วยเหลือ (ห้องที่ปรึกษา)
             </h2>
-            <div className="overflow-x-auto rounded-xl border border-pink-100">
+            <div className="overflow-x-auto rounded-xl border border-gray-300">
                 <table className="w-full border-collapse">
                     <thead>
                         <tr className="bg-linear-to-r from-pink-500 via-rose-400 to-orange-400 text-white">
-                            <th className="px-6 py-4 text-center text-sm font-bold border-r border-white/20 whitespace-nowrap">
+                            <th className="px-6 py-4 text-center text-sm font-bold border-r border-white/30 whitespace-nowrap">
                                 กลุ่มสี
                             </th>
-                            <th className="px-6 py-4 text-center text-sm font-bold border-r border-white/20 whitespace-nowrap">
+                            <th className="px-6 py-4 text-center text-sm font-bold border-r border-white/30 whitespace-nowrap">
                                 จำนวนนักเรียน
                                 <br />
                                 (คน)
                             </th>
-                            <th className="px-6 py-4 text-center text-sm font-bold border-r border-white/20 whitespace-nowrap bg-gray-50/10 text-white/90">
+                            <th className="px-6 py-4 text-center text-sm font-bold border-r border-white/30 whitespace-nowrap bg-gray-50/10 text-white/90">
                                 ยังไม่ทำกิจกรรม
                             </th>
                             {ACTIVITY_LABELS.map((label, index) => (
                                 <th
                                     key={index}
-                                    className="px-6 py-4 text-center text-sm font-bold border-r border-white/20 last:border-none whitespace-nowrap"
+                                    className="px-6 py-4 text-center text-sm font-bold border-r border-white/30 last:border-none whitespace-nowrap"
                                 >
                                     {label}
                                 </th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-pink-50">
+                    <tbody className="divide-y divide-gray-300">
                         {orderedData.map((item) => {
                             const activities = [
                                 item.activity1,
@@ -102,7 +102,7 @@ export function ActivitySummaryTable({
                                 >
                                     {/* Risk Level */}
                                     <td
-                                        className="px-4 py-3 text-center font-bold border-r border-pink-50"
+                                        className="px-4 py-3 text-center font-bold border-r border-gray-300"
                                         style={{ color: item.color }}
                                     >
                                         <div className="flex items-center justify-center gap-2">
@@ -111,33 +111,29 @@ export function ActivitySummaryTable({
                                                 style={{
                                                     backgroundColor: item.color,
                                                 }}
-                                             />
+                                            />
                                             {item.label.split(" ")[0]}
                                         </div>
                                     </td>
 
                                     {/* Total Students */}
-                                    <td className="px-4 py-3 text-center font-bold text-gray-800 border-r border-pink-50 text-lg">
+                                    <td className="px-4 py-3 text-center font-bold text-gray-800 border-r border-gray-300 text-lg">
                                         {item.totalStudents}
                                     </td>
 
                                     {/* No Activity */}
                                     <td
-                                        className={`px-4 py-3 text-center border-r border-pink-50 ${
+                                        className={`px-4 py-3 text-center border-r border-gray-300 ${
                                             item.noActivity > 0
                                                 ? "bg-red-50/50"
-                                                : ""
+                                                : "bg-gray-100/80"
                                         }`}
                                     >
                                         {item.noActivity > 0 ? (
                                             <span className="font-bold text-red-500">
                                                 {item.noActivity}
                                             </span>
-                                        ) : (
-                                            <span className="text-gray-300">
-                                                -
-                                            </span>
-                                        )}
+                                        ) : null}
                                     </td>
 
                                     {/* Activities 1-5 */}
@@ -145,17 +141,17 @@ export function ActivitySummaryTable({
                                         return (
                                             <td
                                                 key={index}
-                                                className="px-4 py-3 text-center border-r border-pink-50 last:border-none"
+                                                className={`px-4 py-3 text-center border-r border-gray-300 last:border-none ${
+                                                    count === 0
+                                                        ? "bg-gray-100/80"
+                                                        : ""
+                                                }`}
                                             >
                                                 {count > 0 ? (
                                                     <span className="inline-flex items-center justify-center min-w-8 h-8 px-2 rounded-lg bg-green-50 text-green-600 font-bold text-sm border border-green-100">
                                                         {count}
                                                     </span>
-                                                ) : (
-                                                    <span className="text-gray-300">
-                                                        -
-                                                    </span>
-                                                )}
+                                                ) : null}
                                             </td>
                                         );
                                     })}

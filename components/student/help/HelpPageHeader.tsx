@@ -27,10 +27,14 @@ export function HelpPageHeader({
                 {title}
             </h1>
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/60 rounded-full border border-pink-100 shadow-sm backdrop-blur-md relative z-10">
+            <div
+                className={`inline-flex items-center gap-2 px-4 py-2 bg-white/60 rounded-full border ${config.borderColor} shadow-sm backdrop-blur-md relative z-10`}
+            >
                 <span className="font-bold text-gray-700">{studentName}</span>
-                <span className="text-pink-300">•</span>
-                <span className="text-pink-600 font-medium">{config.text}</span>
+                <span className={config.separatorColor}>•</span>
+                <span className={`${config.textColor} font-medium`}>
+                    {config.text}
+                </span>
             </div>
         </div>
     );

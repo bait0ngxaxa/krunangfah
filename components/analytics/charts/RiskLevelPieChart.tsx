@@ -5,7 +5,6 @@ import {
     Pie,
     Cell,
     ResponsiveContainer,
-    Legend,
     Tooltip,
 } from "recharts";
 import type { RiskLevelSummary } from "@/lib/actions/analytics";
@@ -21,6 +20,32 @@ interface ChartDataItem {
     value: number;
     color: string;
     percentage: number;
+    riskLevel: string;
+}
+
+// Risk level order from lowest to highest severity
+const RISK_LEVEL_ORDER = ["blue", "green", "yellow", "orange", "red"] as const;
+
+// Custom legend component (declared outside to avoid re-creation during render)
+function CustomLegend({ data }: { data: ChartDataItem[] }) {
+    return (
+        <div className="flex flex-wrap justify-center gap-3 pt-4">
+            {data.map((item) => (
+                <div
+                    key={item.riskLevel}
+                    className="flex items-center gap-2 text-xs sm:text-sm"
+                >
+                    <div
+                        className="w-3 h-3 rounded-sm"
+                        style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-gray-700">
+                        {item.name}: {item.value} คน ({item.percentage.toFixed(0)}%)
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
 }
 
 export function RiskLevelPieChart({
@@ -36,13 +61,46 @@ export function RiskLevelPieChart({
             value: item.count,
             color: item.color,
             percentage: item.percentage,
-        }));
+            riskLevel: item.riskLevel,
+        }))
+        .sort((a, b) => {
+            const indexA = RISK_LEVEL_ORDER.indexOf(
+                a.riskLevel as (typeof RISK_LEVEL_ORDER)[number],
+            );
+            const indexB = RISK_LEVEL_ORDER.indexOf(
+                b.riskLevel as (typeof RISK_LEVEL_ORDER)[number],
+            );
+            return indexA - indexB;
+        });
 
-    // Custom label to show percentage
-    const renderLabel = (entry: unknown): string => {
-        const labelEntry = entry as { percent?: number };
-        const percent = ((labelEntry.percent || 0) * 100).toFixed(1);
-        return `${percent}%`;
+    // Custom label to position percentage INSIDE the slice
+    const RADIAN = Math.PI / 180;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const renderInsideLabel = (props: any) => {
+        const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
+        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+        // Hide label if slice is too small (< 5%)
+        if (percent < 0.05) return null;
+
+        return (
+            <text
+                x={x}
+                y={y}
+                fill="white"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={12}
+                fontWeight="bold"
+                style={{
+                    textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                }}
+            >
+                {`${(percent * 100).toFixed(0)}%`}
+            </text>
+        );
     };
 
     // Dynamic title based on selected class
@@ -79,8 +137,8 @@ export function RiskLevelPieChart({
     }
 
     return (
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-6 pb-8">
-            <h2 className="text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-6 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-4 sm:p-6 pb-6 sm:pb-8">
+            <h2 className="text-lg sm:text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
                 {chartTitle}
             </h2>
             <ResponsiveContainer width="100%" height={380}>
@@ -88,16 +146,16 @@ export function RiskLevelPieChart({
                     <Pie
                         data={chartData}
                         cx="50%"
-                        cy="45%"
+                        cy="50%"
                         labelLine={false}
-                        label={renderLabel}
-                        outerRadius={120}
+                        label={renderInsideLabel}
+                        outerRadius={110}
                         fill="#8884d8"
                         dataKey="value"
                     >
-                        {chartData.map((entry, index) => (
+                        {chartData.map((entry) => (
                             <Cell
-                                key={`cell-${index}`}
+                                key={`cell-${entry.riskLevel}`}
                                 fill={entry.color}
                                 stroke="white"
                                 strokeWidth={2}
@@ -119,21 +177,9 @@ export function RiskLevelPieChart({
                             return [`${numValue} คน`, "จำนวน"];
                         }}
                     />
-                    <Legend
-                        verticalAlign="bottom"
-                        height={36}
-                        formatter={(value: string, entry: unknown) => {
-                            const payload = entry as {
-                                payload?: ChartDataItem;
-                            };
-                            const count = payload.payload?.value || 0;
-                            const percent =
-                                payload.payload?.percentage?.toFixed(1) || 0;
-                            return `${value}: ${count} คน (${percent}%)`;
-                        }}
-                    />
                 </PieChart>
             </ResponsiveContainer>
+            <CustomLegend data={chartData} />
         </div>
     );
 }

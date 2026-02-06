@@ -27,34 +27,52 @@ const COLORS: Record<RiskLevel, string> = {
 };
 
 const LABELS: Record<RiskLevel, string> = {
-    red: "นักเรียนสีแดง",
-    orange: "นักเรียนสีส้ม",
-    yellow: "นักเรียนสีเหลือง",
-    green: "นักเรียนสีเขียว",
-    blue: "นักเรียนสีฟ้า",
+    red: "สีแดง",
+    orange: "สีส้ม",
+    yellow: "สีเหลือง",
+    green: "สีเขียว",
+    blue: "สีฟ้า",
 };
+
+interface ChartDataItem {
+    name: string;
+    value: number;
+    color: string;
+    level: RiskLevel;
+}
+
+// Custom legend component (declared outside to avoid re-creation during render)
+function CustomLegend({ data }: { data: ChartDataItem[] }) {
+    return (
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 px-2">
+            {data.map((item) => (
+                <div
+                    key={item.level}
+                    className="flex items-center gap-1.5 text-xs sm:text-sm"
+                >
+                    <div
+                        className="w-3 h-3 rounded-sm shrink-0"
+                        style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-gray-700">
+                        {item.name}: {item.value} คน
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
 
 export function RiskPieChart({ data }: RiskPieChartProps) {
     const total = data.red + data.orange + data.yellow + data.green + data.blue;
 
-    const chartData = [
+    // Order from lowest to highest severity: blue → green → yellow → orange → red
+    const chartData: ChartDataItem[] = [
         {
-            name: LABELS.red,
-            value: data.red,
-            color: COLORS.red,
-            level: "red" as RiskLevel,
-        },
-        {
-            name: LABELS.orange,
-            value: data.orange,
-            color: COLORS.orange,
-            level: "orange" as RiskLevel,
-        },
-        {
-            name: LABELS.yellow,
-            value: data.yellow,
-            color: COLORS.yellow,
-            level: "yellow" as RiskLevel,
+            name: LABELS.blue,
+            value: data.blue,
+            color: COLORS.blue,
+            level: "blue" as RiskLevel,
         },
         {
             name: LABELS.green,
@@ -63,12 +81,51 @@ export function RiskPieChart({ data }: RiskPieChartProps) {
             level: "green" as RiskLevel,
         },
         {
-            name: LABELS.blue,
-            value: data.blue,
-            color: COLORS.blue,
-            level: "blue" as RiskLevel,
+            name: LABELS.yellow,
+            value: data.yellow,
+            color: COLORS.yellow,
+            level: "yellow" as RiskLevel,
+        },
+        {
+            name: LABELS.orange,
+            value: data.orange,
+            color: COLORS.orange,
+            level: "orange" as RiskLevel,
+        },
+        {
+            name: LABELS.red,
+            value: data.red,
+            color: COLORS.red,
+            level: "red" as RiskLevel,
         },
     ].filter((item) => item.value > 0);
+
+    // Custom label inside the slice
+    const RADIAN = Math.PI / 180;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const renderInsideLabel = (props: any) => {
+        const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
+        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+        if (percent < 0.05) return null;
+
+        return (
+            <text
+                x={x}
+                y={y}
+                fill="white"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={11}
+                fontWeight="bold"
+                style={{ textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}
+            >
+                {`${(percent * 100).toFixed(0)}%`}
+            </text>
+        );
+    };
 
     if (total === 0) {
         return (
@@ -79,28 +136,26 @@ export function RiskPieChart({ data }: RiskPieChartProps) {
     }
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-white/60 relative overflow-hidden ring-1 ring-pink-50">
-            <h3 className="text-lg font-bold text-gray-800 text-center mb-4 flex items-center justify-center gap-2">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-4 sm:p-6 border border-white/60 relative overflow-hidden ring-1 ring-pink-50">
+            <h3 className="text-base sm:text-lg font-bold text-gray-800 text-center mb-4 flex items-center justify-center gap-2">
                 <span className="text-xl">📊</span>
                 สรุปภาพรวมนักเรียน ({total} คน)
             </h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                     <Pie
                         data={chartData}
                         cx="50%"
-                        cy="50%"
-                        labelLine={true}
-                        label={({ name, percent }) =>
-                            `${name} ${((percent ?? 0) * 100).toFixed(1)}%`
-                        }
-                        outerRadius={100}
+                        cy="45%"
+                        labelLine={false}
+                        label={renderInsideLabel}
+                        outerRadius={85}
                         fill="#8884d8"
                         dataKey="value"
                     >
-                        {chartData.map((entry, index) => (
+                        {chartData.map((entry) => (
                             <Cell
-                                key={`cell-${index}`}
+                                key={`cell-${entry.level}`}
                                 fill={entry.color}
                                 stroke="#fff"
                                 strokeWidth={2}
@@ -118,6 +173,7 @@ export function RiskPieChart({ data }: RiskPieChartProps) {
                     />
                 </PieChart>
             </ResponsiveContainer>
+            <CustomLegend data={chartData} />
         </div>
     );
 }

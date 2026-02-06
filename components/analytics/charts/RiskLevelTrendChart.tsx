@@ -7,7 +7,6 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    Legend,
     ResponsiveContainer,
 } from "recharts";
 import type { TrendDataPoint } from "@/lib/actions/analytics";
@@ -16,7 +15,37 @@ interface RiskLevelTrendChartProps {
     trendData: TrendDataPoint[];
 }
 
+// Risk level configuration for legend (ordered from lowest to highest severity)
+const RISK_LEVELS = [
+    { key: "blue", label: "สีฟ้า", color: "#60A5FA" },
+    { key: "green", label: "สีเขียว", color: "#34D399" },
+    { key: "yellow", label: "สีเหลือง", color: "#FBBF24" },
+    { key: "orange", label: "สีส้ม", color: "#F97316" },
+    { key: "red", label: "สีแดง", color: "#F43F5E" },
+] as const;
+
+// Custom legend component (declared outside to avoid re-creation during render)
+function CustomLegend() {
+    return (
+        <div className="flex flex-wrap justify-center gap-3 pb-3">
+            {RISK_LEVELS.map((level) => (
+                <div
+                    key={level.key}
+                    className="flex items-center gap-2 text-xs sm:text-sm"
+                >
+                    <div
+                        className="w-3 h-3 rounded-sm"
+                        style={{ backgroundColor: level.color }}
+                    />
+                    <span className="text-gray-700">{level.label}</span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
+
     if (trendData.length === 0) {
         return (
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex flex-col items-center justify-center min-h-[400px]">
@@ -46,14 +75,15 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
     }
 
     return (
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-6">
-            <h2 className="text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-6 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
                 กราฟแนวโน้มระดับความเสี่ยง
             </h2>
-            <ResponsiveContainer width="100%" height={400}>
+            <CustomLegend />
+            <ResponsiveContainer width="100%" height={350}>
                 <LineChart
                     data={trendData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke="#FCE7F3" />
                     <XAxis
@@ -63,8 +93,9 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                             position: "insideBottom",
                             offset: -5,
                             fill: "#9CA3AF",
+                            fontSize: 12,
                         }}
-                        tick={{ fill: "#6B7280" }}
+                        tick={{ fill: "#6B7280", fontSize: 11 }}
                         axisLine={{ stroke: "#FBCFE8" }}
                     />
                     <YAxis
@@ -73,9 +104,11 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                             angle: -90,
                             position: "insideLeft",
                             fill: "#9CA3AF",
+                            fontSize: 11,
                         }}
-                        tick={{ fill: "#6B7280" }}
+                        tick={{ fill: "#6B7280", fontSize: 11 }}
                         axisLine={{ stroke: "#FBCFE8" }}
+                        width={50}
                     />
                     <Tooltip
                         contentStyle={{
@@ -96,58 +129,18 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                             return `เทอม: ${strLabel}`;
                         }}
                     />
-                    <Legend
-                        verticalAlign="top"
-                        height={36}
-                        formatter={(value: string) => {
-                            const labels: Record<string, string> = {
-                                red: "สีแดง",
-                                orange: "สีส้ม",
-                                yellow: "สีเหลือง",
-                                green: "สีเขียว",
-                                blue: "สีฟ้า",
-                            };
-                            return labels[value] || value;
-                        }}
-                    />
                     <Line
                         type="monotone"
-                        dataKey="red"
-                        stroke="#F43F5E"
+                        dataKey="blue"
+                        stroke="#60A5FA"
                         strokeWidth={3}
                         dot={{
                             r: 4,
-                            fill: "#F43F5E",
+                            fill: "#60A5FA",
                             strokeWidth: 2,
                             stroke: "#fff",
                         }}
-                        activeDot={{ r: 6, stroke: "#F43F5E", strokeWidth: 0 }}
-                    />
-                    <Line
-                        type="monotone"
-                        dataKey="orange"
-                        stroke="#F97316"
-                        strokeWidth={3}
-                        dot={{
-                            r: 4,
-                            fill: "#F97316",
-                            strokeWidth: 2,
-                            stroke: "#fff",
-                        }}
-                        activeDot={{ r: 6, stroke: "#F97316", strokeWidth: 0 }}
-                    />
-                    <Line
-                        type="monotone"
-                        dataKey="yellow"
-                        stroke="#FBBF24"
-                        strokeWidth={3}
-                        dot={{
-                            r: 4,
-                            fill: "#FBBF24",
-                            strokeWidth: 2,
-                            stroke: "#fff",
-                        }}
-                        activeDot={{ r: 6, stroke: "#FBBF24", strokeWidth: 0 }}
+                        activeDot={{ r: 6, stroke: "#60A5FA", strokeWidth: 0 }}
                     />
                     <Line
                         type="monotone"
@@ -164,16 +157,42 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                     />
                     <Line
                         type="monotone"
-                        dataKey="blue"
-                        stroke="#60A5FA"
+                        dataKey="yellow"
+                        stroke="#FBBF24"
                         strokeWidth={3}
                         dot={{
                             r: 4,
-                            fill: "#60A5FA",
+                            fill: "#FBBF24",
                             strokeWidth: 2,
                             stroke: "#fff",
                         }}
-                        activeDot={{ r: 6, stroke: "#60A5FA", strokeWidth: 0 }}
+                        activeDot={{ r: 6, stroke: "#FBBF24", strokeWidth: 0 }}
+                    />
+                    <Line
+                        type="monotone"
+                        dataKey="orange"
+                        stroke="#F97316"
+                        strokeWidth={3}
+                        dot={{
+                            r: 4,
+                            fill: "#F97316",
+                            strokeWidth: 2,
+                            stroke: "#fff",
+                        }}
+                        activeDot={{ r: 6, stroke: "#F97316", strokeWidth: 0 }}
+                    />
+                    <Line
+                        type="monotone"
+                        dataKey="red"
+                        stroke="#F43F5E"
+                        strokeWidth={3}
+                        dot={{
+                            r: 4,
+                            fill: "#F43F5E",
+                            strokeWidth: 2,
+                            stroke: "#fff",
+                        }}
+                        activeDot={{ r: 6, stroke: "#F43F5E", strokeWidth: 0 }}
                     />
                 </LineChart>
             </ResponsiveContainer>

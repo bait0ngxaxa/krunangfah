@@ -14,7 +14,7 @@ export function PersonalInfoFields({
                 <input
                     {...register("email")}
                     type="email"
-                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 hover:border-pink-300"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all text-black placeholder:text-gray-500 hover:border-pink-300"
                     placeholder="example@email.com"
                 />
                 {errors.email && (
@@ -32,7 +32,7 @@ export function PersonalInfoFields({
                 <input
                     {...register("firstName")}
                     type="text"
-                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 hover:border-pink-300"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all text-black placeholder:text-gray-500 hover:border-pink-300"
                     placeholder="ระบุชื่อ"
                 />
                 {errors.firstName && (
@@ -50,7 +50,7 @@ export function PersonalInfoFields({
                 <input
                     {...register("lastName")}
                     type="text"
-                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 hover:border-pink-300"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all text-black placeholder:text-gray-500 hover:border-pink-300"
                     placeholder="ระบุนามสกุล"
                 />
                 {errors.lastName && (
@@ -68,7 +68,7 @@ export function PersonalInfoFields({
                 <input
                     {...register("age")}
                     type="number"
-                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 hover:border-pink-300"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all text-black placeholder:text-gray-500 hover:border-pink-300"
                     placeholder="ระบุอายุ"
                 />
                 {errors.age && (

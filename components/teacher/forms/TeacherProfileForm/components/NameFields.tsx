@@ -17,7 +17,7 @@ export function NameFields({
                     {...register("firstName")}
                     type="text"
                     id="firstName"
-                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 transition-all outline-none placeholder:text-gray-400 hover:border-pink-300"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 transition-all outline-none text-black placeholder:text-gray-500 hover:border-pink-300"
                     placeholder="กรอกชื่อ"
                 />
                 {errors.firstName && (
@@ -38,7 +38,7 @@ export function NameFields({
                     {...register("lastName")}
                     type="text"
                     id="lastName"
-                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 transition-all outline-none placeholder:text-gray-400 hover:border-pink-300"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 transition-all outline-none text-black placeholder:text-gray-500 hover:border-pink-300"
                     placeholder="กรอกนามสกุล"
                 />
                 {errors.lastName && (
