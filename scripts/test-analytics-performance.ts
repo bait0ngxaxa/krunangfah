@@ -264,55 +264,77 @@ async function runPerformanceTests() {
 
     const results: { name: string; time: number; rows: number }[] = [];
 
-    // Test 1: Risk Level Counts
-    console.log("1️⃣  Testing getRiskLevelCounts...");
+    // Test 1: Combined Analytics (NEW - replaces 3 queries)
+    console.log("1️⃣  Testing getCombinedAnalytics (risk + grade + hospital)...");
     let start = Date.now();
-    const riskLevelCounts = await prisma.$queryRaw`
-        WITH latest_phq AS (
-            SELECT DISTINCT ON (pr."studentId") 
-                pr."riskLevel" as risk_level,
-                pr."referredToHospital"
+    const combinedResult = await prisma.$queryRaw<
+        Array<{
+            risk_level: string;
+            grade: string | null;
+            referred_to_hospital: boolean;
+            student_count: bigint;
+        }>
+    >`
+        WITH ranked_phq AS (
+            SELECT
+                pr."studentId",
+                pr."riskLevel",
+                pr."referredToHospital",
+                SUBSTRING(s.class FROM '^(ม\\.\\d+)') as grade,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pr."studentId"
+                    ORDER BY pr."createdAt" DESC
+                ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             WHERE s."schoolId" = ${TEST_SCHOOL_ID}
-            ORDER BY pr."studentId", pr."createdAt" DESC
+        ),
+        latest_phq AS (
+            SELECT "studentId", "riskLevel", "referredToHospital", grade
+            FROM ranked_phq
+            WHERE rn = 1
         )
-        SELECT 
-            risk_level,
-            COUNT(*)::bigint as count,
-            SUM(CASE WHEN "referredToHospital" THEN 1 ELSE 0 END)::bigint as referral_count
+        SELECT
+            "riskLevel"::text as risk_level,
+            grade,
+            "referredToHospital" as referred_to_hospital,
+            COUNT(*)::bigint as student_count
         FROM latest_phq
-        GROUP BY risk_level
+        GROUP BY "riskLevel", grade, "referredToHospital"
     `;
     results.push({
-        name: "getRiskLevelCounts",
+        name: "getCombinedAnalytics",
         time: Date.now() - start,
-        rows: (riskLevelCounts as unknown[]).length,
+        rows: combinedResult.length,
     });
 
-    // Test 2: Trend Data
+    // Test 2: Trend Data (uses ROW_NUMBER)
     console.log("2️⃣  Testing getTrendData...");
     start = Date.now();
     const trendData = await prisma.$queryRaw`
-        WITH latest_per_period AS (
-            SELECT DISTINCT ON (pr."studentId", pr."academicYearId", pr."assessmentRound")
+        WITH ranked_per_period AS (
+            SELECT
                 pr."riskLevel" as risk_level,
                 ay.year as academic_year,
                 ay.semester,
-                pr."assessmentRound" as assessment_round
+                pr."assessmentRound" as assessment_round,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pr."studentId", pr."academicYearId", pr."assessmentRound"
+                    ORDER BY pr."createdAt" DESC
+                ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN academic_years ay ON pr."academicYearId" = ay.id
             WHERE s."schoolId" = ${TEST_SCHOOL_ID}
-            ORDER BY pr."studentId", pr."academicYearId", pr."assessmentRound", pr."createdAt" DESC
         )
-        SELECT 
+        SELECT
             academic_year,
             semester,
             assessment_round,
             risk_level,
             COUNT(*)::bigint as count
-        FROM latest_per_period
+        FROM ranked_per_period
+        WHERE rn = 1
         GROUP BY academic_year, semester, assessment_round, risk_level
         ORDER BY academic_year, semester, assessment_round
     `;
@@ -322,50 +344,30 @@ async function runPerformanceTests() {
         rows: (trendData as unknown[]).length,
     });
 
-    // Test 3: Grade Risk Data
-    console.log("3️⃣  Testing getGradeRiskData...");
-    start = Date.now();
-    const gradeRiskData = await prisma.$queryRaw`
-        WITH latest_phq AS (
-            SELECT DISTINCT ON (pr."studentId")
-                pr."riskLevel" as risk_level,
-                SUBSTRING(s.class FROM '^(ม\\.\\d+)') as grade
-            FROM phq_results pr
-            JOIN students s ON pr."studentId" = s.id
-            WHERE s."schoolId" = ${TEST_SCHOOL_ID}
-            ORDER BY pr."studentId", pr."createdAt" DESC
-        )
-        SELECT 
-            grade,
-            risk_level,
-            COUNT(*)::bigint as count
-        FROM latest_phq
-        WHERE grade IS NOT NULL
-        GROUP BY grade, risk_level
-        ORDER BY grade
-    `;
-    results.push({
-        name: "getGradeRiskData",
-        time: Date.now() - start,
-        rows: (gradeRiskData as unknown[]).length,
-    });
-
-    // Test 4: Activity Progress
-    console.log("4️⃣  Testing getActivityProgressByRisk...");
+    // Test 3: Activity Progress (uses ROW_NUMBER)
+    console.log("3️⃣  Testing getActivityProgressByRisk...");
     start = Date.now();
     const activityProgress = await prisma.$queryRaw`
-        WITH latest_phq AS (
-            SELECT DISTINCT ON (pr."studentId")
+        WITH ranked_phq AS (
+            SELECT
                 pr.id as phq_id,
                 pr."studentId",
-                pr."riskLevel" as risk_level
+                pr."riskLevel" as risk_level,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pr."studentId"
+                    ORDER BY pr."createdAt" DESC
+                ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             WHERE s."schoolId" = ${TEST_SCHOOL_ID}
-            ORDER BY pr."studentId", pr."createdAt" DESC
+        ),
+        latest_phq AS (
+            SELECT phq_id, "studentId", risk_level
+            FROM ranked_phq
+            WHERE rn = 1
         ),
         activity_counts AS (
-            SELECT 
+            SELECT
                 lp.risk_level,
                 ap."activityNumber",
                 COUNT(DISTINCT ap."studentId")::bigint as completed_count
@@ -374,7 +376,7 @@ async function runPerformanceTests() {
             WHERE ap.status = 'completed'
             GROUP BY lp.risk_level, ap."activityNumber"
         )
-        SELECT 
+        SELECT
             lp.risk_level,
             COUNT(DISTINCT lp."studentId")::bigint as total_students,
             COALESCE(MAX(CASE WHEN ac."activityNumber" = 1 THEN ac.completed_count END), 0)::bigint as activity1,
@@ -392,55 +394,29 @@ async function runPerformanceTests() {
         rows: (activityProgress as unknown[]).length,
     });
 
-    // Test 5: Hospital Referrals
-    console.log("5️⃣  Testing getHospitalReferralsByGrade...");
-    start = Date.now();
-    const hospitalReferrals = await prisma.$queryRaw`
-        WITH latest_phq AS (
-            SELECT DISTINCT ON (pr."studentId")
-                pr."referredToHospital",
-                SUBSTRING(s.class FROM '^(ม\\.\\d+)') as grade
-            FROM phq_results pr
-            JOIN students s ON pr."studentId" = s.id
-            WHERE s."schoolId" = ${TEST_SCHOOL_ID}
-            ORDER BY pr."studentId", pr."createdAt" DESC
-        )
-        SELECT 
-            grade,
-            COUNT(*)::bigint as referral_count
-        FROM latest_phq
-        WHERE "referredToHospital" = true AND grade IS NOT NULL
-        GROUP BY grade
-        ORDER BY grade
-    `;
-    results.push({
-        name: "getHospitalReferralsByGrade",
-        time: Date.now() - start,
-        rows: (hospitalReferrals as unknown[]).length,
-    });
-
     // Print results
     console.log("\n" + "=".repeat(60));
-    console.log("📈 PERFORMANCE RESULTS");
+    console.log("📈 PERFORMANCE RESULTS (Optimized Queries)");
     console.log("=".repeat(60));
-    console.log(`\nDataset: ${phqCount.toLocaleString()} PHQ results\n`);
+    console.log(`\nDataset: ${phqCount.toLocaleString()} PHQ results`);
+    console.log("Strategy: ROW_NUMBER() + Combined Query\n");
     console.log(
-        "Query".padEnd(30) + "Time (ms)".padStart(12) + "Rows".padStart(10),
+        "Query".padEnd(35) + "Time (ms)".padStart(12) + "Rows".padStart(10),
     );
-    console.log("-".repeat(52));
+    console.log("-".repeat(57));
 
     let totalTime = 0;
     for (const r of results) {
         console.log(
-            r.name.padEnd(30) +
+            r.name.padEnd(35) +
                 r.time.toString().padStart(12) +
                 r.rows.toString().padStart(10),
         );
         totalTime += r.time;
     }
 
-    console.log("-".repeat(52));
-    console.log("TOTAL".padEnd(30) + totalTime.toString().padStart(12) + "ms");
+    console.log("-".repeat(57));
+    console.log("TOTAL".padEnd(35) + totalTime.toString().padStart(12) + "ms");
     console.log("=".repeat(60));
 
     // Performance grade

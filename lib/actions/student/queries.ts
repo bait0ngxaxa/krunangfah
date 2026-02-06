@@ -10,6 +10,7 @@ import type { RiskCountRaw } from "./types";
 /**
  * Get risk level counts using database aggregation
  * Used for Pie Chart summary - much faster than loading all students
+ * Optimized: Uses ROW_NUMBER() instead of DISTINCT ON for better performance
  */
 export async function getRiskLevelCountsQuery(
     schoolId: string,
@@ -29,19 +30,23 @@ export async function getRiskLevelCountsQuery(
             : Prisma.empty;
 
     return prisma.$queryRaw<RiskCountRaw[]>`
-        WITH latest_phq AS (
-            SELECT DISTINCT ON (pr."studentId")
+        WITH ranked_phq AS (
+            SELECT
                 pr."studentId",
-                pr."riskLevel"
+                pr."riskLevel",
+                ROW_NUMBER() OVER (
+                    PARTITION BY pr."studentId"
+                    ORDER BY pr."createdAt" DESC
+                ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             WHERE s."schoolId" = ${schoolId}
               ${teacherCondition}
               ${classCondition}
-            ORDER BY pr."studentId", pr."createdAt" DESC
         )
         SELECT "riskLevel" as risk_level, COUNT(*)::bigint as count
-        FROM latest_phq
+        FROM ranked_phq
+        WHERE rn = 1
         GROUP BY "riskLevel"
     `;
 }

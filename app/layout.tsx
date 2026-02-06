@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { SessionProvider } from "@/components/providers/SessionProvider";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -24,7 +23,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${googleSans.variable} antialiased`}>
-                <SessionProvider>{children}</SessionProvider>
+                {children}
                 <Toaster
                     position="top-center"
                     richColors

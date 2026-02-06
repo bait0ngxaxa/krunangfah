@@ -117,26 +117,44 @@ async function ensureAcademicYearExists(
 }
 
 /**
- * อัพเดต isCurrent flag
+ * อัพเดต isCurrent flag (ใช้ transaction ป้องกัน race condition)
  */
 async function updateCurrentFlag(
     currentYear: number,
     currentSemester: number,
 ): Promise<void> {
-    // Reset all to false
-    await prisma.academicYear.updateMany({
-        where: { isCurrent: true },
-        data: { isCurrent: false },
-    });
-
-    // Set current one to true
-    await prisma.academicYear.update({
+    // เช็คก่อนว่า flag ถูกต้องอยู่แล้วหรือไม่
+    const currentRecord = await prisma.academicYear.findUnique({
         where: {
             year_semester: {
                 year: currentYear,
                 semester: currentSemester,
             },
         },
-        data: { isCurrent: true },
+        select: { isCurrent: true },
     });
+
+    // ถ้า isCurrent = true อยู่แล้ว ไม่ต้องทำอะไร
+    if (currentRecord?.isCurrent) {
+        return;
+    }
+
+    // ใช้ transaction ป้องกัน race condition
+    await prisma.$transaction([
+        // Reset all to false
+        prisma.academicYear.updateMany({
+            where: { isCurrent: true },
+            data: { isCurrent: false },
+        }),
+        // Set current one to true
+        prisma.academicYear.update({
+            where: {
+                year_semester: {
+                    year: currentYear,
+                    semester: currentSemester,
+                },
+            },
+            data: { isCurrent: true },
+        }),
+    ]);
 }

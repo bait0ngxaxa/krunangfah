@@ -3,11 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import {
-    getRiskLevelCounts,
+    getCombinedAnalytics,
     getTrendData,
-    getGradeRiskData,
     getActivityProgressByRisk,
-    getHospitalReferralsByGrade,
 } from "./queries";
 import {
     transformRiskLevelCounts,
@@ -91,20 +89,15 @@ export async function getAnalyticsSummary(
             availableClasses = classes.map((c) => c.class);
         }
 
-        // ✅ Use database aggregation instead of JavaScript loops
-        const [
-            riskLevelCountsRaw,
-            trendDataRaw,
-            gradeRiskDataRaw,
-            activityProgressRaw,
-            hospitalReferralsRaw,
-        ] = await Promise.all([
-            getRiskLevelCounts(user.schoolId, targetClass),
-            getTrendData(user.schoolId, targetClass),
-            getGradeRiskData(user.schoolId, targetClass),
-            getActivityProgressByRisk(user.schoolId, targetClass),
-            getHospitalReferralsByGrade(user.schoolId, targetClass),
-        ]);
+        // ✅ Optimized: Single combined query for risk/grade/hospital data
+        const [combinedData, trendDataRaw, activityProgressRaw] =
+            await Promise.all([
+                getCombinedAnalytics(user.schoolId, targetClass),
+                getTrendData(user.schoolId, targetClass),
+                getActivityProgressByRisk(user.schoolId, targetClass),
+            ]);
+
+        const { riskLevelCounts: riskLevelCountsRaw, gradeRiskData: gradeRiskDataRaw, hospitalReferrals: hospitalReferralsRaw } = combinedData;
 
         // Calculate total students with assessment from risk level counts
         const studentsWithAssessment = riskLevelCountsRaw.reduce(

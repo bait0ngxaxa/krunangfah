@@ -1,15 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-/**
- * Raw SQL queries for analytics aggregation
- * Using database-level aggregation for performance
- *
- * IMPORTANT: Column names match Prisma schema (camelCase)
- * - studentId, schoolId, createdAt, riskLevel, referredToHospital, etc.
- */
+// ========================================
+// Type Definitions
+// ========================================
 
-// Type definitions for raw query results
 interface RiskLevelCountResult {
     risk_level: string;
     count: bigint;
@@ -45,41 +40,172 @@ interface HospitalReferralResult {
     referral_count: bigint;
 }
 
+/** Combined result from single optimized query */
+export interface CombinedAnalyticsResult {
+    riskLevelCounts: RiskLevelCountResult[];
+    gradeRiskData: GradeRiskResult[];
+    hospitalReferrals: HospitalReferralResult[];
+}
+
+// ========================================
+// Optimized Combined Query (Single Scan)
+// ========================================
+
 /**
- * Get risk level counts and referrals using database aggregation
- * Replaces: findMany + forEach loops (L169-231 in main.ts)
+ * Get risk counts, grade distribution, and hospital referrals in ONE query
+ * Uses ROW_NUMBER() instead of DISTINCT ON for better performance
+ *
+ * Replaces: getRiskLevelCounts + getGradeRiskData + getHospitalReferralsByGrade
+ */
+export async function getCombinedAnalytics(
+    schoolId: string,
+    classFilter?: string,
+): Promise<CombinedAnalyticsResult> {
+    const classCondition = classFilter
+        ? Prisma.sql`AND s.class = ${classFilter}`
+        : Prisma.empty;
+
+    // Single query that computes everything from one table scan
+    const result = await prisma.$queryRaw<
+        Array<{
+            risk_level: string;
+            grade: string | null;
+            referred_to_hospital: boolean;
+            student_count: bigint;
+        }>
+    >`
+        WITH ranked_phq AS (
+            SELECT
+                pr."studentId",
+                pr."riskLevel",
+                pr."referredToHospital",
+                SUBSTRING(s.class FROM '^(ม\\.\\d+)') as grade,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pr."studentId"
+                    ORDER BY pr."createdAt" DESC
+                ) as rn
+            FROM phq_results pr
+            JOIN students s ON pr."studentId" = s.id
+            WHERE s."schoolId" = ${schoolId}
+              ${classCondition}
+        ),
+        latest_phq AS (
+            SELECT "studentId", "riskLevel", "referredToHospital", grade
+            FROM ranked_phq
+            WHERE rn = 1
+        )
+        SELECT
+            "riskLevel"::text as risk_level,
+            grade,
+            "referredToHospital" as referred_to_hospital,
+            COUNT(*)::bigint as student_count
+        FROM latest_phq
+        GROUP BY "riskLevel", grade, "referredToHospital"
+    `;
+
+    // Transform single result into 3 aggregations (in JS, very fast)
+    const riskMap = new Map<string, { count: number; referralCount: number }>();
+    const gradeRiskMap = new Map<string, Map<string, number>>();
+    const hospitalMap = new Map<string, number>();
+
+    for (const row of result) {
+        const count = Number(row.student_count);
+        const riskLevel = row.risk_level;
+        const grade = row.grade;
+        const referred = row.referred_to_hospital;
+
+        // Risk level counts
+        const existing = riskMap.get(riskLevel) || {
+            count: 0,
+            referralCount: 0,
+        };
+        existing.count += count;
+        if (referred) existing.referralCount += count;
+        riskMap.set(riskLevel, existing);
+
+        // Grade risk data
+        if (grade) {
+            if (!gradeRiskMap.has(grade)) gradeRiskMap.set(grade, new Map());
+            const gradeData = gradeRiskMap.get(grade) || new Map<string, number>();
+            gradeData.set(riskLevel, (gradeData.get(riskLevel) || 0) + count);
+        }
+
+        // Hospital referrals by grade
+        if (referred && grade) {
+            hospitalMap.set(grade, (hospitalMap.get(grade) || 0) + count);
+        }
+    }
+
+    // Convert to expected formats
+    const riskLevelCounts: RiskLevelCountResult[] = Array.from(
+        riskMap.entries(),
+    ).map(([risk_level, data]) => ({
+        risk_level,
+        count: BigInt(data.count),
+        referral_count: BigInt(data.referralCount),
+    }));
+
+    const gradeRiskData: GradeRiskResult[] = [];
+    for (const [grade, riskData] of gradeRiskMap.entries()) {
+        for (const [risk_level, count] of riskData.entries()) {
+            gradeRiskData.push({ grade, risk_level, count: BigInt(count) });
+        }
+    }
+    gradeRiskData.sort((a, b) => a.grade.localeCompare(b.grade));
+
+    const hospitalReferrals: HospitalReferralResult[] = Array.from(
+        hospitalMap.entries(),
+    )
+        .map(([grade, count]) => ({ grade, referral_count: BigInt(count) }))
+        .sort((a, b) => a.grade.localeCompare(b.grade));
+
+    return { riskLevelCounts, gradeRiskData, hospitalReferrals };
+}
+
+// ========================================
+// Separate Queries (for backwards compatibility)
+// ========================================
+
+/**
+ * @deprecated Use getCombinedAnalytics instead
  */
 export async function getRiskLevelCounts(
     schoolId: string,
     classFilter?: string,
 ): Promise<RiskLevelCountResult[]> {
-    const classCondition = classFilter
-        ? Prisma.sql`AND s.class = ${classFilter}`
-        : Prisma.empty;
-
-    return prisma.$queryRaw<RiskLevelCountResult[]>`
-        WITH latest_phq AS (
-            SELECT DISTINCT ON (pr."studentId") 
-                pr."riskLevel" as risk_level,
-                pr."referredToHospital"
-            FROM phq_results pr
-            JOIN students s ON pr."studentId" = s.id
-            WHERE s."schoolId" = ${schoolId}
-              ${classCondition}
-            ORDER BY pr."studentId", pr."createdAt" DESC
-        )
-        SELECT 
-            risk_level,
-            COUNT(*)::bigint as count,
-            SUM(CASE WHEN "referredToHospital" THEN 1 ELSE 0 END)::bigint as referral_count
-        FROM latest_phq
-        GROUP BY risk_level
-    `;
+    const result = await getCombinedAnalytics(schoolId, classFilter);
+    return result.riskLevelCounts;
 }
 
 /**
+ * @deprecated Use getCombinedAnalytics instead
+ */
+export async function getGradeRiskData(
+    schoolId: string,
+    classFilter?: string,
+): Promise<GradeRiskResult[]> {
+    const result = await getCombinedAnalytics(schoolId, classFilter);
+    return result.gradeRiskData;
+}
+
+/**
+ * @deprecated Use getCombinedAnalytics instead
+ */
+export async function getHospitalReferralsByGrade(
+    schoolId: string,
+    classFilter?: string,
+): Promise<HospitalReferralResult[]> {
+    const result = await getCombinedAnalytics(schoolId, classFilter);
+    return result.hospitalReferrals;
+}
+
+// ========================================
+// Trend Data (Separate - Different Pattern)
+// ========================================
+
+/**
  * Get trend data grouped by academic year, semester, and round
- * Replaces: forEach loop + Map (L256-328 in main.ts)
+ * Uses ROW_NUMBER for better performance
  */
 export async function getTrendData(
     schoolId: string,
@@ -90,68 +216,42 @@ export async function getTrendData(
         : Prisma.empty;
 
     return prisma.$queryRaw<TrendDataResult[]>`
-        WITH latest_per_period AS (
-            SELECT DISTINCT ON (pr."studentId", pr."academicYearId", pr."assessmentRound")
+        WITH ranked_per_period AS (
+            SELECT
                 pr."riskLevel" as risk_level,
                 ay.year as academic_year,
                 ay.semester,
-                pr."assessmentRound" as assessment_round
+                pr."assessmentRound" as assessment_round,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pr."studentId", pr."academicYearId", pr."assessmentRound"
+                    ORDER BY pr."createdAt" DESC
+                ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN academic_years ay ON pr."academicYearId" = ay.id
             WHERE s."schoolId" = ${schoolId}
               ${classCondition}
-            ORDER BY pr."studentId", pr."academicYearId", pr."assessmentRound", pr."createdAt" DESC
         )
-        SELECT 
+        SELECT
             academic_year,
             semester,
             assessment_round,
             risk_level,
             COUNT(*)::bigint as count
-        FROM latest_per_period
+        FROM ranked_per_period
+        WHERE rn = 1
         GROUP BY academic_year, semester, assessment_round, risk_level
         ORDER BY academic_year, semester, assessment_round
     `;
 }
 
-/**
- * Get risk level distribution by grade
- * Replaces: forEach loop + Map (L409-469 in main.ts)
- */
-export async function getGradeRiskData(
-    schoolId: string,
-    classFilter?: string,
-): Promise<GradeRiskResult[]> {
-    const classCondition = classFilter
-        ? Prisma.sql`AND s.class = ${classFilter}`
-        : Prisma.empty;
-
-    return prisma.$queryRaw<GradeRiskResult[]>`
-        WITH latest_phq AS (
-            SELECT DISTINCT ON (pr."studentId")
-                pr."riskLevel" as risk_level,
-                SUBSTRING(s.class FROM '^(ม\\.\\d+)') as grade
-            FROM phq_results pr
-            JOIN students s ON pr."studentId" = s.id
-            WHERE s."schoolId" = ${schoolId}
-              ${classCondition}
-            ORDER BY pr."studentId", pr."createdAt" DESC
-        )
-        SELECT 
-            grade,
-            risk_level,
-            COUNT(*)::bigint as count
-        FROM latest_phq
-        WHERE grade IS NOT NULL
-        GROUP BY grade, risk_level
-        ORDER BY grade
-    `;
-}
+// ========================================
+// Activity Progress (Separate - Joins activity_progress)
+// ========================================
 
 /**
  * Get activity progress counts by risk level
- * Replaces: findMany + forEach loop (L335-406 in main.ts)
+ * Uses ROW_NUMBER for better performance
  */
 export async function getActivityProgressByRisk(
     schoolId: string,
@@ -162,19 +262,27 @@ export async function getActivityProgressByRisk(
         : Prisma.empty;
 
     return prisma.$queryRaw<ActivityProgressResult[]>`
-        WITH latest_phq AS (
-            SELECT DISTINCT ON (pr."studentId")
+        WITH ranked_phq AS (
+            SELECT
                 pr.id as phq_id,
                 pr."studentId",
-                pr."riskLevel" as risk_level
+                pr."riskLevel" as risk_level,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pr."studentId"
+                    ORDER BY pr."createdAt" DESC
+                ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             WHERE s."schoolId" = ${schoolId}
               ${classCondition}
-            ORDER BY pr."studentId", pr."createdAt" DESC
+        ),
+        latest_phq AS (
+            SELECT phq_id, "studentId", risk_level
+            FROM ranked_phq
+            WHERE rn = 1
         ),
         activity_counts AS (
-            SELECT 
+            SELECT
                 lp.risk_level,
                 ap."activityNumber",
                 COUNT(DISTINCT ap."studentId")::bigint as completed_count
@@ -183,7 +291,7 @@ export async function getActivityProgressByRisk(
             WHERE ap.status = 'completed'
             GROUP BY lp.risk_level, ap."activityNumber"
         )
-        SELECT 
+        SELECT
             lp.risk_level,
             COUNT(DISTINCT lp."studentId")::bigint as total_students,
             COALESCE(MAX(CASE WHEN ac."activityNumber" = 1 THEN ac.completed_count END), 0)::bigint as activity1,
@@ -194,38 +302,5 @@ export async function getActivityProgressByRisk(
         FROM latest_phq lp
         LEFT JOIN activity_counts ac ON ac.risk_level = lp.risk_level
         GROUP BY lp.risk_level
-    `;
-}
-
-/**
- * Get hospital referral counts by grade
- * Replaces: forEach loop + Map (L472-504 in main.ts)
- */
-export async function getHospitalReferralsByGrade(
-    schoolId: string,
-    classFilter?: string,
-): Promise<HospitalReferralResult[]> {
-    const classCondition = classFilter
-        ? Prisma.sql`AND s.class = ${classFilter}`
-        : Prisma.empty;
-
-    return prisma.$queryRaw<HospitalReferralResult[]>`
-        WITH latest_phq AS (
-            SELECT DISTINCT ON (pr."studentId")
-                pr."referredToHospital",
-                SUBSTRING(s.class FROM '^(ม\\.\\d+)') as grade
-            FROM phq_results pr
-            JOIN students s ON pr."studentId" = s.id
-            WHERE s."schoolId" = ${schoolId}
-              ${classCondition}
-            ORDER BY pr."studentId", pr."createdAt" DESC
-        )
-        SELECT 
-            grade,
-            COUNT(*)::bigint as referral_count
-        FROM latest_phq
-        WHERE "referredToHospital" = true AND grade IS NOT NULL
-        GROUP BY grade
-        ORDER BY grade
     `;
 }

@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import {
     ClassFilter,
     PhqSummaryTable,
-    RiskLevelPieChart,
-    RiskLevelTrendChart,
-    RiskLevelByGradeChart,
     HospitalReferralTable,
     ActivitySummaryTable,
 } from "./index";
@@ -14,6 +12,52 @@ import { AnalyticsSkeleton } from "./AnalyticsSkeleton";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
 import type { AnalyticsData } from "@/lib/actions/analytics";
 import { Tabs, type Tab } from "@/components/ui/Tabs";
+
+// Dynamic imports for chart components (ssr: false to prevent hydration warnings)
+const RiskLevelPieChart = dynamic(
+    () =>
+        import("./charts/RiskLevelPieChart").then((mod) => ({
+            default: mod.RiskLevelPieChart,
+        })),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex items-center justify-center min-h-[400px]">
+                <div className="animate-pulse text-gray-400">กำลังโหลดกราฟ...</div>
+            </div>
+        ),
+    },
+);
+
+const RiskLevelTrendChart = dynamic(
+    () =>
+        import("./charts/RiskLevelTrendChart").then((mod) => ({
+            default: mod.RiskLevelTrendChart,
+        })),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex items-center justify-center min-h-[400px]">
+                <div className="animate-pulse text-gray-400">กำลังโหลดกราฟ...</div>
+            </div>
+        ),
+    },
+);
+
+const RiskLevelByGradeChart = dynamic(
+    () =>
+        import("./charts/RiskLevelByGradeChart").then((mod) => ({
+            default: mod.RiskLevelByGradeChart,
+        })),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex items-center justify-center min-h-[400px]">
+                <div className="animate-pulse text-gray-400">กำลังโหลดกราฟ...</div>
+            </div>
+        ),
+    },
+);
 
 interface AnalyticsContentProps {
     initialData: AnalyticsData;

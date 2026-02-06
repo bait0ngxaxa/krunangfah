@@ -1,10 +1,56 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { ActivityStatus } from "@prisma/client";
 import { ACTIVITY_INDICES } from "./constants";
 import type { SubmitAssessmentData, ScheduleActivityData } from "./types";
+
+/**
+ * Verify user has access to student's activity
+ */
+async function verifyActivityAccess(
+    studentId: string,
+    userId: string,
+    userRole: string,
+): Promise<{ allowed: boolean; error?: string }> {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            schoolId: true,
+            teacher: { select: { advisoryClass: true } },
+        },
+    });
+
+    if (!user?.schoolId) {
+        return { allowed: false, error: "ไม่พบข้อมูลโรงเรียน" };
+    }
+
+    const student = await prisma.student.findUnique({
+        where: { id: studentId },
+        select: { schoolId: true, class: true },
+    });
+
+    if (!student) {
+        return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
+    }
+
+    if (student.schoolId !== user.schoolId) {
+        return { allowed: false, error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
+    }
+
+    if (userRole === "class_teacher") {
+        const advisoryClass = user.teacher?.advisoryClass;
+        if (!advisoryClass || student.class !== advisoryClass) {
+            return {
+                allowed: false,
+                error: "คุณสามารถเข้าถึงข้อมูลได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
+            };
+        }
+    }
+
+    return { allowed: true };
+}
 
 /**
  * Initialize activity progress for a student based on their PHQ result
@@ -55,17 +101,26 @@ export async function submitTeacherAssessment(
     data: SubmitAssessmentData,
 ) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" };
-        }
+        const session = await requireAuth();
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: activityProgressId },
+            select: { studentId: true },
         });
 
         if (!activityProgress) {
-            return { success: false, error: "Activity not found" };
+            return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+        }
+
+        // Verify access
+        const { allowed, error } = await verifyActivityAccess(
+            activityProgress.studentId,
+            session.user.id,
+            session.user.role,
+        );
+
+        if (!allowed) {
+            return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
         // Save assessment data (activity is already completed from upload)
@@ -82,7 +137,7 @@ export async function submitTeacherAssessment(
         return { success: true };
     } catch (error) {
         console.error("Error submitting assessment:", error);
-        return { success: false, error: "Failed to submit assessment" };
+        return { success: false, error: "เกิดข้อผิดพลาดในการบันทึก" };
     }
 }
 
@@ -128,9 +183,26 @@ export async function scheduleActivity(
     data: ScheduleActivityData,
 ) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" };
+        const session = await requireAuth();
+
+        const activityProgress = await prisma.activityProgress.findUnique({
+            where: { id: activityProgressId },
+            select: { studentId: true },
+        });
+
+        if (!activityProgress) {
+            return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+        }
+
+        // Verify access
+        const { allowed, error } = await verifyActivityAccess(
+            activityProgress.studentId,
+            session.user.id,
+            session.user.role,
+        );
+
+        if (!allowed) {
+            return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
         const updated = await prisma.activityProgress.update({
@@ -145,7 +217,7 @@ export async function scheduleActivity(
         return { success: true, data: updated };
     } catch (error) {
         console.error("Error scheduling activity:", error);
-        return { success: false, error: "Failed to schedule activity" };
+        return { success: false, error: "เกิดข้อผิดพลาดในการนัดหมาย" };
     }
 }
 
@@ -157,17 +229,26 @@ export async function updateTeacherNotes(
     notes: string,
 ) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" };
-        }
+        const session = await requireAuth();
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: activityProgressId },
+            select: { studentId: true, teacherId: true },
         });
 
         if (!activityProgress) {
-            return { success: false, error: "Activity not found" };
+            return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+        }
+
+        // Verify access
+        const { allowed, error } = await verifyActivityAccess(
+            activityProgress.studentId,
+            session.user.id,
+            session.user.role,
+        );
+
+        if (!allowed) {
+            return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
         const updated = await prisma.activityProgress.update({
@@ -181,6 +262,6 @@ export async function updateTeacherNotes(
         return { success: true, data: updated };
     } catch (error) {
         console.error("Error updating teacher notes:", error);
-        return { success: false, error: "Failed to update notes" };
+        return { success: false, error: "เกิดข้อผิดพลาดในการแก้ไข" };
     }
 }

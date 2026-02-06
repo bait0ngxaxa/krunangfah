@@ -1,6 +1,10 @@
 /**
  * Server Actions for Counseling Sessions
  * การจัดการบันทึกการให้คำปรึกษา
+ *
+ * Access control:
+ * - school_admin: ดูได้ทุกนักเรียนในโรงเรียน
+ * - class_teacher: ดูได้เฉพาะนักเรียนในห้องที่ดูแล (advisoryClass)
  */
 
 "use server";
@@ -19,13 +23,71 @@ export interface CounselingSession {
 }
 
 /**
+ * Verify user has access to student
+ */
+async function verifyStudentAccess(
+    studentId: string,
+    userId: string,
+    userRole: string,
+): Promise<{ allowed: boolean; error?: string }> {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            schoolId: true,
+            teacher: { select: { advisoryClass: true } },
+        },
+    });
+
+    if (!user?.schoolId) {
+        return { allowed: false, error: "ไม่พบข้อมูลโรงเรียน" };
+    }
+
+    const student = await prisma.student.findUnique({
+        where: { id: studentId },
+        select: { schoolId: true, class: true },
+    });
+
+    if (!student) {
+        return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
+    }
+
+    // Check same school
+    if (student.schoolId !== user.schoolId) {
+        return { allowed: false, error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
+    }
+
+    // Check class for class_teacher
+    if (userRole === "class_teacher") {
+        const advisoryClass = user.teacher?.advisoryClass;
+        if (!advisoryClass || student.class !== advisoryClass) {
+            return {
+                allowed: false,
+                error: "คุณสามารถเข้าถึงข้อมูลได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
+            };
+        }
+    }
+
+    return { allowed: true };
+}
+
+/**
  * Get all counseling sessions for a student
  */
 export async function getCounselingSessions(
     studentId: string,
 ): Promise<CounselingSession[]> {
     try {
-        await requireAuth();
+        const session = await requireAuth();
+        const { allowed, error } = await verifyStudentAccess(
+            studentId,
+            session.user.id,
+            session.user.role,
+        );
+
+        if (!allowed) {
+            console.error("Access denied:", error);
+            return [];
+        }
 
         const sessions = await prisma.counselingSession.findMany({
             where: { studentId },
@@ -59,6 +121,17 @@ export async function createCounselingSession(data: {
     try {
         const session = await requireAuth();
         const userId = session.user.id;
+
+        // Verify access
+        const { allowed, error } = await verifyStudentAccess(
+            data.studentId,
+            userId,
+            session.user.role,
+        );
+
+        if (!allowed) {
+            return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
 
         // Get the next session number for this student
         const lastSession = await prisma.counselingSession.findFirst({
@@ -101,16 +174,36 @@ export async function updateCounselingSession(
     },
 ) {
     try {
-        await requireAuth();
+        const session = await requireAuth();
 
-        const session = await prisma.counselingSession.update({
+        // Get session to verify access
+        const counselingSession = await prisma.counselingSession.findUnique({
+            where: { id },
+            select: { studentId: true },
+        });
+
+        if (!counselingSession) {
+            return { success: false, message: "ไม่พบข้อมูลที่ต้องการแก้ไข" };
+        }
+
+        const { allowed, error } = await verifyStudentAccess(
+            counselingSession.studentId,
+            session.user.id,
+            session.user.role,
+        );
+
+        if (!allowed) {
+            return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        const updated = await prisma.counselingSession.update({
             where: { id },
             data,
         });
 
-        revalidatePath(`/students/${session.studentId}`);
+        revalidatePath(`/students/${updated.studentId}`);
 
-        return { success: true, session };
+        return { success: true, session: updated };
     } catch (error) {
         console.error("Error updating counseling session:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการแก้ไขข้อมูล" };
@@ -122,22 +215,32 @@ export async function updateCounselingSession(
  */
 export async function deleteCounselingSession(id: string) {
     try {
-        await requireAuth();
+        const session = await requireAuth();
 
-        const session = await prisma.counselingSession.findUnique({
+        const counselingSession = await prisma.counselingSession.findUnique({
             where: { id },
             select: { studentId: true },
         });
 
-        if (!session) {
+        if (!counselingSession) {
             return { success: false, message: "ไม่พบข้อมูลที่ต้องการลบ" };
+        }
+
+        const { allowed, error } = await verifyStudentAccess(
+            counselingSession.studentId,
+            session.user.id,
+            session.user.role,
+        );
+
+        if (!allowed) {
+            return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
         await prisma.counselingSession.delete({
             where: { id },
         });
 
-        revalidatePath(`/students/${session.studentId}`);
+        revalidatePath(`/students/${counselingSession.studentId}`);
 
         return { success: true };
     } catch (error) {

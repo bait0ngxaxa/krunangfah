@@ -1,10 +1,26 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { RiskPieChart } from "../phq/RiskPieChart";
+import dynamic from "next/dynamic";
 import { RiskGroupSection } from "../phq/RiskGroupSection";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { Users } from "lucide-react";
+
+// Dynamic import for chart component (ssr: false to prevent hydration warnings)
+const RiskPieChart = dynamic(
+    () =>
+        import("../phq/RiskPieChart").then((mod) => ({
+            default: mod.RiskPieChart,
+        })),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-white/60 relative overflow-hidden ring-1 ring-pink-50 flex items-center justify-center min-h-[300px]">
+                <div className="animate-pulse text-gray-400">กำลังโหลดกราฟ...</div>
+            </div>
+        ),
+    },
+);
 
 interface Student {
     id: string;
