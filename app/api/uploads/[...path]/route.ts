@@ -13,9 +13,17 @@ import { readFile } from "fs/promises";
 import { join, resolve, normalize } from "path";
 import { existsSync } from "fs";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
 /** Allowed file extensions for serving */
-const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp", "pdf"]);
+const ALLOWED_EXTENSIONS = new Set([
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "webp",
+    "pdf",
+]);
 
 /** Content-Type mapping by extension */
 const CONTENT_TYPES: Record<string, string> = {
@@ -42,7 +50,8 @@ export async function GET(
 
         // Reject path segments that try to traverse directories
         const hasDotSegment = path.some(
-            (segment) => segment === ".." || segment === "." || segment.includes("\0"),
+            (segment) =>
+                segment === ".." || segment === "." || segment.includes("\0"),
         );
         if (hasDotSegment) {
             return new NextResponse("Forbidden", { status: 403 });
@@ -67,6 +76,61 @@ export async function GET(
         // Check if file exists
         if (!existsSync(filePath)) {
             return new NextResponse("File not found", { status: 404 });
+        }
+
+        // Verify file ownership for worksheets
+        if (path[0] === "worksheets") {
+            const fileUrl = `/api/uploads/${path.join("/")}`;
+
+            const worksheet = await prisma.worksheetUpload.findFirst({
+                where: { fileUrl },
+                include: {
+                    activityProgress: {
+                        include: {
+                            student: {
+                                select: {
+                                    schoolId: true,
+                                    class: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            if (!worksheet) {
+                return new NextResponse("File not found", { status: 404 });
+            }
+
+            // Verify user has access to this file
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: {
+                    schoolId: true,
+                    role: true,
+                    teacher: {
+                        select: { advisoryClass: true },
+                    },
+                },
+            });
+
+            if (
+                !user?.schoolId ||
+                user.schoolId !== worksheet.activityProgress.student.schoolId
+            ) {
+                return new NextResponse("Forbidden", { status: 403 });
+            }
+
+            // class_teacher: verify student is in their advisory class
+            if (user.role === "class_teacher") {
+                const advisoryClass = user.teacher?.advisoryClass;
+                if (
+                    !advisoryClass ||
+                    worksheet.activityProgress.student.class !== advisoryClass
+                ) {
+                    return new NextResponse("Forbidden", { status: 403 });
+                }
+            }
         }
 
         // Read file

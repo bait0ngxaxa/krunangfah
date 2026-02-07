@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { getAcademicYears as getAcademicYearsAction } from "./academic-year.actions";
+import { teacherProfileSchema } from "@/lib/validations/teacher.validation";
 import type {
     CreateTeacherInput,
     TeacherResponse,
@@ -79,6 +80,9 @@ export async function createTeacherProfile(
     input: CreateTeacherInput,
 ): Promise<TeacherResponse> {
     try {
+        // Validate input
+        const validated = teacherProfileSchema.parse(input);
+
         const session = await requireAuth();
         const userId = session.user.id;
 
@@ -98,7 +102,7 @@ export async function createTeacherProfile(
         let school = await prisma.school.findFirst({
             where: {
                 name: {
-                    equals: input.schoolName,
+                    equals: validated.schoolName,
                     mode: "insensitive",
                 },
             },
@@ -106,7 +110,7 @@ export async function createTeacherProfile(
 
         if (!school) {
             school = await prisma.school.create({
-                data: { name: input.schoolName },
+                data: { name: validated.schoolName },
             });
         }
 
@@ -114,7 +118,7 @@ export async function createTeacherProfile(
         await prisma.user.update({
             where: { id: userId },
             data: {
-                name: `${input.firstName} ${input.lastName}`,
+                name: `${validated.firstName} ${validated.lastName}`,
                 schoolId: school.id,
             },
         });
@@ -123,13 +127,13 @@ export async function createTeacherProfile(
         const teacher = await prisma.teacher.create({
             data: {
                 userId,
-                firstName: input.firstName,
-                lastName: input.lastName,
-                age: input.age,
-                advisoryClass: normalizeClassName(input.advisoryClass),
-                academicYearId: input.academicYearId,
-                schoolRole: input.schoolRole,
-                projectRole: input.projectRole,
+                firstName: validated.firstName,
+                lastName: validated.lastName,
+                age: validated.age,
+                advisoryClass: normalizeClassName(validated.advisoryClass),
+                academicYearId: validated.academicYearId,
+                schoolRole: validated.schoolRole,
+                projectRole: validated.projectRole,
             },
             include: {
                 academicYear: true,

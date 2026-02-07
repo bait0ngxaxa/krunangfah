@@ -12,6 +12,7 @@ import {
     MAGIC_BYTES,
     MAX_FILE_SIZE,
 } from "./constants";
+import { revalidateTag } from "next/cache";
 import { unlockNextActivity } from "./mutations";
 import type { UploadWorksheetResult } from "./types";
 
@@ -92,17 +93,50 @@ export async function uploadWorksheet(
             };
         }
 
-        // Get activity progress
+        // Get activity progress with student info for authorization
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: activityProgressId },
             include: {
-                student: true,
+                student: {
+                    select: {
+                        id: true,
+                        schoolId: true,
+                        class: true,
+                    },
+                },
                 worksheetUploads: true,
             },
         });
 
         if (!activityProgress) {
             return { success: false, message: "Activity not found" };
+        }
+
+        // Verify authorization: check if activity belongs to user's school/class
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                schoolId: true,
+                role: true,
+                teacher: {
+                    select: { advisoryClass: true },
+                },
+            },
+        });
+
+        if (!user?.schoolId || user.schoolId !== activityProgress.student.schoolId) {
+            return { success: false, message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
+        }
+
+        // class_teacher: verify student is in their advisory class
+        if (user.role === "class_teacher") {
+            const advisoryClass = user.teacher?.advisoryClass;
+            if (!advisoryClass || activityProgress.student.class !== advisoryClass) {
+                return {
+                    success: false,
+                    message: "คุณสามารถอัปโหลดได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
+                };
+            }
         }
 
         // Create upload directory if not exists
@@ -171,6 +205,8 @@ export async function uploadWorksheet(
                 activityProgress.phqResultId,
                 activityProgress.activityNumber,
             );
+
+            revalidateTag("analytics", "default");
         }
 
         return {

@@ -5,7 +5,7 @@ import { requireAuth } from "@/lib/session";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { calculateRiskLevel } from "@/lib/utils/phq-scoring";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import type { ImportResult } from "./types";
 
 /**
@@ -161,6 +161,7 @@ export async function importStudents(
 
         revalidatePath("/dashboard");
         revalidatePath("/students");
+        revalidateTag("analytics", "default");
 
         const failedCount = errors.length;
 

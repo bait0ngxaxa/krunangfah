@@ -5,6 +5,11 @@ import { prisma } from "@/lib/prisma";
 import { ActivityStatus } from "@prisma/client";
 import { ACTIVITY_INDICES } from "./constants";
 import type { SubmitAssessmentData, ScheduleActivityData } from "./types";
+import {
+    submitAssessmentSchema,
+    scheduleActivitySchema,
+    updateTeacherNotesSchema,
+} from "@/lib/validations/activity.validation";
 
 /**
  * Verify user has access to student's activity
@@ -101,10 +106,16 @@ export async function submitTeacherAssessment(
     data: SubmitAssessmentData,
 ) {
     try {
+        // Validate input
+        const validated = submitAssessmentSchema.parse({
+            activityProgressId,
+            ...data,
+        });
+
         const session = await requireAuth();
 
         const activityProgress = await prisma.activityProgress.findUnique({
-            where: { id: activityProgressId },
+            where: { id: validated.activityProgressId },
             select: { studentId: true },
         });
 
@@ -125,11 +136,11 @@ export async function submitTeacherAssessment(
 
         // Save assessment data (activity is already completed from upload)
         await prisma.activityProgress.update({
-            where: { id: activityProgressId },
+            where: { id: validated.activityProgressId },
             data: {
-                internalProblems: data.internalProblems,
-                externalProblems: data.externalProblems,
-                problemType: data.problemType,
+                internalProblems: validated.internalProblems,
+                externalProblems: validated.externalProblems,
+                problemType: validated.problemType,
                 assessedAt: new Date(),
             },
         });
@@ -183,10 +194,16 @@ export async function scheduleActivity(
     data: ScheduleActivityData,
 ) {
     try {
+        // Validate input
+        const validated = scheduleActivitySchema.parse({
+            activityProgressId,
+            ...data,
+        });
+
         const session = await requireAuth();
 
         const activityProgress = await prisma.activityProgress.findUnique({
-            where: { id: activityProgressId },
+            where: { id: validated.activityProgressId },
             select: { studentId: true },
         });
 
@@ -206,11 +223,11 @@ export async function scheduleActivity(
         }
 
         const updated = await prisma.activityProgress.update({
-            where: { id: activityProgressId },
+            where: { id: validated.activityProgressId },
             data: {
-                scheduledDate: data.scheduledDate,
-                teacherId: data.teacherId,
-                teacherNotes: data.teacherNotes,
+                scheduledDate: validated.scheduledDate,
+                teacherId: validated.teacherId,
+                teacherNotes: validated.teacherNotes,
             },
         });
 
@@ -229,10 +246,16 @@ export async function updateTeacherNotes(
     notes: string,
 ) {
     try {
+        // Validate input
+        const validated = updateTeacherNotesSchema.parse({
+            activityProgressId,
+            notes,
+        });
+
         const session = await requireAuth();
 
         const activityProgress = await prisma.activityProgress.findUnique({
-            where: { id: activityProgressId },
+            where: { id: validated.activityProgressId },
             select: { studentId: true, teacherId: true },
         });
 
@@ -252,9 +275,9 @@ export async function updateTeacherNotes(
         }
 
         const updated = await prisma.activityProgress.update({
-            where: { id: activityProgressId },
+            where: { id: validated.activityProgressId },
             data: {
-                teacherNotes: notes,
+                teacherNotes: validated.notes,
                 teacherId: activityProgress.teacherId || session.user.id,
             },
         });

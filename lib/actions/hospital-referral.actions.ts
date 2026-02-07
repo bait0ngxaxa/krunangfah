@@ -10,18 +10,22 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAuth } from "@/lib/session";
+import { toggleHospitalReferralSchema } from "@/lib/validations/hospital-referral.validation";
 
 export async function toggleHospitalReferral(phqResultId: string) {
     try {
+        // Validate input
+        const validated = toggleHospitalReferralSchema.parse({ phqResultId });
+
         const session = await requireAuth();
         const userId = session.user.id;
         const userRole = session.user.role;
 
         // Get PHQ result with student info for authorization check
         const phqResult = await prisma.phqResult.findUnique({
-            where: { id: phqResultId },
+            where: { id: validated.phqResultId },
             select: {
                 referredToHospital: true,
                 studentId: true,
@@ -66,13 +70,14 @@ export async function toggleHospitalReferral(phqResultId: string) {
 
         // Toggle status
         await prisma.phqResult.update({
-            where: { id: phqResultId },
+            where: { id: validated.phqResultId },
             data: {
                 referredToHospital: !phqResult.referredToHospital,
             },
         });
 
         revalidatePath(`/students/${phqResult.studentId}`);
+        revalidateTag("analytics", "default");
 
         return {
             success: true,

@@ -76,6 +76,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.id = user.id;
                 token.role = user.role;
                 token.hasTeacherProfile = user.hasTeacherProfile;
+                token.lastActivity = Date.now();
             }
 
             // Re-check hasTeacherProfile on session update
@@ -86,6 +87,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 });
                 token.hasTeacherProfile = !!teacherProfile;
             }
+
+            // Check idle timeout (30 minutes = 1800000ms)
+            const IDLE_TIMEOUT = 30 * 60 * 1000;
+            const lastActivity = (token.lastActivity as number) || Date.now();
+            const isIdle = Date.now() - lastActivity > IDLE_TIMEOUT;
+
+            if (isIdle) {
+                // Session expired due to inactivity
+                return null;
+            }
+
+            // Update last activity on each request
+            token.lastActivity = Date.now();
 
             return token;
         },

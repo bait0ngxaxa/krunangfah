@@ -12,6 +12,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { revalidatePath } from "next/cache";
+import {
+    counselingSessionSchema,
+    updateCounselingSessionSchema,
+    deleteCounselingSessionSchema,
+} from "@/lib/validations/counseling.validation";
 
 export interface CounselingSession {
     id: string;
@@ -119,12 +124,15 @@ export async function createCounselingSession(data: {
     summary: string;
 }) {
     try {
+        // Validate input
+        const validated = counselingSessionSchema.parse(data);
+
         const session = await requireAuth();
         const userId = session.user.id;
 
         // Verify access
         const { allowed, error } = await verifyStudentAccess(
-            data.studentId,
+            validated.studentId,
             userId,
             session.user.role,
         );
@@ -135,7 +143,7 @@ export async function createCounselingSession(data: {
 
         // Get the next session number for this student
         const lastSession = await prisma.counselingSession.findFirst({
-            where: { studentId: data.studentId },
+            where: { studentId: validated.studentId },
             orderBy: { sessionNumber: "desc" },
             select: { sessionNumber: true },
         });
@@ -144,16 +152,16 @@ export async function createCounselingSession(data: {
 
         const counselingSession = await prisma.counselingSession.create({
             data: {
-                studentId: data.studentId,
+                studentId: validated.studentId,
                 sessionNumber,
-                sessionDate: data.sessionDate,
-                counselorName: data.counselorName,
-                summary: data.summary,
+                sessionDate: validated.sessionDate,
+                counselorName: validated.counselorName,
+                summary: validated.summary,
                 createdById: userId,
             },
         });
 
-        revalidatePath(`/students/${data.studentId}`);
+        revalidatePath(`/students/${validated.studentId}`);
 
         return { success: true, session: counselingSession };
     } catch (error) {
@@ -174,11 +182,17 @@ export async function updateCounselingSession(
     },
 ) {
     try {
+        // Validate input
+        const validated = updateCounselingSessionSchema.parse({
+            sessionId: id,
+            ...data,
+        });
+
         const session = await requireAuth();
 
         // Get session to verify access
         const counselingSession = await prisma.counselingSession.findUnique({
-            where: { id },
+            where: { id: validated.sessionId },
             select: { studentId: true },
         });
 
@@ -197,8 +211,12 @@ export async function updateCounselingSession(
         }
 
         const updated = await prisma.counselingSession.update({
-            where: { id },
-            data,
+            where: { id: validated.sessionId },
+            data: {
+                sessionDate: validated.sessionDate,
+                counselorName: validated.counselorName,
+                summary: validated.summary,
+            },
         });
 
         revalidatePath(`/students/${updated.studentId}`);
@@ -215,10 +233,13 @@ export async function updateCounselingSession(
  */
 export async function deleteCounselingSession(id: string) {
     try {
+        // Validate input
+        const validated = deleteCounselingSessionSchema.parse({ sessionId: id });
+
         const session = await requireAuth();
 
         const counselingSession = await prisma.counselingSession.findUnique({
-            where: { id },
+            where: { id: validated.sessionId },
             select: { studentId: true },
         });
 
@@ -237,7 +258,7 @@ export async function deleteCounselingSession(id: string) {
         }
 
         await prisma.counselingSession.delete({
-            where: { id },
+            where: { id: validated.sessionId },
         });
 
         revalidatePath(`/students/${counselingSession.studentId}`);

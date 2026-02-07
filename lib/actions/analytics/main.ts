@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
+import { unstable_cache } from "next/cache";
 import {
     getCombinedAnalytics,
     getTrendData,
@@ -19,101 +20,62 @@ import { RISK_LEVEL_CONFIG } from "./constants";
 import type { AnalyticsData } from "./types";
 
 /**
- * Get analytics summary for current teacher's students
- * @param classFilter - Optional class filter for school_admin (e.g. "ม.1/1")
+ * Cached analytics data fetcher
+ * Caches expensive DB queries (CTE + ROW_NUMBER) for 5 minutes
+ * Invalidated via revalidateTag("analytics") when data changes
  */
-export async function getAnalyticsSummary(
-    classFilter?: string,
-): Promise<AnalyticsData | null> {
-    try {
-        const session = await requireAuth();
-        const userId = session.user.id;
-
-        // Get user with teacher profile
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                schoolId: true,
-                role: true,
-                teacher: {
-                    select: {
-                        advisoryClass: true,
-                    },
-                },
-            },
-        });
-
-        if (!user?.schoolId) {
-            return null;
-        }
-
-        // Determine which classes to show based on role
-        let targetClass: string | undefined;
-        if (user.role === "class_teacher") {
-            // Class teacher: only show their advisory class
-            targetClass = user.teacher?.advisoryClass;
-            if (!targetClass) {
-                return null;
-            }
-        } else if (user.role === "school_admin") {
-            // School admin: show filtered class or all classes
-            targetClass = classFilter;
-        }
+const getCachedAnalyticsData = unstable_cache(
+    async (
+        schoolId: string,
+        targetClass: string,
+        role: string,
+    ): Promise<AnalyticsData> => {
+        const classFilter = targetClass || undefined;
 
         // Build student query based on role and filter
-        const studentWhere: {
-            schoolId: string;
-            class?: string;
-        } = {
-            schoolId: user.schoolId,
+        const studentWhere: { schoolId: string; class?: string } = {
+            schoolId,
         };
-
-        if (targetClass) {
-            studentWhere.class = targetClass;
+        if (classFilter) {
+            studentWhere.class = classFilter;
         }
 
-        // Get total students
-        const totalStudents = await prisma.student.count({
-            where: studentWhere,
-        });
-
-        // Get all available classes for school_admin
-        let availableClasses: string[] = [];
-        if (user.role === "school_admin") {
-            const classes = await prisma.student.findMany({
-                where: { schoolId: user.schoolId },
-                select: { class: true },
-                distinct: ["class"],
-                orderBy: { class: "asc" },
-            });
-            availableClasses = classes.map((c) => c.class);
-        }
-
-        // ✅ Optimized: Single combined query for risk/grade/hospital data
-        const [combinedData, trendDataRaw, activityProgressRaw] =
+        // Get total students + available classes in parallel with analytics
+        const [totalStudents, availableClasses, combinedData, trendDataRaw, activityProgressRaw] =
             await Promise.all([
-                getCombinedAnalytics(user.schoolId, targetClass),
-                getTrendData(user.schoolId, targetClass),
-                getActivityProgressByRisk(user.schoolId, targetClass),
+                prisma.student.count({ where: studentWhere }),
+                role === "school_admin"
+                    ? prisma.student
+                          .findMany({
+                              where: { schoolId },
+                              select: { class: true },
+                              distinct: ["class"],
+                              orderBy: { class: "asc" },
+                          })
+                          .then((classes) => classes.map((c) => c.class))
+                    : Promise.resolve([]),
+                getCombinedAnalytics(schoolId, classFilter),
+                getTrendData(schoolId, classFilter),
+                getActivityProgressByRisk(schoolId, classFilter),
             ]);
 
-        const { riskLevelCounts: riskLevelCountsRaw, gradeRiskData: gradeRiskDataRaw, hospitalReferrals: hospitalReferralsRaw } = combinedData;
+        const {
+            riskLevelCounts: riskLevelCountsRaw,
+            gradeRiskData: gradeRiskDataRaw,
+            hospitalReferrals: hospitalReferralsRaw,
+        } = combinedData;
 
-        // Calculate total students with assessment from risk level counts
         const studentsWithAssessment = riskLevelCountsRaw.reduce(
             (sum, r) => sum + Number(r.count),
             0,
         );
         const studentsWithoutAssessment =
             totalStudents - studentsWithAssessment;
-
-        // Calculate total referrals from risk level counts
         const totalReferrals = riskLevelCountsRaw.reduce(
             (sum, r) => sum + Number(r.referral_count),
             0,
         );
 
-        // Transform raw results to API interfaces
         const riskLevelSummary = transformRiskLevelCounts(
             riskLevelCountsRaw,
             studentsWithAssessment,
@@ -131,13 +93,62 @@ export async function getAnalyticsSummary(
             studentsWithAssessment,
             studentsWithoutAssessment,
             availableClasses,
-            currentClass: targetClass,
+            currentClass: classFilter,
             trendData,
             activityProgressByRisk,
             gradeRiskData,
             hospitalReferralsByGrade,
             totalReferrals,
         };
+    },
+    ["analytics-data"],
+    { revalidate: 300, tags: ["analytics"] },
+);
+
+/**
+ * Get analytics summary for current teacher's students
+ * Uses cached data (5 min TTL) to avoid repeated heavy queries
+ * @param classFilter - Optional class filter for school_admin (e.g. "ม.1/1")
+ */
+export async function getAnalyticsSummary(
+    classFilter?: string,
+): Promise<AnalyticsData | null> {
+    try {
+        const session = await requireAuth();
+        const userId = session.user.id;
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                schoolId: true,
+                role: true,
+                teacher: {
+                    select: {
+                        advisoryClass: true,
+                    },
+                },
+            },
+        });
+
+        if (!user?.schoolId) {
+            return null;
+        }
+
+        let targetClass: string | undefined;
+        if (user.role === "class_teacher") {
+            targetClass = user.teacher?.advisoryClass;
+            if (!targetClass) {
+                return null;
+            }
+        } else if (user.role === "school_admin") {
+            targetClass = classFilter;
+        }
+
+        return getCachedAnalyticsData(
+            user.schoolId,
+            targetClass ?? "",
+            user.role,
+        );
     } catch (error) {
         console.error("Get analytics summary error:", error);
         return null;
