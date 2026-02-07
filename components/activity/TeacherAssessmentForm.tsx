@@ -151,7 +151,7 @@ export function TeacherAssessmentForm({
                                         setInternalProblems(e.target.value)
                                     }
                                     placeholder="ระบุปัญหาภายในที่พบ..."
-                                    className={`w-full h-40 p-5 border-2 ${assessmentColors.border} bg-white rounded-2xl ${assessmentColors.borderFocus} focus:ring-4 focus:ring-opacity-20 focus:outline-none resize-none transition-all shadow-sm`}
+                                    className={`w-full h-40 p-5 border-2 ${assessmentColors.border} bg-white rounded-2xl ${assessmentColors.borderFocus} focus:ring-4 ${assessmentColors.ringFocus} focus:ring-opacity-20 focus:outline-none resize-none transition-all shadow-sm`}
                                 />
                             </div>
 
@@ -181,7 +181,7 @@ export function TeacherAssessmentForm({
                                         setExternalProblems(e.target.value)
                                     }
                                     placeholder="ระบุปัญหาภายนอกที่พบ..."
-                                    className={`w-full h-40 p-5 border-2 ${assessmentColors.border} bg-white rounded-2xl ${assessmentColors.borderFocus} focus:ring-4 focus:ring-opacity-20 focus:outline-none resize-none transition-all shadow-sm`}
+                                    className={`w-full h-40 p-5 border-2 ${assessmentColors.border} bg-white rounded-2xl ${assessmentColors.borderFocus} focus:ring-4 ${assessmentColors.ringFocus} focus:ring-opacity-20 focus:outline-none resize-none transition-all shadow-sm`}
                                 />
                             </div>
                         </div>

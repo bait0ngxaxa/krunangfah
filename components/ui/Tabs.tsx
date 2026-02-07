@@ -31,8 +31,8 @@ export function Tabs({ tabs, defaultTab }: TabsProps) {
                             px-6 py-3 font-bold text-base rounded-t-xl transition-all duration-300 relative overflow-hidden group
                             ${
                                 activeTab === tab.id
-                                    ? "text-white shadow-lg shadow-pink-200/50 -translate-y-1"
-                                    : "text-gray-500 hover:text-pink-600 hover:bg-white/60"
+                                    ? "text-white shadow-xl shadow-pink-300/60 -translate-y-1 border-2 border-pink-400 border-b-0"
+                                    : "text-gray-500 hover:text-pink-600 hover:bg-white/60 border-2 border-gray-200 border-b-0 hover:border-pink-200 hover:shadow-md"
                             }
                         `}
                     >

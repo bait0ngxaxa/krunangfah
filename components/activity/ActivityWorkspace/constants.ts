@@ -150,6 +150,7 @@ export const ASSESSMENT_COLOR_CONFIG: Record<
         button: string;
         buttonHover: string;
         buttonRing: string;
+        ringFocus: string;
     }
 > = {
     orange: {
@@ -161,6 +162,7 @@ export const ASSESSMENT_COLOR_CONFIG: Record<
         button: "bg-orange-600",
         buttonHover: "hover:bg-orange-200",
         buttonRing: "ring-orange-300",
+        ringFocus: "focus:ring-orange-300",
     },
     yellow: {
         bgLight: "bg-yellow-50",
@@ -171,6 +173,7 @@ export const ASSESSMENT_COLOR_CONFIG: Record<
         button: "bg-yellow-600",
         buttonHover: "hover:bg-yellow-200",
         buttonRing: "ring-yellow-300",
+        ringFocus: "focus:ring-yellow-300",
     },
     green: {
         bgLight: "bg-green-50",
@@ -181,6 +184,7 @@ export const ASSESSMENT_COLOR_CONFIG: Record<
         button: "bg-green-600",
         buttonHover: "hover:bg-green-200",
         buttonRing: "ring-green-300",
+        ringFocus: "focus:ring-green-300",
     },
 };
 
