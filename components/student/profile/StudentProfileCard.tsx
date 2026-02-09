@@ -9,6 +9,7 @@ interface StudentProfileCardProps {
         lastName: string;
         studentId?: string | null;
         gender?: string | null;
+        age?: number | null;
         class: string;
     };
     latestResult?: {
@@ -93,6 +94,11 @@ export function StudentProfileCard({
                             {student.gender && (
                                 <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-sm border border-purple-100">
                                     {student.gender === "MALE" ? "👦 ชาย" : "👧 หญิง"}
+                                </span>
+                            )}
+                            {student.age && (
+                                <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-sm border border-blue-100">
+                                    อายุ {student.age} ปี
                                 </span>
                             )}
                             {student.studentId && (

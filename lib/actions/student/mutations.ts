@@ -90,16 +90,26 @@ export async function importStudents(
                             firstName: studentData.firstName,
                             lastName: studentData.lastName,
                             gender: studentData.gender ?? null,
+                            age: studentData.age ?? null,
                             class: studentData.class,
                             schoolId,
                         },
                     });
-                } else if (studentData.gender && student.gender !== studentData.gender) {
-                    // อัปเดตเพศถ้ามีข้อมูลใหม่และต่างจากเดิม
-                    student = await prisma.student.update({
-                        where: { id: student.id },
-                        data: { gender: studentData.gender },
-                    });
+                } else {
+                    // อัปเดต gender/age ถ้ามีข้อมูลใหม่และต่างจากเดิม
+                    const updates: Record<string, unknown> = {};
+                    if (studentData.gender && student.gender !== studentData.gender) {
+                        updates.gender = studentData.gender;
+                    }
+                    if (studentData.age && student.age !== studentData.age) {
+                        updates.age = studentData.age;
+                    }
+                    if (Object.keys(updates).length > 0) {
+                        student = await prisma.student.update({
+                            where: { id: student.id },
+                            data: updates,
+                        });
+                    }
                 }
 
                 // Calculate risk level

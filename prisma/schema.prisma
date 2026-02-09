@@ -166,6 +166,7 @@ model Student {
   firstName     String   // ชื่อ
   lastName      String   // สกุล
   gender        Gender?  // เพศ (optional เพื่อรองรับข้อมูลเก่า)
+  age           Int?     // อายุ (optional เพื่อรองรับข้อมูลเก่า)
   class         String   // ห้อง เช่น "ม.1/1"
   schoolId      String   // FK to School
   createdAt     DateTime @default(now())

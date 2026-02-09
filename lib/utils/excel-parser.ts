@@ -9,6 +9,7 @@ export interface ParsedStudent {
     firstName: string;
     lastName: string;
     gender?: ParsedGender;
+    age?: number;
     class: string;
     scores: PhqScores;
 }
@@ -102,6 +103,9 @@ export async function parseExcelBuffer(
                 const lastName = getCell("นามสกุล");
                 const genderRaw = getCell("เพศ");
                 const gender = parseGender(genderRaw);
+                const ageRaw = getCell("อายุ");
+                const ageParsed = parseInt(ageRaw, 10);
+                const age = !isNaN(ageParsed) && ageParsed > 0 && ageParsed <= 100 ? ageParsed : undefined;
                 const studentClass = getCell("ห้อง");
                 const studentId = getCell("รหัสนักเรียน");
 
@@ -131,6 +135,7 @@ export async function parseExcelBuffer(
                     firstName,
                     lastName,
                     gender,
+                    age,
                     class: normalizeClassName(studentClass),
                     scores: {
                         q1: getNumberCell("ข้อ1"),

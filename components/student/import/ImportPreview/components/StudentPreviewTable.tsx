@@ -27,6 +27,9 @@ export function StudentPreviewTable({ students }: StudentPreviewTableProps) {
                                 <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     เพศ
                                 </th>
+                                <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    อายุ
+                                </th>
                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     ห้อง
                                 </th>
@@ -52,6 +55,9 @@ export function StudentPreviewTable({ students }: StudentPreviewTableProps) {
                                     </td>
                                     <td className="px-6 py-4 text-sm text-center text-gray-600">
                                         {student.gender === "MALE" ? "ชาย" : student.gender === "FEMALE" ? "หญิง" : "-"}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-center text-gray-600">
+                                        {student.age ?? "-"}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600">
                                         {student.class}
