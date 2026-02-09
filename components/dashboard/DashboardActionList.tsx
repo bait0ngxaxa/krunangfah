@@ -40,7 +40,7 @@ export function DashboardActionList({
                     </h3>
                     <ActionCard
                         title="เพิ่มนักเรียน + PHQ-A (Import Excel)"
-                        buttonText="Import Excel"
+                        buttonText="นำเข้านักเรียน"
                         href="/students/import"
                         variant="primary"
                     />

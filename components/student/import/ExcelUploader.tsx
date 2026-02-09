@@ -150,8 +150,8 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                     <p className="text-sm text-gray-600 leading-relaxed">
                         คอลัมน์:{" "}
                         <span className="font-medium text-gray-800">
-                            รหัสนักเรียน, ชื่อ, นามสกุล, ห้อง, ข้อ1-ข้อ9, ข้อ9a,
-                            ข้อ9b
+                            รหัสนักเรียน, ชื่อ, นามสกุล, เพศ,อายุ,ห้อง,
+                            ข้อ1-ข้อ9, ข้อ9a, ข้อ9b
                         </span>
                     </p>
                     <p className="text-xs text-gray-500 mt-2 bg-white/50 inline-block px-2 py-1 rounded-md border border-white/50">

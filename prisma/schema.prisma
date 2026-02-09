@@ -70,7 +70,7 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          UserRole  @default(class_teacher) // user, school_admin, system_admin, class_teacher
+  role          UserRole  @default(school_admin) // school_admin (self-register), class_teacher (invite only)
   schoolId      String?   // FK to School
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

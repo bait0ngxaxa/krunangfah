@@ -18,38 +18,51 @@ export default async function Home() {
 
     // Not logged in - show landing page
     return (
-        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-rose-50 via-white to-pink-100 relative overflow-hidden">
-            {/* Grid Pattern Overlay */}
-            <div
-                className="absolute inset-0 opacity-[0.3]"
-                style={{
-                    backgroundImage:
-                        "radial-gradient(#ffe4e6 1px, transparent 1px)",
-                    backgroundSize: "24px 24px",
-                }}
-            />
+        <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#fafafa]">
+            {/* Ambient Background - Soft Mesh Gradient */}
+            <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-rose-200/40 blur-[100px] animate-float-slow" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-pink-200/40 blur-[100px] animate-float-delayed" />
+                <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-orange-100/40 blur-[80px] animate-float" />
 
-            {/* Decorative Floating Background Elements */}
-            <div className="absolute top-20 left-10 w-72 h-72 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-float" />
-            <div className="absolute bottom-20 right-10 w-72 h-72 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-float-delayed" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-float-slow" />
+                {/* Subtle Grid Pattern */}
+                <div
+                    className="absolute inset-0 opacity-[0.25]"
+                    style={{
+                        backgroundImage:
+                            "linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(to right, #e5e7eb 1px, transparent 1px)",
+                        backgroundSize: "40px 40px",
+                    }}
+                />
+            </div>
 
-            {/* Main Content Glass Card */}
-            <div className="relative z-10 p-8 sm:p-12 bg-white/40 backdrop-blur-xl rounded-3xl border border-white/60 shadow-xl shadow-pink-100/40 max-w-4xl mx-4 w-full text-center">
-                <div className="mb-6 inline-block p-4 rounded-full bg-white/60 backdrop-blur-md shadow-md animate-fade-in-down ring-4 ring-white/50">
-                    <span className="text-4xl text-shadow-sm">🧚‍♀️</span>
+            {/* Main Content Container */}
+            <main className="relative z-10 w-full max-w-5xl px-6 py-12 flex flex-col items-center text-center">
+                {/* Hero Icon */}
+                <div className="mb-8 relative group cursor-default">
+                    <div className="absolute -inset-4 bg-linear-to-r from-rose-200 to-pink-200 rounded-full blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500 animate-pulse" />
+                    <div className="relative bg-white/80 backdrop-blur-xl p-5 rounded-3xl shadow-lg ring-1 ring-white/60 transform transition-transform duration-500 hover:scale-105 hover:rotate-3">
+                        <span className="text-6xl filter drop-shadow-sm select-none">
+                            🧚‍♀️
+                        </span>
+                    </div>
                 </div>
 
-                <h1 className="text-5xl md:text-7xl font-bold bg-linear-to-r from-rose-400 to-pink-600 bg-clip-text text-transparent mb-6 drop-shadow-sm py-2 leading-tight animate-fade-in-left animation-delay-200">
+                {/* Hero Text */}
+                <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold bg-linear-to-r from-rose-400 to-pink-600 bg-clip-text text-transparent mb-6 drop-shadow-sm py-2 px-4 leading-normal animate-fade-in-up">
                     โครงการครูนางฟ้า
                 </h1>
 
-                <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto font-medium leading-relaxed animate-fade-in-right animation-delay-400">
-                    ระบบจัดการและติดตามผลการคัดกรอง{" "}
-                    <br className="hidden md:block" />
-                    เพื่อการดูแลนักเรียนอย่างใกล้ชิดและอบอุ่น
+                <p className="text-lg md:text-2xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed font-medium animate-fade-in-up animation-delay-200">
+                    ระบบดูแลช่วยเหลือนักเรียนยุคใหม่
+                    <br className="hidden sm:block" />
+                    <span className="text-slate-400">
+                        {" "}
+                        เพื่อการดูแลอย่างใกล้ชิด อบอุ่น และทั่วถึง
+                    </span>
                 </p>
 
+                {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up animation-delay-600">
                     <Link
                         href="/signin"
@@ -65,7 +78,12 @@ export default async function Home() {
                         ลงทะเบียน
                     </Link>
                 </div>
-            </div>
+            </main>
+
+            {/* Footer / Credits */}
+            <footer className="absolute bottom-6 text-slate-400 text-sm font-medium animate-fade-in-up animation-delay-600">
+                © {new Date().getFullYear()} Kru Nangfah Project
+            </footer>
         </div>
     );
 }

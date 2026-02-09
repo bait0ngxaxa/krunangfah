@@ -41,8 +41,10 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
 
             if (result?.error) {
                 // Check if error contains rate limit message
-                if (result.error.includes("ส่งคำขอมากเกินไป") ||
-                    result.error.includes("RATE_LIMIT")) {
+                if (
+                    result.error.includes("ส่งคำขอมากเกินไป") ||
+                    result.error.includes("RATE_LIMIT")
+                ) {
                     toast.error(result.error);
                 } else {
                     toast.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
@@ -76,7 +78,7 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                     id="email"
                     autoComplete="email"
                     disabled={isLoading}
-                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-black placeholder:text-gray-500"
+                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-black placeholder:text-gray-600"
                     placeholder="your@email.com"
                 />
                 {errors.email && (
@@ -99,7 +101,7 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                     id="password"
                     autoComplete="current-password"
                     disabled={isLoading}
-                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-black placeholder:text-gray-500"
+                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-black placeholder:text-gray-600"
                     placeholder="••••••••"
                 />
                 {errors.password && (

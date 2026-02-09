@@ -10,7 +10,7 @@ import {
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Dashboard | โครงการครูนางฟ้า",
+    title: "หน้าหลัก | โครงการครูนางฟ้า",
     description: "หน้าหลักสำหรับครู",
 };
 

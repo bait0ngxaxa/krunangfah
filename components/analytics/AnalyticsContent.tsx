@@ -23,7 +23,9 @@ const RiskLevelPieChart = dynamic(
         ssr: false,
         loading: () => (
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex items-center justify-center min-h-[400px]">
-                <div className="animate-pulse text-gray-400">กำลังโหลดกราฟ...</div>
+                <div className="animate-pulse text-gray-400">
+                    กำลังโหลดกราฟ...
+                </div>
             </div>
         ),
     },
@@ -38,7 +40,9 @@ const RiskLevelTrendChart = dynamic(
         ssr: false,
         loading: () => (
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex items-center justify-center min-h-[400px]">
-                <div className="animate-pulse text-gray-400">กำลังโหลดกราฟ...</div>
+                <div className="animate-pulse text-gray-400">
+                    กำลังโหลดกราฟ...
+                </div>
             </div>
         ),
     },
@@ -53,7 +57,9 @@ const RiskLevelByGradeChart = dynamic(
         ssr: false,
         loading: () => (
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex items-center justify-center min-h-[400px]">
-                <div className="animate-pulse text-gray-400">กำลังโหลดกราฟ...</div>
+                <div className="animate-pulse text-gray-400">
+                    กำลังโหลดกราฟ...
+                </div>
             </div>
         ),
     },
@@ -104,9 +110,13 @@ export function AnalyticsContent({
                             }
                         />
                     </div>
-                    <HospitalReferralTable
-                        hospitalReferralsByGrade={data.hospitalReferralsByGrade}
-                    />
+                    {isSchoolAdmin && (
+                        <HospitalReferralTable
+                            hospitalReferralsByGrade={
+                                data.hospitalReferralsByGrade
+                            }
+                        />
+                    )}
                 </>
             ),
         },

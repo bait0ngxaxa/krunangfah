@@ -28,6 +28,19 @@ body {
         sans-serif;
 }
 
+/* Global Form Elements Reset */
+input,
+select,
+textarea {
+    color: #171717; /* Dark text for visibility */
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #6b7280; /* Gray-500, readable but distinct */
+    opacity: 1; /* Firefox fix */
+}
+
 /* Animations */
 /* Animations */
 @keyframes fade-in-up {

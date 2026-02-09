@@ -91,7 +91,7 @@ export function StudentSearch() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="พิมพ์ชื่อ, นามสกุล หรือรหัสนักเรียน..."
-                    className="w-full pl-12 pr-12 py-4 bg-white/50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 shadow-sm hover:shadow-md hover:border-pink-200 backdrop-blur-sm"
+                    className="w-full pl-12 pr-12 py-4 bg-white/50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all text-slate-900 placeholder:text-gray-600 shadow-sm hover:shadow-md hover:border-pink-200 backdrop-blur-sm"
                 />
                 {isSearching ? (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">

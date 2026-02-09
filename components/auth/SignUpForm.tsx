@@ -82,7 +82,7 @@ export function SignUpForm() {
                     {...register("email")}
                     type="email"
                     id="email"
-                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black placeholder:text-gray-500"
+                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black placeholder:text-gray-600"
                     placeholder="example@email.com"
                 />
                 {errors.email && (
@@ -103,7 +103,7 @@ export function SignUpForm() {
                     {...register("password")}
                     type="password"
                     id="password"
-                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black placeholder:text-gray-500"
+                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black placeholder:text-gray-600"
                     placeholder="อย่างน้อย 6 ตัวอักษร"
                 />
                 {errors.password && (
@@ -124,7 +124,7 @@ export function SignUpForm() {
                     {...register("confirmPassword")}
                     type="password"
                     id="confirmPassword"
-                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black placeholder:text-gray-500"
+                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black placeholder:text-gray-600"
                     placeholder="กรอกรหัสผ่านอีกครั้ง"
                 />
                 {errors.confirmPassword && (

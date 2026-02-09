@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Sign In | Krunangfah",
+    title: "เข้าสู่ระบบ | Krunangfah",
     description: "Sign in to your account",
 };
 
@@ -23,10 +23,13 @@ export default async function SignInPage({
 
             <div className="max-w-md w-full space-y-8 relative z-10">
                 <div className="text-center">
-                    <div className="mb-4 inline-block p-4 rounded-full bg-white/80 backdrop-blur-sm shadow-sm ring-1 ring-pink-100">
-                        <span className="text-4xl filter drop-shadow-sm">
-                            🧚‍♀️
-                        </span>
+                    <div className="relative mb-6 group cursor-default inline-block">
+                        <div className="absolute -inset-4 bg-linear-to-r from-rose-300/50 to-pink-300/50 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                        <div className="relative bg-white/60 backdrop-blur-xl p-4 rounded-3xl shadow-lg ring-1 ring-white/60 transform transition-transform duration-500 hover:scale-110 hover:rotate-12">
+                            <span className="text-5xl filter drop-shadow-sm select-none animate-bounce-subtle">
+                                🧚‍♀️
+                            </span>
+                        </div>
                     </div>
                     <h1 className="text-4xl font-bold bg-linear-to-r from-rose-400 to-pink-600 bg-clip-text text-transparent drop-shadow-sm">
                         Krunangfah
@@ -56,7 +59,7 @@ export default async function SignInPage({
                 </div>
 
                 <p className="text-center text-xs text-gray-400">
-                    Protected by NextAuth.js
+                    © {new Date().getFullYear()} Kru Nangfah Project
                 </p>
             </div>
         </div>
