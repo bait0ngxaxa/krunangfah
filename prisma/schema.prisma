@@ -152,12 +152,20 @@ model TeacherInvite {
   @@map("teacher_invites")
 }
 
+enum Gender {
+  MALE
+  FEMALE
+
+  @@map("gender")
+}
+
 // Student - นักเรียน
 model Student {
   id            String   @id @default(cuid())
   studentId     String   // รหัสนักเรียน (required)
   firstName     String   // ชื่อ
   lastName      String   // สกุล
+  gender        Gender?  // เพศ (optional เพื่อรองรับข้อมูลเก่า)
   class         String   // ห้อง เช่น "ม.1/1"
   schoolId      String   // FK to School
   createdAt     DateTime @default(now())

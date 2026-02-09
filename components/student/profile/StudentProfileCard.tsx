@@ -8,6 +8,7 @@ interface StudentProfileCardProps {
         firstName: string;
         lastName: string;
         studentId?: string | null;
+        gender?: string | null;
         class: string;
     };
     latestResult?: {
@@ -89,6 +90,11 @@ export function StudentProfileCard({
                             <span className="px-3 py-1 bg-pink-50 text-pink-600 rounded-lg text-sm border border-pink-100">
                                 ห้อง {student.class}
                             </span>
+                            {student.gender && (
+                                <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-sm border border-purple-100">
+                                    {student.gender === "MALE" ? "👦 ชาย" : "👧 หญิง"}
+                                </span>
+                            )}
                             {student.studentId && (
                                 <span className="text-sm border-l-2 border-gray-200 pl-3">
                                     รหัส {student.studentId}

@@ -2,10 +2,13 @@ import ExcelJS from "exceljs";
 import { type PhqScores } from "./phq-scoring";
 import { normalizeClassName } from "./class-normalizer";
 
+export type ParsedGender = "MALE" | "FEMALE";
+
 export interface ParsedStudent {
     studentId: string;
     firstName: string;
     lastName: string;
+    gender?: ParsedGender;
     class: string;
     scores: PhqScores;
 }
@@ -84,8 +87,21 @@ export async function parseExcelBuffer(
                     );
                 };
 
+                const parseGender = (value: string): ParsedGender | undefined => {
+                    const normalized = value.trim().toLowerCase();
+                    if (normalized === "ชาย" || normalized === "male" || normalized === "m") {
+                        return "MALE";
+                    }
+                    if (normalized === "หญิง" || normalized === "female" || normalized === "f") {
+                        return "FEMALE";
+                    }
+                    return undefined;
+                };
+
                 const firstName = getCell("ชื่อ");
                 const lastName = getCell("นามสกุล");
+                const genderRaw = getCell("เพศ");
+                const gender = parseGender(genderRaw);
                 const studentClass = getCell("ห้อง");
                 const studentId = getCell("รหัสนักเรียน");
 
@@ -114,6 +130,7 @@ export async function parseExcelBuffer(
                     studentId,
                     firstName,
                     lastName,
+                    gender,
                     class: normalizeClassName(studentClass),
                     scores: {
                         q1: getNumberCell("ข้อ1"),

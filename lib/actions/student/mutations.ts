@@ -89,9 +89,16 @@ export async function importStudents(
                             studentId: studentData.studentId,
                             firstName: studentData.firstName,
                             lastName: studentData.lastName,
+                            gender: studentData.gender ?? null,
                             class: studentData.class,
                             schoolId,
                         },
+                    });
+                } else if (studentData.gender && student.gender !== studentData.gender) {
+                    // อัปเดตเพศถ้ามีข้อมูลใหม่และต่างจากเดิม
+                    student = await prisma.student.update({
+                        where: { id: student.id },
+                        data: { gender: studentData.gender },
                     });
                 }
 

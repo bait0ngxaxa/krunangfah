@@ -17,6 +17,7 @@ export async function GET() {
             "รหัสนักเรียน",
             "ชื่อ",
             "นามสกุล",
+            "เพศ",
             "ห้อง",
             "ข้อ1",
             "ข้อ2",
@@ -46,6 +47,7 @@ export async function GET() {
             { width: 15 }, // รหัสนักเรียน
             { width: 15 }, // ชื่อ
             { width: 15 }, // นามสกุล
+            { width: 8 },  // เพศ
             { width: 10 }, // ห้อง
             { width: 8 }, // ข้อ1
             { width: 8 }, // ข้อ2
@@ -66,6 +68,7 @@ export async function GET() {
                 "12345",
                 "สมชาย",
                 "ใจดี",
+                "ชาย",
                 "ม.1/1",
                 1,
                 0,
@@ -83,6 +86,7 @@ export async function GET() {
                 "12346",
                 "สมหญิง",
                 "รักเรียน",
+                "หญิง",
                 "ม.1/1",
                 2,
                 1,
@@ -100,6 +104,7 @@ export async function GET() {
                 "12347",
                 "สมศักดิ์",
                 "เก่งมาก",
+                "ชาย",
                 "ม.1/2",
                 0,
                 0,
@@ -117,6 +122,7 @@ export async function GET() {
                 "12348",
                 "สมปอง",
                 "ดีใจ",
+                "หญิง",
                 "ม.1/2",
                 2,
                 2,
@@ -148,6 +154,7 @@ export async function GET() {
         ]);
         instructionSheet.addRow(["ชื่อ", "ชื่อนักเรียน", "ข้อความ"]);
         instructionSheet.addRow(["นามสกุล", "นามสกุลนักเรียน", "ข้อความ"]);
+        instructionSheet.addRow(["เพศ", "เพศของนักเรียน", "ชาย / หญิง"]);
         instructionSheet.addRow(["ห้อง", "ห้องเรียน", "เช่น ม.1/1"]);
         instructionSheet.addRow(["ข้อ1-ข้อ9", "คะแนนแต่ละข้อ", "0, 1, 2, 3"]);
         instructionSheet.addRow([

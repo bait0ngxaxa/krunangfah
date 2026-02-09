@@ -28,9 +28,14 @@ export async function registerUser(
     const rateLimitResult = registrationLimiter.check(ip);
 
     if (!rateLimitResult.allowed) {
+        const minutes = Math.ceil(rateLimitResult.retryAfterSeconds / 60);
+        const timeMessage = minutes > 1
+            ? `${minutes} นาที`
+            : `${rateLimitResult.retryAfterSeconds} วินาที`;
+
         return {
             success: false,
-            message: "คำขอมากเกินไป กรุณาลองใหม่อีกครั้งในภายหลัง",
+            message: `ส่งคำขอมากเกินไป กรุณารอ ${timeMessage}`,
         };
     }
 

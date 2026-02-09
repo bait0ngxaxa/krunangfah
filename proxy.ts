@@ -38,11 +38,16 @@ const guestOnlyRoutes = ["/signin", "/signup"];
  * Build a 429 Too Many Requests response with rate limit headers
  */
 function buildRateLimitResponse(result: RateLimitResult): NextResponse {
+    const minutes = Math.ceil(result.retryAfterSeconds / 60);
+    const timeMessage = minutes > 1
+        ? `${minutes} นาที`
+        : `${result.retryAfterSeconds} วินาที`;
+
     return NextResponse.json(
         {
             error: {
                 code: "RATE_LIMIT_EXCEEDED",
-                message: "Too many requests. Please try again later.",
+                message: `ส่งคำขอมากเกินไป กรุณารออีก ${timeMessage}`,
             },
         },
         {

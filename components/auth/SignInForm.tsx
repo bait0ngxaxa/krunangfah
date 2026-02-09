@@ -40,7 +40,13 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
             });
 
             if (result?.error) {
-                toast.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+                // Check if error contains rate limit message
+                if (result.error.includes("ส่งคำขอมากเกินไป") ||
+                    result.error.includes("RATE_LIMIT")) {
+                    toast.error(result.error);
+                } else {
+                    toast.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+                }
                 return;
             }
 
