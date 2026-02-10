@@ -42,7 +42,6 @@ textarea::placeholder {
 }
 
 /* Animations */
-/* Animations */
 @keyframes fade-in-up {
     from {
         opacity: 0;
@@ -107,6 +106,15 @@ textarea::placeholder {
     opacity: 0;
 }
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 @keyframes float {
     0% {
         transform: translateY(0px);
@@ -160,4 +168,88 @@ textarea::placeholder {
 
 [data-sonner-toast] [data-description] {
     font-weight: 400;
+}
+
+/* ============================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================ */
+
+/* GPU Acceleration Helpers */
+.gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* Content Visibility for off-screen content */
+.content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+}
+
+/* Accessibility: reduce motion & disable heavy effects */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .backdrop-blur-md,
+    .backdrop-blur-sm,
+    .backdrop-blur-xl {
+        backdrop-filter: none !important;
+    }
+}
+
+/* Will-change optimization - use sparingly */
+.will-change-transform {
+    will-change: transform;
+}
+
+.will-change-opacity {
+    will-change: opacity;
+}
+
+/* Remove will-change after animation completes */
+.will-change-transform:not(:hover):not(:focus) {
+    will-change: auto;
+}
+
+/* Custom scrollbar optimized */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(236, 72, 153, 0.3);
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(236, 72, 153, 0.5);
+}
+
+/* Optimized card hover effects */
+.card-hover {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.15);
+}
+
+/* Container queries support for better responsive */
+@supports (container-type: inline-size) {
+    .container-query {
+        container-type: inline-size;
+    }
 }

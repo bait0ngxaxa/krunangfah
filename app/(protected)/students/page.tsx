@@ -3,8 +3,6 @@ import { getStudents } from "@/lib/actions/student";
 import { StudentDashboard } from "@/components/student";
 import Link from "next/link";
 
-export const dynamic = "force-dynamic";
-
 export default async function MyStudentsPage() {
     const { students } = await getStudents();
 

@@ -65,9 +65,11 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
         <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-pink-100 relative overflow-hidden group hover:shadow-2xl transition-all duration-300">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
 
-            <h2 className="text-2xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-6 flex items-center gap-2">
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                 <span className="text-2xl filter drop-shadow-sm">📋</span>
-                ประวัติการคัดกรองสุขภาพจิต
+                <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
+                    ประวัติการคัดกรองสุขภาพจิต
+                </span>
             </h2>
 
             {/* Desktop Table */}

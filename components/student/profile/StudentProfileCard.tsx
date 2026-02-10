@@ -76,24 +76,26 @@ export function StudentProfileCard({
 
             <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6 z-10">
                 {/* Student Info */}
-                <div className="flex items-center gap-6">
-                    <div className="relative">
-                        <div className="w-24 h-24 rounded-full bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white text-4xl font-bold shadow-lg shadow-pink-200 ring-4 ring-white">
+                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6">
+                    <div className="relative shrink-0">
+                        <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-full bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-lg shadow-pink-200 ring-4 ring-white">
                             {student.firstName.charAt(0)}
                         </div>
-                        <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-400 border-4 border-white rounded-full" />
+                        <div className="absolute bottom-0 right-0 w-5 h-5 sm:w-6 sm:h-6 bg-green-400 border-3 sm:border-4 border-white rounded-full" />
                     </div>
-                    <div>
-                        <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                    <div className="text-center sm:text-left min-w-0">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent wrap-break-words">
                             {student.firstName} {student.lastName}
                         </h1>
-                        <div className="flex items-center gap-3 mt-2 text-gray-500 font-medium">
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2 text-gray-500 font-medium">
                             <span className="px-3 py-1 bg-pink-50 text-pink-600 rounded-lg text-sm border border-pink-100">
                                 ห้อง {student.class}
                             </span>
                             {student.gender && (
                                 <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-sm border border-purple-100">
-                                    {student.gender === "MALE" ? "👦 ชาย" : "👧 หญิง"}
+                                    {student.gender === "MALE"
+                                        ? "👦 ชาย"
+                                        : "👧 หญิง"}
                                 </span>
                             )}
                             {student.age && (
@@ -102,7 +104,7 @@ export function StudentProfileCard({
                                 </span>
                             )}
                             {student.studentId && (
-                                <span className="text-sm border-l-2 border-gray-200 pl-3">
+                                <span className="text-sm border-l-2 border-gray-200 pl-2">
                                     รหัส {student.studentId}
                                 </span>
                             )}

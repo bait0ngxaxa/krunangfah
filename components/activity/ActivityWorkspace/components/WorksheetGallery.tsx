@@ -14,9 +14,11 @@ export function WorksheetGallery({
 }: WorksheetGalleryProps) {
     return (
         <div className="mb-10">
-            <h2 className="text-xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-6 flex items-center gap-2">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <span className="text-2xl">🖼️</span>
-                ใบงาน{activityTitle}
+                <span className="bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                    ใบงาน{activityTitle}
+                </span>
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">

@@ -49,9 +49,11 @@ export function ConversationView({
 
                     {/* Content */}
                     <div className="bg-white/60 rounded-2xl p-8 mb-8 border border-pink-50/50 shadow-sm">
-                        <h2 className="text-xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-6 flex items-center gap-2">
+                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                             <span className="text-2xl">📋</span>
-                            แนวทางการช่วยเหลือ
+                            <span className="bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                                แนวทางการช่วยเหลือ
+                            </span>
                         </h2>
                         <ul className="space-y-4 text-gray-700">
                             <li className="flex items-start gap-4 p-4 rounded-xl hover:bg-white/50 transition-colors border border-transparent hover:border-pink-100">

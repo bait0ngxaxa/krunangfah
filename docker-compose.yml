@@ -12,11 +12,13 @@ services:
             - postgres_krunangfah_data:/var/lib/postgresql/data
         ports:
             - "127.0.0.1:5434:5432"
+        networks:
+            - backend
         healthcheck:
             test:
                 [
                     "CMD-SHELL",
-                    "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-survey}",
+                    "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-krunangfah}",
                 ]
             interval: 10s
             timeout: 5s
@@ -26,6 +28,10 @@ services:
         mem_limit: 2g
         cpus: "2.0"
         shm_size: "256m"
+        read_only: true
+        tmpfs:
+            - /tmp
+            - /run/postgresql
         security_opt:
             - no-new-privileges:true
         logging:
@@ -33,6 +39,10 @@ services:
             options:
                 max-size: "10m"
                 max-file: "3"
+
+networks:
+    backend:
+        driver: bridge
 
 volumes:
     postgres_krunangfah_data:

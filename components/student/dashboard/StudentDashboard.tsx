@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { RiskGroupSection } from "../phq/RiskGroupSection";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
@@ -9,14 +10,16 @@ import { Users } from "lucide-react";
 // Dynamic import for chart component (ssr: false to prevent hydration warnings)
 const RiskPieChart = dynamic(
     () =>
-        import("../phq/RiskPieChart").then((mod) => ({
+        import("@/components/ui/RiskPieChart").then((mod) => ({
             default: mod.RiskPieChart,
         })),
     {
         ssr: false,
         loading: () => (
             <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-white/60 relative overflow-hidden ring-1 ring-pink-50 flex items-center justify-center min-h-[300px]">
-                <div className="animate-pulse text-gray-400">กำลังโหลดกราฟ...</div>
+                <div className="animate-pulse text-gray-400">
+                    กำลังโหลดกราฟ...
+                </div>
             </div>
         ),
     },
@@ -39,6 +42,8 @@ interface StudentDashboardProps {
 }
 
 export function StudentDashboard({ students }: StudentDashboardProps) {
+    const router = useRouter();
+
     // Get unique classes
     const classes = useMemo(() => {
         const uniqueClasses = [...new Set(students.map((s) => s.class))];
@@ -76,18 +81,43 @@ export function StudentDashboard({ students }: StudentDashboardProps) {
         [filteredStudents],
     );
 
-    // Count for pie chart
-    const riskCounts = {
-        red: groupedStudents.red.length,
-        orange: groupedStudents.orange.length,
-        yellow: groupedStudents.yellow.length,
-        green: groupedStudents.green.length,
-        blue: groupedStudents.blue.length,
-    };
+    // Pie chart data (ordered from low to high risk)
+    const pieChartData = useMemo(
+        () => [
+            {
+                name: "สีฟ้า",
+                value: groupedStudents.blue.length,
+                color: "#3B82F6",
+            },
+            {
+                name: "สีเขียว",
+                value: groupedStudents.green.length,
+                color: "#22C55E",
+            },
+            {
+                name: "สีเหลือง",
+                value: groupedStudents.yellow.length,
+                color: "#EAB308",
+            },
+            {
+                name: "สีส้ม",
+                value: groupedStudents.orange.length,
+                color: "#F97316",
+            },
+            {
+                name: "สีแดง",
+                value: groupedStudents.red.length,
+                color: "#EF4444",
+            },
+        ],
+        [groupedStudents],
+    );
+
+    const totalStudents = filteredStudents.length;
 
     const handleStudentClick = (studentId: string) => {
         // Navigate to student detail page
-        window.location.href = `/students/${studentId}`;
+        router.push(`/students/${studentId}`);
     };
 
     // Order: red, orange, yellow, green, blue (high risk first)
@@ -130,7 +160,12 @@ export function StudentDashboard({ students }: StudentDashboardProps) {
             )}
 
             {/* Pie Chart */}
-            <RiskPieChart data={riskCounts} />
+            <RiskPieChart
+                data={pieChartData}
+                title={`สรุปภาพรวมนักเรียน (${totalStudents} คน)`}
+                height={280}
+                outerRadius={85}
+            />
 
             {/* Student Groups - แสดงเฉพาะเมื่อเลือกห้องเฉพาะ */}
             {selectedClass === "all" && classes.length > 1 ? (

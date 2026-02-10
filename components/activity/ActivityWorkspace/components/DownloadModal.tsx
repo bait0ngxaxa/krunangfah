@@ -37,9 +37,11 @@ export function DownloadModal({
                 </button>
 
                 {/* Header */}
-                <h3 className="text-xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2 flex items-center gap-2">
+                <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
                     <span className="text-2xl">📋</span>
-                    เลือกใบงาน
+                    <span className="bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                        เลือกใบงาน
+                    </span>
                 </h3>
                 <p className="text-sm text-gray-600 mb-8 font-medium">
                     กิจกรรมที่ {activityNumber}

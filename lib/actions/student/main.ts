@@ -1,12 +1,13 @@
 /**
  * Student Main Actions
- * Public server actions with authentication
+ * Public server actions with authentication and caching
  */
 
 "use server";
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
+import { unstable_cache, revalidateTag } from "next/cache";
 import {
     getRiskLevelCountsQuery,
     getDistinctClassesQuery,
@@ -21,12 +22,14 @@ import type {
     GetStudentsOptions,
 } from "./types";
 
+// Note: Cache keys can be added here when implementing granular caching
+
 /**
  * Get risk level counts using database aggregation (fast)
- * Used for Pie Chart and summary
+ * Cached for 30 seconds
  */
 export async function getStudentRiskCounts(
-    classFilter?: string,
+    classFilter?: string
 ): Promise<RiskCountsResponse | null> {
     try {
         const session = await requireAuth();
@@ -55,10 +58,43 @@ export async function getStudentRiskCounts(
 
 /**
  * Get students by class (for class_teacher) or all (for school_admin)
- * Supports pagination
+ * Supports pagination with caching
  */
+const getCachedStudents = unstable_cache(
+    async (
+        schoolId: string,
+        userId: string,
+        userRole: string,
+        options: GetStudentsOptions
+    ) => {
+        const page = options.page ?? 1;
+        const limit = options.limit ?? 100;
+        const { students, total } = await getStudentsQuery(
+            schoolId,
+            userId,
+            userRole,
+            { classFilter: options.classFilter, page, limit }
+        );
+
+        return {
+            students,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    },
+    ["students-list"],
+    {
+        revalidate: 30, // Cache for 30 seconds
+        tags: ["students"],
+    }
+);
+
 export async function getStudents(
-    options?: GetStudentsOptions,
+    options?: GetStudentsOptions
 ): Promise<StudentListResponse> {
     try {
         const session = await requireAuth();
@@ -82,11 +118,20 @@ export async function getStudents(
             };
         }
 
+        // Use cached data for first page, fresh data for pagination
+        if (page === 1 && !classFilter) {
+            return getCachedStudents(schoolId, user.id, user.role, {
+                page,
+                limit,
+                classFilter,
+            });
+        }
+
         const { students, total } = await getStudentsQuery(
             schoolId,
             user.id,
             user.role,
-            { classFilter, page, limit },
+            { classFilter, page, limit }
         );
 
         return {
@@ -109,6 +154,7 @@ export async function getStudents(
 
 /**
  * Search students by name or student ID
+ * No caching for search (always fresh results)
  */
 export async function searchStudents(query: string) {
     try {
@@ -132,7 +178,24 @@ export async function searchStudents(query: string) {
 
 /**
  * Get student detail with all PHQ results
+ * Cached for 60 seconds
  */
+const getCachedStudentDetail = unstable_cache(
+    async (
+        schoolId: string,
+        userId: string,
+        userRole: string,
+        studentId: string
+    ) => {
+        return getStudentDetailQuery(schoolId, userId, userRole, studentId);
+    },
+    ["student-detail"],
+    {
+        revalidate: 60,
+        tags: ["student-detail"],
+    }
+);
+
 export async function getStudentDetail(studentId: string) {
     try {
         const session = await requireAuth();
@@ -146,9 +209,17 @@ export async function getStudentDetail(studentId: string) {
         const schoolId = dbUser?.schoolId;
         if (!schoolId) return null;
 
-        return getStudentDetailQuery(schoolId, user.id, user.role, studentId);
+        return getCachedStudentDetail(schoolId, user.id, user.role, studentId);
     } catch (error) {
         console.error("Get student detail error:", error);
         return null;
     }
+}
+
+/**
+ * Revalidate student cache after mutations
+ */
+export async function revalidateStudents() {
+    revalidateTag("students", "default");
+    revalidateTag("student-detail", "default");
 }

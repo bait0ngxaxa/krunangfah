@@ -18,22 +18,13 @@ export default async function Home() {
 
     // Not logged in - show landing page
     return (
-        <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#fafafa]">
-            {/* Ambient Background - Soft Mesh Gradient */}
+        <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-linear-to-br from-rose-50 via-white to-pink-100">
+            {/* Ambient Background - Matching signin/signup style */}
             <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-rose-200/40 blur-[100px] animate-float-slow" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-pink-200/40 blur-[100px] animate-float-delayed" />
-                <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-orange-100/40 blur-[80px] animate-float" />
-
-                {/* Subtle Grid Pattern */}
-                <div
-                    className="absolute inset-0 opacity-[0.25]"
-                    style={{
-                        backgroundImage:
-                            "linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(to right, #e5e7eb 1px, transparent 1px)",
-                        backgroundSize: "40px 40px",
-                    }}
-                />
+                <div className="absolute top-10 left-5 sm:left-10 w-60 sm:w-72 h-60 sm:h-72 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-pulse delay-75" />
+                <div className="absolute bottom-10 right-5 sm:right-10 w-60 sm:w-72 h-60 sm:h-72 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-pulse delay-150" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-96 h-72 sm:h-96 bg-pink-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse" />
+                <div className="absolute top-[20%] right-[10%] w-48 sm:w-64 h-48 sm:h-64 bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse delay-300" />
             </div>
 
             {/* Main Content Container */}

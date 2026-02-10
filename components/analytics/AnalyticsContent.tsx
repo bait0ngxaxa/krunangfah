@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useMemo, useTransition } from "react";
 import dynamic from "next/dynamic";
 import {
     ClassFilter,
@@ -10,14 +10,15 @@ import {
 } from "./index";
 import { AnalyticsSkeleton } from "./AnalyticsSkeleton";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
-import type { AnalyticsData } from "@/lib/actions/analytics";
+import type { AnalyticsData, RiskLevelSummary } from "@/lib/actions/analytics";
+import type { RiskPieChartDataItem } from "@/components/ui/RiskPieChart";
 import { Tabs, type Tab } from "@/components/ui/Tabs";
 
 // Dynamic imports for chart components (ssr: false to prevent hydration warnings)
-const RiskLevelPieChart = dynamic(
+const RiskPieChart = dynamic(
     () =>
-        import("./charts/RiskLevelPieChart").then((mod) => ({
-            default: mod.RiskLevelPieChart,
+        import("@/components/ui/RiskPieChart").then((mod) => ({
+            default: mod.RiskPieChart,
         })),
     {
         ssr: false,
@@ -65,6 +66,29 @@ const RiskLevelByGradeChart = dynamic(
     },
 );
 
+// Risk level sort order (low → high severity)
+const RISK_LEVEL_ORDER: Record<string, number> = {
+    blue: 0,
+    green: 1,
+    yellow: 2,
+    orange: 3,
+    red: 4,
+};
+
+function toChartData(summary: RiskLevelSummary[]): RiskPieChartDataItem[] {
+    return [...summary]
+        .sort(
+            (a, b) =>
+                (RISK_LEVEL_ORDER[a.riskLevel] ?? 5) -
+                (RISK_LEVEL_ORDER[b.riskLevel] ?? 5),
+        )
+        .map((item) => ({
+            name: item.label,
+            value: item.count,
+            color: item.color,
+        }));
+}
+
 interface AnalyticsContentProps {
     initialData: AnalyticsData;
     isSchoolAdmin: boolean;
@@ -90,6 +114,15 @@ export function AnalyticsContent({
         });
     };
 
+    const pieChartData = useMemo(
+        () => toChartData(data.riskLevelSummary),
+        [data.riskLevelSummary],
+    );
+
+    const pieChartTitle = selectedClass === "all"
+        ? "ข้อมูลนักเรียน (ทั้งหมด)"
+        : `ข้อมูลนักเรียน (ห้อง ${selectedClass})`;
+
     const tabs: Tab[] = [
         {
             id: "summary",
@@ -100,14 +133,12 @@ export function AnalyticsContent({
                         <PhqSummaryTable
                             riskLevelSummary={data.riskLevelSummary}
                         />
-                        <RiskLevelPieChart
-                            riskLevelSummary={data.riskLevelSummary}
-                            totalStudents={data.studentsWithAssessment}
-                            selectedClass={
-                                selectedClass === "all"
-                                    ? undefined
-                                    : selectedClass
-                            }
+                        <RiskPieChart
+                            data={pieChartData}
+                            title={pieChartTitle}
+                            height={380}
+                            outerRadius={110}
+                            showPercentageInLegend
                         />
                     </div>
                     {isSchoolAdmin && (

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireAuth } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
@@ -35,20 +36,22 @@ export default async function AnalyticsPage() {
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <h1 className="text-3xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-2 drop-shadow-sm flex items-center gap-3">
-                                <span className="text-3xl">📊</span> Dashboard &
-                                Analytics
+                            <h1 className="text-3xl font-bold mb-2 drop-shadow-sm flex items-center gap-3">
+                                <span className="text-3xl">📊</span>
+                                <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
+                                    Dashboard &amp; Analytics
+                                </span>
                             </h1>
                             <p className="text-gray-600 font-medium">
                                 สรุปข้อมูลการคัดกรองสุขภาพจิตนักเรียน (PHQ-A)
                             </p>
                         </div>
-                        <a
+                        <Link
                             href="/dashboard"
                             className="px-6 py-2.5 bg-white text-gray-600 font-semibold rounded-xl hover:bg-pink-50 hover:text-pink-600 border border-gray-200 hover:border-pink-200 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
                         >
                             <span>←</span> กลับหน้าหลัก
-                        </a>
+                        </Link>
                     </div>
                 </div>
 

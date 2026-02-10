@@ -178,6 +178,7 @@ export async function importStudents(
 
         revalidatePath("/dashboard");
         revalidatePath("/students");
+        revalidatePath("/analytics");
         revalidateTag("analytics", "default");
 
         const failedCount = errors.length;
