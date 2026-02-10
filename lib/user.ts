@@ -47,13 +47,18 @@ export async function createUser(
         // Hash password
         const hashedPassword = await hashPassword(credentials.password);
 
+        // Check if email is in system_admin whitelist
+        const isWhitelisted = await prisma.systemAdminWhitelist.findUnique({
+            where: { email: credentials.email, isActive: true },
+        });
+
         // Create user with basic info only (no name, no school yet)
         // Name and school will be set when creating Teacher profile
         const user = await prisma.user.create({
             data: {
                 email: credentials.email,
                 password: hashedPassword,
-                role: "school_admin", // Default role for new signups
+                role: isWhitelisted ? "system_admin" : "school_admin",
             },
         });
 

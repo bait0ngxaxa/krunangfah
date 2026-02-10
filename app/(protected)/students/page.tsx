@@ -1,10 +1,19 @@
-import { ArrowLeft, Upload } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getStudents } from "@/lib/actions/student";
+import { getSchools } from "@/lib/actions/dashboard.actions";
+import { requireAuth } from "@/lib/session";
 import { StudentDashboard } from "@/components/student";
 import Link from "next/link";
 
 export default async function MyStudentsPage() {
-    const { students } = await getStudents();
+    const session = await requireAuth();
+    const userRole = session.user.role;
+    const isAdmin = userRole === "system_admin";
+
+    const { students } = await getStudents({ limit: 10000 });
+
+    // Fetch schools list only for system_admin
+    const schools = isAdmin ? await getSchools() : [];
 
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
@@ -34,18 +43,20 @@ export default async function MyStudentsPage() {
                             ข้อมูลนักเรียนและผลคัดกรอง PHQ-A
                         </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/students/import"
-                            className="px-5 py-2.5 bg-linear-to-r from-rose-400 to-pink-500 text-white rounded-full hover:from-rose-500 hover:to-pink-600 transition-all shadow-md shadow-pink-200 hover:shadow-lg hover:shadow-pink-300 text-sm font-bold flex items-center gap-2 transform hover:-translate-y-0.5"
-                        >
-                            <span>📥</span> นำเข้าข้อมูล
-                        </Link>
-                    </div>
+                    {!isAdmin && (
+                        <div className="flex items-center gap-4">
+                            <Link
+                                href="/students/import"
+                                className="px-5 py-2.5 bg-linear-to-r from-rose-400 to-pink-500 text-white rounded-full hover:from-rose-500 hover:to-pink-600 transition-all shadow-md shadow-pink-200 hover:shadow-lg hover:shadow-pink-300 text-sm font-bold flex items-center gap-2 transform hover:-translate-y-0.5"
+                            >
+                                <span>📥</span> นำเข้าข้อมูล
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 {/* Main Content */}
-                {students.length === 0 ? (
+                {students.length === 0 && !isAdmin ? (
                     <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/40 p-6 md:p-12 border border-white/60 text-center relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-rose-300 to-pink-300" />
                         <div className="py-8">
@@ -63,13 +74,16 @@ export default async function MyStudentsPage() {
                                 href="/students/import"
                                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-linear-to-r from-rose-400 to-pink-500 text-white rounded-full hover:from-rose-500 hover:to-pink-600 transition-all font-bold shadow-lg shadow-pink-200 hover:shadow-xl hover:shadow-pink-300 hover:-translate-y-1"
                             >
-                                <Upload className="w-5 h-5" />
-                                นำเข้าข้อมูลนักเรียน
+                                📥 นำเข้าข้อมูลนักเรียน
                             </Link>
                         </div>
                     </div>
                 ) : (
-                    <StudentDashboard students={students} />
+                    <StudentDashboard
+                        students={students}
+                        schools={isAdmin ? schools : undefined}
+                        userRole={userRole}
+                    />
                 )}
             </div>
         </div>

@@ -16,8 +16,50 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
     const session = await requireAuth();
+    const isSystemAdmin = session.user.role === "system_admin";
 
-    const { teacher, studentCount } = await getDashboardData();
+    const dashboardData = await getDashboardData();
+    const { teacher, studentCount } = dashboardData;
+    const schoolCount = "schoolCount" in dashboardData ? (dashboardData as { schoolCount?: number }).schoolCount : undefined;
+
+    // system_admin: show admin-specific dashboard
+    if (isSystemAdmin) {
+        return (
+            <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-100 py-8 px-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-96 h-96 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+                <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/2 translate-y-1/2 pointer-events-none" />
+
+                <div className="max-w-4xl mx-auto relative z-10">
+                    <DashboardHeader
+                        teacherName={session.user.name || "System Admin"}
+                        schoolName="ผู้ดูแลระบบ (ทุกโรงเรียน)"
+                    />
+
+                    <div className="space-y-6">
+                        {/* System admin summary cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-rose-100">
+                                <p className="text-sm text-gray-500 mb-1">จำนวนนักเรียนทั้งหมด</p>
+                                <p className="text-3xl font-bold text-gray-800">{studentCount.toLocaleString()} คน</p>
+                            </div>
+                            {schoolCount !== undefined && (
+                                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-rose-100">
+                                    <p className="text-sm text-gray-500 mb-1">จำนวนโรงเรียน</p>
+                                    <p className="text-3xl font-bold text-gray-800">{schoolCount.toLocaleString()} โรงเรียน</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* รายการเมนู */}
+                        <DashboardActionList
+                            userRole={session.user.role}
+                            studentCount={studentCount}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // If no teacher profile, show prompt to create one
     if (!teacher) {

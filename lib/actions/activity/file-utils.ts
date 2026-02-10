@@ -124,18 +124,21 @@ export async function uploadWorksheet(
             },
         });
 
-        if (!user?.schoolId || user.schoolId !== activityProgress.student.schoolId) {
-            return { success: false, message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
-        }
+        // system_admin can access all schools — skip school/class check
+        if (user?.role !== "system_admin") {
+            if (!user?.schoolId || user.schoolId !== activityProgress.student.schoolId) {
+                return { success: false, message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
+            }
 
-        // class_teacher: verify student is in their advisory class
-        if (user.role === "class_teacher") {
-            const advisoryClass = user.teacher?.advisoryClass;
-            if (!advisoryClass || activityProgress.student.class !== advisoryClass) {
-                return {
-                    success: false,
-                    message: "คุณสามารถอัปโหลดได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
-                };
+            // class_teacher: verify student is in their advisory class
+            if (user.role === "class_teacher") {
+                const advisoryClass = user.teacher?.advisoryClass;
+                if (!advisoryClass || activityProgress.student.class !== advisoryClass) {
+                    return {
+                        success: false,
+                        message: "คุณสามารถอัปโหลดได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
+                    };
+                }
             }
         }
 

@@ -46,11 +46,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         return null;
                     }
 
-                    // Check if user has a teacher profile
-                    const teacherProfile = await prisma.teacher.findUnique({
-                        where: { userId: user.id },
-                        select: { id: true },
-                    });
+                    // Check whitelist: promote to system_admin if email is whitelisted
+                    if (user.role !== "system_admin") {
+                        const isWhitelisted = await prisma.systemAdminWhitelist.findUnique({
+                            where: { email, isActive: true },
+                        });
+                        if (isWhitelisted) {
+                            await prisma.user.update({
+                                where: { id: user.id },
+                                data: { role: "system_admin" },
+                            });
+                            user.role = "system_admin";
+                        }
+                    }
+
+                    // system_admin doesn't need a teacher profile
+                    const isSystemAdmin = user.role === "system_admin";
+
+                    const teacherProfile = isSystemAdmin
+                        ? null
+                        : await prisma.teacher.findUnique({
+                              where: { userId: user.id },
+                              select: { id: true },
+                          });
 
                     return {
                         id: user.id,
@@ -58,7 +76,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         name: user.name,
                         image: user.image,
                         role: user.role as UserRole,
-                        hasTeacherProfile: !!teacherProfile,
+                        hasTeacherProfile: isSystemAdmin || !!teacherProfile,
                         emailVerified: user.emailVerified,
                         createdAt: user.createdAt,
                         updatedAt: user.updatedAt,

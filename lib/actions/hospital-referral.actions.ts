@@ -42,29 +42,32 @@ export async function toggleHospitalReferral(phqResultId: string) {
             return { success: false, error: "ไม่พบข้อมูลผลประเมิน" };
         }
 
-        // Verify user belongs to the same school
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                schoolId: true,
-                teacher: {
-                    select: { advisoryClass: true },
+        // system_admin can access all schools — skip school/class check
+        if (userRole !== "system_admin") {
+            // Verify user belongs to the same school
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    schoolId: true,
+                    teacher: {
+                        select: { advisoryClass: true },
+                    },
                 },
-            },
-        });
+            });
 
-        if (!user?.schoolId || user.schoolId !== phqResult.student.schoolId) {
-            return { success: false, error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
-        }
+            if (!user?.schoolId || user.schoolId !== phqResult.student.schoolId) {
+                return { success: false, error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
+            }
 
-        // class_teacher: ตรวจว่านักเรียนอยู่ในห้องที่ดูแลหรือไม่
-        if (userRole === "class_teacher") {
-            const advisoryClass = user.teacher?.advisoryClass;
-            if (!advisoryClass || phqResult.student.class !== advisoryClass) {
-                return {
-                    success: false,
-                    error: "คุณสามารถแก้ไขข้อมูลได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
-                };
+            // class_teacher: ตรวจว่านักเรียนอยู่ในห้องที่ดูแลหรือไม่
+            if (userRole === "class_teacher") {
+                const advisoryClass = user.teacher?.advisoryClass;
+                if (!advisoryClass || phqResult.student.class !== advisoryClass) {
+                    return {
+                        success: false,
+                        error: "คุณสามารถแก้ไขข้อมูลได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
+                    };
+                }
             }
         }
 

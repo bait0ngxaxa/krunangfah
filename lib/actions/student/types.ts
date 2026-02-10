@@ -10,6 +10,7 @@ export interface StudentWithLatestPhq {
     lastName: string;
     studentId: string | null;
     class: string;
+    schoolId: string;
     phqResults: {
         totalScore: number;
         riskLevel: string;

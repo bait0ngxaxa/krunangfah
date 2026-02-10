@@ -13,12 +13,16 @@ import type { RiskCountRaw } from "./types";
  * Optimized: Uses ROW_NUMBER() instead of DISTINCT ON for better performance
  */
 export async function getRiskLevelCountsQuery(
-    schoolId: string,
+    schoolId: string | undefined,
     userId: string,
     userRole: string,
     classFilter?: string,
 ): Promise<RiskCountRaw[]> {
     // Build conditions
+    const schoolCondition = schoolId
+        ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
+        : Prisma.sql`WHERE 1=1`;
+
     const teacherCondition =
         userRole === "class_teacher"
             ? Prisma.sql`AND pr."importedById" = ${userId}`
@@ -40,7 +44,7 @@ export async function getRiskLevelCountsQuery(
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
-            WHERE s."schoolId" = ${schoolId}
+            ${schoolCondition}
               ${teacherCondition}
               ${classCondition}
         )
@@ -56,17 +60,19 @@ export async function getRiskLevelCountsQuery(
  * Used for class filter dropdown
  */
 export async function getDistinctClassesQuery(
-    schoolId: string,
+    schoolId: string | undefined,
     userId: string,
     userRole: string,
 ): Promise<string[]> {
+    const where: Prisma.StudentWhereInput = {
+        ...(schoolId ? { schoolId } : {}),
+        ...(userRole === "class_teacher"
+            ? { phqResults: { some: { importedById: userId } } }
+            : {}),
+    };
+
     const classesResult = await prisma.student.findMany({
-        where: {
-            schoolId,
-            ...(userRole === "class_teacher"
-                ? { phqResults: { some: { importedById: userId } } }
-                : {}),
-        },
+        where,
         select: { class: true },
         distinct: ["class"],
         orderBy: { class: "asc" },
@@ -79,7 +85,7 @@ export async function getDistinctClassesQuery(
  * Get students with pagination
  */
 export async function getStudentsQuery(
-    schoolId: string,
+    schoolId: string | undefined,
     userId: string,
     userRole: string,
     options: {
@@ -90,7 +96,9 @@ export async function getStudentsQuery(
 ) {
     const { classFilter, page, limit } = options;
 
-    const whereClause: Prisma.StudentWhereInput = { schoolId };
+    const whereClause: Prisma.StudentWhereInput = {
+        ...(schoolId ? { schoolId } : {}),
+    };
 
     if (userRole === "class_teacher") {
         whereClause.phqResults = {
@@ -126,13 +134,13 @@ export async function getStudentsQuery(
  * Search students by name or student ID
  */
 export async function searchStudentsQuery(
-    schoolId: string,
+    schoolId: string | undefined,
     userId: string,
     userRole: string,
     query: string,
 ) {
     const whereClause: Prisma.StudentWhereInput = {
-        schoolId,
+        ...(schoolId ? { schoolId } : {}),
         OR: [
             { firstName: { contains: query, mode: "insensitive" } },
             { lastName: { contains: query, mode: "insensitive" } },
@@ -163,14 +171,14 @@ export async function searchStudentsQuery(
  * Get student detail with all PHQ results
  */
 export async function getStudentDetailQuery(
-    schoolId: string,
+    schoolId: string | undefined,
     userId: string,
     userRole: string,
     studentId: string,
 ) {
     const whereClause: Prisma.StudentWhereInput = {
         id: studentId,
-        schoolId,
+        ...(schoolId ? { schoolId } : {}),
     };
 
     if (userRole === "class_teacher") {

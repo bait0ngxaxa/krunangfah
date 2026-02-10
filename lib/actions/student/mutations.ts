@@ -38,10 +38,13 @@ export async function importStudents(
             },
         });
 
+        // system_admin doesn't have schoolId — import requires school context
         if (!user?.schoolId) {
             return {
                 success: false,
-                message: "คุณยังไม่ได้เชื่อมต่อกับโรงเรียน",
+                message: userRole === "system_admin"
+                    ? "System admin ต้องเลือกโรงเรียนก่อนนำเข้าข้อมูล"
+                    : "คุณยังไม่ได้เชื่อมต่อกับโรงเรียน",
             };
         }
 

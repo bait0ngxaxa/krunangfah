@@ -6,7 +6,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
+import { requireAuth, isSystemAdmin } from "@/lib/session";
 import { unstable_cache, revalidateTag } from "next/cache";
 import {
     getRiskLevelCountsQuery,
@@ -40,8 +40,9 @@ export async function getStudentRiskCounts(
             select: { schoolId: true },
         });
 
-        const schoolId = dbUser?.schoolId;
-        if (!schoolId) return null;
+        // system_admin can see all schools (schoolId = undefined)
+        const schoolId = isSystemAdmin(user.role) ? undefined : (dbUser?.schoolId ?? undefined);
+        if (!schoolId && !isSystemAdmin(user.role)) return null;
 
         // Get classes and risk counts in parallel
         const [classes, rawCounts] = await Promise.all([
@@ -62,7 +63,7 @@ export async function getStudentRiskCounts(
  */
 const getCachedStudents = unstable_cache(
     async (
-        schoolId: string,
+        schoolId: string | undefined,
         userId: string,
         userRole: string,
         options: GetStudentsOptions
@@ -109,9 +110,10 @@ export async function getStudents(
             select: { schoolId: true },
         });
 
-        const schoolId = dbUser?.schoolId;
+        // system_admin can see all schools (schoolId = undefined)
+        const schoolId = isSystemAdmin(user.role) ? undefined : (dbUser?.schoolId ?? undefined);
 
-        if (!schoolId) {
+        if (!schoolId && !isSystemAdmin(user.role)) {
             return {
                 students: [],
                 pagination: { total: 0, page, limit, totalPages: 0 },
@@ -166,8 +168,9 @@ export async function searchStudents(query: string) {
             select: { schoolId: true },
         });
 
-        const schoolId = dbUser?.schoolId;
-        if (!schoolId) return [];
+        // system_admin can see all schools (schoolId = undefined)
+        const schoolId = isSystemAdmin(user.role) ? undefined : (dbUser?.schoolId ?? undefined);
+        if (!schoolId && !isSystemAdmin(user.role)) return [];
 
         return searchStudentsQuery(schoolId, user.id, user.role, query);
     } catch (error) {
@@ -182,7 +185,7 @@ export async function searchStudents(query: string) {
  */
 const getCachedStudentDetail = unstable_cache(
     async (
-        schoolId: string,
+        schoolId: string | undefined,
         userId: string,
         userRole: string,
         studentId: string
@@ -206,8 +209,9 @@ export async function getStudentDetail(studentId: string) {
             select: { schoolId: true },
         });
 
-        const schoolId = dbUser?.schoolId;
-        if (!schoolId) return null;
+        // system_admin can see all schools (schoolId = undefined)
+        const schoolId = isSystemAdmin(user.role) ? undefined : (dbUser?.schoolId ?? undefined);
+        if (!schoolId && !isSystemAdmin(user.role)) return null;
 
         return getCachedStudentDetail(schoolId, user.id, user.role, studentId);
     } catch (error) {

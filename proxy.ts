@@ -129,11 +129,11 @@ export default auth((req) => {
         return NextResponse.redirect(new URL("/signin", nextUrl));
     }
 
-    // ถ้าเป็น admin-only routes แต่ไม่ใช่ school_admin redirect ไป dashboard
+    // ถ้าเป็น admin-only routes แต่ไม่ใช่ school_admin หรือ system_admin redirect ไป dashboard
     const isAdminOnlyRoute = adminOnlyRoutes.some((route) =>
         pathname.startsWith(route),
     );
-    if (isAdminOnlyRoute && userRole !== "school_admin") {
+    if (isAdminOnlyRoute && userRole !== "school_admin" && userRole !== "system_admin") {
         return NextResponse.redirect(new URL("/dashboard", nextUrl));
     }
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAuth } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
+import { getSchools } from "@/lib/actions/dashboard.actions";
 import { AnalyticsContent } from "@/components/analytics";
 import type { Metadata } from "next";
 
@@ -12,6 +13,8 @@ export const metadata: Metadata = {
 
 export default async function AnalyticsPage() {
     const session = await requireAuth();
+    const userRole = session.user.role;
+    const isSystemAdmin = userRole === "system_admin";
 
     // Get analytics data
     const analyticsData = await getAnalyticsSummary();
@@ -20,7 +23,8 @@ export default async function AnalyticsPage() {
         redirect("/dashboard");
     }
 
-    const isSchoolAdmin = session.user.role === "school_admin";
+    // Fetch schools list only for system_admin
+    const schools = isSystemAdmin ? await getSchools() : [];
 
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
@@ -58,7 +62,9 @@ export default async function AnalyticsPage() {
                 {/* Analytics Content */}
                 <AnalyticsContent
                     initialData={analyticsData}
-                    isSchoolAdmin={isSchoolAdmin}
+                    isSchoolAdmin={userRole === "school_admin"}
+                    schools={isSystemAdmin ? schools : undefined}
+                    userRole={userRole}
                 />
             </div>
         </div>

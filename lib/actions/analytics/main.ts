@@ -26,28 +26,31 @@ import type { AnalyticsData } from "./types";
  */
 const getCachedAnalyticsData = unstable_cache(
     async (
-        schoolId: string,
+        schoolId: string | undefined,
         targetClass: string,
         role: string,
     ): Promise<AnalyticsData> => {
         const classFilter = targetClass || undefined;
 
         // Build student query based on role and filter
-        const studentWhere: { schoolId: string; class?: string } = {
-            schoolId,
+        const studentWhere: { schoolId?: string; class?: string } = {
+            ...(schoolId ? { schoolId } : {}),
         };
         if (classFilter) {
             studentWhere.class = classFilter;
         }
 
+        // school_admin and system_admin can see class filter dropdown
+        const showClassFilter = role === "school_admin" || role === "system_admin";
+
         // Get total students + available classes in parallel with analytics
         const [totalStudents, availableClasses, combinedData, trendDataRaw, activityProgressRaw] =
             await Promise.all([
                 prisma.student.count({ where: studentWhere }),
-                role === "school_admin"
+                showClassFilter
                     ? prisma.student
                           .findMany({
-                              where: { schoolId },
+                              where: { ...(schoolId ? { schoolId } : {}) },
                               select: { class: true },
                               distinct: ["class"],
                               orderBy: { class: "asc" },
@@ -109,9 +112,11 @@ const getCachedAnalyticsData = unstable_cache(
  * Get analytics summary for current teacher's students
  * Uses cached data (5 min TTL) to avoid repeated heavy queries
  * @param classFilter - Optional class filter for school_admin (e.g. "ม.1/1")
+ * @param schoolFilter - Optional school filter for system_admin
  */
 export async function getAnalyticsSummary(
     classFilter?: string,
+    schoolFilter?: string,
 ): Promise<AnalyticsData | null> {
     try {
         const session = await requireAuth();
@@ -130,7 +135,9 @@ export async function getAnalyticsSummary(
             },
         });
 
-        if (!user?.schoolId) {
+        // system_admin doesn't need schoolId
+        const isSystemAdminRole = user?.role === "system_admin";
+        if (!user?.schoolId && !isSystemAdminRole) {
             return null;
         }
 
@@ -140,12 +147,17 @@ export async function getAnalyticsSummary(
             if (!targetClass) {
                 return null;
             }
-        } else if (user.role === "school_admin") {
+        } else if (user.role === "school_admin" || isSystemAdminRole) {
             targetClass = classFilter;
         }
 
+        // system_admin: use schoolFilter if provided, otherwise undefined (all schools)
+        const schoolId = isSystemAdminRole
+            ? (schoolFilter || undefined)
+            : (user.schoolId ?? undefined);
+
         return getCachedAnalyticsData(
-            user.schoolId,
+            schoolId,
             targetClass ?? "",
             user.role,
         );

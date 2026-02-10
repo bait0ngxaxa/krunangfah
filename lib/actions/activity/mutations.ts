@@ -19,6 +19,18 @@ async function verifyActivityAccess(
     userId: string,
     userRole: string,
 ): Promise<{ allowed: boolean; error?: string }> {
+    // system_admin can access all students
+    if (userRole === "system_admin") {
+        const student = await prisma.student.findUnique({
+            where: { id: studentId },
+            select: { id: true },
+        });
+        if (!student) {
+            return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
+        }
+        return { allowed: true };
+    }
+
     const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {

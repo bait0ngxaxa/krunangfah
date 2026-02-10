@@ -53,7 +53,11 @@ export function SignUpForm() {
             }
 
             toast.success("ลงทะเบียนสำเร็จ");
-            router.push("/teacher-profile");
+            // system_admin ไปหน้า dashboard เลย ไม่ต้องกรอก teacher profile
+            const redirectTo = result.user?.role === "system_admin"
+                ? "/dashboard"
+                : "/teacher-profile";
+            router.push(redirectTo);
             router.refresh();
         } catch (err) {
             console.error("Sign up error:", err);

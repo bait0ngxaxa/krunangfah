@@ -13,6 +13,7 @@ datasource db {
 // ==================== Enums ====================
 
 enum UserRole {
+  system_admin
   school_admin
   class_teacher
 }
@@ -295,4 +296,14 @@ model CounselingSession {
   createdBy       User      @relation("CounselingSessions", fields: [createdById], references: [id])
 
   @@map("counseling_sessions")
+}
+
+// System Admin Whitelist - รายชื่อ email ที่สามารถเป็น system_admin ได้
+model SystemAdminWhitelist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("system_admin_whitelist")
 }

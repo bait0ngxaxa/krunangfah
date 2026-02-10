@@ -44,3 +44,10 @@ export async function requireAdmin() {
 
     return session;
 }
+
+/**
+ * Check if user role is system_admin
+ */
+export function isSystemAdmin(role: string): boolean {
+    return role === "system_admin";
+}
