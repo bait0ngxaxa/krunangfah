@@ -34,5 +34,15 @@ export const RATE_LIMIT_REGISTRATION: RateLimitConfig = {
     name: "registration",
 };
 
+/**
+ * Rate limit for forgot-password requests
+ * 3 attempts per hour per IP
+ */
+export const RATE_LIMIT_FORGOT_PASSWORD: RateLimitConfig = {
+    maxRequests: 3,
+    windowMs: 60 * 60 * 1000,
+    name: "forgot-password",
+};
+
 /** Interval for cleaning up expired rate limit entries (ms) */
 export const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60 * 1000;

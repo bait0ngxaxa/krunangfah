@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 interface ActionCardProps {
     title: string;
@@ -6,6 +7,7 @@ interface ActionCardProps {
     buttonText: string;
     href: string;
     variant?: "primary" | "secondary" | "outline";
+    icon?: ReactNode;
 }
 
 export function ActionCard({
@@ -14,6 +16,7 @@ export function ActionCard({
     buttonText,
     href,
     variant = "primary",
+    icon,
 }: ActionCardProps) {
     const buttonStyles = {
         primary:
@@ -30,7 +33,8 @@ export function ActionCard({
             <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-rose-300 via-pink-300 to-orange-200 opacity-60 group-hover:opacity-100 transition-opacity" />
 
             <div className="relative z-10">
-                <h3 className="text-lg font-bold text-gray-800 mb-2 group-hover:text-pink-600 transition-colors">
+                <h3 className="text-lg font-bold text-gray-800 mb-2 group-hover:text-pink-600 transition-colors flex items-center gap-2">
+                    {icon && <span className="shrink-0">{icon}</span>}
                     {title}
                 </h3>
                 {description && (

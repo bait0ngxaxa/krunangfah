@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import Link from "next/link";
 import {
     signInSchema,
     type SignInFormData,
@@ -109,6 +110,14 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                         {errors.password.message}
                     </p>
                 )}
+                <div className="mt-1.5 text-right">
+                    <Link
+                        href="/forgot-password"
+                        className="text-sm text-pink-500 hover:text-pink-600 transition-colors"
+                    >
+                        ลืมรหัสผ่าน?
+                    </Link>
+                </div>
             </div>
 
             {error && (

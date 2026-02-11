@@ -1,4 +1,5 @@
 import { requireAuth } from "@/lib/session";
+import { Users, School } from "lucide-react";
 import { getDashboardData } from "@/lib/actions/dashboard.actions";
 import {
     DashboardHeader,
@@ -20,7 +21,10 @@ export default async function DashboardPage() {
 
     const dashboardData = await getDashboardData();
     const { teacher, studentCount } = dashboardData;
-    const schoolCount = "schoolCount" in dashboardData ? (dashboardData as { schoolCount?: number }).schoolCount : undefined;
+    const schoolCount =
+        "schoolCount" in dashboardData
+            ? (dashboardData as { schoolCount?: number }).schoolCount
+            : undefined;
 
     // system_admin: show admin-specific dashboard
     if (isSystemAdmin) {
@@ -38,14 +42,33 @@ export default async function DashboardPage() {
                     <div className="space-y-6">
                         {/* System admin summary cards */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-rose-100">
-                                <p className="text-sm text-gray-500 mb-1">จำนวนนักเรียนทั้งหมด</p>
-                                <p className="text-3xl font-bold text-gray-800">{studentCount.toLocaleString()} คน</p>
+                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-rose-100 flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white shadow-md shadow-pink-200 shrink-0">
+                                    <Users className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500 mb-1">
+                                        จำนวนนักเรียนในโครงการทั้งหมด
+                                    </p>
+                                    <p className="text-3xl font-bold text-gray-800">
+                                        {studentCount.toLocaleString()} คน
+                                    </p>
+                                </div>
                             </div>
                             {schoolCount !== undefined && (
-                                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-rose-100">
-                                    <p className="text-sm text-gray-500 mb-1">จำนวนโรงเรียน</p>
-                                    <p className="text-3xl font-bold text-gray-800">{schoolCount.toLocaleString()} โรงเรียน</p>
+                                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-rose-100 flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-200 shrink-0">
+                                        <School className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500 mb-1">
+                                            จำนวนโรงเรียนในโครงการ
+                                        </p>
+                                        <p className="text-3xl font-bold text-gray-800">
+                                            {schoolCount.toLocaleString()}{" "}
+                                            โรงเรียน
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </div>

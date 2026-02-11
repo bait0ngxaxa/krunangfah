@@ -1,3 +1,5 @@
+import { School, CalendarDays, DoorOpen, Briefcase } from "lucide-react";
+
 interface TeacherProfileCardProps {
     teacher: {
         firstName: string;
@@ -73,13 +75,19 @@ export function TeacherProfileCard({
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white p-3 rounded-xl border border-pink-100 shadow-sm hover:shadow-md hover:border-pink-200 transition-all">
-                        <p className="text-xs text-gray-500 mb-1">โรงเรียน</p>
+                        <div className="flex items-center gap-2 mb-1">
+                            <School className="w-3.5 h-3.5 text-pink-400" />
+                            <p className="text-xs text-gray-500">โรงเรียน</p>
+                        </div>
                         <p className="text-sm font-bold text-gray-700">
                             {teacher.user.school?.name || "ไม่ระบุ"}
                         </p>
                     </div>
                     <div className="bg-white p-3 rounded-xl border border-purple-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all">
-                        <p className="text-xs text-gray-500 mb-1">ปีการศึกษา</p>
+                        <div className="flex items-center gap-2 mb-1">
+                            <CalendarDays className="w-3.5 h-3.5 text-purple-400" />
+                            <p className="text-xs text-gray-500">ปีการศึกษา</p>
+                        </div>
                         <p className="text-sm font-bold text-gray-700">
                             {teacher.academicYear.year} เทอม{" "}
                             {teacher.academicYear.semester}
@@ -87,18 +95,24 @@ export function TeacherProfileCard({
                     </div>
                     {isClassTeacher && (
                         <div className="bg-white p-3 rounded-xl border border-blue-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
-                            <p className="text-xs text-gray-500 mb-1">
-                                ห้องที่ดูแล
-                            </p>
+                            <div className="flex items-center gap-2 mb-1">
+                                <DoorOpen className="w-3.5 h-3.5 text-blue-400" />
+                                <p className="text-xs text-gray-500">
+                                    ห้องที่ดูแล
+                                </p>
+                            </div>
                             <p className="text-sm font-bold text-gray-700">
                                 {teacher.advisoryClass}
                             </p>
                         </div>
                     )}
                     <div className="bg-white p-3 rounded-xl border border-orange-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all">
-                        <p className="text-xs text-gray-500 mb-1">
-                            บทบาทในโครงการ
-                        </p>
+                        <div className="flex items-center gap-2 mb-1">
+                            <Briefcase className="w-3.5 h-3.5 text-orange-400" />
+                            <p className="text-xs text-gray-500">
+                                บทบาทในโครงการ
+                            </p>
+                        </div>
                         <p className="text-sm font-bold text-gray-700">
                             {projectRoleLabel}
                         </p>

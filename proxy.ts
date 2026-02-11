@@ -1,11 +1,3 @@
-/**
- * Next.js Proxy (Middleware) - Route protection & rate limiting
- *
- * Handles:
- * 1. Rate limiting for auth API routes (POST only)
- * 2. Route protection (auth guards, role-based access)
- */
-
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
@@ -26,22 +18,25 @@ const protectedRoutes = [
     "/teachers",
     "/students",
     "/analytics",
+    "/admin",
 ];
 
-// Routes ที่ต้องเป็น school_admin เท่านั้น
+// Routes ที่ต้องเป็น school_admin หรือ system_admin
 const adminOnlyRoutes = ["/teachers/add", "/teachers/manage"];
 
+// Routes ที่ต้องเป็น system_admin เท่านั้น
+const systemAdminOnlyRoutes = ["/admin/whitelist"];
+
 // Routes สำหรับ guest เท่านั้น (ถ้า login แล้วจะ redirect ไป dashboard)
-const guestOnlyRoutes = ["/signin", "/signup"];
+const guestOnlyRoutes = ["/signin", "/signup", "/forgot-password", "/reset-password"];
 
 /**
  * Build a 429 Too Many Requests response with rate limit headers
  */
 function buildRateLimitResponse(result: RateLimitResult): NextResponse {
     const minutes = Math.ceil(result.retryAfterSeconds / 60);
-    const timeMessage = minutes > 1
-        ? `${minutes} นาที`
-        : `${result.retryAfterSeconds} วินาที`;
+    const timeMessage =
+        minutes > 1 ? `${minutes} นาที` : `${result.retryAfterSeconds} วินาที`;
 
     return NextResponse.json(
         {
@@ -70,10 +65,7 @@ function attachRateLimitHeaders(
     result: RateLimitResult,
 ): NextResponse {
     response.headers.set("X-RateLimit-Limit", result.limit.toString());
-    response.headers.set(
-        "X-RateLimit-Remaining",
-        result.remaining.toString(),
-    );
+    response.headers.set("X-RateLimit-Remaining", result.remaining.toString());
     response.headers.set("X-RateLimit-Reset", result.resetAt.toString());
     return response;
 }
@@ -129,11 +121,23 @@ export default auth((req) => {
         return NextResponse.redirect(new URL("/signin", nextUrl));
     }
 
+    // ถ้าเป็น system_admin-only routes แต่ไม่ใช่ system_admin redirect ไป dashboard
+    const isSystemAdminOnlyRoute = systemAdminOnlyRoutes.some((route) =>
+        pathname.startsWith(route),
+    );
+    if (isSystemAdminOnlyRoute && userRole !== "system_admin") {
+        return NextResponse.redirect(new URL("/dashboard", nextUrl));
+    }
+
     // ถ้าเป็น admin-only routes แต่ไม่ใช่ school_admin หรือ system_admin redirect ไป dashboard
     const isAdminOnlyRoute = adminOnlyRoutes.some((route) =>
         pathname.startsWith(route),
     );
-    if (isAdminOnlyRoute && userRole !== "school_admin" && userRole !== "system_admin") {
+    if (
+        isAdminOnlyRoute &&
+        userRole !== "school_admin" &&
+        userRole !== "system_admin"
+    ) {
         return NextResponse.redirect(new URL("/dashboard", nextUrl));
     }
 
