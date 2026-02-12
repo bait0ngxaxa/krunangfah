@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { HandHelping } from "lucide-react";
 import { toast } from "sonner";
 import {
     acceptInviteSchema,
@@ -66,7 +67,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
             <div className="bg-white/80 backdrop-blur-sm border border-pink-200 rounded-2xl p-6 shadow-sm shadow-pink-100 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-linear-to-bl from-pink-100 to-transparent rounded-bl-full opacity-50 pointer-events-none" />
                 <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <span className="text-xl">👋</span> ข้อมูลของคุณ
+                    <HandHelping className="w-5 h-5 text-pink-500" /> ข้อมูลของคุณ
                 </h3>
                 <div className="space-y-2 text-gray-600">
                     <p className="flex items-center gap-2">

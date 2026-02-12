@@ -1,4 +1,4 @@
-import { Upload, CheckCircle2, Eye, Loader2 } from "lucide-react";
+import { Upload, CheckCircle2, Eye, Loader2, FileText } from "lucide-react";
 import { UPLOAD_COLOR_CONFIG, WORKSHEET_NAMES } from "../constants";
 import type { ActivityProgressData, PreviewFile } from "../types";
 
@@ -64,7 +64,7 @@ export function UploadSection({
                             className={`flex items-center justify-between bg-white p-4 rounded-xl border-2 ${uploadColors.itemBorder} hover:shadow-md transition-all group`}
                         >
                             <div className="flex items-center gap-3 overflow-hidden">
-                                <span className="text-2xl">📄</span>
+                                <FileText className="w-6 h-6 text-gray-500" />
                                 <span className="text-gray-700 font-bold truncate group-hover:text-gray-900 transition-colors">
                                     {upload.fileName}
                                 </span>
@@ -91,7 +91,7 @@ export function UploadSection({
                     <p
                         className={`${uploadColors.completeText} text-sm mb-4 font-medium flex items-center gap-2`}
                     >
-                        <span className="animate-pulse">📝</span>
+                        <FileText className="w-4 h-4 animate-pulse" />
                         ต้องอัปโหลดอีก{" "}
                         <span className="font-bold">{remaining}</span> ไฟล์
                         เพื่อเสร็จสิ้นกิจกรรมนี้

@@ -1,22 +1,106 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+    ArrowLeft,
+    MessageCircle,
+    ClipboardEdit,
+    Hospital,
+    ChevronRight,
+} from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import type { ColorTheme } from "@/lib/config/help-page-config";
 import { HelpPageHeader } from "./HelpPageHeader";
+import { AddCounselingModal } from "../counseling/AddCounselingModal";
+import { ReferralFormModal } from "./ReferralFormModal";
 
 interface ConversationViewProps {
     studentName: string;
     studentId: string;
     riskLevel: RiskLevel;
     config: ColorTheme;
+    phqResultId?: string;
+    initialReferralStatus?: boolean;
+}
+
+interface StepCardProps {
+    stepNumber: number;
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    buttonLabel: string;
+    onClick?: () => void;
+    href?: string;
+    gradient: string;
+}
+
+function StepCard({
+    stepNumber,
+    title,
+    description,
+    icon,
+    buttonLabel,
+    onClick,
+    href,
+    gradient,
+}: StepCardProps) {
+    const buttonClasses = `inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r ${gradient} text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm shadow-md group`;
+
+    return (
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-pink-100/50 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-start gap-4">
+                {/* Step Number Badge */}
+                <div
+                    className={`w-10 h-10 bg-linear-to-br ${gradient} rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-md`}
+                >
+                    {stepNumber}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                        {icon}
+                        <h3 className="text-lg font-bold text-gray-800">
+                            {title}
+                        </h3>
+                    </div>
+                    <p className="text-gray-500 text-sm mb-4">{description}</p>
+
+                    {href ? (
+                        <Link href={href} className={buttonClasses}>
+                            {buttonLabel}
+                            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        </Link>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={onClick}
+                            className={buttonClasses}
+                        >
+                            {buttonLabel}
+                            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 export function ConversationView({
     studentName,
     studentId,
-    riskLevel: _riskLevel,
+    riskLevel,
     config,
+    phqResultId,
+    initialReferralStatus,
 }: ConversationViewProps) {
+    const router = useRouter();
+    const [showCounselingModal, setShowCounselingModal] = useState(false);
+    const [showReferralModal, setShowReferralModal] = useState(false);
+    const showRecordSteps = riskLevel === "red";
+
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
             {/* Decorative Background Elements */}
@@ -43,68 +127,78 @@ export function ConversationView({
                     <HelpPageHeader
                         studentName={studentName}
                         config={config}
-                        icon="💬"
-                        title="หลักการพูดคุยกับนักเรียน"
+                        icon={
+                            <MessageCircle className="w-10 h-10 text-white" />
+                        }
+                        title="ขั้นตอนการช่วยเหลือนักเรียน"
                     />
 
-                    {/* Content */}
-                    <div className="bg-white/60 rounded-2xl p-8 mb-8 border border-pink-50/50 shadow-sm">
-                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                            <span className="text-2xl">📋</span>
-                            <span className="bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                                แนวทางการช่วยเหลือ
-                            </span>
-                        </h2>
-                        <ul className="space-y-4 text-gray-700">
-                            <li className="flex items-start gap-4 p-4 rounded-xl hover:bg-white/50 transition-colors border border-transparent hover:border-pink-100">
-                                <span className="text-2xl filter drop-shadow-sm">
-                                    🤝
-                                </span>
-                                <span className="font-medium text-lg">
-                                    สร้างความสัมพันธ์ที่ดีและความไว้วางใจกับนักเรียน
-                                </span>
-                            </li>
-                            <li className="flex items-start gap-4 p-4 rounded-xl hover:bg-white/50 transition-colors border border-transparent hover:border-pink-100">
-                                <span className="text-2xl filter drop-shadow-sm">
-                                    👂
-                                </span>
-                                <span className="font-medium text-lg">
-                                    รับฟังด้วยความเข้าใจ
-                                    ไม่ตัดสินหรือวิพากษ์วิจารณ์
-                                </span>
-                            </li>
-                            <li className="flex items-start gap-4 p-4 rounded-xl hover:bg-white/50 transition-colors border border-transparent hover:border-pink-100">
-                                <span className="text-2xl filter drop-shadow-sm">
-                                    💡
-                                </span>
-                                <span className="font-medium text-lg">
-                                    ให้ข้อมูลและทางเลือกที่เหมาะสม
-                                    ไม่บังคับให้ตัดสินใจ
-                                </span>
-                            </li>
-                            <li className="flex items-start gap-4 p-4 rounded-xl hover:bg-white/50 transition-colors border border-transparent hover:border-pink-100">
-                                <span className="text-2xl filter drop-shadow-sm">
-                                    🏥
-                                </span>
-                                <span className="font-medium text-lg">
-                                    ประสานงานกับผู้เชี่ยวชาญด้านสุขภาพจิตเมื่อจำเป็น
-                                </span>
-                            </li>
-                        </ul>
-                    </div>
+                    {/* 3-Step Workflow */}
+                    <div className="space-y-4">
+                        {/* Step 1: Conversation Guidelines */}
+                        <StepCard
+                            stepNumber={1}
+                            title="พูดคุยเพื่อประเมินซ้ำ"
+                            description="ดูหลักการและแนวทางในการพูดคุยกับนักเรียน"
+                            icon={
+                                <MessageCircle className="w-5 h-5 text-rose-500" />
+                            }
+                            buttonLabel="หลักการพูดคุย"
+                            href={`/students/${studentId}/help/conversation`}
+                            gradient={config.gradient}
+                        />
 
-                    {/* Conversation Guide Button */}
-                    <Link
-                        href={`/students/${studentId}/help/conversation`}
-                        className={`block w-full py-4 bg-linear-to-r ${config.gradient} text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all text-center text-lg shadow-md flex items-center justify-center gap-2 group`}
-                    >
-                        <span className="group-hover:scale-110 transition-transform">
-                            💬
-                        </span>
-                        ดูหลักการพูดคุย
-                    </Link>
+                        {showRecordSteps && (
+                            <>
+                                {/* Step 2: Counseling Summary */}
+                                <StepCard
+                                    stepNumber={2}
+                                    title="สรุปประเด็นการพูดคุย"
+                                    description="บันทึกสรุปประเด็นที่พูดคุยกับนักเรียน"
+                                    icon={
+                                        <ClipboardEdit className="w-5 h-5 text-rose-500" />
+                                    }
+                                    buttonLabel="กรอกข้อมูล"
+                                    onClick={() => setShowCounselingModal(true)}
+                                    gradient={config.gradient}
+                                />
+
+                                {/* Step 3: Referral or Follow-up */}
+                                <StepCard
+                                    stepNumber={3}
+                                    title="ส่งต่อโรงพยาบาล หรือ ติดตามต่อ"
+                                    description="เลือกส่งต่อผู้เชี่ยวชาญ หรือติดตามดูแลต่อเนื่อง"
+                                    icon={
+                                        <Hospital className="w-5 h-5 text-rose-500" />
+                                    }
+                                    buttonLabel="กรอกข้อมูล"
+                                    onClick={() => setShowReferralModal(true)}
+                                    gradient={config.gradient}
+                                />
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
+
+            {/* Counseling Modal */}
+            {showRecordSteps && showCounselingModal && (
+                <AddCounselingModal
+                    studentId={studentId}
+                    onClose={() => setShowCounselingModal(false)}
+                    onSuccess={() => router.refresh()}
+                />
+            )}
+
+            {/* Referral Modal */}
+            {showRecordSteps && showReferralModal && phqResultId && (
+                <ReferralFormModal
+                    phqResultId={phqResultId}
+                    initialStatus={initialReferralStatus ?? false}
+                    onClose={() => setShowReferralModal(false)}
+                    onSuccess={() => router.refresh()}
+                />
+            )}
         </div>
     );
 }

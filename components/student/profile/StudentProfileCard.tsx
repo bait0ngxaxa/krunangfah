@@ -1,5 +1,6 @@
 "use client";
 
+import { User, FileText, Hospital, ClipboardCheck } from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
 
@@ -15,6 +16,7 @@ interface StudentProfileCardProps {
     latestResult?: {
         totalScore: number;
         riskLevel: string;
+        referredToHospital: boolean;
         createdAt: Date;
         academicYear: {
             year: number;
@@ -93,9 +95,10 @@ export function StudentProfileCard({
                             </span>
                             {student.gender && (
                                 <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-sm border border-purple-100">
+                                    <User className="w-3.5 h-3.5 inline -mt-0.5" />{" "}
                                     {student.gender === "MALE"
-                                        ? "👦 ชาย"
-                                        : "👧 หญิง"}
+                                        ? "ชาย"
+                                        : "หญิง"}
                                 </span>
                             )}
                             {student.age && (
@@ -123,6 +126,27 @@ export function StudentProfileCard({
                             />
                             <span>{risk.label}</span>
                         </div>
+                        {latestResult.riskLevel === "red" && (
+                            <div
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-sm border transition-transform hover:scale-105 ${
+                                    latestResult.referredToHospital
+                                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                                        : "bg-sky-50 text-sky-700 border-sky-200"
+                                }`}
+                            >
+                                {latestResult.referredToHospital ? (
+                                    <>
+                                        <Hospital className="w-4 h-4" />
+                                        ส่งต่อโรงพยาบาลแล้ว
+                                    </>
+                                ) : (
+                                    <>
+                                        <ClipboardCheck className="w-4 h-4" />
+                                        ติดตามต่อ
+                                    </>
+                                )}
+                            </div>
+                        )}
                         <div className="flex flex-col items-end gap-1">
                             <div className="text-sm text-gray-500 font-medium">
                                 ประเมินล่าสุด:{" "}
@@ -150,7 +174,7 @@ export function StudentProfileCard({
 
             {!latestResult && (
                 <div className="mt-8 p-6 bg-pink-50/50 rounded-2xl border-2 border-dashed border-pink-200 text-center text-gray-500 flex flex-col items-center gap-2">
-                    <span className="text-3xl opacity-50">📝</span>
+                    <FileText className="w-8 h-8 text-gray-400" />
                     <p className="font-medium">ยังไม่มีผลการคัดกรอง PHQ-A</p>
                 </div>
             )}

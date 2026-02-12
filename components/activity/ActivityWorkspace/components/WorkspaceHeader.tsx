@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 
 interface WorkspaceHeaderProps {
     studentId: string;
@@ -45,7 +45,7 @@ export function WorkspaceHeader({
                     <div
                         className={`w-24 h-24 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-4xl shadow-lg relative z-10 transition-transform hover:rotate-6 hover:scale-110`}
                     >
-                        📚
+                        <BookOpen className="w-10 h-10" />
                     </div>
                 </div>
 

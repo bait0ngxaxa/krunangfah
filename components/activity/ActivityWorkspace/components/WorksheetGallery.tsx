@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { ImageIcon, ZoomIn } from "lucide-react";
 
 interface WorksheetGalleryProps {
     activityTitle: string;
@@ -15,7 +16,7 @@ export function WorksheetGallery({
     return (
         <div className="mb-10">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <span className="text-2xl">🖼️</span>
+                <ImageIcon className="w-6 h-6 text-gray-700" />
                 <span className="bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                     ใบงาน{activityTitle}
                 </span>
@@ -35,7 +36,7 @@ export function WorksheetGallery({
                             {/* Overlay */}
                             <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-6">
                                 <span className="text-white font-bold bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/50">
-                                    🔍 คลิกเพื่อดูรูปขยาย
+                                    <ZoomIn className="w-4 h-4 inline-block mr-1" /> คลิกเพื่อดูรูปขยาย
                                 </span>
                             </div>
                         </div>

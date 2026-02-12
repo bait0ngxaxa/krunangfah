@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, ClipboardList, FileText } from "lucide-react";
 
 interface DownloadModalProps {
     isOpen: boolean;
@@ -38,7 +38,7 @@ export function DownloadModal({
 
                 {/* Header */}
                 <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
-                    <span className="text-2xl">📋</span>
+                    <ClipboardList className="w-6 h-6 text-gray-700" />
                     <span className="bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                         เลือกใบงาน
                     </span>
@@ -55,9 +55,7 @@ export function DownloadModal({
                             onClick={() => handleDownload(url)}
                             className="w-full py-4 px-6 bg-linear-to-r from-blue-500 via-cyan-500 to-teal-400 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-cyan-200 hover:-translate-y-0.5 transition-all shadow-md flex items-center justify-center gap-3 group"
                         >
-                            <span className="text-2xl group-hover:scale-110 transition-transform">
-                                📄
-                            </span>
+                            <FileText className="w-6 h-6 group-hover:scale-110 transition-transform" />
                             <span className="text-lg">
                                 {downloadUrls.length > 1
                                     ? `ใบงาน ${index + 1}`

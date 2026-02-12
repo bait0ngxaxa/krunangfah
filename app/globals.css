@@ -11,13 +11,6 @@
     --font-sans: var(--font-google-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
-    }
-}
-
 body {
     background: var(--background);
     color: var(--foreground);
@@ -153,6 +146,134 @@ textarea::placeholder {
     animation-delay: 0.6s;
 }
 
+/* ============================================
+   DIMENSIONAL TYPOGRAPHY - Home Page
+   ============================================ */
+
+/* Hero Title - multi-layer drop-shadow for 3D depth on gradient text */
+.hero-title-depth {
+    position: relative;
+    filter: drop-shadow(0 2px 2px rgba(190, 24, 93, 0.25))
+        drop-shadow(0 4px 8px rgba(236, 72, 153, 0.2))
+        drop-shadow(0 8px 16px rgba(236, 72, 153, 0.12));
+    letter-spacing: -0.02em;
+}
+
+/* Animated shimmer that sweeps across the gradient text */
+@keyframes shimmer-sweep {
+    0% {
+        background-position: 200% center;
+    }
+    100% {
+        background-position: -200% center;
+    }
+}
+
+.hero-title-shimmer {
+    background-size: 200% auto !important;
+    background-image: linear-gradient(
+        90deg,
+        #fb7185 0%,
+        #ec4899 20%,
+        #f9a8d4 40%,
+        #fda4af 50%,
+        #ec4899 60%,
+        #be185d 80%,
+        #fb7185 100%
+    ) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    color: transparent !important;
+    animation: shimmer-sweep 5s ease-in-out infinite;
+}
+
+/* Subtitle - static layered text-shadow for depth */
+.subtitle-dimensional {
+    text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.08),
+        0 2px 8px rgba(236, 72, 153, 0.08),
+        0 4px 12px rgba(236, 72, 153, 0.04);
+    letter-spacing: 0.01em;
+}
+
+/* Accent/secondary text - embossed/letterpress feel */
+.text-embossed {
+    text-shadow:
+        0 1px 1px rgba(255, 255, 255, 0.7),
+        0 -1px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* Fairy flying animation */
+@keyframes fairy-fly {
+    0%,
+    100% {
+        transform: translateY(0) translateX(0) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-8px) translateX(4px) rotate(3deg);
+    }
+    50% {
+        transform: translateY(-14px) translateX(-2px) rotate(-2deg);
+    }
+    75% {
+        transform: translateY(-6px) translateX(-5px) rotate(2deg);
+    }
+}
+
+.animate-fairy-fly {
+    animation: fairy-fly 4s ease-in-out infinite;
+    display: inline-block;
+}
+
+/* Decorative floating sparkle dots */
+@keyframes sparkle-float {
+    0%,
+    100% {
+        opacity: 0.4;
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-5px) scale(1.2);
+    }
+}
+
+.sparkle-dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    background: linear-gradient(135deg, #fda4af, #ec4899);
+    border-radius: 50%;
+    animation: sparkle-float 2.5s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(236, 72, 153, 0.5);
+}
+
+.sparkle-dot:nth-of-type(2) {
+    animation-delay: 0.7s;
+    width: 4px;
+    height: 4px;
+}
+
+.sparkle-dot:nth-of-type(3) {
+    animation-delay: 1.4s;
+    width: 6px;
+    height: 6px;
+}
+
+/* Button text depth */
+.btn-text-depth {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    letter-spacing: 0.02em;
+}
+
+/* Footer embossed effect */
+.footer-embossed {
+    text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5),
+        0 -1px 0 rgba(0, 0, 0, 0.03);
+    letter-spacing: 0.04em;
+}
+
 /* Sonner Toast Styles */
 [data-sonner-toast] {
     font-family:
@@ -239,7 +360,9 @@ textarea::placeholder {
 
 /* Optimized card hover effects */
 .card-hover {
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    transition:
+        transform 0.2s ease-out,
+        box-shadow 0.2s ease-out;
 }
 
 .card-hover:hover {

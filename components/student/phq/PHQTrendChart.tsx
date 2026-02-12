@@ -9,6 +9,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
+import { TrendingUp } from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 
 interface PHQResult {
@@ -108,7 +109,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
             <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
 
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <span className="text-2xl filter drop-shadow-sm">📈</span>
+                <TrendingUp className="w-6 h-6 text-rose-500" />
                 <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                     กราฟแนวโน้มคะแนน PHQ-A
                 </span>

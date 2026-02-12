@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { BookOpen, Download, ChevronDown } from "lucide-react";
+import { BookOpen, Download, ChevronDown, FileText } from "lucide-react";
 import { WORKSHEET_NAMES } from "../constants";
 
 interface ActionButtonsProps {
@@ -88,8 +88,8 @@ export function ActionButtons({
                                     onClick={() => handleDownload(url)}
                                     className="w-full px-6 py-4 text-left hover:bg-pink-50 transition-colors flex items-center gap-4 border-b last:border-b-0 border-pink-50/50 group"
                                 >
-                                    <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                                        📄
+                                    <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <FileText className="w-5 h-5 text-pink-600" />
                                     </div>
                                     <div className="flex-1">
                                         {downloadUrls.length > 1 ? (
@@ -109,7 +109,7 @@ export function ActionButtons({
                                         )}
                                     </div>
                                     <div className="text-gray-300 group-hover:text-pink-500 transition-colors">
-                                        ⬇️
+                                        <Download className="w-5 h-5" />
                                     </div>
                                 </button>
                             );

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ExcelUploader, ImportPreview } from "@/components/student";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, FileUp } from "lucide-react";
 import Link from "next/link";
 
 export default function StudentImportPage() {
@@ -49,14 +49,19 @@ export default function StudentImportPage() {
 
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8 bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-lg shadow-pink-100/50 border border-white/60">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
-                            นำเข้าข้อมูลนักเรียน
-                        </h1>
-                        <p className="text-gray-600 mt-1 font-medium text-sm">
-                            อัพโหลดไฟล์ Excel ที่มีข้อมูลนักเรียนและผลคะแนน
-                            PHQ-A
-                        </p>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-pink-50 rounded-xl">
+                            <FileUp className="w-7 h-7 text-pink-500" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
+                                นำเข้าข้อมูลนักเรียน
+                            </h1>
+                            <p className="text-gray-600 mt-1 font-medium text-sm">
+                                อัพโหลดไฟล์ Excel ที่มีข้อมูลนักเรียนและผลคะแนน
+                                PHQ-A
+                            </p>
+                        </div>
                     </div>
                 </div>
 

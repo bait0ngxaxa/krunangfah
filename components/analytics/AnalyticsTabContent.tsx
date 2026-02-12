@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { BarChart3, TrendingUp, Target } from "lucide-react";
 import {
     PhqSummaryTable,
     HospitalReferralTable,
@@ -68,7 +69,11 @@ export function buildAnalyticsTabs({
     return [
         {
             id: "summary",
-            label: "📊 สรุปผลรวม",
+            label: (
+                <span className="flex items-center gap-1.5">
+                    <BarChart3 className="w-4 h-4" /> สรุปผลรวม
+                </span>
+            ),
             content: (
                 <>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -95,7 +100,11 @@ export function buildAnalyticsTabs({
         },
         {
             id: "trend",
-            label: "📈 กราฟแนวโน้ม",
+            label: (
+                <span className="flex items-center gap-1.5">
+                    <TrendingUp className="w-4 h-4" /> กราฟแนวโน้ม
+                </span>
+            ),
             content: (
                 <div className="space-y-6">
                     <RiskLevelTrendChart trendData={data.trendData} />
@@ -105,7 +114,11 @@ export function buildAnalyticsTabs({
         },
         {
             id: "progress",
-            label: "🎯 กิจกรรมช่วยเหลือ",
+            label: (
+                <span className="flex items-center gap-1.5">
+                    <Target className="w-4 h-4" /> กิจกรรมช่วยเหลือ
+                </span>
+            ),
             content: (
                 <ActivitySummaryTable
                     activityProgressByRisk={data.activityProgressByRisk}

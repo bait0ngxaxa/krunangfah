@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard, GraduationCap } from "lucide-react";
 
 interface NavbarProps {
     hasStudents: boolean;
@@ -17,8 +17,8 @@ export function Navbar({ hasStudents }: NavbarProps) {
     const isActive = (path: string) => pathname?.startsWith(path);
 
     const allNavLinks = [
-        { href: "/dashboard", label: "หน้าหลัก" },
-        { href: "/students", label: "นักเรียนของฉัน", requiresStudents: true },
+        { href: "/dashboard", label: "หน้าหลัก", icon: LayoutDashboard },
+        { href: "/students", label: "นักเรียนของฉัน", icon: GraduationCap, requiresStudents: true },
     ];
 
     // Filter links based on whether teacher has students
@@ -51,12 +51,13 @@ export function Navbar({ hasStudents }: NavbarProps) {
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                                         isActive(link.href)
                                             ? "bg-linear-to-r from-pink-50 to-white text-pink-600 shadow-sm shadow-pink-100 ring-1 ring-pink-100"
                                             : "text-gray-600 hover:text-pink-500 hover:bg-white/50"
                                     }`}
                                 >
+                                    <link.icon className="w-4 h-4" />
                                     {link.label}
                                 </Link>
                             ))}
@@ -96,12 +97,13 @@ export function Navbar({ hasStudents }: NavbarProps) {
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-base font-medium ${
                                     isActive(link.href)
                                         ? "bg-pink-50 text-pink-600"
                                         : "text-gray-600 hover:text-pink-500 hover:bg-pink-50/50"
                                 }`}
                             >
+                                <link.icon className="w-5 h-5" />
                                 {link.label}
                             </Link>
                         ))}

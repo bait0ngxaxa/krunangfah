@@ -1,5 +1,7 @@
 "use client";
 
+import { Users, CheckCircle, AlertCircle } from "lucide-react";
+
 interface AnalyticsSummaryCardsProps {
     totalStudents: number;
     studentsWithAssessment: number;
@@ -57,54 +59,6 @@ function SummaryCard({
     );
 }
 
-const StudentsIcon = () => (
-    <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-    >
-        <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-        />
-    </svg>
-);
-
-const CheckIcon = () => (
-    <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-    >
-        <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-    </svg>
-);
-
-const WarningIcon = () => (
-    <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-    >
-        <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-    </svg>
-);
-
 export function AnalyticsSummaryCards({
     totalStudents,
     studentsWithAssessment,
@@ -114,7 +68,7 @@ export function AnalyticsSummaryCards({
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <SummaryCard
-                icon={<StudentsIcon />}
+                icon={<Users className="w-8 h-8" />}
                 label={`นักเรียนทั้งหมด${currentClass ? ` (${currentClass})` : ""}`}
                 value={totalStudents}
                 unit="คน"
@@ -124,7 +78,7 @@ export function AnalyticsSummaryCards({
                 iconBgColor="bg-blue-50"
             />
             <SummaryCard
-                icon={<CheckIcon />}
+                icon={<CheckCircle className="w-8 h-8" />}
                 label="คัดกรองแล้ว"
                 value={studentsWithAssessment}
                 unit="คน"
@@ -134,7 +88,7 @@ export function AnalyticsSummaryCards({
                 iconBgColor="bg-emerald-50"
             />
             <SummaryCard
-                icon={<WarningIcon />}
+                icon={<AlertCircle className="w-8 h-8" />}
                 label="ยังไม่ได้คัดกรอง"
                 value={studentsWithoutAssessment}
                 unit="คน"

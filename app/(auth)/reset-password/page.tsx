@@ -1,5 +1,6 @@
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -26,7 +27,7 @@ export default async function ResetPasswordPage({
                     <div className="relative mb-6 group cursor-default inline-block">
                         <div className="absolute -inset-4 bg-linear-to-r from-rose-300/50 to-pink-300/50 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                         <div className="relative bg-white/60 backdrop-blur-xl p-4 rounded-3xl shadow-lg ring-1 ring-white/60 transform transition-transform duration-500 hover:scale-110 hover:rotate-12">
-                            <span className="text-5xl filter drop-shadow-sm select-none animate-bounce-subtle">
+                            <span className="text-5xl drop-shadow-sm select-none animate-fairy-fly">
                                 🧚‍♀️
                             </span>
                         </div>
@@ -34,6 +35,13 @@ export default async function ResetPasswordPage({
                     <h1 className="text-4xl font-bold bg-linear-to-r from-rose-400 to-pink-600 bg-clip-text text-transparent drop-shadow-sm">
                         Krunangfah
                     </h1>
+                    <div className="flex items-center justify-center gap-3 mt-3">
+                        <span className="sparkle-dot" />
+                        <div className="h-px w-12 bg-linear-to-r from-transparent via-pink-300 to-transparent" />
+                        <span className="sparkle-dot" />
+                        <div className="h-px w-12 bg-linear-to-r from-transparent via-rose-300 to-transparent" />
+                        <span className="sparkle-dot" />
+                    </div>
                     <h2 className="mt-4 text-2xl font-bold text-gray-900">
                         ตั้งรหัสผ่านใหม่
                     </h2>
@@ -48,19 +56,7 @@ export default async function ResetPasswordPage({
                     ) : (
                         <div className="text-center space-y-4">
                             <div className="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
-                                <svg
-                                    className="w-8 h-8 text-red-500"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={2}
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
-                                    />
-                                </svg>
+                                <AlertTriangle className="w-8 h-8 text-red-500" />
                             </div>
                             <h3 className="text-lg font-semibold text-gray-900">
                                 ลิงก์ไม่ถูกต้อง

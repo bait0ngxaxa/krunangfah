@@ -94,15 +94,15 @@ export function RiskGroupSection({
                                 className={`border-b border-gray-100 last:border-0 hover:bg-pink-50/30 cursor-pointer transition-all duration-200 group`}
                                 onClick={() => onStudentClick?.(student.id)}
                             >
-                                <td className="px-4 py-3 text-gray-700 font-medium group-hover:text-pink-700 transition-colors">
+                                <td className="px-4 py-3 text-gray-700 font-medium group-hover:text-pink-700 transition-colors w-full">
                                     {index + 1}. {student.firstName}{" "}
                                     {student.lastName}
                                 </td>
-                                <td className="px-4 py-3 text-right">
+                                <td className="px-4 py-3 text-right whitespace-nowrap">
                                     <Link
                                         href={`/students/${student.id}/help`}
                                         onClick={(e) => e.stopPropagation()}
-                                        className={`inline-block px-4 py-1.5 rounded-full text-sm font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all
+                                        className={`inline-block px-4 py-1.5 rounded-full text-sm font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all whitespace-nowrap
                                             ${
                                                 level === "red" ||
                                                 level === "blue"

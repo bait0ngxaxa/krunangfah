@@ -1,16 +1,25 @@
 import { Tabs, type Tab } from "@/components/ui/Tabs";
 import { VideoUpskillTab, ToolsIntroTab } from "@/components/teacher";
+import { BookOpen, Package, GraduationCap } from "lucide-react";
 
 export default function TeacherSkillPage() {
     const tabs: Tab[] = [
         {
             id: "videos",
-            label: "📚 อัพสกิลคุณครู",
+            label: (
+                <span className="flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4" /> อัพสกิลคุณครู
+                </span>
+            ),
             content: <VideoUpskillTab />,
         },
         {
             id: "tools",
-            label: "🧰 เครื่องมือ Healthy Emotion Box",
+            label: (
+                <span className="flex items-center gap-1.5">
+                    <Package className="w-4 h-4" /> เครื่องมือ Healthy Emotion Box
+                </span>
+            ),
             content: <ToolsIntroTab />,
         },
     ];
@@ -25,8 +34,8 @@ export default function TeacherSkillPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 {/* Page Header */}
                 <div className="mb-8 text-center md:text-left bg-white/60 backdrop-blur-sm p-6 rounded-3xl border border-white/60 shadow-sm">
-                    <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-3">
-                        🎓 อัพสกิลสำหรับคุณครู
+                    <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-3 flex items-center gap-3 justify-center md:justify-start">
+                        <GraduationCap className="w-8 h-8 text-rose-500" /> อัพสกิลสำหรับคุณครู
                     </h1>
                     <p className="text-lg text-gray-600 font-medium">
                         เรียนรู้และพัฒนาทักษะในการดูแลสุขภาพจิตนักเรียน

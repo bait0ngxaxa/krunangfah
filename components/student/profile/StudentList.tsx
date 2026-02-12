@@ -6,6 +6,7 @@
  */
 
 import { useState, useMemo } from "react";
+import { School, ClipboardList, BookOpen } from "lucide-react";
 import { StudentCard } from "./StudentCard";
 import { RISK_BG_CLASSES, type RiskLevel } from "@/lib/utils/phq-scoring";
 
@@ -107,7 +108,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
             <div className="flex flex-wrap gap-6 items-center bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-sm">
                 <div className="flex items-center gap-3">
                     <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                        <span className="text-lg">🏫</span>
+                        <School className="w-5 h-5 text-gray-600" />
                         กรองตามห้องเรียน:
                     </label>
                     <select
@@ -139,7 +140,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
             <div className="max-h-[600px] overflow-y-auto pr-2 space-y-6 rounded-2xl border border-white/60 bg-white/30 p-6 backdrop-blur-sm custom-scrollbar shadow-inner">
                 {Object.keys(groupedStudents).length === 0 ? (
                     <div className="text-center py-20 text-gray-500">
-                        <div className="text-4xl mb-4 opacity-50">📋</div>
+                        <div className="mb-4 opacity-50"><ClipboardList className="w-10 h-10 text-gray-400 mx-auto" /></div>
                         <p className="font-medium text-lg">
                             ไม่พบข้อมูลนักเรียน
                         </p>
@@ -152,9 +153,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                             <div key={className} className="space-y-4">
                                 <h3 className="text-lg font-bold text-gray-700 border-b-2 border-pink-100 pb-2 sticky top-0 bg-white/95 backdrop-blur-md z-10 px-2 py-3 rounded-lg shadow-sm flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-pink-500">
-                                            📚
-                                        </span>
+                                        <BookOpen className="w-5 h-5 text-pink-500" />
                                         ห้อง {className}
                                     </div>
                                     <span className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded-full">

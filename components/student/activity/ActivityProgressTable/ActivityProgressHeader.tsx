@@ -1,4 +1,4 @@
-import { FileText } from "lucide-react";
+import { FileText, Rocket } from "lucide-react";
 import Link from "next/link";
 import { getRiskLevelLabel } from "./utils";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
@@ -51,7 +51,7 @@ export function ActivityProgressHeader({
                 href={`/students/${studentId}/help/start`}
                 className="px-6 py-3 bg-linear-to-r from-rose-500 to-pink-600 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all shadow-md flex items-center justify-center gap-2"
             >
-                <span>🚀</span>
+                <Rocket className="w-5 h-5" />
                 ทำกิจกรรม
             </Link>
         </div>

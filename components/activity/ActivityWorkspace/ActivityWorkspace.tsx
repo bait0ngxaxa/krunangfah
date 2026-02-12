@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MessageCircle } from "lucide-react";
 import { useActivityWorkspace } from "./useActivityWorkspace";
 import {
     PreviewModal,
@@ -129,9 +130,7 @@ export function ActivityWorkspace({
                                 href={`/students/${studentId}/help/conversation`}
                                 className="w-full py-4 bg-linear-to-r from-rose-500 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all text-center text-lg shadow-md flex items-center justify-center gap-2 group"
                             >
-                                <span className="group-hover:scale-110 transition-transform">
-                                    💬
-                                </span>
+                                <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
                                 หลักการพูดคุย
                             </Link>
                         </div>

@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft, BookOpen, Pin } from "lucide-react";
 
 export default function GuidelinesPage() {
     const params = useParams();
@@ -42,7 +42,7 @@ export default function GuidelinesPage() {
                     <div className="prose prose-lg max-w-none">
                         <div className="bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-xl mb-6">
                             <h3 className="text-purple-800 font-bold mb-2">
-                                📌 หมายเหตุ
+                                <span className="flex items-center gap-1.5"><Pin className="w-4 h-4" /> หมายเหตุ</span>
                             </h3>
                             <p className="text-purple-700 mb-0">
                                 เนื้อหาหลักการใช้ใบงานจะถูกเพิ่มในภายหลัง

@@ -26,7 +26,7 @@ export default async function SignInPage({
                     <div className="relative mb-6 group cursor-default inline-block">
                         <div className="absolute -inset-4 bg-linear-to-r from-rose-300/50 to-pink-300/50 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                         <div className="relative bg-white/60 backdrop-blur-xl p-4 rounded-3xl shadow-lg ring-1 ring-white/60 transform transition-transform duration-500 hover:scale-110 hover:rotate-12">
-                            <span className="text-5xl filter drop-shadow-sm select-none animate-bounce-subtle">
+                            <span className="text-5xl drop-shadow-sm select-none animate-fairy-fly">
                                 🧚‍♀️
                             </span>
                         </div>
@@ -34,6 +34,13 @@ export default async function SignInPage({
                     <h1 className="text-4xl font-bold bg-linear-to-r from-rose-400 to-pink-600 bg-clip-text text-transparent drop-shadow-sm">
                         Krunangfah
                     </h1>
+                    <div className="flex items-center justify-center gap-3 mt-3">
+                        <span className="sparkle-dot" />
+                        <div className="h-px w-12 bg-linear-to-r from-transparent via-pink-300 to-transparent" />
+                        <span className="sparkle-dot" />
+                        <div className="h-px w-12 bg-linear-to-r from-transparent via-rose-300 to-transparent" />
+                        <span className="sparkle-dot" />
+                    </div>
                     <h2 className="mt-4 text-2xl font-bold text-gray-900">
                         เข้าสู่ระบบ
                     </h2>

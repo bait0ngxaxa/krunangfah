@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import type { InviteLinkSectionProps } from "../types";
 
 export function InviteLinkSection({
@@ -11,7 +12,7 @@ export function InviteLinkSection({
         <div className="p-4 text-sm text-green-700 bg-green-50/80 backdrop-blur-sm border border-green-200 rounded-xl shadow-sm animate-fade-in-down">
             <div className="flex items-center gap-2 mb-2">
                 <span className="bg-green-100 p-1 rounded-full text-green-600">
-                    ✓
+                    <Check className="w-4 h-4" />
                 </span>
                 <span className="font-bold">{success}</span>
             </div>

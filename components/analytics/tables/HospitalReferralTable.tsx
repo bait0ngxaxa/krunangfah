@@ -1,5 +1,6 @@
 "use client";
 
+import { Hospital } from "lucide-react";
 import type { HospitalReferralByGrade } from "@/lib/actions/analytics";
 
 interface HospitalReferralTableProps {
@@ -78,7 +79,7 @@ export function HospitalReferralTable({
             </div>
             {hospitalReferralsByGrade.length === 0 && (
                 <div className="text-center text-gray-400 mt-8 py-8 border-t border-pink-50 flex flex-col items-center gap-2">
-                    <span className="text-2xl">🏥</span>
+                    <Hospital className="w-6 h-6 text-gray-400" />
                     <span>ยังไม่มีข้อมูลการส่งต่อโรงพยาบาล</span>
                 </div>
             )}

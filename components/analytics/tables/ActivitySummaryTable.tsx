@@ -1,5 +1,6 @@
 "use client";
 
+import { ClipboardList } from "lucide-react";
 import type { ActivityProgressByRisk } from "@/lib/actions/analytics";
 
 interface ActivityProgressTableProps {
@@ -34,19 +35,7 @@ export function ActivitySummaryTable({
                     </h2>
                     <div className="text-gray-400 flex flex-col items-center gap-3">
                         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
-                            <svg
-                                className="w-8 h-8"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                />
-                            </svg>
+                            <ClipboardList className="w-8 h-8 text-gray-400" />
                         </div>
                         <span>ยังไม่มีข้อมูลกระบวนการช่วยเหลือ</span>
                     </div>

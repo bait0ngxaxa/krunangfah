@@ -1,3 +1,5 @@
+import { BookOpen, Clock, Lightbulb, Info } from "lucide-react";
+
 export function VideoUpskillTab() {
     const videos = [
         {
@@ -29,8 +31,9 @@ export function VideoUpskillTab() {
         <div className="space-y-6">
             {/* Header */}
             <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-white/60 shadow-lg shadow-pink-100/50">
-                <h2 className="text-2xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-2">
-                    📚 อัพสกิลคุณครูผ่านวิดีโอ
+                <h2 className="text-2xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-2 flex items-center gap-2">
+                    <BookOpen className="w-6 h-6 text-rose-500" />
+                    อัพสกิลคุณครูผ่านวิดีโอ
                 </h2>
                 <p className="text-gray-600 font-medium">
                     เรียนรู้เทคนิคและความรู้สำหรับการดูแลสุขภาพจิตนักเรียนผ่านวิดีโอบทเรียน
@@ -63,8 +66,8 @@ export function VideoUpskillTab() {
                                 <h3 className="text-xl font-bold text-gray-800">
                                     {video.title}
                                 </h3>
-                                <span className="text-sm font-bold text-pink-600 bg-pink-50 px-3 py-1.5 rounded-full whitespace-nowrap ml-2 border border-pink-100 shadow-sm">
-                                    ⏱️ {video.duration}
+                                <span className="text-sm font-bold text-pink-600 bg-pink-50 px-3 py-1.5 rounded-full whitespace-nowrap ml-2 border border-pink-100 shadow-sm flex items-center gap-1">
+                                    <Clock className="w-3.5 h-3.5" /> {video.duration}
                                 </span>
                             </div>
                             <p className="text-gray-600 relative z-10">
@@ -78,24 +81,24 @@ export function VideoUpskillTab() {
             {/* Additional Resources */}
             <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-blue-100 shadow-md shadow-blue-50/50">
                 <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    <span className="text-xl">💡</span>
+                    <Lightbulb className="w-5 h-5 text-blue-500" />
                     <span>เพิ่มเติม</span>
                 </h3>
                 <ul className="space-y-3 text-gray-600">
                     <li className="flex items-start bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
-                        <span className="mr-3 text-blue-500 font-bold">•</span>
+                        <Info className="w-4 h-4 mr-2 text-blue-500 shrink-0 mt-0.5" />
                         <span>
                             วิดีโอเหล่านี้สามารถดูซ้ำได้ตลอดเวลาเพื่อทบทวนความรู้
                         </span>
                     </li>
                     <li className="flex items-start bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
-                        <span className="mr-3 text-blue-500 font-bold">•</span>
+                        <Info className="w-4 h-4 mr-2 text-blue-500 shrink-0 mt-0.5" />
                         <span>
                             แนะนำให้ดูตามลำดับเพื่อความเข้าใจที่ดีที่สุดและครอบคลุมเนื้อหาทั้งหมด
                         </span>
                     </li>
                     <li className="flex items-start bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
-                        <span className="mr-3 text-blue-500 font-bold">•</span>
+                        <Info className="w-4 h-4 mr-2 text-blue-500 shrink-0 mt-0.5" />
                         <span>
                             หากมีคำถามเพิ่มเติม
                             สามารถติดต่อทีมงานผู้เชี่ยวชาญได้ตลอดเวลา

@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, GraduationCap, FileUp, ClipboardList } from "lucide-react";
 import { getStudents } from "@/lib/actions/student";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { requireAuth } from "@/lib/session";
@@ -35,13 +35,18 @@ export default async function MyStudentsPage() {
 
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8 bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-lg shadow-pink-100/50 border border-white/60">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
-                            นักเรียนทั้งหมด
-                        </h1>
-                        <p className="text-gray-600 mt-1 text-sm font-medium">
-                            ข้อมูลนักเรียนและผลคัดกรอง PHQ-A
-                        </p>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-pink-50 rounded-xl">
+                            <GraduationCap className="w-7 h-7 text-pink-500" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
+                                นักเรียนทั้งหมด
+                            </h1>
+                            <p className="text-gray-600 mt-1 text-sm font-medium">
+                                ข้อมูลนักเรียนและผลคัดกรอง PHQ-A
+                            </p>
+                        </div>
                     </div>
                     {!isAdmin && (
                         <div className="flex items-center gap-4">
@@ -49,7 +54,7 @@ export default async function MyStudentsPage() {
                                 href="/students/import"
                                 className="px-5 py-2.5 bg-linear-to-r from-rose-400 to-pink-500 text-white rounded-full hover:from-rose-500 hover:to-pink-600 transition-all shadow-md shadow-pink-200 hover:shadow-lg hover:shadow-pink-300 text-sm font-bold flex items-center gap-2 transform hover:-translate-y-0.5"
                             >
-                                <span>📥</span> นำเข้าข้อมูล
+                                <FileUp className="w-4 h-4" /> นำเข้าข้อมูล
                             </Link>
                         </div>
                     )}
@@ -61,7 +66,7 @@ export default async function MyStudentsPage() {
                         <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-rose-300 to-pink-300" />
                         <div className="py-8">
                             <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-pink-50 flex items-center justify-center border-4 border-white shadow-inner">
-                                <span className="text-4xl">📝</span>
+                                <ClipboardList className="w-10 h-10 text-pink-400" />
                             </div>
                             <h2 className="text-2xl font-bold text-gray-800 mb-3">
                                 ยังไม่มีข้อมูลนักเรียน
@@ -74,7 +79,7 @@ export default async function MyStudentsPage() {
                                 href="/students/import"
                                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-linear-to-r from-rose-400 to-pink-500 text-white rounded-full hover:from-rose-500 hover:to-pink-600 transition-all font-bold shadow-lg shadow-pink-200 hover:shadow-xl hover:shadow-pink-300 hover:-translate-y-1"
                             >
-                                📥 นำเข้าข้อมูลนักเรียน
+                                <FileUp className="w-5 h-5" /> นำเข้าข้อมูลนักเรียน
                             </Link>
                         </div>
                     </div>

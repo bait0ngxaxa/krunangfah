@@ -1,16 +1,17 @@
+import { ClipboardList } from "lucide-react";
 import type { ColorTheme } from "@/lib/config/help-page-config";
 
 interface HelpPageHeaderProps {
     studentName: string;
     config: ColorTheme;
-    icon?: string;
+    icon?: React.ReactNode;
     title?: string;
 }
 
 export function HelpPageHeader({
     studentName,
     config,
-    icon = "📋",
+    icon = <ClipboardList className="w-10 h-10 text-white" />,
     title = "ระบบใบงานช่วยเหลือนักเรียน",
 }: HelpPageHeaderProps) {
     return (

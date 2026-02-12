@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Mail } from "lucide-react";
 import { useForgotPassword } from "@/hooks/useForgotPassword";
 
 export function ForgotPasswordForm() {
@@ -17,19 +18,7 @@ export function ForgotPasswordForm() {
         return (
             <div className="text-center space-y-4">
                 <div className="mx-auto w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center">
-                    <svg
-                        className="w-8 h-8 text-pink-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                    </svg>
+                    <Mail className="w-8 h-8 text-pink-500" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900">
                     ส่งลิงก์แล้ว

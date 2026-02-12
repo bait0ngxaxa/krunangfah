@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, X } from "lucide-react";
+import { Eye, X, FileText, ImageIcon } from "lucide-react";
 import Image from "next/image";
 
 interface WorksheetPreviewModalProps {
@@ -39,7 +39,7 @@ export function WorksheetPreviewModal({
                         <div className="flex items-center justify-between px-8 py-5 border-b border-pink-100 bg-linear-to-r from-white to-pink-50/50">
                             <h3 className="font-bold text-gray-800 truncate flex items-center gap-3 text-lg">
                                 <span className="p-2 bg-pink-100 rounded-lg text-pink-600">
-                                    {isPdf ? "📄" : "🖼️"}
+                                    {isPdf ? <FileText className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
                                 </span>
                                 {fileName}
                             </h3>

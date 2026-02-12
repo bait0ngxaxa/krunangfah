@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { X } from "lucide-react";
+import { X, FileText, ImageIcon } from "lucide-react";
 import type { PreviewFile } from "../types";
 
 interface PreviewModalProps {
@@ -26,8 +26,8 @@ export function PreviewModal({ file, onClose }: PreviewModalProps) {
                     <h3 className="font-bold text-gray-800 truncate flex items-center gap-3 text-lg">
                         <span className="p-2 bg-pink-100 rounded-lg text-pink-600">
                             {file.name.toLowerCase().endsWith(".pdf")
-                                ? "📄"
-                                : "🖼️"}
+                                ? <FileText className="w-5 h-5" />
+                                : <ImageIcon className="w-5 h-5" />}
                         </span>
                         {file.name}
                     </h3>

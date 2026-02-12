@@ -1,3 +1,4 @@
+import { AlertTriangle } from "lucide-react";
 import type { PreviewStudent } from "../types";
 
 interface FilteredStudentsWarningProps {
@@ -19,7 +20,7 @@ export function FilteredStudentsWarning({
     return (
         <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <div className="flex items-start gap-3">
-                <div className="text-amber-600 text-xl mt-0.5">⚠️</div>
+                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
                 <div className="flex-1">
                     <p className="font-semibold text-amber-800 mb-2">
                         พบนักเรียนที่ไม่ตรงกับห้องที่คุณดูแล ({students.length}{" "}

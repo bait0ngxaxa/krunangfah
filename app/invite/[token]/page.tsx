@@ -1,5 +1,6 @@
 import { getTeacherInvite } from "@/lib/actions/teacher-invite";
 import { AcceptInviteForm } from "@/components/teacher";
+import { XCircle } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -20,7 +21,9 @@ export default async function InvitePage({ params }: InvitePageProps) {
         return (
             <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center py-8 px-4">
                 <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-                    <div className="text-6xl mb-4">❌</div>
+                    <div className="mb-4 flex justify-center">
+                        <XCircle className="w-16 h-16 text-red-500" />
+                    </div>
                     <h1 className="text-2xl font-bold text-gray-800 mb-4">
                         ลิงก์ไม่ถูกต้อง
                     </h1>

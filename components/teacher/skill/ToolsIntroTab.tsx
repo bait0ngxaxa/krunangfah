@@ -3,6 +3,7 @@
  * แท็บสำหรับแนะนำเครื่องมือใน Healthy Emotion Box
  */
 
+import { Package } from "lucide-react";
 import {
     HEALTHY_EMOTION_TOOLS,
     COLOR_STYLES,
@@ -14,8 +15,9 @@ export function ToolsIntroTab() {
         <div className="space-y-6">
             {/* Header */}
             <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-white/60 shadow-lg shadow-pink-100/50">
-                <h2 className="text-2xl font-bold bg-linear-to-r from-purple-500 to-pink-600 bg-clip-text text-transparent mb-2">
-                    🧰 เครื่องมือใน Healthy Emotion Box
+                <h2 className="text-2xl font-bold bg-linear-to-r from-purple-500 to-pink-600 bg-clip-text text-transparent mb-2 flex items-center gap-2">
+                    <Package className="w-6 h-6 text-purple-500" />
+                    เครื่องมือใน Healthy Emotion Box
                 </h2>
                 <p className="text-gray-600 font-medium">
                     ระบบเครื่องมือครบวงจร 9 ชิ้น สำหรับการดูแลสุขภาพจิตนักเรียน
@@ -36,9 +38,9 @@ export function ToolsIntroTab() {
                         {/* Tool Header */}
                         <div className="flex flex-col items-center mb-4 relative z-10">
                             <div
-                                className={`text-5xl mb-4 p-5 rounded-2xl bg-linear-to-br ${COLOR_STYLES[tool.color]} bg-opacity-20 shadow-sm border border-white/50 group-hover:scale-110 transition-transform duration-300`}
+                                className={`mb-4 p-5 rounded-2xl bg-linear-to-br ${COLOR_STYLES[tool.color]} shadow-sm border border-white/50 group-hover:scale-110 transition-transform duration-300`}
                             >
-                                {tool.icon}
+                                <tool.icon className="w-10 h-10 text-white" />
                             </div>
                             <h3 className="text-lg font-bold text-gray-800 text-center leading-tight">
                                 {tool.name}

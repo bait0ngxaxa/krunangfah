@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BarChart3, Target } from "lucide-react";
 import { getStudentDetail } from "@/lib/actions/student";
 import {
     StudentProfileCard,
@@ -89,12 +89,20 @@ export default async function StudentDetailPage({
     const tabs = [
         {
             id: "phq-results",
-            label: "📊 ผลการคัดกรอง",
+            label: (
+                <span className="flex items-center gap-1.5">
+                    <BarChart3 className="w-4 h-4" /> ผลการคัดกรอง
+                </span>
+            ),
             content: phqResultsTab,
         },
         {
             id: "activities",
-            label: "🎯 กิจกรรมและบันทึกการพูดคุย",
+            label: (
+                <span className="flex items-center gap-1.5">
+                    <Target className="w-4 h-4" /> กิจกรรมและบันทึกการพูดคุย
+                </span>
+            ),
             content: activitiesTab,
         },
     ];
@@ -130,10 +138,7 @@ export default async function StudentDetailPage({
                     {/* Hospital Referral Button */}
                     {latestResult && (
                         <div className="flex justify-end">
-                            <HospitalReferralButton
-                                phqResultId={latestResult.id}
-                                initialStatus={latestResult.referredToHospital}
-                            />
+                            <HospitalReferralButton />
                         </div>
                     )}
 

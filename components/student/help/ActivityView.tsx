@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Target, Rocket } from "lucide-react";
 import type { Activity, ColorTheme } from "@/lib/config/help-page-config";
 import { HelpPageHeader } from "./HelpPageHeader";
 import { ActivityCard } from "./ActivityCard";
@@ -49,7 +49,7 @@ export function ActivityView({
                         <div
                             className={`inline-flex items-center gap-3 px-8 py-4 ${config.lightBg} rounded-2xl shadow-sm border border-white/50 backdrop-blur-sm`}
                         >
-                            <span className="text-2xl animate-bounce">🎯</span>
+                            <Target className="w-6 h-6 text-gray-800 animate-bounce" />
                             <span className="text-lg font-bold text-gray-800">
                                 ต้องทำทั้งหมด {activityCount} กิจกรรม
                             </span>
@@ -74,9 +74,7 @@ export function ActivityView({
                             href={`/students/${studentId}/help/start`}
                             className={`flex items-center justify-center gap-3 py-4 px-10 bg-linear-to-r ${config.gradient} text-white rounded-xl font-bold hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all text-xl shadow-md group`}
                         >
-                            <span className="text-2xl group-hover:scale-110 transition-transform">
-                                🚀
-                            </span>
+                            <Rocket className="w-6 h-6 group-hover:scale-110 transition-transform" />
                             เริ่มทำกิจกรรม
                         </Link>
                     </div>

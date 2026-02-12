@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 
 export interface Tab {
     id: string;
-    label: string;
+    label: ReactNode;
     content: ReactNode;
 }
 

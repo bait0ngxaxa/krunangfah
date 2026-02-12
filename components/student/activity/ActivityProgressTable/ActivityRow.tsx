@@ -1,4 +1,4 @@
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Lock } from "lucide-react";
 import { getActivityName } from "./utils";
 import { WorksheetPreviewButton } from "../WorksheetPreviewButton";
 import type { ActivityProgress } from "./types";
@@ -69,7 +69,7 @@ export function ActivityRow({ progress, index }: ActivityRowProps) {
                         className={`w-10 h-10 md:w-8 md:h-8 ${iconBgColor} rounded-xl flex items-center justify-center text-sm font-bold shrink-0 shadow-sm transition-transform hover:scale-110`}
                     >
                         {isLocked ? (
-                            "🔒"
+                            <Lock className="w-5 h-5 md:w-4 md:h-4" />
                         ) : isCompleted ? (
                             <CheckCircle2 className="w-5 h-5 md:w-4 md:h-4" />
                         ) : (

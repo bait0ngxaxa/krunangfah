@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ClipboardCheck, Loader2, ArrowRight } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, Loader2, ArrowRight, Brain, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { submitTeacherAssessment } from "@/lib/actions/activity";
 import {
@@ -209,7 +209,7 @@ export function TeacherAssessmentForm({
                                 }`}
                             >
                                 <div className="relative z-10 flex flex-col items-center gap-2">
-                                    <span className="text-3xl">🧠</span>
+                                    <Brain className="w-8 h-8" />
                                     <span>ปัญหาภายใน</span>
                                 </div>
                                 {problemType === "internal" && (
@@ -226,7 +226,7 @@ export function TeacherAssessmentForm({
                                 }`}
                             >
                                 <div className="relative z-10 flex flex-col items-center gap-2">
-                                    <span className="text-3xl">🌍</span>
+                                    <Globe className="w-8 h-8" />
                                     <span>ปัญหาภายนอก</span>
                                 </div>
                                 {problemType === "external" && (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BarChart3, ArrowLeft } from "lucide-react";
 import { requireAuth } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
@@ -41,7 +42,9 @@ export default async function AnalyticsPage() {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <h1 className="text-3xl font-bold mb-2 drop-shadow-sm flex items-center gap-3">
-                                <span className="text-3xl">📊</span>
+                                <div className="p-2.5 bg-pink-50 rounded-xl">
+                                    <BarChart3 className="w-7 h-7 text-pink-500" />
+                                </div>
                                 <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                                     Dashboard &amp; Analytics
                                 </span>
@@ -54,7 +57,7 @@ export default async function AnalyticsPage() {
                             href="/dashboard"
                             className="px-6 py-2.5 bg-white text-gray-600 font-semibold rounded-xl hover:bg-pink-50 hover:text-pink-600 border border-gray-200 hover:border-pink-200 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
                         >
-                            <span>←</span> กลับหน้าหลัก
+                            <ArrowLeft className="w-4 h-4" /> กลับหน้าหลัก
                         </Link>
                     </div>
                 </div>

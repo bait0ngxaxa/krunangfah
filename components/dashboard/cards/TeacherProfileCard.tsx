@@ -1,4 +1,4 @@
-import { School, CalendarDays, DoorOpen, Briefcase } from "lucide-react";
+import { School, CalendarDays, DoorOpen, Briefcase, User } from "lucide-react";
 
 interface TeacherProfileCardProps {
     teacher: {
@@ -42,8 +42,8 @@ export function TeacherProfileCard({
 
             <div className="flex items-start justify-between mb-6 relative z-10">
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <span className="p-2 bg-pink-50 rounded-lg shadow-sm text-xl">
-                        👤
+                    <span className="p-2 bg-pink-50 rounded-lg shadow-sm">
+                        <User className="w-5 h-5 text-pink-500" />
                     </span>{" "}
                     ข้อมูลส่วนตัว
                 </h3>

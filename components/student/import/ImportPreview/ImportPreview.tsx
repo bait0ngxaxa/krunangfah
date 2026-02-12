@@ -1,5 +1,6 @@
 "use client";
 
+import { BarChart3 } from "lucide-react";
 import { useImportPreview } from "./useImportPreview";
 import {
     RiskSummaryCards,
@@ -42,7 +43,7 @@ export function ImportPreview({
                 <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-pink-400 via-rose-300 to-purple-400 opacity-60" />
 
                 <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                    <span className="text-2xl">📊</span>
+                    <BarChart3 className="w-6 h-6 text-rose-500" />
                     <span className="bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                         สรุปข้อมูลที่จะนำเข้า
                     </span>

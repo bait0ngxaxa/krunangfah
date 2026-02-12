@@ -1,3 +1,4 @@
+import { GraduationCap } from "lucide-react";
 import { TeacherProfileForm } from "@/components/teacher";
 import { requireAuth } from "@/lib/session";
 import { redirect } from "next/navigation";
@@ -27,7 +28,7 @@ export default async function TeacherProfilePage() {
             <div className="max-w-2xl w-full space-y-8 relative z-10">
                 <div className="text-center">
                     <div className="mb-4 inline-block p-4 rounded-2xl bg-white/50 backdrop-blur-sm shadow-sm border border-white/50">
-                        <span className="text-4xl shadow-sm">👩‍🏫</span>
+                        <GraduationCap className="w-10 h-10 text-pink-500" />
                     </div>
                     <h1 className="text-4xl font-bold bg-linear-to-r from-rose-400 to-pink-500 bg-clip-text text-transparent drop-shadow-sm">
                         เพิ่มข้อมูลครู

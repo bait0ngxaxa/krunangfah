@@ -1,5 +1,6 @@
 "use client";
 
+import { ClipboardList } from "lucide-react";
 import { WhitelistEntryRow } from "@/components/admin/WhitelistEntryRow";
 import type { WhitelistEntry } from "@/types/whitelist.types";
 
@@ -25,7 +26,7 @@ export function WhitelistTable({
     return (
         <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-pink-100">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="text-xl">📋</span>
+                <ClipboardList className="w-5 h-5 text-rose-500" />
                 <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                     รายการ Whitelist ({entries.length})
                 </span>

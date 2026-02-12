@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MessageCircle, FileText, Plus } from "lucide-react";
 import type { CounselingSession } from "@/lib/actions/counseling.actions";
 import { AddCounselingModal } from "./AddCounselingModal";
 
@@ -34,7 +35,7 @@ export function CounselingLogTable({
             <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
 
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <span className="text-2xl filter drop-shadow-sm">💬</span>
+                <MessageCircle className="w-6 h-6 text-rose-500" />
                 <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                     บันทึกการให้คำปรึกษารายบุคคล
                 </span>
@@ -45,9 +46,7 @@ export function CounselingLogTable({
                 {sessions.length === 0 ? (
                     <div className="p-12 text-center bg-white/50">
                         <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-pink-50 flex items-center justify-center">
-                            <span className="text-4xl filter drop-shadow-sm">
-                                📝
-                            </span>
+                            <FileText className="w-10 h-10 text-pink-400" />
                         </div>
                         <h3 className="text-lg font-bold text-gray-800 mb-2">
                             ยังไม่มีบันทึกการให้คำปรึกษา
@@ -107,7 +106,7 @@ export function CounselingLogTable({
                     onClick={() => setShowAddModal(true)}
                     className="px-6 py-3 bg-linear-to-r from-rose-500 to-pink-600 text-white rounded-xl hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all font-bold flex items-center gap-2 cursor-pointer shadow-md shadow-pink-100"
                 >
-                    <span className="text-lg">➕</span>
+                    <Plus className="w-5 h-5" />
                     เพิ่มบันทึกการให้คำปรึกษา
                 </button>
             </div>

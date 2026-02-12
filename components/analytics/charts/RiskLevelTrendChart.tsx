@@ -1,5 +1,6 @@
 "use client";
 
+import { TrendingUp } from "lucide-react";
 import {
     LineChart,
     Line,
@@ -54,19 +55,7 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                 </h2>
                 <div className="text-gray-400 flex flex-col items-center gap-3">
                     <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
-                        <svg
-                            className="w-8 h-8"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
-                            />
-                        </svg>
+                        <TrendingUp className="w-8 h-8 text-gray-400" />
                     </div>
                     <span>ยังไม่มีข้อมูลการคัดกรอง</span>
                 </div>

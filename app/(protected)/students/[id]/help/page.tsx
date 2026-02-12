@@ -30,7 +30,7 @@ export default async function StudentHelpPage({ params }: PageProps) {
     const config = COLOR_CONFIG[riskLevel] || COLOR_CONFIG.green;
     const studentName = `${student.firstName} ${student.lastName}`;
 
-    // Red and Blue - Conversation only
+    // Red - 3-step workflow, Blue - conversation guidelines only
     if (riskLevel === "red" || riskLevel === "blue") {
         return (
             <ConversationView
@@ -38,6 +38,10 @@ export default async function StudentHelpPage({ params }: PageProps) {
                 studentId={studentId}
                 riskLevel={riskLevel}
                 config={config}
+                {...(riskLevel === "red" && {
+                    phqResultId: latestResult.id,
+                    initialReferralStatus: latestResult.referredToHospital,
+                })}
             />
         );
     }

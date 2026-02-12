@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import type { WhitelistFormData } from "@/lib/validations/whitelist.validation";
 
@@ -24,7 +25,7 @@ export function WhitelistAddForm({
         <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-pink-100">
             <div className="h-1.5 bg-linear-to-r from-rose-300 to-pink-300 rounded-full -mt-6 md:-mt-8 mx--6 md:mx--8 mb-6 rounded-t-3xl rounded-b-none" />
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="text-xl">➕</span>
+                <Plus className="w-5 h-5 text-rose-500" />
                 <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                     เพิ่มอีเมล System Admin
                 </span>

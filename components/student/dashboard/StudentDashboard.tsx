@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { RiskGroupSection } from "../phq/RiskGroupSection";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
-import { Users, School } from "lucide-react";
+import { Users, School, Filter, ClipboardCheck } from "lucide-react";
 
 // Dynamic import for chart component (ssr: false to prevent hydration warnings)
 const RiskPieChart = dynamic(
@@ -198,6 +198,7 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
                     {classes.length > 1 && (
                         <div className="bg-white rounded-xl shadow-md p-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <Filter className="w-4 h-4 inline-block mr-1 -mt-0.5" />
                                 เลือกห้องเรียน
                             </label>
                             <select
@@ -248,8 +249,8 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
                         <div className="space-y-6">
                             <div className="flex items-center justify-between bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-lg shadow-pink-100/40">
                                 <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
-                                    <span className="text-3xl p-2 bg-pink-50 rounded-lg">
-                                        🏫
+                                    <span className="p-2.5 bg-pink-50 rounded-lg">
+                                        <ClipboardCheck className="w-6 h-6 text-pink-500" />
                                     </span>
                                     <span>
                                         สรุปผลการคัดกรอง:{" "}

@@ -2,7 +2,7 @@
 
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ClipboardList } from "lucide-react";
 
 interface PHQResult {
     id: string;
@@ -66,7 +66,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
             <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
 
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <span className="text-2xl filter drop-shadow-sm">📋</span>
+                <ClipboardList className="w-6 h-6 text-rose-500" />
                 <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                     ประวัติการคัดกรองสุขภาพจิต
                 </span>
@@ -136,19 +136,21 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                             {risk.label}
                                         </span>
                                     </td>
-                                    <td className="py-4 px-6 text-center">
+                                    <td className="py-4 px-6">
                                         {hasWarning && (
-                                            <div
-                                                className="inline-flex items-center justify-center gap-1 text-rose-500 bg-rose-50 w-8 h-8 rounded-full"
-                                                title={
-                                                    result.q9a && result.q9b
-                                                        ? "มีความคิดทำร้ายตัวเองและผู้อื่น"
-                                                        : result.q9a
-                                                          ? "มีความคิดทำร้ายตัวเอง"
-                                                          : "มีความคิดทำร้ายผู้อื่น"
-                                                }
-                                            >
-                                                <AlertTriangle className="w-5 h-5" />
+                                            <div className="space-y-1">
+                                                {result.q9a && (
+                                                    <div className="flex items-center gap-1.5 text-rose-600 text-sm font-medium">
+                                                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                                                        <span>มีความคิดฆ่าตัวตาย</span>
+                                                    </div>
+                                                )}
+                                                {result.q9b && (
+                                                    <div className="flex items-center gap-1.5 text-red-700 text-sm font-medium">
+                                                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                                                        <span>เคยลงมือฆ่าตัวตาย</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </td>
@@ -185,12 +187,23 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                         })}
                                     </div>
                                 </div>
-                                {hasWarning && (
-                                    <div className="p-2 bg-rose-50 text-rose-500 rounded-full">
-                                        <AlertTriangle className="w-5 h-5" />
-                                    </div>
-                                )}
                             </div>
+                            {hasWarning && (
+                                <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 space-y-1">
+                                    {result.q9a && (
+                                        <div className="flex items-center gap-1.5 text-rose-600 text-sm font-medium">
+                                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                                            <span>มีความคิดฆ่าตัวตาย</span>
+                                        </div>
+                                    )}
+                                    {result.q9b && (
+                                        <div className="flex items-center gap-1.5 text-red-700 text-sm font-medium">
+                                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                                            <span>เคยลงมือฆ่าตัวตาย</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             <div className="space-y-3">
                                 <div className="text-sm text-gray-600 flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-pink-300" />

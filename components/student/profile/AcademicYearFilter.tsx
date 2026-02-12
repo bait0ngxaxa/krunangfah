@@ -1,5 +1,6 @@
 "use client";
 
+import { CalendarDays } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface AcademicYear {
@@ -43,7 +44,7 @@ export function AcademicYearFilter({
                     htmlFor="year-filter"
                     className="text-sm font-semibold text-gray-700 whitespace-nowrap"
                 >
-                    📅 ปีการศึกษา:
+                    <CalendarDays className="w-4 h-4 text-gray-500 inline-block mr-1" /> ปีการศึกษา:
                 </label>
                 <select
                     id="year-filter"

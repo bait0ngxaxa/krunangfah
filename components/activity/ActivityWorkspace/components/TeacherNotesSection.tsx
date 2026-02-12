@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText, Save } from "lucide-react";
 
 interface TeacherNotesSectionProps {
     notes: string;
@@ -19,7 +19,7 @@ export function TeacherNotesSection({
     return (
         <div className="mb-8 bg-pink-50/50 border border-pink-200 p-6 rounded-2xl backdrop-blur-sm">
             <h3 className="font-bold text-pink-800 mb-4 flex items-center gap-2 text-lg">
-                <span className="text-2xl">📝</span>
+                <FileText className="w-6 h-6 text-pink-700" />
                 บันทึกของครู
             </h3>
             <p className="text-sm text-pink-700/80 mb-4 font-medium">
@@ -45,7 +45,7 @@ export function TeacherNotesSection({
                     </>
                 ) : (
                     <>
-                        <span>💾</span>
+                        <Save className="w-5 h-5" />
                         <span>บันทึกโน๊ต</span>
                     </>
                 )}

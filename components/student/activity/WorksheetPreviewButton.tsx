@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { Eye, X } from "lucide-react";
+import { Eye, X, Check, FileText, ImageIcon } from "lucide-react";
 import { WORKSHEET_NAMES } from "@/components/activity/ActivityWorkspace/constants";
 
 interface WorksheetUpload {
@@ -39,7 +39,7 @@ export function WorksheetPreviewButton({
             >
                 {isCompleted ? (
                     <>
-                        <span className="w-3 h-3">✓</span>
+                        <Check className="w-3 h-3" />
                         เสร็จแล้ว
                     </>
                 ) : (
@@ -69,8 +69,8 @@ export function WorksheetPreviewButton({
                                         {previewFile.name
                                             .toLowerCase()
                                             .endsWith(".pdf")
-                                            ? "📄"
-                                            : "🖼️"}
+                                            ? <FileText className="w-5 h-5" />
+                                            : <ImageIcon className="w-5 h-5" />}
                                     </span>
                                     {previewFile.name}
                                 </h3>
@@ -118,8 +118,8 @@ export function WorksheetPreviewButton({
             {/* File List */}
             <div className="flex items-center gap-3 flex-wrap justify-center">
                 <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200 shadow-sm">
-                    <span className="w-4 h-4 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px]">
-                        ✓
+                    <span className="w-4 h-4 rounded-full bg-green-500 text-white flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5" />
                     </span>
                     เสร็จแล้ว
                 </span>

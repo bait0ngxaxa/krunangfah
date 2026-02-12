@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { MessageCircle, AlertTriangle, Info, Loader2, Save } from "lucide-react";
 import { createCounselingSession } from "@/lib/actions/counseling.actions";
+import { toast } from "sonner";
 
 interface AddCounselingModalProps {
     studentId: string;
@@ -50,6 +52,7 @@ export function AddCounselingModal({
             });
 
             if (result.success) {
+                toast.success("บันทึกข้อมูลการพูดคุยเรียบร้อยแล้ว");
                 onSuccess();
                 onClose();
             } else {
@@ -81,7 +84,7 @@ export function AddCounselingModal({
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2" />
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
                     <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
-                        <span className="text-2xl">💬</span>
+                        <MessageCircle className="w-6 h-6 text-white" />
                         เพิ่มบันทึกการให้คำปรึกษา
                     </h3>
                 </div>
@@ -94,7 +97,7 @@ export function AddCounselingModal({
                     {/* Error Message */}
                     {error && (
                         <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center gap-2 text-rose-700">
-                            <span className="text-xl">⚠️</span>
+                            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
                             <p className="text-sm font-medium">{error}</p>
                         </div>
                     )}
@@ -171,7 +174,7 @@ export function AddCounselingModal({
                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 focus:bg-white transition-all resize-none outline-none font-medium"
                         />
                         <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                            <span>ℹ️</span>
+                            <Info className="w-4 h-4 text-gray-400 shrink-0" />
                             ระบุรายละเอียดการพูดคุย ปัญหาที่พบ
                             และแนวทางการช่วยเหลือ
                         </p>
@@ -194,12 +197,12 @@ export function AddCounselingModal({
                         >
                             {isSubmitting ? (
                                 <>
-                                    <span className="animate-spin">⏳</span>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
                                     กำลังบันทึก...
                                 </>
                             ) : (
                                 <>
-                                    <span>💾</span>
+                                    <Save className="w-5 h-5" />
                                     บันทึกข้อมูล
                                 </>
                             )}

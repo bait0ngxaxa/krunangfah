@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import { parseExcelBuffer, type ParsedStudent } from "@/lib/utils/excel-parser";
-import { Upload, Download } from "lucide-react";
+import { Upload, Download, Info } from "lucide-react";
 
 interface ExcelUploaderProps {
     onDataParsed: (data: ParsedStudent[]) => void;
@@ -144,7 +144,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
             <div className="p-6 bg-linear-to-r from-blue-50/80 to-purple-50/80 backdrop-blur-md rounded-2xl border border-blue-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
                 <div>
                     <h4 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
-                        <span className="text-blue-500">ℹ️</span>{" "}
+                        <Info className="w-5 h-5 text-blue-500 shrink-0" />{" "}
                         รูปแบบไฟล์ที่รองรับ
                     </h4>
                     <p className="text-sm text-gray-600 leading-relaxed">

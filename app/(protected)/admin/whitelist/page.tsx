@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/session";
 import { getWhitelistEntries } from "@/lib/actions/whitelist.actions";
@@ -27,7 +28,7 @@ export default async function WhitelistPage() {
                         href="/dashboard"
                         className="inline-flex items-center gap-2  text-gray-500 hover:text-pink-600 transition-colors mb-4 font-semibold"
                     >
-                        ← กลับหน้าหลัก
+                        <ArrowLeft className="w-4 h-4" /> กลับหน้าหลัก
                     </Link>
                     <h1 className="text-3xl md:text-4xl font-bold">
                         <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
