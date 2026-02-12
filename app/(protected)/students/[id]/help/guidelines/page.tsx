@@ -1,19 +1,24 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, Pin } from "lucide-react";
 
 export default function GuidelinesPage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const studentId = params.id as string;
+    const phqResultId = searchParams.get("phqResultId");
+    const startHref = phqResultId
+        ? `/students/${studentId}/help/start?phqResultId=${phqResultId}`
+        : `/students/${studentId}/help/start`;
 
     return (
         <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 py-8 px-4">
             <div className="max-w-4xl mx-auto">
                 {/* Back Button */}
                 <Link
-                    href={`/students/${studentId}/help/start`}
+                    href={startHref}
                     className="inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-medium transition-all hover:bg-pink-50 px-4 py-2 rounded-full mb-6"
                 >
                     <ArrowLeft className="w-5 h-5" />
@@ -63,7 +68,7 @@ export default function GuidelinesPage() {
                     {/* Back Button */}
                     <div className="mt-8 pt-6 border-t border-gray-200">
                         <Link
-                            href={`/students/${studentId}/help/start`}
+                            href={startHref}
                             className="block w-full py-3 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity text-center"
                         >
                             กลับหน้าใบงาน

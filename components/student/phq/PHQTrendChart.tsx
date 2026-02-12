@@ -120,6 +120,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                     <LineChart
                         data={chartData}
                         margin={{ top: 10, right: 30, left: 20, bottom: 60 }}
+                        tabIndex={-1}
                     >
                         <CartesianGrid strokeDasharray="3 3" stroke="#FCE7F3" />
                         <XAxis

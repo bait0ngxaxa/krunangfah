@@ -14,7 +14,7 @@ interface EncouragementPageProps {
     problemType: "internal" | "external";
     riskLevel: "orange" | "yellow" | "green";
     activityNumber: number;
-    hasNextActivity?: boolean;
+    assessmentPeriodLabel?: string;
 }
 
 export function EncouragementPage({
@@ -23,7 +23,7 @@ export function EncouragementPage({
     problemType,
     riskLevel,
     activityNumber,
-    hasNextActivity = true,
+    assessmentPeriodLabel,
 }: EncouragementPageProps) {
     // กิจกรรม 2+ ข้าม encouragement messages ไปแสดง completion page เลย
     const initialStep = activityNumber === 1 ? 1 : 2;
@@ -92,7 +92,7 @@ export function EncouragementPage({
                 studentName={studentName}
                 riskLevel={riskLevel}
                 activityNumber={activityNumber}
-                hasNextActivity={hasNextActivity}
+                assessmentPeriodLabel={assessmentPeriodLabel}
             />
         );
     }

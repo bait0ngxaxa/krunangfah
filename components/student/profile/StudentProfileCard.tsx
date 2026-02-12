@@ -17,6 +17,7 @@ interface StudentProfileCardProps {
         totalScore: number;
         riskLevel: string;
         referredToHospital: boolean;
+        hospitalName?: string | null;
         createdAt: Date;
         academicYear: {
             year: number;
@@ -137,7 +138,7 @@ export function StudentProfileCard({
                                 {latestResult.referredToHospital ? (
                                     <>
                                         <Hospital className="w-4 h-4" />
-                                        ส่งต่อโรงพยาบาลแล้ว
+                                        ส่งต่อ: {latestResult.hospitalName || "โรงพยาบาล"}
                                     </>
                                 ) : (
                                     <>

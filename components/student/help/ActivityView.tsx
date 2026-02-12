@@ -9,6 +9,7 @@ interface ActivityViewProps {
     studentId: string;
     config: ColorTheme;
     activities: Activity[];
+    phqResultId: string;
 }
 
 export function ActivityView({
@@ -16,6 +17,7 @@ export function ActivityView({
     studentId,
     config,
     activities,
+    phqResultId,
 }: ActivityViewProps) {
     const activityCount = activities.length;
 
@@ -71,7 +73,7 @@ export function ActivityView({
                     {/* Action Button */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
-                            href={`/students/${studentId}/help/start`}
+                            href={`/students/${studentId}/help/start?phqResultId=${phqResultId}`}
                             className={`flex items-center justify-center gap-3 py-4 px-10 bg-linear-to-r ${config.gradient} text-white rounded-xl font-bold hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all text-xl shadow-md group`}
                         >
                             <Rocket className="w-6 h-6 group-hover:scale-110 transition-transform" />

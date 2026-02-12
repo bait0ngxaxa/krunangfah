@@ -18,6 +18,7 @@ interface TeacherAssessmentFormProps {
     activityNumber: number;
     activityTitle: string;
     riskLevel: "orange" | "yellow" | "green";
+    phqResultId?: string;
 }
 
 export function TeacherAssessmentForm({
@@ -27,6 +28,7 @@ export function TeacherAssessmentForm({
     activityNumber,
     activityTitle,
     riskLevel,
+    phqResultId,
 }: TeacherAssessmentFormProps) {
     const router = useRouter();
     const config = COLOR_CONFIG[riskLevel];
@@ -55,8 +57,9 @@ export function TeacherAssessmentForm({
 
             if (result.success) {
                 // Redirect to encouragement page with problem type and activity number
+                const phqParam = phqResultId ? `&phqResultId=${phqResultId}` : "";
                 router.push(
-                    `/students/${studentId}/help/start/encouragement?type=${problemType}&activity=${activityNumber}`,
+                    `/students/${studentId}/help/start/encouragement?type=${problemType}&activity=${activityNumber}${phqParam}`,
                 );
             } else {
                 toast.error(result.error || "เกิดข้อผิดพลาด");

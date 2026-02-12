@@ -11,6 +11,7 @@ export async function ActivityProgressTable({
     studentId,
     phqResultId,
     riskLevel,
+    assessmentPeriod,
 }: ActivityProgressTableProps) {
     const activityNumbers = getActivityNumbers(riskLevel);
 
@@ -39,9 +40,11 @@ export async function ActivityProgressTable({
 
             <ActivityProgressHeader
                 studentId={studentId}
+                phqResultId={phqResultId}
                 riskLevel={riskLevel}
                 completedCount={completedCount}
                 totalCount={activityNumbers.length}
+                assessmentPeriod={assessmentPeriod}
             />
 
             <div className="overflow-x-auto rounded-xl border border-pink-100">

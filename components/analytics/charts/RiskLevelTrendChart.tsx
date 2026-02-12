@@ -73,6 +73,7 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                 <LineChart
                     data={trendData}
                     margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                    tabIndex={-1}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke="#FCE7F3" />
                     <XAxis

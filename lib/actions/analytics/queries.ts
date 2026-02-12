@@ -83,7 +83,7 @@ export async function getCombinedAnalytics(
                 pr."studentId",
                 pr."riskLevel",
                 pr."referredToHospital",
-                SUBSTRING(s.class FROM '^(ม\\.\\d+)') as grade,
+                SPLIT_PART(s.class, '/', 1) as grade,
                 ROW_NUMBER() OVER (
                     PARTITION BY pr."studentId"
                     ORDER BY pr."createdAt" DESC

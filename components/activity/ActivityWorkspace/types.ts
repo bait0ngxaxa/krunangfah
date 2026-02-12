@@ -23,6 +23,7 @@ export interface ActivityWorkspaceProps {
     studentName: string;
     riskLevel: "orange" | "yellow" | "green";
     activityProgress: ActivityProgressData[];
+    phqResultId?: string;
 }
 
 /**

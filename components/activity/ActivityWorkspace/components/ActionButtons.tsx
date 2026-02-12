@@ -10,6 +10,7 @@ interface ActionButtonsProps {
     config: { gradient: string };
     activityNumber: number;
     downloadUrls: string[];
+    phqResultId?: string;
 }
 
 /**
@@ -20,6 +21,7 @@ export function ActionButtons({
     config,
     activityNumber,
     downloadUrls,
+    phqResultId,
 }: ActionButtonsProps) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -52,7 +54,7 @@ export function ActionButtons({
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <Link
-                href={`/students/${studentId}/help/guidelines`}
+                href={`/students/${studentId}/help/guidelines${phqResultId ? `?phqResultId=${phqResultId}` : ""}`}
                 className={`group flex items-center justify-center gap-3 py-4 px-6 bg-linear-to-r ${config.gradient} text-white rounded-xl font-bold hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all shadow-md`}
             >
                 <BookOpen className="w-6 h-6 group-hover:scale-110 transition-transform" />

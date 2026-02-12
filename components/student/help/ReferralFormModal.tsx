@@ -9,7 +9,7 @@ import {
     Save,
     ClipboardCheck,
 } from "lucide-react";
-import { toggleHospitalReferral } from "@/lib/actions/hospital-referral.actions";
+import { updateHospitalReferral } from "@/lib/actions/hospital-referral.actions";
 import { toast } from "sonner";
 
 type ReferralOption = "refer" | "follow_up";
@@ -17,6 +17,7 @@ type ReferralOption = "refer" | "follow_up";
 interface ReferralFormModalProps {
     phqResultId: string;
     initialStatus: boolean;
+    initialHospitalName?: string;
     onClose: () => void;
     onSuccess: () => void;
 }
@@ -24,6 +25,7 @@ interface ReferralFormModalProps {
 export function ReferralFormModal({
     phqResultId,
     initialStatus,
+    initialHospitalName,
     onClose,
     onSuccess,
 }: ReferralFormModalProps) {
@@ -33,6 +35,7 @@ export function ReferralFormModal({
     const [selectedOption, setSelectedOption] = useState<ReferralOption>(
         initialStatus ? "refer" : "follow_up"
     );
+    const [hospitalName, setHospitalName] = useState(initialHospitalName ?? "");
 
     useEffect(() => {
         setMounted(true);
@@ -45,21 +48,35 @@ export function ReferralFormModal({
 
     const handleSubmit = async (e: React.FormEvent): Promise<void> => {
         e.preventDefault();
-        setIsSubmitting(true);
         setError(null);
 
         const shouldRefer = selectedOption === "refer";
 
-        // Only toggle if the status is changing
-        if (shouldRefer === initialStatus) {
+        // Client-side validation: require hospital name when referring
+        if (shouldRefer && !hospitalName.trim()) {
+            setError("กรุณาระบุชื่อโรงพยาบาล");
+            return;
+        }
+
+        // Skip API call if nothing changed
+        if (
+            shouldRefer === initialStatus &&
+            hospitalName.trim() === (initialHospitalName ?? "")
+        ) {
             toast.success("บันทึกข้อมูลเรียบร้อยแล้ว");
             onSuccess();
             onClose();
             return;
         }
 
+        setIsSubmitting(true);
+
         try {
-            const result = await toggleHospitalReferral(phqResultId);
+            const result = await updateHospitalReferral({
+                phqResultId,
+                referredToHospital: shouldRefer,
+                hospitalName: shouldRefer ? hospitalName.trim() : undefined,
+            });
 
             if (result.success) {
                 toast.success(
@@ -150,6 +167,27 @@ export function ReferralFormModal({
                                 </div>
                             </div>
                         </label>
+
+                        {/* Hospital Name Input — shown when "refer" is selected */}
+                        {selectedOption === "refer" && (
+                            <div className="ml-9 pl-4 border-l-2 border-rose-200">
+                                <label
+                                    htmlFor="hospitalName"
+                                    className="block text-sm font-bold text-gray-700 mb-2"
+                                >
+                                    ชื่อโรงพยาบาล <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                    id="hospitalName"
+                                    type="text"
+                                    value={hospitalName}
+                                    onChange={(e) => setHospitalName(e.target.value)}
+                                    placeholder="เช่น โรงพยาบาลศิริราช"
+                                    maxLength={200}
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-800 placeholder:text-gray-400"
+                                />
+                            </div>
+                        )}
 
                         {/* Follow Up */}
                         <label

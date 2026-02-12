@@ -10,10 +10,12 @@ import { ConversationView, ActivityView } from "@/components/student";
 
 interface PageProps {
     params: Promise<{ id: string }>;
+    searchParams: Promise<{ phqResultId?: string }>;
 }
 
-export default async function StudentHelpPage({ params }: PageProps) {
+export default async function StudentHelpPage({ params, searchParams }: PageProps) {
     const { id: studentId } = await params;
+    const { phqResultId } = await searchParams;
 
     const student = await getStudentDetail(studentId);
 
@@ -21,7 +23,9 @@ export default async function StudentHelpPage({ params }: PageProps) {
         notFound();
     }
 
-    const latestResult = student.phqResults[0];
+    const latestResult = phqResultId
+        ? student.phqResults.find((r) => r.id === phqResultId) ?? student.phqResults[0]
+        : student.phqResults[0];
     if (!latestResult) {
         redirect(`/students/${studentId}`);
     }
@@ -41,6 +45,7 @@ export default async function StudentHelpPage({ params }: PageProps) {
                 {...(riskLevel === "red" && {
                     phqResultId: latestResult.id,
                     initialReferralStatus: latestResult.referredToHospital,
+                    initialHospitalName: latestResult.hospitalName ?? undefined,
                 })}
             />
         );
@@ -56,6 +61,7 @@ export default async function StudentHelpPage({ params }: PageProps) {
             studentId={studentId}
             config={config}
             activities={activities}
+            phqResultId={latestResult.id}
         />
     );
 }

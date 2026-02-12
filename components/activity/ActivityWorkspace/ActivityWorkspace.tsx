@@ -24,6 +24,7 @@ export function ActivityWorkspace({
     studentName,
     riskLevel,
     activityProgress,
+    phqResultId,
 }: ActivityWorkspaceProps) {
     const {
         uploading,
@@ -85,6 +86,7 @@ export function ActivityWorkspace({
                             config={config}
                             activityNumber={currentActivityNumber}
                             downloadUrls={downloadUrls}
+                            phqResultId={phqResultId}
                         />
 
                         {/* Worksheets */}

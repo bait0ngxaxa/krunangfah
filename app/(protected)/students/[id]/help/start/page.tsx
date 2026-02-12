@@ -8,10 +8,12 @@ import { ActivityWorkspace } from "@/components/activity";
 
 interface PageProps {
     params: Promise<{ id: string }>;
+    searchParams: Promise<{ phqResultId?: string }>;
 }
 
-export default async function ActivityStartPage({ params }: PageProps) {
+export default async function ActivityStartPage({ params, searchParams }: PageProps) {
     const { id: studentId } = await params;
+    const { phqResultId } = await searchParams;
 
     const student = await getStudentDetail(studentId);
 
@@ -19,7 +21,11 @@ export default async function ActivityStartPage({ params }: PageProps) {
         notFound();
     }
 
-    const latestResult = student.phqResults[0];
+    // Use specific PHQ result if provided, otherwise fall back to latest
+    const latestResult = phqResultId
+        ? student.phqResults.find((r) => r.id === phqResultId) ?? student.phqResults[0]
+        : student.phqResults[0];
+
     if (!latestResult) {
         redirect(`/students/${studentId}`);
     }
@@ -54,6 +60,7 @@ export default async function ActivityStartPage({ params }: PageProps) {
             studentName={`${student.firstName} ${student.lastName}`}
             riskLevel={riskLevel as "orange" | "yellow" | "green"}
             activityProgress={activityProgress}
+            phqResultId={latestResult.id}
         />
     );
 }

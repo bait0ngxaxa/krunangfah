@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Calendar, PartyPopper } from "lucide-react";
-import { COLOR_CONFIG, ACTIVITY_NAMES } from "./ActivityWorkspace/constants";
+import { COLOR_CONFIG, ACTIVITY_NAMES, ACTIVITY_INDICES } from "./ActivityWorkspace/constants";
 
 interface ActivityCompletionPageProps {
     studentId: string;
     studentName: string;
     riskLevel: "orange" | "yellow" | "green";
     activityNumber: number;
-    hasNextActivity?: boolean;
+    assessmentPeriodLabel?: string;
 }
 
 export function ActivityCompletionPage({
@@ -18,7 +18,7 @@ export function ActivityCompletionPage({
     studentName,
     riskLevel,
     activityNumber,
-    hasNextActivity = true,
+    assessmentPeriodLabel,
 }: ActivityCompletionPageProps) {
     const router = useRouter();
     const [thankYouVisible, setThankYouVisible] = useState(false);
@@ -26,9 +26,14 @@ export function ActivityCompletionPage({
     const [finalButtonVisible, setFinalButtonVisible] = useState(false);
 
     const config = COLOR_CONFIG[riskLevel];
-    const nextActivityNumber = activityNumber + 1;
-    const nextActivityName = ACTIVITY_NAMES[nextActivityNumber];
     const currentActivityName = ACTIVITY_NAMES[activityNumber];
+
+    // Find actual next activity from ACTIVITY_INDICES (not just +1)
+    const activityIndices = ACTIVITY_INDICES[riskLevel] || [];
+    const currentIndex = activityIndices.indexOf(activityNumber);
+    const hasNextActivity = currentIndex >= 0 && currentIndex < activityIndices.length - 1;
+    const nextActivityNumber = hasNextActivity ? activityIndices[currentIndex + 1] : undefined;
+    const nextActivityName = nextActivityNumber ? ACTIVITY_NAMES[nextActivityNumber] : undefined;
 
     // Animate elements
     useEffect(() => {
@@ -127,6 +132,11 @@ export function ActivityCompletionPage({
                         </p>
                         <p className="text-xl text-gray-600">
                             ทำกิจกรรมครบทุกกิจกรรมแล้ว
+                            {assessmentPeriodLabel && (
+                                <span className="block text-base text-purple-500 font-medium mt-2">
+                                    ({assessmentPeriodLabel})
+                                </span>
+                            )}
                         </p>
                     </div>
                 )}

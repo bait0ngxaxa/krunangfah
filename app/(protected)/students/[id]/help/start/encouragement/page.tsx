@@ -4,7 +4,7 @@ import { EncouragementPage } from "@/components/activity";
 
 interface PageProps {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ type?: string; activity?: string }>;
+    searchParams: Promise<{ type?: string; activity?: string; phqResultId?: string }>;
 }
 
 export default async function EncouragementRoute({
@@ -12,7 +12,7 @@ export default async function EncouragementRoute({
     searchParams,
 }: PageProps) {
     const { id: studentId } = await params;
-    const { type: problemType, activity: activityParam } = await searchParams;
+    const { type: problemType, activity: activityParam, phqResultId } = await searchParams;
 
     const student = await getStudentDetail(studentId);
 
@@ -20,7 +20,10 @@ export default async function EncouragementRoute({
         notFound();
     }
 
-    const latestResult = student.phqResults[0];
+    const latestResult = phqResultId
+        ? student.phqResults.find((r) => r.id === phqResultId) ?? student.phqResults[0]
+        : student.phqResults[0];
+
     if (!latestResult) {
         redirect(`/students/${studentId}`);
     }
@@ -39,6 +42,12 @@ export default async function EncouragementRoute({
     // Get activity number (default to 1)
     const activityNumber = activityParam ? parseInt(activityParam) : 1;
 
+    // Build assessment period label for completion message
+    const academicYear = latestResult.academicYear;
+    const assessmentPeriodLabel = academicYear
+        ? `ปีการศึกษา ${academicYear.year} เทอม ${academicYear.semester} ครั้งที่ ${latestResult.assessmentRound}`
+        : undefined;
+
     return (
         <EncouragementPage
             studentId={studentId}
@@ -46,6 +55,7 @@ export default async function EncouragementRoute({
             problemType={validProblemType}
             riskLevel={riskLevel as "orange" | "yellow" | "green"}
             activityNumber={activityNumber}
+            assessmentPeriodLabel={assessmentPeriodLabel}
         />
     );
 }

@@ -1,10 +1,11 @@
 /**
  * Hospital Referral Actions
- * Toggle referredToHospital status for PHQ results
+ * Update referredToHospital status and hospitalName for PHQ results
  *
  * Access control:
- * - school_admin: toggle ได้ทุกนักเรียนในโรงเรียน
- * - class_teacher: toggle ได้เฉพาะนักเรียนในห้องที่ดูแล (advisoryClass)
+ * - system_admin: update ได้ทุกนักเรียน
+ * - school_admin: update ได้ทุกนักเรียนในโรงเรียน
+ * - class_teacher: update ได้เฉพาะนักเรียนในห้องที่ดูแล (advisoryClass)
  */
 
 "use server";
@@ -12,12 +13,17 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAuth } from "@/lib/session";
-import { toggleHospitalReferralSchema } from "@/lib/validations/hospital-referral.validation";
+import { updateHospitalReferralSchema } from "@/lib/validations/hospital-referral.validation";
 
-export async function toggleHospitalReferral(phqResultId: string) {
+interface UpdateHospitalReferralParams {
+    phqResultId: string;
+    referredToHospital: boolean;
+    hospitalName?: string;
+}
+
+export async function updateHospitalReferral(params: UpdateHospitalReferralParams) {
     try {
-        // Validate input
-        const validated = toggleHospitalReferralSchema.parse({ phqResultId });
+        const validated = updateHospitalReferralSchema.parse(params);
 
         const session = await requireAuth();
         const userId = session.user.id;
@@ -27,7 +33,6 @@ export async function toggleHospitalReferral(phqResultId: string) {
         const phqResult = await prisma.phqResult.findUnique({
             where: { id: validated.phqResultId },
             select: {
-                referredToHospital: true,
                 studentId: true,
                 student: {
                     select: {
@@ -71,11 +76,14 @@ export async function toggleHospitalReferral(phqResultId: string) {
             }
         }
 
-        // Toggle status
+        // Update referral status and hospital name
         await prisma.phqResult.update({
             where: { id: validated.phqResultId },
             data: {
-                referredToHospital: !phqResult.referredToHospital,
+                referredToHospital: validated.referredToHospital,
+                hospitalName: validated.referredToHospital
+                    ? validated.hospitalName?.trim() ?? null
+                    : null,
             },
         });
 
@@ -84,10 +92,10 @@ export async function toggleHospitalReferral(phqResultId: string) {
 
         return {
             success: true,
-            newStatus: !phqResult.referredToHospital,
+            referredToHospital: validated.referredToHospital,
         };
     } catch (error) {
-        console.error("Error toggling hospital referral:", error);
+        console.error("Error updating hospital referral:", error);
         return { success: false, error: "เกิดข้อผิดพลาดในการอัปเดตสถานะ" };
     }
 }

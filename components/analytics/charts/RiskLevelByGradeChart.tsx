@@ -74,6 +74,7 @@ export function RiskLevelByGradeChart({
                 <BarChart
                     data={gradeRiskData}
                     margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
+                    tabIndex={-1}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke="#FCE7F3" />
                     <XAxis

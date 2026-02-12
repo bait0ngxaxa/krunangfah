@@ -13,7 +13,7 @@ const ACTIVITIES = [
 
 interface PageProps {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ activity?: string }>;
+    searchParams: Promise<{ activity?: string; phqResultId?: string }>;
 }
 
 export default async function TeacherAssessmentPage({
@@ -21,7 +21,7 @@ export default async function TeacherAssessmentPage({
     searchParams,
 }: PageProps) {
     const { id: studentId } = await params;
-    const { activity: activityParam } = await searchParams;
+    const { activity: activityParam, phqResultId } = await searchParams;
 
     const student = await getStudentDetail(studentId);
 
@@ -29,7 +29,10 @@ export default async function TeacherAssessmentPage({
         notFound();
     }
 
-    const latestResult = student.phqResults[0];
+    const latestResult = phqResultId
+        ? student.phqResults.find((r) => r.id === phqResultId) ?? student.phqResults[0]
+        : student.phqResults[0];
+
     if (!latestResult) {
         redirect(`/students/${studentId}`);
     }
@@ -61,15 +64,17 @@ export default async function TeacherAssessmentPage({
                       p.worksheetUploads.length >= 2),
           );
 
+    const phqParam = phqResultId ? `&phqResultId=${phqResultId}` : "";
+
     if (!currentProgress) {
-        redirect(`/students/${studentId}/help/start`);
+        redirect(`/students/${studentId}/help/start${phqResultId ? `?phqResultId=${phqResultId}` : ""}`);
     }
 
     // Assessment page only for Activity 1
     // Activities 2-5 skip directly to encouragement
     if (currentProgress.activityNumber !== 1) {
         redirect(
-            `/students/${studentId}/help/start/encouragement?activity=${currentProgress.activityNumber}`,
+            `/students/${studentId}/help/start/encouragement?activity=${currentProgress.activityNumber}${phqParam}`,
         );
     }
 
@@ -88,6 +93,7 @@ export default async function TeacherAssessmentPage({
                 `กิจกรรมที่ ${currentProgress.activityNumber}`
             }
             riskLevel={riskLevel as "orange" | "yellow" | "green"}
+            phqResultId={phqResultId}
         />
     );
 }

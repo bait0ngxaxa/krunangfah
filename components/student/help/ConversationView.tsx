@@ -23,6 +23,7 @@ interface ConversationViewProps {
     config: ColorTheme;
     phqResultId?: string;
     initialReferralStatus?: boolean;
+    initialHospitalName?: string;
 }
 
 interface StepCardProps {
@@ -95,6 +96,7 @@ export function ConversationView({
     config,
     phqResultId,
     initialReferralStatus,
+    initialHospitalName,
 }: ConversationViewProps) {
     const router = useRouter();
     const [showCounselingModal, setShowCounselingModal] = useState(false);
@@ -195,6 +197,7 @@ export function ConversationView({
                 <ReferralFormModal
                     phqResultId={phqResultId}
                     initialStatus={initialReferralStatus ?? false}
+                    initialHospitalName={initialHospitalName}
                     onClose={() => setShowReferralModal(false)}
                     onSuccess={() => router.refresh()}
                 />

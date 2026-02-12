@@ -16,9 +16,10 @@ export function useActivityWorkspace({
     studentId,
     riskLevel,
     activityProgress,
+    phqResultId,
 }: Pick<
     ActivityWorkspaceProps,
-    "studentId" | "riskLevel" | "activityProgress"
+    "studentId" | "riskLevel" | "activityProgress" | "phqResultId"
 >): UseActivityWorkspaceReturn {
     const router = useRouter();
 
@@ -67,15 +68,17 @@ export function useActivityWorkspace({
                     // หน่วงเวลา 1.5 วินาที เพื่อให้เห็น toast ก่อน redirect
                     await new Promise((resolve) => setTimeout(resolve, 1500));
 
+                    const phqParam = phqResultId ? `&phqResultId=${phqResultId}` : "";
+
                     if (result.activityNumber === 1) {
                         // กิจกรรมที่ 1: ไป assessment ก่อน
                         router.push(
-                            `/students/${studentId}/help/start/assessment?activity=${result.activityNumber}`,
+                            `/students/${studentId}/help/start/assessment?activity=${result.activityNumber}${phqParam}`,
                         );
                     } else {
                         // กิจกรรม 2+: ไป encouragement (จะแสดง completion page โดยตรง)
                         router.push(
-                            `/students/${studentId}/help/start/encouragement?activity=${result.activityNumber}`,
+                            `/students/${studentId}/help/start/encouragement?activity=${result.activityNumber}${phqParam}`,
                         );
                     }
                 } else {

@@ -73,11 +73,16 @@ export default async function StudentDetailPage({
     const activitiesTab = (
         <div className="space-y-6">
             {/* Activity Progress Table */}
-            {latestResult && (
+            {latestResult && latestResult.academicYear && (
                 <ActivityProgressTable
                     studentId={id}
                     phqResultId={latestResult.id}
                     riskLevel={latestResult.riskLevel as RiskLevel}
+                    assessmentPeriod={{
+                        academicYear: latestResult.academicYear.year,
+                        semester: latestResult.academicYear.semester,
+                        assessmentRound: latestResult.assessmentRound,
+                    }}
                 />
             )}
 

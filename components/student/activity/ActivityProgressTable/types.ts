@@ -35,8 +35,15 @@ export interface ActivityProgress {
     teacher: Teacher | null;
 }
 
+export interface AssessmentPeriod {
+    academicYear: number;
+    semester: number;
+    assessmentRound: number;
+}
+
 export interface ActivityProgressTableProps {
     studentId: string;
     phqResultId: string;
     riskLevel: RiskLevel;
+    assessmentPeriod: AssessmentPeriod;
 }

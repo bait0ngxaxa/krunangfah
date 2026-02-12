@@ -140,7 +140,7 @@ function RiskPieChartComponent({
                 </h2>
             )}
             <ResponsiveContainer width="100%" height={height}>
-                <PieChart>
+                <PieChart tabIndex={-1}>
                     <Pie
                         data={chartData}
                         cx="50%"
