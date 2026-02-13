@@ -38,13 +38,22 @@ export function AcademicYearFilter({
     };
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-4">
-            <div className="flex items-center gap-4">
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-4 overflow-hidden">
+            {/* Corner decoration */}
+            <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+            {/* Shimmer */}
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+
+            <div className="relative flex items-center gap-4">
                 <label
                     htmlFor="year-filter"
                     className="text-sm font-semibold text-gray-700 whitespace-nowrap"
                 >
-                    <CalendarDays className="w-4 h-4 text-gray-500 inline-block mr-1" /> ปีการศึกษา:
+                    <div className="relative inline-block mr-1.5">
+                        <div className="absolute inset-0 rounded-full bg-pink-400 blur-md opacity-20" />
+                        <CalendarDays className="relative w-4 h-4 text-pink-500" />
+                    </div>
+                    ปีการศึกษา:
                 </label>
                 <select
                     id="year-filter"

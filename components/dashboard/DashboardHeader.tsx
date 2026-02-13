@@ -1,57 +1,57 @@
+import type { ReactNode } from "react";
+
 interface DashboardHeaderProps {
     teacherName: string;
     schoolName: string;
+    subtitle?: string;
+    extra?: ReactNode;
 }
 
 export function DashboardHeader({
     teacherName,
     schoolName,
+    subtitle,
+    extra,
 }: DashboardHeaderProps) {
     return (
-        <div className="relative mb-12 py-10 px-6 rounded-3xl overflow-hidden text-center mx-auto max-w-5xl">
-            {/* Ambient Background */}
-            <div className="absolute inset-0 bg-linear-to-br from-rose-50/80 via-white/50 to-pink-50/80 backdrop-blur-sm -z-10" />
-            <div className="absolute top-[-50%] left-[-20%] w-[80%] h-[150%] bg-linear-to-tr from-rose-200/30 via-pink-200/30 to-orange-100/30 rounded-full blur-[100px] animate-float-slow -z-10" />
-            <div className="absolute bottom-[-50%] right-[-20%] w-[80%] h-[150%] bg-linear-to-bl from-blue-100/30 via-purple-100/30 to-pink-100/30 rounded-full blur-[100px] animate-float-delayed -z-10" />
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-6 sm:p-7 mb-4 overflow-hidden group">
+            {/* Gradient accent bottom border */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
+            {/* Top shimmer */}
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/80 to-transparent" />
+            {/* Corner decoration */}
+            <div className="absolute -top-14 -right-14 w-36 h-36 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
 
-            <div className="relative z-10 flex flex-col items-center">
-                {/* Icon Wrapper with Glow */}
-                <div className="relative mb-6 group cursor-default">
-                    <div className="absolute -inset-4 bg-linear-to-r from-rose-300/50 to-pink-300/50 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                    <div className="relative bg-white/60 backdrop-blur-xl p-4 rounded-3xl shadow-lg ring-1 ring-white/60 transform transition-transform duration-500 hover:scale-110 hover:rotate-12">
-                        <span className="text-5xl drop-shadow-sm select-none animate-fairy-fly">
-                            🧚‍♀️
-                        </span>
+            <div className="relative flex items-center gap-4">
+                {/* Animated avatar */}
+                <div className="relative shrink-0">
+                    <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 blur-md opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
+                    <div className="relative w-14 h-14 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center text-2xl shadow-lg shadow-pink-200/50 group-hover:scale-105 group-hover:rotate-3 transition-all duration-500">
+                        🧚‍♀️
                     </div>
                 </div>
 
-                {/* Main Greeting */}
-                <h1 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight drop-shadow-sm">
-                    <span className="bg-clip-text text-transparent bg-linear-to-r from-rose-500 via-pink-500 to-rose-400 animate-gradient-x">
-                        สวัสดีคุณครูนางฟ้า
-                    </span>
-                </h1>
-
-                {/* Sparkle Divider */}
-                <div className="flex items-center gap-3 mb-6">
-                    <span className="sparkle-dot" />
-                    <div className="h-px w-12 bg-linear-to-r from-transparent via-pink-300 to-transparent" />
-                    <span className="sparkle-dot" />
-                    <div className="h-px w-12 bg-linear-to-r from-transparent via-rose-300 to-transparent" />
-                    <span className="sparkle-dot" />
-                </div>
-
-                {/* Info Card */}
-                <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/70 backdrop-blur-md rounded-full shadow-sm border border-white/80 ring-2 ring-pink-50/50 hover:bg-white/90 hover:shadow-md transition-all duration-300 group">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-500" />
-                    <p className="text-lg font-medium text-slate-600">
-                        <span className="font-bold text-slate-800">
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+                        สวัสดี,{" "}
+                        <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                             {teacherName}
                         </span>
-                        <span className="mx-3 text-pink-200">|</span>
-                        <span className="text-slate-600">{schoolName}</span>
+                    </h1>
+                    <p className="text-sm text-gray-500 truncate">
+                        {schoolName}
+                        {subtitle ? (
+                            <>
+                                {" · "}
+                                <span className="font-medium">{subtitle}</span>
+                            </>
+                        ) : null}
                     </p>
                 </div>
+
+                {extra ? (
+                    <div className="hidden sm:block shrink-0">{extra}</div>
+                ) : null}
             </div>
         </div>
     );

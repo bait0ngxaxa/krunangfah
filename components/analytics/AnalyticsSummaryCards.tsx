@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, CheckCircle, AlertCircle } from "lucide-react";
+import { Users, CheckCircle, AlertCircle, type LucideIcon } from "lucide-react";
 
 interface AnalyticsSummaryCardsProps {
     totalStudents: number;
@@ -10,45 +10,51 @@ interface AnalyticsSummaryCardsProps {
 }
 
 function SummaryCard({
-    icon,
+    icon: Icon,
     label,
     value,
     unit,
-
-    bgColor,
-    textColor,
+    accentFrom,
+    accentTo,
+    valueColor,
 }: {
-    icon: React.ReactNode;
+    icon: LucideIcon;
     label: string;
     value: number;
     unit: string;
-    borderColor: string;
-    bgColor: string;
-    textColor: string;
-    iconBgColor: string;
+    accentFrom: string;
+    accentTo: string;
+    valueColor: string;
 }) {
     return (
-        <div
-            className={`bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-300`}
-        >
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-5 overflow-hidden group hover:shadow-xl hover:shadow-pink-200/40 hover:-translate-y-1 hover:ring-pink-100 transition-all duration-300 cursor-default">
+            {/* Decorative gradient corner */}
             <div
-                className={`absolute top-0 right-0 w-24 h-24 ${bgColor} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110`}
+                className={`absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br ${accentFrom} ${accentTo} rounded-full blur-lg group-hover:scale-150 transition-transform duration-500 pointer-events-none`}
             />
+            {/* Shimmer line */}
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
             <div className="relative flex items-center gap-4">
-                <div
-                    className={`p-2.5 rounded-xl bg-rose-100 text-rose-500 group-hover:brightness-95 transition-colors`}
-                >
-                    {icon}
+                <div className="relative shrink-0">
+                    <div
+                        className={`absolute inset-0 rounded-xl blur-md opacity-25 bg-linear-to-br ${accentFrom} ${accentTo}`}
+                    />
+                    <div className="relative p-2.5 rounded-xl bg-linear-to-br from-rose-100 to-pink-100 shadow-inner ring-1 ring-rose-200/50 group-hover:from-rose-200 group-hover:to-pink-200 transition-colors duration-300">
+                        <Icon className="w-6 h-6 text-rose-500 group-hover:scale-110 transition-transform duration-300" />
+                    </div>
                 </div>
                 <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">
+                    <p className="text-sm font-semibold text-gray-500 tracking-wide mb-1">
                         {label}
                     </p>
                     <div className="flex items-baseline gap-2">
-                        <p className={`text-4xl font-bold ${textColor}`}>
+                        <p
+                            className={`text-3xl font-bold ${valueColor} group-hover:opacity-90 transition-opacity`}
+                        >
                             {value}
                         </p>
-                        <p className="text-sm text-gray-500 font-medium">
+                        <p className="text-sm text-gray-400 font-medium group-hover:text-pink-400 transition-colors duration-300">
                             {unit}
                         </p>
                     </div>
@@ -65,36 +71,33 @@ export function AnalyticsSummaryCards({
     currentClass,
 }: AnalyticsSummaryCardsProps) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <SummaryCard
-                icon={<Users className="w-8 h-8" />}
+                icon={Users}
                 label={`นักเรียนทั้งหมด${currentClass ? ` (${currentClass})` : ""}`}
                 value={totalStudents}
                 unit="คน"
-                borderColor="border-blue-100"
-                bgColor="bg-blue-50"
-                textColor="text-blue-600"
-                iconBgColor="bg-blue-50"
+                accentFrom="from-blue-200/40"
+                accentTo="to-blue-300/30"
+                valueColor="text-blue-600"
             />
             <SummaryCard
-                icon={<CheckCircle className="w-8 h-8" />}
+                icon={CheckCircle}
                 label="คัดกรองแล้ว"
                 value={studentsWithAssessment}
                 unit="คน"
-                borderColor="border-emerald-100"
-                bgColor="bg-emerald-50"
-                textColor="text-emerald-600"
-                iconBgColor="bg-emerald-50"
+                accentFrom="from-emerald-200/40"
+                accentTo="to-emerald-300/30"
+                valueColor="text-emerald-600"
             />
             <SummaryCard
-                icon={<AlertCircle className="w-8 h-8" />}
+                icon={AlertCircle}
                 label="ยังไม่ได้คัดกรอง"
                 value={studentsWithoutAssessment}
                 unit="คน"
-                borderColor="border-orange-100"
-                bgColor="bg-orange-50"
-                textColor="text-orange-600"
-                iconBgColor="bg-orange-50"
+                accentFrom="from-orange-200/40"
+                accentTo="to-orange-300/30"
+                valueColor="text-orange-600"
             />
         </div>
     );

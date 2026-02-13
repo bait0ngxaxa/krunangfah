@@ -113,15 +113,22 @@ function RiskPieChartComponent({
 
     if (chartData.length === 0) {
         return (
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex flex-col items-center justify-center min-h-[300px]">
+            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-8 flex flex-col items-center justify-center min-h-[300px] overflow-hidden">
+                {/* Decorations */}
+                <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+
                 {title && (
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 text-center">
+                    <h2 className="relative text-lg sm:text-xl font-bold text-gray-800 mb-4 text-center">
                         {title}
                     </h2>
                 )}
-                <div className="text-gray-400 flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
-                        <Inbox className="w-8 h-8 text-gray-400" />
+                <div className="relative text-gray-400 flex flex-col items-center gap-3">
+                    <div className="relative w-16 h-16">
+                        <div className="absolute inset-0 rounded-full bg-pink-300 blur-lg opacity-20" />
+                        <div className="relative w-full h-full bg-gray-50 rounded-full flex items-center justify-center ring-1 ring-gray-100">
+                            <Inbox className="w-8 h-8 text-gray-400" />
+                        </div>
                     </div>
                     <span>ยังไม่มีข้อมูลการคัดกรอง</span>
                 </div>
@@ -131,11 +138,16 @@ function RiskPieChartComponent({
 
     return (
         <div
-            className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-4 sm:p-6 pb-6 sm:pb-8"
+            className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-4 sm:p-6 pb-6 sm:pb-8 overflow-hidden"
             style={{ contain: "layout style paint" }}
         >
+            {/* Corner decoration */}
+            <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+            {/* Shimmer */}
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+
             {title && (
-                <h2 className="text-lg sm:text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
+                <h2 className="relative text-lg sm:text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
                     {title}
                 </h2>
             )}

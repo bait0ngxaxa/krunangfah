@@ -71,8 +71,13 @@ export function StudentProfileCard({
         : null;
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 overflow-hidden group hover:shadow-xl transition-all duration-300">
+            {/* Gradient accent top */}
             <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
+            {/* Corner blobs */}
+            <div className="absolute -top-12 -right-12 w-28 h-28 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
+            {/* Shimmer */}
+            <div className="absolute inset-x-0 top-[6px] h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
 
             {/* Decorative background blob */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-br from-rose-50 to-pink-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
@@ -97,9 +102,7 @@ export function StudentProfileCard({
                             {student.gender && (
                                 <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-sm border border-purple-100">
                                     <User className="w-3.5 h-3.5 inline -mt-0.5" />{" "}
-                                    {student.gender === "MALE"
-                                        ? "ชาย"
-                                        : "หญิง"}
+                                    {student.gender === "MALE" ? "ชาย" : "หญิง"}
                                 </span>
                             )}
                             {student.age && (
@@ -138,7 +141,9 @@ export function StudentProfileCard({
                                 {latestResult.referredToHospital ? (
                                     <>
                                         <Hospital className="w-4 h-4" />
-                                        ส่งต่อ: {latestResult.hospitalName || "โรงพยาบาล"}
+                                        ส่งต่อ:{" "}
+                                        {latestResult.hospitalName ||
+                                            "โรงพยาบาล"}
                                     </>
                                 ) : (
                                     <>

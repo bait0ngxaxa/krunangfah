@@ -1,15 +1,15 @@
-import { ActionCard } from "@/components/dashboard/cards/ActionCard";
+import Link from "next/link";
 import { StudentSearch } from "@/components/dashboard/StudentSearch";
 import { type UserRole } from "@/types/auth.types";
 import {
     ShieldCheck,
-    UserPlus,
     GraduationCap,
     FileSpreadsheet,
     Users,
     BarChart3,
     Search,
-    ClipboardList,
+    UserPlus,
+    type LucideIcon,
 } from "lucide-react";
 
 interface DashboardActionListProps {
@@ -22,114 +22,188 @@ export function DashboardActionList({
     studentCount,
 }: DashboardActionListProps) {
     const isSystemAdmin = userRole === "system_admin";
+    const isSchoolAdmin = userRole === "school_admin";
 
     return (
-        <div className="space-y-5">
-            {/* จัดการ System Admin - เฉพาะ system_admin */}
-            {isSystemAdmin && (
-                <ActionCard
-                    title="จัดการ System Admin Whitelist"
-                    description="เพิ่ม/ลบอีเมลที่มีสิทธิ์เป็น System Admin"
-                    buttonText="จัดการ Whitelist"
-                    href="/admin/whitelist"
-                    variant="primary"
-                    icon={<ShieldCheck className="w-5 h-5" />}
-                />
-            )}
-
-            {/* เพิ่มข้อมูลคุณครู - เฉพาะ school_admin */}
-            {userRole === "school_admin" && (
-                <ActionCard
-                    title="เพิ่มข้อมูลคุณครู"
-                    buttonText="เพิ่มคุณครูผู้ดูแลนักเรียน"
-                    href="/teachers/add"
-                    variant="primary"
-                    icon={<UserPlus className="w-5 h-5" />}
-                />
-            )}
-
-            {/* อัพสกิลสำหรับคุณครู - ไม่แสดงสำหรับ system_admin */}
-            {!isSystemAdmin && (
-                <ActionCard
-                    title="อัพสกิลสำหรับคุณครู"
-                    buttonText="อัพสกิลสำหรับคุณครู"
-                    href="/teachers/skill"
-                    variant="primary"
-                    icon={<GraduationCap className="w-5 h-5" />}
-                />
-            )}
-
-            {/* เพิ่มนักเรียน + PHQ-A - ไม่แสดงสำหรับ system_admin */}
-            {!isSystemAdmin && (
-                <SectionCard
-                    icon={<ClipboardList className="w-4 h-4 text-white" />}
-                    title="จัดการข้อมูลนักเรียน"
-                    gradient="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600"
-                >
-                    <ActionCard
-                        title="เพิ่มนักเรียน + PHQ-A (Import Excel)"
-                        buttonText="นำเข้านักเรียน"
-                        href="/students/import"
-                        variant="primary"
-                        icon={<FileSpreadsheet className="w-5 h-5" />}
-                    />
-                </SectionCard>
-            )}
-
-            {/* นักเรียนของฉัน - แสดงเมื่อมีนักเรียนแล้ว (system_admin แสดงเสมอ) */}
+        <div className="space-y-3">
+            {/* Featured Hero Card — Students */}
             {(isSystemAdmin || studentCount > 0) && (
-                <ActionCard
-                    title="รายชื่อนักเรียนทั้งหมด"
-                    buttonText={`ดูรายชื่อนักเรียน (${studentCount} คน)`}
+                <Link
                     href="/students"
-                    variant="primary"
-                    icon={<Users className="w-5 h-5" />}
-                />
+                    className="relative flex items-center gap-4 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-5 group hover:shadow-xl hover:shadow-pink-200/40 hover:-translate-y-0.5 hover:ring-pink-100 transition-all duration-300 overflow-hidden"
+                >
+                    {/* Corner decoration */}
+                    <div className="absolute -top-12 -right-12 w-32 h-32 bg-linear-to-br from-rose-200/30 to-pink-300/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+                    {/* Accent bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
+
+                    <div className="relative shrink-0">
+                        <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 blur-md opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
+                        <div className="relative w-14 h-14 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-lg shadow-pink-200/50 group-hover:scale-105 group-hover:rotate-3 transition-all duration-500">
+                            <Users className="w-7 h-7 text-white" />
+                        </div>
+                    </div>
+
+                    <div className="relative flex-1 min-w-0">
+                        <div className="flex items-center gap-2.5">
+                            <h3 className="font-bold text-gray-800 group-hover:text-transparent group-hover:bg-linear-to-r group-hover:from-rose-500 group-hover:to-pink-600 group-hover:bg-clip-text transition-colors duration-300">
+                                นักเรียนทั้งหมด
+                            </h3>
+                            <span className="px-2.5 py-0.5 text-xs font-bold bg-linear-to-r from-rose-100 to-pink-100 text-pink-600 rounded-full ring-1 ring-pink-200/50">
+                                {studentCount.toLocaleString()} คน
+                            </span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-0.5 group-hover:text-gray-600 transition-colors truncate">
+                            ดูรายชื่อและข้อมูลผลคัดกรอง PHQ-A
+                        </p>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="relative opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300 shrink-0">
+                        <svg
+                            className="w-5 h-5 text-pink-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M9 5l7 7-7 7"
+                            />
+                        </svg>
+                    </div>
+                </Link>
             )}
 
-            {/* ดูข้อมูลนักเรียนรายบุคคล */}
-            <SectionCard
-                icon={<Search className="w-4 h-4 text-white" />}
-                title="ค้นหานักเรียน"
-                gradient="bg-gradient-to-r from-pink-400 via-rose-400 to-pink-500"
-            >
-                <StudentSearch />
-            </SectionCard>
+            {/* Secondary Action Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {/* System Admin: Whitelist */}
+                {isSystemAdmin && (
+                    <QuickActionCard
+                        href="/admin/whitelist"
+                        icon={ShieldCheck}
+                        title="จัดการ Whitelist"
+                        description="Admin อีเมล"
+                    />
+                )}
 
-            {/* ดูสรุปข้อมูล */}
-            <ActionCard
-                title="ดูสรุปข้อมูล"
-                buttonText="ดู Dashboard (Analytics)"
-                href="/analytics"
-                variant="secondary"
-                icon={<BarChart3 className="w-5 h-5" />}
-            />
+                {/* School Admin: Add Teacher */}
+                {isSchoolAdmin && (
+                    <QuickActionCard
+                        href="/teachers/add"
+                        icon={UserPlus}
+                        title="เพิ่มครูผู้ดูแล"
+                        description="เพิ่มครูผู้ดูแล"
+                    />
+                )}
+
+                {/* Teacher-only actions */}
+                {!isSystemAdmin && (
+                    <>
+                        <QuickActionCard
+                            href="/students/import"
+                            icon={FileSpreadsheet}
+                            title="นำเข้าข้อมูล"
+                            description="Import Excel"
+                        />
+                        <QuickActionCard
+                            href="/teachers/skill"
+                            icon={GraduationCap}
+                            title="อัพสกิลคุณครู"
+                            description="เรียนรู้เพิ่มเติม"
+                        />
+                    </>
+                )}
+
+                {/* Analytics — always visible */}
+                <QuickActionCard
+                    href="/analytics"
+                    icon={BarChart3}
+                    title="ดูสรุปข้อมูล"
+                    description="Analytics"
+                />
+            </div>
+
+            {/* Search Section */}
+            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden group">
+                {/* Corner decoration */}
+                <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+                <div className="bg-linear-to-r from-pink-400 via-rose-400 to-pink-500 px-5 py-3 flex items-center gap-2.5 relative">
+                    {/* Header shimmer */}
+                    <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
+                    <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-inner ring-1 ring-white/20">
+                        <Search className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="text-sm font-bold text-white tracking-wide">
+                        ค้นหานักเรียน
+                    </h3>
+                </div>
+                <div className="p-4 sm:p-5">
+                    <StudentSearch />
+                </div>
+            </div>
         </div>
     );
 }
 
-function SectionCard({
-    icon,
-    title,
-    gradient,
-    children,
-}: {
-    icon: React.ReactNode;
+/* ─── QuickActionCard ─── */
+
+interface QuickActionCardProps {
+    href: string;
+    icon: LucideIcon;
     title: string;
-    gradient: string;
-    children: React.ReactNode;
-}) {
+    description: string;
+}
+
+function QuickActionCard({
+    href,
+    icon: Icon,
+    title,
+    description,
+}: QuickActionCardProps) {
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
-            <div className={`${gradient} px-5 py-3 flex items-center gap-2.5`}>
-                <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
-                    {icon}
+        <Link
+            href={href}
+            className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-5 group hover:shadow-xl hover:shadow-pink-200/40 hover:-translate-y-1 hover:ring-pink-100 transition-all duration-300 block overflow-hidden"
+        >
+            {/* Decorative gradient corner */}
+            <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/30 to-pink-300/20 rounded-full blur-xl group-hover:scale-[1.8] transition-transform duration-500 pointer-events-none" />
+            {/* Shimmer top line */}
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+            <div className="relative">
+                <div className="p-2.5 rounded-xl bg-linear-to-br from-rose-100 to-pink-100 shadow-inner ring-1 ring-rose-200/50 text-rose-500 w-fit mb-3 group-hover:from-rose-200 group-hover:to-pink-200 group-hover:scale-110 group-hover:shadow-md group-hover:shadow-pink-200/50 transition-all duration-300">
+                    <Icon className="w-5 h-5" />
                 </div>
-                <h3 className="text-sm font-bold text-white tracking-wide">
-                    {title}
-                </h3>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="font-bold text-gray-800 group-hover:text-transparent group-hover:bg-linear-to-r group-hover:from-rose-500 group-hover:to-pink-600 group-hover:bg-clip-text transition-colors duration-300">
+                            {title}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1 group-hover:text-gray-600 transition-colors">
+                            {description}
+                        </p>
+                    </div>
+                    {/* Arrow indicator */}
+                    <div className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                        <svg
+                            className="w-5 h-5 text-pink-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M9 5l7 7-7 7"
+                            />
+                        </svg>
+                    </div>
+                </div>
             </div>
-            <div className="p-4 sm:p-5">{children}</div>
-        </div>
+        </Link>
     );
 }

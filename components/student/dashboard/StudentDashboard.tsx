@@ -172,9 +172,14 @@ export function StudentDashboard({
         <div className="space-y-6">
             {/* School Selector - system_admin only */}
             {isSystemAdmin ? (
-                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
-                    <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-3 flex items-center gap-2.5">
-                        <School className="w-4.5 h-4.5 text-white/90" />
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                    {/* Corner decoration */}
+                    <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+                    <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-3 flex items-center gap-2.5 relative">
+                        <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
+                        <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-inner ring-1 ring-white/20">
+                            <School className="w-4 h-4 text-white" />
+                        </div>
                         <span className="text-sm font-bold text-white tracking-wide">
                             เลือกโรงเรียน
                         </span>
@@ -203,24 +208,39 @@ export function StudentDashboard({
 
             {/* Prompt to select school */}
             {showSchoolPrompt ? (
-                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-white/60 ring-1 ring-pink-50">
-                    <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-linear-to-br from-pink-100 to-rose-100 flex items-center justify-center shadow-inner">
-                        <School className="w-9 h-9 text-pink-500" />
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                    {/* Decorations */}
+                    <div className="absolute -top-12 -right-12 w-28 h-28 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-pink-200/20 to-rose-300/15 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/40 to-transparent" />
+
+                    <div className="relative">
+                        <div className="relative w-18 h-18 mx-auto mb-5">
+                            <div className="absolute inset-0 rounded-2xl bg-pink-300 blur-lg opacity-30" />
+                            <div className="relative w-full h-full rounded-2xl bg-linear-to-br from-pink-100 to-rose-100 flex items-center justify-center shadow-inner ring-1 ring-rose-200/50">
+                                <School className="w-9 h-9 text-pink-500" />
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-800 mb-2">
+                            กรุณาเลือกโรงเรียนเพื่อดูข้อมูล
+                        </h3>
+                        <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                            เลือกโรงเรียนจากเมนูด้านบนเพื่อดูข้อมูลนักเรียนและผลคัดกรอง
+                        </p>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-2">
-                        กรุณาเลือกโรงเรียนเพื่อดูข้อมูล
-                    </h3>
-                    <p className="text-sm text-gray-500 max-w-sm mx-auto">
-                        เลือกโรงเรียนจากเมนูด้านบนเพื่อดูข้อมูลนักเรียนและผลคัดกรอง
-                    </p>
                 </div>
             ) : (
                 <>
                     {/* Class Filter */}
                     {classes.length > 1 ? (
-                        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
-                            <div className="bg-linear-to-r from-pink-400 via-rose-400 to-pink-500 px-5 py-3 flex items-center gap-2.5">
-                                <Filter className="w-4.5 h-4.5 text-white/90" />
+                        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                            {/* Corner decoration */}
+                            <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+                            <div className="bg-linear-to-r from-pink-400 via-rose-400 to-pink-500 px-5 py-3 flex items-center gap-2.5 relative">
+                                <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
+                                <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-inner ring-1 ring-white/20">
+                                    <Filter className="w-4 h-4 text-white" />
+                                </div>
                                 <span className="text-sm font-bold text-white tracking-wide">
                                     เลือกห้องเรียน
                                 </span>
@@ -266,32 +286,45 @@ export function StudentDashboard({
 
                     {/* Student Groups - แสดงเฉพาะเมื่อเลือกห้องเฉพาะ */}
                     {selectedClass === "all" && classes.length > 1 ? (
-                        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-white/60 ring-1 ring-pink-50">
-                            <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-linear-to-br from-pink-100 to-rose-100 flex items-center justify-center shadow-inner">
-                                <Users className="w-9 h-9 text-pink-500" />
+                        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                            {/* Decorations */}
+                            <div className="absolute -top-12 -right-12 w-28 h-28 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
+                            <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-pink-200/20 to-rose-300/15 rounded-full blur-xl pointer-events-none" />
+                            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/40 to-transparent" />
+
+                            <div className="relative">
+                                <div className="relative w-18 h-18 mx-auto mb-5">
+                                    <div className="absolute inset-0 rounded-2xl bg-pink-300 blur-lg opacity-30" />
+                                    <div className="relative w-full h-full rounded-2xl bg-linear-to-br from-pink-100 to-rose-100 flex items-center justify-center shadow-inner ring-1 ring-rose-200/50">
+                                        <Users className="w-9 h-9 text-pink-500" />
+                                    </div>
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-800 mb-2">
+                                    กรุณาเลือกห้องเรียนเพื่อดูรายละเอียด
+                                </h3>
+                                <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                                    ข้อมูลนักเรียนทั้งหมด{" "}
+                                    <span className="font-semibold text-pink-500">
+                                        {schoolFilteredStudents.length}
+                                    </span>{" "}
+                                    คน ใน{" "}
+                                    <span className="font-semibold text-pink-500">
+                                        {classes.length}
+                                    </span>{" "}
+                                    ห้อง
+                                </p>
                             </div>
-                            <h3 className="text-lg font-bold text-gray-800 mb-2">
-                                กรุณาเลือกห้องเรียนเพื่อดูรายละเอียด
-                            </h3>
-                            <p className="text-sm text-gray-500 max-w-sm mx-auto">
-                                ข้อมูลนักเรียนทั้งหมด{" "}
-                                <span className="font-semibold text-pink-500">
-                                    {schoolFilteredStudents.length}
-                                </span>{" "}
-                                คน ใน{" "}
-                                <span className="font-semibold text-pink-500">
-                                    {classes.length}
-                                </span>{" "}
-                                ห้อง
-                            </p>
                         </div>
                     ) : (
                         <div className="space-y-5">
                             {/* Summary Header */}
-                            <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50 overflow-hidden">
-                                <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-4 flex items-center justify-between">
+                            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50 overflow-hidden">
+                                {/* Corner decoration */}
+                                <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+                                <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-4 flex items-center justify-between relative">
+                                    <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                                        <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm shadow-inner ring-1 ring-white/20">
                                             <ClipboardCheck className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
@@ -307,7 +340,7 @@ export function StudentDashboard({
                                             </p>
                                         </div>
                                     </div>
-                                    <span className="bg-white/25 text-white text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm">
+                                    <span className="bg-white/25 text-white text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm shadow-inner ring-1 ring-white/10">
                                         {filteredStudents.length} คน
                                     </span>
                                 </div>
