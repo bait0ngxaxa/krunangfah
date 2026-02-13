@@ -24,7 +24,7 @@ export function DashboardActionList({
     const isSystemAdmin = userRole === "system_admin";
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             {/* จัดการ System Admin - เฉพาะ system_admin */}
             {isSystemAdmin && (
                 <ActionCard
@@ -33,7 +33,7 @@ export function DashboardActionList({
                     buttonText="จัดการ Whitelist"
                     href="/admin/whitelist"
                     variant="primary"
-                    icon={<ShieldCheck className="w-5 h-5 text-rose-500" />}
+                    icon={<ShieldCheck className="w-5 h-5" />}
                 />
             )}
 
@@ -44,7 +44,7 @@ export function DashboardActionList({
                     buttonText="เพิ่มคุณครูผู้ดูแลนักเรียน"
                     href="/teachers/add"
                     variant="primary"
-                    icon={<UserPlus className="w-5 h-5 text-rose-500" />}
+                    icon={<UserPlus className="w-5 h-5" />}
                 />
             )}
 
@@ -55,30 +55,25 @@ export function DashboardActionList({
                     buttonText="อัพสกิลสำหรับคุณครู"
                     href="/teachers/skill"
                     variant="primary"
-                    icon={<GraduationCap className="w-5 h-5 text-rose-500" />}
+                    icon={<GraduationCap className="w-5 h-5" />}
                 />
             )}
 
             {/* เพิ่มนักเรียน + PHQ-A - ไม่แสดงสำหรับ system_admin */}
             {!isSystemAdmin && (
-                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-white/60 relative overflow-hidden group hover:shadow-xl hover:shadow-pink-200/40 transition-all duration-300 ring-1 ring-pink-50">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-rose-300 via-pink-300 to-orange-200 opacity-60 group-hover:opacity-100 transition-opacity" />
-                    <div className="relative z-10">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 text-center flex items-center justify-center gap-2">
-                            <ClipboardList className="w-5 h-5 text-rose-500" />
-                            จัดการข้อมูลนักเรียน
-                        </h3>
-                        <ActionCard
-                            title="เพิ่มนักเรียน + PHQ-A (Import Excel)"
-                            buttonText="นำเข้านักเรียน"
-                            href="/students/import"
-                            variant="primary"
-                            icon={
-                                <FileSpreadsheet className="w-5 h-5 text-rose-500" />
-                            }
-                        />
-                    </div>
-                </div>
+                <SectionCard
+                    icon={<ClipboardList className="w-4 h-4 text-white" />}
+                    title="จัดการข้อมูลนักเรียน"
+                    gradient="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600"
+                >
+                    <ActionCard
+                        title="เพิ่มนักเรียน + PHQ-A (Import Excel)"
+                        buttonText="นำเข้านักเรียน"
+                        href="/students/import"
+                        variant="primary"
+                        icon={<FileSpreadsheet className="w-5 h-5" />}
+                    />
+                </SectionCard>
             )}
 
             {/* นักเรียนของฉัน - แสดงเมื่อมีนักเรียนแล้ว (system_admin แสดงเสมอ) */}
@@ -88,30 +83,53 @@ export function DashboardActionList({
                     buttonText={`ดูรายชื่อนักเรียน (${studentCount} คน)`}
                     href="/students"
                     variant="primary"
-                    icon={<Users className="w-5 h-5 text-rose-500" />}
+                    icon={<Users className="w-5 h-5" />}
                 />
             )}
 
             {/* ดูข้อมูลนักเรียนรายบุคคล */}
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-white/60 relative overflow-hidden group hover:shadow-xl hover:shadow-pink-200/40 transition-all duration-300 ring-1 ring-pink-50">
-                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-rose-300 via-pink-300 to-orange-200 opacity-60 group-hover:opacity-100 transition-opacity" />
-                <div className="relative z-10">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <Search className="w-5 h-5 text-rose-500" />
-                        ค้นหานักเรียน
-                    </h3>
-                    <StudentSearch />
-                </div>
-            </div>
+            <SectionCard
+                icon={<Search className="w-4 h-4 text-white" />}
+                title="ค้นหานักเรียน"
+                gradient="bg-gradient-to-r from-pink-400 via-rose-400 to-pink-500"
+            >
+                <StudentSearch />
+            </SectionCard>
 
             {/* ดูสรุปข้อมูล */}
             <ActionCard
                 title="ดูสรุปข้อมูล"
                 buttonText="ดู Dashboard (Analytics)"
                 href="/analytics"
-                variant="primary"
-                icon={<BarChart3 className="w-5 h-5 text-rose-500" />}
+                variant="secondary"
+                icon={<BarChart3 className="w-5 h-5" />}
             />
+        </div>
+    );
+}
+
+function SectionCard({
+    icon,
+    title,
+    gradient,
+    children,
+}: {
+    icon: React.ReactNode;
+    title: string;
+    gradient: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+            <div className={`${gradient} px-5 py-3 flex items-center gap-2.5`}>
+                <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                    {icon}
+                </div>
+                <h3 className="text-sm font-bold text-white tracking-wide">
+                    {title}
+                </h3>
+            </div>
+            <div className="p-4 sm:p-5">{children}</div>
         </div>
     );
 }

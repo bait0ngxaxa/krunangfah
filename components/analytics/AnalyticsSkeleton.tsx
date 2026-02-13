@@ -9,7 +9,7 @@ export function AnalyticsSkeleton() {
     return (
         <div className="space-y-6 animate-pulse">
             {/* Tab skeleton */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-6">
                 {/* Fake tab buttons */}
                 <div className="flex gap-4 mb-6 border-b border-gray-100 pb-4">
                     <div className="h-10 w-28 bg-gray-100 rounded-xl" />

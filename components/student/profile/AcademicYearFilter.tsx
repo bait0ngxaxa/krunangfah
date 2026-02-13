@@ -38,7 +38,7 @@ export function AcademicYearFilter({
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-purple-200 p-4">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-4">
             <div className="flex items-center gap-4">
                 <label
                     htmlFor="year-filter"
@@ -50,7 +50,7 @@ export function AcademicYearFilter({
                     id="year-filter"
                     value={currentYearId || "all"}
                     onChange={(e) => handleYearChange(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-400 transition-all outline-none"
+                    className="flex-1 px-4 py-2 border border-pink-100 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition-all outline-none"
                 >
                     <option value="all">ทุกปีการศึกษา</option>
                     {academicYears.map((year) => (

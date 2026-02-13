@@ -22,8 +22,8 @@ export default async function TeacherProfilePage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-rose-50 via-white to-pink-50 px-4 py-12 relative overflow-hidden">
             {/* Decorative Background Elements */}
-            <div className="absolute top-10 left-10 w-40 h-40 bg-pink-200 rounded-full mix-blend-multiply filter blur-2xl opacity-60 animate-bounce delay-1000 duration-3000" />
-            <div className="absolute bottom-10 right-10 w-40 h-40 bg-rose-200 rounded-full mix-blend-multiply filter blur-2xl opacity-60 animate-bounce delay-500 duration-4000" />
+            <div className="absolute top-10 left-5 sm:top-20 sm:left-10 w-48 h-48 sm:w-72 sm:h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse delay-75" />
+            <div className="absolute bottom-10 right-5 sm:bottom-20 sm:right-10 w-48 h-48 sm:w-72 sm:h-72 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse delay-150" />
 
             <div className="max-w-2xl w-full space-y-8 relative z-10">
                 <div className="text-center">

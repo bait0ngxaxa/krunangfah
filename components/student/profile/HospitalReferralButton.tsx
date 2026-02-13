@@ -11,13 +11,13 @@ export function HospitalReferralButton() {
             type="button"
             onClick={() => setIsReferred((prev) => !prev)}
             className={`
-                px-6 py-3 rounded-2xl font-bold transition-all duration-300
+                px-6 py-3 rounded-xl font-bold transition-all duration-300
                 flex items-center gap-3 justify-center
-                shadow-lg hover:shadow-xl active:scale-95 hover:-translate-y-0.5 border border-white/20 relative overflow-hidden group
+                shadow-md hover:shadow-xl active:scale-95 hover:-translate-y-0.5 border border-white/20 relative overflow-hidden group
                 ${
                     isReferred
                         ? "bg-linear-to-r from-emerald-400 to-green-500 text-white shadow-green-200 hover:shadow-green-300"
-                        : "bg-linear-to-r from-pink-400 to-rose-500 text-white shadow-pink-200 hover:shadow-pink-300"
+                        : "bg-linear-to-r from-rose-400 to-pink-500 text-white shadow-pink-200/50 hover:shadow-pink-300/50"
                 }
             `}
         >

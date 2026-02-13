@@ -16,7 +16,7 @@ export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
         .filter((item): item is RiskLevelSummary => item !== undefined);
 
     return (
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-6">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-6">
             <h2 className="text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-6 text-center">
                 ผลการคัดกรอง PHQ-A
             </h2>

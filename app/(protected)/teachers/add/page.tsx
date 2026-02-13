@@ -22,7 +22,7 @@ export default async function AddTeacherPage() {
                 <div className="flex justify-between items-center mb-6">
                     <Link
                         href="/dashboard"
-                        className="text-gray-500 hover:text-pink-600 flex items-center gap-2 font-medium transition-colors px-3 py-1.5 rounded-full hover:bg-pink-50"
+                        className="inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-medium transition-all hover:bg-pink-50 px-4 py-2 rounded-full"
                     >
                         <ArrowLeft className="w-4 h-4" /> กลับหน้าหลัก
                     </Link>

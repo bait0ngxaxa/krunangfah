@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { RiskGroupSection } from "../phq/RiskGroupSection";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
-import { Users, School, Filter, ClipboardCheck } from "lucide-react";
+import { Users, School, Filter, ClipboardCheck, ChevronDown } from "lucide-react";
 
 // Dynamic import for chart component (ssr: false to prevent hydration warnings)
 const RiskPieChart = dynamic(
@@ -159,67 +159,81 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
         <div className="space-y-6">
             {/* School Selector - system_admin only */}
             {isSystemAdmin && (
-                <div className="bg-white rounded-xl shadow-md p-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <School className="w-4 h-4 inline-block mr-1 -mt-0.5" />
-                        เลือกโรงเรียน
-                    </label>
-                    <select
-                        value={selectedSchoolId}
-                        onChange={(e) => handleSchoolChange(e.target.value)}
-                        className="w-full md:w-80 px-4 py-2.5 border border-pink-100 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none bg-white/50 backdrop-blur-sm transition-all"
-                    >
-                        <option value="">-- เลือกโรงเรียน --</option>
-                        {schools.map((school) => (
-                            <option key={school.id} value={school.id}>
-                                {school.name}
-                            </option>
-                        ))}
-                    </select>
+                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                    <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-3 flex items-center gap-2.5">
+                        <School className="w-4.5 h-4.5 text-white/90" />
+                        <span className="text-sm font-bold text-white tracking-wide">
+                            เลือกโรงเรียน
+                        </span>
+                    </div>
+                    <div className="p-4 sm:p-5">
+                        <div className="relative w-full md:w-80">
+                            <select
+                                value={selectedSchoolId}
+                                onChange={(e) => handleSchoolChange(e.target.value)}
+                                className="w-full appearance-none px-4 py-2.5 pr-10 border border-pink-100 rounded-xl focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none bg-white/70 backdrop-blur-sm transition-all text-sm font-medium text-gray-700"
+                            >
+                                <option value="">-- เลือกโรงเรียน --</option>
+                                {schools.map((school) => (
+                                    <option key={school.id} value={school.id}>
+                                        {school.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                    </div>
                 </div>
             )}
 
             {/* Prompt to select school */}
             {showSchoolPrompt ? (
-                <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg shadow-pink-100/40 p-8 text-center border border-white/60">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-blue-50 to-indigo-50 flex items-center justify-center border-2 border-white shadow-sm">
-                        <School className="w-8 h-8 text-blue-400" />
+                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-white/60 ring-1 ring-pink-50">
+                    <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center shadow-inner">
+                        <School className="w-9 h-9 text-pink-500" />
                     </div>
                     <h3 className="text-lg font-bold text-gray-800 mb-2">
                         กรุณาเลือกโรงเรียนเพื่อดูข้อมูล
                     </h3>
-                    <p className="text-gray-500">
+                    <p className="text-sm text-gray-500 max-w-sm mx-auto">
                         เลือกโรงเรียนจากเมนูด้านบนเพื่อดูข้อมูลนักเรียนและผลคัดกรอง
                     </p>
                 </div>
             ) : (
                 <>
-                    {/* Class Filter - สำหรับครูนางฟ้าที่เห็นทุกห้อง */}
+                    {/* Class Filter */}
                     {classes.length > 1 && (
-                        <div className="bg-white rounded-xl shadow-md p-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <Filter className="w-4 h-4 inline-block mr-1 -mt-0.5" />
-                                เลือกห้องเรียน
-                            </label>
-                            <select
-                                value={selectedClass}
-                                onChange={(e) => setSelectedClass(e.target.value)}
-                                className="w-full md:w-64 px-4 py-2.5 border border-pink-100 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none bg-white/50 backdrop-blur-sm transition-all"
-                            >
-                                <option value="all">
-                                    ทุกห้อง ({schoolFilteredStudents.length} คน)
-                                </option>
-                                {classes.map((cls) => {
-                                    const count = schoolFilteredStudents.filter(
-                                        (s) => s.class === cls,
-                                    ).length;
-                                    return (
-                                        <option key={cls} value={cls}>
-                                            {cls} ({count} คน)
+                        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                            <div className="bg-gradient-to-r from-pink-400 via-rose-400 to-pink-500 px-5 py-3 flex items-center gap-2.5">
+                                <Filter className="w-4.5 h-4.5 text-white/90" />
+                                <span className="text-sm font-bold text-white tracking-wide">
+                                    เลือกห้องเรียน
+                                </span>
+                            </div>
+                            <div className="p-4 sm:p-5">
+                                <div className="relative w-full md:w-72">
+                                    <select
+                                        value={selectedClass}
+                                        onChange={(e) => setSelectedClass(e.target.value)}
+                                        className="w-full appearance-none px-4 py-2.5 pr-10 border border-pink-100 rounded-xl focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none bg-white/70 backdrop-blur-sm transition-all text-sm font-medium text-gray-700"
+                                    >
+                                        <option value="all">
+                                            ทุกห้อง ({schoolFilteredStudents.length} คน)
                                         </option>
-                                    );
-                                })}
-                            </select>
+                                        {classes.map((cls) => {
+                                            const count = schoolFilteredStudents.filter(
+                                                (s) => s.class === cls,
+                                            ).length;
+                                            return (
+                                                <option key={cls} value={cls}>
+                                                    {cls} ({count} คน)
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -233,39 +247,51 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
 
                     {/* Student Groups - แสดงเฉพาะเมื่อเลือกห้องเฉพาะ */}
                     {selectedClass === "all" && classes.length > 1 ? (
-                        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg shadow-pink-100/40 p-8 text-center border border-white/60">
-                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-blue-50 to-indigo-50 flex items-center justify-center border-2 border-white shadow-sm">
-                                <Users className="w-8 h-8 text-blue-400" />
+                        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-white/60 ring-1 ring-pink-50">
+                            <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center shadow-inner">
+                                <Users className="w-9 h-9 text-pink-500" />
                             </div>
                             <h3 className="text-lg font-bold text-gray-800 mb-2">
                                 กรุณาเลือกห้องเรียนเพื่อดูรายละเอียด
                             </h3>
-                            <p className="text-gray-500">
-                                ข้อมูลนักเรียนทั้งหมด {schoolFilteredStudents.length} คน ใน{" "}
-                                {classes.length} ห้อง
+                            <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                                ข้อมูลนักเรียนทั้งหมด{" "}
+                                <span className="font-semibold text-pink-500">
+                                    {schoolFilteredStudents.length}
+                                </span>{" "}
+                                คน ใน{" "}
+                                <span className="font-semibold text-pink-500">
+                                    {classes.length}
+                                </span>{" "}
+                                ห้อง
                             </p>
                         </div>
                     ) : (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-lg shadow-pink-100/40">
-                                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
-                                    <span className="p-2.5 bg-pink-50 rounded-lg">
-                                        <ClipboardCheck className="w-6 h-6 text-pink-500" />
+                        <div className="space-y-5">
+                            {/* Summary Header */}
+                            <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50 overflow-hidden">
+                                <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                                            <ClipboardCheck className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-[15px] font-bold text-white tracking-wide">
+                                                สรุปผลการคัดกรอง
+                                            </h3>
+                                            <p className="text-xs text-white/80 mt-0.5">
+                                                {selectedClass === "all"
+                                                    ? classes.length === 1
+                                                        ? `ห้อง ${classes[0]}`
+                                                        : "ทุกห้องเรียน"
+                                                    : `ห้อง ${selectedClass}`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span className="bg-white/25 text-white text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm">
+                                        {filteredStudents.length} คน
                                     </span>
-                                    <span>
-                                        สรุปผลการคัดกรอง:{" "}
-                                        <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
-                                            {selectedClass === "all"
-                                                ? classes.length === 1
-                                                    ? `ห้อง ${classes[0]}`
-                                                    : "ทุกห้องเรียน"
-                                                : `ห้อง ${selectedClass}`}
-                                        </span>
-                                    </span>
-                                </h3>
-                                <span className="text-sm font-medium text-gray-600 bg-white/50 px-3 py-1 rounded-full border border-gray-100">
-                                    นักเรียน {filteredStudents.length} คน
-                                </span>
+                                </div>
                             </div>
 
                             {riskLevels.map((level) => (

@@ -13,7 +13,7 @@ export default function ProtectedLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-blue-50">
+        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50">
             <Suspense fallback={<NavbarFallback />}>
                 <NavbarWrapper />
             </Suspense>

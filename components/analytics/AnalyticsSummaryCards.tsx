@@ -14,10 +14,9 @@ function SummaryCard({
     label,
     value,
     unit,
-    borderColor,
+
     bgColor,
     textColor,
-    iconBgColor,
 }: {
     icon: React.ReactNode;
     label: string;
@@ -30,14 +29,14 @@ function SummaryCard({
 }) {
     return (
         <div
-            className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border ${borderColor} p-6 relative overflow-hidden group hover:shadow-md transition-all duration-300`}
+            className={`bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-300`}
         >
             <div
                 className={`absolute top-0 right-0 w-24 h-24 ${bgColor} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110`}
             />
             <div className="relative flex items-center gap-4">
                 <div
-                    className={`p-4 ${iconBgColor} rounded-2xl ${textColor} shadow-sm border ${borderColor} group-hover:brightness-95 transition-colors`}
+                    className={`p-2.5 rounded-xl bg-rose-100 text-rose-500 group-hover:brightness-95 transition-colors`}
                 >
                     {icon}
                 </div>

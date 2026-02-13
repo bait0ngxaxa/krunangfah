@@ -125,7 +125,7 @@ export default async function StudentDetailPage({
                 <div className="mb-6">
                     <Link
                         href="/students"
-                        className="inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-bold transition-all hover:bg-white/80 hover:shadow-sm px-4 py-2 rounded-xl backdrop-blur-sm border border-transparent hover:border-pink-200"
+                        className="inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-medium transition-all hover:bg-pink-50 px-4 py-2 rounded-full"
                     >
                         <ArrowLeft className="w-5 h-5" />
                         <span>กลับหน้านักเรียน</span>

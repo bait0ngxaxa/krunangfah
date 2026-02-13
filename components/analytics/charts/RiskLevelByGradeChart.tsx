@@ -50,7 +50,7 @@ export function RiskLevelByGradeChart({
 }: RiskLevelByGradeChartProps) {
     if (gradeRiskData.length === 0) {
         return (
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex flex-col items-center justify-center min-h-[400px]">
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-8 flex flex-col items-center justify-center min-h-[400px]">
                 <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
                     ข้อมูลนักเรียนแยกตามระดับชั้น
                 </h2>
@@ -65,7 +65,7 @@ export function RiskLevelByGradeChart({
     }
 
     return (
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-4 sm:p-6">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-4 sm:p-6">
             <h2 className="text-lg sm:text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
                 ข้อมูลนักเรียนแยกตามระดับชั้น
             </h2>

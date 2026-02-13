@@ -16,7 +16,7 @@ export default async function WhitelistPage() {
     const entries = await getWhitelistEntries();
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-100 py-8 px-4 relative overflow-hidden">
+        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
             {/* Decorative Background */}
             <div className="absolute top-0 left-0 w-96 h-96 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/2 translate-y-1/2 pointer-events-none" />
@@ -26,7 +26,7 @@ export default async function WhitelistPage() {
                 <div className="mb-8">
                     <Link
                         href="/dashboard"
-                        className="inline-flex items-center gap-2  text-gray-500 hover:text-pink-600 transition-colors mb-4 font-semibold"
+                        className="inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-medium transition-all hover:bg-pink-50 px-4 py-2 rounded-full mb-4"
                     >
                         <ArrowLeft className="w-4 h-4" /> กลับหน้าหลัก
                     </Link>

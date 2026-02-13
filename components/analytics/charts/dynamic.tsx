@@ -11,7 +11,7 @@ import dynamic from "next/dynamic";
 function ChartSkeleton({ height = 400 }: { height?: number }) {
     return (
         <div
-            className="bg-white/90 rounded-2xl shadow-sm border border-pink-100 p-8 flex items-center justify-center"
+            className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-8 flex items-center justify-center"
             style={{ height }}
         >
             <div className="animate-pulse text-gray-400">

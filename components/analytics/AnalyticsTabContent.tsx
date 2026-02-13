@@ -47,7 +47,7 @@ const RiskLevelByGradeChart = dynamic(
 
 function ChartLoadingSkeleton() {
     return (
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-pink-100 p-8 flex items-center justify-center min-h-[400px]">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-8 flex items-center justify-center min-h-[400px]">
             <div className="animate-pulse text-gray-400">กำลังโหลดกราฟ...</div>
         </div>
     );

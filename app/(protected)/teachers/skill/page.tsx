@@ -33,7 +33,7 @@ export default function TeacherSkillPage() {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 {/* Page Header */}
-                <div className="mb-8 text-center md:text-left bg-white/60 backdrop-blur-sm p-6 rounded-3xl border border-white/60 shadow-sm">
+                <div className="mb-8 text-center md:text-left bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50">
                     <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-3 flex items-center gap-3 justify-center md:justify-start">
                         <GraduationCap className="w-8 h-8 text-rose-500" /> อัพสกิลสำหรับคุณครู
                     </h1>
