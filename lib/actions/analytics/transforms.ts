@@ -170,10 +170,13 @@ export function transformGradeRiskData(
                 counts.blue,
         }))
         .sort((a, b) => {
-            // Natural sort for Thai grade levels (ม.1, ม.2, ..., ม.6)
-            const gradeA = parseInt(a.grade.match(/\d+/)?.[0] || "0");
-            const gradeB = parseInt(b.grade.match(/\d+/)?.[0] || "0");
-            return gradeA - gradeB;
+            // Sort by prefix group (ป before ม) then by number
+            const prefixOrder = (g: string): number => g.startsWith("ป") ? 0 : 1;
+            const prefixDiff = prefixOrder(a.grade) - prefixOrder(b.grade);
+            if (prefixDiff !== 0) return prefixDiff;
+            const numA = parseInt(a.grade.match(/\d+/)?.[0] || "0");
+            const numB = parseInt(b.grade.match(/\d+/)?.[0] || "0");
+            return numA - numB;
         });
 }
 
@@ -258,9 +261,12 @@ export function transformHospitalReferrals(
             referralCount: Number(result.referral_count),
         }))
         .sort((a, b) => {
-            // Natural sort for Thai grade levels (ม.1, ม.2, ..., ม.6)
-            const gradeA = parseInt(a.grade.match(/\d+/)?.[0] || "0");
-            const gradeB = parseInt(b.grade.match(/\d+/)?.[0] || "0");
-            return gradeA - gradeB;
+            // Sort by prefix group (ป before ม) then by number
+            const prefixOrder = (g: string): number => g.startsWith("ป") ? 0 : 1;
+            const prefixDiff = prefixOrder(a.grade) - prefixOrder(b.grade);
+            if (prefixDiff !== 0) return prefixDiff;
+            const numA = parseInt(a.grade.match(/\d+/)?.[0] || "0");
+            const numB = parseInt(b.grade.match(/\d+/)?.[0] || "0");
+            return numA - numB;
         });
 }
