@@ -6,14 +6,19 @@ import { StudentDashboard } from "@/components/student";
 import Link from "next/link";
 
 export default async function MyStudentsPage() {
-    const session = await requireAuth();
+    // Start independent promises immediately (avoid waterfall)
+    const sessionPromise = requireAuth();
+    const studentsPromise = getStudents({ limit: 10000 });
+
+    const session = await sessionPromise;
     const userRole = session.user.role;
     const isAdmin = userRole === "system_admin";
 
-    const { students } = await getStudents({ limit: 10000 });
-
-    // Fetch schools list only for system_admin
-    const schools = isAdmin ? await getSchools() : [];
+    // Parallelize students + schools fetch
+    const [{ students }, schools] = await Promise.all([
+        studentsPromise,
+        isAdmin ? getSchools() : Promise.resolve([]),
+    ]);
 
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
@@ -48,7 +53,7 @@ export default async function MyStudentsPage() {
                             </p>
                         </div>
                     </div>
-                    {!isAdmin && (
+                    {!isAdmin ? (
                         <div className="flex items-center gap-4">
                             <Link
                                 href="/students/import"
@@ -57,7 +62,7 @@ export default async function MyStudentsPage() {
                                 <FileUp className="w-4 h-4" /> นำเข้าข้อมูล
                             </Link>
                         </div>
-                    )}
+                    ) : null}
                 </div>
 
                 {/* Main Content */}
@@ -79,7 +84,8 @@ export default async function MyStudentsPage() {
                                 href="/students/import"
                                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-linear-to-r from-rose-400 to-pink-500 text-white rounded-full hover:from-rose-500 hover:to-pink-600 transition-all font-bold shadow-lg shadow-pink-200 hover:shadow-xl hover:shadow-pink-300 hover:-translate-y-1"
                             >
-                                <FileUp className="w-5 h-5" /> นำเข้าข้อมูลนักเรียน
+                                <FileUp className="w-5 h-5" />{" "}
+                                นำเข้าข้อมูลนักเรียน
                             </Link>
                         </div>
                     </div>

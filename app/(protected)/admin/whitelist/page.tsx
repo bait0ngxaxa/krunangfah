@@ -7,8 +7,8 @@ import { WhitelistManager } from "@/components/admin/WhitelistManager";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "จัดการ System Admin Whitelist | โครงการครูนางฟ้า",
-    description: "จัดการรายชื่ออีเมลที่มีสิทธิ์เป็น System Admin",
+    title: "จัดการรายชื่อผู้ดูแลระบบ | โครงการครูนางฟ้า",
+    description: "จัดการรายชื่ออีเมลที่มีสิทธิ์เป็นผู้ดูแลระบบ",
 };
 
 export default async function WhitelistPage() {

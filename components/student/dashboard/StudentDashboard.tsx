@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { RiskGroupSection } from "../phq/RiskGroupSection";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
-import { Users, School, Filter, ClipboardCheck, ChevronDown } from "lucide-react";
+import {
+    Users,
+    School,
+    Filter,
+    ClipboardCheck,
+    ChevronDown,
+} from "lucide-react";
 
 // Dynamic import for chart component (ssr: false to prevent hydration warnings)
 const RiskPieChart = dynamic(
@@ -49,9 +55,14 @@ interface StudentDashboardProps {
     userRole?: string;
 }
 
-export function StudentDashboard({ students, schools, userRole }: StudentDashboardProps) {
+export function StudentDashboard({
+    students,
+    schools,
+    userRole,
+}: StudentDashboardProps) {
     const router = useRouter();
-    const isSystemAdmin = userRole === "system_admin" && schools && schools.length > 0;
+    const isSystemAdmin =
+        userRole === "system_admin" && schools && schools.length > 0;
 
     // School filter state (only for system_admin)
     const [selectedSchoolId, setSelectedSchoolId] = useState<string>("");
@@ -64,7 +75,9 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
 
     // Get unique classes from school-filtered students
     const classes = useMemo(() => {
-        const uniqueClasses = [...new Set(schoolFilteredStudents.map((s) => s.class))];
+        const uniqueClasses = [
+            ...new Set(schoolFilteredStudents.map((s) => s.class)),
+        ];
         return uniqueClasses.sort();
     }, [schoolFilteredStudents]);
 
@@ -158,9 +171,9 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
     return (
         <div className="space-y-6">
             {/* School Selector - system_admin only */}
-            {isSystemAdmin && (
+            {isSystemAdmin ? (
                 <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
-                    <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-3 flex items-center gap-2.5">
+                    <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-3 flex items-center gap-2.5">
                         <School className="w-4.5 h-4.5 text-white/90" />
                         <span className="text-sm font-bold text-white tracking-wide">
                             เลือกโรงเรียน
@@ -170,7 +183,9 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
                         <div className="relative w-full md:w-80">
                             <select
                                 value={selectedSchoolId}
-                                onChange={(e) => handleSchoolChange(e.target.value)}
+                                onChange={(e) =>
+                                    handleSchoolChange(e.target.value)
+                                }
                                 className="w-full appearance-none px-4 py-2.5 pr-10 border border-pink-100 rounded-xl focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none bg-white/70 backdrop-blur-sm transition-all text-sm font-medium text-gray-700"
                             >
                                 <option value="">-- เลือกโรงเรียน --</option>
@@ -184,12 +199,12 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
                         </div>
                     </div>
                 </div>
-            )}
+            ) : null}
 
             {/* Prompt to select school */}
             {showSchoolPrompt ? (
                 <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-white/60 ring-1 ring-pink-50">
-                    <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center shadow-inner">
+                    <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-linear-to-br from-pink-100 to-rose-100 flex items-center justify-center shadow-inner">
                         <School className="w-9 h-9 text-pink-500" />
                     </div>
                     <h3 className="text-lg font-bold text-gray-800 mb-2">
@@ -202,9 +217,9 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
             ) : (
                 <>
                     {/* Class Filter */}
-                    {classes.length > 1 && (
+                    {classes.length > 1 ? (
                         <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
-                            <div className="bg-gradient-to-r from-pink-400 via-rose-400 to-pink-500 px-5 py-3 flex items-center gap-2.5">
+                            <div className="bg-linear-to-r from-pink-400 via-rose-400 to-pink-500 px-5 py-3 flex items-center gap-2.5">
                                 <Filter className="w-4.5 h-4.5 text-white/90" />
                                 <span className="text-sm font-bold text-white tracking-wide">
                                     เลือกห้องเรียน
@@ -214,16 +229,20 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
                                 <div className="relative w-full md:w-72">
                                     <select
                                         value={selectedClass}
-                                        onChange={(e) => setSelectedClass(e.target.value)}
+                                        onChange={(e) =>
+                                            setSelectedClass(e.target.value)
+                                        }
                                         className="w-full appearance-none px-4 py-2.5 pr-10 border border-pink-100 rounded-xl focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none bg-white/70 backdrop-blur-sm transition-all text-sm font-medium text-gray-700"
                                     >
                                         <option value="all">
-                                            ทุกห้อง ({schoolFilteredStudents.length} คน)
+                                            ทุกห้อง (
+                                            {schoolFilteredStudents.length} คน)
                                         </option>
                                         {classes.map((cls) => {
-                                            const count = schoolFilteredStudents.filter(
-                                                (s) => s.class === cls,
-                                            ).length;
+                                            const count =
+                                                schoolFilteredStudents.filter(
+                                                    (s) => s.class === cls,
+                                                ).length;
                                             return (
                                                 <option key={cls} value={cls}>
                                                     {cls} ({count} คน)
@@ -235,7 +254,7 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
                                 </div>
                             </div>
                         </div>
-                    )}
+                    ) : null}
 
                     {/* Pie Chart */}
                     <RiskPieChart
@@ -248,7 +267,7 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
                     {/* Student Groups - แสดงเฉพาะเมื่อเลือกห้องเฉพาะ */}
                     {selectedClass === "all" && classes.length > 1 ? (
                         <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-white/60 ring-1 ring-pink-50">
-                            <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center shadow-inner">
+                            <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-linear-to-br from-pink-100 to-rose-100 flex items-center justify-center shadow-inner">
                                 <Users className="w-9 h-9 text-pink-500" />
                             </div>
                             <h3 className="text-lg font-bold text-gray-800 mb-2">
@@ -270,7 +289,7 @@ export function StudentDashboard({ students, schools, userRole }: StudentDashboa
                         <div className="space-y-5">
                             {/* Summary Header */}
                             <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50 overflow-hidden">
-                                <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-4 flex items-center justify-between">
+                                <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-4 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
                                             <ClipboardCheck className="w-5 h-5 text-white" />

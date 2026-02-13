@@ -90,14 +90,14 @@ export function ActivityCompletionPage({
                         }`}
                     >
                         <div className="flex items-center justify-center gap-3 mb-6">
-                            <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 rotate-3">
+                            <div className="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-500 rotate-3">
                                 <Calendar className="w-6 h-6" />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <p className="text-xl text-gray-600">
                                 อีก{" "}
-                                <span className="font-bold text-blue-600 text-2xl">
+                                <span className="font-bold text-rose-500 text-2xl">
                                     1 สัปดาห์
                                 </span>
                             </p>
@@ -133,7 +133,7 @@ export function ActivityCompletionPage({
                         <p className="text-xl text-gray-600">
                             ทำกิจกรรมครบทุกกิจกรรมแล้ว
                             {assessmentPeriodLabel && (
-                                <span className="block text-base text-purple-500 font-medium mt-2">
+                                <span className="block text-base text-pink-500 font-medium mt-2">
                                     ({assessmentPeriodLabel})
                                 </span>
                             )}

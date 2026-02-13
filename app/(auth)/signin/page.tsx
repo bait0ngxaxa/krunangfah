@@ -3,8 +3,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "เข้าสู่ระบบ | Krunangfah",
-    description: "Sign in to your account",
+    title: "เข้าสู่ระบบ | โครงการครูนางฟ้า",
+    description: "เข้าสู่ระบบเพื่อใช้งานโครงการครูนางฟ้า",
 };
 
 export default async function SignInPage({

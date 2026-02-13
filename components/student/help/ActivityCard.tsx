@@ -9,7 +9,7 @@ interface ActivityCardProps {
 
 export function ActivityCard({ activity, index, config }: ActivityCardProps) {
     return (
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/60 shadow-lg shadow-pink-100/50 hover:shadow-xl hover:shadow-pink-200/50 hover:-translate-y-1 transition-all duration-300">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 border border-white/60 ring-1 ring-pink-50 shadow-lg shadow-pink-100/30 hover:shadow-xl hover:shadow-pink-200/50 hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-center gap-6 mb-8">
                 <div
                     className={`w-16 h-16 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-3xl font-bold shrink-0 shadow-lg relative group`}

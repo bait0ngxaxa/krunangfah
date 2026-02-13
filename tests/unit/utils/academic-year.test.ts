@@ -119,25 +119,117 @@ describe("getCurrentAcademicYear", () => {
     });
 
     describe("Edge cases - Month boundaries", () => {
-        it("should return semester 1 for April 30, 2024 (last day before semester 1)", () => {
+        it("should return semester 2 for April 30, 2024 (last day before new academic year)", () => {
             const date = new Date(2024, 3, 30); // April 30, 2024
             const result = getCurrentAcademicYear(date);
             expect(result.semester).toBe(2);
             expect(result.year).toBe(2566); // Previous academic year
         });
 
-        it("should return semester 1 for May 1, 2024 (first day of semester 1)", () => {
+        it("should return semester 1 for May 1, 2024 (first day of new academic year)", () => {
             const date = new Date(2024, 4, 1); // May 1, 2024
             const result = getCurrentAcademicYear(date);
             expect(result.semester).toBe(1);
             expect(result.year).toBe(2567);
         });
 
-        it("should return semester 2 for October 31, 2024 (last day of semester 1)", () => {
+        it("should return semester 1 for October 31, 2024 (last day of semester 1)", () => {
             const date = new Date(2024, 9, 31); // October 31, 2024
             const result = getCurrentAcademicYear(date);
             expect(result.semester).toBe(1);
             expect(result.year).toBe(2567);
+        });
+    });
+
+    describe("Academic year transitions (ปีการศึกษาใหม่)", () => {
+        it("should transition to NEW academic year when moving from April 30 to May 1", () => {
+            // สิ้นเมษายน 2025 → ยังอยู่ปีการศึกษา 2567 เทอม 2
+            const april30 = getCurrentAcademicYear(new Date(2025, 3, 30));
+            expect(april30.year).toBe(2567);
+            expect(april30.semester).toBe(2);
+
+            // 1 พฤษภาคม 2025 → เข้าปีการศึกษา 2568 เทอม 1 (ปีใหม่!)
+            const may1 = getCurrentAcademicYear(new Date(2025, 4, 1));
+            expect(may1.year).toBe(2568);
+            expect(may1.semester).toBe(1);
+
+            // ✅ ปีการศึกษาเพิ่มขึ้น 1 ปี
+            expect(may1.year).toBe(april30.year + 1);
+        });
+
+        it("should NOT transition academic year when moving from Dec 31 to Jan 1", () => {
+            // 31 ธ.ค. 2025 → ปีการศึกษา 2568 เทอม 2
+            const dec31 = getCurrentAcademicYear(new Date(2025, 11, 31));
+            expect(dec31.year).toBe(2568);
+            expect(dec31.semester).toBe(2);
+
+            // 1 ม.ค. 2026 → ยังอยู่ปีการศึกษา 2568 เทอม 2 (ไม่เปลี่ยน)
+            const jan1 = getCurrentAcademicYear(new Date(2026, 0, 1));
+            expect(jan1.year).toBe(2568);
+            expect(jan1.semester).toBe(2);
+
+            // ✅ ปีการศึกษาเดิม ไม่เพิ่ม
+            expect(jan1.year).toBe(dec31.year);
+        });
+
+        it("should generate correct year data for a newly transitioned academic year", () => {
+            // เมื่อเข้าปีการศึกษาใหม่ 2569 ข้อมูลที่ generate ต้องถูกต้อง
+            const yearData = generateAcademicYearData(2569);
+            expect(yearData).toHaveLength(2);
+
+            // เทอม 1: พ.ค. - ต.ค. 2026
+            expect(yearData[0].year).toBe(2569);
+            expect(yearData[0].semester).toBe(1);
+            expect(yearData[0].startDate.getFullYear()).toBe(2026);
+            expect(yearData[0].startDate.getMonth()).toBe(4); // May
+
+            // เทอม 2: พ.ย. 2026 - มี.ค. 2027
+            expect(yearData[1].year).toBe(2569);
+            expect(yearData[1].semester).toBe(2);
+            expect(yearData[1].startDate.getFullYear()).toBe(2026);
+            expect(yearData[1].endDate.getFullYear()).toBe(2027);
+        });
+
+        it("should track multiple consecutive academic year transitions", () => {
+            // ทดสอบว่าข้ามปีการศึกษาหลายปีต่อเนื่องถูกต้อง
+            const years = [
+                { date: new Date(2024, 6, 1), expectedYear: 2567 }, // Jul 2024 → 2567/1
+                { date: new Date(2025, 0, 15), expectedYear: 2567 }, // Jan 2025 → 2567/2
+                { date: new Date(2025, 6, 1), expectedYear: 2568 }, // Jul 2025 → 2568/1
+                { date: new Date(2026, 0, 15), expectedYear: 2568 }, // Jan 2026 → 2568/2
+                { date: new Date(2026, 6, 1), expectedYear: 2569 }, // Jul 2026 → 2569/1
+            ];
+
+            years.forEach(({ date, expectedYear }) => {
+                const result = getCurrentAcademicYear(date);
+                expect(result.year).toBe(expectedYear);
+            });
+        });
+
+        it("should produce a new academic year for each May transition", () => {
+            // เทียบ May ของหลายปีต่อเนื่อง - แต่ละปีต้องเพิ่ม 1
+            const may2024 = getCurrentAcademicYear(new Date(2024, 4, 15));
+            const may2025 = getCurrentAcademicYear(new Date(2025, 4, 15));
+            const may2026 = getCurrentAcademicYear(new Date(2026, 4, 15));
+
+            expect(may2024.year).toBe(2567);
+            expect(may2025.year).toBe(2568);
+            expect(may2026.year).toBe(2569);
+
+            // แต่ละ May ต้องเพิ่มปีละ 1
+            expect(may2025.year - may2024.year).toBe(1);
+            expect(may2026.year - may2025.year).toBe(1);
+        });
+
+        it("should correctly identify April as still belonging to previous academic year", () => {
+            // เมษายนทุกปีต้องอยู่ปีการศึกษาก่อนหน้า (เทอม 2 ของปีเก่า)
+            const april2025 = getCurrentAcademicYear(new Date(2025, 3, 15));
+            expect(april2025.year).toBe(2567); // ไม่ใช่ 2568
+            expect(april2025.semester).toBe(2);
+
+            const april2026 = getCurrentAcademicYear(new Date(2026, 3, 15));
+            expect(april2026.year).toBe(2568); // ไม่ใช่ 2569
+            expect(april2026.semester).toBe(2);
         });
     });
 });

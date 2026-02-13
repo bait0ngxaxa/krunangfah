@@ -16,10 +16,11 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-    const session = await requireAuth();
+    const [session, dashboardData] = await Promise.all([
+        requireAuth(),
+        getDashboardData(),
+    ]);
     const isSystemAdmin = session.user.role === "system_admin";
-
-    const dashboardData = await getDashboardData();
     const { teacher, studentCount } = dashboardData;
     const schoolCount =
         "schoolCount" in dashboardData
@@ -29,7 +30,7 @@ export default async function DashboardPage() {
     // system_admin: show admin-specific dashboard
     if (isSystemAdmin) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-100 py-8 px-4 relative overflow-hidden">
+            <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-100 py-8 px-4 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-96 h-96 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
                 <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
@@ -49,15 +50,17 @@ export default async function DashboardPage() {
                                 value={studentCount.toLocaleString()}
                                 unit="คน"
                             />
-                            {schoolCount !== undefined && (
+                            {schoolCount !== undefined ? (
                                 <SummaryCard
-                                    icon={<School className="w-5 h-5 text-white" />}
+                                    icon={
+                                        <School className="w-5 h-5 text-white" />
+                                    }
                                     gradient="bg-gradient-to-r from-pink-400 via-rose-400 to-pink-500"
                                     label="โรงเรียนในโครงการ"
                                     value={schoolCount.toLocaleString()}
                                     unit="โรงเรียน"
                                 />
-                            )}
+                            ) : null}
                         </div>
 
                         {/* รายการเมนู */}
@@ -74,7 +77,7 @@ export default async function DashboardPage() {
     // If no teacher profile, show prompt to create one
     if (!teacher) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
+            <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-96 h-96 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
 
                 <div className="max-w-2xl mx-auto relative z-10">
@@ -106,7 +109,7 @@ export default async function DashboardPage() {
     const schoolName = teacher.user.school?.name || "ไม่ระบุ";
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-100 py-8 px-4 relative overflow-hidden">
+        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-100 py-8 px-4 relative overflow-hidden">
             {/* Decorative Background Elements */}
             <div className="absolute top-0 left-0 w-96 h-96 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/2 translate-y-1/2 pointer-events-none" />

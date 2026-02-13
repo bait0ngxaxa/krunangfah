@@ -4,8 +4,8 @@ import { AlertTriangle } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "รีเซ็ตรหัสผ่าน | Krunangfah",
-    description: "Set a new password",
+    title: "ตั้งรหัสผ่านใหม่ | โครงการครูนางฟ้า",
+    description: "กรอกรหัสผ่านใหม่เพื่อเข้าใช้งานระบบ",
 };
 
 export default async function ResetPasswordPage({

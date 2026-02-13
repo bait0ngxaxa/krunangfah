@@ -4,7 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { useState } from "react";
-import { Menu, X, LayoutDashboard, GraduationCap } from "lucide-react";
+import {
+    Menu,
+    X,
+    LayoutDashboard,
+    GraduationCap,
+    BarChart3,
+} from "lucide-react";
 
 interface NavbarProps {
     hasStudents: boolean;
@@ -18,7 +24,18 @@ export function Navbar({ hasStudents }: NavbarProps) {
 
     const allNavLinks = [
         { href: "/dashboard", label: "หน้าหลัก", icon: LayoutDashboard },
-        { href: "/students", label: "นักเรียนของฉัน", icon: GraduationCap, requiresStudents: true },
+        {
+            href: "/students",
+            label: "นักเรียนของฉัน",
+            icon: GraduationCap,
+            requiresStudents: true,
+        },
+        {
+            href: "/analytics",
+            label: "สรุปข้อมูล",
+            icon: BarChart3,
+            requiresStudents: true,
+        },
     ];
 
     // Filter links based on whether teacher has students

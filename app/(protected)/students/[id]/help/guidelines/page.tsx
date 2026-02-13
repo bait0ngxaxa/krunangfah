@@ -14,7 +14,7 @@ export default function GuidelinesPage() {
         : `/students/${studentId}/help/start`;
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 py-8 px-4">
+        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4">
             <div className="max-w-4xl mx-auto">
                 {/* Back Button */}
                 <Link
@@ -25,12 +25,12 @@ export default function GuidelinesPage() {
                     <span>กลับหน้าใบงาน</span>
                 </Link>
 
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl p-6 md:p-8 border border-white/50 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-purple-500 to-pink-500" />
+                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-rose-500 to-pink-500" />
 
                     {/* Header */}
                     <div className="flex items-center gap-4 mb-8">
-                        <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl">
+                        <div className="w-16 h-16 bg-rose-500 rounded-full flex items-center justify-center text-white text-2xl">
                             <BookOpen className="w-8 h-8" />
                         </div>
                         <div>
@@ -45,11 +45,11 @@ export default function GuidelinesPage() {
 
                     {/* Content Placeholder */}
                     <div className="prose prose-lg max-w-none">
-                        <div className="bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-xl mb-6">
-                            <h3 className="text-purple-800 font-bold mb-2">
+                        <div className="bg-rose-50 border-l-4 border-rose-500 p-6 rounded-r-xl mb-6">
+                            <h3 className="text-rose-800 font-bold mb-2">
                                 <span className="flex items-center gap-1.5"><Pin className="w-4 h-4" /> หมายเหตุ</span>
                             </h3>
-                            <p className="text-purple-700 mb-0">
+                            <p className="text-rose-700 mb-0">
                                 เนื้อหาหลักการใช้ใบงานจะถูกเพิ่มในภายหลัง
                             </p>
                         </div>
@@ -69,7 +69,7 @@ export default function GuidelinesPage() {
                     <div className="mt-8 pt-6 border-t border-gray-200">
                         <Link
                             href={startHref}
-                            className="block w-full py-3 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity text-center"
+                            className="block w-full py-3 bg-linear-to-r from-rose-400 to-pink-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity text-center"
                         >
                             กลับหน้าใบงาน
                         </Link>

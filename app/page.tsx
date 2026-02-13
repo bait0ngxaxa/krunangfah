@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Kru Nangfah - ระบบดูแลช่วยเหลือนักเรียน",
+    title: "โครงการครูนางฟ้า - ระบบดูแลช่วยเหลือนักเรียน",
     description:
         "ระบบจัดการข้อมูลและติดตามผลโครงการเพื่อการดูแลนักเรียนอย่างใกล้ชิดและอบอุ่น",
 };

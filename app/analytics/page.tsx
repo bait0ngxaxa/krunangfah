@@ -13,19 +13,23 @@ export const metadata: Metadata = {
 };
 
 export default async function AnalyticsPage() {
-    const session = await requireAuth();
+    // Start independent promises immediately (avoid waterfall)
+    const sessionPromise = requireAuth();
+    const analyticsPromise = getAnalyticsSummary();
+
+    const session = await sessionPromise;
     const userRole = session.user.role;
     const isSystemAdmin = userRole === "system_admin";
 
-    // Get analytics data
-    const analyticsData = await getAnalyticsSummary();
+    // Parallelize analytics + schools fetch
+    const [analyticsData, schools] = await Promise.all([
+        analyticsPromise,
+        isSystemAdmin ? getSchools() : Promise.resolve([]),
+    ]);
 
     if (!analyticsData) {
         redirect("/dashboard");
     }
-
-    // Fetch schools list only for system_admin
-    const schools = isSystemAdmin ? await getSchools() : [];
 
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">

@@ -75,7 +75,7 @@ export function ActivityWorkspace({
                         config={config}
                     />
 
-                    <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-pink-100 relative overflow-hidden animate-fade-in-up">
+                    <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 relative overflow-hidden animate-fade-in-up">
                         <div
                             className={`absolute top-0 left-0 w-full h-1.5 bg-linear-to-r ${config.gradient}`}
                         />

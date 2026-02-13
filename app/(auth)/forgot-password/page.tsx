@@ -2,8 +2,8 @@ import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "ลืมรหัสผ่าน | Krunangfah",
-    description: "Reset your password",
+    title: "ลืมรหัสผ่าน | โครงการครูนางฟ้า",
+    description: "กรอกอีเมลเพื่อรับลิงก์ตั้งรหัสผ่านใหม่",
 };
 
 export default function ForgotPasswordPage() {

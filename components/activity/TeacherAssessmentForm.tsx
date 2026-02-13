@@ -73,7 +73,7 @@ export function TeacherAssessmentForm({
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-pink-50 via-white to-purple-50 py-10 px-4 bg-pattern-grid">
+        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-10 px-4 bg-pattern-grid">
             <div className="max-w-4xl mx-auto">
                 {/* Back Button */}
                 <Link

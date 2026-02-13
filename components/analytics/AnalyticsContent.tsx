@@ -55,21 +55,21 @@ export function AnalyticsContent({
                 currentClass={data.currentClass}
             />
 
-            {isSystemAdmin && schools && (
+            {isSystemAdmin && schools ? (
                 <SchoolFilter
                     schools={schools}
                     selectedSchoolId={selectedSchoolId}
                     onSchoolChange={handleSchoolChange}
                 />
-            )}
+            ) : null}
 
-            {showClassFilter && data.availableClasses.length > 0 && (
+            {showClassFilter && data.availableClasses.length > 0 ? (
                 <ClassFilter
                     availableClasses={data.availableClasses}
                     currentClass={data.currentClass}
                     onClassChange={handleClassChange}
                 />
-            )}
+            ) : null}
 
             {isPending ? (
                 <AnalyticsSkeleton />
