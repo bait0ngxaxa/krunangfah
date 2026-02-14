@@ -6,14 +6,14 @@ export default function Loading() {
 
             <div className="max-w-4xl mx-auto relative z-10">
                 {/* Header Skeleton */}
-                <div className="mb-8 bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-lg shadow-pink-100/50 border border-white/60">
+                <div className="mb-8 bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-lg shadow-pink-100/50 border border-pink-200">
                     <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-3" />
                     <div className="h-5 w-48 bg-gray-200 rounded animate-pulse" />
                 </div>
 
                 <div className="space-y-6">
                     {/* Teacher Profile Card Skeleton */}
-                    <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-lg shadow-pink-100/50 border border-white/60">
+                    <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-lg shadow-pink-100/50 border border-pink-200">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="w-16 h-16 bg-gray-200 rounded-2xl animate-pulse" />
                             <div className="flex-1">
@@ -32,7 +32,7 @@ export default function Loading() {
                         {[1, 2, 3, 4].map((i) => (
                             <div
                                 key={i}
-                                className="bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-sm border border-white/60"
+                                className="bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-sm border border-pink-200"
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse" />

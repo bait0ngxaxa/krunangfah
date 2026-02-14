@@ -105,7 +105,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-6 items-center bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-sm">
+            <div className="flex flex-wrap gap-6 items-center bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-pink-200 shadow-sm">
                 <div className="flex items-center gap-3">
                     <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
                         <School className="w-5 h-5 text-gray-600" />
@@ -137,10 +137,12 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
             </div>
 
             {/* Student List by Class */}
-            <div className="max-h-[600px] overflow-y-auto pr-2 space-y-6 rounded-2xl border border-white/60 bg-white/30 p-6 backdrop-blur-sm custom-scrollbar shadow-inner">
+            <div className="max-h-[600px] overflow-y-auto pr-2 space-y-6 rounded-2xl border border-pink-200 bg-white/30 p-6 backdrop-blur-sm custom-scrollbar shadow-inner">
                 {Object.keys(groupedStudents).length === 0 ? (
                     <div className="text-center py-20 text-gray-500">
-                        <div className="mb-4 opacity-50"><ClipboardList className="w-10 h-10 text-gray-400 mx-auto" /></div>
+                        <div className="mb-4 opacity-50">
+                            <ClipboardList className="w-10 h-10 text-gray-400 mx-auto" />
+                        </div>
                         <p className="font-medium text-lg">
                             ไม่พบข้อมูลนักเรียน
                         </p>

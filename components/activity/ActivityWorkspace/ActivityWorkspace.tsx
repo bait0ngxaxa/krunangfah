@@ -75,7 +75,7 @@ export function ActivityWorkspace({
                         config={config}
                     />
 
-                    <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 relative overflow-hidden animate-fade-in-up">
+                    <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 relative overflow-hidden animate-fade-in-up">
                         <div
                             className={`absolute top-0 left-0 w-full h-1.5 bg-linear-to-r ${config.gradient}`}
                         />
@@ -95,28 +95,6 @@ export function ActivityWorkspace({
                             worksheets={currentActivity.worksheets}
                         />
 
-                        {/* Upload Section */}
-                        {currentProgress && (
-                            <UploadSection
-                                currentProgress={currentProgress}
-                                currentActivityNumber={currentActivityNumber}
-                                riskLevel={riskLevel}
-                                uploading={uploading}
-                                onFileSelect={handleFileSelect}
-                                onPreview={setPreviewFile}
-                            />
-                        )}
-
-                        {/* Teacher Notes */}
-                        {currentProgress && (
-                            <TeacherNotesSection
-                                notes={teacherNotes}
-                                onNotesChange={setTeacherNotes}
-                                onSave={handleSaveNotes}
-                                isSaving={savingNotes}
-                            />
-                        )}
-
                         {/* Progress Indicator */}
                         <ProgressIndicator
                             activities={activities}
@@ -125,6 +103,31 @@ export function ActivityWorkspace({
                             currentActivityNumber={currentActivityNumber}
                             riskLevel={riskLevel}
                         />
+
+                        {/* Upload & Teacher Notes — side by side */}
+                        {currentProgress && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Upload Section */}
+                                <UploadSection
+                                    currentProgress={currentProgress}
+                                    currentActivityNumber={
+                                        currentActivityNumber
+                                    }
+                                    riskLevel={riskLevel}
+                                    uploading={uploading}
+                                    onFileSelect={handleFileSelect}
+                                    onPreview={setPreviewFile}
+                                />
+
+                                {/* Teacher Notes */}
+                                <TeacherNotesSection
+                                    notes={teacherNotes}
+                                    onNotesChange={setTeacherNotes}
+                                    onSave={handleSaveNotes}
+                                    isSaving={savingNotes}
+                                />
+                            </div>
+                        )}
 
                         {/* Conversation Button */}
                         <div className="pt-6 border-t border-pink-100 mt-8">

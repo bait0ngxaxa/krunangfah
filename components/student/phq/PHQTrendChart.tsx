@@ -105,7 +105,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
     const lineColor = riskColors[latestRisk] || riskColors.blue;
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
 
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">

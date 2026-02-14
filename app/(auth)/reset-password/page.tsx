@@ -50,7 +50,7 @@ export default async function ResetPasswordPage({
                     </p>
                 </div>
 
-                <div className="bg-linear-to-b from-white/95 to-pink-50/90 backdrop-blur-xl py-6 px-5 sm:py-8 sm:px-6 shadow-2xl shadow-pink-200/40 rounded-2xl sm:rounded-3xl border border-white/60 ring-1 ring-pink-100/50">
+                <div className="bg-linear-to-b from-white/95 to-pink-50/90 backdrop-blur-xl py-6 px-5 sm:py-8 sm:px-6 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.08),0_8px_32px_-8px_rgba(244,114,182,0.2)] rounded-2xl sm:rounded-3xl border border-pink-200 ring-1 ring-white/80">
                     {token ? (
                         <ResetPasswordForm token={token} />
                     ) : (

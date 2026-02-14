@@ -10,7 +10,7 @@ interface StudentPreviewTableProps {
  */
 export function StudentPreviewTable({ students }: StudentPreviewTableProps) {
     return (
-        <div className="bg-white/60 backdrop-blur-xl rounded-4xl shadow-2xl overflow-hidden border border-white/60 relative">
+        <div className="bg-white/60 backdrop-blur-xl rounded-4xl shadow-2xl overflow-hidden border border-pink-200 relative">
             <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-pink-300 to-purple-300" />
 
             <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
@@ -54,7 +54,11 @@ export function StudentPreviewTable({ students }: StudentPreviewTableProps) {
                                         {student.firstName} {student.lastName}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-center text-gray-600">
-                                        {student.gender === "MALE" ? "ชาย" : student.gender === "FEMALE" ? "หญิง" : "-"}
+                                        {student.gender === "MALE"
+                                            ? "ชาย"
+                                            : student.gender === "FEMALE"
+                                              ? "หญิง"
+                                              : "-"}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-center text-gray-600">
                                         {student.age ?? "-"}

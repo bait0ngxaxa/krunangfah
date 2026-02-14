@@ -2,6 +2,7 @@
 
 import { User, FileText, Hospital, ClipboardCheck } from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
 
 interface StudentProfileCardProps {
@@ -26,53 +27,22 @@ interface StudentProfileCardProps {
     } | null;
 }
 
-const riskConfig: Record<
-    RiskLevel,
-    { label: string; bgColor: string; textColor: string; circleColor: string }
-> = {
-    blue: {
-        label: "ไม่มีความเสี่ยง",
-        bgColor: "bg-blue-100",
-        textColor: "text-blue-700",
-        circleColor: "bg-blue-500",
-    },
-    green: {
-        label: "เสี่ยงน้อย",
-        bgColor: "bg-green-100",
-        textColor: "text-green-700",
-        circleColor: "bg-green-500",
-    },
-    yellow: {
-        label: "เสี่ยงปานกลาง",
-        bgColor: "bg-yellow-100",
-        textColor: "text-yellow-700",
-        circleColor: "bg-yellow-500",
-    },
-    orange: {
-        label: "เสี่ยงสูง",
-        bgColor: "bg-orange-100",
-        textColor: "text-orange-700",
-        circleColor: "bg-orange-500",
-    },
-    red: {
-        label: "เสี่ยงสูงมาก",
-        bgColor: "bg-red-100",
-        textColor: "text-red-700",
-        circleColor: "bg-red-500",
-    },
-};
-
 export function StudentProfileCard({
     student,
     latestResult,
 }: StudentProfileCardProps) {
     const risk = latestResult
-        ? riskConfig[latestResult.riskLevel as RiskLevel]
+        ? RISK_LEVEL_CONFIG[latestResult.riskLevel as RiskLevel]
         : null;
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 sm:p-7 md:p-8 border border-pink-200 ring-1 ring-pink-50 overflow-hidden group hover:shadow-xl transition-all duration-300">
+            {/* Gradient accent bottom border */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
+            {/* Top shimmer */}
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/80 to-transparent" />
+            {/* Corner blobs */}
+            <div className="absolute -top-14 -right-14 w-36 h-36 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
 
             {/* Decorative background blob */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-br from-rose-50 to-pink-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
@@ -97,9 +67,7 @@ export function StudentProfileCard({
                             {student.gender && (
                                 <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-sm border border-purple-100">
                                     <User className="w-3.5 h-3.5 inline -mt-0.5" />{" "}
-                                    {student.gender === "MALE"
-                                        ? "ชาย"
-                                        : "หญิง"}
+                                    {student.gender === "MALE" ? "ชาย" : "หญิง"}
                                 </span>
                             )}
                             {student.age && (
@@ -120,11 +88,11 @@ export function StudentProfileCard({
                 {risk && latestResult && (
                     <div className="flex flex-col items-end gap-3">
                         <div
-                            className={`${risk.bgColor} ${risk.textColor} pl-4 pr-6 py-3 rounded-2xl font-bold text-lg shadow-sm border border-white/50 flex items-center gap-3 backdrop-blur-sm transition-transform hover:scale-105`}
+                            className={`${risk.headerGradient} ${risk.headerTextColor} pl-4 pr-5 py-2.5 rounded-2xl font-bold text-base shadow-md flex items-center gap-2.5 transition-transform hover:scale-105`}
                         >
-                            <div
-                                className={`w-4 h-4 rounded-full ${risk.circleColor} ring-4 ring-white/50 shadow-sm`}
-                            />
+                            <span className="text-lg leading-none">
+                                {risk.emoji}
+                            </span>
                             <span>{risk.label}</span>
                         </div>
                         {latestResult.riskLevel === "red" && (
@@ -138,7 +106,9 @@ export function StudentProfileCard({
                                 {latestResult.referredToHospital ? (
                                     <>
                                         <Hospital className="w-4 h-4" />
-                                        ส่งต่อ: {latestResult.hospitalName || "โรงพยาบาล"}
+                                        ส่งต่อ:{" "}
+                                        {latestResult.hospitalName ||
+                                            "โรงพยาบาล"}
                                     </>
                                 ) : (
                                     <>

@@ -33,16 +33,16 @@ export function UploadSection({
 
     return (
         <div
-            className={`${uploadColors.bgLight} border-2 ${uploadColors.border} p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow`}
+            className={`h-full flex flex-col ${uploadColors.bgLight} border-2 ${uploadColors.border} p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow`}
         >
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
                 <h3
-                    className={`text-lg font-bold ${uploadColors.textDark} flex items-center gap-3`}
+                    className={`text-base font-bold ${uploadColors.textDark} flex items-center gap-2`}
                 >
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                        <Upload className="w-5 h-5" />
+                    <div className="p-1.5 bg-white rounded-lg shadow-sm">
+                        <Upload className="w-4 h-4" />
                     </div>
-                    อัปโหลดใบงานที่ทำเสร็จแล้ว
+                    อัปโหลดใบงาน
                 </h3>
                 <span
                     className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ${
@@ -57,11 +57,11 @@ export function UploadSection({
 
             {/* Uploaded files */}
             {currentProgress.worksheetUploads.length > 0 && (
-                <div className="mb-6 space-y-3">
+                <div className="mb-4 space-y-2">
                     {currentProgress.worksheetUploads.map((upload) => (
                         <div
                             key={upload.id}
-                            className={`flex items-center justify-between bg-white p-4 rounded-xl border-2 ${uploadColors.itemBorder} hover:shadow-md transition-all group`}
+                            className={`flex items-center justify-between bg-white p-3 rounded-xl border-2 ${uploadColors.itemBorder} hover:shadow-md transition-all group`}
                         >
                             <div className="flex items-center gap-3 overflow-hidden">
                                 <FileText className="w-6 h-6 text-gray-500" />
@@ -99,18 +99,18 @@ export function UploadSection({
                     <button
                         onClick={() => onFileSelect(currentProgress.id)}
                         disabled={uploading === currentProgress.id}
-                        className={`w-full py-4 ${uploadColors.button} text-white rounded-xl font-bold ${uploadColors.buttonHover} transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-3 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none`}
+                        className={`w-full py-3 ${uploadColors.button} text-white rounded-xl font-bold text-sm ${uploadColors.buttonHover} transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none`}
                     >
                         {uploading === currentProgress.id ? (
                             <>
-                                <Loader2 className="w-6 h-6 animate-spin" />
+                                <Loader2 className="w-5 h-5 animate-spin" />
                                 <span>กำลังอัปโหลด...</span>
                             </>
                         ) : (
                             <>
-                                <Upload className="w-6 h-6" />
+                                <Upload className="w-5 h-5" />
                                 <div className="text-center">
-                                    <div className="text-lg">
+                                    <div className="text-sm">
                                         อัปโหลดใบงานที่ {uploadedCount + 1}
                                     </div>
                                     {nextWorksheetName && (

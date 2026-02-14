@@ -17,7 +17,7 @@ export function TeacherNotesSection({
     isSaving,
 }: TeacherNotesSectionProps) {
     return (
-        <div className="mb-8 bg-pink-50/50 border border-pink-200 p-6 rounded-2xl backdrop-blur-sm">
+        <div className="h-full flex flex-col bg-pink-50/50 border border-pink-200 p-6 rounded-2xl backdrop-blur-sm">
             <h3 className="font-bold text-pink-800 mb-4 flex items-center gap-2 text-lg">
                 <FileText className="w-6 h-6 text-pink-700" />
                 บันทึกของครู
@@ -30,7 +30,7 @@ export function TeacherNotesSection({
                 value={notes}
                 onChange={(e) => onNotesChange(e.target.value)}
                 placeholder="พิมพ์บันทึกของคุณที่นี่..."
-                className="w-full p-4 bg-white/80 border border-pink-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-400 resize-none transition-all placeholder:text-pink-300/70"
+                className="w-full p-4 bg-white/80 border border-pink-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-400 resize-none transition-all placeholder:text-pink-300/70 flex-1"
                 rows={5}
             />
             <button

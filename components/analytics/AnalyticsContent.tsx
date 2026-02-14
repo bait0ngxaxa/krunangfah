@@ -44,6 +44,7 @@ export function AnalyticsContent({
         pieChartData,
         pieChartTitle,
         showAdminTables: isSchoolAdmin || isSystemAdmin,
+        userRole,
     });
 
     return (

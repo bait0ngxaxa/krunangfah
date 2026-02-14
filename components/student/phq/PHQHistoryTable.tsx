@@ -55,17 +55,25 @@ const riskConfig: Record<
 export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
     if (results.length === 0) {
         return (
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-8 border border-white/60 ring-1 ring-pink-50 text-center">
-                <p className="text-gray-500">ยังไม่มีประวัติการคัดกรอง</p>
+            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-8 border border-pink-200 ring-1 ring-pink-50 text-center overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
+                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+                <p className="relative text-gray-500">
+                    ยังไม่มีประวัติการคัดกรอง
+                </p>
             </div>
         );
     }
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 overflow-hidden group hover:shadow-xl transition-all duration-300">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
+            {/* Corner decoration */}
+            <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-rose-200/45 to-pink-300/35 rounded-full blur-xl pointer-events-none" />
+            {/* Shimmer */}
+            <div className="absolute inset-x-0 top-[6px] h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
 
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-2">
                 <ClipboardList className="w-6 h-6 text-rose-500" />
                 <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                     ประวัติการคัดกรองสุขภาพจิต
@@ -142,13 +150,17 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                                 {result.q9a && (
                                                     <div className="flex items-center gap-1.5 text-rose-600 text-sm font-medium">
                                                         <AlertTriangle className="w-4 h-4 shrink-0" />
-                                                        <span>มีความคิดฆ่าตัวตาย</span>
+                                                        <span>
+                                                            มีความคิดฆ่าตัวตาย
+                                                        </span>
                                                     </div>
                                                 )}
                                                 {result.q9b && (
                                                     <div className="flex items-center gap-1.5 text-red-700 text-sm font-medium">
                                                         <AlertTriangle className="w-4 h-4 shrink-0" />
-                                                        <span>เคยลงมือฆ่าตัวตาย</span>
+                                                        <span>
+                                                            เคยลงมือฆ่าตัวตาย
+                                                        </span>
                                                     </div>
                                                 )}
                                             </div>

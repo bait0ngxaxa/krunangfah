@@ -11,10 +11,16 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/user";
 import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
-import { RATE_LIMIT_FORGOT_PASSWORD } from "@/constants/rate-limit";
-import { generatePasswordResetToken, verifyPasswordResetToken } from "@/lib/token";
+import { RATE_LIMIT_FORGOT_PASSWORD } from "@/lib/constants/rate-limit";
+import {
+    generatePasswordResetToken,
+    verifyPasswordResetToken,
+} from "@/lib/token";
 import { sendPasswordResetEmail } from "@/lib/email";
-import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations/auth.validation";
+import {
+    forgotPasswordSchema,
+    resetPasswordSchema,
+} from "@/lib/validations/auth.validation";
 
 interface ActionResult {
     success: boolean;
@@ -29,9 +35,9 @@ const forgotPasswordLimiter = createRateLimiter(RATE_LIMIT_FORGOT_PASSWORD);
  *
  * Always returns a success-like message to prevent email enumeration.
  */
-export async function requestPasswordReset(
-    input: { email: string },
-): Promise<ActionResult> {
+export async function requestPasswordReset(input: {
+    email: string;
+}): Promise<ActionResult> {
     // --- Rate limit ---
     const headerStore = await headers();
     const ip = extractClientIp((name) => headerStore.get(name));
@@ -74,16 +80,19 @@ export async function requestPasswordReset(
     // Always return success to prevent email enumeration
     return {
         success: true,
-        message: "หากอีเมลนี้มีอยู่ในระบบ คุณจะได้รับลิงก์รีเซ็ตรหัสผ่านทางอีเมล",
+        message:
+            "หากอีเมลนี้มีอยู่ในระบบ คุณจะได้รับลิงก์รีเซ็ตรหัสผ่านทางอีเมล",
     };
 }
 
 /**
  * Reset the user's password using a valid token.
  */
-export async function resetPassword(
-    input: { token: string; password: string; confirmPassword: string },
-): Promise<ActionResult> {
+export async function resetPassword(input: {
+    token: string;
+    password: string;
+    confirmPassword: string;
+}): Promise<ActionResult> {
     // --- Validate ---
     const parsed = resetPasswordSchema.safeParse(input);
     if (!parsed.success) {

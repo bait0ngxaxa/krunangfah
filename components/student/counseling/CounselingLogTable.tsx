@@ -31,10 +31,14 @@ export function CounselingLogTable({
     };
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 overflow-hidden group hover:shadow-xl transition-all duration-300">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
+            {/* Corner decoration */}
+            <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-rose-200/45 to-pink-300/35 rounded-full blur-xl pointer-events-none" />
+            {/* Shimmer */}
+            <div className="absolute inset-x-0 top-[6px] h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
 
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-2">
                 <MessageCircle className="w-6 h-6 text-rose-500" />
                 <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                     บันทึกการให้คำปรึกษารายบุคคล

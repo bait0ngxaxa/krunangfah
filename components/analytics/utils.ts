@@ -28,6 +28,7 @@ export function toChartData(
 export function getPieChartTitle(
     selectedClass: string,
     selectedSchoolName: string | undefined,
+    userRole?: string,
 ): string {
     if (selectedClass !== "all") {
         return `ข้อมูลนักเรียน (ห้อง ${selectedClass})`;
@@ -35,5 +36,16 @@ export function getPieChartTitle(
     if (selectedSchoolName) {
         return `ข้อมูลนักเรียน (${selectedSchoolName})`;
     }
-    return "ข้อมูลนักเรียน (ทุกโรงเรียน)";
+
+    // Default title based on role
+    switch (userRole) {
+        case "system_admin":
+            return "ข้อมูลนักเรียน (ทุกโรงเรียน)";
+        case "school_admin":
+            return "ข้อมูลนักเรียน (ทั้งโรงเรียน)";
+        case "class_teacher":
+            return "ข้อมูลนักเรียน (ห้องที่ปรึกษา)";
+        default:
+            return "ข้อมูลนักเรียน";
+    }
 }

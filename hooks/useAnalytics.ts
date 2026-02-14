@@ -85,7 +85,11 @@ export function useAnalytics(
             ? schools?.find((s) => s.id === selectedSchoolId)?.name
             : undefined;
 
-    const pieChartTitle = getPieChartTitle(selectedClass, selectedSchoolName);
+    const pieChartTitle = getPieChartTitle(
+        selectedClass,
+        selectedSchoolName,
+        userRole,
+    );
 
     return {
         data,
