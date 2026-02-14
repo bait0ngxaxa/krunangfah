@@ -1,7 +1,7 @@
 import { requireAuth } from "@/lib/session";
 import { AddTeacherForm } from "@/components/teacher";
-import { ArrowLeft, UserPlus, Info } from "lucide-react";
-import Link from "next/link";
+import { UserPlus, Info } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -19,19 +19,10 @@ export default async function AddTeacherPage() {
             <div className="absolute bottom-0 left-0 w-80 h-80 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 -translate-x-1/3 translate-y-1/3 pointer-events-none" />
 
             <div className="max-w-2xl mx-auto relative z-10">
-                {/* Back Button */}
-                <div className="mb-6">
-                    <Link
-                        href="/dashboard"
-                        className="group inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-medium transition-all hover:bg-white/80 hover:shadow-sm px-4 py-2 rounded-full border border-transparent hover:border-pink-200"
-                    >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        กลับหน้าหลัก
-                    </Link>
-                </div>
+                <BackButton href="/dashboard" label="กลับหน้าหลัก" />
 
                 {/* Header */}
-                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-5 sm:p-6 mb-6 overflow-hidden group">
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 p-5 sm:p-6 mb-6 overflow-hidden group">
                     {/* Gradient accent bottom border */}
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
                     {/* Top shimmer */}
@@ -63,10 +54,10 @@ export default async function AddTeacherPage() {
                 </div>
 
                 {/* Form Card */}
-                <div className="relative bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-8 border border-white/60 overflow-hidden ring-1 ring-pink-50">
+                <div className="relative bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-8 border border-pink-200 overflow-hidden ring-1 ring-pink-50">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
                     {/* Corner decoration */}
-                    <div className="absolute -top-12 -right-12 w-28 h-28 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-rose-200/45 to-pink-300/35 rounded-full blur-xl pointer-events-none" />
                     {/* Shimmer */}
                     <div className="absolute inset-x-0 top-[6px] h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
 

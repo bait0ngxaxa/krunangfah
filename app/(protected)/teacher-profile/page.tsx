@@ -26,7 +26,7 @@ export default async function TeacherProfilePage() {
             <div className="absolute bottom-10 right-5 sm:bottom-20 sm:right-10 w-48 h-48 sm:w-72 sm:h-72 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse delay-150" />
 
             <div className="max-w-2xl w-full space-y-8 relative z-10">
-                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-5 sm:p-6 overflow-hidden group text-center md:text-left">
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 p-5 sm:p-6 overflow-hidden group text-center md:text-left">
                     {/* Gradient accent bottom border */}
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
                     {/* Top shimmer */}
@@ -56,7 +56,7 @@ export default async function TeacherProfilePage() {
                     </div>
                 </div>
 
-                <div className="bg-white/80 backdrop-blur-md py-8 px-8 shadow-xl shadow-pink-100/50 rounded-3xl border border-white/60 relative ring-1 ring-pink-50">
+                <div className="bg-white/80 backdrop-blur-md py-8 px-8 shadow-xl shadow-pink-100/50 rounded-3xl border border-pink-200 relative ring-1 ring-pink-50">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300 rounded-t-3xl" />
                     <TeacherProfileForm />
                 </div>

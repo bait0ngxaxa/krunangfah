@@ -38,7 +38,7 @@ export function AcademicYearFilter({
     };
 
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-4 overflow-hidden">
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 p-4 overflow-hidden">
             {/* Corner decoration */}
             <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
             {/* Shimmer */}

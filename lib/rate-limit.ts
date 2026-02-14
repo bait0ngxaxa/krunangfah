@@ -12,7 +12,7 @@ import type {
     RateLimitEntry,
     RateLimiter,
 } from "@/types/rate-limit.types";
-import { RATE_LIMIT_CLEANUP_INTERVAL_MS } from "@/constants/rate-limit";
+import { RATE_LIMIT_CLEANUP_INTERVAL_MS } from "@/lib/constants/rate-limit";
 
 /**
  * Creates an in-memory rate limiter with sliding window algorithm.
@@ -41,7 +41,10 @@ export function createRateLimiter(config: RateLimitConfig): RateLimiter {
     }
 
     // Auto-cleanup on interval
-    const cleanupInterval = setInterval(cleanup, RATE_LIMIT_CLEANUP_INTERVAL_MS);
+    const cleanupInterval = setInterval(
+        cleanup,
+        RATE_LIMIT_CLEANUP_INTERVAL_MS,
+    );
 
     // Prevent interval from keeping the process alive in tests
     if (typeof cleanupInterval === "object" && "unref" in cleanupInterval) {

@@ -39,7 +39,7 @@ export function ImportPreview({
     return (
         <div className="space-y-6">
             {/* Summary Section */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-white/60 relative overflow-hidden group">
+            <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-pink-200 relative overflow-hidden group">
                 <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-pink-400 via-rose-300 to-purple-400 opacity-60" />
 
                 <h3 className="text-xl font-bold mb-6 flex items-center gap-2">

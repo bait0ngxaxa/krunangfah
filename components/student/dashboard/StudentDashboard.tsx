@@ -22,7 +22,7 @@ const RiskPieChart = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-white/60 relative overflow-hidden ring-1 ring-pink-50 flex items-center justify-center min-h-[300px]">
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-pink-200 relative overflow-hidden ring-1 ring-pink-50 flex items-center justify-center min-h-[300px]">
                 <div className="animate-pulse text-gray-400">
                     กำลังโหลดกราฟ...
                 </div>
@@ -172,9 +172,9 @@ export function StudentDashboard({
         <div className="space-y-6">
             {/* School Selector - system_admin only */}
             {isSystemAdmin ? (
-                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 overflow-hidden">
                     {/* Corner decoration */}
-                    <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
                     <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-3 flex items-center gap-2.5 relative">
                         <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
                         <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-inner ring-1 ring-white/20">
@@ -208,9 +208,9 @@ export function StudentDashboard({
 
             {/* Prompt to select school */}
             {showSchoolPrompt ? (
-                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-pink-200 ring-1 ring-pink-50 overflow-hidden">
                     {/* Decorations */}
-                    <div className="absolute -top-12 -right-12 w-28 h-28 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-rose-200/45 to-pink-300/35 rounded-full blur-xl pointer-events-none" />
                     <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-pink-200/20 to-rose-300/15 rounded-full blur-xl pointer-events-none" />
                     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/40 to-transparent" />
 
@@ -233,9 +233,9 @@ export function StudentDashboard({
                 <>
                     {/* Class Filter */}
                     {classes.length > 1 ? (
-                        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 overflow-hidden">
                             {/* Corner decoration */}
-                            <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+                            <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
                             <div className="bg-linear-to-r from-pink-400 via-rose-400 to-pink-500 px-5 py-3 flex items-center gap-2.5 relative">
                                 <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
                                 <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-inner ring-1 ring-white/20">
@@ -286,9 +286,9 @@ export function StudentDashboard({
 
                     {/* Student Groups - แสดงเฉพาะเมื่อเลือกห้องเฉพาะ */}
                     {selectedClass === "all" && classes.length > 1 ? (
-                        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-10 text-center border border-pink-200 ring-1 ring-pink-50 overflow-hidden">
                             {/* Decorations */}
-                            <div className="absolute -top-12 -right-12 w-28 h-28 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
+                            <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-rose-200/45 to-pink-300/35 rounded-full blur-xl pointer-events-none" />
                             <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-pink-200/20 to-rose-300/15 rounded-full blur-xl pointer-events-none" />
                             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/40 to-transparent" />
 
@@ -318,9 +318,9 @@ export function StudentDashboard({
                     ) : (
                         <div className="space-y-5">
                             {/* Summary Header */}
-                            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50 overflow-hidden">
+                            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl border border-pink-200 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50 overflow-hidden">
                                 {/* Corner decoration */}
-                                <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+                                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
                                 <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-4 flex items-center justify-between relative">
                                     <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
                                     <div className="flex items-center gap-3">

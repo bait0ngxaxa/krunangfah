@@ -30,7 +30,7 @@ export function VideoUpskillTab() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-white/60 shadow-lg shadow-pink-100/50">
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-pink-200 shadow-lg shadow-pink-100/50">
                 <h2 className="text-2xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-2 flex items-center gap-2">
                     <BookOpen className="w-6 h-6 text-rose-500" />
                     อัพสกิลคุณครูผ่านวิดีโอ
@@ -45,7 +45,7 @@ export function VideoUpskillTab() {
                 {videos.map((video) => (
                     <div
                         key={video.id}
-                        className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl shadow-pink-100/40 hover:shadow-pink-200/50 transition-all duration-300 overflow-hidden border border-white/60 ring-1 ring-pink-50 hover:-translate-y-1"
+                        className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl shadow-pink-100/40 hover:shadow-pink-200/50 transition-all duration-300 overflow-hidden border border-pink-200 ring-1 ring-pink-50 hover:-translate-y-1"
                     >
                         {/* Video Embed */}
                         <div className="aspect-video bg-gray-100 relative">
@@ -67,7 +67,8 @@ export function VideoUpskillTab() {
                                     {video.title}
                                 </h3>
                                 <span className="text-sm font-bold text-pink-600 bg-pink-50 px-3 py-1.5 rounded-full whitespace-nowrap ml-2 border border-pink-100 shadow-sm flex items-center gap-1">
-                                    <Clock className="w-3.5 h-3.5" /> {video.duration}
+                                    <Clock className="w-3.5 h-3.5" />{" "}
+                                    {video.duration}
                                 </span>
                             </div>
                             <p className="text-gray-600 relative z-10">

@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Calendar, PartyPopper } from "lucide-react";
-import { COLOR_CONFIG, ACTIVITY_NAMES, ACTIVITY_INDICES } from "./ActivityWorkspace/constants";
+import {
+    COLOR_CONFIG,
+    ACTIVITY_NAMES,
+    ACTIVITY_INDICES,
+} from "./ActivityWorkspace/constants";
 
 interface ActivityCompletionPageProps {
     studentId: string;
@@ -31,9 +35,14 @@ export function ActivityCompletionPage({
     // Find actual next activity from ACTIVITY_INDICES (not just +1)
     const activityIndices = ACTIVITY_INDICES[riskLevel] || [];
     const currentIndex = activityIndices.indexOf(activityNumber);
-    const hasNextActivity = currentIndex >= 0 && currentIndex < activityIndices.length - 1;
-    const nextActivityNumber = hasNextActivity ? activityIndices[currentIndex + 1] : undefined;
-    const nextActivityName = nextActivityNumber ? ACTIVITY_NAMES[nextActivityNumber] : undefined;
+    const hasNextActivity =
+        currentIndex >= 0 && currentIndex < activityIndices.length - 1;
+    const nextActivityNumber = hasNextActivity
+        ? activityIndices[currentIndex + 1]
+        : undefined;
+    const nextActivityName = nextActivityNumber
+        ? ACTIVITY_NAMES[nextActivityNumber]
+        : undefined;
 
     // Animate elements
     useEffect(() => {
@@ -68,7 +77,7 @@ export function ActivityCompletionPage({
                         </div>
                     </div>
 
-                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 border border-white/60 shadow-xl mb-8">
+                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 border border-pink-200 shadow-xl mb-8">
                         <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 tracking-tight">
                             ขอบคุณที่ชวนเด็กทำ
                         </h1>

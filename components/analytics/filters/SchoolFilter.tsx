@@ -19,7 +19,7 @@ export function SchoolFilter({
     onSchoolChange,
 }: SchoolFilterProps) {
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-4 flex items-center gap-4 overflow-hidden">
+        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-4 flex items-center gap-4 overflow-hidden">
             {/* Corner decoration */}
             <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-rose-200/30 to-pink-300/20 rounded-full blur-lg pointer-events-none" />
             {/* Shimmer */}

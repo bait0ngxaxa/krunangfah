@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { StudentSearch } from "@/components/dashboard/StudentSearch";
+import { StudentSearch } from "@/components/dashboard/student-search";
 import { type UserRole } from "@/types/auth.types";
 import {
     ShieldCheck,
@@ -30,7 +30,7 @@ export function DashboardActionList({
             {(isSystemAdmin || studentCount > 0) && (
                 <Link
                     href="/students"
-                    className="relative flex items-center gap-4 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-5 group hover:shadow-xl hover:shadow-pink-200/40 hover:-translate-y-0.5 hover:ring-pink-100 transition-all duration-300 overflow-hidden"
+                    className="relative flex items-center gap-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-5 group hover:shadow-[0_8px_24px_-4px_rgba(244,114,182,0.25),0_4px_12px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 hover:border-pink-300 hover:ring-pink-100 transition-all duration-300 overflow-hidden"
                 >
                     {/* Corner decoration */}
                     <div className="absolute -top-12 -right-12 w-32 h-32 bg-linear-to-br from-rose-200/30 to-pink-300/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
@@ -105,7 +105,7 @@ export function DashboardActionList({
                         <QuickActionCard
                             href="/students/import"
                             icon={FileSpreadsheet}
-                            title="นำเข้าข้อมูล"
+                            title="นำเข้าข้อมูลนักเรียน"
                             description="Import Excel"
                         />
                         <QuickActionCard
@@ -127,9 +127,9 @@ export function DashboardActionList({
             </div>
 
             {/* Search Section */}
-            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden group">
+            <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 overflow-hidden group">
                 {/* Corner decoration */}
-                <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
                 <div className="bg-linear-to-r from-pink-400 via-rose-400 to-pink-500 px-5 py-3 flex items-center gap-2.5 relative">
                     {/* Header shimmer */}
                     <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
@@ -166,7 +166,7 @@ function QuickActionCard({
     return (
         <Link
             href={href}
-            className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-5 group hover:shadow-xl hover:shadow-pink-200/40 hover:-translate-y-1 hover:ring-pink-100 transition-all duration-300 block overflow-hidden"
+            className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-5 group hover:shadow-[0_8px_24px_-4px_rgba(244,114,182,0.25),0_4px_12px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-pink-300 hover:ring-pink-100 transition-all duration-300 block overflow-hidden"
         >
             {/* Decorative gradient corner */}
             <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/30 to-pink-300/20 rounded-full blur-xl group-hover:scale-[1.8] transition-transform duration-500 pointer-events-none" />

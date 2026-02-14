@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, ClipboardCheck, Loader2, ArrowRight, Brain, Globe } from "lucide-react";
+import {
+    ClipboardCheck,
+    Loader2,
+    ArrowRight,
+    Brain,
+    Globe,
+} from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { toast } from "sonner";
 import { submitTeacherAssessment } from "@/lib/actions/activity";
 import {
@@ -57,7 +63,9 @@ export function TeacherAssessmentForm({
 
             if (result.success) {
                 // Redirect to encouragement page with problem type and activity number
-                const phqParam = phqResultId ? `&phqResultId=${phqResultId}` : "";
+                const phqParam = phqResultId
+                    ? `&phqResultId=${phqResultId}`
+                    : "";
                 router.push(
                     `/students/${studentId}/help/start/encouragement?type=${problemType}&activity=${activityNumber}${phqParam}`,
                 );
@@ -75,16 +83,12 @@ export function TeacherAssessmentForm({
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-10 px-4 bg-pattern-grid">
             <div className="max-w-4xl mx-auto">
-                {/* Back Button */}
-                <Link
+                <BackButton
                     href={`/students/${studentId}`}
-                    className="inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-bold transition-all hover:bg-white/80 hover:shadow-sm px-5 py-2.5 rounded-2xl backdrop-blur-sm border border-transparent hover:border-pink-200 mb-8"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                    <span>กลับหน้าข้อมูลนักเรียน</span>
-                </Link>
+                    label="กลับหน้าข้อมูลนักเรียน"
+                />
 
-                <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl p-8 md:p-12 border border-white/60 relative overflow-hidden">
+                <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl p-8 md:p-12 border border-pink-200 relative overflow-hidden">
                     <div
                         className={`absolute top-0 left-0 w-full h-3 bg-linear-to-r ${config.gradient}`}
                     />

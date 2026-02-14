@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 
 interface WorkspaceHeaderProps {
     studentId: string;
@@ -27,14 +27,10 @@ export function WorkspaceHeader({
 }: WorkspaceHeaderProps) {
     return (
         <>
-            {/* Back Button */}
-            <Link
+            <BackButton
                 href={`/students/${studentId}`}
-                className="inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-bold transition-all hover:bg-pink-50 px-4 py-2 rounded-full mb-6"
-            >
-                <ArrowLeft className="w-5 h-5" />
-                <span>กลับหน้าข้อมูลนักเรียน</span>
-            </Link>
+                label="กลับหน้าข้อมูลนักเรียน"
+            />
 
             {/* Activity Header */}
             <div className="text-center mb-10">

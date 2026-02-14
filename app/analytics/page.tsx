@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { BarChart3, ArrowLeft } from "lucide-react";
+import { BarChart3 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { requireAuth } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
@@ -40,8 +40,13 @@ export default async function AnalyticsPage() {
             </div>
 
             <div className="max-w-7xl mx-auto space-y-6 relative z-10">
+                <BackButton
+                    href="/dashboard"
+                    label="กลับหน้าหลัก"
+                    className="mb-4"
+                />
                 {/* Header */}
-                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 sm:p-8 border border-white/60 overflow-hidden ring-1 ring-pink-50 group">
+                <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] p-6 sm:p-8 border border-pink-200 overflow-hidden ring-1 ring-white/80 group">
                     {/* Gradient accent bottom */}
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
                     {/* Top shimmer */}
@@ -66,13 +71,6 @@ export default async function AnalyticsPage() {
                                 สรุปข้อมูลการคัดกรองสุขภาพจิตนักเรียน (PHQ-A)
                             </p>
                         </div>
-                        <Link
-                            href="/dashboard"
-                            className="px-5 py-2 text-gray-500 hover:text-pink-600 font-medium rounded-full hover:bg-pink-50/80 transition-all duration-300 flex items-center gap-2 group/back"
-                        >
-                            <ArrowLeft className="w-4 h-4 group-hover/back:-translate-x-0.5 transition-transform duration-300" />{" "}
-                            กลับหน้าหลัก
-                        </Link>
                     </div>
                 </div>
 

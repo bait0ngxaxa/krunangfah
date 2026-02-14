@@ -1,5 +1,6 @@
-import { ArrowLeft, Shield } from "lucide-react";
-import Link from "next/link";
+import { Shield } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
+
 import { requireAdmin } from "@/lib/session";
 import { getWhitelistEntries } from "@/lib/actions/whitelist.actions";
 import { WhitelistManager } from "@/components/admin/WhitelistManager";
@@ -22,19 +23,10 @@ export default async function WhitelistPage() {
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
             <div className="max-w-4xl mx-auto relative z-10">
-                {/* Back Button */}
-                <div className="mb-6">
-                    <Link
-                        href="/dashboard"
-                        className="group inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-medium transition-all hover:bg-white/80 hover:shadow-sm px-4 py-2 rounded-full border border-transparent hover:border-pink-200"
-                    >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        กลับหน้าหลัก
-                    </Link>
-                </div>
+                <BackButton href="/dashboard" label="กลับหน้าหลัก" />
 
                 {/* Header */}
-                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-5 sm:p-6 mb-8 overflow-hidden group">
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 p-5 sm:p-6 mb-8 overflow-hidden group">
                     {/* Gradient accent bottom border */}
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
                     {/* Top shimmer */}

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, Target, Rocket } from "lucide-react";
+import { Target, Rocket } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import type { Activity, ColorTheme } from "@/lib/config/help-page-config";
 import { HelpPageHeader } from "./HelpPageHeader";
 import { ActivityCard } from "./ActivityCard";
@@ -30,16 +31,12 @@ export function ActivityView({
             </div>
 
             <div className="max-w-5xl mx-auto relative z-10">
-                {/* Back Button */}
-                <Link
+                <BackButton
                     href={`/students/${studentId}`}
-                    className="inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-bold transition-all hover:bg-pink-50 px-4 py-2 rounded-full mb-6"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                    <span>กลับหน้าข้อมูลนักเรียน</span>
-                </Link>
+                    label="กลับหน้าข้อมูลนักเรียน"
+                />
 
-                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 relative overflow-hidden animate-fade-in-up">
+                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 relative overflow-hidden animate-fade-in-up">
                     <div
                         className={`absolute top-0 left-0 w-full h-1.5 bg-linear-to-r ${config.gradient}`}
                     />

@@ -9,6 +9,7 @@ import {
     Lightbulb,
     Hospital,
 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { getStudentDetail } from "@/lib/actions/student";
 import { COLOR_CONFIG } from "@/lib/config/help-page-config";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
@@ -47,18 +48,14 @@ export default async function ConversationGuidelinesPage({
             </div>
 
             <div className="max-w-4xl mx-auto relative z-10">
-                {/* Back Button */}
-                <Link
+                <BackButton
                     href={`/students/${studentId}/help`}
-                    className="group inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-bold transition-all hover:bg-white/80 hover:shadow-sm px-4 py-2 rounded-xl backdrop-blur-sm border border-transparent hover:border-pink-200 mb-6"
-                >
-                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                    <span>กลับหน้าขั้นตอนการช่วยเหลือ</span>
-                </Link>
+                    label="กลับหน้าขั้นตอนการช่วยเหลือ"
+                />
 
-                <div className="relative bg-white/90 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 overflow-hidden animate-fade-in-up">
+                <div className="relative bg-white/90 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 overflow-hidden animate-fade-in-up">
                     {/* Corner decoration */}
-                    <div className="absolute -top-12 -right-12 w-28 h-28 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-rose-200/45 to-pink-300/35 rounded-full blur-xl pointer-events-none" />
                     {/* Shimmer */}
                     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
 

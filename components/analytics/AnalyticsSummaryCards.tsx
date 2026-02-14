@@ -27,7 +27,7 @@ function SummaryCard({
     valueColor: string;
 }) {
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-5 overflow-hidden group hover:shadow-xl hover:shadow-pink-200/40 hover:-translate-y-1 hover:ring-pink-100 transition-all duration-300 cursor-default">
+        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-5 overflow-hidden group hover:shadow-[0_8px_24px_-4px_rgba(244,114,182,0.25),0_4px_12px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-pink-300 hover:ring-pink-100 transition-all duration-300 cursor-default">
             {/* Decorative gradient corner */}
             <div
                 className={`absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br ${accentFrom} ${accentTo} rounded-full blur-lg group-hover:scale-150 transition-transform duration-500 pointer-events-none`}

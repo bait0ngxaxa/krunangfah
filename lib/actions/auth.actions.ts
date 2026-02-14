@@ -8,7 +8,7 @@
 import { headers } from "next/headers";
 import { createUser } from "@/lib/user";
 import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
-import { RATE_LIMIT_REGISTRATION } from "@/constants/rate-limit";
+import { RATE_LIMIT_REGISTRATION } from "@/lib/constants/rate-limit";
 import type { SignUpCredentials, AuthResponse } from "@/types/auth.types";
 
 // Module-level singleton: 3 registration attempts per hour per IP
@@ -29,9 +29,10 @@ export async function registerUser(
 
     if (!rateLimitResult.allowed) {
         const minutes = Math.ceil(rateLimitResult.retryAfterSeconds / 60);
-        const timeMessage = minutes > 1
-            ? `${minutes} นาที`
-            : `${rateLimitResult.retryAfterSeconds} วินาที`;
+        const timeMessage =
+            minutes > 1
+                ? `${minutes} นาที`
+                : `${rateLimitResult.retryAfterSeconds} วินาที`;
 
         return {
             success: false,

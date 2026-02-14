@@ -5,7 +5,7 @@ import type { RateLimitResult } from "@/types/rate-limit.types";
 import {
     RATE_LIMIT_AUTH_SIGNIN,
     RATE_LIMIT_AUTH_GENERAL,
-} from "@/constants/rate-limit";
+} from "@/lib/constants/rate-limit";
 
 // Rate limiter singletons (persist across requests)
 const signinLimiter = createRateLimiter(RATE_LIMIT_AUTH_SIGNIN);
@@ -28,7 +28,12 @@ const adminOnlyRoutes = ["/teachers/add", "/teachers/manage"];
 const systemAdminOnlyRoutes = ["/admin/whitelist"];
 
 // Routes สำหรับ guest เท่านั้น (ถ้า login แล้วจะ redirect ไป dashboard)
-const guestOnlyRoutes = ["/signin", "/signup", "/forgot-password", "/reset-password"];
+const guestOnlyRoutes = [
+    "/signin",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+];
 
 /**
  * Build a 429 Too Many Requests response with rate limit headers

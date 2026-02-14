@@ -113,9 +113,9 @@ function RiskPieChartComponent({
 
     if (chartData.length === 0) {
         return (
-            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-8 flex flex-col items-center justify-center min-h-[300px] overflow-hidden">
+            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 p-8 flex flex-col items-center justify-center min-h-[300px] overflow-hidden">
                 {/* Decorations */}
-                <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
                 <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
 
                 {title && (
@@ -138,11 +138,11 @@ function RiskPieChartComponent({
 
     return (
         <div
-            className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 p-4 sm:p-6 pb-6 sm:pb-8 overflow-hidden"
+            className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 p-4 sm:p-6 pb-6 sm:pb-8 overflow-hidden"
             style={{ contain: "layout style paint" }}
         >
             {/* Corner decoration */}
-            <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
             {/* Shimmer */}
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
 

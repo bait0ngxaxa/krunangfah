@@ -34,7 +34,7 @@ export function ProgressIndicator({
     };
 
     return (
-        <div className="mb-10 bg-white/60 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-white/60 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50">
+        <div className="mb-10 bg-white/60 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-pink-200 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50">
             <h3 className="text-xl font-bold mb-8 sm:mb-10 flex items-center gap-2">
                 <div className="w-10 h-10 rounded-xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white shadow-md shadow-pink-200">
                     <BarChart3 className="w-6 h-6" />

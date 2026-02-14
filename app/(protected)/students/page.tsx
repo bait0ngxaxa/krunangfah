@@ -1,8 +1,9 @@
-import { ArrowLeft, GraduationCap, FileUp, ClipboardList } from "lucide-react";
+import { GraduationCap, FileUp, ClipboardList } from "lucide-react";
 import { getStudents } from "@/lib/actions/student";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { requireAuth } from "@/lib/session";
 import { StudentDashboard } from "@/components/student";
+import { BackButton } from "@/components/ui/BackButton";
 import Link from "next/link";
 
 export default async function MyStudentsPage() {
@@ -27,19 +28,10 @@ export default async function MyStudentsPage() {
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
             <div className="max-w-4xl mx-auto relative z-10">
-                {/* Back Button */}
-                <div className="mb-5">
-                    <Link
-                        href="/dashboard"
-                        className="inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-medium transition-all hover:bg-pink-50/80 px-4 py-2 rounded-full group"
-                    >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-300" />
-                        <span>กลับหน้า Dashboard</span>
-                    </Link>
-                </div>
+                <BackButton href="/dashboard" />
 
                 {/* Header */}
-                <div className="relative flex justify-between items-center mb-6 bg-white/80 backdrop-blur-md p-5 sm:p-6 rounded-2xl shadow-lg shadow-pink-100/30 border border-white/60 ring-1 ring-pink-50 overflow-hidden group">
+                <div className="relative flex justify-between items-center mb-6 bg-white/90 backdrop-blur-md p-5 sm:p-6 rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 overflow-hidden group">
                     {/* Gradient accent bottom */}
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
                     {/* Top shimmer */}
@@ -77,7 +69,7 @@ export default async function MyStudentsPage() {
 
                 {/* Main Content */}
                 {students.length === 0 && !isAdmin ? (
-                    <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-12 border border-white/60 ring-1 ring-pink-50 text-center overflow-hidden">
+                    <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-12 border border-pink-200 ring-1 ring-pink-50 text-center overflow-hidden">
                         {/* Gradient accent top */}
                         <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
                         {/* Corner decoration */}

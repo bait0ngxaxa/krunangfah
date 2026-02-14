@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, BarChart3, Target } from "lucide-react";
+import { BarChart3, Target } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { getStudentDetail } from "@/lib/actions/student";
 import {
     StudentProfileCard,
@@ -122,16 +122,7 @@ export default async function StudentDetailPage({
             </div>
 
             <div className="max-w-6xl mx-auto relative z-10">
-                {/* Back Button */}
-                <div className="mb-6">
-                    <Link
-                        href="/students"
-                        className="group inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-medium transition-all hover:bg-white/80 hover:shadow-sm px-4 py-2 rounded-full border border-transparent hover:border-pink-200"
-                    >
-                        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                        <span>กลับหน้านักเรียน</span>
-                    </Link>
-                </div>
+                <BackButton href="/students" label="กลับหน้านักเรียน" />
 
                 {/* Content */}
                 <div className="space-y-6">

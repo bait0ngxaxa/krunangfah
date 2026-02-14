@@ -8,13 +8,13 @@ import {
     HEALTHY_EMOTION_TOOLS,
     COLOR_STYLES,
     BORDER_STYLES,
-} from "@/constants/healthyEmotionTools";
+} from "@/lib/constants/healthyEmotionTools";
 
 export function ToolsIntroTab() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-white/60 shadow-lg shadow-pink-100/50">
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-pink-200 shadow-lg shadow-pink-100/50">
                 <h2 className="text-2xl font-bold bg-linear-to-r from-purple-500 to-pink-600 bg-clip-text text-transparent mb-2 flex items-center gap-2">
                     <Package className="w-6 h-6 text-purple-500" />
                     เครื่องมือใน Healthy Emotion Box

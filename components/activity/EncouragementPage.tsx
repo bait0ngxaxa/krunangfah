@@ -129,7 +129,7 @@ export function EncouragementPage({
 
                 {/* Tips Section */}
                 <div
-                    className={`bg-white/70 backdrop-blur-xl rounded-3xl p-8 md:p-10 shadow-2xl border border-white/60 mb-12 transition-all duration-1000 mx-4 transform hover:scale-[1.02] ${
+                    className={`bg-white/70 backdrop-blur-xl rounded-3xl p-8 md:p-10 shadow-2xl border border-pink-200 mb-12 transition-all duration-1000 mx-4 transform hover:scale-[1.02] ${
                         showTips
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"

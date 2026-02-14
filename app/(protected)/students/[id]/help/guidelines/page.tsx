@@ -2,7 +2,9 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Pin } from "lucide-react";
+
+import { BookOpen, Pin } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function GuidelinesPage() {
     const params = useParams();
@@ -16,18 +18,11 @@ export default function GuidelinesPage() {
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-6 px-4">
             <div className="max-w-4xl mx-auto">
-                {/* Back Button */}
-                <Link
-                    href={startHref}
-                    className="group inline-flex items-center gap-2 text-gray-500 hover:text-pink-600 font-medium transition-all hover:bg-white/80 hover:shadow-sm px-4 py-2 rounded-full border border-transparent hover:border-pink-200 mb-6"
-                >
-                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                    <span>กลับหน้าใบงาน</span>
-                </Link>
+                <BackButton href={startHref} label="กลับหน้าใบงาน" />
 
-                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-white/60 ring-1 ring-pink-50 overflow-hidden">
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 overflow-hidden">
                     {/* Corner decoration */}
-                    <div className="absolute -top-12 -right-12 w-28 h-28 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-rose-200/45 to-pink-300/35 rounded-full blur-xl pointer-events-none" />
                     <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-pink-200/20 to-rose-300/15 rounded-full blur-xl pointer-events-none" />
                     {/* Shimmer */}
                     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
