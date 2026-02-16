@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, CheckCircle2, ArrowRight, Eye, FileText } from "lucide-react";
 import { useActivityWorkspace } from "./useActivityWorkspace";
 import {
     PreviewModal,
@@ -39,9 +39,12 @@ export function ActivityWorkspace({
         currentProgress,
         currentActivityNumber,
         currentActivity,
+        pendingCompletion,
+        completedUploads,
+        handleConfirmComplete,
         handleFileSelect,
         handleSaveNotes,
-    } = useActivityWorkspace({ studentId, riskLevel, activityProgress });
+    } = useActivityWorkspace({ studentId, riskLevel, activityProgress, phqResultId });
 
     // Get download URLs for current activity
     const downloadUrls = currentActivityNumber
@@ -105,7 +108,58 @@ export function ActivityWorkspace({
                         />
 
                         {/* Upload & Teacher Notes — side by side */}
-                        {currentProgress && (
+                        {pendingCompletion ? (
+                            <div className="flex flex-col items-center gap-5 py-6 px-4 bg-green-50 border-2 border-green-200 rounded-2xl">
+                                <div className="p-3 bg-green-100 rounded-full">
+                                    <CheckCircle2 className="w-10 h-10 text-green-600" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-800">
+                                    อัปโหลดใบงานครบแล้ว!
+                                </h3>
+
+                                {/* รายการไฟล์ที่อัปโหลด (เก็บไว้ใน state) */}
+                                {completedUploads.length > 0 && (
+                                    <div className="w-full space-y-2">
+                                        {completedUploads.map((upload) => (
+                                            <div
+                                                key={upload.id}
+                                                className="flex items-center justify-between bg-white p-3 rounded-xl border border-green-200 hover:shadow-md transition-all"
+                                            >
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                    <FileText className="w-5 h-5 text-green-600" />
+                                                    <span className="text-gray-700 font-medium truncate">
+                                                        {upload.fileName}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() =>
+                                                        setPreviewFile({
+                                                            url: upload.fileUrl,
+                                                            name: upload.fileName,
+                                                        })
+                                                    }
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg text-xs font-bold hover:bg-green-600 transition-all shadow-sm hover:shadow-md shrink-0"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    พรีวิว
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <p className="text-gray-500 text-sm">
+                                    กดยืนยันเพื่อดำเนินการต่อ
+                                </p>
+                                <button
+                                    onClick={handleConfirmComplete}
+                                    className={`px-8 py-3 bg-linear-to-r ${config.gradient} text-white rounded-xl font-bold text-lg hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md flex items-center gap-2`}
+                                >
+                                    ยืนยันจบกิจกรรม
+                                    <ArrowRight className="w-5 h-5" />
+                                </button>
+                            </div>
+                        ) : currentProgress ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Upload Section */}
                                 <UploadSection
@@ -127,7 +181,7 @@ export function ActivityWorkspace({
                                     isSaving={savingNotes}
                                 />
                             </div>
-                        )}
+                        ) : null}
 
                         {/* Conversation Button */}
                         <div className="pt-6 border-t border-pink-100 mt-8">

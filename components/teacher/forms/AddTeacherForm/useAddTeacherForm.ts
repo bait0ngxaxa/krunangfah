@@ -10,11 +10,12 @@ import {
     type TeacherInviteFormData,
 } from "@/lib/validations/teacher-invite.validation";
 import { createTeacherInvite } from "@/lib/actions/teacher-invite";
-import { getAcademicYears } from "@/lib/actions/teacher.actions";
 import { ADMIN_ADVISORY_CLASS } from "./constants";
 import type { AcademicYear, UseAddTeacherFormReturn } from "./types";
 
-export function useAddTeacherForm(): UseAddTeacherFormReturn {
+export function useAddTeacherForm(
+    academicYears: AcademicYear[],
+): UseAddTeacherFormReturn {
     const router = useRouter();
 
     // === State ===
@@ -22,7 +23,6 @@ export function useAddTeacherForm(): UseAddTeacherFormReturn {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [inviteLink, setInviteLink] = useState("");
-    const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
 
     // === Form Setup ===
     const form = useForm<TeacherInviteFormData>({
@@ -32,15 +32,6 @@ export function useAddTeacherForm(): UseAddTeacherFormReturn {
     // === Computed Values ===
     const userRoleValue = form.watch("userRole") || "";
     const advisoryClassValue = form.watch("advisoryClass") || "";
-
-    // === Effects ===
-    useEffect(() => {
-        const loadAcademicYears = async (): Promise<void> => {
-            const years = await getAcademicYears();
-            setAcademicYears(years);
-        };
-        loadAcademicYears();
-    }, []);
 
     useEffect(() => {
         if (userRoleValue === "school_admin") {

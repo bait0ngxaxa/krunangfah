@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { BarChart3 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { requireAuth } from "@/lib/session";
@@ -5,6 +6,7 @@ import { redirect } from "next/navigation";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { AnalyticsContent } from "@/components/analytics";
+import { AnalyticsSkeleton } from "@/components/analytics/AnalyticsSkeleton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -13,23 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AnalyticsPage() {
-    // Start independent promises immediately (avoid waterfall)
-    const sessionPromise = requireAuth();
-    const analyticsPromise = getAnalyticsSummary();
-
-    const session = await sessionPromise;
-    const userRole = session.user.role;
-    const isSystemAdmin = userRole === "system_admin";
-
-    // Parallelize analytics + schools fetch
-    const [analyticsData, schools] = await Promise.all([
-        analyticsPromise,
-        isSystemAdmin ? getSchools() : Promise.resolve([]),
-    ]);
-
-    if (!analyticsData) {
-        redirect("/dashboard");
-    }
+    const session = await requireAuth();
 
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-6 px-4 relative overflow-hidden">
@@ -45,7 +31,7 @@ export default async function AnalyticsPage() {
                     label="กลับหน้าหลัก"
                     className="mb-4"
                 />
-                {/* Header */}
+                {/* Header (renders instantly) */}
                 <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] p-6 sm:p-8 border border-pink-200 overflow-hidden ring-1 ring-white/80 group">
                     {/* Gradient accent bottom */}
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
@@ -74,14 +60,40 @@ export default async function AnalyticsPage() {
                     </div>
                 </div>
 
-                {/* Analytics Content */}
-                <AnalyticsContent
-                    initialData={analyticsData}
-                    isSchoolAdmin={userRole === "school_admin"}
-                    schools={isSystemAdmin ? schools : undefined}
-                    userRole={userRole}
-                />
+                {/* Analytics Content (streamed via Suspense) */}
+                <Suspense fallback={<AnalyticsSkeleton />}>
+                    <AnalyticsData session={session} />
+                </Suspense>
             </div>
         </div>
+    );
+}
+
+/* ─── Async Content (streamed via Suspense) ─── */
+
+async function AnalyticsData({
+    session,
+}: {
+    session: Awaited<ReturnType<typeof requireAuth>>;
+}) {
+    const userRole = session.user.role;
+    const isSystemAdmin = userRole === "system_admin";
+
+    const [analyticsData, schools] = await Promise.all([
+        getAnalyticsSummary(),
+        isSystemAdmin ? getSchools() : Promise.resolve([]),
+    ]);
+
+    if (!analyticsData) {
+        redirect("/dashboard");
+    }
+
+    return (
+        <AnalyticsContent
+            initialData={analyticsData}
+            isSchoolAdmin={userRole === "school_admin"}
+            schools={isSystemAdmin ? schools : undefined}
+            userRole={userRole}
+        />
     );
 }

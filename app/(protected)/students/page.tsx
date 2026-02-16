@@ -1,25 +1,19 @@
+import { Suspense } from "react";
 import { GraduationCap, FileUp, ClipboardList } from "lucide-react";
 import { getStudents } from "@/lib/actions/student";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { requireAuth } from "@/lib/session";
-import { StudentDashboard } from "@/components/student";
+import {
+    StudentDashboard,
+    StudentDashboardSkeleton,
+} from "@/components/student";
 import { BackButton } from "@/components/ui/BackButton";
 import Link from "next/link";
 
 export default async function MyStudentsPage() {
-    // Start independent promises immediately (avoid waterfall)
-    const sessionPromise = requireAuth();
-    const studentsPromise = getStudents({ limit: 10000 });
-
-    const session = await sessionPromise;
+    const session = await requireAuth();
     const userRole = session.user.role;
     const isAdmin = userRole === "system_admin";
-
-    // Parallelize students + schools fetch
-    const [{ students }, schools] = await Promise.all([
-        studentsPromise,
-        isAdmin ? getSchools() : Promise.resolve([]),
-    ]);
 
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-6 px-4 relative overflow-hidden">
@@ -67,46 +61,68 @@ export default async function MyStudentsPage() {
                     ) : null}
                 </div>
 
-                {/* Main Content */}
-                {students.length === 0 && !isAdmin ? (
-                    <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-12 border border-pink-200 ring-1 ring-pink-50 text-center overflow-hidden">
-                        {/* Gradient accent top */}
-                        <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
-                        {/* Corner decoration */}
-                        <div className="absolute -top-12 -right-12 w-32 h-32 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
-                        <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-linear-to-br from-pink-200/20 to-rose-300/15 rounded-full blur-xl pointer-events-none" />
-
-                        <div className="relative py-8">
-                            <div className="relative w-24 h-24 mx-auto mb-6">
-                                <div className="absolute inset-0 rounded-full bg-pink-300 blur-xl opacity-30" />
-                                <div className="relative w-full h-full rounded-full bg-linear-to-br from-pink-50 to-rose-50 flex items-center justify-center border-4 border-white shadow-inner ring-1 ring-pink-100/50">
-                                    <ClipboardList className="w-10 h-10 text-pink-400" />
-                                </div>
-                            </div>
-                            <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                                ยังไม่มีข้อมูลนักเรียน
-                            </h2>
-                            <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                                เริ่มต้นด้วยการนำเข้าข้อมูลนักเรียนจากไฟล์ Excel
-                                เพื่อเริ่มติดตามและดูแลนักเรียนของคุณ
-                            </p>
-                            <Link
-                                href="/students/import"
-                                className="inline-flex items-center gap-2 px-8 py-3.5 bg-linear-to-r from-rose-400 to-pink-500 text-white rounded-full hover:from-rose-500 hover:to-pink-600 transition-all font-bold shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 hover:-translate-y-1 duration-300"
-                            >
-                                <FileUp className="w-5 h-5" />{" "}
-                                นำเข้าข้อมูลนักเรียน
-                            </Link>
-                        </div>
-                    </div>
-                ) : (
-                    <StudentDashboard
-                        students={students}
-                        schools={isAdmin ? schools : undefined}
-                        userRole={userRole}
-                    />
-                )}
+                {/* Main Content (streamed via Suspense) */}
+                <Suspense fallback={<StudentDashboardSkeleton />}>
+                    <StudentsContent userRole={userRole} isAdmin={isAdmin} />
+                </Suspense>
             </div>
         </div>
+    );
+}
+
+/* ─── Async Content (streamed via Suspense) ─── */
+
+async function StudentsContent({
+    userRole,
+    isAdmin,
+}: {
+    userRole: string;
+    isAdmin: boolean;
+}) {
+    const [{ students }, schools] = await Promise.all([
+        getStudents({ limit: 10000 }),
+        isAdmin ? getSchools() : Promise.resolve([]),
+    ]);
+
+    if (students.length === 0 && !isAdmin) {
+        return (
+            <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-12 border border-pink-200 ring-1 ring-pink-50 text-center overflow-hidden">
+                {/* Gradient accent top */}
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
+                {/* Corner decoration */}
+                <div className="absolute -top-12 -right-12 w-32 h-32 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
+                <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-linear-to-br from-pink-200/20 to-rose-300/15 rounded-full blur-xl pointer-events-none" />
+
+                <div className="relative py-8">
+                    <div className="relative w-24 h-24 mx-auto mb-6">
+                        <div className="absolute inset-0 rounded-full bg-pink-300 blur-xl opacity-30" />
+                        <div className="relative w-full h-full rounded-full bg-linear-to-br from-pink-50 to-rose-50 flex items-center justify-center border-4 border-white shadow-inner ring-1 ring-pink-100/50">
+                            <ClipboardList className="w-10 h-10 text-pink-400" />
+                        </div>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                        ยังไม่มีข้อมูลนักเรียน
+                    </h2>
+                    <p className="text-gray-500 mb-8 max-w-md mx-auto">
+                        เริ่มต้นด้วยการนำเข้าข้อมูลนักเรียนจากไฟล์ Excel
+                        เพื่อเริ่มติดตามและดูแลนักเรียนของคุณ
+                    </p>
+                    <Link
+                        href="/students/import"
+                        className="inline-flex items-center gap-2 px-8 py-3.5 bg-linear-to-r from-rose-400 to-pink-500 text-white rounded-full hover:from-rose-500 hover:to-pink-600 transition-all font-bold shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 hover:-translate-y-1 duration-300"
+                    >
+                        <FileUp className="w-5 h-5" /> นำเข้าข้อมูลนักเรียน
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <StudentDashboard
+            students={students}
+            schools={isAdmin ? schools : undefined}
+            userRole={userRole}
+        />
     );
 }

@@ -111,7 +111,7 @@ export function DashboardHeader({
                             return (
                                 <div
                                     key={stat.label}
-                                    className={`inline-flex items-center gap-2 px-3 py-2 ${colors.bg} rounded-xl border ${colors.border} shadow-sm`}
+                                    className={`inline-flex items-center gap-2 px-3 mt-3 py-2 ${colors.bg} rounded-xl border ${colors.border} shadow-sm`}
                                 >
                                     <Icon
                                         className={`w-3.5 h-3.5 ${colors.icon} shrink-0`}

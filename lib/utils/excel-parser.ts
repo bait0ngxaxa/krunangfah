@@ -49,7 +49,7 @@ export async function parseExcelBuffer(
         });
 
         // Validate required headers
-        const requiredHeaders = ["ชื่อ", "นามสกุล", "ห้อง"];
+        const requiredHeaders = ["รหัสนักเรียน", "ชื่อ", "นามสกุล", "ห้อง"];
         for (const header of requiredHeaders) {
             if (!headers.includes(header)) {
                 errors.push(`ไม่พบคอลัมน์ "${header}" ในไฟล์`);
@@ -88,12 +88,22 @@ export async function parseExcelBuffer(
                     );
                 };
 
-                const parseGender = (value: string): ParsedGender | undefined => {
+                const parseGender = (
+                    value: string,
+                ): ParsedGender | undefined => {
                     const normalized = value.trim().toLowerCase();
-                    if (normalized === "ชาย" || normalized === "male" || normalized === "m") {
+                    if (
+                        normalized === "ชาย" ||
+                        normalized === "male" ||
+                        normalized === "m"
+                    ) {
                         return "MALE";
                     }
-                    if (normalized === "หญิง" || normalized === "female" || normalized === "f") {
+                    if (
+                        normalized === "หญิง" ||
+                        normalized === "female" ||
+                        normalized === "f"
+                    ) {
                         return "FEMALE";
                     }
                     return undefined;
@@ -105,7 +115,10 @@ export async function parseExcelBuffer(
                 const gender = parseGender(genderRaw);
                 const ageRaw = getCell("อายุ");
                 const ageParsed = parseInt(ageRaw, 10);
-                const age = !isNaN(ageParsed) && ageParsed > 0 && ageParsed <= 100 ? ageParsed : undefined;
+                const age =
+                    !isNaN(ageParsed) && ageParsed > 0 && ageParsed <= 100
+                        ? ageParsed
+                        : undefined;
                 const studentClass = getCell("ห้อง");
                 const studentId = getCell("รหัสนักเรียน");
 
@@ -160,17 +173,17 @@ export async function parseExcelBuffer(
 
         // Check for duplicate studentId within the Excel file
         const studentIdSet = new Set<string>();
-        const duplicateStudentIds: string[] = [];
+        const duplicateSet = new Set<string>();
 
         data.forEach((student) => {
             if (studentIdSet.has(student.studentId)) {
-                if (!duplicateStudentIds.includes(student.studentId)) {
-                    duplicateStudentIds.push(student.studentId);
-                }
+                duplicateSet.add(student.studentId);
             } else {
                 studentIdSet.add(student.studentId);
             }
         });
+
+        const duplicateStudentIds = [...duplicateSet];
 
         if (duplicateStudentIds.length > 0) {
             errors.push(

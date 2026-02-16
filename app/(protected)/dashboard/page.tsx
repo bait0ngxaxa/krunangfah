@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { requireAuth } from "@/lib/session";
 import {
     Users,
@@ -12,10 +13,12 @@ import {
     DashboardHeader,
     ActionCard,
     DashboardActionList,
+    DashboardContentSkeleton,
 } from "@/components/dashboard";
 import type { StatItem } from "@/components/dashboard/DashboardHeader";
 
 import type { Metadata } from "next";
+import type { Session } from "next-auth";
 
 export const metadata: Metadata = {
     title: "หน้าหลัก | โครงการครูนางฟ้า",
@@ -93,10 +96,21 @@ function buildTeacherStats(
 /* ─── Page Component ─── */
 
 export default async function DashboardPage() {
-    const [session, dashboardData] = await Promise.all([
-        requireAuth(),
-        getDashboardData(),
-    ]);
+    const session = await requireAuth();
+
+    return (
+        <DashboardShell>
+            <Suspense fallback={<DashboardContentSkeleton />}>
+                <DashboardContent session={session} />
+            </Suspense>
+        </DashboardShell>
+    );
+}
+
+/* ─── Async Content (streamed via Suspense) ─── */
+
+async function DashboardContent({ session }: { session: Session }) {
+    const dashboardData = await getDashboardData();
 
     const { teacher, studentCount } = dashboardData;
     const userRole = session.user.role;
@@ -109,7 +123,7 @@ export default async function DashboardPage() {
     // ─── System Admin ───
     if (isSystemAdmin) {
         return (
-            <DashboardShell>
+            <>
                 <DashboardHeader
                     teacherName={session.user.name || "System Admin"}
                     schoolName="ผู้ดูแลระบบ (ทุกโรงเรียน)"
@@ -120,33 +134,31 @@ export default async function DashboardPage() {
                     userRole={userRole}
                     studentCount={studentCount}
                 />
-            </DashboardShell>
+            </>
         );
     }
 
     // ─── No Teacher Profile ───
     if (!teacher) {
         return (
-            <DashboardShell>
-                <div className="text-center py-8">
-                    <div className="inline-flex items-center justify-center p-3 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg ring-1 ring-white/60 mb-5">
-                        <Sparkles className="w-8 h-8 text-pink-400" />
-                    </div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
-                        ยินดีต้อนรับสู่โครงการครูนางฟ้า
-                    </h1>
-                    <p className="text-base text-gray-500 mb-8">
-                        กรุณากรอกข้อมูลครูเพื่อเริ่มใช้งานระบบ
-                    </p>
-                    <ActionCard
-                        title="เพิ่มข้อมูลครู"
-                        description="กรอกข้อมูลส่วนตัวและบทบาทในโครงการ"
-                        buttonText="กรอกข้อมูลครู"
-                        href="/teacher-profile"
-                        variant="primary"
-                    />
+            <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center p-3 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg ring-1 ring-white/60 mb-5">
+                    <Sparkles className="w-8 h-8 text-pink-400" />
                 </div>
-            </DashboardShell>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
+                    ยินดีต้อนรับสู่โครงการครูนางฟ้า
+                </h1>
+                <p className="text-base text-gray-500 mb-8">
+                    กรุณากรอกข้อมูลครูเพื่อเริ่มใช้งานระบบ
+                </p>
+                <ActionCard
+                    title="เพิ่มข้อมูลครู"
+                    description="กรอกข้อมูลส่วนตัวและบทบาทในโครงการ"
+                    buttonText="กรอกข้อมูลครู"
+                    href="/teacher-profile"
+                    variant="primary"
+                />
+            </div>
         );
     }
 
@@ -157,7 +169,7 @@ export default async function DashboardPage() {
     const academicYearText = `${teacher.academicYear.year} เทอม ${teacher.academicYear.semester}`;
 
     return (
-        <DashboardShell>
+        <>
             <DashboardHeader
                 teacherName={teacherName}
                 schoolName={schoolName}
@@ -179,7 +191,7 @@ export default async function DashboardPage() {
                 userRole={userRole}
                 studentCount={studentCount}
             />
-        </DashboardShell>
+        </>
     );
 }
 

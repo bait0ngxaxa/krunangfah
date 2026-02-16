@@ -1,5 +1,6 @@
 import { requireAuth } from "@/lib/session";
 import { AddTeacherForm } from "@/components/teacher";
+import { getAcademicYears } from "@/lib/actions/teacher.actions";
 import { UserPlus, Info } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import type { Metadata } from "next";
@@ -11,6 +12,9 @@ export const metadata: Metadata = {
 
 export default async function AddTeacherPage() {
     await requireAuth();
+
+    // Pre-fetch academic years on the server
+    const academicYears = await getAcademicYears();
 
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-6 px-4 relative overflow-hidden">
@@ -68,7 +72,7 @@ export default async function AddTeacherPage() {
                             สำหรับให้ครูผู้ดูแลใช้ในการตั้งรหัสผ่าน
                         </span>
                     </p>
-                    <AddTeacherForm />
+                    <AddTeacherForm academicYears={academicYears} />
                 </div>
             </div>
         </div>

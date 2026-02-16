@@ -2,7 +2,10 @@ import { GraduationCap } from "lucide-react";
 import { TeacherProfileForm } from "@/components/teacher";
 import { requireAuth } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { getTeacherProfile } from "@/lib/actions/teacher.actions";
+import {
+    getTeacherProfile,
+    getAcademicYears,
+} from "@/lib/actions/teacher.actions";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,6 +21,9 @@ export default async function TeacherProfilePage() {
     if (existingProfile) {
         redirect("/");
     }
+
+    // Pre-fetch academic years on the server
+    const academicYears = await getAcademicYears();
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-rose-50 via-white to-pink-50 px-4 py-12 relative overflow-hidden">
@@ -58,7 +64,7 @@ export default async function TeacherProfilePage() {
 
                 <div className="bg-white/80 backdrop-blur-md py-8 px-8 shadow-xl shadow-pink-100/50 rounded-3xl border border-pink-200 relative ring-1 ring-pink-50">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300 rounded-t-3xl" />
-                    <TeacherProfileForm />
+                    <TeacherProfileForm academicYears={academicYears} />
                 </div>
             </div>
         </div>

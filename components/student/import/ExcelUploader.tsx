@@ -14,24 +14,20 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFile = async (file: File) => {
+        // Validate file type before starting loading state
+        const validTypes = [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel",
+        ];
+        if (!validTypes.includes(file.type) && !file.name.endsWith(".xlsx")) {
+            setError("กรุณาอัพโหลดไฟล์ Excel (.xlsx) เท่านั้น");
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
-            // Validate file type
-            const validTypes = [
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "application/vnd.ms-excel",
-            ];
-            if (
-                !validTypes.includes(file.type) &&
-                !file.name.endsWith(".xlsx")
-            ) {
-                setError("กรุณาอัพโหลดไฟล์ Excel (.xlsx) เท่านั้น");
-                setIsLoading(false);
-                return;
-            }
-
             // Read file
             const buffer = await file.arrayBuffer();
             const result = await parseExcelBuffer(buffer);

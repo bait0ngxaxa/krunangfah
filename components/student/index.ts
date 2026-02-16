@@ -1,8 +1,36 @@
 // Import components
-export * from "./import";
-export * from "./profile";
-export * from "./phq";
-export * from "./activity";
-export * from "./counseling";
-export * from "./dashboard";
-export * from "./help";
+export { ExcelUploader, ImportPreview } from "./import";
+
+// Profile
+export {
+    StudentCard,
+    StudentProfileCard,
+    StudentList,
+    AcademicYearFilter,
+    HospitalReferralButton,
+} from "./profile";
+
+// PHQ
+export { PHQHistoryTable, PHQTrendChart, RiskGroupSection } from "./phq";
+
+// Activity
+export {
+    ActivityProgressTable,
+    WorksheetPreviewButton,
+    WorksheetPreviewModal,
+} from "./activity";
+
+// Counseling
+export { CounselingLogTable, AddCounselingModal } from "./counseling";
+
+// Dashboard
+export { StudentDashboard, StudentDashboardSkeleton } from "./dashboard";
+
+// Help
+export {
+    ActivityCard,
+    ActivityView,
+    ConversationView,
+    HelpPageHeader,
+    ReferralFormModal,
+} from "./help";

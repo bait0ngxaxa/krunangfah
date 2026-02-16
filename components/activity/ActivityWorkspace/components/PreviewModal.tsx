@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { X, FileText, ImageIcon } from "lucide-react";
 import type { PreviewFile } from "../types";
 
@@ -47,13 +46,12 @@ export function PreviewModal({ file, onClose }: PreviewModalProps) {
                         />
                     ) : (
                         <div className="flex justify-center">
-                            <Image
+                            {/* ใช้ <img> เพราะไฟล์ serve ผ่าน API route ที่ต้อง auth — next/image optimization ไม่มี session */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
                                 src={file.url}
                                 alt={file.name}
-                                width={1200}
-                                height={900}
-                                className="w-auto h-auto max-h-[70vh] rounded-xl shadow-lg"
-                                style={{ objectFit: "contain" }}
+                                className="w-auto h-auto max-h-[70vh] rounded-xl shadow-lg object-contain"
                             />
                         </div>
                     )}

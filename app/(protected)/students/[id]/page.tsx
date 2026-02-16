@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { BarChart3, Target } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
@@ -27,7 +28,44 @@ export default async function StudentDetailPage({
     const { id } = await params;
     const { year: selectedYearId } = await searchParams;
 
-    const student = await getStudentDetail(id);
+    return (
+        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-6 px-4 relative overflow-hidden">
+            {/* Decorative Background Elements */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+                <div className="absolute top-10 right-10 w-64 h-64 bg-rose-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
+                <div className="absolute bottom-10 left-10 w-64 h-64 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
+                <div className="absolute top-1/3 left-1/4 w-48 h-48 bg-pink-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow delay-500" />
+            </div>
+
+            <div className="max-w-6xl mx-auto relative z-10">
+                <BackButton href="/students" label="กลับหน้านักเรียน" />
+
+                {/* Content (streamed via Suspense) */}
+                <Suspense fallback={<StudentDetailSkeleton />}>
+                    <StudentDetailContent
+                        studentId={id}
+                        selectedYearId={selectedYearId}
+                    />
+                </Suspense>
+            </div>
+        </div>
+    );
+}
+
+/* ─── Async Content (streamed via Suspense) ─── */
+
+async function StudentDetailContent({
+    studentId,
+    selectedYearId,
+}: {
+    studentId: string;
+    selectedYearId?: string;
+}) {
+    // Parallelize both data fetches (was sequential before)
+    const [student, counselingSessions] = await Promise.all([
+        getStudentDetail(studentId),
+        getCounselingSessions(studentId),
+    ]);
 
     if (!student) {
         notFound();
@@ -41,7 +79,6 @@ export default async function StudentDetailPage({
                 .map((r) => [r.academicYear.id, r.academicYear]),
         ).values(),
     ).sort((a, b) => {
-        // Sort by year desc, then semester desc
         if (a.year !== b.year) return b.year - a.year;
         return b.semester - a.semester;
     });
@@ -54,17 +91,13 @@ export default async function StudentDetailPage({
         : student.phqResults;
 
     const latestResult = filteredPhqResults[0] || null;
-    const counselingSessions = await getCounselingSessions(id);
 
     // Tab 1: PHQ Results (Chart + History)
     const phqResultsTab = (
         <div className="space-y-6">
-            {/* Trend Chart */}
             {filteredPhqResults.length > 0 && (
                 <PHQTrendChart results={filteredPhqResults} />
             )}
-
-            {/* History Table */}
             <PHQHistoryTable results={filteredPhqResults} />
         </div>
     );
@@ -72,10 +105,9 @@ export default async function StudentDetailPage({
     // Tab 2: Activities (Activity Progress + Counseling Log)
     const activitiesTab = (
         <div className="space-y-6">
-            {/* Activity Progress Table */}
             {latestResult && latestResult.academicYear && (
                 <ActivityProgressTable
-                    studentId={id}
+                    studentId={studentId}
                     phqResultId={latestResult.id}
                     riskLevel={latestResult.riskLevel as RiskLevel}
                     assessmentPeriod={{
@@ -85,9 +117,10 @@ export default async function StudentDetailPage({
                     }}
                 />
             )}
-
-            {/* Counseling Log Table */}
-            <CounselingLogTable sessions={counselingSessions} studentId={id} />
+            <CounselingLogTable
+                sessions={counselingSessions}
+                studentId={studentId}
+            />
         </div>
     );
 
@@ -113,42 +146,64 @@ export default async function StudentDetailPage({
     ];
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-6 px-4 relative overflow-hidden">
-            {/* Decorative Background Elements */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-10 right-10 w-64 h-64 bg-rose-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
-                <div className="absolute bottom-10 left-10 w-64 h-64 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
-                <div className="absolute top-1/3 left-1/4 w-48 h-48 bg-pink-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow delay-500" />
+        <div className="space-y-6">
+            <StudentProfileCard student={student} latestResult={latestResult} />
+
+            {latestResult && (
+                <div className="flex justify-end">
+                    <HospitalReferralButton />
+                </div>
+            )}
+
+            {uniqueYears.length > 1 && (
+                <AcademicYearFilter
+                    academicYears={uniqueYears}
+                    currentYearId={selectedYearId}
+                />
+            )}
+
+            <Tabs tabs={tabs} defaultTab="phq-results" />
+        </div>
+    );
+}
+
+/* ─── Skeleton Fallback ─── */
+
+function StudentDetailSkeleton() {
+    return (
+        <div className="space-y-6">
+            {/* Profile Card Skeleton */}
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 border border-pink-200 ring-1 ring-pink-50">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="w-16 h-16 bg-gray-200 rounded-2xl animate-pulse" />
+                    <div className="flex-1">
+                        <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-2" />
+                        <div className="h-4 w-56 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div
+                            key={i}
+                            className="h-16 bg-gray-100 rounded-xl animate-pulse"
+                        />
+                    ))}
+                </div>
             </div>
 
-            <div className="max-w-6xl mx-auto relative z-10">
-                <BackButton href="/students" label="กลับหน้านักเรียน" />
-
-                {/* Content */}
-                <div className="space-y-6">
-                    {/* Profile Card */}
-                    <StudentProfileCard
-                        student={student}
-                        latestResult={latestResult}
-                    />
-
-                    {/* Hospital Referral Button */}
-                    {latestResult && (
-                        <div className="flex justify-end">
-                            <HospitalReferralButton />
-                        </div>
-                    )}
-
-                    {/* Academic Year Filter */}
-                    {uniqueYears.length > 1 && (
-                        <AcademicYearFilter
-                            academicYears={uniqueYears}
-                            currentYearId={selectedYearId}
+            {/* Tabs Skeleton */}
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 border border-pink-200 ring-1 ring-pink-50">
+                <div className="flex gap-4 mb-6">
+                    <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
+                    <div className="h-10 w-40 bg-gray-200 rounded-lg animate-pulse" />
+                </div>
+                <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                        <div
+                            key={i}
+                            className="h-16 bg-gray-100 rounded-xl animate-pulse"
                         />
-                    )}
-
-                    {/* Tabs */}
-                    <Tabs tabs={tabs} defaultTab="phq-results" />
+                    ))}
                 </div>
             </div>
         </div>

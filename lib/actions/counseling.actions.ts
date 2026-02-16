@@ -47,22 +47,24 @@ async function verifyStudentAccess(
         return { allowed: true };
     }
 
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-            schoolId: true,
-            teacher: { select: { advisoryClass: true } },
-        },
-    });
+    // Fetch user and student in parallel (independent queries)
+    const [user, student] = await Promise.all([
+        prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                schoolId: true,
+                teacher: { select: { advisoryClass: true } },
+            },
+        }),
+        prisma.student.findUnique({
+            where: { id: studentId },
+            select: { schoolId: true, class: true },
+        }),
+    ]);
 
     if (!user?.schoolId) {
         return { allowed: false, error: "ไม่พบข้อมูลโรงเรียน" };
     }
-
-    const student = await prisma.student.findUnique({
-        where: { id: studentId },
-        select: { schoolId: true, class: true },
-    });
 
     if (!student) {
         return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
@@ -246,7 +248,9 @@ export async function updateCounselingSession(
 export async function deleteCounselingSession(id: string) {
     try {
         // Validate input
-        const validated = deleteCounselingSessionSchema.parse({ sessionId: id });
+        const validated = deleteCounselingSessionSchema.parse({
+            sessionId: id,
+        });
 
         const session = await requireAuth();
 
