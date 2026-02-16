@@ -86,7 +86,7 @@ export async function removeWhitelistEntry(
     id: string,
 ): Promise<WhitelistActionResponse> {
     try {
-        await requireAdmin();
+        const session = await requireAdmin();
 
         const entry = await prisma.systemAdminWhitelist.findUnique({
             where: { id },
@@ -96,6 +96,13 @@ export async function removeWhitelistEntry(
             return {
                 success: false,
                 message: "ไม่พบรายการที่ต้องการลบ",
+            };
+        }
+
+        if (entry.email === session.user.email) {
+            return {
+                success: false,
+                message: "ไม่สามารถลบอีเมลของตัวเองได้",
             };
         }
 
@@ -125,17 +132,24 @@ export async function toggleWhitelistEntry(
     id: string,
 ): Promise<WhitelistActionResponse> {
     try {
-        await requireAdmin();
+        const session = await requireAdmin();
 
         const entry = await prisma.systemAdminWhitelist.findUnique({
             where: { id },
-            select: { id: true, isActive: true },
+            select: { id: true, email: true, isActive: true },
         });
 
         if (!entry) {
             return {
                 success: false,
                 message: "ไม่พบรายการที่ต้องการแก้ไข",
+            };
+        }
+
+        if (entry.email === session.user.email) {
+            return {
+                success: false,
+                message: "ไม่สามารถปิดใช้งานอีเมลของตัวเองได้",
             };
         }
 

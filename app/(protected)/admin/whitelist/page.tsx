@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function WhitelistPage() {
-    await requireAdmin();
+    const session = await requireAdmin();
     const entries = await getWhitelistEntries();
 
     return (
@@ -56,7 +56,7 @@ export default async function WhitelistPage() {
                     </div>
                 </div>
 
-                <WhitelistManager initialEntries={entries} />
+                <WhitelistManager initialEntries={entries} currentUserEmail={session.user.email ?? ""} />
             </div>
         </div>
     );

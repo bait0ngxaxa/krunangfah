@@ -4,6 +4,7 @@ import type { WhitelistEntry } from "@/types/whitelist.types";
 
 interface WhitelistEntryRowProps {
     entry: WhitelistEntry;
+    isSelf: boolean;
     isToggling: boolean;
     isDeleting: boolean;
     isConfirmingDelete: boolean;
@@ -22,6 +23,7 @@ function formatDate(date: Date): string {
 
 export function WhitelistEntryRow({
     entry,
+    isSelf,
     isToggling,
     isDeleting,
     isConfirmingDelete,
@@ -33,6 +35,11 @@ export function WhitelistEntryRow({
         <tr className="hover:bg-pink-50/30 transition-colors">
             <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                 {entry.email}
+                {isSelf && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                        คุณ
+                    </span>
+                )}
             </td>
 
             <td className="px-6 py-4 text-center">
@@ -56,13 +63,13 @@ export function WhitelistEntryRow({
                     {/* Toggle Button */}
                     <button
                         onClick={() => onToggle(entry.id)}
-                        disabled={isToggling}
+                        disabled={isToggling || isSelf}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                             entry.isActive
                                 ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
                                 : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                         }`}
-                        title={entry.isActive ? "ปิดใช้งาน" : "เปิดใช้งาน"}
+                        title={isSelf ? "ไม่สามารถปิดใช้งานตัวเองได้" : entry.isActive ? "ปิดใช้งาน" : "เปิดใช้งาน"}
                     >
                         {isToggling
                             ? "..."
@@ -72,7 +79,15 @@ export function WhitelistEntryRow({
                     </button>
 
                     {/* Delete Button (with confirm) */}
-                    {isConfirmingDelete ? (
+                    {isSelf ? (
+                        <button
+                            disabled
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-300 cursor-not-allowed"
+                            title="ไม่สามารถลบตัวเองได้"
+                        >
+                            ลบ
+                        </button>
+                    ) : isConfirmingDelete ? (
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={() => onDelete(entry.id)}

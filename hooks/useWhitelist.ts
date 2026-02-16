@@ -21,6 +21,7 @@ interface UseWhitelistReturn {
     deletingId: string | null;
     togglingId: string | null;
     confirmDeleteId: string | null;
+    currentUserEmail: string;
     form: ReturnType<typeof useForm<WhitelistFormData>>;
     onSubmit: (data: WhitelistFormData) => Promise<void>;
     handleDelete: (id: string) => Promise<void>;
@@ -30,6 +31,7 @@ interface UseWhitelistReturn {
 
 export function useWhitelist(
     initialEntries: WhitelistEntry[],
+    currentUserEmail: string,
 ): UseWhitelistReturn {
     const [entries, setEntries] = useState<WhitelistEntry[]>(initialEntries);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,7 +65,19 @@ export function useWhitelist(
         [form],
     );
 
+    const isSelf = useCallback(
+        (id: string): boolean => {
+            const entry = entries.find((e) => e.id === id);
+            return entry?.email === currentUserEmail;
+        },
+        [entries, currentUserEmail],
+    );
+
     const handleDelete = useCallback(async (id: string): Promise<void> => {
+        if (isSelf(id)) {
+            toast.error("ไม่สามารถลบอีเมลของตัวเองได้");
+            return;
+        }
         setDeletingId(id);
         try {
             const result = await removeWhitelistEntry(id);
@@ -79,9 +93,13 @@ export function useWhitelist(
             setDeletingId(null);
             setConfirmDeleteId(null);
         }
-    }, []);
+    }, [isSelf]);
 
     const handleToggle = useCallback(async (id: string): Promise<void> => {
+        if (isSelf(id)) {
+            toast.error("ไม่สามารถปิดใช้งานอีเมลของตัวเองได้");
+            return;
+        }
         setTogglingId(id);
         try {
             const result = await toggleWhitelistEntry(id);
@@ -103,7 +121,7 @@ export function useWhitelist(
         } finally {
             setTogglingId(null);
         }
-    }, []);
+    }, [isSelf]);
 
     return {
         entries,
@@ -111,6 +129,7 @@ export function useWhitelist(
         deletingId,
         togglingId,
         confirmDeleteId,
+        currentUserEmail,
         form,
         onSubmit,
         handleDelete,

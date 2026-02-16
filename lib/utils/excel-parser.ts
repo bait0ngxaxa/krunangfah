@@ -73,19 +73,63 @@ export async function parseExcelBuffer(
                 };
 
                 const getNumberCell = (headerName: string): number => {
-                    const value = getCell(headerName);
+                    const value = getCell(headerName).trim();
+
+                    // ถ้าว่างเปล่า → ให้เป็น 0
+                    if (!value) return 0;
+
                     const num = parseInt(value, 10);
-                    return isNaN(num) ? 0 : Math.min(Math.max(num, 0), 3); // Clamp 0-3
+
+                    // ตรวจสอบว่าเป็นตัวเลขที่ valid
+                    if (isNaN(num)) {
+                        errors.push(
+                            `แถว ${rowNumber}: ${headerName} ต้องเป็นตัวเลข (พบ: "${value}")`,
+                        );
+                        return 0;
+                    }
+
+                    // ตรวจสอบช่วง 0-3
+                    if (num < 0 || num > 3) {
+                        errors.push(
+                            `แถว ${rowNumber}: ${headerName} ต้องอยู่ในช่วง 0-3 (พบ: ${num})`,
+                        );
+                        return Math.min(Math.max(num, 0), 3); // Clamp แต่มี warning
+                    }
+
+                    return num;
                 };
 
                 const getBooleanCell = (headerName: string): boolean => {
-                    const value = getCell(headerName).toLowerCase();
-                    return (
+                    const value = getCell(headerName).trim().toLowerCase();
+
+                    // ถ้าว่างเปล่า → ให้เป็น false
+                    if (!value) return false;
+
+                    // ค่าที่ยอมรับได้สำหรับ true
+                    if (
                         value === "ใช่" ||
                         value === "yes" ||
                         value === "1" ||
                         value === "true"
+                    ) {
+                        return true;
+                    }
+
+                    // ค่าที่ยอมรับได้สำหรับ false
+                    if (
+                        value === "ไม่ใช่" ||
+                        value === "no" ||
+                        value === "0" ||
+                        value === "false"
+                    ) {
+                        return false;
+                    }
+
+                    // ค่าที่ไม่ valid
+                    errors.push(
+                        `แถว ${rowNumber}: ${headerName} ต้องเป็น "ใช่" หรือ "ไม่ใช่" (พบ: "${value}")`,
                     );
+                    return false;
                 };
 
                 const parseGender = (

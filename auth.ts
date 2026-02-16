@@ -46,18 +46,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         return null;
                     }
 
-                    // Check whitelist: promote to system_admin if email is whitelisted
-                    if (user.role !== "system_admin") {
-                        const isWhitelisted = await prisma.systemAdminWhitelist.findUnique({
-                            where: { email, isActive: true },
+                    // Sync role with whitelist on every login
+                    const isWhitelisted = await prisma.systemAdminWhitelist.findUnique({
+                        where: { email, isActive: true },
+                    });
+
+                    if (isWhitelisted && user.role !== "system_admin") {
+                        // Promote: whitelisted but not yet system_admin
+                        await prisma.user.update({
+                            where: { id: user.id },
+                            data: { role: "system_admin" },
                         });
-                        if (isWhitelisted) {
-                            await prisma.user.update({
-                                where: { id: user.id },
-                                data: { role: "system_admin" },
-                            });
-                            user.role = "system_admin";
-                        }
+                        user.role = "system_admin";
+                    } else if (!isWhitelisted && user.role === "system_admin") {
+                        // Demote: no longer whitelisted (removed or deactivated)
+                        await prisma.user.update({
+                            where: { id: user.id },
+                            data: { role: "school_admin" },
+                        });
+                        user.role = "school_admin";
                     }
 
                     // system_admin doesn't need a teacher profile
