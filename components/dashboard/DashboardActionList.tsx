@@ -9,6 +9,7 @@ import {
     BarChart3,
     Search,
     UserPlus,
+    ChevronRight,
     type LucideIcon,
 } from "lucide-react";
 
@@ -60,19 +61,7 @@ export function DashboardActionList({
 
                     {/* Arrow */}
                     <div className="relative opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300 shrink-0">
-                        <svg
-                            className="w-5 h-5 text-pink-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 5l7 7-7 7"
-                            />
-                        </svg>
+                        <ChevronRight className="w-5 h-5 text-pink-400" />
                     </div>
                 </Link>
             )}
@@ -188,19 +177,7 @@ function QuickActionCard({
                     </div>
                     {/* Arrow indicator */}
                     <div className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-                        <svg
-                            className="w-5 h-5 text-pink-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 5l7 7-7 7"
-                            />
-                        </svg>
+                        <ChevronRight className="w-5 h-5 text-pink-400" />
                     </div>
                 </div>
             </div>

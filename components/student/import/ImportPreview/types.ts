@@ -67,5 +67,5 @@ export interface UseImportPreviewReturn {
     // Actions
     setSelectedYearId: (id: string) => void;
     setAssessmentRound: (round: number) => void;
-    handleSave: () => Promise<void>;
+    handleSave: () => void;
 }

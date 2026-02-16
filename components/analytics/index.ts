@@ -1,11 +1,15 @@
 // Charts
-export * from "./charts";
+export { RiskLevelByGradeChart, RiskLevelTrendChart } from "./charts";
 
 // Tables
-export * from "./tables";
+export {
+    PhqSummaryTable,
+    HospitalReferralTable,
+    ActivitySummaryTable,
+} from "./tables";
 
 // Filters
-export * from "./filters";
+export { ClassFilter, SchoolFilter } from "./filters";
 
 // Main content
 export { AnalyticsContent } from "./AnalyticsContent";

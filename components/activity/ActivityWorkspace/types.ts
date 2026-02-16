@@ -62,6 +62,11 @@ export interface UseActivityWorkspaceReturn {
     currentActivityNumber: number;
     currentActivity: Activity | undefined;
 
+    // Completion confirmation
+    pendingCompletion: number | null;
+    completedUploads: { id: string; fileName: string; fileUrl: string }[];
+    handleConfirmComplete: () => void;
+
     // Handlers
     handleFileSelect: (progressId: string) => void;
     handleSaveNotes: () => Promise<void>;

@@ -96,27 +96,23 @@ export function StudentDashboard({
         return schoolFilteredStudents.filter((s) => s.class === selectedClass);
     }, [schoolFilteredStudents, selectedClass]);
 
-    // Group students by risk level
-    const groupedStudents = useMemo(
-        () => ({
-            red: filteredStudents.filter(
-                (s) => s.phqResults[0]?.riskLevel === "red",
-            ),
-            orange: filteredStudents.filter(
-                (s) => s.phqResults[0]?.riskLevel === "orange",
-            ),
-            yellow: filteredStudents.filter(
-                (s) => s.phqResults[0]?.riskLevel === "yellow",
-            ),
-            green: filteredStudents.filter(
-                (s) => s.phqResults[0]?.riskLevel === "green",
-            ),
-            blue: filteredStudents.filter(
-                (s) => s.phqResults[0]?.riskLevel === "blue",
-            ),
-        }),
-        [filteredStudents],
-    );
+    // Group students by risk level in a single pass
+    const groupedStudents = useMemo(() => {
+        const groups: Record<string, Student[]> = {
+            red: [],
+            orange: [],
+            yellow: [],
+            green: [],
+            blue: [],
+        };
+        for (const s of filteredStudents) {
+            const level = s.phqResults[0]?.riskLevel;
+            if (level && level in groups) {
+                groups[level].push(s);
+            }
+        }
+        return groups;
+    }, [filteredStudents]);
 
     // Pie chart data (ordered from low to high risk)
     const pieChartData = useMemo(

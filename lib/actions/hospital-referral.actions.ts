@@ -21,7 +21,9 @@ interface UpdateHospitalReferralParams {
     hospitalName?: string;
 }
 
-export async function updateHospitalReferral(params: UpdateHospitalReferralParams) {
+export async function updateHospitalReferral(
+    params: UpdateHospitalReferralParams,
+) {
     try {
         const validated = updateHospitalReferralSchema.parse(params);
 
@@ -29,19 +31,32 @@ export async function updateHospitalReferral(params: UpdateHospitalReferralParam
         const userId = session.user.id;
         const userRole = session.user.role;
 
-        // Get PHQ result with student info for authorization check
-        const phqResult = await prisma.phqResult.findUnique({
-            where: { id: validated.phqResultId },
-            select: {
-                studentId: true,
-                student: {
-                    select: {
-                        class: true,
-                        schoolId: true,
+        // Fetch PHQ result + user data in parallel (for non-system_admin)
+        const [phqResult, user] = await Promise.all([
+            prisma.phqResult.findUnique({
+                where: { id: validated.phqResultId },
+                select: {
+                    studentId: true,
+                    student: {
+                        select: {
+                            class: true,
+                            schoolId: true,
+                        },
                     },
                 },
-            },
-        });
+            }),
+            userRole !== "system_admin"
+                ? prisma.user.findUnique({
+                      where: { id: userId },
+                      select: {
+                          schoolId: true,
+                          teacher: {
+                              select: { advisoryClass: true },
+                          },
+                      },
+                  })
+                : Promise.resolve(null),
+        ]);
 
         if (!phqResult) {
             return { success: false, error: "ไม่พบข้อมูลผลประเมิน" };
@@ -49,25 +64,20 @@ export async function updateHospitalReferral(params: UpdateHospitalReferralParam
 
         // system_admin can access all schools — skip school/class check
         if (userRole !== "system_admin") {
-            // Verify user belongs to the same school
-            const user = await prisma.user.findUnique({
-                where: { id: userId },
-                select: {
-                    schoolId: true,
-                    teacher: {
-                        select: { advisoryClass: true },
-                    },
-                },
-            });
-
-            if (!user?.schoolId || user.schoolId !== phqResult.student.schoolId) {
+            if (
+                !user?.schoolId ||
+                user.schoolId !== phqResult.student.schoolId
+            ) {
                 return { success: false, error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
             }
 
             // class_teacher: ตรวจว่านักเรียนอยู่ในห้องที่ดูแลหรือไม่
             if (userRole === "class_teacher") {
                 const advisoryClass = user.teacher?.advisoryClass;
-                if (!advisoryClass || phqResult.student.class !== advisoryClass) {
+                if (
+                    !advisoryClass ||
+                    phqResult.student.class !== advisoryClass
+                ) {
                     return {
                         success: false,
                         error: "คุณสามารถแก้ไขข้อมูลได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
@@ -82,7 +92,7 @@ export async function updateHospitalReferral(params: UpdateHospitalReferralParam
             data: {
                 referredToHospital: validated.referredToHospital,
                 hospitalName: validated.referredToHospital
-                    ? validated.hospitalName?.trim() ?? null
+                    ? (validated.hospitalName?.trim() ?? null)
                     : null,
             },
         });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAddTeacherForm } from "./useAddTeacherForm";
+import type { AcademicYear } from "./types";
 import {
     ErrorMessage,
     InviteLinkSection,
@@ -10,24 +11,29 @@ import {
     FormActions,
 } from "./components";
 
+interface AddTeacherFormProps {
+    academicYears: AcademicYear[];
+}
+
 /**
  * AddTeacherForm - Form for creating teacher invite
  * Refactored following separation of concerns and modular design
  */
-export function AddTeacherForm(): React.ReactNode {
+export function AddTeacherForm({
+    academicYears,
+}: AddTeacherFormProps): React.ReactNode {
     const {
         form,
         isLoading,
         error,
         success,
         inviteLink,
-        academicYears,
         userRoleValue,
         advisoryClassValue,
         onSubmit,
         copyToClipboard,
         handleCancel,
-    } = useAddTeacherForm();
+    } = useAddTeacherForm(academicYears);
 
     const {
         register,

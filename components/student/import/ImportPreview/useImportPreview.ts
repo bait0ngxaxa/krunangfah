@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useTransition } from "react";
 import { calculateRiskLevel } from "@/lib/utils/phq-scoring";
 import { importStudents } from "@/lib/actions/student";
 import {
@@ -22,7 +22,7 @@ export function useImportPreview({
     onSuccess,
 }: Pick<ImportPreviewProps, "data" | "onSuccess">): UseImportPreviewReturn {
     // State
-    const [isLoading, setIsLoading] = useState(false);
+    const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
     const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
     const [selectedYearId, setSelectedYearId] = useState<string>("");
@@ -43,48 +43,53 @@ export function useImportPreview({
         [data],
     );
 
-    // Filter data based on teacher role
-    const previewData = useMemo(() => {
-        if (
+    // Filter data + count risk levels in a single pass (combined iterations)
+    const { previewData, filteredOutStudents, riskCounts } = useMemo(() => {
+        const isClassTeacher =
             teacherProfile?.role === "class_teacher" &&
-            teacherProfile.advisoryClass
-        ) {
-            return allPreviewData.filter(
-                (s) => s.class === teacherProfile.advisoryClass,
-            );
-        }
-        return allPreviewData;
-    }, [allPreviewData, teacherProfile]);
+            !!teacherProfile.advisoryClass;
 
-    // Get filtered out students (for class_teacher only)
-    const filteredOutStudents = useMemo(() => {
-        if (
-            teacherProfile?.role === "class_teacher" &&
-            teacherProfile.advisoryClass
-        ) {
-            return allPreviewData.filter(
-                (s) => s.class !== teacherProfile.advisoryClass,
-            );
-        }
-        return [];
-    }, [allPreviewData, teacherProfile]);
+        const matched: PreviewStudent[] = [];
+        const excluded: PreviewStudent[] = [];
+        const counts: RiskCounts = {
+            blue: 0,
+            green: 0,
+            yellow: 0,
+            orange: 0,
+            red: 0,
+        };
 
-    // Count by risk level
-    const riskCounts = useMemo(() => {
-        return previewData.reduce(
-            (acc, student) => {
-                acc[student.riskLevel]++;
-                return acc;
-            },
-            { blue: 0, green: 0, yellow: 0, orange: 0, red: 0 } as RiskCounts,
-        );
-    }, [previewData]);
+        for (const student of allPreviewData) {
+            if (
+                isClassTeacher &&
+                student.class !== teacherProfile?.advisoryClass
+            ) {
+                excluded.push(student);
+            } else {
+                matched.push(student);
+                counts[student.riskLevel]++;
+            }
+        }
+
+        return {
+            previewData: matched,
+            filteredOutStudents: excluded,
+            riskCounts: counts,
+        };
+    }, [allPreviewData, teacherProfile]);
 
     // Load initial data
     useEffect(() => {
         const loadData = async () => {
-            // Load academic years
-            const years = await getAcademicYears();
+            // Load academic years and teacher profile in parallel
+            const [years, profile] = await Promise.all([
+                getAcademicYears(),
+                getCurrentTeacherProfile().catch((err) => {
+                    console.error("Failed to load teacher profile:", err);
+                    return null;
+                }),
+            ]);
+
             setAcademicYears(years);
             const current = years.find((y) => y.isCurrent);
             if (current) {
@@ -93,55 +98,48 @@ export function useImportPreview({
                 setSelectedYearId(years[0].id);
             }
 
-            // Load teacher profile
-            try {
-                const profile = await getCurrentTeacherProfile();
-                if (profile) {
-                    setTeacherProfile({
-                        role: profile.user.role,
-                        advisoryClass: profile.advisoryClass,
-                    });
-                }
-            } catch (err) {
-                console.error("Failed to load teacher profile:", err);
+            if (profile) {
+                setTeacherProfile({
+                    role: profile.user.role,
+                    advisoryClass: profile.advisoryClass,
+                });
             }
         };
         loadData();
     }, []);
 
     // Handle save action
-    const handleSave = async () => {
+    const handleSave = () => {
         if (!selectedYearId) {
             setError("กรุณาเลือกปีการศึกษา");
             return;
         }
 
-        setIsLoading(true);
         setError(null);
 
-        try {
-            const result = await importStudents(
-                data,
-                selectedYearId,
-                assessmentRound,
-            );
+        startTransition(async () => {
+            try {
+                const result = await importStudents(
+                    data,
+                    selectedYearId,
+                    assessmentRound,
+                );
 
-            if (result.success) {
-                onSuccess();
-            } else {
-                setError(result.message);
+                if (result.success) {
+                    onSuccess();
+                } else {
+                    setError(result.message);
+                }
+            } catch (err) {
+                console.error("Import error:", err);
+                setError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
             }
-        } catch (err) {
-            console.error("Import error:", err);
-            setError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-        } finally {
-            setIsLoading(false);
-        }
+        });
     };
 
     return {
         // State
-        isLoading,
+        isLoading: isPending,
         error,
         academicYears,
         selectedYearId,

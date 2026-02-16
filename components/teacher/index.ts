@@ -1,5 +1,8 @@
 // Forms
-export * from "./forms";
+export { AddTeacherForm } from "./forms";
+export { TeacherProfileForm } from "./forms";
+export { AcceptInviteForm } from "./forms";
 
 // Skill development
-export * from "./skill";
+export { ToolsIntroTab } from "./skill";
+export { VideoUpskillTab } from "./skill";
