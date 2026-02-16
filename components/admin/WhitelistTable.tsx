@@ -9,6 +9,7 @@ interface WhitelistTableProps {
     deletingId: string | null;
     togglingId: string | null;
     confirmDeleteId: string | null;
+    currentUserEmail: string;
     onToggle: (id: string) => void;
     onDelete: (id: string) => void;
     onConfirmDelete: (id: string | null) => void;
@@ -19,6 +20,7 @@ export function WhitelistTable({
     deletingId,
     togglingId,
     confirmDeleteId,
+    currentUserEmail,
     onToggle,
     onDelete,
     onConfirmDelete,
@@ -65,6 +67,7 @@ export function WhitelistTable({
                                 <WhitelistEntryRow
                                     key={entry.id}
                                     entry={entry}
+                                    isSelf={entry.email === currentUserEmail}
                                     isToggling={togglingId === entry.id}
                                     isDeleting={deletingId === entry.id}
                                     isConfirmingDelete={

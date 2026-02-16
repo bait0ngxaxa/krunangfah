@@ -251,7 +251,7 @@ export const DOWNLOAD_URLS: Record<number, string[]> = {
  * Worksheet names by activity number
  */
 export const WORKSHEET_NAMES: Record<number, string[]> = {
-    1: ["ฉันชอบตัวเอง", "กราฟวัดจมลอย"],
+    1: ["ฉันชอบตัวเอง", "กราฟวัดลอยจม"],
     2: ["ค้นหาคุณค่าที่ฉันมี", "เสริมสร้างพลังใจ"],
     3: ["ปรับความคิดชีวิตเปลี่ยน", "ตั้งเป้าหมาย"],
     4: ["ตามหาสิ่งกระตุ้น", "แผนการจัดการใจ"],

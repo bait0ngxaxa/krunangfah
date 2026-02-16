@@ -7,21 +7,23 @@ import type { WhitelistEntry } from "@/types/whitelist.types";
 
 interface WhitelistManagerProps {
     initialEntries: WhitelistEntry[];
+    currentUserEmail: string;
 }
 
-export function WhitelistManager({ initialEntries }: WhitelistManagerProps) {
+export function WhitelistManager({ initialEntries, currentUserEmail }: WhitelistManagerProps) {
     const {
         entries,
         isSubmitting,
         deletingId,
         togglingId,
         confirmDeleteId,
+        currentUserEmail: userEmail,
         form,
         onSubmit,
         handleDelete,
         handleToggle,
         setConfirmDeleteId,
-    } = useWhitelist(initialEntries);
+    } = useWhitelist(initialEntries, currentUserEmail);
 
     return (
         <div className="space-y-6">
@@ -36,6 +38,7 @@ export function WhitelistManager({ initialEntries }: WhitelistManagerProps) {
                 deletingId={deletingId}
                 togglingId={togglingId}
                 confirmDeleteId={confirmDeleteId}
+                currentUserEmail={userEmail}
                 onToggle={handleToggle}
                 onDelete={handleDelete}
                 onConfirmDelete={setConfirmDeleteId}
