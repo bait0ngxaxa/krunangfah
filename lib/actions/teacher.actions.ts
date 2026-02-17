@@ -17,7 +17,15 @@ export async function getTeacherProfile(
     userId: string,
 ): Promise<TeacherProfile | null> {
     try {
-        await requireAuth();
+        const session = await requireAuth();
+
+        // Only allow viewing own profile, or system_admin can view any
+        if (
+            session.user.role !== "system_admin" &&
+            session.user.id !== userId
+        ) {
+            return null;
+        }
 
         const teacher = await prisma.teacher.findUnique({
             where: { userId },
@@ -98,49 +106,52 @@ export async function createTeacherProfile(
             };
         }
 
-        // Find or create school
-        let school = await prisma.school.findFirst({
-            where: {
-                name: {
-                    equals: validated.schoolName,
-                    mode: "insensitive",
+        // Find or create school, update user, create teacher — all in one transaction
+        const teacher = await prisma.$transaction(async (tx) => {
+            // 1. Find or create school
+            let school = await tx.school.findFirst({
+                where: {
+                    name: {
+                        equals: validated.schoolName,
+                        mode: "insensitive",
+                    },
                 },
-            },
-        });
-
-        if (!school) {
-            school = await prisma.school.create({
-                data: { name: validated.schoolName },
             });
-        }
 
-        // Update User with name and schoolId
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                name: `${validated.firstName} ${validated.lastName}`,
-                schoolId: school.id,
-            },
-        });
+            if (!school) {
+                school = await tx.school.create({
+                    data: { name: validated.schoolName },
+                });
+            }
 
-        // Create teacher profile (role ได้จาก signup แล้ว)
-        const teacher = await prisma.teacher.create({
-            data: {
-                userId,
-                firstName: validated.firstName,
-                lastName: validated.lastName,
-                age: validated.age,
-                advisoryClass: normalizeClassName(validated.advisoryClass),
-                academicYearId: validated.academicYearId,
-                schoolRole: validated.schoolRole,
-                projectRole: validated.projectRole,
-            },
-            include: {
-                academicYear: true,
-                user: {
-                    include: { school: true },
+            // 2. Update User with name and schoolId
+            await tx.user.update({
+                where: { id: userId },
+                data: {
+                    name: `${validated.firstName} ${validated.lastName}`,
+                    schoolId: school.id,
                 },
-            },
+            });
+
+            // 3. Create teacher profile
+            return tx.teacher.create({
+                data: {
+                    userId,
+                    firstName: validated.firstName,
+                    lastName: validated.lastName,
+                    age: validated.age,
+                    advisoryClass: normalizeClassName(validated.advisoryClass),
+                    academicYearId: validated.academicYearId,
+                    schoolRole: validated.schoolRole,
+                    projectRole: validated.projectRole,
+                },
+                include: {
+                    academicYear: true,
+                    user: {
+                        include: { school: true },
+                    },
+                },
+            });
         });
 
         // Revalidate dashboard to show updated data

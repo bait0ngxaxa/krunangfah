@@ -155,24 +155,26 @@ export async function createCounselingSession(data: {
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        // Get the next session number for this student
-        const lastSession = await prisma.counselingSession.findFirst({
-            where: { studentId: validated.studentId },
-            orderBy: { sessionNumber: "desc" },
-            select: { sessionNumber: true },
-        });
+        // Use transaction to prevent race condition on sessionNumber
+        const counselingSession = await prisma.$transaction(async (tx) => {
+            const lastSession = await tx.counselingSession.findFirst({
+                where: { studentId: validated.studentId },
+                orderBy: { sessionNumber: "desc" },
+                select: { sessionNumber: true },
+            });
 
-        const sessionNumber = (lastSession?.sessionNumber || 0) + 1;
+            const sessionNumber = (lastSession?.sessionNumber || 0) + 1;
 
-        const counselingSession = await prisma.counselingSession.create({
-            data: {
-                studentId: validated.studentId,
-                sessionNumber,
-                sessionDate: validated.sessionDate,
-                counselorName: validated.counselorName,
-                summary: validated.summary,
-                createdById: userId,
-            },
+            return tx.counselingSession.create({
+                data: {
+                    studentId: validated.studentId,
+                    sessionNumber,
+                    sessionDate: validated.sessionDate,
+                    counselorName: validated.counselorName,
+                    summary: validated.summary,
+                    createdById: userId,
+                },
+            });
         });
 
         revalidatePath(`/students/${validated.studentId}`);

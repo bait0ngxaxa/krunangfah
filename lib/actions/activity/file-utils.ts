@@ -126,29 +126,36 @@ export async function uploadWorksheet(
 
         // system_admin can access all schools — skip school/class check
         if (user?.role !== "system_admin") {
-            if (!user?.schoolId || user.schoolId !== activityProgress.student.schoolId) {
-                return { success: false, message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
+            if (
+                !user?.schoolId ||
+                user.schoolId !== activityProgress.student.schoolId
+            ) {
+                return {
+                    success: false,
+                    message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+                };
             }
 
             // class_teacher: verify student is in their advisory class
             if (user.role === "class_teacher") {
                 const advisoryClass = user.teacher?.advisoryClass;
-                if (!advisoryClass || activityProgress.student.class !== advisoryClass) {
+                if (
+                    !advisoryClass ||
+                    activityProgress.student.class !== advisoryClass
+                ) {
                     return {
                         success: false,
-                        message: "คุณสามารถอัปโหลดได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
+                        message:
+                            "คุณสามารถอัปโหลดได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
                     };
                 }
             }
         }
 
         // Create upload directory if not exists
-        const uploadDir = join(
-            process.cwd(),
-            "public",
-            "uploads",
-            "worksheets",
-        );
+        // SECURITY: Store outside public/ to prevent unauthenticated access
+        // Files are served exclusively through the /api/uploads/ route with auth checks
+        const uploadDir = join(process.cwd(), ".data", "uploads", "worksheets");
         if (!existsSync(uploadDir)) {
             await mkdir(uploadDir, { recursive: true });
         }
@@ -158,21 +165,29 @@ export async function uploadWorksheet(
         const fileName = `${activityProgress.studentId}_activity${activityProgress.activityNumber}_${timestamp}.${ext}`;
         const filePath = join(uploadDir, fileName);
 
-        // Save file
+        // Save file to disk
         await writeFile(filePath, buffer);
 
-        // Save to database - use API route instead of static file
+        // Save to database — clean up file if DB write fails
         const fileUrl = `/api/uploads/worksheets/${fileName}`;
-        const upload = await prisma.worksheetUpload.create({
-            data: {
-                activityProgressId,
-                fileName: file.name,
-                fileUrl,
-                fileType: file.type,
-                fileSize: file.size,
-                uploadedById: session.user.id,
-            },
-        });
+        let upload;
+        try {
+            upload = await prisma.worksheetUpload.create({
+                data: {
+                    activityProgressId,
+                    fileName: file.name,
+                    fileUrl,
+                    fileType: file.type,
+                    fileSize: file.size,
+                    uploadedById: session.user.id,
+                },
+            });
+        } catch (dbError) {
+            // Clean up orphaned file if DB insert fails
+            const { unlink } = await import("fs/promises");
+            await unlink(filePath).catch(() => {});
+            throw dbError;
+        }
 
         // Check if activity should be completed
         const requiredCount =

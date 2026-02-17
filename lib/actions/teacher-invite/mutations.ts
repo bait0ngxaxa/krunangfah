@@ -137,10 +137,10 @@ export async function acceptTeacherInvite(
         // Hash password
         const hashedPassword = await hashPassword(password);
 
-        // Create user and teacher in transaction
-        await prisma.$transaction([
-            // Create user
-            prisma.user.create({
+        // Create user, teacher profile, and mark invite — all in one transaction
+        await prisma.$transaction(async (tx) => {
+            // 1. Create user
+            const user = await tx.user.create({
                 data: {
                     email: invite.email,
                     name: `${invite.firstName} ${invite.lastName}`,
@@ -148,21 +148,10 @@ export async function acceptTeacherInvite(
                     role: invite.userRole,
                     schoolId: invite.schoolId,
                 },
-            }),
-            // Mark invite as accepted
-            prisma.teacherInvite.update({
-                where: { id: invite.id },
-                data: { acceptedAt: new Date() },
-            }),
-        ]);
+            });
 
-        // Get created user to create teacher profile
-        const user = await prisma.user.findUnique({
-            where: { email: invite.email },
-        });
-
-        if (user) {
-            await prisma.teacher.create({
+            // 2. Create teacher profile
+            await tx.teacher.create({
                 data: {
                     userId: user.id,
                     firstName: invite.firstName,
@@ -174,7 +163,13 @@ export async function acceptTeacherInvite(
                     projectRole: invite.projectRole,
                 },
             });
-        }
+
+            // 3. Mark invite as accepted
+            await tx.teacherInvite.update({
+                where: { id: invite.id },
+                data: { acceptedAt: new Date() },
+            });
+        });
 
         return {
             success: true,

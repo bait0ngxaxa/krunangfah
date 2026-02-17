@@ -40,5 +40,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# uploaded files
-/public/uploads/
+# uploaded files (stored in .data/ — NOT public/ — to prevent unauthenticated access)
+/.data/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

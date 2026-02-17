@@ -1,13 +1,3 @@
-/**
- * File Serving API Route
- *
- * Security:
- * - Path traversal protection (resolves and validates path stays within uploads dir)
- * - Authentication required
- * - Extension whitelist
- * - Content-Disposition header to prevent inline execution
- */
-
 import { type NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import { join, resolve, normalize } from "path";
@@ -15,23 +5,14 @@ import { existsSync } from "fs";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-/** Allowed file extensions for serving */
-const ALLOWED_EXTENSIONS = new Set([
-    "jpg",
-    "jpeg",
-    "png",
-    "gif",
-    "webp",
-    "pdf",
-]);
+/** Allowed file extensions for serving (must match upload whitelist) */
+const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "pdf"]);
 
 /** Content-Type mapping by extension */
 const CONTENT_TYPES: Record<string, string> = {
     jpg: "image/jpeg",
     jpeg: "image/jpeg",
     png: "image/png",
-    gif: "image/gif",
-    webp: "image/webp",
     pdf: "application/pdf",
 };
 
@@ -58,7 +39,8 @@ export async function GET(
         }
 
         // Build and validate the resolved path stays within uploads directory
-        const uploadsDir = resolve(process.cwd(), "public", "uploads");
+        // SECURITY: Files stored in .data/ (not public/) — this API route is the only access path
+        const uploadsDir = resolve(process.cwd(), ".data", "uploads");
         const filePath = normalize(join(uploadsDir, ...path));
 
         if (!filePath.startsWith(uploadsDir)) {
@@ -114,21 +96,26 @@ export async function GET(
                 },
             });
 
-            if (
-                !user?.schoolId ||
-                user.schoolId !== worksheet.activityProgress.student.schoolId
-            ) {
-                return new NextResponse("Forbidden", { status: 403 });
-            }
-
-            // class_teacher: verify student is in their advisory class
-            if (user.role === "class_teacher") {
-                const advisoryClass = user.teacher?.advisoryClass;
+            // system_admin can access all files
+            if (user?.role !== "system_admin") {
                 if (
-                    !advisoryClass ||
-                    worksheet.activityProgress.student.class !== advisoryClass
+                    !user?.schoolId ||
+                    user.schoolId !==
+                        worksheet.activityProgress.student.schoolId
                 ) {
                     return new NextResponse("Forbidden", { status: 403 });
+                }
+
+                // class_teacher: verify student is in their advisory class
+                if (user.role === "class_teacher") {
+                    const advisoryClass = user.teacher?.advisoryClass;
+                    if (
+                        !advisoryClass ||
+                        worksheet.activityProgress.student.class !==
+                            advisoryClass
+                    ) {
+                        return new NextResponse("Forbidden", { status: 403 });
+                    }
                 }
             }
         }
@@ -137,13 +124,14 @@ export async function GET(
         const fileBuffer = await readFile(filePath);
         const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
 
-        // Determine filename for Content-Disposition
-        const fileName = path[path.length - 1];
+        // Sanitize filename for Content-Disposition header
+        const rawFileName = path[path.length - 1];
+        const safeFileName = rawFileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 
         return new NextResponse(fileBuffer, {
             headers: {
                 "Content-Type": contentType,
-                "Content-Disposition": `inline; filename="${fileName}"`,
+                "Content-Disposition": `inline; filename="${safeFileName}"`,
                 "Cache-Control": "private, max-age=31536000, immutable",
                 "X-Content-Type-Options": "nosniff",
             },

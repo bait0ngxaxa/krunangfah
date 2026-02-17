@@ -107,18 +107,18 @@ export async function resetPassword(input: {
         return { success: false, message: verification.error };
     }
 
-    // --- Update password ---
+    // --- Update password and delete token atomically ---
     const hashedPassword = await hashPassword(password);
 
-    await prisma.user.update({
-        where: { email: verification.email },
-        data: { password: hashedPassword },
-    });
-
-    // --- Delete used token ---
-    await prisma.passwordResetToken.delete({
-        where: { id: verification.tokenId },
-    });
+    await prisma.$transaction([
+        prisma.user.update({
+            where: { email: verification.email },
+            data: { password: hashedPassword },
+        }),
+        prisma.passwordResetToken.delete({
+            where: { id: verification.tokenId },
+        }),
+    ]);
 
     return {
         success: true,

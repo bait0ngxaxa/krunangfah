@@ -31,8 +31,9 @@ export const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "pdf"]);
  * Verifies actual file content matches claimed type
  */
 export const MAGIC_BYTES: { mime: string; bytes: number[] }[] = [
-    { mime: "image/jpeg", bytes: [0xFF, 0xD8, 0xFF] },
-    { mime: "image/png", bytes: [0x89, 0x50, 0x4E, 0x47] },
+    { mime: "image/jpeg", bytes: [0xff, 0xd8, 0xff] },
+    { mime: "image/jpg", bytes: [0xff, 0xd8, 0xff] }, // Some browsers report image/jpg
+    { mime: "image/png", bytes: [0x89, 0x50, 0x4e, 0x47] },
     { mime: "application/pdf", bytes: [0x25, 0x50, 0x44, 0x46] }, // %PDF
 ];
 

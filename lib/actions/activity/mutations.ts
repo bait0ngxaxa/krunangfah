@@ -128,11 +128,23 @@ export async function submitTeacherAssessment(
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },
-            select: { studentId: true },
+            select: { studentId: true, status: true },
         });
 
         if (!activityProgress) {
             return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+        }
+
+        // Allow assessment when activity is pending_assessment or completed
+        // (current flow: upload completes → status becomes "completed" → teacher assesses)
+        if (
+            activityProgress.status !== "pending_assessment" &&
+            activityProgress.status !== "completed"
+        ) {
+            return {
+                success: false,
+                error: "ไม่สามารถบันทึกแบบประเมินได้ในสถานะปัจจุบัน",
+            };
         }
 
         // Verify access
