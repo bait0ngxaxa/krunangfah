@@ -2,13 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
 import type { RateLimitResult } from "@/types/rate-limit.types";
-import {
-    RATE_LIMIT_AUTH_SIGNIN,
-    RATE_LIMIT_AUTH_GENERAL,
-} from "@/lib/constants/rate-limit";
+import { RATE_LIMIT_AUTH_GENERAL } from "@/lib/constants/rate-limit";
 
 // Rate limiter singletons (persist across requests)
-const signinLimiter = createRateLimiter(RATE_LIMIT_AUTH_SIGNIN);
+// Note: signin rate limiting is handled in auth.ts authorize() function
 const generalAuthLimiter = createRateLimiter(RATE_LIMIT_AUTH_GENERAL);
 
 // Routes ที่ต้อง login
@@ -19,6 +16,7 @@ const protectedRoutes = [
     "/students",
     "/analytics",
     "/admin",
+    "/settings",
 ];
 
 // Routes ที่ต้องเป็น school_admin หรือ system_admin
@@ -80,16 +78,14 @@ export default auth((req) => {
     const pathname = nextUrl.pathname;
 
     // ─── Rate Limiting: Auth API routes (POST only) ───
+    // Note: signin rate limiting is handled in auth.ts authorize() function
+    // to properly return error messages through NextAuth
     if (pathname.startsWith("/api/auth/") && req.method === "POST") {
         const ip = extractClientIp((name) => req.headers.get(name));
 
-        // Stricter limit for credential login attempts
+        // Skip rate limiting for signin endpoint (handled in auth.ts)
         if (pathname === "/api/auth/callback/credentials") {
-            const result = signinLimiter.check(ip);
-            if (!result.allowed) {
-                return buildRateLimitResponse(result);
-            }
-            return attachRateLimitHeaders(NextResponse.next(), result);
+            return NextResponse.next();
         }
 
         // General limit for other auth POST requests

@@ -44,5 +44,15 @@ export const RATE_LIMIT_FORGOT_PASSWORD: RateLimitConfig = {
     name: "forgot-password",
 };
 
+/**
+ * Rate limit for password change requests
+ * 3 attempts per hour per IP (stricter than signin for security)
+ */
+export const RATE_LIMIT_PASSWORD_CHANGE: RateLimitConfig = {
+    maxRequests: 3,
+    windowMs: 60 * 60 * 1000,
+    name: "password-change",
+};
+
 /** Interval for cleaning up expired rate limit entries (ms) */
 export const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60 * 1000;

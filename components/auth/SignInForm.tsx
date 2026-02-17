@@ -11,6 +11,7 @@ import {
     signInSchema,
     type SignInFormData,
 } from "@/lib/validations/auth.validation";
+import { checkSignInRateLimit } from "@/lib/actions/auth.actions";
 
 interface SignInFormProps {
     callbackUrl?: string;
@@ -34,6 +35,15 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
         setError("");
 
         try {
+            // Check rate limit first (server-side)
+            const rateLimitCheck = await checkSignInRateLimit();
+
+            if (!rateLimitCheck.allowed) {
+                toast.error(rateLimitCheck.message || "ส่งคำขอมากเกินไป");
+                return;
+            }
+
+            // Proceed with signin if rate limit allows
             const result = await signIn("credentials", {
                 email: data.email,
                 password: data.password,
@@ -41,15 +51,7 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
             });
 
             if (result?.error) {
-                // Check if error contains rate limit message
-                if (
-                    result.error.includes("ส่งคำขอมากเกินไป") ||
-                    result.error.includes("RATE_LIMIT")
-                ) {
-                    toast.error(result.error);
-                } else {
-                    toast.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-                }
+                toast.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
                 return;
             }
 

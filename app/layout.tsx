@@ -3,10 +3,14 @@ import localFont from "next/font/local";
 import { ToasterProvider } from "@/components/ui/ToasterProvider";
 import "./globals.css";
 
+// Google Sans Variable Font - รองรับ weights 100-900 ทั้งหมด
 const googleSans = localFont({
-    src: "../public/fonts/GoogleSans-VariableFont.ttf",
+    src: "../public/fonts/GoogleSans-VariableFont.woff2",
     variable: "--font-google-sans",
     display: "swap",
+    weight: "100 900", // Variable font รองรับทุก weight
+    preload: true,
+    fallback: ["system-ui", "-apple-system", "sans-serif"],
 });
 
 export const metadata: Metadata = {

@@ -10,6 +10,7 @@ import {
     LayoutDashboard,
     GraduationCap,
     BarChart3,
+    Settings,
 } from "lucide-react";
 
 interface NavbarProps {
@@ -36,6 +37,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
             icon: BarChart3,
             requiresStudents: true,
         },
+        { href: "/settings", label: "ตั้งค่าบัญชี", icon: Settings },
     ];
 
     // Filter links based on whether teacher has students

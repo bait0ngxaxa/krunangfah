@@ -28,6 +28,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 const email = credentials.email as string;
                 const password = credentials.password as string;
 
+                // Rate limiting is handled at client-side via server action
+                // to provide better error messages
+
                 try {
                     const user = await prisma.user.findUnique({
                         where: { email },

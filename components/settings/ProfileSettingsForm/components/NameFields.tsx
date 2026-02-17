@@ -1,0 +1,58 @@
+import type { UseFormRegister, FieldErrors } from "react-hook-form";
+import type { ProfileUpdateFormData } from "@/lib/validations/profile.validation";
+
+interface NameFieldsProps {
+    register: UseFormRegister<ProfileUpdateFormData>;
+    errors: FieldErrors<ProfileUpdateFormData>;
+}
+
+/**
+ * Name fields for profile settings: first name & last name
+ */
+export function NameFields({ register, errors }: NameFieldsProps) {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label
+                    htmlFor="firstName"
+                    className="block text-sm font-bold text-gray-700 mb-2"
+                >
+                    ชื่อ <span className="text-red-500">*</span>
+                </label>
+                <input
+                    {...register("firstName")}
+                    type="text"
+                    id="firstName"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 transition-all outline-none text-black placeholder:text-gray-600 hover:border-pink-300"
+                    placeholder="กรอกชื่อ"
+                />
+                {errors.firstName && (
+                    <p className="mt-1 text-sm text-red-500 font-medium">
+                        {errors.firstName.message}
+                    </p>
+                )}
+            </div>
+
+            <div>
+                <label
+                    htmlFor="lastName"
+                    className="block text-sm font-bold text-gray-700 mb-2"
+                >
+                    นามสกุล <span className="text-red-500">*</span>
+                </label>
+                <input
+                    {...register("lastName")}
+                    type="text"
+                    id="lastName"
+                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 transition-all outline-none text-black placeholder:text-gray-600 hover:border-pink-300"
+                    placeholder="กรอกนามสกุล"
+                />
+                {errors.lastName && (
+                    <p className="mt-1 text-sm text-red-500 font-medium">
+                        {errors.lastName.message}
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+}
