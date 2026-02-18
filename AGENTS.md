@@ -87,6 +87,105 @@
 - **Database:** Encrypted connections (SSL/TLS), Principle of Least Privilege.
 - **Dependencies:** Regular audits (`npm audit`), use lockfiles.
 
+### Static Analysis (eslint-plugin-security)
+
+Project uses `eslint-plugin-security` (SAST). The rule `security/detect-object-injection` flags **any** `obj[variable]` access — even when TypeScript types are safe — because it cannot rule out Prototype Pollution at static analysis time.
+
+**NEVER** write dynamic object indexing with a variable key:
+
+```ts
+// ❌ Flagged — variable key access
+const value = CONFIG[riskLevel];
+const value = LABELS[level];
+obj[dynamicKey] = something;
+counts[riskLevel]++;
+```
+
+**Fix patterns — choose based on context:**
+
+**1. Switch function** — for typed union keys (`RiskLevel`, `"orange" | "yellow" | "green"`, etc.)
+
+```ts
+// ✅ Add a getter function next to the constant
+export function getRiskBgClass(level: RiskLevel): string {
+    switch (level) {
+        case "red":
+            return RISK_BG_CLASSES.red;
+        case "orange":
+            return RISK_BG_CLASSES.orange;
+        case "yellow":
+            return RISK_BG_CLASSES.yellow;
+        case "green":
+            return RISK_BG_CLASSES.green;
+        case "blue":
+            return RISK_BG_CLASSES.blue;
+    }
+}
+// Usage: getRiskBgClass(riskLevel)  ← no flag
+```
+
+**2. Map** — for dynamic string keys from DB, user input, or loops
+
+```ts
+// ✅ Map.get() is never flagged
+const groups = new Map<string, Student[]>();
+groups.set(student.class, [...]);        // ← no flag
+const list = groups.get(student.class); // ← no flag
+```
+
+**3. Pre-computed data array** — for render loops in JSX that need multiple fields
+
+```ts
+// ✅ Build a static array; use literal property access inside it
+const cardData = [
+    {
+        level: "blue" as const,
+        bgClass: getRiskBgClass("blue"),
+        count: riskCounts.blue,
+    },
+    {
+        level: "green" as const,
+        bgClass: getRiskBgClass("green"),
+        count: riskCounts.green,
+    },
+    {
+        level: "yellow" as const,
+        bgClass: getRiskBgClass("yellow"),
+        count: riskCounts.yellow,
+    },
+    {
+        level: "orange" as const,
+        bgClass: getRiskBgClass("orange"),
+        count: riskCounts.orange,
+    },
+    {
+        level: "red" as const,
+        bgClass: getRiskBgClass("red"),
+        count: riskCounts.red,
+    },
+];
+// In JSX: cardData.map(({ level, bgClass, count }) => ...)
+```
+
+**4. Safe Buffer / Array access**
+
+```ts
+buffer[i]; // ❌ flagged
+buffer.readUInt8(i); // ✅ use typed read method
+
+array[index]; // ❌ flagged when index is a variable
+array.at(index); // ✅ Array.prototype.at() is not flagged
+```
+
+**Unavoidable `eslint-disable`** — only for `fs` functions with dynamic paths (no alternative API exists):
+
+```ts
+// eslint-disable-next-line security/detect-non-literal-fs-filename
+fs.readFile(filePath, callback);
+```
+
+**Convention:** Every `Record<UnionType, V>` constant **must** have a paired getter function with a switch statement defined immediately after it in the same file.
+
 ## 1.4 Performance Standards
 
 - **Rendering:** Use `React.memo`, `useMemo`, `useCallback` strategically.

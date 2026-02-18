@@ -8,7 +8,7 @@
 import { useState, useMemo } from "react";
 import { School, ClipboardList, BookOpen } from "lucide-react";
 import { StudentCard } from "./StudentCard";
-import { RISK_BG_CLASSES, type RiskLevel } from "@/lib/utils/phq-scoring";
+import { getRiskBgClass, type RiskLevel } from "@/lib/utils/phq-scoring";
 
 interface Student {
     id: string;
@@ -52,12 +52,14 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
 
     // Group by class
     const groupedStudents = useMemo(() => {
-        const groups: Record<string, Student[]> = {};
+        const groups = new Map<string, Student[]>();
         filteredStudents.forEach((student) => {
-            if (!groups[student.class]) {
-                groups[student.class] = [];
+            const existing = groups.get(student.class);
+            if (existing) {
+                existing.push(student);
+            } else {
+                groups.set(student.class, [student]);
             }
-            groups[student.class].push(student);
         });
         return groups;
     }, [filteredStudents]);
@@ -68,18 +70,30 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
         students.forEach((student) => {
             const riskLevel = (student.phqResults?.[0]?.riskLevel ||
                 "blue") as RiskLevel;
-            counts[riskLevel]++;
+            switch (riskLevel) {
+                case "blue":   counts.blue++;   break;
+                case "green":  counts.green++;  break;
+                case "yellow": counts.yellow++; break;
+                case "orange": counts.orange++; break;
+                case "red":    counts.red++;    break;
+            }
         });
         return counts;
     }, [students]);
+
+    const riskCardData = [
+        { level: "blue"   as const, bgClass: getRiskBgClass("blue"),   count: riskCounts.blue },
+        { level: "green"  as const, bgClass: getRiskBgClass("green"),  count: riskCounts.green },
+        { level: "yellow" as const, bgClass: getRiskBgClass("yellow"), count: riskCounts.yellow },
+        { level: "orange" as const, bgClass: getRiskBgClass("orange"), count: riskCounts.orange },
+        { level: "red"    as const, bgClass: getRiskBgClass("red"),    count: riskCounts.red },
+    ];
 
     return (
         <div className="space-y-8">
             {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {(
-                    ["blue", "green", "yellow", "orange", "red"] as RiskLevel[]
-                ).map((level) => (
+                {riskCardData.map(({ level, bgClass, count }) => (
                     <button
                         key={level}
                         onClick={() =>
@@ -87,7 +101,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                                 selectedRisk === level ? "all" : level,
                             )
                         }
-                        className={`${RISK_BG_CLASSES[level]} relative overflow-hidden rounded-2xl p-4 text-white text-center transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 ${
+                        className={`${bgClass} relative overflow-hidden rounded-2xl p-4 text-white text-center transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 ${
                             selectedRisk === level
                                 ? "ring-4 ring-offset-2 ring-pink-200 scale-105 z-10 shadow-xl"
                                 : "opacity-90 hover:opacity-100"
@@ -95,7 +109,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                     >
                         <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity" />
                         <p className="text-3xl font-bold mb-1 drop-shadow-sm">
-                            {riskCounts[level]}
+                            {count}
                         </p>
                         <p className="text-xs font-bold opacity-90 uppercase tracking-wider">
                             คน
@@ -138,7 +152,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
 
             {/* Student List by Class */}
             <div className="max-h-[600px] overflow-y-auto pr-2 space-y-6 rounded-2xl border border-pink-200 bg-white/30 p-6 backdrop-blur-sm custom-scrollbar shadow-inner">
-                {Object.keys(groupedStudents).length === 0 ? (
+                {groupedStudents.size === 0 ? (
                     <div className="text-center py-20 text-gray-500">
                         <div className="mb-4 opacity-50">
                             <ClipboardList className="w-10 h-10 text-gray-400 mx-auto" />
@@ -149,7 +163,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                         <p className="text-sm opacity-70">ลองปรับตัวกรองใหม่</p>
                     </div>
                 ) : (
-                    Object.entries(groupedStudents)
+                    Array.from(groupedStudents.entries())
                         .sort(([a], [b]) => a.localeCompare(b))
                         .map(([className, classStudents]) => (
                             <div key={className} className="space-y-4">

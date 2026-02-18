@@ -1,5 +1,5 @@
 import { Upload, CheckCircle2, Eye, Loader2, FileText } from "lucide-react";
-import { UPLOAD_COLOR_CONFIG, WORKSHEET_NAMES } from "../constants";
+import { getUploadColors, getWorksheetNames } from "../constants";
 import type { ActivityProgressData, PreviewFile } from "../types";
 
 interface UploadSectionProps {
@@ -25,11 +25,10 @@ export function UploadSection({
     const requiredCount = currentActivityNumber === 5 ? 1 : 2;
     const uploadedCount = currentProgress.worksheetUploads.length;
     const remaining = requiredCount - uploadedCount;
-    const uploadColors = UPLOAD_COLOR_CONFIG[riskLevel];
+    const uploadColors = getUploadColors(riskLevel);
 
     // Get worksheet name for current upload
-    const worksheetNames = WORKSHEET_NAMES[currentActivityNumber] || [];
-    const nextWorksheetName = worksheetNames[uploadedCount];
+    const nextWorksheetName = getWorksheetNames(currentActivityNumber).at(uploadedCount);
 
     return (
         <div

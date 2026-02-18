@@ -2,6 +2,16 @@ import { ClipboardCheck } from "lucide-react";
 import { RiskGroupSection } from "../../phq/RiskGroupSection";
 import type { Student, GroupedStudents, RiskLevel } from "../types";
 
+function getStudentsByLevel(groupedStudents: GroupedStudents, level: RiskLevel): Student[] {
+    switch (level) {
+        case "red":    return groupedStudents.red;
+        case "orange": return groupedStudents.orange;
+        case "yellow": return groupedStudents.yellow;
+        case "green":  return groupedStudents.green;
+        case "blue":   return groupedStudents.blue;
+    }
+}
+
 interface ScreeningSummaryProps {
     filteredStudents: Student[];
     groupedStudents: GroupedStudents;
@@ -54,7 +64,7 @@ export function ScreeningSummary({
                 <RiskGroupSection
                     key={level}
                     level={level}
-                    students={groupedStudents[level]}
+                    students={getStudentsByLevel(groupedStudents, level)}
                     onStudentClick={onStudentClick}
                 />
             ))}

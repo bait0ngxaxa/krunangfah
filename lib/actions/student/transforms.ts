@@ -23,23 +23,16 @@ export function transformRiskCounts(
     };
 
     for (const row of rawCounts) {
-        const level = row.risk_level as
-            | "red"
-            | "orange"
-            | "yellow"
-            | "green"
-            | "blue";
-        const riskLevels = [
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "blue",
-        ] as const;
-        if (riskLevels.includes(level as (typeof riskLevels)[number])) {
-            riskCounts[level] = Number(row.count);
-            riskCounts.total += Number(row.count);
+        const count = Number(row.count);
+        switch (row.risk_level) {
+            case "red":    riskCounts.red    = count; break;
+            case "orange": riskCounts.orange = count; break;
+            case "yellow": riskCounts.yellow = count; break;
+            case "green":  riskCounts.green  = count; break;
+            case "blue":   riskCounts.blue   = count; break;
+            default:       continue;
         }
+        riskCounts.total += count;
     }
 
     return riskCounts;

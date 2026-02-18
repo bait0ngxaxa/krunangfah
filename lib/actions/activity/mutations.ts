@@ -79,7 +79,12 @@ export async function initializeActivityProgress(
     riskLevel: string,
 ) {
     try {
-        const activityNumbers = ACTIVITY_INDICES[riskLevel] || [];
+        // SECURITY: ป้องกัน client เรียก "use server" function โดยตรง
+        await requireAuth();
+
+        const activityNumbers = Object.hasOwn(ACTIVITY_INDICES, riskLevel)
+            ? ACTIVITY_INDICES[riskLevel as keyof typeof ACTIVITY_INDICES]
+            : [];
 
         if (activityNumbers.length === 0) {
             // No activities for red/blue
@@ -185,6 +190,9 @@ export async function unlockNextActivity(
     currentActivityNumber: number,
 ) {
     try {
+        // SECURITY: ป้องกัน client เรียก "use server" function โดยตรง
+        await requireAuth();
+
         // Find next locked activity
         const nextActivity = await prisma.activityProgress.findFirst({
             where: {

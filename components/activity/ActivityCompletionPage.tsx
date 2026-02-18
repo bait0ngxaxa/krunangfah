@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Calendar, PartyPopper } from "lucide-react";
 import {
-    COLOR_CONFIG,
-    ACTIVITY_NAMES,
-    ACTIVITY_INDICES,
+    getWorkspaceColorConfig,
+    getActivityName,
+    getWorksheetActivityIndices,
 } from "./ActivityWorkspace/constants";
 
 interface ActivityCompletionPageProps {
@@ -29,11 +29,11 @@ export function ActivityCompletionPage({
     const [scheduleVisible, setScheduleVisible] = useState(false);
     const [finalButtonVisible, setFinalButtonVisible] = useState(false);
 
-    const config = COLOR_CONFIG[riskLevel];
-    const currentActivityName = ACTIVITY_NAMES[activityNumber];
+    const config = getWorkspaceColorConfig(riskLevel);
+    const currentActivityName = getActivityName(activityNumber);
 
     // Find actual next activity from ACTIVITY_INDICES (not just +1)
-    const activityIndices = ACTIVITY_INDICES[riskLevel] || [];
+    const activityIndices = getWorksheetActivityIndices(riskLevel);
     const currentIndex = activityIndices.indexOf(activityNumber);
     const hasNextActivity =
         currentIndex >= 0 && currentIndex < activityIndices.length - 1;
@@ -41,7 +41,7 @@ export function ActivityCompletionPage({
         ? activityIndices[currentIndex + 1]
         : undefined;
     const nextActivityName = nextActivityNumber
-        ? ACTIVITY_NAMES[nextActivityNumber]
+        ? getActivityName(nextActivityNumber)
         : undefined;
 
     // Animate elements

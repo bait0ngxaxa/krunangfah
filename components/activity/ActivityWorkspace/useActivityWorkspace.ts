@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { uploadWorksheet, updateTeacherNotes } from "@/lib/actions/activity";
-import { ACTIVITIES, ACTIVITY_INDICES, COLOR_CONFIG } from "./constants";
+import { ACTIVITIES, getWorksheetActivityIndices, getWorkspaceColorConfig } from "./constants";
 import type {
     ActivityWorkspaceProps,
     UseActivityWorkspaceReturn,
@@ -34,8 +34,8 @@ export function useActivityWorkspace({
     >([]);
 
     // Computed values
-    const config = COLOR_CONFIG[riskLevel];
-    const activityNumbers = ACTIVITY_INDICES[riskLevel];
+    const config = getWorkspaceColorConfig(riskLevel);
+    const activityNumbers = getWorksheetActivityIndices(riskLevel);
     const activities = activityNumbers
         .map((num) => ACTIVITIES.find((a) => a.number === num))
         .filter((a): a is NonNullable<typeof a> => a !== undefined);

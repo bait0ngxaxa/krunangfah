@@ -27,11 +27,11 @@ export const metadata: Metadata = {
 
 /* ─── Constants ─── */
 
-const PROJECT_ROLE_LABELS: Record<string, string> = {
-    lead: "ทีมนำ (Lead)",
-    care: "ทีมดูแล (Care)",
-    coordinate: "ทีมประสานงาน (Coordinate)",
-};
+const PROJECT_ROLE_LABEL_MAP = new Map<string, string>([
+    ["lead", "ทีมนำ (Lead)"],
+    ["care", "ทีมดูแล (Care)"],
+    ["coordinate", "ทีมประสานงาน (Coordinate)"],
+]);
 
 /* ─── Stat Builders ─── */
 
@@ -66,7 +66,7 @@ function buildTeacherStats(
     projectRole: string,
     isClassTeacher: boolean,
 ): StatItem[] {
-    const roleLabel = PROJECT_ROLE_LABELS[projectRole] || projectRole;
+    const roleLabel = PROJECT_ROLE_LABEL_MAP.get(projectRole) ?? projectRole;
     const stats: StatItem[] = [
         {
             icon: Users,

@@ -131,3 +131,13 @@ export const RISK_LEVEL_CONFIG: Record<RiskLevel, RiskLevelStyle> = {
         rowBorder: "border-blue-100/40",
     },
 };
+
+export function getRiskLevelConfig(level: RiskLevel): RiskLevelStyle {
+    switch (level) {
+        case "red":    return RISK_LEVEL_CONFIG.red;
+        case "orange": return RISK_LEVEL_CONFIG.orange;
+        case "yellow": return RISK_LEVEL_CONFIG.yellow;
+        case "green":  return RISK_LEVEL_CONFIG.green;
+        case "blue":   return RISK_LEVEL_CONFIG.blue;
+    }
+}

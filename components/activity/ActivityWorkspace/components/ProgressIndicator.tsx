@@ -27,11 +27,13 @@ export function ProgressIndicator({
     ).length;
     const progressPercentage = (completedCount / (activities.length - 1)) * 100;
 
-    const colorMap: Record<string, string> = {
-        orange: "border-orange-500 text-orange-600 ring-orange-100",
-        yellow: "border-yellow-400 text-yellow-600 ring-yellow-100",
-        green: "border-green-500 text-green-600 ring-green-100",
-    };
+    function getActiveCircleStyle(level: "orange" | "yellow" | "green"): string {
+        switch (level) {
+            case "orange": return "border-orange-500 text-orange-600 ring-orange-100";
+            case "yellow": return "border-yellow-400 text-yellow-600 ring-yellow-100";
+            case "green":  return "border-green-500 text-green-600 ring-green-100";
+        }
+    }
 
     return (
         <div className="mb-10 bg-white/60 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-pink-200 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50">
@@ -71,9 +73,7 @@ export function ProgressIndicator({
                             circleClass =
                                 "bg-linear-to-br from-green-400 to-emerald-500 border-transparent text-white shadow-lg shadow-green-200 scale-110";
                         } else if (isCurrent) {
-                            const activeStyle =
-                                colorMap[riskLevel] ||
-                                "border-gray-500 text-gray-600 ring-gray-100";
+                            const activeStyle = getActiveCircleStyle(riskLevel);
                             circleClass = `bg-white border-4 ${activeStyle} shadow-lg ring-4 scale-110`;
                         }
 
@@ -164,9 +164,7 @@ export function ProgressIndicator({
                             circleClass =
                                 "bg-linear-to-br from-green-400 to-emerald-500 border-transparent text-white shadow-lg shadow-green-200";
                         } else if (isCurrent) {
-                            const activeStyle =
-                                colorMap[riskLevel] ||
-                                "border-gray-500 text-gray-600 ring-gray-100";
+                            const activeStyle = getActiveCircleStyle(riskLevel);
                             circleClass = `bg-white border-3 ${activeStyle} shadow-md ring-3`;
                         }
 

@@ -13,8 +13,8 @@ import { BackButton } from "@/components/ui/BackButton";
 import { toast } from "sonner";
 import { submitTeacherAssessment } from "@/lib/actions/activity";
 import {
-    COLOR_CONFIG,
-    ASSESSMENT_COLOR_CONFIG,
+    getWorkspaceColorConfig,
+    getAssessmentColors,
 } from "./ActivityWorkspace/constants";
 
 interface TeacherAssessmentFormProps {
@@ -37,8 +37,8 @@ export function TeacherAssessmentForm({
     phqResultId,
 }: TeacherAssessmentFormProps) {
     const router = useRouter();
-    const config = COLOR_CONFIG[riskLevel];
-    const assessmentColors = ASSESSMENT_COLOR_CONFIG[riskLevel];
+    const config = getWorkspaceColorConfig(riskLevel);
+    const assessmentColors = getAssessmentColors(riskLevel);
 
     const [internalProblems, setInternalProblems] = useState("");
     const [externalProblems, setExternalProblems] = useState("");

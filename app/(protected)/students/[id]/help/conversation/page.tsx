@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { getStudentDetail } from "@/lib/actions/student";
-import { COLOR_CONFIG } from "@/lib/config/help-page-config";
+import { getColorConfig } from "@/lib/config/help-page-config";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { HelpPageHeader } from "@/components/student/help";
 
@@ -35,7 +35,7 @@ export default async function ConversationGuidelinesPage({
     }
 
     const riskLevel = latestResult.riskLevel as RiskLevel;
-    const config = COLOR_CONFIG[riskLevel] || COLOR_CONFIG.green;
+    const config = getColorConfig(riskLevel);
     const studentName = `${student.firstName} ${student.lastName}`;
 
     return (

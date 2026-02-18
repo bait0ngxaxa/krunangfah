@@ -1,3 +1,5 @@
+import type { RiskLevel } from "@/lib/utils/phq-scoring";
+
 export type Activity = {
     id: string;
     title: string;
@@ -57,7 +59,7 @@ export const ACTIVITY_INDICES: Record<string, number[]> = {
     green: [0, 1, 4], // กิจกรรม 1, 2, 5
 };
 
-export const COLOR_CONFIG: Record<string, ColorTheme> = {
+export const COLOR_CONFIG: Record<RiskLevel, ColorTheme> = {
     orange: {
         gradient: "from-orange-500 to-amber-500",
         bg: "bg-orange-500",
@@ -109,3 +111,23 @@ export const COLOR_CONFIG: Record<string, ColorTheme> = {
         separatorColor: "text-blue-300",
     },
 };
+
+export function getColorConfig(level: RiskLevel): ColorTheme {
+    switch (level) {
+        case "red":    return COLOR_CONFIG.red;
+        case "orange": return COLOR_CONFIG.orange;
+        case "yellow": return COLOR_CONFIG.yellow;
+        case "green":  return COLOR_CONFIG.green;
+        case "blue":   return COLOR_CONFIG.blue;
+    }
+}
+
+export function getActivities(level: RiskLevel): Activity[] {
+    switch (level) {
+        case "orange": return [ACTIVITIES[0], ACTIVITIES[1], ACTIVITIES[2], ACTIVITIES[3], ACTIVITIES[4]];
+        case "yellow": return [ACTIVITIES[0], ACTIVITIES[1], ACTIVITIES[2], ACTIVITIES[4]];
+        case "green":  return [ACTIVITIES[0], ACTIVITIES[1], ACTIVITIES[4]];
+        case "red":
+        case "blue":   return [];
+    }
+}

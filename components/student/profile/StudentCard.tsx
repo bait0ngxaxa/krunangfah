@@ -8,8 +8,8 @@
 
 import { memo } from "react";
 import {
-    RISK_LABELS,
-    RISK_BG_CLASSES,
+    getRiskBgClass,
+    getRiskLabel,
     type RiskLevel,
 } from "@/lib/utils/phq-scoring";
 
@@ -72,9 +72,9 @@ function StudentCardComponent({ student, onClick }: StudentCardProps) {
                         </span>
                     )}
                     <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm border border-white/20 ${RISK_BG_CLASSES[riskLevel]}`}
+                        className={`px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm border border-white/20 ${getRiskBgClass(riskLevel)}`}
                     >
-                        {RISK_LABELS[riskLevel]}
+                        {getRiskLabel(riskLevel)}
                     </span>
                 </div>
             </div>

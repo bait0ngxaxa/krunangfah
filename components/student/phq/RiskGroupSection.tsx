@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
-import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
+import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 
 const MAX_VISIBLE_ROWS = 6;
 const ROW_HEIGHT_PX = 56;
@@ -32,7 +32,7 @@ export function RiskGroupSection({
     students,
     onStudentClick,
 }: RiskGroupSectionProps) {
-    const config = RISK_LEVEL_CONFIG[level];
+    const config = getRiskLevelConfig(level);
     const scrollRef = useRef<HTMLDivElement>(null);
     const [scrolledToBottom, setScrolledToBottom] = useState(false);
 

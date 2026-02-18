@@ -136,6 +136,13 @@ export const ENCOURAGEMENT_MESSAGES = {
     ],
 };
 
+export function getEncouragementMessages(problemType: "internal" | "external"): string[] {
+    switch (problemType) {
+        case "internal": return ENCOURAGEMENT_MESSAGES.internal;
+        case "external": return ENCOURAGEMENT_MESSAGES.external;
+    }
+}
+
 /**
  * Assessment form colors by risk level
  */
@@ -236,6 +243,62 @@ export const UPLOAD_COLOR_CONFIG: Record<
     },
 };
 
+export type WorksheetRiskLevel = "orange" | "yellow" | "green";
+
+export function getWorkspaceColorConfig(level: WorksheetRiskLevel) {
+    switch (level) {
+        case "orange": return COLOR_CONFIG.orange;
+        case "yellow": return COLOR_CONFIG.yellow;
+        case "green":  return COLOR_CONFIG.green;
+    }
+}
+
+export function getAssessmentColors(level: WorksheetRiskLevel) {
+    switch (level) {
+        case "orange": return ASSESSMENT_COLOR_CONFIG.orange;
+        case "yellow": return ASSESSMENT_COLOR_CONFIG.yellow;
+        case "green":  return ASSESSMENT_COLOR_CONFIG.green;
+    }
+}
+
+export function getUploadColors(level: WorksheetRiskLevel) {
+    switch (level) {
+        case "orange": return UPLOAD_COLOR_CONFIG.orange;
+        case "yellow": return UPLOAD_COLOR_CONFIG.yellow;
+        case "green":  return UPLOAD_COLOR_CONFIG.green;
+    }
+}
+
+export function getWorksheetActivityIndices(level: WorksheetRiskLevel): number[] {
+    switch (level) {
+        case "orange": return ACTIVITY_INDICES.orange;
+        case "yellow": return ACTIVITY_INDICES.yellow;
+        case "green":  return ACTIVITY_INDICES.green;
+    }
+}
+
+export function getActivityName(activityNumber: number): string {
+    switch (activityNumber) {
+        case 1: return ACTIVITY_NAMES[1];
+        case 2: return ACTIVITY_NAMES[2];
+        case 3: return ACTIVITY_NAMES[3];
+        case 4: return ACTIVITY_NAMES[4];
+        case 5: return ACTIVITY_NAMES[5];
+        default: return `กิจกรรมที่ ${activityNumber}`;
+    }
+}
+
+export function getWorksheetNames(activityNumber: number): string[] {
+    switch (activityNumber) {
+        case 1: return WORKSHEET_NAMES[1];
+        case 2: return WORKSHEET_NAMES[2];
+        case 3: return WORKSHEET_NAMES[3];
+        case 4: return WORKSHEET_NAMES[4];
+        case 5: return WORKSHEET_NAMES[5];
+        default: return [];
+    }
+}
+
 /**
  * Download URLs for worksheet PDFs by activity number
  */
@@ -246,6 +309,17 @@ export const DOWNLOAD_URLS: Record<number, string[]> = {
     4: ["/download/a4/d4-1.pdf", "/download/a4/d4-2.pdf"],
     5: ["/download/a5/d5.pdf"],
 };
+
+export function getDownloadUrls(activityNumber: number): string[] {
+    switch (activityNumber) {
+        case 1: return DOWNLOAD_URLS[1];
+        case 2: return DOWNLOAD_URLS[2];
+        case 3: return DOWNLOAD_URLS[3];
+        case 4: return DOWNLOAD_URLS[4];
+        case 5: return DOWNLOAD_URLS[5];
+        default: return [];
+    }
+}
 
 /**
  * Worksheet names by activity number

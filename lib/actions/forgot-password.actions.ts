@@ -72,7 +72,10 @@ export async function requestPasswordReset(input: {
             const token = await generatePasswordResetToken(email);
             await sendPasswordResetEmail(email, token);
         } catch (error) {
-            console.error("Failed to send password reset email:", error);
+            console.error(
+                "Failed to send password reset email:",
+                error instanceof Error ? error.message : "Unknown error",
+            );
             // Don't expose the error to the client
         }
     }
@@ -93,6 +96,17 @@ export async function resetPassword(input: {
     password: string;
     confirmPassword: string;
 }): Promise<ActionResult> {
+    // --- Rate limit (ป้องกัน brute-force token) ---
+    const headerStore = await headers();
+    const ip = extractClientIp((name) => headerStore.get(name));
+    const rateLimitResult = forgotPasswordLimiter.check(ip);
+    if (!rateLimitResult.allowed) {
+        return {
+            success: false,
+            message: `ส่งคำขอมากเกินไป กรุณารอสักครู่`,
+        };
+    }
+
     // --- Validate ---
     const parsed = resetPasswordSchema.safeParse(input);
     if (!parsed.success) {

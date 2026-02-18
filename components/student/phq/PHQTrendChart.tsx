@@ -27,13 +27,15 @@ interface PHQTrendChartProps {
     results: PHQResult[];
 }
 
-const riskColors: Record<RiskLevel, string> = {
-    blue: "#3b82f6",
-    green: "#22c55e",
-    yellow: "#eab308",
-    orange: "#f97316",
-    red: "#ef4444",
-};
+function getLineColor(level: RiskLevel): string {
+    switch (level) {
+        case "blue":   return "#3b82f6";
+        case "green":  return "#22c55e";
+        case "yellow": return "#eab308";
+        case "orange": return "#f97316";
+        case "red":    return "#ef4444";
+    }
+}
 
 interface ChartDataPoint {
     date: string;
@@ -102,7 +104,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
 
     // Get color based on latest risk level
     const latestRisk = results[0].riskLevel as RiskLevel;
-    const lineColor = riskColors[latestRisk] || riskColors.blue;
+    const lineColor = getLineColor(latestRisk);
 
     return (
         <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 relative overflow-hidden group hover:shadow-xl transition-all duration-300">

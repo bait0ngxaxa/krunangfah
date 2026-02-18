@@ -18,7 +18,12 @@ export function getCompletedCount(progressData: ActivityProgress[]): number {
 }
 
 export function getActivityNumbers(riskLevel: RiskLevel): number[] {
-    return ACTIVITY_INDICES[riskLevel] || [];
+    switch (riskLevel) {
+        case "orange": return ACTIVITY_INDICES.orange;
+        case "yellow": return ACTIVITY_INDICES.yellow;
+        case "green":  return ACTIVITY_INDICES.green;
+        default:       return [];
+    }
 }
 
 export function getRiskLevelLabel(level: string): string {

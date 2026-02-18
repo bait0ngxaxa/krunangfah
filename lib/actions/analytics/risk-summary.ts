@@ -22,9 +22,12 @@ export async function calculateRiskLevelSummary(
     };
 
     studentLatestAssessment.forEach((result) => {
-        const level = result.riskLevel as keyof typeof riskLevelCounts;
-        if (level in riskLevelCounts) {
-            riskLevelCounts[level]++;
+        switch (result.riskLevel) {
+            case "blue":   riskLevelCounts.blue++;   break;
+            case "green":  riskLevelCounts.green++;  break;
+            case "yellow": riskLevelCounts.yellow++; break;
+            case "orange": riskLevelCounts.orange++; break;
+            case "red":    riskLevelCounts.red++;    break;
         }
     });
 
@@ -39,10 +42,12 @@ export async function calculateRiskLevelSummary(
 
     studentLatestAssessment.forEach((result) => {
         if (result.referredToHospital) {
-            const level =
-                result.riskLevel as keyof typeof referralCountsByLevel;
-            if (level in referralCountsByLevel) {
-                referralCountsByLevel[level]++;
+            switch (result.riskLevel) {
+                case "blue":   referralCountsByLevel.blue++;   break;
+                case "green":  referralCountsByLevel.green++;  break;
+                case "yellow": referralCountsByLevel.yellow++; break;
+                case "orange": referralCountsByLevel.orange++; break;
+                case "red":    referralCountsByLevel.red++;    break;
             }
         }
     });

@@ -43,15 +43,16 @@ export async function parseExcelBuffer(
             };
         }
 
-        const headers: string[] = [];
+        // Map from header name → column number (reverse index for safe lookup)
+        const headers = new Map<string, number>();
         worksheet.getRow(1).eachCell((cell, colNumber) => {
-            headers[colNumber] = String(cell.value || "").trim();
+            headers.set(String(cell.value || "").trim(), colNumber);
         });
 
         // Validate required headers
         const requiredHeaders = ["รหัสนักเรียน", "ชื่อ", "นามสกุล", "ห้อง"];
         for (const header of requiredHeaders) {
-            if (!headers.includes(header)) {
+            if (!headers.has(header)) {
                 errors.push(`ไม่พบคอลัมน์ "${header}" ในไฟล์`);
             }
         }
@@ -66,7 +67,7 @@ export async function parseExcelBuffer(
 
             try {
                 const getCell = (headerName: string): string => {
-                    const colIndex = headers.indexOf(headerName);
+                    const colIndex = headers.get(headerName) ?? -1;
                     if (colIndex === -1) return "";
                     const cellValue = row.getCell(colIndex).value;
                     return String(cellValue ?? "").trim();

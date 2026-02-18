@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { BookOpen, Download, ChevronDown, FileText } from "lucide-react";
-import { WORKSHEET_NAMES } from "../constants";
+import { getWorksheetNames } from "../constants";
 
 interface ActionButtonsProps {
     studentId: string;
@@ -80,9 +80,8 @@ export function ActionButtons({
                 {isDropdownOpen && (
                     <div className="absolute top-full mt-3 left-0 right-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-pink-100 overflow-hidden z-50 animate-fade-in-up">
                         {downloadUrls.map((url, index) => {
-                            const worksheetNames =
-                                WORKSHEET_NAMES[activityNumber] || [];
-                            const worksheetName = worksheetNames[index];
+                            const worksheetNames = getWorksheetNames(activityNumber);
+                            const worksheetName = worksheetNames.at(index);
 
                             return (
                                 <button

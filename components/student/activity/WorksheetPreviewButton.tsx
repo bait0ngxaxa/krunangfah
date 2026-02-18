@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Eye, X, Check, FileText, ImageIcon } from "lucide-react";
-import { WORKSHEET_NAMES } from "@/components/activity/ActivityWorkspace/constants";
+import { getWorksheetNames } from "@/components/activity/ActivityWorkspace/constants";
 
 interface WorksheetUpload {
     id: string;
@@ -124,9 +124,7 @@ export function WorksheetPreviewButton({
                     เสร็จแล้ว
                 </span>
                 {uploads.map((upload, index) => {
-                    const worksheetNames =
-                        WORKSHEET_NAMES[activityNumber] || [];
-                    const worksheetName = worksheetNames[index];
+                    const worksheetName = getWorksheetNames(activityNumber).at(index);
 
                     return (
                         <button

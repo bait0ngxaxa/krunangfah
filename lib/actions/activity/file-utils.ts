@@ -30,7 +30,7 @@ function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
         return false;
     }
 
-    return signature.bytes.every((byte, i) => buffer[i] === byte);
+    return signature.bytes.every((byte, i) => buffer.readUInt8(i) === byte);
 }
 
 function getValidExtension(fileName: string): string | null {
@@ -166,6 +166,7 @@ export async function uploadWorksheet(
         const filePath = join(uploadDir, fileName);
 
         // Save file to disk
+        // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB UUID + activityNumber + timestamp + whitelist-validated extension
         await writeFile(filePath, buffer);
 
         // Save to database — clean up file if DB write fails

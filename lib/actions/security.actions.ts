@@ -102,7 +102,10 @@ export async function changePassword(
             message: "เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่",
         };
     } catch (error) {
-        console.error("Change password error:", error);
+        console.error(
+            "Change password error:",
+            error instanceof Error ? error.message : "Unknown error",
+        );
         return {
             success: false,
             message: "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",

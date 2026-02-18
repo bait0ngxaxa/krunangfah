@@ -8,13 +8,15 @@ import { prisma } from "@/lib/prisma";
 /** Allowed file extensions for serving (must match upload whitelist) */
 const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "pdf"]);
 
-/** Content-Type mapping by extension */
-const CONTENT_TYPES: Record<string, string> = {
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    png: "image/png",
-    pdf: "application/pdf",
-};
+function getContentType(ext: string): string {
+    switch (ext) {
+        case "jpg":
+        case "jpeg": return "image/jpeg";
+        case "png":  return "image/png";
+        case "pdf":  return "application/pdf";
+        default:     return "application/octet-stream";
+    }
+}
 
 export async function GET(
     request: NextRequest,
@@ -56,6 +58,7 @@ export async function GET(
         }
 
         // Check if file exists
+        // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath validated via startsWith(uploadsDir) and extension whitelist above
         if (!existsSync(filePath)) {
             return new NextResponse("File not found", { status: 404 });
         }
@@ -121,8 +124,9 @@ export async function GET(
         }
 
         // Read file
+        // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath validated via startsWith(uploadsDir) and extension whitelist above
         const fileBuffer = await readFile(filePath);
-        const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
+        const contentType = getContentType(ext);
 
         // Sanitize filename for Content-Disposition header
         const rawFileName = path[path.length - 1];

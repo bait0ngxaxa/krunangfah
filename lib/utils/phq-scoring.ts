@@ -59,6 +59,36 @@ export const RISK_BG_CLASSES: Record<RiskLevel, string> = {
     red: "bg-red-500",
 };
 
+export function getRiskBgClass(level: RiskLevel): string {
+    switch (level) {
+        case "red":    return RISK_BG_CLASSES.red;
+        case "orange": return RISK_BG_CLASSES.orange;
+        case "yellow": return RISK_BG_CLASSES.yellow;
+        case "green":  return RISK_BG_CLASSES.green;
+        case "blue":   return RISK_BG_CLASSES.blue;
+    }
+}
+
+export function getRiskLabel(level: RiskLevel): string {
+    switch (level) {
+        case "red":    return RISK_LABELS.red;
+        case "orange": return RISK_LABELS.orange;
+        case "yellow": return RISK_LABELS.yellow;
+        case "green":  return RISK_LABELS.green;
+        case "blue":   return RISK_LABELS.blue;
+    }
+}
+
+function getRiskData(level: RiskLevel): { riskLabel: string; riskColor: string } {
+    switch (level) {
+        case "red":    return { riskLabel: RISK_LABELS.red,    riskColor: RISK_COLORS.red };
+        case "orange": return { riskLabel: RISK_LABELS.orange, riskColor: RISK_COLORS.orange };
+        case "yellow": return { riskLabel: RISK_LABELS.yellow, riskColor: RISK_COLORS.yellow };
+        case "green":  return { riskLabel: RISK_LABELS.green,  riskColor: RISK_COLORS.green };
+        case "blue":   return { riskLabel: RISK_LABELS.blue,   riskColor: RISK_COLORS.blue };
+    }
+}
+
 /**
  * Calculate risk level from PHQ-A scores
  *
@@ -98,12 +128,8 @@ export function calculateRiskLevel(scores: PhqScores): ScoringResult {
         riskLevel = "blue";
     }
 
-    return {
-        totalScore,
-        riskLevel,
-        riskLabel: RISK_LABELS[riskLevel],
-        riskColor: RISK_COLORS[riskLevel],
-    };
+    const { riskLabel, riskColor } = getRiskData(riskLevel);
+    return { totalScore, riskLevel, riskLabel, riskColor };
 }
 
 /**

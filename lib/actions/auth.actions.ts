@@ -7,6 +7,7 @@ import {
     RATE_LIMIT_REGISTRATION,
     RATE_LIMIT_AUTH_SIGNIN,
 } from "@/lib/constants/rate-limit";
+import { signUpSchema } from "@/lib/validations/auth.validation";
 import type { SignUpCredentials, AuthResponse } from "@/types/auth.types";
 
 // Module-level singletons
@@ -70,5 +71,14 @@ export async function registerUser(
         };
     }
 
-    return await createUser(credentials);
+    // Validate input server-side (ป้องกัน bypass client-side validation)
+    const parsed = signUpSchema.safeParse(credentials);
+    if (!parsed.success) {
+        return {
+            success: false,
+            message: parsed.error.issues[0].message,
+        };
+    }
+
+    return await createUser(parsed.data);
 }

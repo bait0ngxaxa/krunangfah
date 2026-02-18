@@ -1,11 +1,3 @@
-/**
- * In-memory rate limiter using sliding window algorithm
- *
- * Tracks request timestamps per key (IP) in a Map.
- * Automatically cleans up expired entries to prevent memory leaks.
- * Compatible with both Edge Runtime (middleware) and Node.js (server actions).
- */
-
 import type {
     RateLimitConfig,
     RateLimitResult,
@@ -117,15 +109,21 @@ export function createRateLimiter(config: RateLimitConfig): RateLimiter {
 export function extractClientIp(
     headerGetter: (name: string) => string | null,
 ): string {
+    // Basic IPv4/IPv6 format validation
+    const isValidIp = (ip: string) =>
+        /^[\d.:a-fA-F]+$/.test(ip) && ip.length <= 45;
+
     const forwarded = headerGetter("x-forwarded-for");
     if (forwarded) {
         // x-forwarded-for may contain multiple IPs: client, proxy1, proxy2
-        return forwarded.split(",")[0].trim();
+        const ip = forwarded.split(",")[0].trim();
+        if (isValidIp(ip)) return ip;
     }
 
     const realIp = headerGetter("x-real-ip");
     if (realIp) {
-        return realIp.trim();
+        const ip = realIp.trim();
+        if (isValidIp(ip)) return ip;
     }
 
     return "unknown";

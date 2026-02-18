@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { Heart, Sparkles, ArrowRight } from "lucide-react";
 import { ActivityCompletionPage } from "./ActivityCompletionPage";
 import {
-    COLOR_CONFIG,
+    getWorkspaceColorConfig,
+    getEncouragementMessages,
     ENCOURAGEMENT_MESSAGES,
 } from "./ActivityWorkspace/constants";
 
@@ -32,8 +33,8 @@ export function EncouragementPage({
     const [showTips, setShowTips] = useState(false);
     const [showButton, setShowButton] = useState(false);
 
-    const config = COLOR_CONFIG[riskLevel];
-    const mainMessages = ENCOURAGEMENT_MESSAGES[problemType];
+    const config = getWorkspaceColorConfig(riskLevel);
+    const mainMessages = getEncouragementMessages(problemType);
     const tipMessages = ENCOURAGEMENT_MESSAGES.tips;
 
     // Step 1 animations

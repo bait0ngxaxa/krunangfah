@@ -2,9 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { getStudentDetail } from "@/lib/actions/student";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import {
-    ACTIVITIES,
-    ACTIVITY_INDICES,
-    COLOR_CONFIG,
+    getColorConfig,
+    getActivities,
 } from "@/lib/config/help-page-config";
 import { ConversationView, ActivityView } from "@/components/student";
 
@@ -31,7 +30,7 @@ export default async function StudentHelpPage({ params, searchParams }: PageProp
     }
 
     const riskLevel = latestResult.riskLevel as RiskLevel;
-    const config = COLOR_CONFIG[riskLevel] || COLOR_CONFIG.green;
+    const config = getColorConfig(riskLevel);
     const studentName = `${student.firstName} ${student.lastName}`;
 
     // Red - 3-step workflow, Blue - conversation guidelines only
@@ -52,8 +51,7 @@ export default async function StudentHelpPage({ params, searchParams }: PageProp
     }
 
     // Orange, Yellow, Green - Always show worksheet introduction
-    const activityIndices = ACTIVITY_INDICES[riskLevel] || [0, 1, 4];
-    const activities = activityIndices.map((index) => ACTIVITIES[index]);
+    const activities = getActivities(riskLevel);
 
     return (
         <ActivityView

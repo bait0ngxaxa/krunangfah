@@ -50,9 +50,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     }
 
                     // Sync role with whitelist on every login
-                    const isWhitelisted = await prisma.systemAdminWhitelist.findUnique({
-                        where: { email, isActive: true },
-                    });
+                    const isWhitelisted =
+                        await prisma.systemAdminWhitelist.findUnique({
+                            where: { email, isActive: true },
+                        });
 
                     if (isWhitelisted && user.role !== "system_admin") {
                         // Promote: whitelisted but not yet system_admin
@@ -92,7 +93,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         updatedAt: user.updatedAt,
                     };
                 } catch (error) {
-                    console.error("Authorization error:", error);
+                    console.error(
+                        "Authorization error:",
+                        error instanceof Error
+                            ? error.message
+                            : "Unknown error",
+                    );
                     return null;
                 }
             },
@@ -135,7 +141,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (token && session.user) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as UserRole;
-                session.user.hasTeacherProfile = token.hasTeacherProfile as boolean;
+                session.user.hasTeacherProfile =
+                    token.hasTeacherProfile as boolean;
             }
             return session;
         },

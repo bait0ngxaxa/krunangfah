@@ -12,7 +12,7 @@ import {
     TeacherNotesSection,
     ProgressIndicator,
 } from "./components";
-import { DOWNLOAD_URLS } from "./constants";
+import { getDownloadUrls } from "./constants";
 import type { ActivityWorkspaceProps } from "./types";
 
 /**
@@ -48,7 +48,7 @@ export function ActivityWorkspace({
 
     // Get download URLs for current activity
     const downloadUrls = currentActivityNumber
-        ? DOWNLOAD_URLS[currentActivityNumber] || []
+        ? getDownloadUrls(currentActivityNumber)
         : [];
 
     if (!currentActivity) {
