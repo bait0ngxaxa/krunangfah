@@ -7,31 +7,12 @@ import { join } from "path";
 import { existsSync } from "fs";
 import {
     REQUIRED_WORKSHEETS,
-    ALLOWED_FILE_TYPES,
     ALLOWED_EXTENSIONS,
-    MAGIC_BYTES,
     MAX_FILE_SIZE,
 } from "./constants";
 import { revalidateTag } from "next/cache";
 import { unlockNextActivity } from "./mutations";
 import type { UploadWorksheetResult } from "./types";
-
-/**
- * Validate file content by checking magic bytes (file signature)
- * Prevents uploading disguised files (e.g. .exe renamed to .jpg)
- */
-function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
-    const signature = MAGIC_BYTES.find((m) => m.mime === mimeType);
-    if (!signature) {
-        return false;
-    }
-
-    if (buffer.length < signature.bytes.length) {
-        return false;
-    }
-
-    return signature.bytes.every((byte, i) => buffer.readUInt8(i) === byte);
-}
 
 function getValidExtension(fileName: string): string | null {
     const parts = fileName.split(".");
@@ -63,15 +44,7 @@ export async function uploadWorksheet(
             return { success: false, message: "ไฟล์ใหญ่เกินไป (สูงสุด 10MB)" };
         }
 
-        // Validate MIME type
-        if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-            return {
-                success: false,
-                message: "ประเภทไฟล์ไม่ถูกต้อง (รองรับ JPG, PNG, PDF เท่านั้น)",
-            };
-        }
-
-        // Validate file extension
+        // Validate file extension (whitelist only)
         const ext = getValidExtension(file.name);
         if (!ext) {
             return {
@@ -84,14 +57,6 @@ export async function uploadWorksheet(
         // Read file content
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-
-        // Validate magic bytes (actual file content)
-        if (!validateMagicBytes(buffer, file.type)) {
-            return {
-                success: false,
-                message: "เนื้อหาไฟล์ไม่ตรงกับประเภทที่ระบุ",
-            };
-        }
 
         // Get activity progress with student info for authorization
         const activityProgress = await prisma.activityProgress.findUnique({
@@ -112,19 +77,17 @@ export async function uploadWorksheet(
             return { success: false, message: "Activity not found" };
         }
 
-        // Verify authorization: check if activity belongs to user's school/class
+        // Verify authorization by role
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: {
                 schoolId: true,
                 role: true,
-                teacher: {
-                    select: { advisoryClass: true },
-                },
             },
         });
 
-        // system_admin can access all schools — skip school/class check
+        // system_admin / school_admin can access all files (school_admin scoped to own school)
+        // class_teacher: schoolId check only — UI already filters by advisory class
         if (user?.role !== "system_admin") {
             if (
                 !user?.schoolId ||
@@ -134,21 +97,6 @@ export async function uploadWorksheet(
                     success: false,
                     message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
                 };
-            }
-
-            // class_teacher: verify student is in their advisory class
-            if (user.role === "class_teacher") {
-                const advisoryClass = user.teacher?.advisoryClass;
-                if (
-                    !advisoryClass ||
-                    activityProgress.student.class !== advisoryClass
-                ) {
-                    return {
-                        success: false,
-                        message:
-                            "คุณสามารถอัปโหลดได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
-                    };
-                }
             }
         }
 

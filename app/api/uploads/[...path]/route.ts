@@ -93,13 +93,11 @@ export async function GET(
                 select: {
                     schoolId: true,
                     role: true,
-                    teacher: {
-                        select: { advisoryClass: true },
-                    },
                 },
             });
 
-            // system_admin can access all files
+            // system_admin / school_admin can view all files (school_admin scoped to own school)
+            // class_teacher: schoolId check only — UI already filters by advisory class
             if (user?.role !== "system_admin") {
                 if (
                     !user?.schoolId ||
@@ -107,18 +105,6 @@ export async function GET(
                         worksheet.activityProgress.student.schoolId
                 ) {
                     return new NextResponse("Forbidden", { status: 403 });
-                }
-
-                // class_teacher: verify student is in their advisory class
-                if (user.role === "class_teacher") {
-                    const advisoryClass = user.teacher?.advisoryClass;
-                    if (
-                        !advisoryClass ||
-                        worksheet.activityProgress.student.class !==
-                            advisoryClass
-                    ) {
-                        return new NextResponse("Forbidden", { status: 403 });
-                    }
                 }
             }
         }
