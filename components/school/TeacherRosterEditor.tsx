@@ -1,0 +1,520 @@
+"use client";
+
+import { useState, useEffect, useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, X, UserPlus, Users, Check, Pencil } from "lucide-react";
+import {
+    addTeacherToRoster,
+    removeFromRoster,
+    updateRosterEntry,
+} from "@/lib/actions/teacher-roster.actions";
+import {
+    teacherRosterSchema,
+    ADMIN_ADVISORY_CLASS,
+    type TeacherRosterFormData,
+} from "@/lib/validations/teacher-roster.validation";
+import type {
+    TeacherRosterItem,
+    SchoolClassItem,
+} from "@/types/school-setup.types";
+
+interface TeacherRosterEditorProps {
+    initialRoster: TeacherRosterItem[];
+    schoolClasses: SchoolClassItem[];
+    onUpdate?: (roster: TeacherRosterItem[]) => void;
+    readOnly?: boolean;
+}
+
+const USER_ROLES = [
+    { value: "school_admin", label: "ครูนางฟ้า" },
+    { value: "class_teacher", label: "ครูประจำชั้น" },
+] as const;
+
+const PROJECT_ROLES = [
+    { value: "lead", label: "ทีมนำ" },
+    { value: "care", label: "ทีมดูแล" },
+    { value: "coordinate", label: "ทีมประสาน" },
+] as const;
+
+const USER_ROLE_LABELS: Record<string, string> = {
+    school_admin: "ครูนางฟ้า",
+    class_teacher: "ครูประจำชั้น",
+};
+
+const PROJECT_ROLE_LABELS: Record<string, string> = {
+    lead: "ทีมนำ",
+    care: "ทีมดูแล",
+    coordinate: "ทีมประสาน",
+};
+
+export function TeacherRosterEditor({
+    initialRoster,
+    schoolClasses,
+    onUpdate,
+    readOnly = false,
+}: TeacherRosterEditorProps) {
+    const [roster, setRoster] = useState<TeacherRosterItem[]>(initialRoster);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [showForm, setShowForm] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [, startTransition] = useTransition();
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        setValue,
+        watch,
+        formState: { errors, isSubmitting },
+    } = useForm<TeacherRosterFormData>({
+        resolver: zodResolver(teacherRosterSchema),
+        defaultValues: {
+            firstName: "",
+            lastName: "",
+            email: "",
+            age: undefined as unknown as number,
+            userRole: undefined,
+            advisoryClass: "",
+            schoolRole: "",
+            projectRole: undefined,
+        },
+    });
+
+    const userRoleValue = watch("userRole") || "";
+    const advisoryClassValue = watch("advisoryClass") || "";
+
+    // Auto-set advisory class for school_admin
+    useEffect(() => {
+        if (userRoleValue === "school_admin") {
+            setValue("advisoryClass", ADMIN_ADVISORY_CLASS, {
+                shouldValidate: true,
+            });
+        } else if (
+            userRoleValue === "class_teacher" &&
+            advisoryClassValue === ADMIN_ADVISORY_CLASS
+        ) {
+            setValue("advisoryClass", "", { shouldValidate: false });
+        }
+    }, [userRoleValue, setValue, advisoryClassValue]);
+
+    function syncUpdate(updated: TeacherRosterItem[]) {
+        setRoster(updated);
+        onUpdate?.(updated);
+    }
+
+    function startEdit(teacher: TeacherRosterItem) {
+        setEditingId(teacher.id);
+        setShowForm(true);
+        setErrorMsg(null);
+
+        // Pre-fill form with existing data
+        setValue("firstName", teacher.firstName);
+        setValue("lastName", teacher.lastName);
+        setValue("email", teacher.email || "");
+        setValue("age", teacher.age);
+        setValue(
+            "userRole",
+            teacher.userRole as "school_admin" | "class_teacher",
+        );
+        setValue("advisoryClass", teacher.advisoryClass);
+        setValue("schoolRole", teacher.schoolRole);
+        setValue(
+            "projectRole",
+            teacher.projectRole as "lead" | "care" | "coordinate",
+        );
+    }
+
+    function cancelForm() {
+        setShowForm(false);
+        setEditingId(null);
+        reset();
+    }
+
+    async function onSubmit(data: TeacherRosterFormData) {
+        setErrorMsg(null);
+
+        if (editingId) {
+            // Update existing entry
+            const result = await updateRosterEntry(editingId, data);
+            if (!result.success) {
+                setErrorMsg(result.message);
+                return;
+            }
+            if (result.data) {
+                const updated = roster
+                    .map((t) => (t.id === editingId ? result.data! : t))
+                    .sort((a, b) =>
+                        `${a.firstName} ${a.lastName}`.localeCompare(
+                            `${b.firstName} ${b.lastName}`,
+                            "th",
+                        ),
+                    );
+                syncUpdate(updated);
+            }
+        } else {
+            // Add new entry
+            const result = await addTeacherToRoster(data);
+            if (!result.success) {
+                setErrorMsg(result.message);
+                return;
+            }
+            if (result.data) {
+                const updated = [...roster, result.data].sort((a, b) =>
+                    `${a.firstName} ${a.lastName}`.localeCompare(
+                        `${b.firstName} ${b.lastName}`,
+                        "th",
+                    ),
+                );
+                syncUpdate(updated);
+            }
+        }
+
+        reset();
+        setShowForm(false);
+        setEditingId(null);
+    }
+
+    async function handleRemove(id: string) {
+        setErrorMsg(null);
+        const result = await removeFromRoster(id);
+        if (!result.success) {
+            setErrorMsg(result.message);
+            return;
+        }
+        startTransition(() => {
+            syncUpdate(roster.filter((t) => t.id !== id));
+        });
+    }
+
+    // Shared form JSX (used for both add and edit)
+    const formContent = (
+        <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="p-4 bg-pink-50/60 rounded-xl border border-pink-100 space-y-3"
+        >
+            <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-bold text-pink-600 flex items-center gap-1.5">
+                    {editingId ? (
+                        <>
+                            <Pencil className="w-4 h-4" />
+                            แก้ไขข้อมูลครู
+                        </>
+                    ) : (
+                        <>
+                            <UserPlus className="w-4 h-4" />
+                            เพิ่มครู
+                        </>
+                    )}
+                </span>
+                <button
+                    type="button"
+                    onClick={cancelForm}
+                    className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+
+            {/* Row 1: Name + Age */}
+            <div className="grid grid-cols-5 gap-2">
+                <div className="col-span-2">
+                    <input
+                        {...register("firstName")}
+                        placeholder="ชื่อ *"
+                        className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                    />
+                    {errors.firstName && (
+                        <p className="mt-0.5 text-xs text-red-500">
+                            {errors.firstName.message}
+                        </p>
+                    )}
+                </div>
+                <div className="col-span-2">
+                    <input
+                        {...register("lastName")}
+                        placeholder="นามสกุล *"
+                        className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                    />
+                    {errors.lastName && (
+                        <p className="mt-0.5 text-xs text-red-500">
+                            {errors.lastName.message}
+                        </p>
+                    )}
+                </div>
+                <div className="col-span-1">
+                    <input
+                        {...register("age", { valueAsNumber: true })}
+                        type="number"
+                        placeholder="อายุ *"
+                        min={18}
+                        max={100}
+                        className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                    />
+                    {errors.age && (
+                        <p className="mt-0.5 text-xs text-red-500">
+                            {errors.age.message}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {/* Row 2: Email + User Role */}
+            <div className="grid grid-cols-2 gap-2">
+                <div>
+                    <input
+                        {...register("email")}
+                        type="email"
+                        placeholder="อีเมล (ไม่บังคับ)"
+                        className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                    />
+                    {errors.email && (
+                        <p className="mt-0.5 text-xs text-red-500">
+                            {errors.email.message}
+                        </p>
+                    )}
+                </div>
+                <div>
+                    <select
+                        {...register("userRole")}
+                        className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black"
+                    >
+                        <option value="">ประเภทครู *</option>
+                        {USER_ROLES.map((r) => (
+                            <option key={r.value} value={r.value}>
+                                {r.label}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.userRole && (
+                        <p className="mt-0.5 text-xs text-red-500">
+                            {errors.userRole.message}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {/* Row 3: Advisory Class (only for class_teacher) + School Role */}
+            <div className="grid grid-cols-2 gap-2">
+                {userRoleValue === "class_teacher" ? (
+                    <div>
+                        <select
+                            value={advisoryClassValue}
+                            onChange={(e) =>
+                                setValue("advisoryClass", e.target.value, {
+                                    shouldValidate: true,
+                                })
+                            }
+                            className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black"
+                        >
+                            <option value="">เลือกห้องที่ปรึกษา *</option>
+                            {schoolClasses.map((c) => (
+                                <option key={c.id} value={c.name}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.advisoryClass && (
+                            <p className="mt-0.5 text-xs text-red-500">
+                                {errors.advisoryClass.message}
+                            </p>
+                        )}
+                    </div>
+                ) : (
+                    <div>
+                        <input
+                            {...register("schoolRole")}
+                            placeholder="บทบาทในโรงเรียน *"
+                            className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                        />
+                        {errors.schoolRole && (
+                            <p className="mt-0.5 text-xs text-red-500">
+                                {errors.schoolRole.message}
+                            </p>
+                        )}
+                    </div>
+                )}
+                {userRoleValue === "class_teacher" ? (
+                    <div>
+                        <input
+                            {...register("schoolRole")}
+                            placeholder="บทบาทในโรงเรียน *"
+                            className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                        />
+                        {errors.schoolRole && (
+                            <p className="mt-0.5 text-xs text-red-500">
+                                {errors.schoolRole.message}
+                            </p>
+                        )}
+                    </div>
+                ) : (
+                    <div /> /* spacer for school_admin */
+                )}
+            </div>
+
+            {/* Row 4: Project Role (radio buttons) */}
+            <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5">
+                    บทบาทในโครงการครูนางฟ้า{" "}
+                    <span className="text-red-500">*</span>
+                </label>
+                <div className="flex flex-wrap gap-3 bg-white/80 p-3 rounded-lg border border-pink-100">
+                    {PROJECT_ROLES.map((role) => (
+                        <label
+                            key={role.value}
+                            className="flex items-center gap-1.5 cursor-pointer group"
+                        >
+                            <div className="relative flex items-center">
+                                <input
+                                    {...register("projectRole")}
+                                    type="radio"
+                                    value={role.value}
+                                    className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded-full border border-pink-300 shadow-sm transition-all checked:border-pink-500 checked:bg-pink-500 hover:border-pink-400"
+                                />
+                                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform text-white opacity-0 peer-checked:opacity-100">
+                                    <Check className="h-2 w-2" />
+                                </span>
+                            </div>
+                            <span className="text-sm text-gray-700 group-hover:text-pink-600 transition-colors font-medium">
+                                {role.label}
+                            </span>
+                        </label>
+                    ))}
+                </div>
+                {errors.projectRole && (
+                    <p className="mt-0.5 text-xs text-red-500">
+                        {errors.projectRole.message}
+                    </p>
+                )}
+            </div>
+
+            <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-center gap-2 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+                {editingId ? (
+                    <>
+                        <Check className="w-4 h-4" />
+                        {isSubmitting ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+                    </>
+                ) : (
+                    <>
+                        <Plus className="w-4 h-4" />
+                        {isSubmitting ? "กำลังเพิ่ม..." : "เพิ่มครู"}
+                    </>
+                )}
+            </button>
+        </form>
+    );
+
+    return (
+        <div className="space-y-4">
+            {/* Add teacher button / form toggle */}
+            {!readOnly &&
+                (!showForm ? (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setEditingId(null);
+                            reset();
+                            setShowForm(true);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-pink-200 text-pink-500 rounded-xl font-semibold text-sm hover:bg-pink-50 hover:border-pink-300 transition-all cursor-pointer"
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        เพิ่มครูใน Roster
+                    </button>
+                ) : (
+                    formContent
+                ))}
+
+            {errorMsg && (
+                <p className="text-sm text-red-500 font-medium">{errorMsg}</p>
+            )}
+
+            {/* Teacher roster list */}
+            {roster.length === 0 ? (
+                <div className="text-center py-8">
+                    <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-400">
+                        ยังไม่มีรายชื่อครู — เพิ่มด้านบนได้เลย
+                    </p>
+                    <p className="text-xs text-gray-300 mt-1">
+                        ข้ามได้ — เพิ่มทีหลังจากหน้าจัดการ
+                    </p>
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    <p className="text-xs text-gray-500 font-medium">
+                        รายชื่อครูทั้งหมด ({roster.length} คน)
+                    </p>
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                        {roster.map((t) => (
+                            <div
+                                key={t.id}
+                                className={`flex items-center justify-between p-3 bg-white border rounded-xl hover:shadow-sm transition-all group ${
+                                    editingId === t.id
+                                        ? "border-pink-400 ring-2 ring-pink-100"
+                                        : "border-pink-100"
+                                }`}
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-semibold text-sm text-gray-800">
+                                            {t.firstName} {t.lastName}
+                                        </span>
+                                        <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-md font-medium">
+                                            {USER_ROLE_LABELS[t.userRole] ??
+                                                t.userRole}
+                                        </span>
+                                        {t.userRole === "class_teacher" && (
+                                            <span className="text-xs px-1.5 py-0.5 bg-pink-50 text-pink-600 rounded-md font-medium">
+                                                {t.advisoryClass}
+                                            </span>
+                                        )}
+                                        <span className="text-xs px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded-md font-medium">
+                                            {PROJECT_ROLE_LABELS[
+                                                t.projectRole
+                                            ] ?? t.projectRole}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-xs text-gray-400">
+                                            {t.schoolRole}
+                                        </span>
+                                        {t.email && (
+                                            <span className="text-xs text-gray-400">
+                                                • {t.email}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                {!readOnly && (
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                        <button
+                                            type="button"
+                                            onClick={() => startEdit(t)}
+                                            className="text-gray-300 hover:text-blue-500 transition-all cursor-pointer p-1"
+                                            title="แก้ไขข้อมูล"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemove(t.id)}
+                                            className="text-gray-300 hover:text-red-500 transition-all cursor-pointer p-1"
+                                            title="ลบออกจาก roster"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

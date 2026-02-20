@@ -71,23 +71,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         user.role = "school_admin";
                     }
 
-                    // system_admin doesn't need a teacher profile
-                    const isSystemAdmin = user.role === "system_admin";
-
-                    const teacherProfile = isSystemAdmin
-                        ? null
-                        : await prisma.teacher.findUnique({
-                              where: { userId: user.id },
-                              select: { id: true },
-                          });
-
                     return {
                         id: user.id,
                         email: user.email,
                         name: user.name,
                         image: user.image,
                         role: user.role as UserRole,
-                        hasTeacherProfile: isSystemAdmin || !!teacherProfile,
+                        isPrimary: user.isPrimary,
+                        schoolId: user.schoolId,
                         emailVerified: user.emailVerified,
                         createdAt: user.createdAt,
                         updatedAt: user.updatedAt,
@@ -109,30 +100,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
-                token.hasTeacherProfile = user.hasTeacherProfile;
+                token.isPrimary = user.isPrimary;
+                token.schoolId = user.schoolId;
                 token.lastActivity = Date.now();
             }
 
-            // Re-check hasTeacherProfile on session update
+            // Re-sync role and schoolId from DB on session update
             if (trigger === "update" && token.id) {
-                const teacherProfile = await prisma.teacher.findUnique({
-                    where: { userId: token.id as string },
-                    select: { id: true },
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: token.id as string },
+                    select: { role: true, isPrimary: true, schoolId: true },
                 });
-                token.hasTeacherProfile = !!teacherProfile;
+
+                if (dbUser) {
+                    token.role = dbUser.role as UserRole;
+                    token.isPrimary = dbUser.isPrimary;
+                    token.schoolId = dbUser.schoolId;
+                }
             }
 
-            // Check idle timeout (30 minutes = 1800000ms)
+            // Check idle timeout (30 minutes)
             const IDLE_TIMEOUT = 30 * 60 * 1000;
-            const lastActivity = (token.lastActivity as number) || Date.now();
+            const lastActivity =
+                (token.lastActivity as number | undefined) ?? Date.now();
             const isIdle = Date.now() - lastActivity > IDLE_TIMEOUT;
 
             if (isIdle) {
-                // Session expired due to inactivity
                 return null;
             }
 
-            // Update last activity on each request
             token.lastActivity = Date.now();
 
             return token;
@@ -141,8 +137,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (token && session.user) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as UserRole;
-                session.user.hasTeacherProfile =
-                    token.hasTeacherProfile as boolean;
+                session.user.isPrimary = (token.isPrimary as boolean) ?? false;
+                session.user.schoolId =
+                    (token.schoolId as string | null | undefined) ?? null;
             }
             return session;
         },

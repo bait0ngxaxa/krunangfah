@@ -1,5 +1,4 @@
 import { SignInForm } from "@/components/auth/SignInForm";
-import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -52,17 +51,6 @@ export default async function SignInPage({
                 <div className="bg-linear-to-b from-white/95 to-pink-50/90 backdrop-blur-xl py-6 px-5 sm:py-8 sm:px-6 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.08),0_8px_32px_-8px_rgba(244,114,182,0.2)] rounded-2xl sm:rounded-3xl border border-pink-200 ring-1 ring-white/80">
                     <SignInForm callbackUrl={callbackUrl} />
 
-                    <div className="mt-5 sm:mt-6 text-center">
-                        <p className="text-sm text-gray-600">
-                            ยังไม่มีบัญชี?{" "}
-                            <Link
-                                href="/signup"
-                                className="font-semibold text-pink-500 hover:text-pink-600 transition-colors"
-                            >
-                                ลงทะเบียน
-                            </Link>
-                        </p>
-                    </div>
                 </div>
 
                 <p className="text-center text-xs text-gray-400">

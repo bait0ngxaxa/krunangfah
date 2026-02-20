@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ToasterProvider } from "@/components/ui/ToasterProvider";
+import { Providers } from "@/components/ui/Providers";
 import "./globals.css";
 
 // Google Sans Variable Font - รองรับ weights 100-900 ทั้งหมด
@@ -27,8 +28,10 @@ export default function RootLayout({
     return (
         <html lang="th" suppressHydrationWarning>
             <body className={`${googleSans.variable} antialiased`}>
-                {children}
-                <ToasterProvider />
+                <Providers>
+                    {children}
+                    <ToasterProvider />
+                </Providers>
             </body>
         </html>
     );

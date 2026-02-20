@@ -43,7 +43,6 @@ export interface CreateTeacherInput {
     firstName: string;
     lastName: string;
     age: number;
-    schoolName: string;
     advisoryClass: string;
     academicYearId: string;
     schoolRole: string;

@@ -9,6 +9,8 @@ import {
     BarChart3,
     Search,
     UserPlus,
+    Link as LinkIcon,
+    LayoutGrid,
 } from "lucide-react";
 
 interface DashboardActionListProps {
@@ -53,6 +55,16 @@ export function DashboardActionList({
                     />
                 )}
 
+                {/* System Admin: Invite Links */}
+                {isSystemAdmin && (
+                    <QuickActionCard
+                        href="/admin/invites"
+                        icon={LinkIcon}
+                        title="Invite Links"
+                        description="เชิญ School Admin"
+                    />
+                )}
+
                 {/* School Admin: Add Teacher */}
                 {isSchoolAdmin && (
                     <QuickActionCard
@@ -60,6 +72,16 @@ export function DashboardActionList({
                         icon={UserPlus}
                         title="เพิ่มครูผู้ดูแล"
                         description="เพิ่มครูผู้ดูแล"
+                    />
+                )}
+
+                {/* School Admin: Manage Classes */}
+                {isSchoolAdmin && (
+                    <QuickActionCard
+                        href="/school/classes"
+                        icon={LayoutGrid}
+                        title="จัดการห้องเรียนและครู"
+                        description="ห้องเรียน / รายชื่อครู"
                     />
                 )}
 

@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { ClassSelector } from "@/components/ui/ClassSelector";
+import { SchoolClassSelect } from "@/components/ui/SchoolClassSelect";
 import { PROJECT_ROLES, USER_ROLES } from "../constants";
 import type { RoleSelectionFieldsProps } from "../types";
 
@@ -9,6 +9,7 @@ export function RoleSelectionFields({
     userRoleValue,
     advisoryClassValue,
     onAdvisoryClassChange,
+    schoolClasses,
 }: RoleSelectionFieldsProps): React.ReactNode {
     return (
         <>
@@ -41,7 +42,8 @@ export function RoleSelectionFields({
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                         ชั้นที่ปรึกษา
                     </label>
-                    <ClassSelector
+                    <SchoolClassSelect
+                        classes={schoolClasses}
                         value={advisoryClassValue}
                         onChange={onAdvisoryClassChange}
                         error={errors.advisoryClass?.message}

@@ -10,8 +10,13 @@ import {
     type TeacherInviteFormData,
 } from "@/lib/validations/teacher-invite.validation";
 import { createTeacherInvite } from "@/lib/actions/teacher-invite";
+import { markRosterInviteSent } from "@/lib/actions/teacher-roster.actions";
 import { ADMIN_ADVISORY_CLASS } from "./constants";
-import type { AcademicYear, UseAddTeacherFormReturn } from "./types";
+import type {
+    AcademicYear,
+    TeacherRosterItem,
+    UseAddTeacherFormReturn,
+} from "./types";
 
 export function useAddTeacherForm(
     academicYears: AcademicYear[],
@@ -23,6 +28,7 @@ export function useAddTeacherForm(
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [inviteLink, setInviteLink] = useState("");
+    const [selectedRosterId, setSelectedRosterId] = useState("");
 
     // === Form Setup ===
     const form = useForm<TeacherInviteFormData>({
@@ -47,6 +53,51 @@ export function useAddTeacherForm(
     }, [userRoleValue, form, advisoryClassValue]);
 
     // === Handlers ===
+
+    /**
+     * Select a teacher from the roster and pre-fill form fields
+     */
+    const onSelectRoster = (id: string, roster: TeacherRosterItem[]): void => {
+        setSelectedRosterId(id);
+
+        if (!id) {
+            // Reset to manual entry
+            form.reset();
+            return;
+        }
+
+        const teacher = roster.find((t) => t.id === id);
+        if (!teacher) return;
+
+        // Pre-fill all fields from roster
+        form.setValue("firstName", teacher.firstName, { shouldValidate: true });
+        form.setValue("lastName", teacher.lastName, { shouldValidate: true });
+        form.setValue("age", String(teacher.age), { shouldValidate: true });
+        form.setValue(
+            "userRole",
+            teacher.userRole as "school_admin" | "class_teacher",
+            {
+                shouldValidate: true,
+            },
+        );
+        form.setValue("advisoryClass", teacher.advisoryClass, {
+            shouldValidate: true,
+        });
+        form.setValue("schoolRole", teacher.schoolRole, {
+            shouldValidate: true,
+        });
+        form.setValue(
+            "projectRole",
+            teacher.projectRole as "lead" | "care" | "coordinate",
+            {
+                shouldValidate: true,
+            },
+        );
+        if (teacher.email) {
+            form.setValue("email", teacher.email, { shouldValidate: true });
+        }
+    };
+
     const onSubmit = async (data: TeacherInviteFormData): Promise<void> => {
         setIsLoading(true);
         setError("");
@@ -66,6 +117,13 @@ export function useAddTeacherForm(
             if (result.inviteLink) {
                 setInviteLink(result.inviteLink);
             }
+
+            // Mark roster entry as invited
+            if (selectedRosterId) {
+                await markRosterInviteSent(selectedRosterId);
+                setSelectedRosterId("");
+            }
+
             form.reset();
         } catch (err) {
             console.error("Create invite error:", err);
@@ -93,6 +151,8 @@ export function useAddTeacherForm(
         academicYears,
         userRoleValue,
         advisoryClassValue,
+        selectedRosterId,
+        onSelectRoster,
         onSubmit,
         copyToClipboard,
         handleCancel,

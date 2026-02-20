@@ -12,7 +12,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "สมชาย",
                 lastName: "ใจดี",
                 age: 35,
-                schoolName: "โรงเรียนตัวอย่าง",
                 advisoryClass: "ม.2/5",
                 academicYearId: "clxyz123456789",
                 schoolRole: "ครูประจำชั้น",
@@ -31,7 +30,6 @@ describe("teacherProfileSchema", () => {
                     firstName: "Test",
                     lastName: "User",
                     age: 30,
-                    schoolName: "Test School",
                     advisoryClass: "ม.1/1",
                     academicYearId: "test123",
                     schoolRole: "Teacher",
@@ -47,7 +45,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "Young",
                 lastName: "Teacher",
                 age: 18,
-                schoolName: "School",
                 advisoryClass: "ม.1/1",
                 academicYearId: "test123",
                 schoolRole: "Teacher",
@@ -62,7 +59,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "Old",
                 lastName: "Teacher",
                 age: 100,
-                schoolName: "School",
                 advisoryClass: "ม.1/1",
                 academicYearId: "test123",
                 schoolRole: "Teacher",
@@ -79,7 +75,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "",
                 lastName: "ใจดี",
                 age: 30,
-                schoolName: "School",
                 advisoryClass: "ม.1/1",
                 academicYearId: "test123",
                 schoolRole: "Teacher",
@@ -99,7 +94,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "สมชาย",
                 lastName: "",
                 age: 30,
-                schoolName: "School",
                 advisoryClass: "ม.1/1",
                 academicYearId: "test123",
                 schoolRole: "Teacher",
@@ -119,7 +113,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "Young",
                 lastName: "Person",
                 age: 17,
-                schoolName: "School",
                 advisoryClass: "ม.1/1",
                 academicYearId: "test123",
                 schoolRole: "Teacher",
@@ -139,7 +132,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "Very",
                 lastName: "Old",
                 age: 101,
-                schoolName: "School",
                 advisoryClass: "ม.1/1",
                 academicYearId: "test123",
                 schoolRole: "Teacher",
@@ -153,35 +145,12 @@ describe("teacherProfileSchema", () => {
         });
     });
 
-    describe("Invalid schoolName", () => {
-        it("should reject empty schoolName", () => {
-            const data = {
-                firstName: "Test",
-                lastName: "User",
-                age: 30,
-                schoolName: "",
-                advisoryClass: "ม.1/1",
-                academicYearId: "test123",
-                schoolRole: "Teacher",
-                projectRole: "lead" as const,
-            };
-            const result = teacherProfileSchema.safeParse(data);
-            expect(result.success).toBe(false);
-            if (!result.success) {
-                expect(result.error.issues[0].message).toBe(
-                    "กรุณากรอกชื่อโรงเรียน",
-                );
-            }
-        });
-    });
-
     describe("Invalid advisoryClass", () => {
         it("should reject empty advisoryClass", () => {
             const data = {
                 firstName: "Test",
                 lastName: "User",
                 age: 30,
-                schoolName: "School",
                 advisoryClass: "",
                 academicYearId: "test123",
                 schoolRole: "Teacher",
@@ -203,7 +172,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "Test",
                 lastName: "User",
                 age: 30,
-                schoolName: "School",
                 advisoryClass: "ม.1/1",
                 academicYearId: "",
                 schoolRole: "Teacher",
@@ -225,7 +193,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "Test",
                 lastName: "User",
                 age: 30,
-                schoolName: "School",
                 advisoryClass: "ม.1/1",
                 academicYearId: "test123",
                 schoolRole: "",
@@ -247,7 +214,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "Test",
                 lastName: "User",
                 age: 30,
-                schoolName: "School",
                 advisoryClass: "ม.1/1",
                 academicYearId: "test123",
                 schoolRole: "Teacher",
@@ -267,7 +233,6 @@ describe("teacherProfileSchema", () => {
                 firstName: "Test",
                 lastName: "User",
                 age: 30,
-                schoolName: "School",
                 advisoryClass: "ม.1/1",
                 academicYearId: "test123",
                 schoolRole: "Teacher",

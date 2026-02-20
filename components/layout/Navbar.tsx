@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { useState } from "react";
@@ -46,88 +47,94 @@ export function Navbar({ hasStudents }: NavbarProps) {
     );
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-white/40 shadow-sm shadow-pink-100/50 transition-all duration-300 supports-backdrop-filter:bg-white/60">
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-pink-200/50 to-transparent opacity-50" />
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
-                    {/* Logo & Brand */}
-                    <div className="flex items-center">
-                        <Link
-                            href="/dashboard"
-                            className="shrink-0 flex items-center gap-2 group"
-                        >
-                            <div className="w-9 h-9 rounded-full bg-linear-to-br from-rose-400 to-pink-400 flex items-center justify-center text-white font-bold shadow-md shadow-pink-200 group-hover:scale-105 transition-transform duration-300">
-                                🧚‍♀️
-                            </div>
-                            <span className="font-bold text-xl bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
-                                Krunangfah
-                            </span>
-                        </Link>
+        <nav
+            className="fixed top-0 left-0 right-0 z-50"
+            style={{ marginTop: "-48px" }}
+        >
+            {/* Green bar — finalized Figma spec */}
+            <div
+                className="w-full flex items-center"
+                style={{
+                    background: "#00DB87",
+                    height: "120px",
+                    borderRadius: "0px 0px 36px 45px",
+                }}
+            >
+                {/* Logo — fills full navbar height, snug to bottom-left corner */}
+                <div className="flex items-end h-full pl-0">
+                    <Link
+                        href="/dashboard"
+                        className="flex items-end group h-full"
+                    >
+                        <Image
+                            src="/image/homepage/icon 1.png"
+                            alt="Kru Nangfah"
+                            width={240}
+                            height={120}
+                            className="h-full w-auto object-contain"
+                        />
+                    </Link>
+                </div>
 
-                        {/* Desktop Nav */}
-                        <div className="hidden md:ml-10 md:flex md:space-x-4">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                                        isActive(link.href)
-                                            ? "bg-linear-to-r from-pink-50 to-white text-pink-600 shadow-sm shadow-pink-100 ring-1 ring-pink-100"
-                                            : "text-gray-600 hover:text-pink-500 hover:bg-white/50"
-                                    }`}
-                                >
-                                    <link.icon className="w-4 h-4" />
-                                    {link.label}
-                                </Link>
-                            ))}
-                        </div>
+                {/* Desktop Nav Links + Logout — right side */}
+                <div className="flex items-center gap-2 ml-auto pr-6 sm:pr-10 lg:pr-16">
+                    <div className="hidden md:flex md:space-x-1">
+                        {navLinks.map((link) => (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                                    isActive(link.href)
+                                        ? "bg-white/25 text-white shadow-sm"
+                                        : "text-white/80 hover:text-white hover:bg-white/15"
+                                }`}
+                            >
+                                <link.icon className="w-4 h-4" />
+                                {link.label}
+                            </Link>
+                        ))}
                     </div>
 
-                    {/* Right Side: Logout & Mobile Menu Button */}
-                    <div className="flex items-center gap-4">
-                        <div className="hidden md:block">
-                            <LogoutButton />
-                        </div>
-
-                        {/* Mobile menu button */}
-                        <button
-                            onClick={() =>
-                                setIsMobileMenuOpen(!isMobileMenuOpen)
-                            }
-                            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-pink-500 hover:bg-pink-50 focus:outline-hidden"
-                        >
-                            <span className="sr-only">Open main menu</span>
-                            {!isMobileMenuOpen ? (
-                                <Menu className="block h-6 w-6" />
-                            ) : (
-                                <X className="block h-6 w-6" />
-                            )}
-                        </button>
+                    <div className="hidden md:block">
+                        <LogoutButton variant="navbar" />
                     </div>
+
+                    {/* Mobile menu button */}
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/15 focus:outline-hidden transition-colors cursor-pointer"
+                    >
+                        <span className="sr-only">Open main menu</span>
+                        {!isMobileMenuOpen ? (
+                            <Menu className="block h-6 w-6" />
+                        ) : (
+                            <X className="block h-6 w-6" />
+                        )}
+                    </button>
                 </div>
             </div>
 
             {/* Mobile Menu */}
             {isMobileMenuOpen && (
-                <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-pink-50 shadow-lg absolute w-full left-0">
-                    <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <div className="md:hidden bg-[#00DB87]/95 backdrop-blur-xl shadow-lg absolute w-full left-0 rounded-b-2xl">
+                    <div className="px-3 pt-2 pb-3 space-y-1">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-base font-medium ${
+                                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-base font-semibold transition-colors ${
                                     isActive(link.href)
-                                        ? "bg-pink-50 text-pink-600"
-                                        : "text-gray-600 hover:text-pink-500 hover:bg-pink-50/50"
+                                        ? "bg-white/25 text-white"
+                                        : "text-white/80 hover:text-white hover:bg-white/15"
                                 }`}
                             >
                                 <link.icon className="w-5 h-5" />
                                 {link.label}
                             </Link>
                         ))}
-                        <div className="pt-2 mt-2 border-t border-gray-100">
-                            <LogoutButton />
+                        <div className="pt-2 mt-2 border-t border-white/20">
+                            <LogoutButton variant="navbar" />
                         </div>
                     </div>
                 </div>

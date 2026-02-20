@@ -1,7 +1,7 @@
+import { redirect } from "next/navigation";
 import { GraduationCap } from "lucide-react";
 import { TeacherProfileForm } from "@/components/teacher";
 import { requireAuth } from "@/lib/session";
-import { redirect } from "next/navigation";
 import {
     getTeacherProfile,
     getAcademicYears,
@@ -16,10 +16,12 @@ export const metadata: Metadata = {
 export default async function TeacherProfilePage() {
     const session = await requireAuth();
 
-    // Check if already has teacher profile
+    // Already has teacher profile → go to dashboard
+    // No stale JWT loop: teacher-profile is in (onboarding) group,
+    // dashboard is in (protected) group — layout re-renders on cross-group nav
     const existingProfile = await getTeacherProfile(session.user.id);
     if (existingProfile) {
-        redirect("/");
+        redirect("/dashboard");
     }
 
     // Pre-fetch academic years on the server

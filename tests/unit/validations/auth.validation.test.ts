@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
+import type { ZodIssue } from "zod";
 import {
     signInSchema,
-    signUpSchema,
+    inviteRegisterSchema,
     type SignInFormData,
-    type SignUpFormData,
+    type InviteRegisterFormData,
 } from "@/lib/validations/auth.validation";
 
 describe("signInSchema", () => {
@@ -106,15 +107,14 @@ describe("signInSchema", () => {
     });
 });
 
-describe("signUpSchema", () => {
+describe("inviteRegisterSchema", () => {
     describe("Valid inputs", () => {
-        it("should accept valid email, password, and matching confirmPassword", () => {
+        it("should accept valid password and matching confirmPassword", () => {
             const data = {
-                email: "test@example.com",
                 password: "password123",
                 confirmPassword: "password123",
             };
-            const result = signUpSchema.safeParse(data);
+            const result = inviteRegisterSchema.safeParse(data);
             expect(result.success).toBe(true);
             if (result.success) {
                 expect(result.data).toEqual(data);
@@ -123,48 +123,30 @@ describe("signUpSchema", () => {
 
         it("should accept password with exactly 6 characters", () => {
             const data = {
-                email: "test@example.com",
                 password: "123456",
                 confirmPassword: "123456",
             };
-            const result = signUpSchema.safeParse(data);
+            const result = inviteRegisterSchema.safeParse(data);
             expect(result.success).toBe(true);
         });
 
         it("should accept long passwords", () => {
             const data = {
-                email: "test@example.com",
                 password: "verylongpassword123456789",
                 confirmPassword: "verylongpassword123456789",
             };
-            const result = signUpSchema.safeParse(data);
+            const result = inviteRegisterSchema.safeParse(data);
             expect(result.success).toBe(true);
-        });
-    });
-
-    describe("Invalid email", () => {
-        it("should reject invalid email format", () => {
-            const data = {
-                email: "invalid-email",
-                password: "password123",
-                confirmPassword: "password123",
-            };
-            const result = signUpSchema.safeParse(data);
-            expect(result.success).toBe(false);
-            if (!result.success) {
-                expect(result.error.issues[0].message).toBe("อีเมลไม่ถูกต้อง");
-            }
         });
     });
 
     describe("Invalid password", () => {
         it("should reject password shorter than 6 characters", () => {
             const data = {
-                email: "test@example.com",
                 password: "12345",
                 confirmPassword: "12345",
             };
-            const result = signUpSchema.safeParse(data);
+            const result = inviteRegisterSchema.safeParse(data);
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error.issues[0].message).toBe(
@@ -175,11 +157,10 @@ describe("signUpSchema", () => {
 
         it("should reject empty password", () => {
             const data = {
-                email: "test@example.com",
                 password: "",
                 confirmPassword: "",
             };
-            const result = signUpSchema.safeParse(data);
+            const result = inviteRegisterSchema.safeParse(data);
             expect(result.success).toBe(false);
         });
     });
@@ -187,15 +168,14 @@ describe("signUpSchema", () => {
     describe("Password mismatch", () => {
         it("should reject when passwords don't match", () => {
             const data = {
-                email: "test@example.com",
                 password: "password123",
                 confirmPassword: "password456",
             };
-            const result = signUpSchema.safeParse(data);
+            const result = inviteRegisterSchema.safeParse(data);
             expect(result.success).toBe(false);
             if (!result.success) {
                 const confirmPasswordError = result.error.issues.find(
-                    (issue) => issue.path[0] === "confirmPassword",
+                    (issue: ZodIssue) => issue.path[0] === "confirmPassword",
                 );
                 expect(confirmPasswordError?.message).toBe("รหัสผ่านไม่ตรงกัน");
             }
@@ -203,40 +183,28 @@ describe("signUpSchema", () => {
 
         it("should reject when confirmPassword is empty but password is not", () => {
             const data = {
-                email: "test@example.com",
                 password: "password123",
                 confirmPassword: "",
             };
-            const result = signUpSchema.safeParse(data);
+            const result = inviteRegisterSchema.safeParse(data);
             expect(result.success).toBe(false);
         });
     });
 
     describe("Missing fields", () => {
-        it("should reject missing email", () => {
-            const data = {
-                password: "password123",
-                confirmPassword: "password123",
-            } as SignUpFormData;
-            const result = signUpSchema.safeParse(data);
-            expect(result.success).toBe(false);
-        });
-
         it("should reject missing password", () => {
             const data = {
-                email: "test@example.com",
                 confirmPassword: "password123",
-            } as SignUpFormData;
-            const result = signUpSchema.safeParse(data);
+            } as InviteRegisterFormData;
+            const result = inviteRegisterSchema.safeParse(data);
             expect(result.success).toBe(false);
         });
 
         it("should reject missing confirmPassword", () => {
             const data = {
-                email: "test@example.com",
                 password: "password123",
-            } as SignUpFormData;
-            const result = signUpSchema.safeParse(data);
+            } as InviteRegisterFormData;
+            const result = inviteRegisterSchema.safeParse(data);
             expect(result.success).toBe(false);
         });
     });

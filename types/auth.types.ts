@@ -16,7 +16,8 @@ export interface ExtendedUser {
     name: string | null;
     image: string | null;
     role: UserRole;
-    hasTeacherProfile?: boolean;
+    isPrimary?: boolean;
+    schoolId?: string | null;
     emailVerified?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;

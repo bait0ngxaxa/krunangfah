@@ -8,9 +8,17 @@ import type {
     FieldErrors,
 } from "react-hook-form";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
+import type {
+    SchoolClassItem,
+    TeacherRosterItem,
+} from "@/types/school-setup.types";
 
 // Re-export for convenience
 export type { TeacherInviteFormData };
+
+export type { SchoolClassItem };
+
+export type { TeacherRosterItem };
 
 export interface AcademicYear {
     id: string;
@@ -27,6 +35,8 @@ export interface UseAddTeacherFormReturn {
     academicYears: AcademicYear[];
     userRoleValue: string;
     advisoryClassValue: string;
+    selectedRosterId: string;
+    onSelectRoster: (id: string, roster: TeacherRosterItem[]) => void;
     onSubmit: (data: TeacherInviteFormData) => Promise<void>;
     copyToClipboard: () => void;
     handleCancel: () => void;
@@ -53,6 +63,7 @@ export interface RoleSelectionFieldsProps {
     userRoleValue: string;
     advisoryClassValue: string;
     onAdvisoryClassChange: (value: string) => void;
+    schoolClasses: SchoolClassItem[];
 }
 
 export interface AcademicFieldsProps {

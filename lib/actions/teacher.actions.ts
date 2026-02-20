@@ -106,34 +106,23 @@ export async function createTeacherProfile(
             };
         }
 
-        // Find or create school, update user, create teacher — all in one transaction
+        // schoolId must already be set by SchoolSetupWizard (createSchoolAndLink)
+        const schoolId = session.user.schoolId;
+        if (!schoolId) {
+            return { success: false, message: "กรุณาตั้งค่าโรงเรียนก่อนสร้างโปรไฟล์" };
+        }
+
+        // Update user name and create teacher profile in one transaction
         const teacher = await prisma.$transaction(async (tx) => {
-            // 1. Find or create school
-            let school = await tx.school.findFirst({
-                where: {
-                    name: {
-                        equals: validated.schoolName,
-                        mode: "insensitive",
-                    },
-                },
-            });
-
-            if (!school) {
-                school = await tx.school.create({
-                    data: { name: validated.schoolName },
-                });
-            }
-
-            // 2. Update User with name and schoolId
+            // 1. Update User name only (schoolId was already set by createSchoolAndLink)
             await tx.user.update({
                 where: { id: userId },
                 data: {
                     name: `${validated.firstName} ${validated.lastName}`,
-                    schoolId: school.id,
                 },
             });
 
-            // 3. Create teacher profile
+            // 2. Create teacher profile
             return tx.teacher.create({
                 data: {
                     userId,

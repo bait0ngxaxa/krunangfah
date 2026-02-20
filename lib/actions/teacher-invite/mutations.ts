@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
+import { requirePrimaryAdmin } from "@/lib/session";
 import { hashPassword } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
@@ -16,7 +16,7 @@ export async function createTeacherInvite(
     input: TeacherInviteFormData,
 ): Promise<InviteResponse> {
     try {
-        const session = await requireAuth();
+        const session = await requirePrimaryAdmin();
         const userId = session.user.id;
 
         // Get user's schoolId

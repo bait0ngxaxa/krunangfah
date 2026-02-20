@@ -51,3 +51,19 @@ export async function requireAdmin() {
 export function isSystemAdmin(role: string): boolean {
     return role === "system_admin";
 }
+
+/**
+ * Require primary school admin - throws if not the school_admin invited by system_admin
+ * Used to protect roster, class, and invite management actions
+ * @returns Session object
+ * @throws Error if not authenticated, not school_admin, or not primary
+ */
+export async function requirePrimaryAdmin() {
+    const session = await requireAuth();
+
+    if (session.user.role !== "school_admin" || !session.user.isPrimary) {
+        throw new Error("Forbidden: Primary school admin access required");
+    }
+
+    return session;
+}

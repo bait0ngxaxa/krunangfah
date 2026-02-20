@@ -42,8 +42,9 @@ export function useTeacherProfileForm(
                 return;
             }
 
+            // Navigate to dashboard — (protected) layout checks DB directly
+            // so no JWT refresh needed
             router.push("/dashboard");
-            router.refresh();
         } catch (err) {
             console.error("Create teacher profile error:", err);
             setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");

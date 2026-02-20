@@ -59,8 +59,24 @@ model School {
   users          User[]
   teacherInvites TeacherInvite[]
   students       Student[]
+  classes        SchoolClass[]
+  teacherRoster  SchoolTeacherRoster[]
 
   @@map("schools")
+}
+
+// School Class - ห้องเรียนของโรงเรียน (flexible, free-form)
+model SchoolClass {
+  id        String   @id @default(cuid())
+  schoolId  String
+  name      String   // free-form: "ม.1/1", "ป.6/2", อะไรก็ได้
+  createdAt DateTime @default(now())
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, name])
+  @@index([schoolId])
+  @@map("school_classes")
 }
 
 // User Model for JWT-based Authentication
@@ -71,18 +87,20 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          UserRole  @default(school_admin) // school_admin (self-register), class_teacher (invite only)
+  role          UserRole  @default(school_admin) // school_admin (invite only), class_teacher (invite only)
+  isPrimary     Boolean   @default(false) // true = invited by system_admin, can manage school data
   schoolId      String?   // FK to School
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  school              School?           @relation(fields: [schoolId], references: [id])
-  teacher             Teacher?
-  teacherInvites      TeacherInvite[]
-  phqResults          PhqResult[]
-  assignedActivities  ActivityProgress[] @relation("TeacherActivities")
-  worksheetUploads    WorksheetUpload[]
-  counselingSessions  CounselingSession[] @relation("CounselingSessions")
+  school                School?             @relation(fields: [schoolId], references: [id])
+  teacher               Teacher?
+  teacherInvites        TeacherInvite[]
+  phqResults            PhqResult[]
+  assignedActivities    ActivityProgress[]  @relation("TeacherActivities")
+  worksheetUploads      WorksheetUpload[]
+  counselingSessions    CounselingSession[] @relation("CounselingSessions")
+  schoolAdminInvites    SchoolAdminInvite[] @relation("CreatedSchoolAdminInvites")
 
   @@map("users")
   @@index([email])
@@ -307,6 +325,44 @@ model SystemAdminWhitelist {
   createdAt DateTime @default(now())
 
   @@map("system_admin_whitelist")
+}
+
+// School Admin Invite - คำเชิญสร้างบัญชี school_admin
+model SchoolAdminInvite {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  email     String    @unique  // email ที่ระบุล่วงหน้า
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdBy String
+  createdAt DateTime  @default(now())
+
+  creator   User @relation("CreatedSchoolAdminInvites", fields: [createdBy], references: [id])
+
+  @@map("school_admin_invites")
+}
+
+// School Teacher Roster - รายชื่อครูที่ลงไว้ล่วงหน้า (ก่อน invite)
+model SchoolTeacherRoster {
+  id              String       @id @default(cuid())
+  schoolId        String
+  firstName       String
+  lastName        String
+  email           String?      // optional — ใช้ pre-fill invite
+  age             Int          // อายุ
+  userRole        UserRole     // school_admin | class_teacher
+  advisoryClass   String       // ห้องที่ปรึกษา (class_teacher) หรือ "ทุกห้อง" (school_admin)
+  schoolRole      String       // บทบาทในโรงเรียน
+  projectRole     ProjectRole  // lead, care, coordinate
+  inviteSent      Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, email])
+  @@index([schoolId])
+  @@map("school_teacher_roster")
 }
 
 // Password Reset Token - โทเค็นรีเซ็ตรหัสผ่าน

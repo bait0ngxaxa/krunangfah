@@ -1,6 +1,8 @@
 import { requireAuth } from "@/lib/session";
 import { AddTeacherForm } from "@/components/teacher";
 import { getAcademicYears } from "@/lib/actions/teacher.actions";
+import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
+import { getSchoolRoster } from "@/lib/actions/teacher-roster.actions";
 import { UserPlus, Info } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import type { Metadata } from "next";
@@ -13,8 +15,12 @@ export const metadata: Metadata = {
 export default async function AddTeacherPage() {
     await requireAuth();
 
-    // Pre-fetch academic years on the server
-    const academicYears = await getAcademicYears();
+    // Pre-fetch academic years, school classes, and roster on the server
+    const [academicYears, schoolClasses, roster] = await Promise.all([
+        getAcademicYears(),
+        getSchoolClasses(),
+        getSchoolRoster(),
+    ]);
 
     return (
         <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-6 px-4 relative overflow-hidden">
@@ -50,8 +56,8 @@ export default async function AddTeacherPage() {
                                 </span>
                             </h1>
                             <p className="text-sm text-gray-500 truncate">
-                                กรอกข้อมูลครูผู้ดูแล ระบบจะสร้าง Link
-                                สำหรับตั้งรหัสผ่าน
+                                เลือกจาก roster หรือกรอกข้อมูลเอง ระบบจะสร้าง
+                                Link สำหรับตั้งรหัสผ่าน
                             </p>
                         </div>
                     </div>
@@ -68,11 +74,16 @@ export default async function AddTeacherPage() {
                     <p className="relative text-gray-600 mb-8 bg-pink-50/50 p-4 rounded-xl border border-pink-100/50 flex items-start gap-2">
                         <Info className="w-4 h-4 text-pink-500 mt-0.5 shrink-0" />
                         <span>
-                            กรอกข้อมูลครูผู้ดูแล ระบบจะสร้าง Link
+                            เลือกครูจาก roster เพื่อ auto-fill ข้อมูล
+                            หรือกรอกข้อมูลเองได้ ระบบจะสร้าง Link
                             สำหรับให้ครูผู้ดูแลใช้ในการตั้งรหัสผ่าน
                         </span>
                     </p>
-                    <AddTeacherForm academicYears={academicYears} />
+                    <AddTeacherForm
+                        academicYears={academicYears}
+                        schoolClasses={schoolClasses}
+                        roster={roster}
+                    />
                 </div>
             </div>
         </div>

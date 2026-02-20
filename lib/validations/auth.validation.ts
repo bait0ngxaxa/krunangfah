@@ -7,9 +7,8 @@ export const signInSchema = z.object({
 
 export type SignInFormData = z.infer<typeof signInSchema>;
 
-export const signUpSchema = z
+export const inviteRegisterSchema = z
     .object({
-        email: z.string().email("อีเมลไม่ถูกต้อง"),
         password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
         confirmPassword: z.string(),
     })
@@ -18,7 +17,7 @@ export const signUpSchema = z
         path: ["confirmPassword"],
     });
 
-export type SignUpFormData = z.infer<typeof signUpSchema>;
+export type InviteRegisterFormData = z.infer<typeof inviteRegisterSchema>;
 
 export const forgotPasswordSchema = z.object({
     email: z.string().email("อีเมลไม่ถูกต้อง"),
