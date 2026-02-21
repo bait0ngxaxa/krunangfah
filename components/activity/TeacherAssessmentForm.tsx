@@ -81,14 +81,14 @@ export function TeacherAssessmentForm({
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-10 px-4 bg-pattern-grid">
+        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-10 px-4 bg-pattern-grid">
             <div className="max-w-4xl mx-auto">
                 <BackButton
                     href={`/students/${studentId}`}
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
-                <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl p-8 md:p-12 border border-pink-200 relative overflow-hidden">
+                <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl p-8 md:p-12 border border-emerald-200 relative overflow-hidden">
                     <div
                         className={`absolute top-0 left-0 w-full h-3 bg-linear-to-r ${config.gradient}`}
                     />
@@ -106,12 +106,12 @@ export function TeacherAssessmentForm({
                         <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
                             แบบประเมินจากใบงาน
                         </h1>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 rounded-full border border-pink-100 shadow-sm backdrop-blur-sm">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 rounded-full border border-emerald-100 shadow-sm backdrop-blur-sm">
                             <span className="font-bold text-gray-700">
                                 {activityTitle}
                             </span>
-                            <span className="text-pink-300">•</span>
-                            <span className="text-pink-600 font-medium">
+                            <span className="text-emerald-300">•</span>
+                            <span className="text-emerald-600 font-medium">
                                 {studentName}
                             </span>
                         </div>
@@ -200,7 +200,7 @@ export function TeacherAssessmentForm({
                             จากการดูใบงานแล้ว คุณครูคิดว่าเด็กคนนี้
                             <br className="hidden md:block" />
                             มี{" "}
-                            <span className="text-pink-600 underline decoration-wavy underline-offset-4">
+                            <span className="text-emerald-600 underline decoration-wavy underline-offset-4">
                                 ปัญหาหลัก
                             </span>{" "}
                             เป็นด้านใดมากกว่ากัน?
@@ -247,7 +247,7 @@ export function TeacherAssessmentForm({
                     <button
                         onClick={handleSubmit}
                         disabled={!canSubmit || submitting}
-                        className={`w-full py-5 rounded-2xl font-bold text-xl transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl hover:shadow-pink-200/50 hover:-translate-y-1 active:scale-[0.98] ${
+                        className={`w-full py-5 rounded-2xl font-bold text-xl transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl hover:shadow-emerald-200/50 hover:-translate-y-1 active:scale-[0.98] ${
                             canSubmit
                                 ? `bg-linear-to-r ${config.gradient} text-white`
                                 : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none border border-gray-200"

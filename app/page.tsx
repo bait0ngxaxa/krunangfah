@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
 import { getServerSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -18,90 +19,66 @@ export default async function Home() {
     }
 
     return (
-        <div className="relative h-screen flex flex-col overflow-hidden bg-[#c8f5e6]">
+        <div className="relative h-screen flex flex-col overflow-hidden bg-linear-to-b from-sky-300 via-sky-100 to-white">
+            {/* Background image — rainbow */}
+            <Image
+                src="/image/homepage/rainbow.png"
+                alt=""
+                fill
+                className="object-cover object-bottom overflow-hidden transform scale-125 md:scale-110"
+                priority
+            />
+
             {/* ─── Top Green Navbar ─── */}
-            <nav
-                className="relative z-20"
-                style={{ marginTop: "-48px", paddingTop: "48px" }}
-            >
-                <div
-                    className="w-full flex items-center"
-                    style={{
-                        background: "#00DB87",
-                        height: "120px",
-                        borderRadius: "0px 0px 36px 45px",
-                    }}
-                >
-                    <div className="flex items-end h-full pl-0 w-full">
-                        {/* Logo — fills full navbar height, snug to bottom-left corner */}
-                        <Link href="/" className="flex items-end group h-full">
-                            <Image
-                                src="/image/homepage/icon 1.png"
-                                alt="Kru Nangfah"
-                                width={240}
-                                height={120}
-                                className="h-full w-auto object-contain"
-                                priority
-                            />
-                        </Link>
-                    </div>
-                    {/* หน้าหลัก — Figma: top:34px, left:1187px on 1440 canvas */}
-                    <span
-                        className="absolute text-white"
-                        style={{
-                            top: "80px",
-                            right: "131px" /* 1440-1187-122 = 131px from right */,
-                            width: "122px",
-                            height: "55px",
-                            fontSize: "30px",
-                            lineHeight: "55px",
-                            fontWeight: "400",
-                        }}
-                    >
+            <NavbarGreenBar>
+                {/* หน้าหลัก */}
+                <div className="ml-auto pr-6 sm:pr-12 lg:pr-[131px] flex items-center">
+                    <span className="text-white font-medium text-xl sm:text-2xl lg:text-[30px]">
                         หน้าหลัก
                     </span>
                 </div>
-            </nav>
-
-            {/* ─── Absolute: เข้าสู่ระบบ button — Figma top:152px, right:77px (1440-1131-232) ─── */}
-            <div
-                className="absolute z-30"
-                style={{ top: "152px", right: "77px" }}
-            >
-                <Link
-                    href="/signin"
-                    className="inline-flex items-center justify-center bg-white text-gray-700 font-bold rounded-full border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 hover:-translate-y-1"
-                    style={{
-                        width: "232px",
-                        height: "73px",
-                        fontSize: "1.125rem",
-                        filter: "drop-shadow(0px 4px 10px rgba(0, 0, 0, 0.5))",
-                    }}
-                >
-                    เข้าสู่ระบบ
-                </Link>
-            </div>
+            </NavbarGreenBar>
 
             {/* ─── Main Hero Section ─── */}
-            <main className="relative z-10 flex-1 flex flex-col px-6 sm:px-10 lg:px-16 pt-4 sm:pt-6 lg:pt-8 pb-0 w-full">
-                {/* Heading only — button and หน้าหลัก are absolute below navbar */}
-                <div className="flex flex-col items-start">
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-gray-800 leading-tight mb-1">
+            <main className="relative z-10 flex-1 flex flex-col px-6 sm:px-10 lg:px-16 pt-8 sm:pt-10 lg:pt-8 pb-0 w-full">
+                {/* Mobile/Tablet: Login button at top right */}
+                <div className="flex justify-end lg:hidden w-full mb-6 animate-fade-in-down">
+                    <Link
+                        href="/signin"
+                        className="inline-flex items-center justify-center bg-white text-emerald-700 font-bold rounded-full border-2 border-emerald-400 hover:border-emerald-500 hover:bg-emerald-50 transition-all duration-300 active:scale-95 w-32 h-10 sm:w-40 sm:h-12 text-sm sm:text-base shadow-md"
+                    >
+                        เข้าสู่ระบบ
+                    </Link>
+                </div>
+
+                {/* ─── Absolute: เข้าสู่ระบบ button (Desktop) ─── */}
+                <div className="hidden lg:block absolute z-30 lg:top-[120px] xl:top-[152px] lg:right-[60px] xl:right-[77px] animate-fade-in-down">
+                    <Link
+                        href="/signin"
+                        className="inline-flex items-center justify-center bg-white text-emerald-700 font-bold rounded-full border-2 border-emerald-400 hover:border-emerald-500 hover:bg-emerald-50 transition-all duration-300 hover:-translate-y-1 lg:w-[180px] lg:h-[60px] xl:w-[232px] xl:h-[73px] lg:text-base xl:text-[1.125rem]"
+                        style={{
+                            filter: "drop-shadow(0px 4px 10px rgba(0, 0, 0, 0.5))",
+                        }}
+                    >
+                        เข้าสู่ระบบ
+                    </Link>
+                </div>
+
+                {/* Heading */}
+                <div className="flex flex-col items-start mt-2 sm:mt-0 animate-fade-in-left">
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-gray-800 leading-tight mb-1 hero-title-depth">
                         ระบบดูแล
                     </h1>
                     <div className="mb-4">
-                        <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-700 leading-snug">
+                        <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-700 leading-snug subtitle-dimensional">
                             ช่วยเหลือนักเรียน
-                        </p>
-                        <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-800 leading-tight">
-                            ยุคใหม่
                         </p>
                     </div>
                 </div>
 
                 {/* Center — Hero Illustration (absolute center of viewport) */}
-                <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
-                    <div className="relative w-[280px] sm:w-[360px] md:w-[440px] lg:w-[500px] xl:w-[560px]">
+                <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none mt-24 sm:mt-0 animate-fade-in-right animation-delay-200">
+                    <div className="relative w-[280px] sm:w-[360px] md:w-[440px] lg:w-[500px] xl:w-[560px] animate-float">
                         <Image
                             src="/image/homepage/hero.png"
                             alt="ครูนางฟ้าพานักเรียนบิน"

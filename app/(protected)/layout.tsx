@@ -9,9 +9,8 @@ function NavbarFallback() {
         <nav
             className="fixed top-0 left-0 right-0 z-50"
             style={{
-                marginTop: "-48px",
-                height: "120px",
                 background: "#00DB87",
+                height: "120px",
                 borderRadius: "0px 0px 36px 45px",
             }}
         />
@@ -25,28 +24,31 @@ export default async function ProtectedLayout({
 }) {
     const session = await requireAuth();
 
-    // Onboarding guard: check DB directly (no stale JWT issues)
+    // Onboarding guard: check DB directly (JWT may be stale)
     if (session.user.role !== "system_admin") {
-        if (!session.user.schoolId) {
-            redirect("/school-setup");
-        }
-
-        const teacherProfile = await prisma.teacher.findUnique({
-            where: { userId: session.user.id },
-            select: { id: true },
+        const dbUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                schoolId: true,
+                teacher: { select: { id: true } },
+            },
         });
 
-        if (!teacherProfile) {
+        if (!dbUser?.teacher) {
             redirect("/teacher-profile");
+        }
+
+        if (!dbUser?.schoolId) {
+            redirect("/school-setup");
         }
     }
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-emerald-50/30 via-white to-teal-50/20">
+        <div className="min-h-screen">
             <Suspense fallback={<NavbarFallback />}>
                 <NavbarWrapper />
             </Suspense>
-            <main className="pt-[72px]">{children}</main>
+            <main className="pt-[120px]">{children}</main>
         </div>
     );
 }

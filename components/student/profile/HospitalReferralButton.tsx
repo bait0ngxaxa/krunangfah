@@ -17,15 +17,19 @@ export function HospitalReferralButton() {
                 ${
                     isReferred
                         ? "bg-linear-to-r from-emerald-400 to-green-500 text-white shadow-green-200 hover:shadow-green-300"
-                        : "bg-linear-to-r from-rose-400 to-pink-500 text-white shadow-pink-200/50 hover:shadow-pink-300/50"
+                        : "bg-linear-to-r from-teal-400 to-emerald-500 text-white shadow-emerald-200/50 hover:shadow-emerald-300/50"
                 }
             `}
         >
-            <span>{isReferred ? <Check className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}</span>
             <span>
-                {isReferred
-                    ? "ส่งต่อครูนางฟ้าแล้ว"
-                    : "ส่งต่อให้ครูนางฟ้าดูแล"}
+                {isReferred ? (
+                    <Check className="w-5 h-5" />
+                ) : (
+                    <UserCheck className="w-5 h-5" />
+                )}
+            </span>
+            <span>
+                {isReferred ? "ส่งต่อครูนางฟ้าแล้ว" : "ส่งต่อให้ครูนางฟ้าดูแล"}
             </span>
         </button>
     );

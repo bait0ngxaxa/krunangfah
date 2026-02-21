@@ -87,8 +87,8 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                     transition-all duration-300 transform
                     ${
                         isDragging
-                            ? "border-pink-500 bg-pink-50 scale-102 shadow-lg shadow-pink-100"
-                            : "border-pink-200 hover:border-pink-400 hover:bg-pink-50/50 hover:shadow-md"
+                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg shadow-emerald-100"
+                            : "border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-md"
                     }
                 `}
             >
@@ -102,7 +102,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
 
                 {isLoading ? (
                     <div className="flex flex-col items-center gap-4">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500" />
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
                         <p className="text-gray-600 font-medium">
                             กำลังอ่านไฟล์...
                         </p>
@@ -110,17 +110,17 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                 ) : (
                     <div className="flex flex-col items-center gap-4">
                         <div
-                            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isDragging ? "bg-pink-100 scale-110" : "bg-pink-50"}`}
+                            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isDragging ? "bg-emerald-100 scale-110" : "bg-emerald-50"}`}
                         >
                             <Upload
-                                className={`w-10 h-10 transition-colors ${isDragging ? "text-pink-600" : "text-pink-400"}`}
+                                className={`w-10 h-10 transition-colors ${isDragging ? "text-emerald-600" : "text-emerald-400"}`}
                             />
                         </div>
                         <div>
                             <p className="text-xl font-bold text-gray-700 mb-2">
                                 ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์
                             </p>
-                            <p className="text-sm text-gray-500 bg-white/60 px-4 py-1 rounded-full border border-pink-100 inline-block">
+                            <p className="text-sm text-gray-500 bg-white/60 px-4 py-1 rounded-full border border-emerald-100 inline-block">
                                 รองรับไฟล์ .xlsx เท่านั้น
                             </p>
                         </div>

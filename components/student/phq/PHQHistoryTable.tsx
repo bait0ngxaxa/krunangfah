@@ -55,9 +55,9 @@ const riskConfig: Record<
 export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
     if (results.length === 0) {
         return (
-            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-8 border border-pink-200 ring-1 ring-pink-50 text-center overflow-hidden">
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
-                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-8 border border-emerald-200 ring-1 ring-emerald-50 text-center overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-teal-300/30 rounded-full blur-xl pointer-events-none" />
+                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
                 <p className="relative text-gray-500">
                     ยังไม่มีประวัติการคัดกรอง
                 </p>
@@ -66,25 +66,25 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
     }
 
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 overflow-hidden group hover:shadow-xl transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 overflow-hidden group hover:shadow-xl transition-all duration-300">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-emerald-300 via-teal-300 to-cyan-300" />
             {/* Corner decoration */}
-            <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-rose-200/45 to-pink-300/35 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-teal-300/35 rounded-full blur-xl pointer-events-none" />
             {/* Shimmer */}
-            <div className="absolute inset-x-0 top-[6px] h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+            <div className="absolute inset-x-0 top-[6px] h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
 
             <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-2">
-                <ClipboardList className="w-6 h-6 text-rose-500" />
-                <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
+                <ClipboardList className="w-6 h-6 text-emerald-500" />
+                <span className="bg-linear-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
                     ประวัติการคัดกรองสุขภาพจิต
                 </span>
             </h2>
 
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto rounded-xl border border-pink-100">
+            <div className="hidden md:block overflow-x-auto rounded-xl border border-emerald-100">
                 <table className="w-full">
                     <thead>
-                        <tr className="bg-pink-50/80 border-b border-pink-200">
+                        <tr className="bg-emerald-50/80 border-b border-emerald-200">
                             <th className="text-left py-4 px-6 font-bold text-gray-700">
                                 ครั้งที่
                             </th>
@@ -105,7 +105,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-pink-50">
+                    <tbody className="divide-y divide-emerald-50">
                         {results.map((result, index) => {
                             const risk =
                                 riskConfig[result.riskLevel as RiskLevel];
@@ -114,7 +114,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                             return (
                                 <tr
                                     key={result.id}
-                                    className="hover:bg-pink-50/30 transition-colors"
+                                    className="hover:bg-emerald-50/30 transition-colors"
                                 >
                                     <td className="py-4 px-6 font-medium text-gray-700">
                                         {results.length - index}
@@ -148,7 +148,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                         {hasWarning && (
                                             <div className="space-y-1">
                                                 {result.q9a && (
-                                                    <div className="flex items-center gap-1.5 text-rose-600 text-sm font-medium">
+                                                    <div className="flex items-center gap-1.5 text-orange-600 text-sm font-medium">
                                                         <AlertTriangle className="w-4 h-4 shrink-0" />
                                                         <span>
                                                             มีความคิดฆ่าตัวตาย
@@ -182,11 +182,11 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                     return (
                         <div
                             key={result.id}
-                            className="p-5 bg-white rounded-2xl border border-pink-100 shadow-sm hover:shadow-md transition-all"
+                            className="p-5 bg-white rounded-2xl border border-emerald-100 shadow-sm hover:shadow-md transition-all"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <div className="text-sm text-pink-500 font-medium mb-1">
+                                    <div className="text-sm text-emerald-500 font-medium mb-1">
                                         ครั้งที่ {results.length - index}
                                     </div>
                                     <div className="font-bold text-gray-800">
@@ -201,9 +201,9 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                 </div>
                             </div>
                             {hasWarning && (
-                                <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 space-y-1">
+                                <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 space-y-1">
                                     {result.q9a && (
-                                        <div className="flex items-center gap-1.5 text-rose-600 text-sm font-medium">
+                                        <div className="flex items-center gap-1.5 text-orange-600 text-sm font-medium">
                                             <AlertTriangle className="w-4 h-4 shrink-0" />
                                             <span>มีความคิดฆ่าตัวตาย</span>
                                         </div>
@@ -218,7 +218,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                             )}
                             <div className="space-y-3">
                                 <div className="text-sm text-gray-600 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-pink-300" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
                                     {formatAcademicYear(
                                         result.academicYear.year,
                                         result.academicYear.semester,

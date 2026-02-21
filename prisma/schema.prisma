@@ -327,11 +327,12 @@ model SystemAdminWhitelist {
   @@map("system_admin_whitelist")
 }
 
-// School Admin Invite - คำเชิญสร้างบัญชี school_admin
+// School Admin Invite - คำเชิญสร้างบัญชี admin (system_admin หรือ school_admin)
 model SchoolAdminInvite {
   id        String    @id @default(cuid())
   token     String    @unique
   email     String    @unique  // email ที่ระบุล่วงหน้า
+  role      UserRole  @default(school_admin) // role ที่จะได้รับเมื่อ accept invite
   usedAt    DateTime?
   expiresAt DateTime
   createdBy String

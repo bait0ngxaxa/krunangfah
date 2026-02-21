@@ -36,9 +36,9 @@ export function TeacherProfileCard({
         PROJECT_ROLE_LABELS[teacher.projectRole] || teacher.projectRole;
 
     return (
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 overflow-hidden">
             {/* Gradient Header */}
-            <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-3.5 flex items-center justify-between">
+            <div className="bg-linear-to-r from-emerald-500 via-teal-500 to-emerald-600 px-5 py-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                     <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
                         <User className="w-4 h-4 text-white" />
@@ -62,25 +62,25 @@ export function TeacherProfileCard({
             <div className="p-5 sm:p-6 space-y-5">
                 {/* Profile Row */}
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-pink-200/50 ring-2 ring-white/80 shrink-0">
+                    <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-emerald-200/50 ring-2 ring-white/80 shrink-0">
                         {teacher.firstName.charAt(0)}
                     </div>
                     <div>
                         <p className="font-bold text-lg text-gray-800">
                             {teacher.firstName} {teacher.lastName}
                         </p>
-                        <p className="text-sm font-medium text-pink-500">
+                        <p className="text-sm font-medium text-emerald-500">
                             {teacher.schoolRole}
                         </p>
                     </div>
                 </div>
 
                 {/* Info Grid */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <InfoTile
                         icon={<School className="w-3.5 h-3.5" />}
-                        iconColor="text-pink-400"
-                        borderColor="border-pink-100"
+                        iconColor="text-emerald-400"
+                        borderColor="border-emerald-100"
                         label="โรงเรียน"
                         value={teacher.user.school?.name || "ไม่ระบุ"}
                     />

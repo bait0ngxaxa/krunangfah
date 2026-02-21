@@ -20,7 +20,7 @@ const RiskPieChart = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/50 p-6 border border-pink-200 relative overflow-hidden ring-1 ring-pink-50 flex items-center justify-center min-h-[300px]">
+            <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/50 p-6 border border-emerald-200 relative overflow-hidden ring-1 ring-emerald-50 flex items-center justify-center min-h-[300px]">
                 <div className="animate-pulse text-gray-400">
                     กำลังโหลดกราฟ...
                 </div>
@@ -79,14 +79,14 @@ export function StudentDashboard(props: StudentDashboardProps) {
                             description={
                                 <>
                                     ข้อมูลนักเรียนทั้งหมด{" "}
-                                    <span className="font-semibold text-pink-500">
+                                    <span className="font-semibold text-emerald-500">
                                         {
                                             dashboard.schoolFilteredStudents
                                                 .length
                                         }
                                     </span>{" "}
                                     คน ใน{" "}
-                                    <span className="font-semibold text-pink-500">
+                                    <span className="font-semibold text-emerald-500">
                                         {dashboard.classes.length}
                                     </span>{" "}
                                     ห้อง

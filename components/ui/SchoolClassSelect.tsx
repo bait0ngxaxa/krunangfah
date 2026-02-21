@@ -26,7 +26,7 @@ export function SchoolClassSelect({
             <select
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none bg-white transition-all hover:border-pink-300 text-slate-900"
+                className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-all hover:border-emerald-300 text-slate-900"
             >
                 <option value="">{placeholder}</option>
                 {classes.length === 0 && (

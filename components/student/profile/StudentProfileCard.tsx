@@ -36,22 +36,22 @@ export function StudentProfileCard({
         : null;
 
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 sm:p-7 md:p-8 border border-pink-200 ring-1 ring-pink-50 overflow-hidden group hover:shadow-xl transition-all duration-300">
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 sm:p-7 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 overflow-hidden group hover:shadow-xl transition-all duration-300">
             {/* Gradient accent bottom border */}
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-emerald-400 via-teal-400 to-emerald-300 opacity-60" />
             {/* Top shimmer */}
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/80 to-transparent" />
             {/* Corner blobs */}
-            <div className="absolute -top-14 -right-14 w-36 h-36 bg-linear-to-br from-rose-200/25 to-pink-300/20 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute -top-14 -right-14 w-36 h-36 bg-linear-to-br from-emerald-200/25 to-teal-300/20 rounded-full blur-xl pointer-events-none" />
 
             {/* Decorative background blob */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-br from-rose-50 to-pink-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-br from-emerald-50 to-teal-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
             <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6 z-10">
                 {/* Student Info */}
                 <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6">
                     <div className="relative shrink-0">
-                        <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-full bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-lg shadow-pink-200 ring-4 ring-white">
+                        <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-full bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-lg shadow-emerald-200 ring-4 ring-white">
                             {student.firstName.charAt(0)}
                         </div>
                         <div className="absolute bottom-0 right-0 w-5 h-5 sm:w-6 sm:h-6 bg-green-400 border-3 sm:border-4 border-white rounded-full" />
@@ -61,7 +61,7 @@ export function StudentProfileCard({
                             {student.firstName} {student.lastName}
                         </h1>
                         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2 text-gray-500 font-medium">
-                            <span className="px-3 py-1 bg-pink-50 text-pink-600 rounded-lg text-sm border border-pink-100">
+                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-sm border border-emerald-100">
                                 ห้อง {student.class}
                             </span>
                             {student.gender && (
@@ -99,7 +99,7 @@ export function StudentProfileCard({
                             <div
                                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-sm border transition-transform hover:scale-105 ${
                                     latestResult.referredToHospital
-                                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                                        ? "bg-orange-50 text-orange-700 border-orange-200"
                                         : "bg-sky-50 text-sky-700 border-sky-200"
                                 }`}
                             >
@@ -121,7 +121,7 @@ export function StudentProfileCard({
                         <div className="flex flex-col items-end gap-1">
                             <div className="text-sm text-gray-500 font-medium">
                                 ประเมินล่าสุด:{" "}
-                                <span className="text-pink-600">
+                                <span className="text-emerald-600">
                                     {formatAcademicYear(
                                         latestResult.academicYear.year,
                                         latestResult.academicYear.semester,
@@ -144,7 +144,7 @@ export function StudentProfileCard({
             </div>
 
             {!latestResult && (
-                <div className="mt-8 p-6 bg-pink-50/50 rounded-2xl border-2 border-dashed border-pink-200 text-center text-gray-500 flex flex-col items-center gap-2">
+                <div className="mt-8 p-6 bg-emerald-50/50 rounded-2xl border-2 border-dashed border-emerald-200 text-center text-gray-500 flex flex-col items-center gap-2">
                     <FileText className="w-8 h-8 text-gray-400" />
                     <p className="font-medium">ยังไม่มีผลการคัดกรอง PHQ-A</p>
                 </div>

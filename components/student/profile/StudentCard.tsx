@@ -38,18 +38,18 @@ function StudentCardComponent({ student, onClick }: StudentCardProps) {
     return (
         <div
             onClick={onClick}
-            className="group bg-white/60 backdrop-blur-md rounded-2xl p-5 border border-white/80 shadow-sm hover:shadow-lg hover:shadow-pink-100/50 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-white/60 backdrop-blur-md rounded-2xl p-5 border border-white/80 shadow-sm hover:shadow-lg hover:shadow-emerald-100/50 transition-all cursor-pointer relative overflow-hidden"
             style={{ contain: "layout style paint" }}
         >
-            <div className="absolute inset-0 bg-linear-to-br from-white/40 to-pink-50/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-linear-to-br from-white/40 to-emerald-50/20 opacity-0 group-hover:opacity-100 transition-opacity" />
 
             <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-400 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-110 transition-transform duration-300">
                         {initialLetter}
                     </div>
                     <div>
-                        <h3 className="font-bold text-gray-800 text-lg group-hover:text-pink-700 transition-colors">
+                        <h3 className="font-bold text-gray-800 text-lg group-hover:text-emerald-700 transition-colors">
                             {displayName}
                         </h3>
                         <p className="text-sm text-gray-500 font-medium flex items-center gap-2">

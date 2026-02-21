@@ -13,10 +13,10 @@ export function SchoolSelector({
     onSchoolChange,
 }: SchoolSelectorProps) {
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 overflow-hidden">
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 border border-emerald-200 ring-1 ring-emerald-50 overflow-hidden">
             {/* Corner decoration */}
-            <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
-            <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-3 flex items-center gap-2.5 relative">
+            <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-green-300/30 rounded-full blur-xl pointer-events-none" />
+            <div className="bg-linear-to-r from-emerald-500 via-green-500 to-emerald-600 px-5 py-3 flex items-center gap-2.5 relative">
                 <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
                 <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-inner ring-1 ring-white/20">
                     <School className="w-4 h-4 text-white" />
@@ -30,7 +30,7 @@ export function SchoolSelector({
                     <select
                         value={selectedSchoolId}
                         onChange={(e) => onSchoolChange(e.target.value)}
-                        className="w-full appearance-none px-4 py-2.5 pr-10 border border-pink-100 rounded-xl focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none bg-white/70 backdrop-blur-sm transition-all text-sm font-medium text-gray-700"
+                        className="w-full appearance-none px-4 py-2.5 pr-10 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 outline-none bg-white/70 backdrop-blur-sm transition-all text-sm font-medium text-gray-700"
                     >
                         <option value="">-- เลือกโรงเรียน --</option>
                         {schools.map((school) => (

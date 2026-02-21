@@ -71,22 +71,52 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
             const riskLevel = (student.phqResults?.[0]?.riskLevel ||
                 "blue") as RiskLevel;
             switch (riskLevel) {
-                case "blue":   counts.blue++;   break;
-                case "green":  counts.green++;  break;
-                case "yellow": counts.yellow++; break;
-                case "orange": counts.orange++; break;
-                case "red":    counts.red++;    break;
+                case "blue":
+                    counts.blue++;
+                    break;
+                case "green":
+                    counts.green++;
+                    break;
+                case "yellow":
+                    counts.yellow++;
+                    break;
+                case "orange":
+                    counts.orange++;
+                    break;
+                case "red":
+                    counts.red++;
+                    break;
             }
         });
         return counts;
     }, [students]);
 
     const riskCardData = [
-        { level: "blue"   as const, bgClass: getRiskBgClass("blue"),   count: riskCounts.blue },
-        { level: "green"  as const, bgClass: getRiskBgClass("green"),  count: riskCounts.green },
-        { level: "yellow" as const, bgClass: getRiskBgClass("yellow"), count: riskCounts.yellow },
-        { level: "orange" as const, bgClass: getRiskBgClass("orange"), count: riskCounts.orange },
-        { level: "red"    as const, bgClass: getRiskBgClass("red"),    count: riskCounts.red },
+        {
+            level: "blue" as const,
+            bgClass: getRiskBgClass("blue"),
+            count: riskCounts.blue,
+        },
+        {
+            level: "green" as const,
+            bgClass: getRiskBgClass("green"),
+            count: riskCounts.green,
+        },
+        {
+            level: "yellow" as const,
+            bgClass: getRiskBgClass("yellow"),
+            count: riskCounts.yellow,
+        },
+        {
+            level: "orange" as const,
+            bgClass: getRiskBgClass("orange"),
+            count: riskCounts.orange,
+        },
+        {
+            level: "red" as const,
+            bgClass: getRiskBgClass("red"),
+            count: riskCounts.red,
+        },
     ];
 
     return (
@@ -103,7 +133,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                         }
                         className={`${bgClass} relative overflow-hidden rounded-2xl p-4 text-white text-center transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 ${
                             selectedRisk === level
-                                ? "ring-4 ring-offset-2 ring-pink-200 scale-105 z-10 shadow-xl"
+                                ? "ring-4 ring-offset-2 ring-emerald-200 scale-105 z-10 shadow-xl"
                                 : "opacity-90 hover:opacity-100"
                         }`}
                     >
@@ -119,7 +149,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-6 items-center bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-pink-200 shadow-sm">
+            <div className="flex flex-wrap gap-6 items-center bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-emerald-200 shadow-sm">
                 <div className="flex items-center gap-3">
                     <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
                         <School className="w-5 h-5 text-gray-600" />
@@ -128,7 +158,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                     <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
-                        className="px-4 py-2 bg-white/80 border border-gray-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all cursor-pointer hover:border-pink-200"
+                        className="px-4 py-2 bg-white/80 border border-gray-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all cursor-pointer hover:border-emerald-200"
                     >
                         <option value="all">แสดงทั้งหมด</option>
                         {classes.map((cls) => (
@@ -143,7 +173,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
 
                 <div className="text-sm text-gray-600 font-medium">
                     แสดง{" "}
-                    <span className="text-pink-600 font-bold">
+                    <span className="text-emerald-600 font-bold">
                         {filteredStudents.length}
                     </span>{" "}
                     จาก <span className="font-bold">{students.length}</span> คน
@@ -151,7 +181,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
             </div>
 
             {/* Student List by Class */}
-            <div className="max-h-[600px] overflow-y-auto pr-2 space-y-6 rounded-2xl border border-pink-200 bg-white/30 p-6 backdrop-blur-sm custom-scrollbar shadow-inner">
+            <div className="max-h-[600px] overflow-y-auto pr-2 space-y-6 rounded-2xl border border-emerald-200 bg-white/30 p-6 backdrop-blur-sm custom-scrollbar shadow-inner">
                 {groupedStudents.size === 0 ? (
                     <div className="text-center py-20 text-gray-500">
                         <div className="mb-4 opacity-50">
@@ -167,12 +197,12 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                         .sort(([a], [b]) => a.localeCompare(b))
                         .map(([className, classStudents]) => (
                             <div key={className} className="space-y-4">
-                                <h3 className="text-lg font-bold text-gray-700 border-b-2 border-pink-100 pb-2 sticky top-0 bg-white/95 backdrop-blur-md z-10 px-2 py-3 rounded-lg shadow-sm flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-gray-700 border-b-2 border-emerald-100 pb-2 sticky top-0 bg-white/95 backdrop-blur-md z-10 px-2 py-3 rounded-lg shadow-sm flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <BookOpen className="w-5 h-5 text-pink-500" />
+                                        <BookOpen className="w-5 h-5 text-emerald-500" />
                                         ห้อง {className}
                                     </div>
-                                    <span className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded-full">
+                                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
                                         {classStudents.length} คน
                                     </span>
                                 </h3>

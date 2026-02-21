@@ -107,7 +107,7 @@ export function EncouragementPage({
             <div className="max-w-2xl mx-auto text-center w-full">
                 {/* Decorative icon */}
                 <div
-                    className={`w-28 h-28 ${config.bg} rounded-full flex items-center justify-center text-white mx-auto mb-10 animate-pulse shadow-xl shadow-pink-100`}
+                    className={`w-28 h-28 ${config.bg} rounded-full flex items-center justify-center text-white mx-auto mb-10 animate-pulse shadow-xl shadow-emerald-100`}
                 >
                     <Heart className="w-14 h-14" />
                 </div>
@@ -130,7 +130,7 @@ export function EncouragementPage({
 
                 {/* Tips Section */}
                 <div
-                    className={`bg-white/70 backdrop-blur-xl rounded-3xl p-8 md:p-10 shadow-2xl border border-pink-200 mb-12 transition-all duration-1000 mx-4 transform hover:scale-[1.02] ${
+                    className={`bg-white/70 backdrop-blur-xl rounded-3xl p-8 md:p-10 shadow-2xl border border-emerald-200 mb-12 transition-all duration-1000 mx-4 transform hover:scale-[1.02] ${
                         showTips
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"
@@ -179,7 +179,7 @@ export function EncouragementPage({
                 {/* Continue Button */}
                 <button
                     onClick={handleContinue}
-                    className={`inline-flex items-center gap-3 px-10 py-5 bg-linear-to-r ${config.gradient} text-white rounded-full font-bold text-xl shadow-lg hover:shadow-xl hover:shadow-pink-200/50 hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
+                    className={`inline-flex items-center gap-3 px-10 py-5 bg-linear-to-r ${config.gradient} text-white rounded-full font-bold text-xl shadow-lg hover:shadow-xl hover:shadow-emerald-200/50 hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
                         showButton
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"

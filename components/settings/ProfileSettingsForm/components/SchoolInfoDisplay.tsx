@@ -8,7 +8,7 @@ interface SchoolInfoDisplayProps {
  */
 export function SchoolInfoDisplay({ schoolName }: SchoolInfoDisplayProps) {
     return (
-        <div className="bg-pink-50 border border-pink-200 rounded-xl p-4">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <label className="block text-sm font-bold text-gray-700 mb-2">
                 โรงเรียน
             </label>

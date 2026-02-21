@@ -12,7 +12,10 @@
 }
 
 body {
-    background: var(--background);
+    background-image: linear-gradient(to bottom, #c8f5e6, #ffffff);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: var(--background);
     color: var(--foreground);
     font-family:
         var(--font-google-sans),
@@ -153,9 +156,9 @@ textarea::placeholder {
 /* Hero Title - multi-layer drop-shadow for 3D depth on gradient text */
 .hero-title-depth {
     position: relative;
-    filter: drop-shadow(0 2px 2px rgba(190, 24, 93, 0.25))
-        drop-shadow(0 4px 8px rgba(236, 72, 153, 0.2))
-        drop-shadow(0 8px 16px rgba(236, 72, 153, 0.12));
+    filter: drop-shadow(0 2px 2px rgba(16, 185, 129, 0.25))
+        drop-shadow(0 4px 8px rgba(16, 185, 129, 0.2))
+        drop-shadow(0 8px 16px rgba(16, 185, 129, 0.12));
     letter-spacing: -0.02em;
 }
 
@@ -173,13 +176,13 @@ textarea::placeholder {
     background-size: 200% auto !important;
     background-image: linear-gradient(
         90deg,
-        #fb7185 0%,
-        #ec4899 20%,
-        #f9a8d4 40%,
-        #fda4af 50%,
-        #ec4899 60%,
-        #be185d 80%,
-        #fb7185 100%
+        #34d399 0%,
+        #10b981 20%,
+        #6ee7b7 40%,
+        #a7f3d0 50%,
+        #10b981 60%,
+        #047857 80%,
+        #34d399 100%
     ) !important;
     -webkit-background-clip: text !important;
     background-clip: text !important;
@@ -191,8 +194,8 @@ textarea::placeholder {
 .subtitle-dimensional {
     text-shadow:
         0 1px 2px rgba(0, 0, 0, 0.08),
-        0 2px 8px rgba(236, 72, 153, 0.08),
-        0 4px 12px rgba(236, 72, 153, 0.04);
+        0 2px 8px rgba(16, 185, 129, 0.08),
+        0 4px 12px rgba(16, 185, 129, 0.04);
     letter-spacing: 0.01em;
 }
 

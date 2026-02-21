@@ -29,11 +29,16 @@ interface PHQTrendChartProps {
 
 function getLineColor(level: RiskLevel): string {
     switch (level) {
-        case "blue":   return "#3b82f6";
-        case "green":  return "#22c55e";
-        case "yellow": return "#eab308";
-        case "orange": return "#f97316";
-        case "red":    return "#ef4444";
+        case "blue":
+            return "#3b82f6";
+        case "green":
+            return "#22c55e";
+        case "yellow":
+            return "#eab308";
+        case "orange":
+            return "#f97316";
+        case "red":
+            return "#ef4444";
     }
 }
 
@@ -62,7 +67,7 @@ function CustomTooltip({
                 <p className="text-sm text-gray-600 mb-1">
                     {data.academicYear}
                 </p>
-                <p className="text-lg font-bold text-pink-600">
+                <p className="text-lg font-bold text-emerald-600">
                     คะแนน: {data.score}
                 </p>
             </div>
@@ -107,12 +112,12 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
     const lineColor = getLineColor(latestRisk);
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-rose-300 via-pink-300 to-orange-300" />
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-emerald-300 via-teal-300 to-cyan-300" />
 
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <TrendingUp className="w-6 h-6 text-rose-500" />
-                <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
+                <TrendingUp className="w-6 h-6 text-emerald-500" />
+                <span className="bg-linear-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
                     กราฟแนวโน้มคะแนน PHQ-A
                 </span>
             </h2>
@@ -124,7 +129,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                         margin={{ top: 10, right: 30, left: 20, bottom: 60 }}
                         tabIndex={-1}
                     >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#FCE7F3" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#D1FAE5" />
                         <XAxis
                             dataKey="academicYear"
                             stroke="#9CA3AF"
@@ -143,7 +148,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                                 },
                             }}
                             tick={{ fill: "#6B7280" }}
-                            axisLine={{ stroke: "#FBCFE8" }}
+                            axisLine={{ stroke: "#A7F3D0" }}
                         />
                         <YAxis
                             domain={[0, 27]}
@@ -161,7 +166,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                                 },
                             }}
                             tick={{ fill: "#6B7280" }}
-                            axisLine={{ stroke: "#FBCFE8" }}
+                            axisLine={{ stroke: "#A7F3D0" }}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Line
@@ -181,9 +186,9 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                 </ResponsiveContainer>
             </div>
 
-            <div className="mt-4 p-4 bg-pink-50/50 rounded-xl border border-pink-100">
+            <div className="mt-4 p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
                 <p className="text-sm text-gray-600 flex items-center gap-2">
-                    <span className="font-semibold text-pink-600">
+                    <span className="font-semibold text-emerald-600">
                         หมายเหตุ:
                     </span>{" "}
                     คะแนนรวม 0-27 คะแนน | กราฟแสดงแนวโน้มจากเก่าสุด → ใหม่สุด

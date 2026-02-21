@@ -50,7 +50,7 @@ function StepCard({
     const buttonClasses = `inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r ${gradient} text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm shadow-md group`;
 
     return (
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-pink-100/50 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-emerald-100/50 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-start gap-4">
                 {/* Step Number Badge */}
                 <div
@@ -104,11 +104,11 @@ export function ConversationView({
     const showRecordSteps = riskLevel === "red";
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
+        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-8 px-4 relative overflow-hidden">
             {/* Decorative Background Elements */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-10 right-10 w-64 h-64 bg-rose-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
-                <div className="absolute bottom-10 left-10 w-64 h-64 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
+                <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
+                <div className="absolute bottom-10 left-10 w-64 h-64 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
             </div>
 
             <div className="max-w-4xl mx-auto relative z-10">
@@ -117,7 +117,7 @@ export function ConversationView({
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
-                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 relative overflow-hidden animate-fade-in-up">
+                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 relative overflow-hidden animate-fade-in-up">
                     <div
                         className={`absolute top-0 left-0 w-full h-1.5 bg-linear-to-r ${config.gradient}`}
                     />
@@ -139,7 +139,7 @@ export function ConversationView({
                             title="พูดคุยเพื่อประเมินซ้ำ"
                             description="ดูหลักการและแนวทางในการพูดคุยกับนักเรียน"
                             icon={
-                                <MessageCircle className="w-5 h-5 text-rose-500" />
+                                <MessageCircle className="w-5 h-5 text-emerald-500" />
                             }
                             buttonLabel="หลักการพูดคุย"
                             href={`/students/${studentId}/help/conversation`}
@@ -154,7 +154,7 @@ export function ConversationView({
                                     title="สรุปประเด็นการพูดคุย"
                                     description="บันทึกสรุปประเด็นที่พูดคุยกับนักเรียน"
                                     icon={
-                                        <ClipboardEdit className="w-5 h-5 text-rose-500" />
+                                        <ClipboardEdit className="w-5 h-5 text-emerald-500" />
                                     }
                                     buttonLabel="กรอกข้อมูล"
                                     onClick={() => setShowCounselingModal(true)}
@@ -167,7 +167,7 @@ export function ConversationView({
                                     title="ส่งต่อโรงพยาบาล หรือ ติดตามต่อ"
                                     description="เลือกส่งต่อผู้เชี่ยวชาญ หรือติดตามดูแลต่อเนื่อง"
                                     icon={
-                                        <Hospital className="w-5 h-5 text-rose-500" />
+                                        <Hospital className="w-5 h-5 text-emerald-500" />
                                     }
                                     buttonLabel="กรอกข้อมูล"
                                     onClick={() => setShowReferralModal(true)}

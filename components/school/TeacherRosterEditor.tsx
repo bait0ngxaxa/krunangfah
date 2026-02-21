@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, X, UserPlus, Users, Check, Pencil } from "lucide-react";
 import {
@@ -65,7 +65,7 @@ export function TeacherRosterEditor({
         handleSubmit,
         reset,
         setValue,
-        watch,
+        control,
         formState: { errors, isSubmitting },
     } = useForm<TeacherRosterFormData>({
         resolver: zodResolver(teacherRosterSchema),
@@ -81,8 +81,8 @@ export function TeacherRosterEditor({
         },
     });
 
-    const userRoleValue = watch("userRole") || "";
-    const advisoryClassValue = watch("advisoryClass") || "";
+    const userRoleValue = useWatch({ control, name: "userRole" }) ?? "";
+    const advisoryClassValue = useWatch({ control, name: "advisoryClass" }) ?? "";
 
     // Auto-set advisory class for school_admin
     useEffect(() => {
@@ -142,8 +142,10 @@ export function TeacherRosterEditor({
                 return;
             }
             if (result.data) {
+                const updatedEntry = result.data;
+                if (!updatedEntry) return;
                 const updated = roster
-                    .map((t) => (t.id === editingId ? result.data! : t))
+                    .map((t) => (t.id === editingId ? updatedEntry : t))
                     .sort((a, b) =>
                         `${a.firstName} ${a.lastName}`.localeCompare(
                             `${b.firstName} ${b.lastName}`,
@@ -191,10 +193,10 @@ export function TeacherRosterEditor({
     const formContent = (
         <form
             onSubmit={handleSubmit(onSubmit)}
-            className="p-4 bg-pink-50/60 rounded-xl border border-pink-100 space-y-3"
+            className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-100 space-y-3"
         >
             <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-bold text-pink-600 flex items-center gap-1.5">
+                <span className="text-sm font-bold text-emerald-600 flex items-center gap-1.5">
                     {editingId ? (
                         <>
                             <Pencil className="w-4 h-4" />
@@ -217,12 +219,12 @@ export function TeacherRosterEditor({
             </div>
 
             {/* Row 1: Name + Age */}
-            <div className="grid grid-cols-5 gap-2">
-                <div className="col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 sm:gap-3">
+                <div className="col-span-1 sm:col-span-2">
                     <input
                         {...register("firstName")}
                         placeholder="ชื่อ *"
-                        className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
                     />
                     {errors.firstName && (
                         <p className="mt-0.5 text-xs text-red-500">
@@ -230,11 +232,11 @@ export function TeacherRosterEditor({
                         </p>
                     )}
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                     <input
                         {...register("lastName")}
                         placeholder="นามสกุล *"
-                        className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
                     />
                     {errors.lastName && (
                         <p className="mt-0.5 text-xs text-red-500">
@@ -242,14 +244,14 @@ export function TeacherRosterEditor({
                         </p>
                     )}
                 </div>
-                <div className="col-span-1">
+                <div className="col-span-1 sm:col-span-1">
                     <input
                         {...register("age", { valueAsNumber: true })}
                         type="number"
                         placeholder="อายุ *"
                         min={18}
                         max={100}
-                        className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
                     />
                     {errors.age && (
                         <p className="mt-0.5 text-xs text-red-500">
@@ -260,13 +262,13 @@ export function TeacherRosterEditor({
             </div>
 
             {/* Row 2: Email + User Role */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 <div>
                     <input
                         {...register("email")}
                         type="email"
                         placeholder="อีเมล (ไม่บังคับ)"
-                        className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
                     />
                     {errors.email && (
                         <p className="mt-0.5 text-xs text-red-500">
@@ -277,7 +279,7 @@ export function TeacherRosterEditor({
                 <div>
                     <select
                         {...register("userRole")}
-                        className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black"
+                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black"
                     >
                         <option value="">ประเภทครู *</option>
                         {USER_ROLES.map((r) => (
@@ -295,7 +297,7 @@ export function TeacherRosterEditor({
             </div>
 
             {/* Row 3: Advisory Class (only for class_teacher) + School Role */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 {userRoleValue === "class_teacher" ? (
                     <div>
                         <select
@@ -305,7 +307,7 @@ export function TeacherRosterEditor({
                                     shouldValidate: true,
                                 })
                             }
-                            className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black"
+                            className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black"
                         >
                             <option value="">เลือกห้องที่ปรึกษา *</option>
                             {schoolClasses.map((c) => (
@@ -325,7 +327,7 @@ export function TeacherRosterEditor({
                         <input
                             {...register("schoolRole")}
                             placeholder="บทบาทในโรงเรียน *"
-                            className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                            className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
                         />
                         {errors.schoolRole && (
                             <p className="mt-0.5 text-xs text-red-500">
@@ -339,7 +341,7 @@ export function TeacherRosterEditor({
                         <input
                             {...register("schoolRole")}
                             placeholder="บทบาทในโรงเรียน *"
-                            className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-100 bg-white text-black placeholder:text-gray-400"
+                            className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
                         />
                         {errors.schoolRole && (
                             <p className="mt-0.5 text-xs text-red-500">
@@ -358,7 +360,7 @@ export function TeacherRosterEditor({
                     บทบาทในโครงการครูนางฟ้า{" "}
                     <span className="text-red-500">*</span>
                 </label>
-                <div className="flex flex-wrap gap-3 bg-white/80 p-3 rounded-lg border border-pink-100">
+                <div className="flex flex-wrap gap-3 bg-white/80 p-3 rounded-lg border border-emerald-100">
                     {PROJECT_ROLES.map((role) => (
                         <label
                             key={role.value}
@@ -369,13 +371,13 @@ export function TeacherRosterEditor({
                                     {...register("projectRole")}
                                     type="radio"
                                     value={role.value}
-                                    className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded-full border border-pink-300 shadow-sm transition-all checked:border-pink-500 checked:bg-pink-500 hover:border-pink-400"
+                                    className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded-full border border-teal-300 shadow-sm transition-all checked:border-teal-500 checked:bg-teal-500 hover:border-teal-400"
                                 />
                                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform text-white opacity-0 peer-checked:opacity-100">
                                     <Check className="h-2 w-2" />
                                 </span>
                             </div>
-                            <span className="text-sm text-gray-700 group-hover:text-pink-600 transition-colors font-medium">
+                            <span className="text-sm text-gray-700 group-hover:text-emerald-600 transition-colors font-medium">
                                 {role.label}
                             </span>
                         </label>
@@ -391,7 +393,7 @@ export function TeacherRosterEditor({
             <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
                 {editingId ? (
                     <>
@@ -420,10 +422,10 @@ export function TeacherRosterEditor({
                             reset();
                             setShowForm(true);
                         }}
-                        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-pink-200 text-pink-500 rounded-xl font-semibold text-sm hover:bg-pink-50 hover:border-pink-300 transition-all cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-emerald-200 text-teal-500 rounded-xl font-semibold text-sm hover:bg-emerald-50 hover:border-emerald-300 transition-all cursor-pointer"
                     >
                         <UserPlus className="w-4 h-4" />
-                        เพิ่มครูใน Roster
+                        เพิ่มครูในโรงเรียน
                     </button>
                 ) : (
                     formContent
@@ -455,8 +457,8 @@ export function TeacherRosterEditor({
                                 key={t.id}
                                 className={`flex items-center justify-between p-3 bg-white border rounded-xl hover:shadow-sm transition-all group ${
                                     editingId === t.id
-                                        ? "border-pink-400 ring-2 ring-pink-100"
-                                        : "border-pink-100"
+                                        ? "border-emerald-400 ring-2 ring-emerald-100"
+                                        : "border-emerald-100"
                                 }`}
                             >
                                 <div className="flex-1 min-w-0">
@@ -469,7 +471,7 @@ export function TeacherRosterEditor({
                                                 t.userRole}
                                         </span>
                                         {t.userRole === "class_teacher" && (
-                                            <span className="text-xs px-1.5 py-0.5 bg-pink-50 text-pink-600 rounded-md font-medium">
+                                            <span className="text-xs px-1.5 py-0.5 bg-emerald-50 text-teal-600 rounded-md font-medium">
                                                 {t.advisoryClass}
                                             </span>
                                         )}

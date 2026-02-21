@@ -17,8 +17,8 @@ export function ForgotPasswordForm() {
     if (emailSent) {
         return (
             <div className="text-center space-y-4">
-                <div className="mx-auto w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center">
-                    <Mail className="w-8 h-8 text-pink-500" />
+                <div className="mx-auto w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center">
+                    <Mail className="w-8 h-8 text-emerald-500" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900">
                     ส่งลิงก์แล้ว
@@ -32,7 +32,7 @@ export function ForgotPasswordForm() {
                 </p>
                 <Link
                     href="/signin"
-                    className="inline-block mt-2 text-sm font-semibold text-pink-500 hover:text-pink-600 transition-colors"
+                    className="inline-block mt-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
                 >
                     กลับไปหน้าเข้าสู่ระบบ
                 </Link>
@@ -55,7 +55,7 @@ export function ForgotPasswordForm() {
                     id="email"
                     autoComplete="email"
                     disabled={isSubmitting}
-                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-black placeholder:text-gray-600"
+                    className="w-full px-4 py-3 border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-black placeholder:text-gray-600"
                     placeholder="your@email.com"
                 />
                 {errors.email && (
@@ -68,7 +68,7 @@ export function ForgotPasswordForm() {
             <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-linear-to-r from-pink-50 to-white text-pink-600 text-lg font-bold py-3.5 px-4 rounded-full border border-pink-200 hover:from-pink-100 hover:to-white focus:outline-none focus:ring-4 focus:ring-pink-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-pink-100 hover:shadow-xl hover:shadow-pink-200 hover:-translate-y-0.5"
+                className="w-full bg-linear-to-r from-emerald-50 to-white text-emerald-600 text-lg font-bold py-3.5 px-4 rounded-full border border-emerald-200 hover:from-emerald-100 hover:to-white focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-emerald-100 hover:shadow-xl hover:shadow-emerald-200 hover:-translate-y-0.5"
             >
                 {isSubmitting ? "กำลังส่ง..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
             </button>
@@ -76,7 +76,7 @@ export function ForgotPasswordForm() {
             <div className="text-center">
                 <Link
                     href="/signin"
-                    className="text-sm font-semibold text-pink-500 hover:text-pink-600 transition-colors"
+                    className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
                 >
                     กลับไปหน้าเข้าสู่ระบบ
                 </Link>

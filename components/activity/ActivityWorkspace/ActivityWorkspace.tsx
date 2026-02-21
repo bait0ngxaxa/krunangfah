@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { MessageCircle, CheckCircle2, ArrowRight, Eye, FileText } from "lucide-react";
+import {
+    MessageCircle,
+    CheckCircle2,
+    ArrowRight,
+    Eye,
+    FileText,
+} from "lucide-react";
 import { useActivityWorkspace } from "./useActivityWorkspace";
 import {
     PreviewModal,
@@ -44,7 +50,12 @@ export function ActivityWorkspace({
         handleConfirmComplete,
         handleFileSelect,
         handleSaveNotes,
-    } = useActivityWorkspace({ studentId, riskLevel, activityProgress, phqResultId });
+    } = useActivityWorkspace({
+        studentId,
+        riskLevel,
+        activityProgress,
+        phqResultId,
+    });
 
     // Get download URLs for current activity
     const downloadUrls = currentActivityNumber
@@ -63,11 +74,11 @@ export function ActivityWorkspace({
                 onClose={() => setPreviewFile(null)}
             />
 
-            <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 py-8 px-4 relative overflow-hidden">
+            <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-8 px-4 relative overflow-hidden">
                 {/* Decorative Background Elements */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                    <div className="absolute top-10 right-10 w-64 h-64 bg-rose-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
-                    <div className="absolute bottom-10 left-10 w-64 h-64 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
+                    <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
+                    <div className="absolute bottom-10 left-10 w-64 h-64 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
                 </div>
 
                 <div className="max-w-4xl mx-auto relative z-10">
@@ -78,7 +89,7 @@ export function ActivityWorkspace({
                         config={config}
                     />
 
-                    <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 p-6 md:p-8 border border-pink-200 ring-1 ring-pink-50 relative overflow-hidden animate-fade-in-up">
+                    <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 relative overflow-hidden animate-fade-in-up">
                         <div
                             className={`absolute top-0 left-0 w-full h-1.5 bg-linear-to-r ${config.gradient}`}
                         />
@@ -184,10 +195,10 @@ export function ActivityWorkspace({
                         ) : null}
 
                         {/* Conversation Button */}
-                        <div className="pt-6 border-t border-pink-100 mt-8">
+                        <div className="pt-6 border-t border-emerald-100 mt-8">
                             <Link
                                 href={`/students/${studentId}/help/conversation`}
-                                className="w-full py-4 bg-linear-to-r from-rose-500 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all text-center text-lg shadow-md flex items-center justify-center gap-2 group"
+                                className="w-full py-4 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all text-center text-lg shadow-md flex items-center justify-center gap-2 group"
                             >
                                 <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
                                 หลักการพูดคุย

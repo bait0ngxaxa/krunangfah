@@ -2,7 +2,6 @@
  * User roles in the system
  */
 export type UserRole =
-    | "user"
     | "school_admin"
     | "system_admin"
     | "class_teacher";
@@ -56,6 +55,7 @@ export interface AuthResponse {
     success: boolean;
     message: string;
     user?: ExtendedUser;
+    redirectTo?: string;
 }
 
 /**

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import type {
     SchoolClassItem,
     SchoolContextData,
@@ -57,28 +57,43 @@ export async function createSchoolAndLink(input: {
             };
         }
 
-        if (session.user.schoolId) {
-            return { success: false, message: "คุณมีโรงเรียนอยู่แล้ว" };
-        }
-
         const parsed = schoolSetupSchema.safeParse(input);
         if (!parsed.success) {
             return { success: false, message: parsed.error.issues[0].message };
         }
 
-        // Sequential queries — safe because schoolId nullity was already
-        // verified above, so concurrent double-create cannot happen.
-        const school = await prisma.school.create({
-            data: {
-                name: parsed.data.name.trim(),
-                province: parsed.data.province?.trim() || null,
-            },
+        // Transaction prevents race condition (double-click creating duplicate schools)
+        const school = await prisma.$transaction(async (tx) => {
+            // Re-check inside transaction to prevent concurrent double-create
+            const user = await tx.user.findUnique({
+                where: { id: session.user.id },
+                select: { schoolId: true },
+            });
+
+            if (user?.schoolId) {
+                return null; // Already has a school
+            }
+
+            const newSchool = await tx.school.create({
+                data: {
+                    name: parsed.data.name.trim(),
+                    province: parsed.data.province?.trim() || null,
+                },
+            });
+
+            await tx.user.update({
+                where: { id: session.user.id },
+                data: { schoolId: newSchool.id },
+            });
+
+            return newSchool;
         });
 
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { schoolId: school.id },
-        });
+        if (!school) {
+            return { success: false, message: "คุณมีโรงเรียนอยู่แล้ว" };
+        }
+
+        revalidateTag("dashboard", "default");
 
         return {
             success: true,
@@ -185,7 +200,10 @@ export async function removeSchoolClass(
  */
 export async function getSchoolClasses(): Promise<SchoolClassItem[]> {
     const session = await requireAuth();
-    const schoolId = session.user.schoolId;
+    const schoolId = await resolveSchoolId(
+        session.user.id,
+        session.user.schoolId,
+    );
 
     if (!schoolId) return [];
 
@@ -203,7 +221,10 @@ export async function getSchoolClasses(): Promise<SchoolClassItem[]> {
  */
 export async function getSchoolContext(): Promise<SchoolContextData> {
     const session = await requireAuth();
-    const schoolId = session.user.schoolId;
+    const schoolId = await resolveSchoolId(
+        session.user.id,
+        session.user.schoolId,
+    );
 
     if (!schoolId) return { classes: [], teachers: [] };
 

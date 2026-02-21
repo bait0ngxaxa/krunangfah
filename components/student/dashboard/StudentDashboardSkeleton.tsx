@@ -29,7 +29,7 @@ export function StudentDashboardSkeleton() {
             </div>
 
             {/* Student groups skeleton */}
-            <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-pink-100 shadow-sm">
+            <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-emerald-100 shadow-sm">
                 <div className="h-6 w-64 bg-gray-200 rounded" />
             </div>
 

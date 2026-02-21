@@ -77,7 +77,7 @@ export function ActivityCompletionPage({
                         </div>
                     </div>
 
-                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 border border-pink-200 shadow-xl mb-8">
+                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 border border-emerald-200 shadow-xl mb-8">
                         <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 tracking-tight">
                             ขอบคุณที่ชวนเด็กทำ
                         </h1>
@@ -99,14 +99,14 @@ export function ActivityCompletionPage({
                         }`}
                     >
                         <div className="flex items-center justify-center gap-3 mb-6">
-                            <div className="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-500 rotate-3">
+                            <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-500 rotate-3">
                                 <Calendar className="w-6 h-6" />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <p className="text-xl text-gray-600">
                                 อีก{" "}
-                                <span className="font-bold text-rose-500 text-2xl">
+                                <span className="font-bold text-emerald-500 text-2xl">
                                     1 สัปดาห์
                                 </span>
                             </p>
@@ -142,7 +142,7 @@ export function ActivityCompletionPage({
                         <p className="text-xl text-gray-600">
                             ทำกิจกรรมครบทุกกิจกรรมแล้ว
                             {assessmentPeriodLabel && (
-                                <span className="block text-base text-pink-500 font-medium mt-2">
+                                <span className="block text-base text-emerald-500 font-medium mt-2">
                                     ({assessmentPeriodLabel})
                                 </span>
                             )}
@@ -153,7 +153,7 @@ export function ActivityCompletionPage({
                 {/* Back to Dashboard Button */}
                 <button
                     onClick={handleBackToDashboard}
-                    className={`pointer-events-auto mt-12 inline-flex items-center gap-3 px-10 py-5 bg-linear-to-r ${config.gradient} text-white rounded-full font-bold text-xl shadow-lg hover:shadow-xl hover:shadow-pink-200/50 hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
+                    className={`pointer-events-auto mt-12 inline-flex items-center gap-3 px-10 py-5 bg-linear-to-r ${config.gradient} text-white rounded-full font-bold text-xl shadow-lg hover:shadow-xl hover:shadow-emerald-200/50 hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
                         finalButtonVisible
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"

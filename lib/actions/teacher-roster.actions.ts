@@ -1,10 +1,8 @@
 "use server";
 
-import { z } from "zod";
-import { UserRole, ProjectRole } from "@prisma/client";
+import type { UserRole, ProjectRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
-import { revalidatePath } from "next/cache";
 import {
     teacherRosterSchema,
     type TeacherRosterFormData,
@@ -165,7 +163,10 @@ export async function removeFromRoster(
  */
 export async function getSchoolRoster(): Promise<TeacherRosterItem[]> {
     const session = await requireAuth();
-    const schoolId = session.user.schoolId;
+    const schoolId = await resolveSchoolId(
+        session.user.id,
+        session.user.schoolId,
+    );
 
     if (!schoolId) return [];
 

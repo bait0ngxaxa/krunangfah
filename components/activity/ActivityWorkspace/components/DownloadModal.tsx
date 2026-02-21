@@ -31,7 +31,7 @@ export function DownloadModal({
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-gray-400 hover:text-pink-600 hover:bg-pink-50 rounded-full transition-all"
+                    className="absolute top-4 right-4 p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-all"
                 >
                     <X className="w-5 h-5" />
                 </button>

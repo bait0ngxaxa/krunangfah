@@ -14,14 +14,18 @@ export function ToolsIntroTab() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-pink-200 shadow-lg shadow-pink-100/50">
-                <h2 className="text-2xl font-bold bg-linear-to-r from-purple-500 to-pink-600 bg-clip-text text-transparent mb-2 flex items-center gap-2">
-                    <Package className="w-6 h-6 text-purple-500" />
-                    เครื่องมือใน Healthy Emotion Box
-                </h2>
-                <p className="text-gray-600 font-medium">
-                    ระบบเครื่องมือครบวงจร 9 ชิ้น สำหรับการดูแลสุขภาพจิตนักเรียน
-                </p>
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-emerald-200 shadow-lg shadow-emerald-100/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-linear-to-r from-emerald-50/50 to-transparent opacity-50 pointer-events-none" />
+                <div className="relative z-10">
+                    <h2 className="text-2xl font-bold bg-linear-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent mb-2 flex items-center gap-2 drop-shadow-sm">
+                        <Package className="w-6 h-6 text-emerald-500" />
+                        เครื่องมือใน Healthy Emotion Box
+                    </h2>
+                    <p className="text-gray-600 font-medium">
+                        ระบบเครื่องมือครบวงจร 9 ชิ้น
+                        สำหรับการดูแลสุขภาพจิตนักเรียน
+                    </p>
+                </div>
             </div>
 
             {/* Tools Grid */}
@@ -29,7 +33,7 @@ export function ToolsIntroTab() {
                 {HEALTHY_EMOTION_TOOLS.map((tool) => (
                     <div
                         key={tool.id}
-                        className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl hover:shadow-pink-100/50 transition-all duration-300 p-6 border ${BORDER_STYLES[tool.color]} hover:-translate-y-1 relative group overflow-hidden`}
+                        className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl hover:shadow-emerald-100/50 transition-all duration-300 p-6 border ${BORDER_STYLES[tool.color]} hover:-translate-y-1 relative group overflow-hidden flex flex-col`}
                     >
                         <div
                             className={`absolute top-0 right-0 w-24 h-24 bg-linear-to-bl ${COLOR_STYLES[tool.color]} opacity-10 rounded-bl-[100px] pointer-events-none transition-opacity group-hover:opacity-20`}

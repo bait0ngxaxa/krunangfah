@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { MessageCircle, AlertTriangle, Info, Loader2, Save } from "lucide-react";
+import {
+    MessageCircle,
+    AlertTriangle,
+    Info,
+    Loader2,
+    Save,
+} from "lucide-react";
 import { createCounselingSession } from "@/lib/actions/counseling.actions";
 import { toast } from "sonner";
 
@@ -80,7 +86,7 @@ export function AddCounselingModal({
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="bg-linear-to-r from-rose-500 to-pink-600 px-8 py-6 rounded-t-3xl relative overflow-hidden">
+                <div className="bg-linear-to-r from-emerald-500 to-teal-600 px-8 py-6 rounded-t-3xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2" />
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
                     <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
@@ -96,8 +102,8 @@ export function AddCounselingModal({
                 >
                     {/* Error Message */}
                     {error && (
-                        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center gap-2 text-rose-700">
-                            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-2 text-orange-700">
+                            <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />
                             <p className="text-sm font-medium">{error}</p>
                         </div>
                     )}
@@ -108,7 +114,7 @@ export function AddCounselingModal({
                             htmlFor="sessionDate"
                             className="block text-sm font-bold text-gray-700 mb-2"
                         >
-                            วันที่ <span className="text-rose-500">*</span>
+                            วันที่ <span className="text-emerald-500">*</span>
                         </label>
                         <input
                             type="date"
@@ -121,7 +127,7 @@ export function AddCounselingModal({
                                     sessionDate: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 focus:bg-white transition-all outline-none font-medium"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all outline-none font-medium"
                         />
                     </div>
 
@@ -132,7 +138,7 @@ export function AddCounselingModal({
                             className="block text-sm font-bold text-gray-700 mb-2"
                         >
                             ครูที่พูดคุย{" "}
-                            <span className="text-rose-500">*</span>
+                            <span className="text-emerald-500">*</span>
                         </label>
                         <input
                             type="text"
@@ -146,7 +152,7 @@ export function AddCounselingModal({
                                     counselorName: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 focus:bg-white transition-all outline-none font-medium"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all outline-none font-medium"
                         />
                     </div>
 
@@ -157,7 +163,7 @@ export function AddCounselingModal({
                             className="block text-sm font-bold text-gray-700 mb-2"
                         >
                             สรุปประเด็นที่พูดคุย{" "}
-                            <span className="text-rose-500">*</span>
+                            <span className="text-emerald-500">*</span>
                         </label>
                         <textarea
                             id="summary"
@@ -171,7 +177,7 @@ export function AddCounselingModal({
                                     summary: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 focus:bg-white transition-all resize-none outline-none font-medium"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all resize-none outline-none font-medium"
                         />
                         <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                             <Info className="w-4 h-4 text-gray-400 shrink-0" />
@@ -193,7 +199,7 @@ export function AddCounselingModal({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 px-6 py-3 bg-linear-to-r from-rose-500 to-pink-600 text-white rounded-xl hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>

@@ -37,3 +37,5 @@ export const resetPasswordSchema = z
     });
 
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+
+export const inviteRoleSchema = z.enum(["system_admin", "school_admin"]);

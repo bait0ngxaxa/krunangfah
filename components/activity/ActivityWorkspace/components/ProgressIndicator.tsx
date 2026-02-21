@@ -27,18 +27,23 @@ export function ProgressIndicator({
     ).length;
     const progressPercentage = (completedCount / (activities.length - 1)) * 100;
 
-    function getActiveCircleStyle(level: "orange" | "yellow" | "green"): string {
+    function getActiveCircleStyle(
+        level: "orange" | "yellow" | "green",
+    ): string {
         switch (level) {
-            case "orange": return "border-orange-500 text-orange-600 ring-orange-100";
-            case "yellow": return "border-yellow-400 text-yellow-600 ring-yellow-100";
-            case "green":  return "border-green-500 text-green-600 ring-green-100";
+            case "orange":
+                return "border-orange-500 text-orange-600 ring-orange-100";
+            case "yellow":
+                return "border-yellow-400 text-yellow-600 ring-yellow-100";
+            case "green":
+                return "border-green-500 text-green-600 ring-green-100";
         }
     }
 
     return (
-        <div className="mb-10 bg-white/60 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-pink-200 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50">
+        <div className="mb-10 bg-white/60 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-emerald-200 shadow-lg shadow-emerald-100/30 ring-1 ring-emerald-50">
             <h3 className="text-xl font-bold mb-8 sm:mb-10 flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white shadow-md shadow-pink-200">
+                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-200">
                     <BarChart3 className="w-6 h-6" />
                 </div>
                 <span className="bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">

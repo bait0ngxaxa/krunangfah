@@ -18,10 +18,7 @@ export function RoleSelectionFields({
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                     ประเภทครู <span className="text-red-500">*</span>
                 </label>
-                <select
-                    {...register("userRole")}
-                    className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none bg-white transition-all hover:border-pink-300"
-                >
+                <select className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-all hover:border-emerald-300">
                     <option value="">เลือกประเภทครู</option>
                     {USER_ROLES.map((role) => (
                         <option key={role.value} value={role.value}>
@@ -66,7 +63,7 @@ export function RoleSelectionFields({
                     บทบาทหน้าที่ในโครงการครูนางฟ้า{" "}
                     <span className="text-red-500">*</span>
                 </label>
-                <div className="flex flex-wrap gap-4 bg-pink-50/50 p-4 rounded-xl border border-pink-100">
+                <div className="flex flex-wrap gap-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
                     {PROJECT_ROLES.map((role) => (
                         <label
                             key={role.value}
@@ -77,13 +74,13 @@ export function RoleSelectionFields({
                                     {...register("projectRole")}
                                     type="radio"
                                     value={role.value}
-                                    className="peer h-4 w-4 cursor-pointer appearance-none rounded-full border border-pink-300 shadow-sm transition-all checked:border-pink-500 checked:bg-pink-500 hover:border-pink-400"
+                                    className="peer h-4 w-4 cursor-pointer appearance-none rounded-full border border-emerald-300 shadow-sm transition-all checked:border-emerald-500 checked:bg-emerald-500 hover:border-emerald-400"
                                 />
                                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform text-white opacity-0 peer-checked:opacity-100">
                                     <Check className="h-2.5 w-2.5" />
                                 </span>
                             </div>
-                            <span className="text-gray-700 group-hover:text-pink-600 transition-colors font-medium">
+                            <span className="text-gray-700 group-hover:text-emerald-600 transition-colors font-medium">
                                 {role.label}
                             </span>
                         </label>

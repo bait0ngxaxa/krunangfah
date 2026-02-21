@@ -10,12 +10,12 @@ interface StudentPreviewTableProps {
  */
 export function StudentPreviewTable({ students }: StudentPreviewTableProps) {
     return (
-        <div className="bg-white/60 backdrop-blur-xl rounded-4xl shadow-2xl overflow-hidden border border-pink-200 relative">
-            <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-pink-300 to-purple-300" />
+        <div className="bg-white/60 backdrop-blur-xl rounded-4xl shadow-2xl overflow-hidden border border-emerald-200 relative">
+            <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-emerald-300 to-teal-300" />
 
             <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-pink-100">
+                    <table className="min-w-full divide-y divide-emerald-100">
                         <thead className="bg-white/80 sticky top-0 z-10 backdrop-blur-md shadow-sm">
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
@@ -41,7 +41,7 @@ export function StudentPreviewTable({ students }: StudentPreviewTableProps) {
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white/30 divide-y divide-pink-50">
+                        <tbody className="bg-white/30 divide-y divide-emerald-50">
                             {students.map((student, index) => (
                                 <tr
                                     key={index}
@@ -50,7 +50,7 @@ export function StudentPreviewTable({ students }: StudentPreviewTableProps) {
                                     <td className="px-6 py-4 text-sm text-gray-500 font-medium">
                                         {index + 1}
                                     </td>
-                                    <td className="px-6 py-4 text-sm font-bold text-gray-800 group-hover:text-pink-600 transition-colors">
+                                    <td className="px-6 py-4 text-sm font-bold text-gray-800 group-hover:text-emerald-600 transition-colors">
                                         {student.firstName} {student.lastName}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-center text-gray-600">

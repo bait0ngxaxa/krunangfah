@@ -38,11 +38,11 @@ export function AcademicYearFilter({
     };
 
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 ring-1 ring-pink-50 p-4 overflow-hidden">
+        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 border border-emerald-200 ring-1 ring-emerald-50 p-4 overflow-hidden">
             {/* Corner decoration */}
-            <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-emerald-200/20 to-teal-300/15 rounded-full blur-xl pointer-events-none" />
             {/* Shimmer */}
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
 
             <div className="relative flex items-center gap-4">
                 <label
@@ -50,8 +50,8 @@ export function AcademicYearFilter({
                     className="text-sm font-semibold text-gray-700 whitespace-nowrap"
                 >
                     <div className="relative inline-block mr-1.5">
-                        <div className="absolute inset-0 rounded-full bg-pink-400 blur-md opacity-20" />
-                        <CalendarDays className="relative w-4 h-4 text-pink-500" />
+                        <div className="absolute inset-0 rounded-full bg-emerald-400 blur-md opacity-20" />
+                        <CalendarDays className="relative w-4 h-4 text-emerald-500" />
                     </div>
                     ปีการศึกษา:
                 </label>
@@ -59,7 +59,7 @@ export function AcademicYearFilter({
                     id="year-filter"
                     value={currentYearId || "all"}
                     onChange={(e) => handleYearChange(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-pink-100 rounded-lg focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition-all outline-none"
+                    className="flex-1 px-4 py-2 border border-emerald-100 rounded-lg focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none"
                 >
                     <option value="all">ทุกปีการศึกษา</option>
                     {academicYears.map((year) => (

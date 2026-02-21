@@ -64,26 +64,27 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
     return (
         <div className="space-y-6">
             {/* Info Card */}
-            <div className="bg-white/80 backdrop-blur-sm border border-pink-200 rounded-2xl p-6 shadow-sm shadow-pink-100 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-20 h-20 bg-linear-to-bl from-pink-100 to-transparent rounded-bl-full opacity-50 pointer-events-none" />
+            <div className="bg-white/80 backdrop-blur-sm border border-emerald-200 rounded-2xl p-6 shadow-sm shadow-emerald-100 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-linear-to-bl from-emerald-100 to-transparent rounded-bl-full opacity-50 pointer-events-none" />
                 <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <HandHelping className="w-5 h-5 text-pink-500" /> ข้อมูลของคุณ
+                    <HandHelping className="w-5 h-5 text-emerald-500" />{" "}
+                    ข้อมูลของคุณ
                 </h3>
                 <div className="space-y-2 text-gray-600">
                     <p className="flex items-center gap-2">
-                        <span className="font-semibold text-pink-500 w-16">
+                        <span className="font-semibold text-emerald-500 w-16">
                             ชื่อ:
                         </span>
                         {inviteData.firstName} {inviteData.lastName}
                     </p>
                     <p className="flex items-center gap-2">
-                        <span className="font-semibold text-pink-500 w-16">
+                        <span className="font-semibold text-emerald-500 w-16">
                             อีเมล:
                         </span>
                         {inviteData.email}
                     </p>
                     <p className="flex items-center gap-2">
-                        <span className="font-semibold text-pink-500 w-16">
+                        <span className="font-semibold text-emerald-500 w-16">
                             โรงเรียน:
                         </span>
                         {inviteData.school.name}
@@ -107,7 +108,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                     <input
                         {...register("password")}
                         type="password"
-                        className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 hover:border-pink-300"
+                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all placeholder:text-gray-400 hover:border-emerald-300"
                         placeholder="อย่างน้อย 6 ตัวอักษร"
                     />
                     {errors.password && (
@@ -124,7 +125,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                     <input
                         {...register("confirmPassword")}
                         type="password"
-                        className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-400 outline-none transition-all placeholder:text-gray-400 hover:border-pink-300"
+                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all placeholder:text-gray-400 hover:border-emerald-300"
                         placeholder="กรอกรหัสผ่านอีกครั้ง"
                     />
                     {errors.confirmPassword && (
@@ -137,7 +138,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3.5 px-4 bg-linear-to-r from-rose-400 to-pink-500 text-white font-bold rounded-xl hover:from-rose-500 hover:to-pink-600 disabled:opacity-50 transition-all duration-200 shadow-md shadow-pink-200 hover:shadow-lg hover:shadow-pink-300 transform hover:-translate-y-0.5"
+                    className="w-full py-3.5 px-4 bg-linear-to-r from-emerald-400 to-teal-500 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-teal-600 disabled:opacity-50 transition-all duration-200 shadow-md shadow-emerald-200 hover:shadow-lg hover:shadow-emerald-300 transform hover:-translate-y-0.5"
                 >
                     {isLoading ? (
                         <span className="flex items-center justify-center gap-2">

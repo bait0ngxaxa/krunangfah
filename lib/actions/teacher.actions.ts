@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { getAcademicYears as getAcademicYearsAction } from "./academic-year.actions";
 import { teacherProfileSchema } from "@/lib/validations/teacher.validation";
@@ -106,15 +106,9 @@ export async function createTeacherProfile(
             };
         }
 
-        // schoolId must already be set by SchoolSetupWizard (createSchoolAndLink)
-        const schoolId = session.user.schoolId;
-        if (!schoolId) {
-            return { success: false, message: "กรุณาตั้งค่าโรงเรียนก่อนสร้างโปรไฟล์" };
-        }
-
         // Update user name and create teacher profile in one transaction
+        // Note: schoolId is NOT required here — school setup happens AFTER teacher profile
         const teacher = await prisma.$transaction(async (tx) => {
-            // 1. Update User name only (schoolId was already set by createSchoolAndLink)
             await tx.user.update({
                 where: { id: userId },
                 data: {
@@ -143,7 +137,8 @@ export async function createTeacherProfile(
             });
         });
 
-        // Revalidate dashboard to show updated data
+        // Revalidate dashboard data cache + page
+        revalidateTag("dashboard", "default");
         revalidatePath("/dashboard");
         revalidatePath("/");
 
@@ -154,7 +149,7 @@ export async function createTeacherProfile(
                 ...teacher,
                 school: teacher.user.school ?? undefined,
             },
-            newRole: "school_admin",
+            newRole: session.user.role,
         };
     } catch (error) {
         console.error("Create teacher profile error:", error);

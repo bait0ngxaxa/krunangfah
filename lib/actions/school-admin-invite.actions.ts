@@ -7,12 +7,16 @@ import { hashPassword } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { z } from "zod";
-import { inviteRegisterSchema } from "@/lib/validations/auth.validation";
+import {
+    inviteRegisterSchema,
+    inviteRoleSchema,
+} from "@/lib/validations/auth.validation";
 import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
 import { RATE_LIMIT_AUTH_SIGNIN } from "@/lib/constants/rate-limit";
 import type {
     SchoolAdminInvite,
     InviteActionResponse,
+    InviteRole,
 } from "@/types/school-admin-invite.types";
 import type { AuthResponse } from "@/types/auth.types";
 
@@ -24,10 +28,13 @@ const inviteAcceptLimiter = createRateLimiter(RATE_LIMIT_AUTH_SIGNIN);
 const emailSchema = z.string().email("อีเมลไม่ถูกต้อง");
 
 /**
- * สร้าง invite link สำหรับ school_admin (system_admin only)
+ * สร้าง invite link สำหรับ admin (system_admin only)
+ * @param email - อีเมลผู้รับเชิญ
+ * @param role - บทบาทที่ต้องการ: "system_admin" หรือ "school_admin"
  */
 export async function createSchoolAdminInvite(
     email: string,
+    role: InviteRole = "school_admin",
 ): Promise<InviteActionResponse> {
     try {
         const session = await requireAdmin();
@@ -36,6 +43,12 @@ export async function createSchoolAdminInvite(
         const parsedEmail = emailSchema.safeParse(email);
         if (!parsedEmail.success) {
             return { success: false, message: "อีเมลไม่ถูกต้อง" };
+        }
+
+        // Validate role
+        const parsedRole = inviteRoleSchema.safeParse(role);
+        if (!parsedRole.success) {
+            return { success: false, message: "บทบาทไม่ถูกต้อง" };
         }
 
         const normalizedEmail = parsedEmail.data.toLowerCase().trim();
@@ -79,6 +92,7 @@ export async function createSchoolAdminInvite(
             data: {
                 token,
                 email: normalizedEmail,
+                role: parsedRole.data,
                 expiresAt,
                 createdBy: session.user.id,
             },
@@ -113,7 +127,16 @@ export async function getSchoolAdminInvites(): Promise<SchoolAdminInvite[]> {
         orderBy: { createdAt: "desc" },
     });
 
-    return invites;
+    return invites.map((inv) => ({
+        id: inv.id,
+        token: inv.token,
+        email: inv.email,
+        role: inv.role as InviteRole,
+        usedAt: inv.usedAt,
+        expiresAt: inv.expiresAt,
+        createdAt: inv.createdAt,
+        creator: inv.creator,
+    }));
 }
 
 /**
@@ -152,11 +175,11 @@ export async function revokeSchoolAdminInvite(
 }
 
 /**
- * Validate invite token — ส่งคืน email ถ้า valid, throw ถ้าไม่ valid
+ * Validate invite token — ส่งคืน email + role ถ้า valid, throw ถ้าไม่ valid
  */
 export async function validateInviteToken(
     token: string,
-): Promise<{ email: string }> {
+): Promise<{ email: string; role: InviteRole }> {
     const invite = await prisma.schoolAdminInvite.findUnique({
         where: { token },
     });
@@ -173,7 +196,7 @@ export async function validateInviteToken(
         throw new Error("คำเชิญหมดอายุแล้ว");
     }
 
-    return { email: invite.email };
+    return { email: invite.email, role: invite.role as InviteRole };
 }
 
 /**
@@ -201,11 +224,13 @@ export async function acceptSchoolAdminInvite(
         };
     }
 
-    // Validate token
+    // Validate token and get role
     let inviteEmail: string;
+    let inviteRole: InviteRole;
     try {
         const result = await validateInviteToken(token);
         inviteEmail = result.email;
+        inviteRole = result.role;
     } catch (error) {
         if (error instanceof Error) {
             return { success: false, message: error.message };
@@ -230,10 +255,19 @@ export async function acceptSchoolAdminInvite(
                 data: {
                     email: inviteEmail,
                     password: hashedPassword,
-                    role: "school_admin",
-                    isPrimary: true, // invited by system_admin = primary admin
+                    role: inviteRole,
+                    isPrimary: inviteRole === "school_admin",
                 },
             });
+
+            // system_admin: เพิ่มเข้า whitelist เพื่อให้ auto-promote ทำงาน
+            if (inviteRole === "system_admin") {
+                await tx.systemAdminWhitelist.upsert({
+                    where: { email: inviteEmail },
+                    update: { isActive: true },
+                    create: { email: inviteEmail },
+                });
+            }
 
             await tx.schoolAdminInvite.update({
                 where: { token },
@@ -243,9 +277,14 @@ export async function acceptSchoolAdminInvite(
             return user;
         });
 
+        // กำหนด redirect ตาม role
+        const redirectTo =
+            inviteRole === "system_admin" ? "/dashboard" : "/teacher-profile";
+
         return {
             success: true,
             message: "สร้างบัญชีสำเร็จ กรุณาเข้าสู่ระบบ",
+            redirectTo,
         };
     } catch (error) {
         console.error("acceptSchoolAdminInvite error:", error);

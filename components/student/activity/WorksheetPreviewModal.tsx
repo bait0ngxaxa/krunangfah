@@ -21,7 +21,7 @@ export function WorksheetPreviewModal({
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-pink-200 text-pink-600 rounded-xl text-sm font-bold hover:bg-pink-50 hover:border-pink-300 transition-all shadow-sm hover:shadow-md shrink-0 group"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-emerald-200 text-emerald-600 rounded-xl text-sm font-bold hover:bg-emerald-50 hover:border-emerald-300 transition-all shadow-sm hover:shadow-md shrink-0 group"
             >
                 <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 ดูใบงาน
@@ -36,16 +36,20 @@ export function WorksheetPreviewModal({
                         className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-5xl max-h-[90vh] overflow-hidden w-full border border-white/50 animate-zoom-in"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between px-8 py-5 border-b border-pink-100 bg-linear-to-r from-white to-pink-50/50">
+                        <div className="flex items-center justify-between px-8 py-5 border-b border-emerald-100 bg-linear-to-r from-white to-emerald-50/50">
                             <h3 className="font-bold text-gray-800 truncate flex items-center gap-3 text-lg">
-                                <span className="p-2 bg-pink-100 rounded-lg text-pink-600">
-                                    {isPdf ? <FileText className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
+                                <span className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
+                                    {isPdf ? (
+                                        <FileText className="w-5 h-5" />
+                                    ) : (
+                                        <ImageIcon className="w-5 h-5" />
+                                    )}
                                 </span>
                                 {fileName}
                             </h3>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="p-2.5 hover:bg-pink-100/50 text-gray-500 hover:text-pink-600 rounded-full transition-all hover:rotate-90 duration-300"
+                                className="p-2.5 hover:bg-emerald-100/50 text-gray-500 hover:text-emerald-600 rounded-full transition-all hover:rotate-90 duration-300"
                             >
                                 <X className="w-6 h-6" />
                             </button>

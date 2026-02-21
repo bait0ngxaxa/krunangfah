@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
     Building2,
@@ -41,7 +40,6 @@ const STEPS = [
 type StepIndex = 0 | 1 | 2 | 3;
 
 export function SchoolSetupWizard() {
-    const router = useRouter();
     const { update: updateSession } = useSession();
     const [step, setStep] = useState<StepIndex>(0);
     const [classes, setClasses] = useState<SchoolClassItem[]>([]);
@@ -78,7 +76,8 @@ export function SchoolSetupWizard() {
     }
 
     function handleFinish() {
-        router.push("/teacher-profile");
+        // Hard redirect — layout เช็ค schoolId จาก DB โดยตรง ไม่พึ่ง JWT
+        window.location.href = "/dashboard";
     }
 
     return (
@@ -91,9 +90,9 @@ export function SchoolSetupWizard() {
                             <div
                                 className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${
                                     i < step
-                                        ? "bg-pink-500 border-pink-500 text-white"
+                                        ? "bg-emerald-500 border-emerald-500 text-white"
                                         : i === step
-                                          ? "border-pink-500 text-pink-600 bg-pink-50"
+                                          ? "border-emerald-500 text-emerald-600 bg-emerald-50"
                                           : "border-gray-200 text-gray-400 bg-white"
                                 }`}
                             >
@@ -104,14 +103,14 @@ export function SchoolSetupWizard() {
                                 )}
                             </div>
                             <span
-                                className={`text-[10px] sm:text-xs font-medium whitespace-nowrap ${i === step ? "text-pink-600" : "text-gray-400"}`}
+                                className={`text-[10px] sm:text-xs font-medium whitespace-nowrap ${i === step ? "text-emerald-600" : "text-gray-400"}`}
                             >
                                 {label}
                             </span>
                         </div>
                         {i < STEPS.length - 1 && (
                             <div
-                                className={`w-8 sm:w-16 h-0.5 mb-4 mx-1 sm:mx-2 transition-all ${i < step ? "bg-pink-400" : "bg-gray-200"}`}
+                                className={`w-8 sm:w-16 h-0.5 mb-4 mx-1 sm:mx-2 transition-all ${i < step ? "bg-emerald-400" : "bg-gray-200"}`}
                             />
                         )}
                     </div>
@@ -120,9 +119,9 @@ export function SchoolSetupWizard() {
 
             {/* Step 1 — School Info */}
             {step === 0 && (
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 sm:p-8 border border-pink-100">
+                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 sm:p-8 border border-emerald-100">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-md">
+                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
                             <Building2 className="w-5 h-5 text-white" />
                         </div>
                         <div>
@@ -148,7 +147,7 @@ export function SchoolSetupWizard() {
                                 {...register("name")}
                                 type="text"
                                 placeholder="เช่น โรงเรียนสาธิตมหาวิทยาลัย"
-                                className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 outline-none bg-white text-black placeholder:text-gray-400 transition-all"
+                                className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 outline-none bg-white text-black placeholder:text-gray-400 transition-all"
                                 disabled={isSubmitting}
                             />
                             {errors.name && (
@@ -169,7 +168,7 @@ export function SchoolSetupWizard() {
                                 {...register("province")}
                                 type="text"
                                 placeholder="เช่น กรุงเทพมหานคร"
-                                className="w-full px-4 py-3 border border-pink-200 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 outline-none bg-white text-black placeholder:text-gray-400 transition-all"
+                                className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 outline-none bg-white text-black placeholder:text-gray-400 transition-all"
                                 disabled={isSubmitting}
                             />
                         </div>
@@ -183,7 +182,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-linear-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white rounded-xl font-bold transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                             {isSubmitting ? "กำลังบันทึก..." : "ถัดไป"}
                             {!isSubmitting && (
@@ -196,9 +195,9 @@ export function SchoolSetupWizard() {
 
             {/* Step 2 — Classes */}
             {step === 1 && (
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 sm:p-8 border border-pink-100">
+                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 sm:p-8 border border-emerald-100">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-md">
+                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
                             <LayoutGrid className="w-5 h-5 text-white" />
                         </div>
                         <div>
@@ -221,7 +220,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="button"
                             onClick={() => setStep(2)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
                         >
                             ถัดไป
                             <ArrowRight className="w-4 h-4" />
@@ -230,7 +229,7 @@ export function SchoolSetupWizard() {
                     {classes.length === 0 && (
                         <p className="text-center text-xs text-gray-400 mt-2">
                             ข้ามได้ — เพิ่มห้องเรียนที่{" "}
-                            <span className="text-pink-500">
+                            <span className="text-emerald-500">
                                 จัดการห้องเรียน
                             </span>{" "}
                             ในภายหลังได้เลย
@@ -241,9 +240,9 @@ export function SchoolSetupWizard() {
 
             {/* Step 3 — Teacher Roster */}
             {step === 2 && (
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 sm:p-8 border border-pink-100">
+                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 sm:p-8 border border-emerald-100">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-md">
+                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
                             <Users className="w-5 h-5 text-white" />
                         </div>
                         <div>
@@ -267,7 +266,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="button"
                             onClick={() => setStep(1)}
-                            className="flex items-center justify-center gap-2 px-5 py-3 border border-pink-200 text-pink-600 rounded-xl font-bold transition-all hover:bg-pink-50 cursor-pointer"
+                            className="flex items-center justify-center gap-2 px-5 py-3 border border-emerald-200 text-teal-600 rounded-xl font-bold transition-all hover:bg-emerald-50 cursor-pointer"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             ย้อนกลับ
@@ -275,7 +274,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="button"
                             onClick={() => setStep(3)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
                         >
                             ถัดไป
                             <ArrowRight className="w-4 h-4" />
@@ -291,9 +290,9 @@ export function SchoolSetupWizard() {
 
             {/* Step 4 — Summary */}
             {step === 3 && (
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 sm:p-8 border border-pink-100">
+                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 sm:p-8 border border-emerald-100">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-md">
+                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
                             <ClipboardCheck className="w-5 h-5 text-white" />
                         </div>
                         <div>
@@ -317,7 +316,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="button"
                             onClick={() => setStep(2)}
-                            className="flex items-center justify-center gap-2 px-5 py-3 border border-pink-200 text-pink-600 rounded-xl font-bold transition-all hover:bg-pink-50 cursor-pointer"
+                            className="flex items-center justify-center gap-2 px-5 py-3 border border-emerald-200 text-teal-600 rounded-xl font-bold transition-all hover:bg-emerald-50 cursor-pointer"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             ย้อนกลับ
@@ -325,10 +324,10 @@ export function SchoolSetupWizard() {
                         <button
                             type="button"
                             onClick={handleFinish}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
                         >
                             <Check className="w-4 h-4" />
-                            เสร็จสิ้น — ไปกรอกข้อมูลครูของฉัน
+                            เสร็จสิ้น — เข้าสู่ระบบ
                         </button>
                     </div>
                 </div>

@@ -13,27 +13,31 @@ interface ActionCardProps {
 
 const VARIANT_STYLES = {
     primary: {
-        gradient: "bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600",
-        btn: "bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white shadow-md shadow-pink-200/50 hover:shadow-lg hover:shadow-pink-300/50",
-        iconBg: "bg-rose-100 text-rose-500",
+        gradient:
+            "bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600",
+        btn: "bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white shadow-md shadow-emerald-200/50 hover:shadow-lg hover:shadow-emerald-300/50",
+        iconBg: "bg-emerald-100 text-emerald-500",
     },
     secondary: {
-        gradient: "bg-gradient-to-r from-pink-400 via-rose-400 to-pink-500",
-        btn: "bg-gradient-to-r from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white shadow-md shadow-pink-200/50 hover:shadow-lg hover:shadow-pink-300/50",
-        iconBg: "bg-pink-100 text-pink-500",
+        gradient: "bg-gradient-to-r from-teal-400 via-emerald-400 to-teal-500",
+        btn: "bg-gradient-to-r from-teal-400 to-emerald-500 hover:from-teal-500 hover:to-emerald-600 text-white shadow-md shadow-emerald-200/50 hover:shadow-lg hover:shadow-emerald-300/50",
+        iconBg: "bg-teal-100 text-teal-500",
     },
     outline: {
-        gradient: "bg-gradient-to-r from-pink-300 via-rose-300 to-pink-400",
-        btn: "bg-white hover:bg-pink-50 text-pink-600 border border-pink-200 hover:border-pink-300 shadow-sm",
-        iconBg: "bg-pink-50 text-pink-400",
+        gradient: "bg-gradient-to-r from-teal-300 via-emerald-300 to-teal-400",
+        btn: "bg-white hover:bg-emerald-50 text-emerald-600 border border-emerald-200 hover:border-emerald-300 shadow-sm",
+        iconBg: "bg-emerald-50 text-emerald-400",
     },
 };
 
 function getVariantStyles(v: "primary" | "secondary" | "outline") {
     switch (v) {
-        case "primary":   return VARIANT_STYLES.primary;
-        case "secondary": return VARIANT_STYLES.secondary;
-        case "outline":   return VARIANT_STYLES.outline;
+        case "primary":
+            return VARIANT_STYLES.primary;
+        case "secondary":
+            return VARIANT_STYLES.secondary;
+        case "outline":
+            return VARIANT_STYLES.outline;
     }
 }
 
@@ -48,7 +52,7 @@ export function ActionCard({
     const styles = getVariantStyles(variant);
 
     return (
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 overflow-hidden group hover:shadow-[0_8px_24px_-4px_rgba(244,114,182,0.25),0_4px_12px_-2px_rgba(0,0,0,0.06)] hover:border-pink-300 transition-all duration-300">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 overflow-hidden group hover:shadow-[0_8px_24px_-4px_rgba(16,185,129,0.25),0_4px_12px_-2px_rgba(0,0,0,0.06)] hover:border-emerald-300 transition-all duration-300">
             <div
                 className={`${styles.gradient} h-1 group-hover:h-1.5 transition-all duration-300`}
             />
@@ -63,7 +67,7 @@ export function ActionCard({
                         </div>
                     )}
                     <div className="min-w-0">
-                        <h3 className="text-base font-bold text-gray-800 group-hover:text-pink-600 transition-colors truncate">
+                        <h3 className="text-base font-bold text-gray-800 group-hover:text-emerald-600 transition-colors truncate">
                             {title}
                         </h3>
                         {description && (

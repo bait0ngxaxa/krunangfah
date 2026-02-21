@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { Copy, Check, Trash2 } from "lucide-react";
 import { revokeSchoolAdminInvite } from "@/lib/actions/school-admin-invite.actions";
-import type { SchoolAdminInvite, InviteStatus } from "@/types/school-admin-invite.types";
+import type {
+    SchoolAdminInvite,
+    InviteStatus,
+    InviteRole,
+} from "@/types/school-admin-invite.types";
 
 interface InviteRowProps {
     invite: SchoolAdminInvite;
@@ -49,9 +53,12 @@ export function InviteRow({ invite, onRevoked }: InviteRowProps) {
     }
 
     return (
-        <tr className="hover:bg-pink-50/30 transition-colors">
+        <tr className="hover:bg-emerald-50/30 transition-colors">
             <td className="px-6 py-4 text-sm text-gray-700 font-medium">
                 {invite.email}
+            </td>
+            <td className="px-6 py-4 text-center">
+                <RoleBadge role={invite.role} />
             </td>
             <td className="px-6 py-4 text-center">
                 <StatusBadge status={status} />
@@ -103,6 +110,21 @@ export function InviteRow({ invite, onRevoked }: InviteRowProps) {
                 </div>
             </td>
         </tr>
+    );
+}
+
+function RoleBadge({ role }: { role: InviteRole }) {
+    if (role === "system_admin") {
+        return (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                System Admin
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+            School Admin
+        </span>
     );
 }
 

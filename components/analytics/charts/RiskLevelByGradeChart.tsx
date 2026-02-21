@@ -50,17 +50,17 @@ export function RiskLevelByGradeChart({
 }: RiskLevelByGradeChartProps) {
     if (gradeRiskData.length === 0) {
         return (
-            <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-8 flex flex-col items-center justify-center min-h-[400px] overflow-hidden">
+            <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-8 flex flex-col items-center justify-center min-h-[400px] overflow-hidden">
                 {/* Decorations */}
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
-                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-green-300/30 rounded-full blur-xl pointer-events-none" />
+                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
 
                 <h2 className="relative text-xl font-bold text-gray-800 mb-4 text-center">
                     ข้อมูลนักเรียนแยกตามระดับชั้น
                 </h2>
                 <div className="relative text-gray-400 flex flex-col items-center gap-3">
                     <div className="relative w-16 h-16">
-                        <div className="absolute inset-0 rounded-full bg-pink-300 blur-lg opacity-20" />
+                        <div className="absolute inset-0 rounded-full bg-emerald-300 blur-lg opacity-20" />
                         <div className="relative w-full h-full bg-gray-50 rounded-full flex items-center justify-center ring-1 ring-gray-100">
                             <BarChart3 className="w-8 h-8 text-gray-400" />
                         </div>
@@ -72,13 +72,13 @@ export function RiskLevelByGradeChart({
     }
 
     return (
-        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-4 sm:p-6 overflow-hidden">
+        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-4 sm:p-6 overflow-hidden">
             {/* Corner decoration */}
-            <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-green-300/30 rounded-full blur-xl pointer-events-none" />
             {/* Shimmer */}
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
 
-            <h2 className="relative text-lg sm:text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
+            <h2 className="relative text-lg sm:text-xl font-bold bg-linear-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
                 ข้อมูลนักเรียนแยกตามระดับชั้น
             </h2>
             <CustomLegend />
@@ -88,7 +88,7 @@ export function RiskLevelByGradeChart({
                     margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
                     tabIndex={-1}
                 >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#FCE7F3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#D1FAE5" />
                     <XAxis
                         dataKey="grade"
                         label={{
@@ -99,7 +99,7 @@ export function RiskLevelByGradeChart({
                             fontSize: 12,
                         }}
                         tick={{ fill: "#6B7280", fontSize: 11 }}
-                        axisLine={{ stroke: "#FBCFE8" }}
+                        axisLine={{ stroke: "#A7F3D0" }}
                     />
                     <YAxis
                         label={{
@@ -110,18 +110,18 @@ export function RiskLevelByGradeChart({
                             fontSize: 11,
                         }}
                         tick={{ fill: "#6B7280", fontSize: 11 }}
-                        axisLine={{ stroke: "#FBCFE8" }}
+                        axisLine={{ stroke: "#A7F3D0" }}
                         width={50}
                     />
                     <Tooltip
                         contentStyle={{
                             backgroundColor: "rgba(255, 255, 255, 0.95)",
                             borderRadius: "1rem",
-                            border: "1px solid #FCE7F3",
+                            border: "1px solid #D1FAE5",
                             boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                             padding: "12px",
                         }}
-                        cursor={{ fill: "rgba(252, 231, 243, 0.3)" }}
+                        cursor={{ fill: "rgba(209, 250, 229, 0.3)" }}
                         formatter={(value: unknown) => {
                             const numValue =
                                 typeof value === "number" ? value : 0;

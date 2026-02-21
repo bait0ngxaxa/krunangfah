@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
@@ -6,7 +7,7 @@ export interface StatItem {
     label: string;
     value: string;
     unit?: string;
-    color?: string; // tailwind color prefix, e.g. "pink", "blue", "orange"
+    color?: string;
 }
 
 interface DashboardHeaderProps {
@@ -17,34 +18,49 @@ interface DashboardHeaderProps {
     stats?: StatItem[];
 }
 
-const COLOR_MAP: Record<string, { icon: string; border: string; bg: string }> =
-    {
-        pink: {
-            icon: "text-rose-500",
-            border: "border-pink-200",
-            bg: "bg-pink-50/80",
-        },
-        blue: {
-            icon: "text-blue-500",
-            border: "border-blue-200",
-            bg: "bg-blue-50/80",
-        },
-        orange: {
-            icon: "text-orange-500",
-            border: "border-orange-200",
-            bg: "bg-orange-50/80",
-        },
-        purple: {
-            icon: "text-purple-500",
-            border: "border-purple-200",
-            bg: "bg-purple-50/80",
-        },
-        green: {
-            icon: "text-green-500",
-            border: "border-green-200",
-            bg: "bg-green-50/80",
-        },
-    };
+interface ColorStyle {
+    bg: string;
+    shadow: string;
+    border: string;
+}
+
+const COLOR_MAP = {
+    yellow: {
+        bg: "bg-linear-to-b from-[#FCE954] to-[#F1C517]",
+        shadow: "shadow-[0_4px_8px_rgba(241,197,23,0.3)]",
+        border: "border-[#DFB511]",
+    },
+    emerald: {
+        bg: "bg-linear-to-b from-[#A7F3D0] to-[#6EE7B7]",
+        shadow: "shadow-[0_4px_8px_rgba(110,231,183,0.3)]",
+        border: "border-[#34D399]",
+    },
+    green: {
+        bg: "bg-linear-to-b from-[#A7F3D0] to-[#6EE7B7]",
+        shadow: "shadow-[0_4px_8px_rgba(110,231,183,0.3)]",
+        border: "border-[#34D399]",
+    },
+    blue: {
+        bg: "bg-linear-to-b from-[#BFDBFE] to-[#93C5FD]",
+        shadow: "shadow-[0_4px_8px_rgba(147,197,253,0.3)]",
+        border: "border-[#60A5FA]",
+    },
+} as const;
+
+function getColorStyle(color: string): ColorStyle {
+    switch (color) {
+        case "yellow":
+            return COLOR_MAP.yellow;
+        case "emerald":
+            return COLOR_MAP.emerald;
+        case "green":
+            return COLOR_MAP.green;
+        case "blue":
+            return COLOR_MAP.blue;
+        default:
+            return COLOR_MAP.emerald;
+    }
+}
 
 export function DashboardHeader({
     teacherName,
@@ -54,85 +70,87 @@ export function DashboardHeader({
     stats,
 }: DashboardHeaderProps) {
     return (
-        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-6 sm:p-7 mb-4 overflow-hidden group">
-            {/* Gradient accent bottom border */}
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-60" />
-            {/* Top shimmer */}
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/80 to-transparent" />
-            {/* Corner decoration */}
-            <div className="absolute -top-14 -right-14 w-36 h-36 bg-linear-to-br from-rose-200/20 to-pink-300/15 rounded-full blur-xl pointer-events-none" />
+        <div className="relative bg-white rounded-[2.5rem] p-5 sm:p-7 mb-6 overflow-hidden border-[3px] border-[#0BD0D9] shadow-[0_8px_24px_-4px_rgba(11,208,217,0.15)] flex flex-col sm:flex-row gap-6 sm:gap-8 items-center sm:items-start group">
+            {/* Left Avatar (Big image) */}
+            <div className="shrink-0 relative w-[140px] h-[140px] sm:w-[160px] sm:h-[160px] rounded-4xl bg-[#FDE24F] flex items-center justify-center overflow-hidden shadow-inner flex-none">
+                <Image
+                    src="/image/dashboard/teacherprofile.png"
+                    alt="Teacher Avatar"
+                    width={160}
+                    height={160}
+                    className="object-contain w-full h-full p-2 sm:p-3 drop-shadow-md"
+                    priority
+                />
+            </div>
 
-            <div className="relative flex items-center gap-4">
-                {/* Animated avatar */}
-                <div className="relative shrink-0">
-                    <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 blur-md opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
-                    <div className="relative w-14 h-14 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center text-2xl shadow-lg shadow-pink-200/50 group-hover:scale-105 group-hover:rotate-3 transition-all duration-500">
-                        🧚‍♀️
-                    </div>
-                </div>
-
-                <div className="min-w-0 flex-1">
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-                        สวัสดี,{" "}
-                        <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
-                            {teacherName}
+            {/* Right Content */}
+            <div className="flex-1 flex flex-col w-full text-center sm:text-left pt-2">
+                {/* Titles */}
+                <div>
+                    <h1 className="text-2xl sm:text-3xl lg:text-[28px] font-extrabold pb-1">
+                        <span className="text-gray-900">สวัสดี </span>
+                        <span className="text-[#0BD0D9]">
+                            ชั้นเป็นครูนางฟ้า
                         </span>
                     </h1>
-                    <p className="text-sm text-gray-500 truncate">
-                        {schoolName}
-                        {subtitle ? (
-                            <>
-                                {" · "}
-                                <span className="font-medium">{subtitle}</span>
-                            </>
-                        ) : null}
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-0.5">
+                        ครู{teacherName.replace(/^ครู/, "")}
+                    </h2>
+                    <p className="text-base sm:text-lg font-bold text-gray-800 flex flex-col sm:flex-row items-center sm:items-start sm:gap-4 mt-1">
+                        <span>{schoolName}</span>
+                        {subtitle && (
+                            <span className="text-[#0BD0D9]">{subtitle}</span>
+                        )}
                     </p>
                 </div>
 
-                {extra ? (
-                    <div className="hidden sm:block shrink-0">{extra}</div>
-                ) : null}
-            </div>
+                {extra && <div className="mt-2">{extra}</div>}
 
-            {/* Stats Row */}
-            {stats && stats.length > 0 && (
-                <>
-                    <div className="relative mt-5 mb-4">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-pink-100/80" />
-                        </div>
-                    </div>
-                    <div className="relative flex flex-wrap gap-2 sm:gap-3">
+                {/* Gray Separator Line */}
+                <hr className="border-t-2 border-gray-200/80 my-4 sm:my-5 w-full" />
+
+                {/* Badges / Stats */}
+                {stats && stats.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
                         {stats.map((stat) => {
-                            const colors =
-                                COLOR_MAP[stat.color || "pink"] ||
-                                COLOR_MAP.pink;
+                            // Assign distinct colors based on label if generic colors are sent
+                            let assignedColor = "blue";
+                            if (
+                                stat.label === "บทบาท" ||
+                                stat.color === "green"
+                            )
+                                assignedColor = "yellow";
+                            if (
+                                stat.label === "จำนวนนักเรียน" ||
+                                stat.color === "emerald"
+                            )
+                                assignedColor = "emerald";
+                            if (stat.color === "blue") assignedColor = "blue";
+
+                            const style = getColorStyle(assignedColor);
                             const Icon = stat.icon;
+
                             return (
                                 <div
                                     key={stat.label}
-                                    className={`inline-flex items-center gap-2 px-3 mt-3 py-2 ${colors.bg} rounded-xl border ${colors.border} shadow-sm`}
+                                    className={`flex flex-col items-center justify-center min-w-[140px] px-4 py-2.5 rounded-2xl ${style.bg} ${style.border} border-b-[3px] border-r-2 ${style.shadow} transition-transform hover:scale-105 active:scale-95`}
                                 >
-                                    <Icon
-                                        className={`w-3.5 h-3.5 ${colors.icon} shrink-0`}
-                                    />
-                                    <span className="text-xs text-gray-500">
-                                        {stat.label}
-                                    </span>
-                                    <span className="text-sm font-bold text-gray-800">
+                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                        <Icon className="w-3.5 h-3.5 text-gray-900 stroke-[2.5]" />
+                                        <span className="text-[11px] font-bold text-gray-800 leading-none">
+                                            {stat.label}
+                                        </span>
+                                    </div>
+                                    <span className="text-sm font-extrabold text-gray-900 tracking-tight leading-tight">
                                         {stat.value}
-                                        {stat.unit && (
-                                            <span className="text-xs font-medium text-gray-400 ml-0.5">
-                                                {stat.unit}
-                                            </span>
-                                        )}
+                                        {stat.unit && ` ${stat.unit}`}
                                     </span>
                                 </div>
                             );
                         })}
                     </div>
-                </>
-            )}
+                )}
+            </div>
         </div>
     );
 }

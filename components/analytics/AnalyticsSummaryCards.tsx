@@ -27,21 +27,21 @@ function SummaryCard({
     valueColor: string;
 }) {
     return (
-        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-5 overflow-hidden group hover:shadow-[0_8px_24px_-4px_rgba(244,114,182,0.25),0_4px_12px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-pink-300 hover:ring-pink-100 transition-all duration-300 cursor-default">
+        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-5 overflow-hidden group hover:shadow-[0_8px_24px_-4px_rgba(16,185,129,0.25),0_4px_12px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-emerald-300 hover:ring-emerald-100 transition-all duration-300 cursor-default">
             {/* Decorative gradient corner */}
             <div
                 className={`absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br ${accentFrom} ${accentTo} rounded-full blur-lg group-hover:scale-150 transition-transform duration-500 pointer-events-none`}
             />
             {/* Shimmer line */}
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <div className="relative flex items-center gap-4">
                 <div className="relative shrink-0">
                     <div
                         className={`absolute inset-0 rounded-xl blur-md opacity-25 bg-linear-to-br ${accentFrom} ${accentTo}`}
                     />
-                    <div className="relative p-2.5 rounded-xl bg-linear-to-br from-rose-100 to-pink-100 shadow-inner ring-1 ring-rose-200/50 group-hover:from-rose-200 group-hover:to-pink-200 transition-colors duration-300">
-                        <Icon className="w-6 h-6 text-rose-500 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="relative p-2.5 rounded-xl bg-linear-to-br from-emerald-100 to-green-100 shadow-inner ring-1 ring-emerald-200/50 group-hover:from-emerald-200 group-hover:to-green-200 transition-colors duration-300">
+                        <Icon className="w-6 h-6 text-emerald-500 group-hover:scale-110 transition-transform duration-300" />
                     </div>
                 </div>
                 <div>
@@ -54,7 +54,7 @@ function SummaryCard({
                         >
                             {value}
                         </p>
-                        <p className="text-sm text-gray-400 font-medium group-hover:text-pink-400 transition-colors duration-300">
+                        <p className="text-sm text-gray-400 font-medium group-hover:text-emerald-400 transition-colors duration-300">
                             {unit}
                         </p>
                     </div>

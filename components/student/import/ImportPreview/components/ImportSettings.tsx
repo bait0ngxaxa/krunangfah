@@ -29,7 +29,7 @@ export function ImportSettings({
                     <select
                         value={selectedYearId}
                         onChange={(e) => onYearChange(e.target.value)}
-                        className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 outline-none transition-all shadow-sm appearance-none text-gray-700 font-medium"
+                        className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-all shadow-sm appearance-none text-gray-700 font-medium"
                     >
                         <option value="">เลือกปีการศึกษา</option>
                         {academicYears.map((year) => (
@@ -38,7 +38,7 @@ export function ImportSettings({
                             </option>
                         ))}
                     </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-pink-400">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-400">
                         ▼
                     </div>
                 </div>
@@ -53,12 +53,12 @@ export function ImportSettings({
                     <select
                         value={assessmentRound}
                         onChange={(e) => onRoundChange(Number(e.target.value))}
-                        className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100 focus:border-pink-300 outline-none transition-all shadow-sm appearance-none text-gray-700 font-medium"
+                        className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-all shadow-sm appearance-none text-gray-700 font-medium"
                     >
                         <option value={1}>ครั้งที่ 1</option>
                         <option value={2}>ครั้งที่ 2</option>
                     </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-pink-400">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-400">
                         ▼
                     </div>
                 </div>

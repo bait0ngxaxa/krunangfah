@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import Image from "next/image";
+import { ChevronDown, type LucideIcon } from "lucide-react";
 
 interface QuickActionCardProps {
     href: string;
     icon: LucideIcon;
     title: string;
     description: string;
+    imageSrc?: string;
+    actionButton?: React.ReactNode;
 }
 
 export function QuickActionCard({
@@ -13,35 +16,52 @@ export function QuickActionCard({
     icon: Icon,
     title,
     description,
+    imageSrc,
+    actionButton,
 }: QuickActionCardProps) {
     return (
         <Link
             href={href}
-            className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-5 group hover:shadow-[0_8px_24px_-4px_rgba(244,114,182,0.25),0_4px_12px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-pink-300 hover:ring-pink-100 transition-all duration-300 block overflow-hidden"
+            className="relative bg-white rounded-4xl border-2 border-[#0BD0D9] shadow-[0_4px_12px_rgba(11,208,217,0.1)] p-4 sm:p-5 flex items-stretch min-h-[140px] group hover:-translate-y-1 transition-all duration-300"
         >
-            {/* Decorative gradient corner */}
-            <div className="absolute -top-10 -right-10 w-24 h-24 bg-linear-to-br from-rose-200/30 to-pink-300/20 rounded-full blur-xl group-hover:scale-[1.8] transition-transform duration-500 pointer-events-none" />
-            {/* Shimmer top line */}
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {/* Left Image Spacer */}
+            {imageSrc && (
+                <div className="w-[70px] sm:w-[80px] shrink-0 relative">
+                    <Image
+                        src={imageSrc}
+                        alt=""
+                        width={140}
+                        height={160}
+                        className="absolute -bottom-1 -left-1 sm:-left-3 w-[100px] sm:w-[110px] max-w-none object-contain origin-bottom z-10 drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+                    />
+                </div>
+            )}
 
-            <div className="relative">
-                <div className="p-2.5 rounded-xl bg-linear-to-br from-rose-100 to-pink-100 shadow-inner ring-1 ring-rose-200/50 text-rose-500 w-fit mb-3 group-hover:from-rose-200 group-hover:to-pink-200 group-hover:scale-110 group-hover:shadow-md group-hover:shadow-pink-200/50 transition-all duration-300">
-                    <Icon className="w-5 h-5" />
-                </div>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="font-bold text-gray-800 group-hover:text-transparent group-hover:bg-linear-to-r group-hover:from-rose-500 group-hover:to-pink-600 group-hover:bg-clip-text transition-colors duration-300">
-                            {title}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1 group-hover:text-gray-600 transition-colors">
-                            {description}
-                        </p>
-                    </div>
-                    {/* Arrow indicator */}
-                    <div className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-                        <ChevronRight className="w-5 h-5 text-pink-400" />
+            {/* Right Content */}
+            <div
+                className={`flex-1 flex flex-col justify-center relative z-0 ${!imageSrc ? "pl-1" : "pl-6 sm:pl-8"} pr-4 sm:pr-8`}
+            >
+                <div className="mb-2">
+                    <div className="inline-flex p-2.5 rounded-xl bg-[#0BD0D9] text-white shadow-md">
+                        <Icon className="w-6 h-6 stroke-[2.5]" />
                     </div>
                 </div>
+
+                <h3 className="font-extrabold text-gray-900 text-base sm:text-[17px] leading-tight mb-1">
+                    {title}
+                </h3>
+                <p className="text-[13px] sm:text-sm text-gray-400 font-bold leading-tight">
+                    {description}
+                </p>
+
+                {actionButton && (
+                    <div className="mt-2.5 relative z-20">{actionButton}</div>
+                )}
+            </div>
+
+            {/* Bottom Right Circle */}
+            <div className="absolute bottom-4 right-4 sm:bottom-5 sm:right-5 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#0BD0D9] text-white flex items-center justify-center shadow-lg group-hover:bg-[#09B8C0] transition-colors">
+                <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
             </div>
         </Link>
     );

@@ -33,7 +33,7 @@ export function ReferralFormModal({
     const [error, setError] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
     const [selectedOption, setSelectedOption] = useState<ReferralOption>(
-        initialStatus ? "refer" : "follow_up"
+        initialStatus ? "refer" : "follow_up",
     );
     const [hospitalName, setHospitalName] = useState(initialHospitalName ?? "");
 
@@ -82,7 +82,7 @@ export function ReferralFormModal({
                 toast.success(
                     shouldRefer
                         ? "บันทึกการส่งต่อโรงพยาบาลแล้ว"
-                        : "บันทึกการติดตามต่อแล้ว"
+                        : "บันทึกการติดตามต่อแล้ว",
                 );
                 onSuccess();
                 onClose();
@@ -110,7 +110,7 @@ export function ReferralFormModal({
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="bg-linear-to-r from-rose-500 to-pink-600 px-8 py-6 rounded-t-3xl relative overflow-hidden">
+                <div className="bg-linear-to-r from-emerald-500 to-teal-600 px-8 py-6 rounded-t-3xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2" />
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
                     <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
@@ -122,8 +122,8 @@ export function ReferralFormModal({
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-8 space-y-6">
                     {error && (
-                        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center gap-2 text-rose-700">
-                            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-2 text-orange-700">
+                            <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />
                             <p className="text-sm font-medium">{error}</p>
                         </div>
                     )}
@@ -137,7 +137,7 @@ export function ReferralFormModal({
                         <label
                             className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
                                 selectedOption === "refer"
-                                    ? "border-rose-400 bg-rose-50 shadow-md"
+                                    ? "border-emerald-400 bg-emerald-50 shadow-md"
                                     : "border-gray-200 bg-gray-50 hover:border-gray-300"
                             }`}
                         >
@@ -147,13 +147,13 @@ export function ReferralFormModal({
                                 value="refer"
                                 checked={selectedOption === "refer"}
                                 onChange={() => setSelectedOption("refer")}
-                                className="w-5 h-5 text-rose-500 accent-rose-500"
+                                className="w-5 h-5 text-emerald-500 accent-emerald-500"
                             />
                             <div className="flex items-center gap-3">
                                 <Hospital
                                     className={`w-6 h-6 shrink-0 ${
                                         selectedOption === "refer"
-                                            ? "text-rose-500"
+                                            ? "text-emerald-500"
                                             : "text-gray-400"
                                     }`}
                                 />
@@ -170,21 +170,24 @@ export function ReferralFormModal({
 
                         {/* Hospital Name Input — shown when "refer" is selected */}
                         {selectedOption === "refer" && (
-                            <div className="ml-9 pl-4 border-l-2 border-rose-200">
+                            <div className="ml-9 pl-4 border-l-2 border-emerald-200">
                                 <label
                                     htmlFor="hospitalName"
                                     className="block text-sm font-bold text-gray-700 mb-2"
                                 >
-                                    ชื่อโรงพยาบาล <span className="text-rose-500">*</span>
+                                    ชื่อโรงพยาบาล{" "}
+                                    <span className="text-emerald-500">*</span>
                                 </label>
                                 <input
                                     id="hospitalName"
                                     type="text"
                                     value={hospitalName}
-                                    onChange={(e) => setHospitalName(e.target.value)}
+                                    onChange={(e) =>
+                                        setHospitalName(e.target.value)
+                                    }
                                     placeholder="เช่น โรงพยาบาลศิริราช"
                                     maxLength={200}
-                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-800 placeholder:text-gray-400"
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-gray-800 placeholder:text-gray-400"
                                 />
                             </div>
                         )}
@@ -238,7 +241,7 @@ export function ReferralFormModal({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 px-6 py-3 bg-linear-to-r from-rose-500 to-pink-600 text-white rounded-xl hover:shadow-lg hover:shadow-pink-200 hover:-translate-y-0.5 transition-all font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>

@@ -25,7 +25,7 @@ const protectedRoutes = [
 const adminOnlyRoutes = ["/teachers/add", "/teachers/manage"];
 
 // Routes ที่ต้องเป็น system_admin เท่านั้น
-const systemAdminOnlyRoutes = ["/admin/whitelist", "/admin/invites"];
+const systemAdminOnlyRoutes = ["/admin/invites"];
 
 // Routes สำหรับ guest เท่านั้น (ถ้า login แล้วจะ redirect ไป dashboard)
 const guestOnlyRoutes = ["/signin", "/forgot-password", "/reset-password"];
@@ -97,7 +97,6 @@ export default auth((req) => {
 
     const isLoggedIn = !!session;
     const userRole = session?.user?.role;
-    const schoolId = session?.user?.schoolId;
 
     // ถ้าเป็น public routes ให้ผ่าน
     if (pathname === "/" || pathname.startsWith("/invite/")) {
@@ -120,19 +119,9 @@ export default auth((req) => {
         return NextResponse.redirect(new URL("/signin", nextUrl));
     }
 
-    // ─── Onboarding redirect: schoolId (JWT-based) ───
-    // Teacher profile check is handled in (protected)/layout.tsx via DB query
-    if (
-        isLoggedIn &&
-        userRole !== "system_admin" &&
-        !pathname.startsWith("/school-setup") &&
-        !pathname.startsWith("/teacher-profile") &&
-        !pathname.startsWith("/api/")
-    ) {
-        if (!schoolId) {
-            return NextResponse.redirect(new URL("/school-setup", nextUrl));
-        }
-    }
+    // ─── Onboarding redirects ───
+    // Both teacher profile and schoolId checks are in (protected)/layout.tsx via DB query
+    // No JWT-based onboarding check here — avoids stale JWT loop
 
     // ถ้าเป็น system_admin-only routes แต่ไม่ใช่ system_admin redirect ไป dashboard
     const isSystemAdminOnlyRoute = systemAdminOnlyRoutes.some((route) =>

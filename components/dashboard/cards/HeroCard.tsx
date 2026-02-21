@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ChevronRight, Inbox, type LucideIcon } from "lucide-react";
+import Image from "next/image";
+import { ChevronDown, Inbox, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 interface HeroCardProps {
@@ -9,10 +10,11 @@ interface HeroCardProps {
     badge?: string | ReactNode;
     description: string;
     show?: boolean;
-    /** When true, renders an empty state UI instead of the normal clickable card */
     isEmpty?: boolean;
     emptyTitle?: string;
     emptyDescription?: string;
+    imageSrc?: string;
+    theme?: "emerald" | "teal";
 }
 
 export function HeroCard({
@@ -25,23 +27,19 @@ export function HeroCard({
     isEmpty = false,
     emptyTitle,
     emptyDescription,
+    imageSrc,
+    theme = "teal",
 }: HeroCardProps) {
     if (!show) return null;
 
-    // Empty state variant
     if (isEmpty) {
         return (
-            <div className="relative flex items-center gap-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200/60 ring-1 ring-white/80 p-5 overflow-hidden">
-                {/* Corner decoration */}
-                <div className="absolute -top-12 -right-12 w-32 h-32 bg-linear-to-br from-gray-200/30 to-pink-200/10 rounded-full blur-xl pointer-events-none" />
-
+            <div className="relative flex items-center gap-4 bg-white/90 backdrop-blur-md rounded-4xl shadow-sm border border-gray-200 p-5 overflow-hidden">
                 <div className="relative shrink-0">
-                    <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-gray-300 to-gray-400 blur-md opacity-30" />
-                    <div className="relative w-14 h-14 rounded-2xl bg-linear-to-br from-gray-300 to-gray-400 flex items-center justify-center shadow-lg shadow-gray-200/50">
+                    <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-gray-300 to-gray-400 flex items-center justify-center shadow-inner">
                         <Inbox className="w-7 h-7 text-white" />
                     </div>
                 </div>
-
                 <div className="relative flex-1 min-w-0">
                     <h3 className="font-bold text-gray-500">
                         {emptyTitle ?? title}
@@ -55,42 +53,88 @@ export function HeroCard({
         );
     }
 
+    const isEmerald = theme === "emerald";
+    const colors = {
+        border: isEmerald ? "border-[#6EE7B7]" : "border-[#0BD0D9]",
+        iconBg: isEmerald ? "bg-[#34D399]" : "bg-[#0BD0D9]",
+        iconColor: "text-white",
+        badgeBg: isEmerald ? "bg-[#A7F3D0]" : "bg-[#A7F3D0]", // Emerald badge for emerald theme
+        titleHover: isEmerald
+            ? "group-hover:text-emerald-500"
+            : "group-hover:text-[#09B8C0]",
+    };
+
     return (
         <Link
             href={href}
-            className="relative flex items-center gap-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-5 group hover:shadow-[0_8px_24px_-4px_rgba(244,114,182,0.25),0_4px_12px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 hover:border-pink-300 hover:ring-pink-100 transition-all duration-300 overflow-hidden"
+            className={`relative bg-white rounded-4xl border-2 ${colors.border} shadow-[0_4px_12px_rgba(0,0,0,0.05)] p-5 sm:p-6 flex items-stretch min-h-[140px] sm:min-h-[160px] group hover:-translate-y-1 transition-all duration-300 w-full`}
         >
-            {/* Corner decoration */}
-            <div className="absolute -top-12 -right-12 w-32 h-32 bg-linear-to-br from-rose-200/30 to-pink-300/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
-            {/* Accent bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-rose-400 via-pink-400 to-rose-300 opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
-
-            <div className="relative shrink-0">
-                <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 blur-md opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
-                <div className="relative w-14 h-14 rounded-2xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-lg shadow-pink-200/50 group-hover:scale-105 group-hover:rotate-3 transition-all duration-500">
-                    <Icon className="w-7 h-7 text-white" />
+            {/* Left Image Spacer */}
+            {imageSrc && (
+                <div className="w-[80px] sm:w-[100px] shrink-0 relative">
+                    <Image
+                        src={imageSrc}
+                        alt=""
+                        width={160}
+                        height={180}
+                        className="absolute -bottom-2 -left-2 sm:-left-4 w-[120px] sm:w-[150px] max-w-none object-contain origin-bottom z-10 drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+                    />
                 </div>
-            </div>
+            )}
 
-            <div className="relative flex-1 min-w-0">
-                <div className="flex items-center gap-2.5">
-                    <h3 className="font-bold text-gray-800 group-hover:text-transparent group-hover:bg-linear-to-r group-hover:from-rose-500 group-hover:to-pink-600 group-hover:bg-clip-text transition-colors duration-300">
+            {/* Right Content */}
+            <div
+                className={`flex-1 flex flex-col sm:flex-row sm:items-center justify-between relative z-0 ${!imageSrc ? "pl-2" : "pl-6 sm:pl-10"} pr-6 sm:pr-24`}
+            >
+                {/* Main Titles */}
+                <div className="flex flex-col justify-center">
+                    {!isEmerald && (
+                        <div className="mb-2">
+                            <div
+                                className={`inline-flex p-2.5 rounded-xl ${colors.iconBg} ${colors.iconColor} shadow-md`}
+                            >
+                                <Icon className="w-6 h-6 stroke-[2.5]" />
+                            </div>
+                        </div>
+                    )}
+
+                    <h3 className="font-extrabold text-gray-900 text-[18px] sm:text-[22px] leading-tight mb-2">
                         {title}
                     </h3>
-                    {badge ? (
-                        <span className="px-2.5 py-0.5 text-xs font-bold bg-linear-to-r from-rose-100 to-pink-100 text-pink-600 rounded-full ring-1 ring-pink-200/50">
-                            {badge}
-                        </span>
-                    ) : null}
+
+                    {/* Badge */}
+                    {badge && (
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-[#A7F3D0] border border-[#6EE7B7] shadow-sm w-fit mb-2">
+                            <Icon className="w-4 h-4 text-emerald-800 stroke-[2.5]" />
+                            <span className="text-sm font-extrabold text-emerald-900">
+                                {badge}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Emerald explicitly has description on the right, Teal has it under */}
+                    {!isEmerald && description && (
+                        <p className="text-[14px] sm:text-[15px] text-gray-400 font-bold leading-tight">
+                            {description}
+                        </p>
+                    )}
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5 group-hover:text-gray-600 transition-colors truncate">
-                    {description}
-                </p>
+
+                {/* Rightmost Description (Emerald Theme) */}
+                {isEmerald && description && (
+                    <div className="hidden sm:flex items-center justify-end text-right">
+                        <p className="text-[13px] text-gray-400 font-bold max-w-[120px] leading-snug mr-2">
+                            {description}
+                        </p>
+                    </div>
+                )}
             </div>
 
-            {/* Arrow */}
-            <div className="relative opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300 shrink-0">
-                <ChevronRight className="w-5 h-5 text-pink-400" />
+            {/* Bottom/Center Right Circle */}
+            <div
+                className={`absolute ${isEmerald ? "top-1/2 -translate-y-1/2 right-5" : "bottom-5 right-5"} w-7 h-7 sm:w-9 sm:h-9 rounded-full ${colors.iconBg} ${colors.iconColor} flex items-center justify-center shadow-lg group-hover:brightness-95 transition-all`}
+            >
+                <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
             </div>
         </Link>
     );

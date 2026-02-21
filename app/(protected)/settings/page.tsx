@@ -67,11 +67,11 @@ export default async function SettingsPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-50 px-4 py-12">
+        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 px-4 py-12">
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
-                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 p-6 mb-8">
-                    <h1 className="text-2xl font-bold bg-linear-to-r from-rose-400 to-pink-500 bg-clip-text text-transparent">
+                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 border border-emerald-200 p-6 mb-8">
+                    <h1 className="text-2xl font-bold bg-linear-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent">
                         ตั้งค่าบัญชี
                     </h1>
                     <p className="text-gray-600 mt-2">
@@ -80,7 +80,7 @@ export default async function SettingsPage() {
                 </div>
 
                 {/* Tabs Content */}
-                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-pink-100/30 border border-pink-200 p-8">
+                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 border border-emerald-200 p-8">
                     <Tabs tabs={tabs} defaultTab="profile" />
                 </div>
             </div>

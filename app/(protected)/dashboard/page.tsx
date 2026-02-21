@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+
 import { requireAuth } from "@/lib/session";
 import {
     Users,
@@ -15,6 +16,7 @@ import {
     DashboardActionList,
     DashboardContentSkeleton,
 } from "@/components/dashboard";
+import { PageBanner } from "@/components/ui/PageBanner";
 import type { StatItem } from "@/components/dashboard/DashboardHeader";
 
 import type { Metadata } from "next";
@@ -123,7 +125,7 @@ async function DashboardContent({ session }: { session: Session }) {
     // ─── System Admin ───
     if (isSystemAdmin) {
         return (
-            <>
+            <div className="max-w-4xl mx-auto relative z-10 px-4 sm:px-6 lg:px-8 py-6 space-y-4">
                 <DashboardHeader
                     teacherName={session.user.name || "System Admin"}
                     schoolName="ผู้ดูแลระบบ (ทุกโรงเรียน)"
@@ -134,30 +136,32 @@ async function DashboardContent({ session }: { session: Session }) {
                     userRole={userRole}
                     studentCount={studentCount}
                 />
-            </>
+            </div>
         );
     }
 
     // ─── No Teacher Profile ───
     if (!teacher) {
         return (
-            <div className="text-center py-8">
-                <div className="inline-flex items-center justify-center p-3 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg ring-1 ring-white/60 mb-5">
-                    <Sparkles className="w-8 h-8 text-pink-400" />
+            <div className="max-w-4xl mx-auto relative z-10 px-4 sm:px-6 lg:px-8 py-6">
+                <div className="text-center py-8">
+                    <div className="inline-flex items-center justify-center p-3 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg ring-1 ring-white/60 mb-5">
+                        <Sparkles className="w-8 h-8 text-pink-400" />
+                    </div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
+                        ยินดีต้อนรับสู่โครงการครูนางฟ้า
+                    </h1>
+                    <p className="text-base text-gray-500 mb-8">
+                        กรุณากรอกข้อมูลครูเพื่อเริ่มใช้งานระบบ
+                    </p>
+                    <ActionCard
+                        title="เพิ่มข้อมูลครู"
+                        description="กรอกข้อมูลส่วนตัวและบทบาทในโครงการ"
+                        buttonText="กรอกข้อมูลครู"
+                        href="/teacher-profile"
+                        variant="primary"
+                    />
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
-                    ยินดีต้อนรับสู่โครงการครูนางฟ้า
-                </h1>
-                <p className="text-base text-gray-500 mb-8">
-                    กรุณากรอกข้อมูลครูเพื่อเริ่มใช้งานระบบ
-                </p>
-                <ActionCard
-                    title="เพิ่มข้อมูลครู"
-                    description="กรอกข้อมูลส่วนตัวและบทบาทในโครงการ"
-                    buttonText="กรอกข้อมูลครู"
-                    href="/teacher-profile"
-                    variant="primary"
-                />
             </div>
         );
     }
@@ -170,27 +174,42 @@ async function DashboardContent({ session }: { session: Session }) {
 
     return (
         <>
-            <DashboardHeader
-                teacherName={teacherName}
-                schoolName={schoolName}
-                subtitle={isClassTeacher ? "ครูประจำชั้น" : "ครูนางฟ้า"}
-                extra={
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-pink-50 rounded-xl text-xs font-medium text-pink-600">
-                        <CalendarDays className="w-3.5 h-3.5" />
+            <PageBanner
+                title="ระบบดูแลช่วยเหลือนักเรียน"
+                subtitle={
+                    <>
+                        เพื่อการดูแลสุขภาพจิตนักเรียน
+                        <br />
+                        Angel Teacher Creative Assets
+                    </>
+                }
+                imageSrc="/image/homepage/hero.png"
+                imageAlt="Dashboard Banner"
+                showBackButton={false}
+                actionNode={
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-400 rounded-full text-sm font-bold text-white shadow-md border border-emerald-300">
+                        <CalendarDays className="w-5 h-5" />
                         <span>ปี {academicYearText}</span>
                     </div>
                 }
-                stats={buildTeacherStats(
-                    studentCount,
-                    teacher.advisoryClass,
-                    teacher.projectRole,
-                    isClassTeacher,
-                )}
             />
-            <DashboardActionList
-                userRole={userRole}
-                studentCount={studentCount}
-            />
+            <div className="max-w-4xl mx-auto relative z-10 px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+                <DashboardHeader
+                    teacherName={teacherName}
+                    schoolName={schoolName}
+                    subtitle={isClassTeacher ? "ครูประจำชั้น" : "ครูนางฟ้า"}
+                    stats={buildTeacherStats(
+                        studentCount,
+                        teacher.advisoryClass,
+                        teacher.projectRole,
+                        isClassTeacher,
+                    )}
+                />
+                <DashboardActionList
+                    userRole={userRole}
+                    studentCount={studentCount}
+                />
+            </div>
         </>
     );
 }
@@ -198,13 +217,5 @@ async function DashboardContent({ session }: { session: Session }) {
 /* ─── Layout Shell ─── */
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
-    return (
-        <div className="min-h-screen bg-linear-to-br from-rose-50 via-white to-pink-100 py-6 px-4 relative overflow-hidden">
-            {/* Decorative blobs */}
-            <div className="absolute top-0 left-0 w-96 h-96 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/2 translate-y-1/2 pointer-events-none" />
-
-            <div className="max-w-4xl mx-auto relative z-10">{children}</div>
-        </div>
-    );
+    return <div className="min-h-screen">{children}</div>;
 }

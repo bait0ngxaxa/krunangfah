@@ -2,13 +2,21 @@ import { ClipboardCheck } from "lucide-react";
 import { RiskGroupSection } from "../../phq/RiskGroupSection";
 import type { Student, GroupedStudents, RiskLevel } from "../types";
 
-function getStudentsByLevel(groupedStudents: GroupedStudents, level: RiskLevel): Student[] {
+function getStudentsByLevel(
+    groupedStudents: GroupedStudents,
+    level: RiskLevel,
+): Student[] {
     switch (level) {
-        case "red":    return groupedStudents.red;
-        case "orange": return groupedStudents.orange;
-        case "yellow": return groupedStudents.yellow;
-        case "green":  return groupedStudents.green;
-        case "blue":   return groupedStudents.blue;
+        case "red":
+            return groupedStudents.red;
+        case "orange":
+            return groupedStudents.orange;
+        case "yellow":
+            return groupedStudents.yellow;
+        case "green":
+            return groupedStudents.green;
+        case "blue":
+            return groupedStudents.blue;
     }
 }
 
@@ -32,10 +40,10 @@ export function ScreeningSummary({
     return (
         <div className="space-y-5">
             {/* Summary Header */}
-            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl border border-pink-200 shadow-lg shadow-pink-100/30 ring-1 ring-pink-50 overflow-hidden">
+            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl border border-emerald-200 shadow-lg shadow-emerald-100/30 ring-1 ring-emerald-50 overflow-hidden">
                 {/* Corner decoration */}
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
-                <div className="bg-linear-to-r from-rose-500 via-pink-500 to-rose-600 px-5 py-4 flex items-center justify-between relative">
+                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-green-300/30 rounded-full blur-xl pointer-events-none" />
+                <div className="bg-linear-to-r from-emerald-500 via-green-500 to-emerald-600 px-5 py-4 flex items-center justify-between relative">
                     <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm shadow-inner ring-1 ring-white/20">

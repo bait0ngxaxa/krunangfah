@@ -9,7 +9,7 @@ interface ActivityCardProps {
 
 export function ActivityCard({ activity, index, config }: ActivityCardProps) {
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 border border-pink-200 ring-1 ring-pink-50 shadow-lg shadow-pink-100/30 hover:shadow-xl hover:shadow-pink-200/50 hover:-translate-y-1 transition-all duration-300">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 border border-emerald-200 ring-1 ring-emerald-50 shadow-lg shadow-emerald-100/30 hover:shadow-xl hover:shadow-emerald-200/50 hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-center gap-6 mb-8">
                 <div
                     className={`w-16 h-16 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-3xl font-bold shrink-0 shadow-lg relative group`}
@@ -34,7 +34,7 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                 {activity.worksheets.map((worksheet, wIndex) => (
                     <div
                         key={wIndex}
-                        className="shrink-0 w-48 h-64 bg-white rounded-2xl overflow-hidden shadow-md shadow-pink-100/30 border-4 border-white relative transform hover:scale-105 hover:rotate-1 hover:shadow-xl hover:shadow-pink-200 transition-all duration-300 group"
+                        className="shrink-0 w-48 h-64 bg-white rounded-2xl overflow-hidden shadow-md shadow-emerald-100/30 border-4 border-white relative transform hover:scale-105 hover:rotate-1 hover:shadow-xl hover:shadow-emerald-200 transition-all duration-300 group"
                     >
                         <Image
                             src={worksheet}

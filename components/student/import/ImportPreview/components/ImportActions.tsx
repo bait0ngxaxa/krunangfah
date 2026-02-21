@@ -30,7 +30,7 @@ export function ImportActions({
                 type="button"
                 onClick={onSave}
                 disabled={!canSave || isLoading}
-                className="px-8 py-3 bg-linear-to-r from-pink-500 to-rose-500 text-white rounded-2xl font-bold shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 hover:-translate-y-1 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+                className="px-8 py-3 bg-linear-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 hover:-translate-y-1 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
             >
                 {isLoading ? (
                     <>

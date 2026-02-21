@@ -67,11 +67,11 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
                 <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-600 mb-2"
+                    className="block text-base font-medium text-gray-700 mb-2"
                 >
                     อีเมล
                 </label>
@@ -81,11 +81,11 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                     id="email"
                     autoComplete="email"
                     disabled={isLoading}
-                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-black placeholder:text-gray-600"
+                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-gray-800 placeholder:text-gray-400"
                     placeholder="your@email.com"
                 />
                 {errors.email && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
+                    <p className="mt-1.5 text-sm text-red-500 font-medium">
                         {errors.email.message}
                     </p>
                 )}
@@ -94,7 +94,7 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
             <div>
                 <label
                     htmlFor="password"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-base font-medium text-gray-700 mb-2"
                 >
                     รหัสผ่าน
                 </label>
@@ -104,18 +104,18 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                     id="password"
                     autoComplete="current-password"
                     disabled={isLoading}
-                    className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-black placeholder:text-gray-600"
+                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-gray-800 placeholder:text-gray-400"
                     placeholder="••••••••"
                 />
                 {errors.password && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
+                    <p className="mt-1.5 text-sm text-red-500 font-medium">
                         {errors.password.message}
                     </p>
                 )}
-                <div className="mt-1.5 text-right">
+                <div className="mt-2 text-right">
                     <Link
                         href="/forgot-password"
-                        className="text-sm text-pink-500 hover:text-pink-600 transition-colors"
+                        className="text-sm text-emerald-500 hover:text-emerald-600 font-medium transition-colors"
                     >
                         ลืมรหัสผ่าน?
                     </Link>
@@ -128,13 +128,19 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                 </div>
             )}
 
-            <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-linear-to-r from-pink-50 to-white text-pink-600 text-lg font-bold py-3.5 px-4 rounded-full border border-pink-200 hover:from-pink-100 hover:to-white focus:outline-none focus:ring-4 focus:ring-pink-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-pink-100 hover:shadow-xl hover:shadow-pink-200 hover:-translate-y-0.5"
-            >
-                {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-            </button>
+            <div className="flex justify-center pt-1">
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+                >
+                    {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+                </button>
+            </div>
+
+            <p className="text-center text-sm text-gray-500 pt-1">
+                ยังไม่มีบัญชี? ติดต่อผู้ดูแล
+            </p>
         </form>
     );
 }

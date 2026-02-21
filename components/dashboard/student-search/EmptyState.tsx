@@ -14,8 +14,8 @@ export function EmptyState({
     if (!hasQuery) {
         return (
             <div className="text-center py-10 text-gray-500 bg-white/30 rounded-2xl border border-white/50 backdrop-blur-sm">
-                <div className="w-16 h-16 bg-pink-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Search className="w-7 h-7 text-pink-300" />
+                <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-7 h-7 text-emerald-500" />
                 </div>
                 <p className="text-sm font-semibold text-gray-600">
                     พิมพ์เพื่อค้นหานักเรียน

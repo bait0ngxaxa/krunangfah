@@ -47,18 +47,18 @@ export function ActivityRow({ progress, index }: ActivityRowProps) {
         ? "bg-gray-100 text-gray-400"
         : isCompleted
           ? "bg-green-100 text-green-600"
-          : "bg-rose-100 text-rose-600";
+          : "bg-emerald-100 text-emerald-600";
 
     return (
         <tr
             className={`
                 block md:table-row
                 bg-white md:bg-transparent
-                border border-pink-100 md:border-none rounded-2xl md:rounded-none
+                border border-emerald-100 md:border-none rounded-2xl md:rounded-none
                 p-5 md:p-0
                 mb-4 md:mb-0
                 shadow-sm md:shadow-none
-                hover:bg-pink-50/30 transition-colors
+                hover:bg-emerald-50/30 transition-colors
                 ${isLocked ? "opacity-60 grayscale" : ""}
             `}
         >

@@ -6,12 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Copy, Check } from "lucide-react";
 import { createSchoolAdminInvite } from "@/lib/actions/school-admin-invite.actions";
+import type { InviteRole } from "@/types/school-admin-invite.types";
 
-const emailSchema = z.object({
+const inviteFormSchema = z.object({
     email: z.string().email("อีเมลไม่ถูกต้อง"),
+    role: z.enum(["system_admin", "school_admin"]),
 });
 
-type EmailFormData = z.infer<typeof emailSchema>;
+type InviteFormData = z.infer<typeof inviteFormSchema>;
 
 interface InviteCreateFormProps {
     onCreated: () => void;
@@ -27,15 +29,19 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
         handleSubmit,
         reset,
         formState: { errors, isSubmitting },
-    } = useForm<EmailFormData>({
-        resolver: zodResolver(emailSchema),
+    } = useForm<InviteFormData>({
+        resolver: zodResolver(inviteFormSchema),
+        defaultValues: { role: "school_admin" },
     });
 
-    async function onSubmit(data: EmailFormData) {
+    async function onSubmit(data: InviteFormData) {
         setErrorMessage(null);
         setInviteUrl(null);
 
-        const result = await createSchoolAdminInvite(data.email);
+        const result = await createSchoolAdminInvite(
+            data.email,
+            data.role as InviteRole,
+        );
 
         if (!result.success || !result.data) {
             setErrorMessage(result.message);
@@ -55,39 +61,51 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
     }
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-pink-100/50 p-6 md:p-8 border border-pink-100">
+        <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 md:p-8 border border-emerald-100">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Plus className="w-5 h-5 text-rose-500" />
-                <span className="bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
-                    สร้าง Invite Link สำหรับ School Admin
+                <Plus className="w-5 h-5 text-emerald-500" />
+                <span className="bg-linear-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
+                    สร้าง Invite Link
                 </span>
             </h2>
 
             <form
                 onSubmit={handleSubmit(onSubmit)}
-                className="flex flex-col sm:flex-row gap-3"
+                className="flex flex-col gap-3"
             >
-                <div className="flex-1">
-                    <input
-                        {...register("email")}
-                        type="email"
-                        placeholder="example@email.com"
-                        className="w-full px-4 py-3 border border-pink-100 rounded-xl focus:ring-4 focus:ring-pink-100/50 focus:border-pink-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black placeholder:text-gray-400"
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1">
+                        <input
+                            {...register("email")}
+                            type="email"
+                            placeholder="example@email.com"
+                            className="w-full px-4 py-3 border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black placeholder:text-gray-400"
+                            disabled={isSubmitting}
+                        />
+                        {errors.email && (
+                            <p className="mt-1 text-sm text-red-500 font-medium">
+                                {errors.email.message}
+                            </p>
+                        )}
+                    </div>
+                    <div className="sm:w-48">
+                        <select
+                            {...register("role")}
+                            className="w-full px-4 py-3 border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black cursor-pointer"
+                            disabled={isSubmitting}
+                        >
+                            <option value="school_admin">แอดมินโรงเรียน</option>
+                            <option value="system_admin">แอดมินระบบ</option>
+                        </select>
+                    </div>
+                    <button
+                        type="submit"
                         disabled={isSubmitting}
-                    />
-                    {errors.email && (
-                        <p className="mt-1 text-sm text-red-500 font-medium">
-                            {errors.email.message}
-                        </p>
-                    )}
+                        className="px-6 py-3 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold transition-all duration-300 shadow-md shadow-emerald-200 hover:shadow-lg hover:shadow-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+                    >
+                        {isSubmitting ? "กำลังสร้าง..." : "สร้าง Link"}
+                    </button>
                 </div>
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-6 py-3 bg-linear-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white rounded-xl font-bold transition-all duration-300 shadow-md shadow-pink-200 hover:shadow-lg hover:shadow-pink-300 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
-                >
-                    {isSubmitting ? "กำลังสร้าง..." : "สร้าง Link"}
-                </button>
             </form>
 
             {errorMessage && (

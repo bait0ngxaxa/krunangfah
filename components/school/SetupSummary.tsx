@@ -17,18 +17,17 @@ interface SetupSummaryProps {
  * Group classes by grade prefix (e.g. "ม.1/1" → "ม.1")
  */
 function groupClassesByGrade(classes: SchoolClassItem[]) {
-    const groups: Record<string, SchoolClassItem[]> = {};
+    const groups = new Map<string, SchoolClassItem[]>();
 
     for (const cls of classes) {
-        // Extract prefix before "/" — e.g. "ม.1/1" → "ม.1", "ป.6/2" → "ป.6"
         const slashIdx = cls.name.indexOf("/");
         const prefix = slashIdx > 0 ? cls.name.slice(0, slashIdx) : cls.name;
-        if (!groups[prefix]) groups[prefix] = [];
-        groups[prefix].push(cls);
+        const group = groups.get(prefix) ?? [];
+        group.push(cls);
+        groups.set(prefix, group);
     }
 
-    // Sort groups by key
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b, "th"));
+    return Array.from(groups).sort(([a], [b]) => a.localeCompare(b, "th"));
 }
 
 const PROJECT_ROLE_LABELS: Record<string, string> = {
@@ -67,7 +66,7 @@ export function SetupSummary({
 
             {/* School info */}
             <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-sm shrink-0">
                     <Building2 className="w-4 h-4 text-white" />
                 </div>
                 <div>
@@ -83,7 +82,7 @@ export function SetupSummary({
 
             {/* Classes summary */}
             <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-sm shrink-0">
                     <LayoutGrid className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1">
@@ -98,14 +97,14 @@ export function SetupSummary({
                         <div className="space-y-2 mt-1">
                             {groupedClasses.map(([grade, items]) => (
                                 <div key={grade}>
-                                    <span className="text-xs font-semibold text-pink-600">
+                                    <span className="text-xs font-semibold text-emerald-600">
                                         {grade}
                                     </span>
                                     <div className="flex flex-wrap gap-1 mt-0.5">
                                         {items.map((c) => (
                                             <span
                                                 key={c.id}
-                                                className="px-2 py-0.5 bg-pink-50 border border-pink-100 text-pink-700 rounded-md text-xs font-medium"
+                                                className="px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-teal-700 rounded-md text-xs font-medium"
                                             >
                                                 {c.name}
                                             </span>
@@ -120,7 +119,7 @@ export function SetupSummary({
 
             {/* Roster summary */}
             <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-sm shrink-0">
                     <Users className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1">
@@ -146,7 +145,7 @@ export function SetupSummary({
                                             t.userRole}
                                     </span>
                                     {t.userRole === "class_teacher" && (
-                                        <span className="text-xs px-1.5 py-0.5 bg-pink-50 text-pink-600 rounded font-medium">
+                                        <span className="text-xs px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded font-medium">
                                             {t.advisoryClass}
                                         </span>
                                     )}

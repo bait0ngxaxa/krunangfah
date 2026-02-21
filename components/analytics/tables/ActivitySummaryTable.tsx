@@ -29,18 +29,18 @@ export function ActivitySummaryTable({
     if (orderedData.length === 0) {
         if (orderedData.length === 0) {
             return (
-                <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-8 flex flex-col items-center justify-center min-h-[400px] overflow-hidden">
+                <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-8 flex flex-col items-center justify-center min-h-[400px] overflow-hidden">
                     {/* Decorations */}
-                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-rose-200/45 to-pink-300/35 rounded-full blur-xl pointer-events-none" />
-                    <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-pink-200/20 to-rose-300/15 rounded-full blur-xl pointer-events-none" />
-                    <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-green-300/35 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-green-200/20 to-emerald-300/15 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
 
                     <h2 className="relative text-xl font-bold text-gray-800 mb-4 text-center">
                         กระบวนการช่วยเหลือ (ห้องที่ปรึกษา)
                     </h2>
                     <div className="relative text-gray-400 flex flex-col items-center gap-3">
                         <div className="relative w-16 h-16">
-                            <div className="absolute inset-0 rounded-full bg-pink-300 blur-lg opacity-20" />
+                            <div className="absolute inset-0 rounded-full bg-emerald-300 blur-lg opacity-20" />
                             <div className="relative w-full h-full bg-gray-50 rounded-full flex items-center justify-center ring-1 ring-gray-100">
                                 <ClipboardList className="w-8 h-8 text-gray-400" />
                             </div>
@@ -53,19 +53,19 @@ export function ActivitySummaryTable({
     }
 
     return (
-        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(244,114,182,0.15)] border border-pink-200 ring-1 ring-white/80 p-6 overflow-hidden">
+        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-6 overflow-hidden">
             {/* Corner decoration */}
-            <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-rose-200/40 to-pink-300/30 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-green-300/30 rounded-full blur-xl pointer-events-none" />
             {/* Shimmer */}
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pink-300/30 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
 
-            <h2 className="relative text-xl font-bold bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-6 text-center">
+            <h2 className="relative text-xl font-bold bg-linear-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent mb-6 text-center">
                 กระบวนการช่วยเหลือ (ห้องที่ปรึกษา)
             </h2>
-            <div className="overflow-x-auto rounded-xl border border-pink-100">
+            <div className="overflow-x-auto rounded-xl border border-emerald-100">
                 <table className="w-full border-collapse">
                     <thead>
-                        <tr className="bg-linear-to-r from-pink-500 via-rose-400 to-orange-400 text-white">
+                        <tr className="bg-linear-to-r from-emerald-500 via-green-400 to-teal-400 text-white">
                             <th className="px-6 py-4 text-center text-sm font-bold border-r border-white/30 whitespace-nowrap">
                                 กลุ่มสี
                             </th>
@@ -100,7 +100,7 @@ export function ActivitySummaryTable({
                             return (
                                 <tr
                                     key={item.riskLevel}
-                                    className="hover:bg-pink-50/30 transition-colors"
+                                    className="hover:bg-emerald-50/30 transition-colors"
                                 >
                                     {/* Risk Level */}
                                     <td
