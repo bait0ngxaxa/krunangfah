@@ -137,7 +137,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                                 : "opacity-90 hover:opacity-100"
                         }`}
                     >
-                        <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-black/10 opacity-0 hover:opacity-100 transition-opacity" />
                         <p className="text-3xl font-bold mb-1 drop-shadow-sm">
                             {count}
                         </p>
@@ -148,8 +148,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                 ))}
             </div>
 
-            {/* Filters */}
-            <div className="flex flex-wrap gap-6 items-center bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-emerald-200 shadow-sm">
+            <div className="flex flex-wrap gap-6 items-center bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
                 <div className="flex items-center gap-3">
                     <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
                         <School className="w-5 h-5 text-gray-600" />
@@ -158,7 +157,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                     <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
-                        className="px-4 py-2 bg-white/80 border border-gray-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all cursor-pointer hover:border-emerald-200"
+                        className="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all cursor-pointer hover:border-emerald-200"
                     >
                         <option value="all">แสดงทั้งหมด</option>
                         {classes.map((cls) => (
@@ -180,8 +179,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                 </div>
             </div>
 
-            {/* Student List by Class */}
-            <div className="max-h-[600px] overflow-y-auto pr-2 space-y-6 rounded-2xl border border-emerald-200 bg-white/30 p-6 backdrop-blur-sm custom-scrollbar shadow-inner">
+            <div className="max-h-[600px] overflow-y-auto pr-2 space-y-6 rounded-2xl border-2 border-gray-100 bg-slate-50 p-6 custom-scrollbar shadow-inner">
                 {groupedStudents.size === 0 ? (
                     <div className="text-center py-20 text-gray-500">
                         <div className="mb-4 opacity-50">
@@ -197,7 +195,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                         .sort(([a], [b]) => a.localeCompare(b))
                         .map(([className, classStudents]) => (
                             <div key={className} className="space-y-4">
-                                <h3 className="text-lg font-bold text-gray-700 border-b-2 border-emerald-100 pb-2 sticky top-0 bg-white/95 backdrop-blur-md z-10 px-2 py-3 rounded-lg shadow-sm flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-gray-700 border-b-2 border-emerald-100 pb-2 sticky top-0 bg-slate-50 z-10 px-2 py-3 rounded-lg shadow-sm flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <BookOpen className="w-5 h-5 text-emerald-500" />
                                         ห้อง {className}

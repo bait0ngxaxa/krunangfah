@@ -64,8 +64,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
     return (
         <div className="space-y-6">
             {/* Info Card */}
-            <div className="bg-white/80 backdrop-blur-sm border border-emerald-200 rounded-2xl p-6 shadow-sm shadow-emerald-100 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-20 h-20 bg-linear-to-bl from-emerald-100 to-transparent rounded-bl-full opacity-50 pointer-events-none" />
+            <div className="bg-white border-2 border-emerald-100 rounded-2xl p-6 shadow-sm relative overflow-hidden">
                 <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <HandHelping className="w-5 h-5 text-emerald-500" />{" "}
                     ข้อมูลของคุณ
@@ -138,7 +137,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3.5 px-4 bg-linear-to-r from-emerald-400 to-teal-500 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-teal-600 disabled:opacity-50 transition-all duration-200 shadow-md shadow-emerald-200 hover:shadow-lg hover:shadow-emerald-300 transform hover:-translate-y-0.5"
+                    className="w-full py-3.5 px-4 bg-[#0BD0D9] text-white font-bold rounded-xl hover:bg-[#09B8C0] disabled:opacity-50 transition-all duration-200 shadow-sm"
                 >
                     {isLoading ? (
                         <span className="flex items-center justify-center gap-2">

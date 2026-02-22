@@ -9,7 +9,7 @@ export function FormActions({
             <button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 py-3 px-4 bg-linear-to-r from-emerald-400 to-teal-500 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-teal-600 disabled:opacity-50 transition-all duration-200 shadow-md shadow-emerald-200 hover:shadow-lg hover:shadow-emerald-300 transform hover:-translate-y-0.5"
+                className="flex-1 py-3 px-4 bg-[#0BD0D9] text-white font-bold rounded-xl hover:bg-[#09B8C0] disabled:opacity-50 transition-all duration-200 shadow-sm"
             >
                 {isLoading ? (
                     <span className="flex items-center justify-center gap-2">

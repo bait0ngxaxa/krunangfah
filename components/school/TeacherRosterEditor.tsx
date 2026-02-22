@@ -82,7 +82,8 @@ export function TeacherRosterEditor({
     });
 
     const userRoleValue = useWatch({ control, name: "userRole" }) ?? "";
-    const advisoryClassValue = useWatch({ control, name: "advisoryClass" }) ?? "";
+    const advisoryClassValue =
+        useWatch({ control, name: "advisoryClass" }) ?? "";
 
     // Auto-set advisory class for school_admin
     useEffect(() => {
@@ -193,10 +194,10 @@ export function TeacherRosterEditor({
     const formContent = (
         <form
             onSubmit={handleSubmit(onSubmit)}
-            className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-100 space-y-3"
+            className="p-5 bg-white rounded-2xl border-2 border-[#0BD0D9]/50 shadow-sm space-y-4"
         >
             <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-bold text-emerald-600 flex items-center gap-1.5">
+                <span className="text-sm font-bold text-[#09B8C0] flex items-center gap-1.5">
                     {editingId ? (
                         <>
                             <Pencil className="w-4 h-4" />
@@ -224,7 +225,7 @@ export function TeacherRosterEditor({
                     <input
                         {...register("firstName")}
                         placeholder="ชื่อ *"
-                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                     />
                     {errors.firstName && (
                         <p className="mt-0.5 text-xs text-red-500">
@@ -236,7 +237,7 @@ export function TeacherRosterEditor({
                     <input
                         {...register("lastName")}
                         placeholder="นามสกุล *"
-                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                     />
                     {errors.lastName && (
                         <p className="mt-0.5 text-xs text-red-500">
@@ -251,7 +252,7 @@ export function TeacherRosterEditor({
                         placeholder="อายุ *"
                         min={18}
                         max={100}
-                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                     />
                     {errors.age && (
                         <p className="mt-0.5 text-xs text-red-500">
@@ -268,7 +269,7 @@ export function TeacherRosterEditor({
                         {...register("email")}
                         type="email"
                         placeholder="อีเมล (ไม่บังคับ)"
-                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                     />
                     {errors.email && (
                         <p className="mt-0.5 text-xs text-red-500">
@@ -279,7 +280,7 @@ export function TeacherRosterEditor({
                 <div>
                     <select
                         {...register("userRole")}
-                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black"
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 transition-colors"
                     >
                         <option value="">ประเภทครู *</option>
                         {USER_ROLES.map((r) => (
@@ -307,7 +308,7 @@ export function TeacherRosterEditor({
                                     shouldValidate: true,
                                 })
                             }
-                            className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black"
+                            className="w-full px-4 py-2 border border-violet-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-violet-100/50 focus:border-violet-300 bg-white shadow-sm text-black transition-all"
                         >
                             <option value="">เลือกห้องที่ปรึกษา *</option>
                             {schoolClasses.map((c) => (
@@ -327,7 +328,7 @@ export function TeacherRosterEditor({
                         <input
                             {...register("schoolRole")}
                             placeholder="บทบาทในโรงเรียน *"
-                            className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
+                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-[#0BD0D9] bg-white text-gray-900 placeholder:text-gray-400"
                         />
                         {errors.schoolRole && (
                             <p className="mt-0.5 text-xs text-red-500">
@@ -341,7 +342,7 @@ export function TeacherRosterEditor({
                         <input
                             {...register("schoolRole")}
                             placeholder="บทบาทในโรงเรียน *"
-                            className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
+                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-[#0BD0D9] bg-white text-gray-900 placeholder:text-gray-400"
                         />
                         {errors.schoolRole && (
                             <p className="mt-0.5 text-xs text-red-500">
@@ -356,11 +357,11 @@ export function TeacherRosterEditor({
 
             {/* Row 4: Project Role (radio buttons) */}
             <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1.5">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                     บทบาทในโครงการครูนางฟ้า{" "}
                     <span className="text-red-500">*</span>
                 </label>
-                <div className="flex flex-wrap gap-3 bg-white/80 p-3 rounded-lg border border-emerald-100">
+                <div className="flex flex-wrap gap-3 bg-white p-3 rounded-xl border-2 border-gray-100 shadow-sm">
                     {PROJECT_ROLES.map((role) => (
                         <label
                             key={role.value}
@@ -371,13 +372,13 @@ export function TeacherRosterEditor({
                                     {...register("projectRole")}
                                     type="radio"
                                     value={role.value}
-                                    className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded-full border border-teal-300 shadow-sm transition-all checked:border-teal-500 checked:bg-teal-500 hover:border-teal-400"
+                                    className="peer h-4 w-4 cursor-pointer appearance-none rounded-full border-2 border-gray-300 shadow-sm transition-all checked:border-[#0BD0D9] checked:bg-[#0BD0D9] hover:border-[#0BD0D9]/50"
                                 />
                                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform text-white opacity-0 peer-checked:opacity-100">
                                     <Check className="h-2 w-2" />
                                 </span>
                             </div>
-                            <span className="text-sm text-gray-700 group-hover:text-emerald-600 transition-colors font-medium">
+                            <span className="text-sm text-gray-700 group-hover:text-[#09B8C0] transition-colors font-medium">
                                 {role.label}
                             </span>
                         </label>
@@ -393,7 +394,7 @@ export function TeacherRosterEditor({
             <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
                 {editingId ? (
                     <>
@@ -422,7 +423,7 @@ export function TeacherRosterEditor({
                             reset();
                             setShowForm(true);
                         }}
-                        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-emerald-200 text-teal-500 rounded-xl font-semibold text-sm hover:bg-emerald-50 hover:border-emerald-300 transition-all cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[#0BD0D9]/50 text-[#09B8C0] rounded-xl font-bold text-sm hover:bg-cyan-50 hover:border-[#0BD0D9] transition-colors cursor-pointer"
                     >
                         <UserPlus className="w-4 h-4" />
                         เพิ่มครูในโรงเรียน
@@ -455,10 +456,10 @@ export function TeacherRosterEditor({
                         {roster.map((t) => (
                             <div
                                 key={t.id}
-                                className={`flex items-center justify-between p-3 bg-white border rounded-xl hover:shadow-sm transition-all group ${
+                                className={`flex items-center justify-between p-3 bg-white rounded-2xl shadow-sm border-2 transition-all group ${
                                     editingId === t.id
-                                        ? "border-emerald-400 ring-2 ring-emerald-100"
-                                        : "border-emerald-100"
+                                        ? "border-[#0BD0D9]"
+                                        : "border-gray-100 hover:shadow-md hover:border-[#0BD0D9]/50"
                                 }`}
                             >
                                 <div className="flex-1 min-w-0">

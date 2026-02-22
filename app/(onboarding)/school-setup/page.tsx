@@ -30,37 +30,40 @@ export default async function SchoolSetupPage() {
         },
     });
 
-    // มีโรงเรียนแล้ว ไม่ต้องทำซ้ำ
-    if (dbUser?.schoolId) {
-        redirect("/dashboard");
-    }
-
     // ต้องสร้าง teacher profile ก่อน school setup
     if (!dbUser?.teacher) {
         redirect("/teacher-profile");
     }
 
+    // ส่ง flag ไปให้ client แทนการ redirect ตรงนี้
+    // เพราะ server action revalidation จะ re-run page component
+    // ถ้า redirect ที่นี่ จะข้ามขั้นตอน wizard ทันที
+    const hasSchool = !!dbUser?.schoolId;
+
     return (
         <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 relative overflow-hidden px-4 py-10 sm:py-16">
             {/* Decorative Background */}
-            <div className="absolute top-10 left-5 sm:left-10 w-60 sm:w-72 h-60 sm:h-72 bg-emerald-200 rounded-full mix-blend-multiply blur-3xl opacity-50 animate-pulse" />
-            <div className="absolute bottom-10 right-5 sm:right-10 w-60 sm:w-72 h-60 sm:h-72 bg-cyan-100 rounded-full mix-blend-multiply blur-3xl opacity-50 animate-pulse delay-150" />
+            <div className="absolute top-10 left-5 sm:left-10 w-60 sm:w-72 h-60 sm:h-72 bg-[#34D399] rounded-full mix-blend-multiply blur-3xl opacity-10 animate-pulse" />
+            <div className="absolute bottom-10 right-5 sm:right-10 w-60 sm:w-72 h-60 sm:h-72 bg-[#0BD0D9] rounded-full mix-blend-multiply blur-3xl opacity-10 animate-pulse delay-150" />
 
             <div className="relative z-10 max-w-2xl mx-auto">
                 {/* Header */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-linear-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-200/50 mb-4">
-                        <span className="text-3xl">🧚‍♀️</span>
+                <div className="text-center mb-10 relative">
+                    <div className="relative inline-flex items-center justify-center w-20 h-20 mb-6">
+                        <div className="absolute inset-0 bg-[#0BD0D9] rounded-3xl blur-xl opacity-20 animate-pulse" />
+                        <div className="relative w-full h-full bg-[#0BD0D9] rounded-3xl flex items-center justify-center shadow-md rotate-3 transition-transform hover:rotate-6">
+                            <span className="text-4xl -rotate-3">🧚‍♀️</span>
+                        </div>
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-extrabold bg-linear-to-r from-emerald-400 via-teal-500 to-teal-600 bg-clip-text text-transparent">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
                         ยินดีต้อนรับสู่ครูนางฟ้า
                     </h1>
-                    <p className="mt-2 text-gray-500 text-sm sm:text-base">
+                    <p className="mt-2 text-slate-500 font-medium text-sm sm:text-base max-w-sm mx-auto">
                         มาตั้งค่าโรงเรียนของคุณก่อนเริ่มใช้งานระบบ
                     </p>
                 </div>
 
-                <SchoolSetupWizard />
+                <SchoolSetupWizard initialHasSchool={hasSchool} />
             </div>
         </div>
     );

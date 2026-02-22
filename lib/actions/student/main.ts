@@ -25,6 +25,26 @@ import type {
 // Note: Cache keys can be added here when implementing granular caching
 
 /**
+ * Fetch user context (schoolId, advisoryClass) needed by query functions
+ */
+async function getUserContext(userId: string, userRole: string) {
+    const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            schoolId: true,
+            teacher: { select: { advisoryClass: true } },
+        },
+    });
+
+    const schoolId = isSystemAdmin(userRole)
+        ? undefined
+        : (dbUser?.schoolId ?? undefined);
+    const advisoryClass = dbUser?.teacher?.advisoryClass ?? undefined;
+
+    return { schoolId, advisoryClass };
+}
+
+/**
  * Get risk level counts using database aggregation (fast)
  * Cached for 30 seconds
  */
@@ -34,22 +54,20 @@ export async function getStudentRiskCounts(
     try {
         const session = await requireAuth();
         const user = session.user;
+        const { schoolId, advisoryClass } = await getUserContext(user.id, user.role);
 
-        const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { schoolId: true },
-        });
-
-        // system_admin can see all schools (schoolId = undefined)
-        const schoolId = isSystemAdmin(user.role)
-            ? undefined
-            : (dbUser?.schoolId ?? undefined);
         if (!schoolId && !isSystemAdmin(user.role)) return null;
 
         // Get classes and risk counts in parallel
         const [classes, rawCounts] = await Promise.all([
-            getDistinctClassesQuery(schoolId, user.id, user.role),
-            getRiskLevelCountsQuery(schoolId, user.id, user.role, classFilter),
+            getDistinctClassesQuery(schoolId, advisoryClass, user.role, user.id),
+            getRiskLevelCountsQuery(
+                schoolId,
+                advisoryClass,
+                user.role,
+                user.id,
+                classFilter,
+            ),
         ]);
 
         return transformRiskCounts(rawCounts, classes);
@@ -66,16 +84,18 @@ export async function getStudentRiskCounts(
 const getCachedStudents = unstable_cache(
     async (
         schoolId: string | undefined,
-        userId: string,
+        advisoryClass: string | undefined,
         userRole: string,
+        userId: string,
         options: GetStudentsOptions,
     ) => {
         const page = options.page ?? 1;
         const limit = options.limit ?? 100;
         const { students, total } = await getStudentsQuery(
             schoolId,
-            userId,
+            advisoryClass,
             userRole,
+            userId,
             { classFilter: options.classFilter, page, limit },
         );
 
@@ -107,15 +127,7 @@ export async function getStudents(
         const limit = options?.limit ?? 100;
         const classFilter = options?.classFilter;
 
-        const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { schoolId: true },
-        });
-
-        // system_admin can see all schools (schoolId = undefined)
-        const schoolId = isSystemAdmin(user.role)
-            ? undefined
-            : (dbUser?.schoolId ?? undefined);
+        const { schoolId, advisoryClass } = await getUserContext(user.id, user.role);
 
         if (!schoolId && !isSystemAdmin(user.role)) {
             return {
@@ -126,7 +138,7 @@ export async function getStudents(
 
         // Use cached data for first page, fresh data for pagination
         if (page === 1 && !classFilter) {
-            return getCachedStudents(schoolId, user.id, user.role, {
+            return getCachedStudents(schoolId, advisoryClass, user.role, user.id, {
                 page,
                 limit,
                 classFilter,
@@ -135,8 +147,9 @@ export async function getStudents(
 
         const { students, total } = await getStudentsQuery(
             schoolId,
-            user.id,
+            advisoryClass,
             user.role,
+            user.id,
             { classFilter, page, limit },
         );
 
@@ -170,22 +183,15 @@ export async function searchStudents(query: string) {
 
         const session = await requireAuth();
         const user = session.user;
+        const { schoolId, advisoryClass } = await getUserContext(user.id, user.role);
 
-        const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { schoolId: true },
-        });
-
-        // system_admin can see all schools (schoolId = undefined)
-        const schoolId = isSystemAdmin(user.role)
-            ? undefined
-            : (dbUser?.schoolId ?? undefined);
         if (!schoolId && !isSystemAdmin(user.role)) return [];
 
         return searchStudentsQuery(
             schoolId,
-            user.id,
+            advisoryClass,
             user.role,
+            user.id,
             sanitizedQuery,
         );
     } catch (error) {
@@ -201,11 +207,18 @@ export async function searchStudents(query: string) {
 const getCachedStudentDetail = unstable_cache(
     async (
         schoolId: string | undefined,
-        userId: string,
+        advisoryClass: string | undefined,
         userRole: string,
+        userId: string,
         studentId: string,
     ) => {
-        return getStudentDetailQuery(schoolId, userId, userRole, studentId);
+        return getStudentDetailQuery(
+            schoolId,
+            advisoryClass,
+            userRole,
+            userId,
+            studentId,
+        );
     },
     ["student-detail"],
     {
@@ -218,19 +231,17 @@ export async function getStudentDetail(studentId: string) {
     try {
         const session = await requireAuth();
         const user = session.user;
+        const { schoolId, advisoryClass } = await getUserContext(user.id, user.role);
 
-        const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { schoolId: true },
-        });
-
-        // system_admin can see all schools (schoolId = undefined)
-        const schoolId = isSystemAdmin(user.role)
-            ? undefined
-            : (dbUser?.schoolId ?? undefined);
         if (!schoolId && !isSystemAdmin(user.role)) return null;
 
-        return getCachedStudentDetail(schoolId, user.id, user.role, studentId);
+        return getCachedStudentDetail(
+            schoolId,
+            advisoryClass,
+            user.role,
+            user.id,
+            studentId,
+        );
     } catch (error) {
         console.error("Get student detail error:", error);
         return null;

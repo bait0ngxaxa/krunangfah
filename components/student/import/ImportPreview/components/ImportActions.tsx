@@ -22,7 +22,7 @@ export function ImportActions({
                 type="button"
                 onClick={onCancel}
                 disabled={isLoading}
-                className="px-8 py-3 rounded-2xl text-gray-600 font-bold hover:bg-white/50 hover:text-gray-800 transition-all disabled:opacity-50 border border-transparent hover:border-gray-200"
+                className="px-8 py-3 rounded-2xl text-gray-600 font-bold hover:bg-gray-100 hover:text-gray-800 transition-all disabled:opacity-50 border-2 border-transparent hover:border-gray-200"
             >
                 ยกเลิก
             </button>
@@ -30,7 +30,7 @@ export function ImportActions({
                 type="button"
                 onClick={onSave}
                 disabled={!canSave || isLoading}
-                className="px-8 py-3 bg-linear-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 hover:-translate-y-1 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+                className="px-8 py-3 bg-[#0BD0D9] text-white rounded-2xl font-bold shadow-sm hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-1 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
             >
                 {isLoading ? (
                     <>
@@ -40,7 +40,7 @@ export function ImportActions({
                 ) : (
                     <>
                         <span>บันทึกข้อมูล</span>
-                        <span className="bg-white/20 px-2 py-0.5 rounded-lg text-sm">
+                        <span className="bg-black/10 px-2 py-0.5 rounded-lg text-sm">
                             {studentCount} คน
                         </span>
                     </>

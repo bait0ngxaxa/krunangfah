@@ -8,6 +8,7 @@ interface QuickActionCardProps {
     title: string;
     description: string;
     imageSrc?: string;
+    imageClassName?: string;
     actionButton?: React.ReactNode;
 }
 
@@ -17,6 +18,7 @@ export function QuickActionCard({
     title,
     description,
     imageSrc,
+    imageClassName,
     actionButton,
 }: QuickActionCardProps) {
     return (
@@ -32,7 +34,9 @@ export function QuickActionCard({
                         alt=""
                         width={140}
                         height={160}
-                        className="absolute -bottom-1 -left-1 sm:-left-3 w-[100px] sm:w-[110px] max-w-none object-contain origin-bottom z-10 drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+                        className={`absolute -bottom-1 -left-1 sm:-left-3 max-w-none object-contain origin-bottom z-10 drop-shadow-md group-hover:scale-105 transition-transform duration-300 ${
+                            imageClassName || "w-[100px] sm:w-[110px]"
+                        }`}
                     />
                 </div>
             )}

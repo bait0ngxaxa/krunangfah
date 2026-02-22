@@ -115,12 +115,12 @@ export function ClassListEditor({
                             (e.preventDefault(), handleAdd())
                         }
                         placeholder="เช่น ม.1/1, ป.6/2, ห้องพิเศษ..."
-                        className="flex-1 px-4 py-2.5 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 outline-none bg-white text-sm text-black placeholder:text-gray-400 transition-all"
+                        className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-[#0BD0D9] outline-none bg-white text-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                     />
                     <button
                         type="button"
                         onClick={handleAdd}
-                        className="flex items-center gap-1.5 px-4 py-2.5 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl text-sm font-semibold transition-all shadow-sm cursor-pointer"
+                        className="flex items-center gap-1.5 px-4 py-2.5 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white rounded-xl text-sm font-semibold transition-colors shadow-sm cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
                         เพิ่ม
@@ -130,8 +130,8 @@ export function ClassListEditor({
 
             {/* Bulk add */}
             {!readOnly && (
-                <div className="flex flex-col sm:flex-row gap-2 p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
-                    <div className="flex items-center gap-1.5 text-sm text-emerald-600 font-semibold shrink-0">
+                <div className="flex flex-col sm:flex-row gap-2 p-3 bg-cyan-50/60 rounded-xl border border-cyan-100">
+                    <div className="flex items-center gap-1.5 text-sm text-[#09B8C0] font-semibold shrink-0">
                         <Zap className="w-4 h-4" />
                         เพิ่มแบบหลายห้องเรียน:
                     </div>
@@ -141,7 +141,7 @@ export function ClassListEditor({
                             value={bulkGrade}
                             onChange={(e) => setBulkGrade(e.target.value)}
                             placeholder="ระดับชั้น เช่น ม.1"
-                            className="flex-1 min-w-[100px] px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
+                            className="flex-1 min-w-[100px] px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                         />
                         <input
                             type="number"
@@ -150,12 +150,12 @@ export function ClassListEditor({
                             min={1}
                             max={20}
                             placeholder="จำนวนทับ"
-                            className="w-28 px-3 py-2 border border-emerald-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-100 bg-white text-black placeholder:text-gray-400"
+                            className="w-28 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                         />
                         <button
                             type="button"
                             onClick={handleBulkAdd}
-                            className="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap"
+                            className="px-3 py-2 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap"
                         >
                             Generate
                         </button>
@@ -202,7 +202,7 @@ export function ClassListEditor({
                         .sort(([a], [b]) => a.localeCompare(b, "th"))
                         .map(([grade, items]) => (
                             <div key={grade}>
-                                <p className="text-xs font-semibold text-emerald-600 mb-1">
+                                <p className="text-xs font-semibold text-[#09B8C0] mb-1">
                                     {grade}{" "}
                                     <span className="text-gray-400 font-normal">
                                         ({items.length} ห้อง)
@@ -212,7 +212,7 @@ export function ClassListEditor({
                                     {items.map((c) => (
                                         <span
                                             key={c.id}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-teal-700 rounded-full text-sm font-medium"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border-2 border-gray-100 text-gray-700 rounded-full text-sm font-bold"
                                         >
                                             {c.name}
                                             {!readOnly && (

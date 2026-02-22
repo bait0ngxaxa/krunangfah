@@ -1,6 +1,7 @@
 import { CheckCircle2, Lock } from "lucide-react";
 import { getActivityName } from "./utils";
 import { WorksheetPreviewButton } from "../WorksheetPreviewButton";
+import { ScheduleDateCell } from "./ScheduleDateCell";
 import type { ActivityProgress } from "./types";
 
 interface ActivityRowProps {
@@ -28,14 +29,6 @@ function StatusBadge({ status }: { status: string }) {
             {label}
         </span>
     );
-}
-
-function formatScheduledDate(date: Date): string {
-    return new Date(date).toLocaleDateString("th-TH", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
 }
 
 export function ActivityRow({ progress, index }: ActivityRowProps) {
@@ -98,15 +91,11 @@ export function ActivityRow({ progress, index }: ActivityRowProps) {
                     <span className="font-medium md:hidden text-gray-500 text-sm">
                         วันที่:{" "}
                     </span>
-                    {progress.scheduledDate ? (
-                        <span className="text-gray-700 font-medium bg-gray-50 px-2 py-1 rounded-lg text-sm">
-                            {formatScheduledDate(progress.scheduledDate)}
-                        </span>
-                    ) : (
-                        <span className="text-gray-400 italic text-sm">
-                            ยังไม่ได้นัดหมาย
-                        </span>
-                    )}
+                    <ScheduleDateCell
+                        activityProgressId={progress.id}
+                        currentDate={progress.scheduledDate}
+                        isLocked={isLocked}
+                    />
                 </div>
             </td>
 

@@ -135,6 +135,7 @@ async function DashboardContent({ session }: { session: Session }) {
                 <DashboardActionList
                     userRole={userRole}
                     studentCount={studentCount}
+                    isPrimary={session.user.isPrimary}
                 />
             </div>
         );
@@ -208,6 +209,7 @@ async function DashboardContent({ session }: { session: Session }) {
                 <DashboardActionList
                     userRole={userRole}
                     studentCount={studentCount}
+                    isPrimary={session.user.isPrimary}
                 />
             </div>
         </>

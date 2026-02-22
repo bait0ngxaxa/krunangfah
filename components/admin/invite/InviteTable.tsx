@@ -11,25 +11,27 @@ interface InviteTableProps {
 
 export function InviteTable({ invites, onRevoked }: InviteTableProps) {
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 md:p-8 border border-emerald-100">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-emerald-500" />
-                <span className="bg-linear-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
+        <div className="bg-white rounded-3xl p-6 md:p-8 border-2 border-gray-100 shadow-sm relative overflow-hidden group">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 relative z-10">
+                <ClipboardList className="w-5 h-5 text-[#0BD0D9] stroke-[2.5]" />
+                <span className="text-gray-900 font-extrabold">
                     รายการคำเชิญ ({invites.length})
                 </span>
             </h2>
 
             {invites.length === 0 ? (
-                <div className="p-12 text-center bg-white/50 rounded-xl border border-emerald-50">
-                    <p className="text-gray-400 text-lg">ยังไม่มีคำเชิญ</p>
-                    <p className="text-gray-300 text-sm mt-1">
+                <div className="p-12 text-center bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200 relative z-10">
+                    <p className="text-gray-500 font-bold text-lg">
+                        ยังไม่มีคำเชิญ
+                    </p>
+                    <p className="text-gray-400 text-sm mt-1 font-medium">
                         สร้างคำเชิญด้านบนเพื่อเชิญ School Admin
                     </p>
                 </div>
             ) : (
-                <div className="overflow-x-auto rounded-xl border border-emerald-100">
+                <div className="overflow-x-auto rounded-xl border border-gray-200 relative z-10">
                     <table className="w-full">
-                        <thead className="bg-emerald-50/80">
+                        <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
                                     อีเมล
@@ -51,7 +53,7 @@ export function InviteTable({ invites, onRevoked }: InviteTableProps) {
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white/50 divide-y divide-emerald-50">
+                        <tbody className="bg-white divide-y divide-gray-100">
                             {invites.map((invite) => (
                                 <InviteRow
                                     key={invite.id}

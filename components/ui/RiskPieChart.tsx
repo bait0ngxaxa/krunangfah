@@ -113,11 +113,7 @@ function RiskPieChartComponent({
 
     if (chartData.length === 0) {
         return (
-            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 border border-emerald-200 ring-1 ring-emerald-50 p-8 flex flex-col items-center justify-center min-h-[300px] overflow-hidden">
-                {/* Decorations */}
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-green-300/30 rounded-full blur-xl pointer-events-none" />
-                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
-
+            <div className="relative bg-white rounded-2xl shadow-sm border-2 border-emerald-100 p-8 flex flex-col items-center justify-center min-h-[300px] overflow-hidden">
                 {title && (
                     <h2 className="relative text-lg sm:text-xl font-bold text-gray-800 mb-4 text-center">
                         {title}
@@ -138,16 +134,11 @@ function RiskPieChartComponent({
 
     return (
         <div
-            className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 border border-emerald-200 ring-1 ring-emerald-50 p-4 sm:p-6 pb-6 sm:pb-8 overflow-hidden"
+            className="relative bg-white rounded-2xl shadow-sm border-2 border-emerald-100 p-4 sm:p-6 pb-6 sm:pb-8 overflow-hidden"
             style={{ contain: "layout style paint" }}
         >
-            {/* Corner decoration */}
-            <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-green-300/30 rounded-full blur-xl pointer-events-none" />
-            {/* Shimmer */}
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
-
             {title && (
-                <h2 className="relative text-lg sm:text-xl font-bold bg-linear-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
+                <h2 className="relative text-lg sm:text-xl font-bold text-emerald-600 mb-4 sm:mb-6 text-center">
                     {title}
                 </h2>
             )}

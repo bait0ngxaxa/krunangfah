@@ -14,10 +14,9 @@ export function ToolsIntroTab() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-emerald-200 shadow-lg shadow-emerald-100/50 relative overflow-hidden">
-                <div className="absolute inset-0 bg-linear-to-r from-emerald-50/50 to-transparent opacity-50 pointer-events-none" />
+            <div className="bg-white rounded-2xl p-6 border-2 border-emerald-100 shadow-sm relative overflow-hidden">
                 <div className="relative z-10">
-                    <h2 className="text-2xl font-bold bg-linear-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent mb-2 flex items-center gap-2 drop-shadow-sm">
+                    <h2 className="text-2xl font-bold text-emerald-600 mb-2 flex items-center gap-2 drop-shadow-sm">
                         <Package className="w-6 h-6 text-emerald-500" />
                         เครื่องมือใน Healthy Emotion Box
                     </h2>
@@ -33,16 +32,12 @@ export function ToolsIntroTab() {
                 {HEALTHY_EMOTION_TOOLS.map((tool) => (
                     <div
                         key={tool.id}
-                        className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl hover:shadow-emerald-100/50 transition-all duration-300 p-6 border ${BORDER_STYLES[tool.color]} hover:-translate-y-1 relative group overflow-hidden flex flex-col`}
+                        className={`bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 p-6 border-2 ${BORDER_STYLES[tool.color]} hover:-translate-y-1 relative group overflow-hidden flex flex-col`}
                     >
-                        <div
-                            className={`absolute top-0 right-0 w-24 h-24 bg-linear-to-bl ${COLOR_STYLES[tool.color]} opacity-10 rounded-bl-[100px] pointer-events-none transition-opacity group-hover:opacity-20`}
-                        />
-
                         {/* Tool Header */}
                         <div className="flex flex-col items-center mb-4 relative z-10">
                             <div
-                                className={`mb-4 p-5 rounded-2xl bg-linear-to-br ${COLOR_STYLES[tool.color]} shadow-sm border border-white/50 group-hover:scale-110 transition-transform duration-300`}
+                                className={`mb-4 p-5 rounded-2xl ${COLOR_STYLES[tool.color]} shadow-sm group-hover:scale-110 transition-transform duration-300`}
                             >
                                 <tool.icon className="w-10 h-10 text-white" />
                             </div>

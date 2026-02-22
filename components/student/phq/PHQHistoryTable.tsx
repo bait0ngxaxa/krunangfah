@@ -55,9 +55,7 @@ const riskConfig: Record<
 export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
     if (results.length === 0) {
         return (
-            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-8 border border-emerald-200 ring-1 ring-emerald-50 text-center overflow-hidden">
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-teal-300/30 rounded-full blur-xl pointer-events-none" />
-                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
+            <div className="relative bg-white rounded-2xl shadow-sm p-8 border-2 border-gray-100 text-center overflow-hidden">
                 <p className="relative text-gray-500">
                     ยังไม่มีประวัติการคัดกรอง
                 </p>
@@ -66,16 +64,10 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
     }
 
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 overflow-hidden group hover:shadow-xl transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-emerald-300 via-teal-300 to-cyan-300" />
-            {/* Corner decoration */}
-            <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-teal-300/35 rounded-full blur-xl pointer-events-none" />
-            {/* Shimmer */}
-            <div className="absolute inset-x-0 top-[6px] h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
-
+        <div className="relative bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 overflow-hidden group transition-all duration-300">
             <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-2">
-                <ClipboardList className="w-6 h-6 text-emerald-500" />
-                <span className="bg-linear-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
+                <ClipboardList className="w-6 h-6 text-[#0BD0D9]" />
+                <span className="text-gray-800">
                     ประวัติการคัดกรองสุขภาพจิต
                 </span>
             </h2>
@@ -84,7 +76,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
             <div className="hidden md:block overflow-x-auto rounded-xl border border-emerald-100">
                 <table className="w-full">
                     <thead>
-                        <tr className="bg-emerald-50/80 border-b border-emerald-200">
+                        <tr className="bg-gray-50 border-b border-gray-200">
                             <th className="text-left py-4 px-6 font-bold text-gray-700">
                                 ครั้งที่
                             </th>
@@ -182,7 +174,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                     return (
                         <div
                             key={result.id}
-                            className="p-5 bg-white rounded-2xl border border-emerald-100 shadow-sm hover:shadow-md transition-all"
+                            className="p-5 bg-white rounded-2xl border-2 border-gray-100 shadow-sm hover:shadow-md transition-all"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div>

@@ -36,21 +36,18 @@ export function WorkspaceHeader({
             <div className="text-center mb-10">
                 <div className="relative inline-block mb-6">
                     <div
-                        className={`absolute inset-0 ${config.glowBg} rounded-full blur-xl opacity-50 animate-pulse-slow`}
-                    />
-                    <div
                         className={`w-24 h-24 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-4xl shadow-lg relative z-10 transition-transform hover:rotate-6 hover:scale-110`}
                     >
                         <BookOpen className="w-10 h-10" />
                     </div>
                 </div>
 
-                <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
                     {activityTitle}
                 </h1>
 
                 <div
-                    className={`inline-flex items-center gap-2 px-4 py-2 bg-white/50 rounded-full border ${config.borderColor} shadow-sm backdrop-blur-sm`}
+                    className={`inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border-2 ${config.borderColor} shadow-sm`}
                 >
                     <span className="font-bold text-gray-700">
                         {studentName}

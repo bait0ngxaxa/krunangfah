@@ -41,14 +41,12 @@ export function ProgressIndicator({
     }
 
     return (
-        <div className="mb-10 bg-white/60 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-emerald-200 shadow-lg shadow-emerald-100/30 ring-1 ring-emerald-50">
+        <div className="mb-10 bg-white rounded-2xl p-6 sm:p-8 border-2 border-gray-100 shadow-sm">
             <h3 className="text-xl font-bold mb-8 sm:mb-10 flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-200">
+                <div className="w-10 h-10 rounded-xl bg-[#0BD0D9] flex items-center justify-center text-white shadow-sm shadow-cyan-100">
                     <BarChart3 className="w-6 h-6" />
                 </div>
-                <span className="bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                    ความคืบหน้า
-                </span>
+                <span className="text-gray-900">ความคืบหน้า</span>
             </h3>
 
             {/* Desktop: Horizontal Timeline (md+) */}
@@ -58,7 +56,7 @@ export function ProgressIndicator({
 
                 {/* Progress Line */}
                 <div
-                    className="absolute top-4 left-0 h-1.5 bg-linear-to-r from-green-400 to-emerald-500 rounded-full -z-10 transition-all duration-1000 ease-out shadow-sm"
+                    className="absolute top-4 left-0 h-1.5 bg-[#34D399] rounded-full -z-10 transition-all duration-1000 ease-out shadow-sm"
                     style={{ width: `${progressPercentage}%` }}
                 />
 
@@ -76,7 +74,7 @@ export function ProgressIndicator({
                             "bg-white border-2 border-gray-200 text-gray-300";
                         if (isCompleted) {
                             circleClass =
-                                "bg-linear-to-br from-green-400 to-emerald-500 border-transparent text-white shadow-lg shadow-green-200 scale-110";
+                                "bg-[#34D399] border-transparent text-white shadow-sm scale-110";
                         } else if (isCurrent) {
                             const activeStyle = getActiveCircleStyle(riskLevel);
                             circleClass = `bg-white border-4 ${activeStyle} shadow-lg ring-4 scale-110`;
@@ -149,7 +147,7 @@ export function ProgressIndicator({
 
                 {/* Vertical Progress Line */}
                 <div
-                    className="absolute top-0 left-[19px] w-1 bg-linear-to-b from-green-400 to-emerald-500 rounded-full transition-all duration-1000 ease-out"
+                    className="absolute top-0 left-[19px] w-1 bg-[#34D399] rounded-full transition-all duration-1000 ease-out"
                     style={{ height: `${progressPercentage}%` }}
                 />
 
@@ -167,7 +165,7 @@ export function ProgressIndicator({
                             "bg-white border-2 border-gray-200 text-gray-300";
                         if (isCompleted) {
                             circleClass =
-                                "bg-linear-to-br from-green-400 to-emerald-500 border-transparent text-white shadow-lg shadow-green-200";
+                                "bg-[#34D399] border-transparent text-white shadow-sm";
                         } else if (isCurrent) {
                             const activeStyle = getActiveCircleStyle(riskLevel);
                             circleClass = `bg-white border-3 ${activeStyle} shadow-md ring-3`;

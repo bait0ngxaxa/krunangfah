@@ -21,6 +21,12 @@ export const updateTeacherNotesSchema = z.object({
     notes: z.string().min(1, "กรุณากรอกบันทึก"),
 });
 
+export const updateScheduledDateSchema = z.object({
+    activityProgressId: z.string().cuid("Invalid activity progress ID"),
+    scheduledDate: z.string().refine((s) => !isNaN(Date.parse(s)), "วันที่ไม่ถูกต้อง"),
+});
+
 export type SubmitAssessmentInput = z.infer<typeof submitAssessmentSchema>;
 export type ScheduleActivityInput = z.infer<typeof scheduleActivitySchema>;
 export type UpdateTeacherNotesInput = z.infer<typeof updateTeacherNotesSchema>;
+export type UpdateScheduledDateInput = z.infer<typeof updateScheduledDateSchema>;

@@ -36,7 +36,7 @@ export function SecuritySettingsForm() {
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-linear-to-r from-emerald-400 to-teal-500 text-white text-lg font-bold py-3.5 px-4 rounded-xl hover:from-emerald-500 hover:to-teal-600 focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300"
+                className="w-full bg-[#0BD0D9] hover:bg-[#09B8C0] text-white text-lg font-bold py-3.5 px-4 rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-sm"
             >
                 {isLoading ? "กำลังเปลี่ยนรหัสผ่าน..." : "เปลี่ยนรหัสผ่าน"}
             </button>

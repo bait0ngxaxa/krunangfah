@@ -61,10 +61,10 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
     }
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 md:p-8 border border-emerald-100">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Plus className="w-5 h-5 text-emerald-500" />
-                <span className="bg-linear-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
+        <div className="bg-white rounded-3xl p-6 md:p-8 border-2 border-gray-100 shadow-sm relative overflow-hidden group">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 relative z-10">
+                <Plus className="w-5 h-5 text-[#0BD0D9] stroke-3" />
+                <span className="text-gray-900 font-extrabold">
                     สร้าง Invite Link
                 </span>
             </h2>
@@ -79,7 +79,7 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
                             {...register("email")}
                             type="email"
                             placeholder="example@email.com"
-                            className="w-full px-4 py-3 border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black placeholder:text-gray-400"
+                            className="w-full px-4 py-3 border-2 border-gray-200 hover:border-gray-300 focus:border-[#0BD0D9] rounded-xl outline-none text-gray-900 placeholder:text-gray-400 transition-colors"
                             disabled={isSubmitting}
                         />
                         {errors.email && (
@@ -91,7 +91,7 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
                     <div className="sm:w-48">
                         <select
                             {...register("role")}
-                            className="w-full px-4 py-3 border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 bg-white/50 backdrop-blur-sm transition-all outline-none text-black cursor-pointer"
+                            className="w-full px-4 py-3 border-2 border-gray-200 hover:border-gray-300 focus:border-[#0BD0D9] rounded-xl outline-none text-gray-900 cursor-pointer transition-colors"
                             disabled={isSubmitting}
                         >
                             <option value="school_admin">แอดมินโรงเรียน</option>
@@ -101,7 +101,7 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="px-6 py-3 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold transition-all duration-300 shadow-md shadow-emerald-200 hover:shadow-lg hover:shadow-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+                        className="px-6 py-3 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer shadow-sm"
                     >
                         {isSubmitting ? "กำลังสร้าง..." : "สร้าง Link"}
                     </button>

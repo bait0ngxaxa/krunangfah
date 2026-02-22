@@ -140,7 +140,6 @@ export async function createTeacherProfile(
         // Revalidate dashboard data cache + page
         revalidateTag("dashboard", "default");
         revalidatePath("/dashboard");
-        revalidatePath("/");
 
         return {
             success: true,

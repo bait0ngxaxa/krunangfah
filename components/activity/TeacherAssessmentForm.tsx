@@ -81,32 +81,27 @@ export function TeacherAssessmentForm({
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-10 px-4 bg-pattern-grid">
+        <div className="min-h-screen bg-slate-50 py-10 px-4">
             <div className="max-w-4xl mx-auto">
                 <BackButton
                     href={`/students/${studentId}`}
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
-                <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl p-8 md:p-12 border border-emerald-200 relative overflow-hidden">
-                    <div
-                        className={`absolute top-0 left-0 w-full h-3 bg-linear-to-r ${config.gradient}`}
-                    />
-
+                <div className="bg-white rounded-3xl shadow-sm p-8 md:p-12 border-2 border-gray-100 relative overflow-hidden">
                     {/* Header */}
                     <div className="text-center mb-12">
                         <div className="relative inline-block mb-6">
-                            <div className="absolute inset-0 bg-white/50 rounded-full blur-2xl animate-pulse-slow" />
                             <div
                                 className={`w-24 h-24 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-4xl shadow-xl relative z-10 transition-transform hover:rotate-6 hover:scale-110`}
                             >
                                 <ClipboardCheck className="w-12 h-12" />
                             </div>
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
                             แบบประเมินจากใบงาน
                         </h1>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 rounded-full border border-emerald-100 shadow-sm backdrop-blur-sm">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full border-2 border-emerald-100 shadow-sm">
                             <span className="font-bold text-gray-700">
                                 {activityTitle}
                             </span>
@@ -133,7 +128,7 @@ export function TeacherAssessmentForm({
                         <div className="grid md:grid-cols-2 gap-8">
                             {/* Internal Problems */}
                             <div>
-                                <div className="mb-4 bg-white/50 p-4 rounded-2xl backdrop-blur-sm border border-white/50">
+                                <div className="mb-4 bg-white p-4 rounded-xl border-2 border-gray-100">
                                     <div className="flex items-center gap-2 mb-2">
                                         <div
                                             className={`w-3 h-3 rounded-full ${assessmentColors.button}`}
@@ -164,7 +159,7 @@ export function TeacherAssessmentForm({
 
                             {/* External Problems */}
                             <div>
-                                <div className="mb-4 bg-white/50 p-4 rounded-2xl backdrop-blur-sm border border-white/50">
+                                <div className="mb-4 bg-white p-4 rounded-xl border-2 border-gray-100">
                                     <div className="flex items-center gap-2 mb-2">
                                         <div
                                             className={`w-3 h-3 rounded-full ${assessmentColors.button}`}
@@ -195,7 +190,7 @@ export function TeacherAssessmentForm({
                     </div>
 
                     {/* Part 2: Problem Type Selection */}
-                    <div className="bg-gray-50/80 rounded-3xl p-8 md:p-10 mb-10 border border-gray-100 shadow-sm text-center">
+                    <div className="bg-gray-50 rounded-3xl p-8 md:p-10 mb-10 border-2 border-gray-100 shadow-sm text-center">
                         <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-8 leading-relaxed">
                             จากการดูใบงานแล้ว คุณครูคิดว่าเด็กคนนี้
                             <br className="hidden md:block" />
@@ -219,9 +214,6 @@ export function TeacherAssessmentForm({
                                     <Brain className="w-8 h-8" />
                                     <span>ปัญหาภายใน</span>
                                 </div>
-                                {problemType === "internal" && (
-                                    <div className="absolute inset-0 bg-white/20 animate-pulse-slow" />
-                                )}
                             </button>
 
                             <button
@@ -236,9 +228,6 @@ export function TeacherAssessmentForm({
                                     <Globe className="w-8 h-8" />
                                     <span>ปัญหาภายนอก</span>
                                 </div>
-                                {problemType === "external" && (
-                                    <div className="absolute inset-0 bg-white/20 animate-pulse-slow" />
-                                )}
                             </button>
                         </div>
                     </div>
@@ -247,9 +236,9 @@ export function TeacherAssessmentForm({
                     <button
                         onClick={handleSubmit}
                         disabled={!canSubmit || submitting}
-                        className={`w-full py-5 rounded-2xl font-bold text-xl transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl hover:shadow-emerald-200/50 hover:-translate-y-1 active:scale-[0.98] ${
+                        className={`w-full py-5 rounded-2xl font-bold text-xl transition-all flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-[0.98] ${
                             canSubmit
-                                ? `bg-linear-to-r ${config.gradient} text-white`
+                                ? `bg-[#0BD0D9] text-white hover:bg-[#09B8C0] shadow-sm`
                                 : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none border border-gray-200"
                         }`}
                     >

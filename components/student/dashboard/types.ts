@@ -1,4 +1,5 @@
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import type { ReferredOutStudent } from "@/types/referral.types";
 
 export interface Student {
     id: string;
@@ -11,6 +12,11 @@ export interface Student {
         totalScore: number;
         riskLevel: string;
     }[];
+    referral?: {
+        id: string;
+        fromTeacherUserId: string;
+        toTeacherUserId: string;
+    } | null;
 }
 
 export interface SchoolOption {
@@ -22,6 +28,7 @@ export interface StudentDashboardProps {
     students: Student[];
     schools?: SchoolOption[];
     userRole?: string;
+    referredOutStudents?: ReferredOutStudent[];
 }
 
 export interface PieChartDataItem {

@@ -16,8 +16,8 @@ export function HospitalReferralButton() {
                 shadow-md hover:shadow-xl active:scale-95 hover:-translate-y-0.5 border border-white/20 relative overflow-hidden group
                 ${
                     isReferred
-                        ? "bg-linear-to-r from-emerald-400 to-green-500 text-white shadow-green-200 hover:shadow-green-300"
-                        : "bg-linear-to-r from-teal-400 to-emerald-500 text-white shadow-emerald-200/50 hover:shadow-emerald-300/50"
+                        ? "bg-[#34D399] text-white shadow-sm hover:shadow-md hover:bg-emerald-400"
+                        : "bg-[#0BD0D9] text-white shadow-sm hover:shadow-md hover:bg-[#09B8C0]"
                 }
             `}
         >

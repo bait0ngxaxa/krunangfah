@@ -16,11 +16,13 @@ import {
 interface DashboardActionListProps {
     userRole: UserRole;
     studentCount: number;
+    isPrimary?: boolean;
 }
 
 export function DashboardActionList({
     userRole,
     studentCount,
+    isPrimary,
 }: DashboardActionListProps) {
     const isSystemAdmin = userRole === "system_admin";
     const isSchoolAdmin = userRole === "school_admin";
@@ -43,6 +45,7 @@ export function DashboardActionList({
                         title="นำเข้าข้อมูลนักเรียน"
                         description="" // Handled by button
                         imageSrc="/image/dashboard/import.png"
+                        imageClassName="w-[85px] sm:w-[95px]"
                         actionButton={
                             <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0BD0D9] text-white text-[11px] sm:text-xs font-bold rounded-xl shadow-sm hover:brightness-95 transition-all">
                                 <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -72,7 +75,7 @@ export function DashboardActionList({
             />
 
             {/* Admin & Management Action Grid */}
-            {(isSystemAdmin || isSchoolAdmin) && (
+            {(isSystemAdmin || (isSchoolAdmin && isPrimary)) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                     {/* System Admin: Invite Links */}
                     {isSystemAdmin && (
@@ -84,8 +87,8 @@ export function DashboardActionList({
                         />
                     )}
 
-                    {/* School Admin: Add Teacher */}
-                    {isSchoolAdmin && (
+                    {/* School Admin (Primary): Add Teacher */}
+                    {isSchoolAdmin && isPrimary && (
                         <QuickActionCard
                             href="/teachers/add"
                             icon={UserPlus}
@@ -94,8 +97,8 @@ export function DashboardActionList({
                         />
                     )}
 
-                    {/* School Admin: Manage Classes */}
-                    {isSchoolAdmin && (
+                    {/* School Admin (Primary): Manage Classes */}
+                    {isSchoolAdmin && isPrimary && (
                         <QuickActionCard
                             href="/school/classes"
                             icon={LayoutGrid}

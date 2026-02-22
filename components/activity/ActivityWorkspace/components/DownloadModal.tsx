@@ -26,8 +26,8 @@ export function DownloadModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full p-8 relative border border-white/50 animate-zoom-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in">
+            <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8 relative border-2 border-gray-100 animate-zoom-in">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
@@ -39,9 +39,7 @@ export function DownloadModal({
                 {/* Header */}
                 <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
                     <ClipboardList className="w-6 h-6 text-gray-700" />
-                    <span className="bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                        เลือกใบงาน
-                    </span>
+                    <span className="text-gray-900">เลือกใบงาน</span>
                 </h3>
                 <p className="text-sm text-gray-600 mb-8 font-medium">
                     กิจกรรมที่ {activityNumber}
@@ -53,7 +51,7 @@ export function DownloadModal({
                         <button
                             key={url}
                             onClick={() => handleDownload(url)}
-                            className="w-full py-4 px-6 bg-linear-to-r from-blue-500 via-cyan-500 to-teal-400 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-cyan-200 hover:-translate-y-0.5 transition-all shadow-md flex items-center justify-center gap-3 group"
+                            className="w-full py-4 px-6 bg-[#0BD0D9] text-white rounded-xl font-bold hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-0.5 transition-all shadow-sm flex items-center justify-center gap-3 group"
                         >
                             <FileText className="w-6 h-6 group-hover:scale-110 transition-transform" />
                             <span className="text-lg">

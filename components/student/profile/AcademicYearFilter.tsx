@@ -38,12 +38,7 @@ export function AcademicYearFilter({
     };
 
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 border border-emerald-200 ring-1 ring-emerald-50 p-4 overflow-hidden">
-            {/* Corner decoration */}
-            <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-emerald-200/20 to-teal-300/15 rounded-full blur-xl pointer-events-none" />
-            {/* Shimmer */}
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
-
+        <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-4 overflow-hidden">
             <div className="relative flex items-center gap-4">
                 <label
                     htmlFor="year-filter"

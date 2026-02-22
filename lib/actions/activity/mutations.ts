@@ -2,6 +2,7 @@
 
 import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
 import { ActivityStatus } from "@prisma/client";
 import { ACTIVITY_INDICES } from "./constants";
 import type { SubmitAssessmentData, ScheduleActivityData } from "./types";
@@ -9,6 +10,7 @@ import {
     submitAssessmentSchema,
     scheduleActivitySchema,
     updateTeacherNotesSchema,
+    updateScheduledDateSchema,
 } from "@/lib/validations/activity.validation";
 
 /**
@@ -318,5 +320,63 @@ export async function updateTeacherNotes(
     } catch (error) {
         console.error("Error updating teacher notes:", error);
         return { success: false, error: "เกิดข้อผิดพลาดในการแก้ไข" };
+    }
+}
+
+/**
+ * Update scheduled date for an activity (lightweight — no teacherNotes required)
+ */
+export async function updateScheduledDate(
+    activityProgressId: string,
+    scheduledDate: string,
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const validated = updateScheduledDateSchema.parse({
+            activityProgressId,
+            scheduledDate,
+        });
+
+        const session = await requireAuth();
+
+        const activityProgress = await prisma.activityProgress.findUnique({
+            where: { id: validated.activityProgressId },
+            select: { studentId: true, status: true },
+        });
+
+        if (!activityProgress) {
+            return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+        }
+
+        if (activityProgress.status === "locked") {
+            return {
+                success: false,
+                error: "ไม่สามารถนัดหมายกิจกรรมที่ยังล็อคอยู่",
+            };
+        }
+
+        const { allowed, error } = await verifyActivityAccess(
+            activityProgress.studentId,
+            session.user.id,
+            session.user.role,
+        );
+
+        if (!allowed) {
+            return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        await prisma.activityProgress.update({
+            where: { id: validated.activityProgressId },
+            data: {
+                scheduledDate: new Date(validated.scheduledDate),
+                teacherId: session.user.id,
+            },
+        });
+
+        revalidateTag("student-detail", "default");
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating scheduled date:", error);
+        return { success: false, error: "เกิดข้อผิดพลาดในการบันทึกวันนัดหมาย" };
     }
 }

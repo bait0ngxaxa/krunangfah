@@ -7,7 +7,7 @@ export function SubmitButton({
         <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3.5 px-4 bg-linear-to-r from-emerald-400 to-teal-500 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md shadow-emerald-200 hover:shadow-lg hover:shadow-emerald-300 transform hover:-translate-y-0.5"
+            className="w-full py-3.5 px-4 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
         >
             {isLoading ? (
                 <span className="flex items-center justify-center gap-2">

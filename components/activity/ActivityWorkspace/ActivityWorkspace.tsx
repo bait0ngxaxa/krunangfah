@@ -74,13 +74,7 @@ export function ActivityWorkspace({
                 onClose={() => setPreviewFile(null)}
             />
 
-            <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-8 px-4 relative overflow-hidden">
-                {/* Decorative Background Elements */}
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                    <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
-                    <div className="absolute bottom-10 left-10 w-64 h-64 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
-                </div>
-
+            <div className="min-h-screen bg-slate-50 py-8 px-4 relative overflow-hidden">
                 <div className="max-w-4xl mx-auto relative z-10">
                     <WorkspaceHeader
                         studentId={studentId}
@@ -89,11 +83,7 @@ export function ActivityWorkspace({
                         config={config}
                     />
 
-                    <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 relative overflow-hidden animate-fade-in-up">
-                        <div
-                            className={`absolute top-0 left-0 w-full h-1.5 bg-linear-to-r ${config.gradient}`}
-                        />
-
+                    <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden animate-fade-in-up">
                         {/* Action Buttons */}
                         <ActionButtons
                             studentId={studentId}
@@ -164,7 +154,7 @@ export function ActivityWorkspace({
                                 </p>
                                 <button
                                     onClick={handleConfirmComplete}
-                                    className={`px-8 py-3 bg-linear-to-r ${config.gradient} text-white rounded-xl font-bold text-lg hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md flex items-center gap-2`}
+                                    className={`px-8 py-3 bg-[#0BD0D9] text-white rounded-xl font-bold text-lg hover:shadow-md hover:-translate-y-0.5 hover:bg-[#09B8C0] transition-all flex items-center gap-2`}
                                 >
                                     ยืนยันจบกิจกรรม
                                     <ArrowRight className="w-5 h-5" />
@@ -198,7 +188,7 @@ export function ActivityWorkspace({
                         <div className="pt-6 border-t border-emerald-100 mt-8">
                             <Link
                                 href={`/students/${studentId}/help/conversation`}
-                                className="w-full py-4 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all text-center text-lg shadow-md flex items-center justify-center gap-2 group"
+                                className="w-full py-4 bg-[#34D399] text-white rounded-xl font-bold hover:shadow-md hover:-translate-y-0.5 hover:bg-emerald-400 transition-all text-center text-lg flex items-center justify-center gap-2 group"
                             >
                                 <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
                                 หลักการพูดคุย

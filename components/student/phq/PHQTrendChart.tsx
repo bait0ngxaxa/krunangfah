@@ -112,14 +112,10 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
     const lineColor = getLineColor(latestRisk);
 
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-emerald-300 via-teal-300 to-cyan-300" />
-
+        <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden group transition-all duration-300">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <TrendingUp className="w-6 h-6 text-emerald-500" />
-                <span className="bg-linear-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
-                    กราฟแนวโน้มคะแนน PHQ-A
-                </span>
+                <TrendingUp className="w-6 h-6 text-[#0BD0D9]" />
+                <span className="text-gray-800">กราฟแนวโน้มคะแนน PHQ-A</span>
             </h2>
 
             <div className="w-full h-96">

@@ -102,12 +102,12 @@ export function EncouragementPage({
 
     return (
         <div
-            className={`min-h-screen ${config.bgLight} flex items-center justify-center py-12 px-4 bg-pattern-grid`}
+            className={`min-h-screen ${config.bgLight} flex items-center justify-center py-12 px-4`}
         >
             <div className="max-w-2xl mx-auto text-center w-full">
                 {/* Decorative icon */}
                 <div
-                    className={`w-28 h-28 ${config.bg} rounded-full flex items-center justify-center text-white mx-auto mb-10 animate-pulse shadow-xl shadow-emerald-100`}
+                    className={`w-28 h-28 ${config.bg} rounded-full flex items-center justify-center text-white mx-auto mb-10 shadow-sm`}
                 >
                     <Heart className="w-14 h-14" />
                 </div>
@@ -130,7 +130,7 @@ export function EncouragementPage({
 
                 {/* Tips Section */}
                 <div
-                    className={`bg-white/70 backdrop-blur-xl rounded-3xl p-8 md:p-10 shadow-2xl border border-emerald-200 mb-12 transition-all duration-1000 mx-4 transform hover:scale-[1.02] ${
+                    className={`bg-white rounded-3xl p-8 md:p-10 shadow-sm border-2 border-emerald-100 mb-12 transition-all duration-1000 mx-4 transform hover:scale-[1.02] ${
                         showTips
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"
@@ -140,7 +140,7 @@ export function EncouragementPage({
                         <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
                             <Sparkles className="w-5 h-5 text-amber-500" />
                         </div>
-                        <span className="text-xl font-bold bg-linear-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                        <span className="text-xl font-bold text-amber-600">
                             คำแนะนำสำหรับคุณครู
                         </span>
                         <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
@@ -179,13 +179,12 @@ export function EncouragementPage({
                 {/* Continue Button */}
                 <button
                     onClick={handleContinue}
-                    className={`inline-flex items-center gap-3 px-10 py-5 bg-linear-to-r ${config.gradient} text-white rounded-full font-bold text-xl shadow-lg hover:shadow-xl hover:shadow-emerald-200/50 hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
+                    className={`inline-flex items-center gap-3 px-10 py-5 bg-[#0BD0D9] text-white rounded-full font-bold text-xl shadow-sm hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
                         showButton
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"
                     }`}
                 >
-                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                     <span className="relative">ถัดไป</span>
                     <ArrowRight className="w-6 h-6 relative group-hover:translate-x-1 transition-transform" />
                 </button>

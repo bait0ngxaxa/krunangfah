@@ -19,6 +19,11 @@ interface Student {
         totalScore: number;
         riskLevel: string;
     }[];
+    referral?: {
+        id: string;
+        fromTeacherUserId: string;
+        toTeacherUserId: string;
+    } | null;
 }
 
 interface RiskGroupSectionProps {
@@ -85,7 +90,7 @@ export function RiskGroupSection({
                     </h3>
                 </div>
                 <span
-                    className={`${config.countBg} ${config.countText} text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm`}
+                    className={`${config.countBg} ${config.countText} text-xs font-bold px-3 py-1 rounded-full`}
                 >
                     {students.length} คน
                 </span>
@@ -129,6 +134,11 @@ export function RiskGroupSection({
                                     >
                                         {student.firstName} {student.lastName}
                                     </span>
+                                    {student.referral && (
+                                        <span className="bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">
+                                            ส่งต่อ
+                                        </span>
+                                    )}
                                 </div>
 
                                 {/* Action button */}
@@ -160,7 +170,7 @@ export function RiskGroupSection({
                 {/* Scroll fade indicator */}
                 {isScrollable && showFade && (
                     <div
-                        className={`absolute bottom-0 left-0 right-0 h-12 bg-linear-to-b ${config.fadeTo} pointer-events-none`}
+                        className={`absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-white to-transparent pointer-events-none`}
                         aria-hidden="true"
                     />
                 )}

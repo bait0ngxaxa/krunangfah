@@ -32,8 +32,8 @@ export default async function Home() {
             {/* ─── Top Green Navbar ─── */}
             <NavbarGreenBar>
                 {/* หน้าหลัก */}
-                <div className="ml-auto pr-6 sm:pr-12 lg:pr-[131px] flex items-center">
-                    <span className="text-white font-medium text-xl sm:text-2xl lg:text-[30px]">
+                <div className="ml-auto pr-4 sm:pr-12 lg:pr-[131px] flex items-center shrink-0">
+                    <span className="text-white font-medium text-lg sm:text-2xl lg:text-[30px] whitespace-nowrap">
                         หน้าหลัก
                     </span>
                 </div>

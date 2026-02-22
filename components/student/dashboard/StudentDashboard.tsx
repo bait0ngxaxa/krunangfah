@@ -9,6 +9,7 @@ import {
     EmptyPrompt,
     ScreeningSummary,
 } from "./components";
+import { ReferredOutSection } from "../referral/ReferredOutSection";
 import type { StudentDashboardProps } from "./types";
 
 // Dynamic import for chart component (ssr: false to prevent hydration warnings)
@@ -20,8 +21,9 @@ const RiskPieChart = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/50 p-6 border border-emerald-200 relative overflow-hidden ring-1 ring-emerald-50 flex items-center justify-center min-h-[300px]">
-                <div className="animate-pulse text-gray-400">
+            <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/80 ring-1 ring-slate-900/5 p-6 overflow-hidden flex items-center justify-center min-h-[300px]">
+                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
+                <div className="animate-pulse text-slate-400 font-medium">
                     กำลังโหลดกราฟ...
                 </div>
             </div>
@@ -102,6 +104,11 @@ export function StudentDashboard(props: StudentDashboardProps) {
                             riskLevels={dashboard.riskLevels}
                             onStudentClick={dashboard.handleStudentClick}
                         />
+                    )}
+
+                    {/* Referred Out Students - class_teacher only */}
+                    {props.referredOutStudents && props.referredOutStudents.length > 0 && (
+                        <ReferredOutSection students={props.referredOutStudents} />
                     )}
                 </>
             )}

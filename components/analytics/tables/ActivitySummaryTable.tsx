@@ -29,12 +29,7 @@ export function ActivitySummaryTable({
     if (orderedData.length === 0) {
         if (orderedData.length === 0) {
             return (
-                <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-8 flex flex-col items-center justify-center min-h-[400px] overflow-hidden">
-                    {/* Decorations */}
-                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-green-300/35 rounded-full blur-xl pointer-events-none" />
-                    <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-green-200/20 to-emerald-300/15 rounded-full blur-xl pointer-events-none" />
-                    <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
-
+                <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-8 flex flex-col items-center justify-center min-h-[400px]">
                     <h2 className="relative text-xl font-bold text-gray-800 mb-4 text-center">
                         กระบวนการช่วยเหลือ (ห้องที่ปรึกษา)
                     </h2>
@@ -53,41 +48,38 @@ export function ActivitySummaryTable({
     }
 
     return (
-        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-6 overflow-hidden">
-            {/* Corner decoration */}
-            <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-green-300/30 rounded-full blur-xl pointer-events-none" />
-            {/* Shimmer */}
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
-
-            <h2 className="relative text-xl font-bold bg-linear-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent mb-6 text-center">
+        <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-6 overflow-hidden mt-6">
+            <h2 className="relative text-xl font-extrabold text-slate-800 mb-6 text-center tracking-tight">
                 กระบวนการช่วยเหลือ (ห้องที่ปรึกษา)
             </h2>
-            <div className="overflow-x-auto rounded-xl border border-emerald-100">
+            <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-xs">
                 <table className="w-full border-collapse">
                     <thead>
-                        <tr className="bg-linear-to-r from-emerald-500 via-green-400 to-teal-400 text-white">
-                            <th className="px-6 py-4 text-center text-sm font-bold border-r border-white/30 whitespace-nowrap">
+                        <tr className="bg-slate-50 text-slate-700">
+                            <th className="px-6 py-4 text-center text-sm font-semibold border-r border-slate-200 whitespace-nowrap">
                                 กลุ่มสี
                             </th>
-                            <th className="px-6 py-4 text-center text-sm font-bold border-r border-white/30 whitespace-nowrap">
+                            <th className="px-6 py-4 text-center text-sm font-semibold border-r border-slate-200 whitespace-nowrap">
                                 จำนวนนักเรียน
                                 <br />
-                                (คน)
+                                <span className="text-xs font-normal text-slate-500">
+                                    (คน)
+                                </span>
                             </th>
-                            <th className="px-6 py-4 text-center text-sm font-bold border-r border-white/30 whitespace-nowrap bg-gray-50/10 text-white/90">
+                            <th className="px-6 py-4 text-center text-sm font-semibold border-r border-slate-200 whitespace-nowrap">
                                 ยังไม่ทำกิจกรรม
                             </th>
                             {ACTIVITY_LABELS.map((label, index) => (
                                 <th
                                     key={index}
-                                    className="px-6 py-4 text-center text-sm font-bold border-r border-white/30 last:border-none whitespace-nowrap"
+                                    className="px-6 py-4 text-center text-sm font-semibold border-r border-slate-200 last:border-none whitespace-nowrap"
                                 >
                                     {label}
                                 </th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-300">
+                    <tbody className="divide-y divide-slate-100">
                         {orderedData.map((item) => {
                             const activities = [
                                 item.activity1,
@@ -97,14 +89,29 @@ export function ActivitySummaryTable({
                                 item.activity5,
                             ];
 
+                            // Determine which activities are required for this risk level
+                            const REQUIRED_ACTIVITIES: Record<
+                                string,
+                                number[]
+                            > = {
+                                orange: [1, 2, 3, 4, 5],
+                                yellow: [1, 2, 3, 5],
+                                green: [1, 2, 5],
+                                red: [],
+                                blue: [],
+                            };
+                            const requiredForLevel =
+                                REQUIRED_ACTIVITIES[item.riskLevel] || [];
+                            const hasActivities = requiredForLevel.length > 0;
+
                             return (
                                 <tr
                                     key={item.riskLevel}
-                                    className="hover:bg-emerald-50/30 transition-colors"
+                                    className="hover:bg-slate-50/50 transition-colors"
                                 >
                                     {/* Risk Level */}
                                     <td
-                                        className="px-4 py-3 text-center font-bold border-r border-gray-300"
+                                        className="px-4 py-3 text-center font-bold border-r border-slate-200 bg-white"
                                         style={{ color: item.color }}
                                     >
                                         <div className="flex items-center justify-center gap-2">
@@ -119,19 +126,22 @@ export function ActivitySummaryTable({
                                     </td>
 
                                     {/* Total Students */}
-                                    <td className="px-4 py-3 text-center font-bold text-gray-800 border-r border-gray-300 text-lg">
+                                    <td className="px-4 py-3 text-center font-bold text-slate-800 border-r border-slate-200 text-lg bg-white">
                                         {item.totalStudents}
                                     </td>
 
-                                    {/* No Activity */}
+                                    {/* No Activity Column */}
                                     <td
-                                        className={`px-4 py-3 text-center border-r border-gray-300 ${
-                                            item.noActivity > 0
-                                                ? "bg-red-50/50"
-                                                : "bg-gray-100/80"
+                                        className={`px-4 py-3 text-center border-r border-slate-300 ${
+                                            !hasActivities
+                                                ? "bg-slate-200" // Not required: darker background
+                                                : item.noActivity > 0
+                                                  ? "bg-red-50/70" // Required & has value
+                                                  : "bg-white" // Required & empty state
                                         }`}
                                     >
-                                        {item.noActivity > 0 ? (
+                                        {hasActivities &&
+                                        item.noActivity > 0 ? (
                                             <span className="font-bold text-red-500">
                                                 {item.noActivity}
                                             </span>
@@ -140,17 +150,23 @@ export function ActivitySummaryTable({
 
                                     {/* Activities 1-5 */}
                                     {activities.map((count, index) => {
+                                        const activityNumber = index + 1;
+                                        const isRequired =
+                                            requiredForLevel.includes(
+                                                activityNumber,
+                                            );
+
                                         return (
                                             <td
                                                 key={index}
-                                                className={`px-4 py-3 text-center border-r border-gray-300 last:border-none ${
-                                                    count === 0
-                                                        ? "bg-gray-100/80"
-                                                        : ""
+                                                className={`px-4 py-3 text-center border-r border-slate-300 last:border-none ${
+                                                    !isRequired
+                                                        ? "bg-slate-200" // Not required: darker background
+                                                        : "bg-white" // Required: white background (even if empty)
                                                 }`}
                                             >
-                                                {count > 0 ? (
-                                                    <span className="inline-flex items-center justify-center min-w-8 h-8 px-2 rounded-lg bg-green-50 text-green-600 font-bold text-sm border border-green-100">
+                                                {isRequired && count > 0 ? (
+                                                    <span className="inline-flex items-center justify-center min-w-8 h-8 px-2 rounded-lg bg-emerald-50 text-emerald-600 font-bold text-sm border border-emerald-100">
                                                         {count}
                                                     </span>
                                                 ) : null}

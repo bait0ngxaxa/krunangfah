@@ -6,7 +6,7 @@ export function VideoUpskillTab() {
             id: 1,
             title: "การทำความเข้าใจสุขภาพจิตวัยรุ่น",
             description: "เรียนรู้พื้นฐานการดูแลสุขภาพจิตของนักเรียนวัยรุ่น",
-            embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder
+            embedUrl: "https://www.youtube.com/embed/1i9OktVsTWo",
             duration: "15 นาที",
         },
         {
@@ -14,7 +14,7 @@ export function VideoUpskillTab() {
             title: "การสังเกตสัญญาณเตือนภัยทางจิตใจ",
             description:
                 "วิธีการสังเกตและระบุสัญญาณเตือนภัยของปัญหาสุขภาพจิตในนักเรียน",
-            embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder
+            embedUrl: "https://www.youtube.com/embed/DxIDKZHW3-E",
             duration: "20 นาที",
         },
         {
@@ -22,7 +22,7 @@ export function VideoUpskillTab() {
             title: "เทคนิคการสนทนากับนักเรียนที่มีปัญหา",
             description:
                 "เรียนรู้เทคนิคการสื่อสารและสร้างความไว้วางใจกับนักเรียน",
-            embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder
+            embedUrl: "https://www.youtube.com/embed/3bKuoH8CkFc",
             duration: "25 นาที",
         },
     ];
@@ -30,10 +30,9 @@ export function VideoUpskillTab() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-emerald-200 shadow-lg shadow-emerald-100/50 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-linear-to-r from-emerald-50/50 to-transparent opacity-50" />
+            <div className="bg-white rounded-2xl p-6 border-2 border-emerald-100 shadow-sm relative overflow-hidden group">
                 <div className="relative z-10">
-                    <h2 className="text-2xl font-bold bg-linear-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent mb-2 flex items-center gap-2 drop-shadow-sm">
+                    <h2 className="text-2xl font-bold text-emerald-600 mb-2 flex items-center gap-2 drop-shadow-sm">
                         <BookOpen className="w-6 h-6 text-emerald-500" />
                         อัพสกิลคุณครูผ่านวิดีโอ
                     </h2>
@@ -48,11 +47,10 @@ export function VideoUpskillTab() {
                 {videos.map((video) => (
                     <div
                         key={video.id}
-                        className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl shadow-emerald-100/40 hover:shadow-emerald-200/50 transition-all duration-300 overflow-hidden border border-emerald-200 ring-1 ring-emerald-50 hover:-translate-y-1 flex flex-col"
+                        className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-2 border-emerald-100 hover:-translate-y-1 flex flex-col"
                     >
                         {/* Video Embed */}
                         <div className="aspect-video bg-gray-100 relative shrink-0">
-                            <div className="absolute inset-0 bg-linear-to-br from-emerald-500/10 to-teal-500/10 pointer-events-none z-10" />
                             <iframe
                                 className="w-full h-full relative z-0"
                                 src={video.embedUrl}
@@ -64,7 +62,6 @@ export function VideoUpskillTab() {
 
                         {/* Video Info */}
                         <div className="p-6 relative overflow-hidden flex-1 flex flex-col">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-full opacity-50 pointer-events-none" />
                             <div className="flex items-start justify-between mb-3 relative z-10 gap-2">
                                 <h3 className="text-lg xl:text-xl font-bold text-gray-800 line-clamp-2">
                                     {video.title}
@@ -83,7 +80,7 @@ export function VideoUpskillTab() {
             </div>
 
             {/* Additional Resources */}
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-blue-100 shadow-md shadow-blue-50/50">
+            <div className="bg-white rounded-2xl p-6 border-2 border-blue-100 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                     <Lightbulb className="w-5 h-5 text-blue-500" />
                     <span>เพิ่มเติม</span>

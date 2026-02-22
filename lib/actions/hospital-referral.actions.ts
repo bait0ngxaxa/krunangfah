@@ -71,17 +71,24 @@ export async function updateHospitalReferral(
                 return { success: false, error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
             }
 
-            // class_teacher: ตรวจว่านักเรียนอยู่ในห้องที่ดูแลหรือไม่
+            // class_teacher: ตรวจว่านักเรียนอยู่ในห้องที่ดูแลหรือได้รับส่งต่อมา
             if (userRole === "class_teacher") {
                 const advisoryClass = user.teacher?.advisoryClass;
-                if (
-                    !advisoryClass ||
-                    phqResult.student.class !== advisoryClass
-                ) {
-                    return {
-                        success: false,
-                        error: "คุณสามารถแก้ไขข้อมูลได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
-                    };
+                const isInAdvisoryClass = advisoryClass && phqResult.student.class === advisoryClass;
+
+                if (!isInAdvisoryClass) {
+                    // Check if student was referred to this teacher
+                    const referral = await prisma.studentReferral.findUnique({
+                        where: { studentId: phqResult.studentId },
+                        select: { toTeacherUserId: true },
+                    });
+
+                    if (referral?.toTeacherUserId !== userId) {
+                        return {
+                            success: false,
+                            error: "คุณสามารถแก้ไขข้อมูลได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
+                        };
+                    }
                 }
             }
         }

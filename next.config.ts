@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
             "exceljs",
             "react-hook-form",
             "@hookform/resolvers",
+            "@/components/student",
+            "@/components/teacher",
+            "@/components/dashboard",
+            "@/components/analytics",
+            "@/components/activity",
+            "@/components/settings",
         ],
         // 4. Router cache สำหรับ dynamic/static pages
         staleTimes: {

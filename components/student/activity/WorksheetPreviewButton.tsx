@@ -56,14 +56,14 @@ export function WorksheetPreviewButton({
                 typeof document !== "undefined" &&
                 createPortal(
                     <div
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in"
                         onClick={() => setPreviewFile(null)}
                     >
                         <div
-                            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-5xl max-h-[90vh] overflow-hidden w-full border border-white/50 animate-zoom-in"
+                            className="bg-white rounded-3xl shadow-2xl max-w-5xl max-h-[90vh] overflow-hidden w-full border-2 border-emerald-100 animate-zoom-in"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="flex items-center justify-between px-8 py-5 border-b border-emerald-100 bg-linear-to-r from-white to-emerald-50/50">
+                            <div className="flex items-center justify-between px-8 py-5 border-b-2 border-emerald-100 bg-emerald-50">
                                 <h3 className="font-bold text-gray-800 truncate flex items-center gap-3 text-lg">
                                     <span className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
                                         {previewFile.name

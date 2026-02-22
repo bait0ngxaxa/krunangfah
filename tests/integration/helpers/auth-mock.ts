@@ -12,6 +12,7 @@ export interface MockUser {
     name: string;
     email: string;
     role: "system_admin" | "school_admin" | "class_teacher";
+    isPrimary?: boolean;
     schoolId?: string;
 }
 
@@ -61,6 +62,21 @@ export function setupAuthMocks() {
             }
             return session;
         }),
+        requirePrimaryAdmin: vi.fn(async () => {
+            const session = getMockSession();
+            if (!session || !session.user) {
+                throw new Error("Unauthorized");
+            }
+            if (
+                session.user.role !== "school_admin" ||
+                !session.user.isPrimary
+            ) {
+                throw new Error(
+                    "Forbidden: Primary school admin access required",
+                );
+            }
+            return session;
+        }),
         isSystemAdmin: vi.fn((role: string) => role === "system_admin"),
     }));
 
@@ -98,6 +114,7 @@ export function createMockUsers(prefix: string) {
             name: "Test School Admin",
             email: `sca-${uid}@test.local`,
             role: "school_admin" as const,
+            isPrimary: true,
             schoolId: "",
         } as MockUser,
         classTeacher: {

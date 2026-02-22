@@ -53,7 +53,7 @@ export function InviteRow({ invite, onRevoked }: InviteRowProps) {
     }
 
     return (
-        <tr className="hover:bg-emerald-50/30 transition-colors">
+        <tr className="hover:bg-gray-50 transition-colors">
             <td className="px-6 py-4 text-sm text-gray-700 font-medium">
                 {invite.email}
             </td>

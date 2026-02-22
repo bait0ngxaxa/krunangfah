@@ -18,7 +18,7 @@ interface ActionButtonsProps {
  */
 export function ActionButtons({
     studentId,
-    config,
+
     activityNumber,
     downloadUrls,
     phqResultId,
@@ -55,7 +55,7 @@ export function ActionButtons({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <Link
                 href={`/students/${studentId}/help/guidelines${phqResultId ? `?phqResultId=${phqResultId}` : ""}`}
-                className={`group flex items-center justify-center gap-3 py-4 px-6 bg-linear-to-r ${config.gradient} text-white rounded-xl font-bold hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all shadow-md`}
+                className={`group flex items-center justify-center gap-3 py-4 px-6 bg-[#34D399] text-white rounded-xl font-bold hover:shadow-md hover:bg-emerald-400 hover:-translate-y-0.5 transition-all shadow-sm`}
             >
                 <BookOpen className="w-6 h-6 group-hover:scale-110 transition-transform" />
                 <span className="text-lg">หลักการใช้ใบงาน</span>
@@ -65,7 +65,7 @@ export function ActionButtons({
             <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-linear-to-r from-blue-500 via-cyan-500 to-teal-400 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-cyan-200 hover:-translate-y-0.5 transition-all shadow-md group"
+                    className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-[#0BD0D9] text-white rounded-xl font-bold hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-0.5 transition-all shadow-sm group"
                 >
                     <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
                     <span className="text-lg">ดาวน์โหลดใบงาน</span>
@@ -78,7 +78,7 @@ export function ActionButtons({
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                    <div className="absolute top-full mt-3 left-0 right-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-emerald-100 overflow-hidden z-50 animate-fade-in-up">
+                    <div className="absolute top-full mt-3 left-0 right-0 bg-white rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden z-50 animate-fade-in-up">
                         {downloadUrls.map((url, index) => {
                             const worksheetNames =
                                 getWorksheetNames(activityNumber);

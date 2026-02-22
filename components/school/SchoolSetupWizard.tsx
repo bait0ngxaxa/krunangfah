@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,7 +39,13 @@ const STEPS = [
 
 type StepIndex = 0 | 1 | 2 | 3;
 
-export function SchoolSetupWizard() {
+interface SchoolSetupWizardProps {
+    initialHasSchool?: boolean;
+}
+
+export function SchoolSetupWizard({
+    initialHasSchool = false,
+}: SchoolSetupWizardProps) {
     const { update: updateSession } = useSession();
     const [step, setStep] = useState<StepIndex>(0);
     const [classes, setClasses] = useState<SchoolClassItem[]>([]);
@@ -49,6 +55,19 @@ export function SchoolSetupWizard() {
         province?: string;
     } | null>(null);
     const [serverError, setServerError] = useState<string | null>(null);
+
+    // Flag ป้องกัน server action revalidation redirect
+    // ตั้ง true ก่อนเรียก server action → เมื่อ page re-render
+    // (initialHasSchool เปลี่ยนเป็น true) จะไม่ redirect ทิ้งกลางทาง wizard
+    const [wizardActive, setWizardActive] = useState(false);
+
+    // ถ้ามีโรงเรียนแล้วและยังไม่เริ่ม wizard → redirect ไป dashboard
+    // (กรณี user พิมพ์ URL ตรงมาหลัง setup เสร็จ)
+    useEffect(() => {
+        if (initialHasSchool && !wizardActive) {
+            window.location.href = "/dashboard";
+        }
+    }, [initialHasSchool, wizardActive]);
 
     const {
         register,
@@ -60,9 +79,17 @@ export function SchoolSetupWizard() {
 
     async function onSchoolInfoSubmit(data: SchoolInfoData) {
         setServerError(null);
+
+        // ต้องตั้ง flag ก่อนเรียก server action
+        // เพราะ server action จะ trigger page revalidation
+        // ซึ่งจะทำให้ initialHasSchool เปลี่ยนเป็น true
+        // React 18+ batch state updates → commit ก่อน async yield
+        setWizardActive(true);
+
         const result = await createSchoolAndLink(data);
 
         if (!result.success) {
+            setWizardActive(false);
             setServerError(result.message);
             return;
         }
@@ -90,9 +117,9 @@ export function SchoolSetupWizard() {
                             <div
                                 className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${
                                     i < step
-                                        ? "bg-emerald-500 border-emerald-500 text-white"
+                                        ? "bg-[#0BD0D9] border-[#0BD0D9] text-white shadow-sm"
                                         : i === step
-                                          ? "border-emerald-500 text-emerald-600 bg-emerald-50"
+                                          ? "border-[#0BD0D9] text-[#09B8C0] bg-cyan-50"
                                           : "border-gray-200 text-gray-400 bg-white"
                                 }`}
                             >
@@ -103,14 +130,14 @@ export function SchoolSetupWizard() {
                                 )}
                             </div>
                             <span
-                                className={`text-[10px] sm:text-xs font-medium whitespace-nowrap ${i === step ? "text-emerald-600" : "text-gray-400"}`}
+                                className={`text-[10px] sm:text-xs font-medium whitespace-nowrap ${i === step ? "text-[#09B8C0]" : "text-gray-400"}`}
                             >
                                 {label}
                             </span>
                         </div>
                         {i < STEPS.length - 1 && (
                             <div
-                                className={`w-8 sm:w-16 h-0.5 mb-4 mx-1 sm:mx-2 transition-all ${i < step ? "bg-emerald-400" : "bg-gray-200"}`}
+                                className={`w-8 sm:w-16 h-0.5 mb-4 mx-1 sm:mx-2 transition-all ${i < step ? "bg-[#0BD0D9]" : "bg-gray-200"}`}
                             />
                         )}
                     </div>
@@ -119,10 +146,10 @@ export function SchoolSetupWizard() {
 
             {/* Step 1 — School Info */}
             {step === 0 && (
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 sm:p-8 border border-emerald-100">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
-                            <Building2 className="w-5 h-5 text-white" />
+                <div className="relative bg-white rounded-3xl border-2 border-gray-100 shadow-sm p-6 sm:p-8 overflow-hidden">
+                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                        <div className="w-10 h-10 rounded-2xl bg-[#0BD0D9] flex items-center justify-center shadow-md">
+                            <Building2 className="w-5 h-5 text-white stroke-[2.5]" />
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-gray-800">
@@ -147,7 +174,7 @@ export function SchoolSetupWizard() {
                                 {...register("name")}
                                 type="text"
                                 placeholder="เช่น โรงเรียนสาธิตมหาวิทยาลัย"
-                                className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 outline-none bg-white text-black placeholder:text-gray-400 transition-all"
+                                className="w-full px-4 py-3 border-2 border-gray-200 hover:border-gray-300 focus:border-[#0BD0D9] rounded-xl outline-none text-gray-900 placeholder:text-gray-400 transition-colors"
                                 disabled={isSubmitting}
                             />
                             {errors.name && (
@@ -168,7 +195,7 @@ export function SchoolSetupWizard() {
                                 {...register("province")}
                                 type="text"
                                 placeholder="เช่น กรุงเทพมหานคร"
-                                className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 outline-none bg-white text-black placeholder:text-gray-400 transition-all"
+                                className="w-full px-4 py-3 border-2 border-gray-200 hover:border-gray-300 focus:border-[#0BD0D9] rounded-xl outline-none text-gray-900 placeholder:text-gray-400 transition-colors"
                                 disabled={isSubmitting}
                             />
                         </div>
@@ -182,7 +209,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                             {isSubmitting ? "กำลังบันทึก..." : "ถัดไป"}
                             {!isSubmitting && (
@@ -195,10 +222,10 @@ export function SchoolSetupWizard() {
 
             {/* Step 2 — Classes */}
             {step === 1 && (
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 sm:p-8 border border-emerald-100">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
-                            <LayoutGrid className="w-5 h-5 text-white" />
+                <div className="relative bg-white rounded-3xl border-2 border-gray-100 shadow-sm p-6 sm:p-8 overflow-hidden">
+                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                        <div className="w-10 h-10 rounded-2xl bg-[#0BD0D9] flex items-center justify-center shadow-md">
+                            <LayoutGrid className="w-5 h-5 text-white stroke-[2.5]" />
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-gray-800">
@@ -220,7 +247,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="button"
                             onClick={() => setStep(2)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white rounded-xl font-bold transition-colors shadow-sm cursor-pointer"
                         >
                             ถัดไป
                             <ArrowRight className="w-4 h-4" />
@@ -240,10 +267,10 @@ export function SchoolSetupWizard() {
 
             {/* Step 3 — Teacher Roster */}
             {step === 2 && (
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 sm:p-8 border border-emerald-100">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
-                            <Users className="w-5 h-5 text-white" />
+                <div className="relative bg-white rounded-3xl border-2 border-gray-100 shadow-sm p-6 sm:p-8 overflow-hidden">
+                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                        <div className="w-10 h-10 rounded-2xl bg-[#0BD0D9] flex items-center justify-center shadow-md">
+                            <Users className="w-5 h-5 text-white stroke-[2.5]" />
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-gray-800">
@@ -266,7 +293,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="button"
                             onClick={() => setStep(1)}
-                            className="flex items-center justify-center gap-2 px-5 py-3 border border-emerald-200 text-teal-600 rounded-xl font-bold transition-all hover:bg-emerald-50 cursor-pointer"
+                            className="flex items-center justify-center gap-2 px-5 py-3 border-2 border-gray-200 text-gray-600 rounded-xl font-bold transition-colors hover:border-gray-300 hover:bg-gray-50 cursor-pointer"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             ย้อนกลับ
@@ -274,7 +301,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="button"
                             onClick={() => setStep(3)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white rounded-xl font-bold transition-colors shadow-sm cursor-pointer"
                         >
                             ถัดไป
                             <ArrowRight className="w-4 h-4" />
@@ -290,10 +317,10 @@ export function SchoolSetupWizard() {
 
             {/* Step 4 — Summary */}
             {step === 3 && (
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl shadow-emerald-100/50 p-6 sm:p-8 border border-emerald-100">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
-                            <ClipboardCheck className="w-5 h-5 text-white" />
+                <div className="relative bg-white rounded-3xl border-2 border-gray-100 shadow-sm p-6 sm:p-8 overflow-hidden">
+                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                        <div className="w-10 h-10 rounded-2xl bg-[#34D399] flex items-center justify-center shadow-md">
+                            <ClipboardCheck className="w-5 h-5 text-white stroke-[2.5]" />
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-gray-800">
@@ -316,7 +343,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="button"
                             onClick={() => setStep(2)}
-                            className="flex items-center justify-center gap-2 px-5 py-3 border border-emerald-200 text-teal-600 rounded-xl font-bold transition-all hover:bg-emerald-50 cursor-pointer"
+                            className="flex items-center justify-center gap-2 px-5 py-3 border-2 border-gray-200 text-gray-600 rounded-xl font-bold transition-colors hover:border-gray-300 hover:bg-gray-50 cursor-pointer"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             ย้อนกลับ
@@ -324,7 +351,7 @@ export function SchoolSetupWizard() {
                         <button
                             type="button"
                             onClick={handleFinish}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#34D399] hover:bg-[#10B981] text-white rounded-xl font-bold transition-colors shadow-sm cursor-pointer"
                         >
                             <Check className="w-4 h-4" />
                             เสร็จสิ้น — เข้าสู่ระบบ

@@ -23,22 +23,16 @@ export function ActivityView({
     const activityCount = activities.length;
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-8 px-4 relative overflow-hidden">
-            {/* Decorative Background Elements */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
-                <div className="absolute bottom-10 left-10 w-64 h-64 bg-yellow-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
-            </div>
-
+        <div className="min-h-screen bg-slate-50 py-8 px-4 relative overflow-hidden">
             <div className="max-w-5xl mx-auto relative z-10">
                 <BackButton
                     href={`/students/${studentId}`}
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
-                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 relative overflow-hidden animate-fade-in-up">
+                <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden animate-fade-in-up">
                     <div
-                        className={`absolute top-0 left-0 w-full h-1.5 bg-linear-to-r ${config.gradient}`}
+                        className={`absolute top-0 left-0 w-full h-1.5 ${config.bg}`}
                     />
 
                     <HelpPageHeader studentName={studentName} config={config} />
@@ -71,7 +65,7 @@ export function ActivityView({
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
                             href={`/students/${studentId}/help/start?phqResultId=${phqResultId}`}
-                            className={`flex items-center justify-center gap-3 py-4 px-10 bg-linear-to-r ${config.gradient} text-white rounded-xl font-bold hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all text-xl shadow-md group`}
+                            className={`flex items-center justify-center gap-3 py-4 px-10 ${config.bg} text-white rounded-xl font-bold hover:shadow-md hover:-translate-y-0.5 transition-all text-xl shadow-sm group`}
                         >
                             <Rocket className="w-6 h-6 group-hover:scale-110 transition-transform" />
                             เริ่มทำกิจกรรม

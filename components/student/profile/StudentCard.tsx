@@ -27,9 +27,10 @@ interface StudentCardProps {
         }[];
     };
     onClick?: () => void;
+    isReferred?: boolean;
 }
 
-function StudentCardComponent({ student, onClick }: StudentCardProps) {
+function StudentCardComponent({ student, onClick, isReferred }: StudentCardProps) {
     const latestResult = student.phqResults?.[0];
     const riskLevel = (latestResult?.riskLevel || "blue") as RiskLevel;
     const displayName = `${student.firstName} ${student.lastName}`;
@@ -38,14 +39,12 @@ function StudentCardComponent({ student, onClick }: StudentCardProps) {
     return (
         <div
             onClick={onClick}
-            className="group bg-white/60 backdrop-blur-md rounded-2xl p-5 border border-white/80 shadow-sm hover:shadow-lg hover:shadow-emerald-100/50 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-white rounded-2xl p-5 border-2 border-gray-100 shadow-sm hover:shadow-md hover:border-[#0BD0D9]/50 transition-all cursor-pointer relative overflow-hidden"
             style={{ contain: "layout style paint" }}
         >
-            <div className="absolute inset-0 bg-linear-to-br from-white/40 to-emerald-50/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-
             <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-400 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-12 h-12 rounded-2xl bg-[#0BD0D9] flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:scale-105 transition-transform duration-300">
                         {initialLetter}
                     </div>
                     <div>
@@ -56,6 +55,11 @@ function StudentCardComponent({ student, onClick }: StudentCardProps) {
                             <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">
                                 {student.class}
                             </span>
+                            {isReferred && (
+                                <span className="bg-violet-100 text-violet-700 px-2 py-0.5 rounded text-xs font-bold">
+                                    ส่งต่อ
+                                </span>
+                            )}
                             {student.studentId && (
                                 <span className="opacity-70 text-xs">
                                     #{student.studentId}

@@ -11,11 +11,20 @@ interface PageProps {
     searchParams: Promise<{ phqResultId?: string }>;
 }
 
-export default async function ActivityStartPage({ params, searchParams }: PageProps) {
+export default async function ActivityStartPage({
+    params,
+    searchParams,
+}: PageProps) {
     const { id: studentId } = await params;
     const { phqResultId } = await searchParams;
 
-    const student = await getStudentDetail(studentId);
+    // Parallelize independent fetches
+    const [student, initialProgress] = await Promise.all([
+        getStudentDetail(studentId),
+        phqResultId
+            ? getActivityProgress(studentId, phqResultId)
+            : Promise.resolve(null),
+    ]);
 
     if (!student) {
         notFound();
@@ -23,7 +32,8 @@ export default async function ActivityStartPage({ params, searchParams }: PagePr
 
     // Use specific PHQ result if provided, otherwise fall back to latest
     const latestResult = phqResultId
-        ? student.phqResults.find((r) => r.id === phqResultId) ?? student.phqResults[0]
+        ? (student.phqResults.find((r) => r.id === phqResultId) ??
+          student.phqResults[0])
         : student.phqResults[0];
 
     if (!latestResult) {
@@ -37,8 +47,11 @@ export default async function ActivityStartPage({ params, searchParams }: PagePr
         redirect(`/students/${studentId}/help`);
     }
 
-    // Get or initialize activity progress
-    let progressResult = await getActivityProgress(studentId, latestResult.id);
+    // Use parallel result if phqResultId matched, otherwise fetch now
+    let progressResult =
+        initialProgress && phqResultId === latestResult.id
+            ? initialProgress
+            : await getActivityProgress(studentId, latestResult.id);
 
     // Auto-initialize if no progress exists
     if (!progressResult.success || !progressResult.data?.length) {

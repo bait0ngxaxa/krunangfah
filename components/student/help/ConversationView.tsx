@@ -34,7 +34,7 @@ interface StepCardProps {
     buttonLabel: string;
     onClick?: () => void;
     href?: string;
-    gradient: string;
+    bgClass: string;
 }
 
 function StepCard({
@@ -45,16 +45,16 @@ function StepCard({
     buttonLabel,
     onClick,
     href,
-    gradient,
+    bgClass,
 }: StepCardProps) {
-    const buttonClasses = `inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r ${gradient} text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm shadow-md group`;
+    const buttonClasses = `inline-flex items-center gap-2 px-6 py-3 ${bgClass} text-white rounded-xl font-bold hover:shadow-md hover:-translate-y-0.5 transition-all text-sm shadow-sm group`;
 
     return (
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-emerald-100/50 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-start gap-4">
                 {/* Step Number Badge */}
                 <div
-                    className={`w-10 h-10 bg-linear-to-br ${gradient} rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-md`}
+                    className={`w-10 h-10 ${bgClass} rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm`}
                 >
                     {stepNumber}
                 </div>
@@ -104,22 +104,16 @@ export function ConversationView({
     const showRecordSteps = riskLevel === "red";
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-8 px-4 relative overflow-hidden">
-            {/* Decorative Background Elements */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
-                <div className="absolute bottom-10 left-10 w-64 h-64 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
-            </div>
-
+        <div className="min-h-screen bg-slate-50 py-8 px-4 relative overflow-hidden">
             <div className="max-w-4xl mx-auto relative z-10">
                 <BackButton
                     href={`/students/${studentId}`}
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
-                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 relative overflow-hidden animate-fade-in-up">
+                <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden animate-fade-in-up">
                     <div
-                        className={`absolute top-0 left-0 w-full h-1.5 bg-linear-to-r ${config.gradient}`}
+                        className={`absolute top-0 left-0 w-full h-1.5 ${config.bg}`}
                     />
 
                     <HelpPageHeader
@@ -143,7 +137,7 @@ export function ConversationView({
                             }
                             buttonLabel="หลักการพูดคุย"
                             href={`/students/${studentId}/help/conversation`}
-                            gradient={config.gradient}
+                            bgClass={config.bg}
                         />
 
                         {showRecordSteps && (
@@ -158,7 +152,7 @@ export function ConversationView({
                                     }
                                     buttonLabel="กรอกข้อมูล"
                                     onClick={() => setShowCounselingModal(true)}
-                                    gradient={config.gradient}
+                                    bgClass={config.bg}
                                 />
 
                                 {/* Step 3: Referral or Follow-up */}
@@ -171,7 +165,7 @@ export function ConversationView({
                                     }
                                     buttonLabel="กรอกข้อมูล"
                                     onClick={() => setShowReferralModal(true)}
-                                    gradient={config.gradient}
+                                    bgClass={config.bg}
                                 />
                             </>
                         )}

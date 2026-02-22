@@ -9,7 +9,7 @@ interface ActivityCardProps {
 
 export function ActivityCard({ activity, index, config }: ActivityCardProps) {
     return (
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 border border-emerald-200 ring-1 ring-emerald-50 shadow-lg shadow-emerald-100/30 hover:shadow-xl hover:shadow-emerald-200/50 hover:-translate-y-1 transition-all duration-300">
+        <div className="bg-white rounded-2xl p-8 border-2 border-gray-100 shadow-sm transition-all duration-300">
             <div className="flex items-center gap-6 mb-8">
                 <div
                     className={`w-16 h-16 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-3xl font-bold shrink-0 shadow-lg relative group`}
@@ -17,7 +17,7 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                     <span className="relative z-10 group-hover:scale-110 transition-transform">
                         {index + 1}
                     </span>
-                    <div className="absolute inset-0 bg-white/20 rounded-3xl blur-sm transform scale-110 -z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 bg-black/5 rounded-3xl transform scale-110 -z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <div className="min-w-0">
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">
@@ -44,7 +44,7 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                             sizes="(max-width: 768px) 100vw, 33vw"
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center">
-                            <span className="text-white text-xs font-bold bg-white/20 backdrop-blur-md px-2 py-1 rounded-full border border-white/50">
+                            <span className="text-white text-xs font-bold bg-[#0BD0D9] px-2 py-1 rounded-full border-2 border-white shadow-sm">
                                 ใบที่ {wIndex + 1}
                             </span>
                         </div>

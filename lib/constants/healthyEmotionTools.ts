@@ -107,15 +107,15 @@ export const HEALTHY_EMOTION_TOOLS: HealthyEmotionTool[] = [
 ];
 
 export const COLOR_STYLES: Record<string, string> = {
-    pink: "from-pink-400 to-pink-500",
-    purple: "from-purple-400 to-purple-500",
-    blue: "from-blue-400 to-cyan-500",
-    green: "from-green-400 to-emerald-500",
-    orange: "from-orange-400 to-amber-500",
-    cyan: "from-cyan-400 to-teal-500",
-    indigo: "from-indigo-400 to-purple-500",
-    teal: "from-teal-400 to-cyan-500",
-    rose: "from-rose-400 to-pink-500",
+    pink: "bg-pink-500",
+    purple: "bg-purple-500",
+    blue: "bg-blue-500",
+    green: "bg-emerald-500",
+    orange: "bg-orange-500",
+    cyan: "bg-cyan-500",
+    indigo: "bg-indigo-500",
+    teal: "bg-teal-500",
+    rose: "bg-rose-500",
 };
 
 export const BORDER_STYLES: Record<string, string> = {

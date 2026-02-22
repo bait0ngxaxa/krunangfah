@@ -9,7 +9,7 @@ export function SchoolInfoFields({
             <div>
                 <label
                     htmlFor="age"
-                    className="block text-sm font-bold text-gray-700 mb-2"
+                    className="block text-sm font-semibold text-gray-700 mb-2"
                 >
                     อายุ <span className="text-red-500">*</span>
                 </label>
@@ -18,8 +18,7 @@ export function SchoolInfoFields({
                     type="number"
                     id="age"
                     min="18"
-                    max="100"
-                    className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 transition-all outline-none text-black placeholder:text-gray-600 hover:border-emerald-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[#0BD0D9] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="กรอกอายุ"
                 />
                 {errors.age && (
@@ -32,7 +31,7 @@ export function SchoolInfoFields({
             <div>
                 <label
                     htmlFor="schoolRole"
-                    className="block text-sm font-bold text-gray-700 mb-2"
+                    className="block text-sm font-semibold text-gray-700 mb-2"
                 >
                     บทบาทหน้าที่ในโรงเรียน{" "}
                     <span className="text-red-500">*</span>
@@ -40,8 +39,7 @@ export function SchoolInfoFields({
                 <input
                     {...register("schoolRole")}
                     type="text"
-                    id="schoolRole"
-                    className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 transition-all outline-none text-black placeholder:text-gray-600 hover:border-emerald-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[#0BD0D9] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="เช่น ครูประจำชั้น, หัวหน้ากลุ่มสาระ"
                 />
                 {errors.schoolRole && (

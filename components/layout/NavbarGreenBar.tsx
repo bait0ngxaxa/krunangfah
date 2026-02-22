@@ -50,7 +50,7 @@ export function NavbarGreenBar({
                 <div
                     className="absolute inset-0 pointer-events-none"
                     style={{
-                        borderRadius: "0px 0px 36px 45px",
+                        borderRadius: "0px 0px 36px 38px",
                         boxShadow:
                             "inset 0 -3px 10px rgba(0, 0, 0, 0.1), inset 0 2px 10px rgba(255, 255, 255, 0.3)",
                     }}

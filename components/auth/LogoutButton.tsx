@@ -16,7 +16,7 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
         return (
             <button
                 onClick={handleLogout}
-                className="text-white hover:text-white/80 transition-colors font-bold text-lg sm:text-xl cursor-pointer focus:outline-none"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold text-white/80 hover:text-white hover:bg-white/15 transition-all duration-300 cursor-pointer focus:outline-none"
             >
                 ออกจากระบบ
             </button>

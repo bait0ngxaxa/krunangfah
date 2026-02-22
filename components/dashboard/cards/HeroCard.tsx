@@ -84,7 +84,7 @@ export function HeroCard({
 
             {/* Right Content */}
             <div
-                className={`flex-1 flex flex-col sm:flex-row sm:items-center justify-between relative z-0 ${!imageSrc ? "pl-2" : "pl-6 sm:pl-10"} pr-6 sm:pr-24`}
+                className={`flex-1 flex flex-col sm:flex-row sm:items-center justify-between relative z-0 ${!imageSrc ? "pl-2" : "pl-12 sm:pl-10"} pr-6 sm:pr-24`}
             >
                 {/* Main Titles */}
                 <div className="flex flex-col justify-center">

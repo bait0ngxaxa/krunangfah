@@ -101,6 +101,8 @@ model User {
   worksheetUploads      WorksheetUpload[]
   counselingSessions    CounselingSession[] @relation("CounselingSessions")
   schoolAdminInvites    SchoolAdminInvite[] @relation("CreatedSchoolAdminInvites")
+  referralsFrom         StudentReferral[]   @relation("ReferralsFrom")
+  referralsTo           StudentReferral[]   @relation("ReferralsTo")
 
   @@map("users")
   @@index([email])
@@ -195,6 +197,7 @@ model Student {
   phqResults       PhqResult[]
   activityProgress ActivityProgress[]
   counselingSessions CounselingSession[]
+  referral         StudentReferral?
 
   @@unique([studentId, schoolId]) // ป้องกันซ้ำ: รหัสนักเรียน + โรงเรียน
   @@index([schoolId, class]) // For filtering by school and class
@@ -377,4 +380,21 @@ model PasswordResetToken {
   @@index([email])
   @@index([token])
   @@map("password_reset_token")
+}
+
+// Student Referral - ส่งต่อนักเรียนระหว่างครู
+model StudentReferral {
+  id                String   @id @default(cuid())
+  studentId         String   @unique  // 1 referral ต่อ 1 นักเรียน
+  fromTeacherUserId String   // userId ครูที่ส่งต่อ
+  toTeacherUserId   String   // userId ครูที่รับดูแล
+  createdAt         DateTime @default(now())
+
+  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fromTeacher User    @relation("ReferralsFrom", fields: [fromTeacherUserId], references: [id])
+  toTeacher   User    @relation("ReferralsTo", fields: [toTeacherUserId], references: [id])
+
+  @@index([fromTeacherUserId])
+  @@index([toTeacherUserId])
+  @@map("student_referrals")
 }

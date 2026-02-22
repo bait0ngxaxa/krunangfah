@@ -18,7 +18,7 @@ export function FilteredStudentsWarning({
     }
 
     return (
-        <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="mt-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-lg">
             <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
                 <div className="flex-1">
@@ -30,7 +30,7 @@ export function FilteredStudentsWarning({
                         นักเรียนต่อไปนี้จะไม่ถูกนำเข้าเพราะไม่ใช่ห้อง{" "}
                         <span className="font-bold">{advisoryClass}</span>:
                     </p>
-                    <div className="max-h-32 overflow-y-auto bg-white/50 rounded p-2">
+                    <div className="max-h-32 overflow-y-auto bg-amber-100/50 rounded p-2">
                         <ul className="text-sm text-amber-800 space-y-1">
                             {students.map((student, idx) => (
                                 <li

@@ -57,7 +57,7 @@ export function ActivityCompletionPage({
 
     return (
         <div
-            className={`min-h-screen ${config.bgLight} flex items-center justify-center py-12 px-4 bg-pattern-grid`}
+            className={`min-h-screen ${config.bgLight} flex items-center justify-center py-12 px-4`}
         >
             <div className="max-w-2xl mx-auto text-center relative pointer-events-none">
                 {/* Thank You Section */}
@@ -69,20 +69,19 @@ export function ActivityCompletionPage({
                     }`}
                 >
                     <div className="relative inline-block mb-8 group">
-                        <div className="absolute inset-0 bg-white/50 rounded-full blur-2xl animate-pulse-slow" />
                         <div
-                            className={`w-32 h-32 ${config.bg} rounded-3xl rotate-6 flex items-center justify-center text-white mx-auto shadow-2xl relative z-10 group-hover:rotate-12 group-hover:scale-110 transition-transform duration-500 border-4 border-white/30`}
+                            className={`w-32 h-32 ${config.bg} rounded-3xl rotate-6 flex items-center justify-center text-white mx-auto shadow-sm relative z-10 group-hover:rotate-12 group-hover:scale-110 transition-transform duration-500`}
                         >
                             <PartyPopper className="w-16 h-16 animate-bounce-slow" />
                         </div>
                     </div>
 
-                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 border border-emerald-200 shadow-xl mb-8">
+                    <div className="bg-white rounded-3xl p-8 border-2 border-emerald-100 shadow-sm mb-8">
                         <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 tracking-tight">
                             ขอบคุณที่ชวนเด็กทำ
                         </h1>
                         <p
-                            className={`text-2xl md:text-3xl font-bold bg-linear-to-r ${config.gradient} bg-clip-text text-transparent`}
+                            className={`text-2xl md:text-3xl font-bold text-emerald-600`}
                         >
                             กิจกรรมที่ {activityNumber}: {currentActivityName}
                         </p>
@@ -92,7 +91,7 @@ export function ActivityCompletionPage({
                 {/* Schedule Section - Only show if there's a next activity */}
                 {hasNextActivity && nextActivityName && (
                     <div
-                        className={`mt-8 bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border-2 border-white pointer-events-auto hover:shadow-3xl transition-all duration-1000 ${
+                        className={`mt-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-emerald-100 pointer-events-auto hover:shadow-md transition-all duration-1000 ${
                             scheduleVisible
                                 ? "opacity-100 translate-y-0"
                                 : "opacity-0 translate-y-8"
@@ -127,7 +126,7 @@ export function ActivityCompletionPage({
                 {/* All activities completed message */}
                 {!hasNextActivity && (
                     <div
-                        className={`mt-8 bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border-2 border-white pointer-events-auto transition-all duration-1000 ${
+                        className={`mt-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-emerald-100 pointer-events-auto transition-all duration-1000 ${
                             scheduleVisible
                                 ? "opacity-100 translate-y-0"
                                 : "opacity-0 translate-y-8"
@@ -153,13 +152,12 @@ export function ActivityCompletionPage({
                 {/* Back to Dashboard Button */}
                 <button
                     onClick={handleBackToDashboard}
-                    className={`pointer-events-auto mt-12 inline-flex items-center gap-3 px-10 py-5 bg-linear-to-r ${config.gradient} text-white rounded-full font-bold text-xl shadow-lg hover:shadow-xl hover:shadow-emerald-200/50 hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
+                    className={`pointer-events-auto mt-12 inline-flex items-center gap-3 px-10 py-5 bg-[#0BD0D9] text-white rounded-full font-bold text-xl shadow-sm hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
                         finalButtonVisible
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"
                     }`}
                 >
-                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                     <span className="relative">กลับหน้าหลัก</span>
                     <ArrowRight className="w-6 h-6 relative group-hover:translate-x-1 transition-transform" />
                 </button>

@@ -120,7 +120,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                             <p className="text-xl font-bold text-gray-700 mb-2">
                                 ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์
                             </p>
-                            <p className="text-sm text-gray-500 bg-white/60 px-4 py-1 rounded-full border border-emerald-100 inline-block">
+                            <p className="text-sm text-gray-500 bg-white px-4 py-1 rounded-full border border-emerald-100 inline-block">
                                 รองรับไฟล์ .xlsx เท่านั้น
                             </p>
                         </div>
@@ -129,7 +129,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
             </div>
 
             {error && (
-                <div className="p-4 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-xl animate-fade-in-up">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl animate-fade-in-up">
                     <p className="text-sm text-red-600 whitespace-pre-line font-medium text-center">
                         {error}
                     </p>
@@ -137,7 +137,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
             )}
 
             {/* Template download info */}
-            <div className="p-6 bg-linear-to-r from-blue-50/80 to-purple-50/80 backdrop-blur-md rounded-2xl border border-blue-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
+            <div className="p-6 bg-blue-50 rounded-2xl border-2 border-blue-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
                 <div>
                     <h4 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
                         <Info className="w-5 h-5 text-blue-500 shrink-0" />{" "}
@@ -150,7 +150,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                             ข้อ1-ข้อ9, ข้อ9a, ข้อ9b
                         </span>
                     </p>
-                    <p className="text-xs text-gray-500 mt-2 bg-white/50 inline-block px-2 py-1 rounded-md border border-white/50">
+                    <p className="text-xs text-gray-500 mt-2 bg-white inline-block px-2 py-1 rounded-md border border-blue-100">
                         * ข้อ1-ข้อ9: ค่า 0-3 | ข้อ9a, ข้อ9b: ใช่/ไม่ใช่
                     </p>
                 </div>

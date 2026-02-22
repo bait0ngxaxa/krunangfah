@@ -15,6 +15,11 @@ export interface StudentWithLatestPhq {
         totalScore: number;
         riskLevel: string;
     }[];
+    referral?: {
+        id: string;
+        fromTeacherUserId: string;
+        toTeacherUserId: string;
+    } | null;
 }
 
 // Paginated student list response

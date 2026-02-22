@@ -11,14 +11,13 @@ export function ProjectFields({
             <div>
                 <label
                     htmlFor="academicYearId"
-                    className="block text-sm font-bold text-gray-700 mb-2"
+                    className="block text-sm font-semibold text-gray-700 mb-2"
                 >
                     ปีการศึกษา/เทอม <span className="text-red-500">*</span>
                 </label>
                 <select
                     {...register("academicYearId")}
-                    id="academicYearId"
-                    className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 transition-all outline-none bg-white hover:border-emerald-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[#0BD0D9] transition-colors outline-none bg-white shadow-sm text-gray-900"
                 >
                     <option value="">เลือกปีการศึกษา/เทอม</option>
                     {academicYears.map((year) => (
@@ -38,15 +37,14 @@ export function ProjectFields({
             <div>
                 <label
                     htmlFor="projectRole"
-                    className="block text-sm font-bold text-gray-700 mb-2"
+                    className="block text-sm font-semibold text-gray-700 mb-2"
                 >
                     บทบาทหน้าที่ในโครงการครูนางฟ้า{" "}
                     <span className="text-red-500">*</span>
                 </label>
                 <select
                     {...register("projectRole")}
-                    id="projectRole"
-                    className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 transition-all outline-none bg-white hover:border-emerald-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[#0BD0D9] transition-colors outline-none bg-white shadow-sm text-gray-900"
                 >
                     <option value="">เลือกบทบาท</option>
                     {PROJECT_ROLES.map((role) => (

@@ -1,18 +1,34 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import dynamic from "next/dynamic";
 import { BarChart3, Target } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { getStudentDetail } from "@/lib/actions/student";
 import {
     StudentProfileCard,
     PHQHistoryTable,
-    PHQTrendChart,
     ActivityProgressTable,
     CounselingLogTable,
     AcademicYearFilter,
-    HospitalReferralButton,
+    ReferralButton,
 } from "@/components/student";
+
+// Dynamic import — Recharts is heavy, lazy-load for smaller initial bundle
+const PHQTrendChart = dynamic(
+    () =>
+        import("@/components/student/phq/PHQTrendChart").then(
+            (mod) => mod.PHQTrendChart,
+        ),
+    {
+        loading: () => (
+            <div className="h-[300px] bg-gray-100 rounded-2xl animate-pulse flex items-center justify-center text-gray-400">
+                กำลังโหลดกราฟ...
+            </div>
+        ),
+    },
+);
 import { getCounselingSessions } from "@/lib/actions/counseling.actions";
+import { requireAuth } from "@/lib/session";
 import { Tabs } from "@/components/ui/Tabs";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 
@@ -61,11 +77,13 @@ async function StudentDetailContent({
     studentId: string;
     selectedYearId?: string;
 }) {
-    // Parallelize both data fetches (was sequential before)
-    const [student, counselingSessions] = await Promise.all([
+    // Parallelize data fetches
+    const [session, student, counselingSessions] = await Promise.all([
+        requireAuth(),
         getStudentDetail(studentId),
         getCounselingSessions(studentId),
     ]);
+    const currentUserId = session.user.id;
 
     if (!student) {
         notFound();
@@ -151,7 +169,12 @@ async function StudentDetailContent({
 
             {latestResult && (
                 <div className="flex justify-end">
-                    <HospitalReferralButton />
+                    <ReferralButton
+                        studentId={studentId}
+                        studentName={`${student.firstName} ${student.lastName}`}
+                        referral={student.referral}
+                        currentUserId={currentUserId}
+                    />
                 </div>
             )}
 

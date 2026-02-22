@@ -6,14 +6,18 @@
  */
 
 import { auth } from "@/auth";
+import { cache } from "react";
 
 /**
  * Get current session on server side
+ * Wrapped with React.cache() for per-request deduplication —
+ * multiple calls within the same request (layout → page → component)
+ * will only hit the auth layer once.
  * @returns Session object or null
  */
-export async function getServerSession() {
+export const getServerSession = cache(async () => {
     return await auth();
-}
+});
 
 /**
  * Require authentication - throws if not authenticated

@@ -13,23 +13,23 @@ export function EmptyPrompt({
     description,
 }: EmptyPromptProps) {
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-10 text-center border border-emerald-200 ring-1 ring-emerald-50 overflow-hidden">
+        <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-10 text-center border border-white/80 ring-1 ring-slate-900/5 overflow-hidden">
             {/* Decorations */}
-            <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-green-300/35 rounded-full blur-xl pointer-events-none" />
-            <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-green-200/20 to-emerald-300/15 rounded-full blur-xl pointer-events-none" />
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/40 to-transparent" />
+            <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-indigo-200/30 to-blue-300/20 rounded-full blur-2xl pointer-events-none opacity-50" />
+            <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-purple-200/20 to-fuchsia-300/15 rounded-full blur-2xl pointer-events-none opacity-50" />
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-indigo-300/30 to-transparent" />
 
             <div className="relative">
                 <div className="relative w-18 h-18 mx-auto mb-5">
-                    <div className="absolute inset-0 rounded-2xl bg-emerald-300 blur-lg opacity-30" />
-                    <div className="relative w-full h-full rounded-2xl bg-linear-to-br from-emerald-100 to-green-100 flex items-center justify-center shadow-inner ring-1 ring-emerald-200/50">
-                        <Icon className="w-9 h-9 text-emerald-500" />
+                    <div className="absolute inset-0 rounded-2xl bg-indigo-300 blur-xl opacity-20" />
+                    <div className="relative w-full h-full rounded-2xl bg-linear-to-br from-indigo-50/80 to-blue-50/80 border border-indigo-100/50 flex items-center justify-center shadow-sm">
+                        <Icon className="w-9 h-9 text-indigo-500" />
                     </div>
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-2">
+                <h3 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">
                     {title}
                 </h3>
-                <div className="text-sm text-gray-500 max-w-sm mx-auto">
+                <div className="text-sm text-slate-500 max-w-sm mx-auto font-medium">
                     {description}
                 </div>
             </div>

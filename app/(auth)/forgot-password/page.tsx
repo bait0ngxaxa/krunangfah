@@ -24,11 +24,10 @@ export default function ForgotPasswordPage() {
             {/* ─── Green Navbar ─── */}
             <NavbarGreenBar>
                 {/* หน้าหลัก */}
-                <div className="ml-auto pr-8 sm:pr-12 lg:pr-[131px] flex items-center">
+                <div className="ml-auto pr-4 sm:pr-12 lg:pr-[131px] flex items-center shrink-0">
                     <Link
                         href="/"
-                        className="text-white hover:opacity-80 transition-opacity font-medium"
-                        style={{ fontSize: "30px" }}
+                        className="text-white hover:opacity-80 transition-opacity font-medium whitespace-nowrap text-lg sm:text-2xl lg:text-[30px]"
                     >
                         หน้าหลัก
                     </Link>

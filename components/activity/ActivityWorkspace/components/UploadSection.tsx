@@ -28,7 +28,9 @@ export function UploadSection({
     const uploadColors = getUploadColors(riskLevel);
 
     // Get worksheet name for current upload
-    const nextWorksheetName = getWorksheetNames(currentActivityNumber).at(uploadedCount);
+    const nextWorksheetName = getWorksheetNames(currentActivityNumber).at(
+        uploadedCount,
+    );
 
     return (
         <div
@@ -124,7 +126,7 @@ export function UploadSection({
                 </>
             ) : (
                 <div
-                    className={`flex items-center justify-center gap-3 p-4 bg-white/50 rounded-xl border-2 border-dashed ${uploadColors.border} ${uploadColors.completeText} font-bold text-lg animate-pulse-slow`}
+                    className={`flex items-center justify-center gap-3 p-4 bg-white rounded-xl border-2 border-dashed ${uploadColors.border} ${uploadColors.completeText} font-bold text-lg`}
                 >
                     <CheckCircle2 className="w-6 h-6" />
                     เสร็จสิ้นกิจกรรมแล้ว!

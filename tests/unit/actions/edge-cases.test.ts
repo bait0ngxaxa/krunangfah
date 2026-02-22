@@ -540,30 +540,24 @@ describe("Bug #7 — getTeacherProfile Access Restriction", () => {
 // ═══════════════════════════════════════════════════════════
 
 describe("Cross-Teacher Student Data Isolation", () => {
-    interface PhqResult {
-        studentId: string;
-        importedById: string;
-    }
-
     interface Student {
         id: string;
         class: string;
-        phqResults: PhqResult[];
     }
 
     /**
-     * Student list query filtering logic (importedById approach)
+     * Student list query filtering logic (advisoryClass approach)
+     * Matches queries.ts: class_teacher sees students in their advisoryClass
      */
-    const filterStudentsByImporter = (
+    const filterStudentsByAdvisoryClass = (
         students: Student[],
-        userId: string,
+        advisoryClass: string | undefined,
         role: string,
     ): Student[] => {
         if (role !== "class_teacher") return students;
+        if (!advisoryClass) return [];
 
-        return students.filter((s) =>
-            s.phqResults.some((r) => r.importedById === userId),
-        );
+        return students.filter((s) => s.class === advisoryClass);
     };
 
     /**
@@ -579,49 +573,46 @@ describe("Cross-Teacher Student Data Isolation", () => {
     };
 
     const allStudents: Student[] = [
-        {
-            id: "s1",
-            class: "ม.2/5",
-            phqResults: [{ studentId: "s1", importedById: "teacher-A" }],
-        },
-        {
-            id: "s2",
-            class: "ม.2/5",
-            phqResults: [{ studentId: "s2", importedById: "teacher-B" }],
-        },
-        {
-            id: "s3",
-            class: "ม.3/1",
-            phqResults: [{ studentId: "s3", importedById: "teacher-A" }],
-        },
+        { id: "s1", class: "ม.2/5" },
+        { id: "s2", class: "ม.2/5" },
+        { id: "s3", class: "ม.3/1" },
     ];
 
-    describe("student list (importedById filtering)", () => {
-        it("teacher A sees only students they imported", () => {
-            const result = filterStudentsByImporter(
+    describe("student list (advisoryClass filtering)", () => {
+        it("teacher with advisory ม.2/5 sees all students in ม.2/5", () => {
+            const result = filterStudentsByAdvisoryClass(
                 allStudents,
-                "teacher-A",
+                "ม.2/5",
                 "class_teacher",
             );
-            expect(result.map((s) => s.id)).toEqual(["s1", "s3"]);
+            expect(result.map((s) => s.id)).toEqual(["s1", "s2"]);
         });
 
-        it("teacher B sees only students they imported", () => {
-            const result = filterStudentsByImporter(
+        it("teacher with advisory ม.3/1 sees only students in ม.3/1", () => {
+            const result = filterStudentsByAdvisoryClass(
                 allStudents,
-                "teacher-B",
+                "ม.3/1",
                 "class_teacher",
             );
-            expect(result.map((s) => s.id)).toEqual(["s2"]);
+            expect(result.map((s) => s.id)).toEqual(["s3"]);
         });
 
         it("school_admin sees all students", () => {
-            const result = filterStudentsByImporter(
+            const result = filterStudentsByAdvisoryClass(
                 allStudents,
-                "admin-1",
+                undefined,
                 "school_admin",
             );
             expect(result).toHaveLength(3);
+        });
+
+        it("teacher without advisoryClass sees no students", () => {
+            const result = filterStudentsByAdvisoryClass(
+                allStudents,
+                undefined,
+                "class_teacher",
+            );
+            expect(result).toHaveLength(0);
         });
     });
 
@@ -651,21 +642,152 @@ describe("Cross-Teacher Student Data Isolation", () => {
         });
     });
 
-    describe("cross-teacher isolation (ensure A cannot see B's students)", () => {
-        it("teacher A cannot see teacher B's imported student in list", () => {
-            const result = filterStudentsByImporter(
+    describe("cross-teacher isolation (ensure A cannot see B's class)", () => {
+        it("teacher advisory ม.3/1 cannot see students in ม.2/5", () => {
+            const result = filterStudentsByAdvisoryClass(
                 allStudents,
-                "teacher-A",
+                "ม.3/1",
                 "class_teacher",
             );
+            expect(result.find((s) => s.class === "ม.2/5")).toBeUndefined();
+        });
+
+        it("teacher advisory ม.2/5 cannot access ม.3/1 activities", () => {
+            expect(
+                canAccessStudentActivity("ม.3/1", "ม.2/5", "class_teacher"),
+            ).toBe(false);
+        });
+    });
+});
+
+// ═══════════════════════════════════════════════════════════
+// Student Referral Visibility Logic
+// Files: student/queries.ts
+// Feature: teacher-to-teacher student referral system
+// ═══════════════════════════════════════════════════════════
+
+describe("Student Referral Visibility Logic", () => {
+    interface StudentWithReferral {
+        id: string;
+        class: string;
+        referral?: {
+            fromTeacherUserId: string;
+            toTeacherUserId: string;
+        } | null;
+    }
+
+    /**
+     * Referral-aware visibility for class_teacher:
+     * - Students in advisoryClass WITHOUT a referral (not sent away), OR
+     * - Students referred TO this teacher (regardless of class)
+     */
+    const filterStudentsWithReferral = (
+        students: StudentWithReferral[],
+        advisoryClass: string | undefined,
+        userId: string | undefined,
+        role: string,
+    ): StudentWithReferral[] => {
+        if (role !== "class_teacher") return students;
+        if (!advisoryClass || !userId) return [];
+
+        return students.filter((s) => {
+            const isInAdvisoryClass = s.class === advisoryClass;
+            const hasNoReferral = !s.referral;
+            const isReferredToMe = s.referral?.toTeacherUserId === userId;
+
+            return (isInAdvisoryClass && hasNoReferral) || isReferredToMe;
+        });
+    };
+
+    const teacherA = "teacher-a";
+    const teacherB = "teacher-b";
+
+    const students: StudentWithReferral[] = [
+        { id: "s1", class: "ม.2/5", referral: null },
+        { id: "s2", class: "ม.2/5", referral: { fromTeacherUserId: teacherA, toTeacherUserId: teacherB } },
+        { id: "s3", class: "ม.3/1", referral: null },
+        { id: "s4", class: "ม.3/1", referral: { fromTeacherUserId: teacherB, toTeacherUserId: teacherA } },
+    ];
+
+    describe("teacher A (advisory ม.2/5)", () => {
+        it("sees s1 (in advisory class, no referral)", () => {
+            const result = filterStudentsWithReferral(students, "ม.2/5", teacherA, "class_teacher");
+            expect(result.find((s) => s.id === "s1")).toBeDefined();
+        });
+
+        it("does NOT see s2 (in advisory class, but referred away to B)", () => {
+            const result = filterStudentsWithReferral(students, "ม.2/5", teacherA, "class_teacher");
             expect(result.find((s) => s.id === "s2")).toBeUndefined();
         });
 
-        it("teacher B cannot access teacher A's class activities", () => {
-            // Teacher B is advisory of ม.3/1, student s1 is ม.2/5
-            expect(
-                canAccessStudentActivity("ม.2/5", "ม.3/1", "class_teacher"),
-            ).toBe(false);
+        it("does NOT see s3 (different class, no referral)", () => {
+            const result = filterStudentsWithReferral(students, "ม.2/5", teacherA, "class_teacher");
+            expect(result.find((s) => s.id === "s3")).toBeUndefined();
+        });
+
+        it("sees s4 (different class, but referred TO teacher A)", () => {
+            const result = filterStudentsWithReferral(students, "ม.2/5", teacherA, "class_teacher");
+            expect(result.find((s) => s.id === "s4")).toBeDefined();
+        });
+
+        it("sees exactly 2 students", () => {
+            const result = filterStudentsWithReferral(students, "ม.2/5", teacherA, "class_teacher");
+            expect(result).toHaveLength(2);
+        });
+    });
+
+    describe("teacher B (advisory ม.3/1)", () => {
+        it("sees s2 (referred TO teacher B from A)", () => {
+            const result = filterStudentsWithReferral(students, "ม.3/1", teacherB, "class_teacher");
+            expect(result.find((s) => s.id === "s2")).toBeDefined();
+        });
+
+        it("sees s3 (in advisory class, no referral)", () => {
+            const result = filterStudentsWithReferral(students, "ม.3/1", teacherB, "class_teacher");
+            expect(result.find((s) => s.id === "s3")).toBeDefined();
+        });
+
+        it("does NOT see s4 (in advisory class, but referred away to A)", () => {
+            const result = filterStudentsWithReferral(students, "ม.3/1", teacherB, "class_teacher");
+            expect(result.find((s) => s.id === "s4")).toBeUndefined();
+        });
+
+        it("does NOT see s1 (different class, no referral to B)", () => {
+            const result = filterStudentsWithReferral(students, "ม.3/1", teacherB, "class_teacher");
+            expect(result.find((s) => s.id === "s1")).toBeUndefined();
+        });
+
+        it("sees exactly 2 students", () => {
+            const result = filterStudentsWithReferral(students, "ม.3/1", teacherB, "class_teacher");
+            expect(result).toHaveLength(2);
+        });
+    });
+
+    describe("school_admin sees all students", () => {
+        it("returns all students regardless of referrals", () => {
+            const result = filterStudentsWithReferral(students, undefined, "admin-1", "school_admin");
+            expect(result).toHaveLength(4);
+        });
+    });
+
+    describe("edge cases", () => {
+        it("teacher without userId sees nothing", () => {
+            const result = filterStudentsWithReferral(students, "ม.2/5", undefined, "class_teacher");
+            expect(result).toHaveLength(0);
+        });
+
+        it("teacher without advisoryClass sees nothing", () => {
+            const result = filterStudentsWithReferral(students, undefined, teacherA, "class_teacher");
+            expect(result).toHaveLength(0);
+        });
+
+        it("student with no referral in advisory class is always visible", () => {
+            const noReferralStudents: StudentWithReferral[] = [
+                { id: "s5", class: "ม.2/5", referral: null },
+                { id: "s6", class: "ม.2/5" },
+            ];
+            const result = filterStudentsWithReferral(noReferralStudents, "ม.2/5", teacherA, "class_teacher");
+            expect(result).toHaveLength(2);
         });
     });
 });

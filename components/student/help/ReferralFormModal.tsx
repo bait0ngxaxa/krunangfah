@@ -109,10 +109,7 @@ export function ReferralFormModal({
                 className="bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-lg my-8 shadow-2xl border border-white/50 animate-fade-in-up"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
-                <div className="bg-linear-to-r from-emerald-500 to-teal-600 px-8 py-6 rounded-t-3xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2" />
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
+                <div className="bg-[#0BD0D9] px-8 py-6 rounded-t-3xl relative overflow-hidden">
                     <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
                         <Hospital className="w-6 h-6 text-white" />
                         ส่งต่อหรือติดตาม
@@ -240,8 +237,7 @@ export function ReferralFormModal({
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting}
-                            className="flex-1 px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 px-6 py-3 bg-[#0BD0D9] text-white rounded-xl hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-0.5 transition-all font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>
