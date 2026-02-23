@@ -287,6 +287,7 @@ model ActivityProgress {
 model WorksheetUpload {
   id                  String   @id @default(cuid())
   activityProgressId  String   // FK to ActivityProgress
+  worksheetNumber     Int      @default(1) // ลำดับใบงาน (1, 2) — fixed, ไม่เปลี่ยนเมื่อลบ
   
   fileName            String   // ชื่อไฟล์
   fileUrl             String   // URL ของไฟล์ (path ใน public/uploads)

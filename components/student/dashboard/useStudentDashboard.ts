@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type {
     StudentDashboardProps,
@@ -36,11 +36,26 @@ export function useStudentDashboard({
     // Class filter state
     const [selectedClass, setSelectedClass] = useState<string>("all");
 
+    // Risk level & referral filter state
+    const [selectedRiskFilter, setSelectedRiskFilter] = useState<
+        RiskLevel | "all"
+    >("all");
+    const [showReferredOnly, setShowReferredOnly] = useState<boolean>(false);
+
     // Reset class filter when school changes
     const handleSchoolChange = (schoolId: string): void => {
         setSelectedSchoolId(schoolId);
         setSelectedClass("all");
+        setSelectedRiskFilter("all");
+        setShowReferredOnly(false);
     };
+
+    // Reset risk/referral filters when class changes
+    const handleClassChange = useCallback((cls: string): void => {
+        setSelectedClass(cls);
+        setSelectedRiskFilter("all");
+        setShowReferredOnly(false);
+    }, []);
 
     // Filtered students (by class)
     const filteredStudents = useMemo(() => {
@@ -66,7 +81,62 @@ export function useStudentDashboard({
         return groups;
     }, [filteredStudents]);
 
-    // Pie chart data (ordered from low to high risk)
+    // Count of referred students (for badge display)
+    const referredCount = useMemo(() => {
+        return filteredStudents.filter((s) => s.referral !== null).length;
+    }, [filteredStudents]);
+
+    // Displayed risk levels — filtered by selectedRiskFilter
+    const displayedRiskLevels: RiskLevel[] = useMemo(() => {
+        const allLevels: RiskLevel[] = [
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "blue",
+        ];
+        if (selectedRiskFilter === "all") return allLevels;
+        return [selectedRiskFilter];
+    }, [selectedRiskFilter]);
+
+    // Displayed grouped students — filtered by referral toggle
+    const displayedGroupedStudents: GroupedStudents = useMemo(() => {
+        if (!showReferredOnly) return groupedStudents;
+        return {
+            red: groupedStudents.red.filter((s) => s.referral !== null),
+            orange: groupedStudents.orange.filter((s) => s.referral !== null),
+            yellow: groupedStudents.yellow.filter((s) => s.referral !== null),
+            green: groupedStudents.green.filter((s) => s.referral !== null),
+            blue: groupedStudents.blue.filter((s) => s.referral !== null),
+        };
+    }, [groupedStudents, showReferredOnly]);
+
+    // Count of displayed (after all filters) students for summary header
+    const displayedStudentCount = useMemo(() => {
+        let count = 0;
+        for (const level of displayedRiskLevels) {
+            switch (level) {
+                case "red":
+                    count += displayedGroupedStudents.red.length;
+                    break;
+                case "orange":
+                    count += displayedGroupedStudents.orange.length;
+                    break;
+                case "yellow":
+                    count += displayedGroupedStudents.yellow.length;
+                    break;
+                case "green":
+                    count += displayedGroupedStudents.green.length;
+                    break;
+                case "blue":
+                    count += displayedGroupedStudents.blue.length;
+                    break;
+            }
+        }
+        return count;
+    }, [displayedRiskLevels, displayedGroupedStudents]);
+
+    // Pie chart data (ordered from low to high risk) — always shows full data
     const pieChartData: PieChartDataItem[] = useMemo(
         () => [
             {
@@ -113,6 +183,23 @@ export function useStudentDashboard({
         "blue",
     ];
 
+    // Toggle risk filter: click same = reset to "all", click different = select
+    const handleRiskFilterChange = useCallback(
+        (level: RiskLevel | "all"): void => {
+            if (level === "all") {
+                setSelectedRiskFilter("all");
+                setShowReferredOnly(false);
+                return;
+            }
+            setSelectedRiskFilter((prev) => (prev === level ? "all" : level));
+        },
+        [],
+    );
+
+    const handleReferredToggle = useCallback((): void => {
+        setShowReferredOnly((prev) => !prev);
+    }, []);
+
     // system_admin must select a school first
     const showSchoolPrompt = isSystemAdmin && !selectedSchoolId;
 
@@ -120,11 +207,17 @@ export function useStudentDashboard({
         // State
         selectedSchoolId,
         selectedClass,
+        selectedRiskFilter,
+        showReferredOnly,
         // Derived data
         schoolFilteredStudents,
         filteredStudents,
         classes,
         groupedStudents,
+        displayedGroupedStudents,
+        displayedRiskLevels,
+        displayedStudentCount,
+        referredCount,
         pieChartData,
         totalStudents,
         riskLevels,
@@ -133,7 +226,10 @@ export function useStudentDashboard({
         showSchoolPrompt,
         // Callbacks
         handleSchoolChange,
+        handleClassChange,
         setSelectedClass,
         handleStudentClick,
+        handleRiskFilterChange,
+        handleReferredToggle,
     };
 }

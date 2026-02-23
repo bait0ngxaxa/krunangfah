@@ -21,7 +21,7 @@ function getStudentsByLevel(
 }
 
 interface ScreeningSummaryProps {
-    filteredStudents: Student[];
+    displayedStudentCount: number;
     groupedStudents: GroupedStudents;
     selectedClass: string;
     classes: string[];
@@ -30,7 +30,7 @@ interface ScreeningSummaryProps {
 }
 
 export function ScreeningSummary({
-    filteredStudents,
+    displayedStudentCount,
     groupedStudents,
     selectedClass,
     classes,
@@ -66,7 +66,7 @@ export function ScreeningSummary({
                         </div>
                     </div>
                     <span className="bg-violet-50 text-violet-700 text-xs font-bold px-3.5 py-1.5 rounded-full border border-violet-100 shadow-sm">
-                        {filteredStudents.length} คน
+                        {displayedStudentCount} คน
                     </span>
                 </div>
             </div>

@@ -46,4 +46,5 @@ export interface ActivityProgressTableProps {
     phqResultId: string;
     riskLevel: RiskLevel;
     assessmentPeriod: AssessmentPeriod;
+    readOnly?: boolean;
 }

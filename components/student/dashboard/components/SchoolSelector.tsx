@@ -30,7 +30,7 @@ export function SchoolSelector({
                     <select
                         value={selectedSchoolId}
                         onChange={(e) => onSchoolChange(e.target.value)}
-                        className="w-full appearance-none px-4 py-2.5 pr-10 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 outline-none bg-white/70 backdrop-blur-sm transition-all text-sm font-medium text-gray-700"
+                        className="w-full appearance-none px-4 py-2.5 pr-10 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 outline-none bg-white/70 backdrop-blur-sm transition-all text-sm font-medium text-gray-700 truncate"
                     >
                         <option value="">-- เลือกโรงเรียน --</option>
                         {schools.map((school) => (

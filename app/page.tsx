@@ -25,19 +25,12 @@ export default async function Home() {
                 src="/image/homepage/rainbow.png"
                 alt=""
                 fill
-                className="object-cover object-bottom overflow-hidden transform scale-125 md:scale-110"
+                className="object-cover object-bottom overflow-hidden"
                 priority
             />
 
             {/* ─── Top Green Navbar ─── */}
-            <NavbarGreenBar>
-                {/* หน้าหลัก */}
-                <div className="ml-auto pr-4 sm:pr-12 lg:pr-[131px] flex items-center shrink-0">
-                    <span className="text-white font-medium text-lg sm:text-2xl lg:text-[30px] whitespace-nowrap">
-                        หน้าหลัก
-                    </span>
-                </div>
-            </NavbarGreenBar>
+            <NavbarGreenBar />
 
             {/* ─── Main Hero Section ─── */}
             <main className="relative z-10 flex-1 flex flex-col px-6 sm:px-10 lg:px-16 pt-8 sm:pt-10 lg:pt-8 pb-0 w-full">

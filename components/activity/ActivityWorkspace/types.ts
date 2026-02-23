@@ -10,6 +10,7 @@ export interface ActivityProgressData {
     teacherNotes?: string | null;
     worksheetUploads: {
         id: string;
+        worksheetNumber: number;
         fileName: string;
         fileUrl: string;
     }[];
@@ -62,12 +63,9 @@ export interface UseActivityWorkspaceReturn {
     currentActivityNumber: number;
     currentActivity: Activity | undefined;
 
-    // Completion confirmation
-    pendingCompletion: number | null;
-    completedUploads: { id: string; fileName: string; fileUrl: string }[];
-    handleConfirmComplete: () => void;
-
     // Handlers
     handleFileSelect: (progressId: string) => void;
+    handleDeleteUpload: (uploadId: string) => Promise<void>;
+    handleConfirmComplete: () => Promise<void>;
     handleSaveNotes: () => Promise<void>;
 }

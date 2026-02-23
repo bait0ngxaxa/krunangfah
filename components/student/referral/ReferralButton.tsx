@@ -41,14 +41,16 @@ export function ReferralButton({
 
         return (
             <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-violet-50 border border-violet-200 rounded-xl text-violet-700">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-cyan-50 border border-[#0BD0D9]/30 rounded-xl text-[#09B8C0]">
                     <ArrowRightLeft className="w-4 h-4" />
-                    <span className="text-sm font-bold">ได้รับส่งต่อจาก {fromName}</span>
+                    <span className="text-sm font-bold">
+                        ได้รับส่งต่อจาก {fromName}
+                    </span>
                 </div>
                 <button
                     type="button"
                     onClick={() => setShowModal(true)}
-                    className="px-5 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 justify-center shadow-sm hover:shadow-md active:scale-95 hover:-translate-y-0.5 border border-white/20 bg-violet-500 text-white hover:bg-violet-600"
+                    className="px-5 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 justify-center shadow-sm hover:shadow-md active:scale-95 hover:-translate-y-0.5 border border-white/20 bg-[#0BD0D9] text-white hover:bg-[#09B8C0]"
                 >
                     <UserCheck className="w-4 h-4" />
                     ส่งต่อต่อ
@@ -75,7 +77,9 @@ export function ReferralButton({
         return (
             <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-700">
                 <ArrowRightLeft className="w-4 h-4" />
-                <span className="text-sm font-bold">ส่งต่อให้ {toName} แล้ว</span>
+                <span className="text-sm font-bold">
+                    ส่งต่อให้ {toName} แล้ว
+                </span>
             </div>
         );
     }
@@ -86,7 +90,7 @@ export function ReferralButton({
             <button
                 type="button"
                 onClick={() => setShowModal(true)}
-                className="px-6 py-3 rounded-xl font-bold transition-all duration-300 flex items-center gap-3 justify-center shadow-md hover:shadow-xl active:scale-95 hover:-translate-y-0.5 border border-white/20 relative overflow-hidden group bg-violet-500 text-white hover:bg-violet-600"
+                className="px-6 py-3 rounded-xl font-bold transition-all duration-300 flex items-center gap-3 justify-center shadow-md hover:shadow-xl active:scale-95 hover:-translate-y-0.5 border border-white/20 relative overflow-hidden group bg-[#0BD0D9] text-white hover:bg-[#09B8C0]"
             >
                 <UserCheck className="w-5 h-5" />
                 <span>ส่งต่อให้ครูนางฟ้าดูแล</span>

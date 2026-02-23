@@ -280,7 +280,7 @@ export function TeacherRosterEditor({
                 <div>
                     <select
                         {...register("userRole")}
-                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 transition-colors"
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 transition-colors truncate"
                     >
                         <option value="">ประเภทครู *</option>
                         {USER_ROLES.map((r) => (
@@ -308,7 +308,7 @@ export function TeacherRosterEditor({
                                     shouldValidate: true,
                                 })
                             }
-                            className="w-full px-4 py-2 border border-violet-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-violet-100/50 focus:border-violet-300 bg-white shadow-sm text-black transition-all"
+                            className="w-full px-4 py-2 border border-violet-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-violet-100/50 focus:border-violet-300 bg-white shadow-sm text-black transition-all truncate"
                         >
                             <option value="">เลือกห้องที่ปรึกษา *</option>
                             {schoolClasses.map((c) => (

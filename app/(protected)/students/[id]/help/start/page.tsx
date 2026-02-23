@@ -5,6 +5,7 @@ import {
 } from "@/lib/actions/activity";
 import { redirect, notFound } from "next/navigation";
 import { ActivityWorkspace } from "@/components/activity";
+import { requireAuth } from "@/lib/session";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -17,6 +18,12 @@ export default async function ActivityStartPage({
 }: PageProps) {
     const { id: studentId } = await params;
     const { phqResultId } = await searchParams;
+
+    // system_admin เป็น readonly — ไม่สามารถเข้าหน้าทำกิจกรรมได้
+    const session = await requireAuth();
+    if (session.user.role === "system_admin") {
+        redirect(`/students/${studentId}`);
+    }
 
     // Parallelize independent fetches
     const [student, initialProgress] = await Promise.all([

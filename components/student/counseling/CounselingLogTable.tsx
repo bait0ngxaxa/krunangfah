@@ -9,11 +9,13 @@ import { AddCounselingModal } from "./AddCounselingModal";
 interface CounselingLogTableProps {
     sessions: CounselingSession[];
     studentId: string;
+    readOnly?: boolean;
 }
 
 export function CounselingLogTable({
     sessions,
     studentId,
+    readOnly = false,
 }: CounselingLogTableProps) {
     const router = useRouter();
     const [showAddModal, setShowAddModal] = useState(false);
@@ -104,19 +106,21 @@ export function CounselingLogTable({
                 )}
             </div>
 
-            {/* Add Button */}
-            <div className="mt-6 flex justify-end">
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="px-6 py-3 bg-linear-to-r from-emerald-400 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-200/50 hover:-translate-y-0.5 transition-all font-bold flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-200/50"
-                >
-                    <Plus className="w-5 h-5" />
-                    เพิ่มบันทึกการให้คำปรึกษา
-                </button>
-            </div>
+            {/* Add Button — ซ่อนเมื่อ readOnly */}
+            {!readOnly && (
+                <div className="mt-6 flex justify-end">
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="px-6 py-3 bg-linear-to-r from-emerald-400 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-200/50 hover:-translate-y-0.5 transition-all font-bold flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-200/50"
+                    >
+                        <Plus className="w-5 h-5" />
+                        เพิ่มบันทึกการให้คำปรึกษา
+                    </button>
+                </div>
+            )}
 
             {/* Add Modal */}
-            {showAddModal && (
+            {!readOnly && showAddModal && (
                 <AddCounselingModal
                     studentId={studentId}
                     onClose={() => setShowAddModal(false)}

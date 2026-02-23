@@ -184,8 +184,9 @@ async function DashboardContent({ session }: { session: Session }) {
                         Angel Teacher Creative Assets
                     </>
                 }
-                imageSrc="/image/homepage/hero.png"
+                imageSrc="/image/dashboard/main.PNG"
                 imageAlt="Dashboard Banner"
+                imageContainerClassName="absolute bottom-0 left-1/2 -translate-x-1/2 w-[400px] sm:w-[560px] lg:w-[680px] pointer-events-none z-10 flex items-end"
                 showBackButton={false}
                 actionNode={
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-400 rounded-full text-sm font-bold text-white shadow-md border border-emerald-300">

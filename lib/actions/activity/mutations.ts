@@ -133,6 +133,14 @@ export async function submitTeacherAssessment(
 
         const session = await requireAuth();
 
+        // system_admin เป็น readonly — ไม่สามารถทำกิจกรรมได้
+        if (session.user.role === "system_admin") {
+            return {
+                success: false,
+                error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+            };
+        }
+
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },
             select: { studentId: true, status: true },
@@ -221,6 +229,80 @@ export async function unlockNextActivity(
 }
 
 /**
+ * Confirm activity completion — marks activity as completed and unlocks next
+ * Called explicitly when user reviews uploaded worksheets and confirms
+ */
+export async function confirmActivityComplete(
+    activityProgressId: string,
+): Promise<{ success: boolean; activityNumber?: number; error?: string }> {
+    try {
+        const session = await requireAuth();
+
+        if (session.user.role === "system_admin") {
+            return {
+                success: false,
+                error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+            };
+        }
+
+        const activityProgress = await prisma.activityProgress.findUnique({
+            where: { id: activityProgressId },
+            include: {
+                student: { select: { schoolId: true, class: true } },
+            },
+        });
+
+        if (!activityProgress) {
+            return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+        }
+
+        if (activityProgress.status === "completed") {
+            return {
+                success: true,
+                activityNumber: activityProgress.activityNumber,
+            };
+        }
+
+        // Verify access
+        const { allowed, error } = await verifyActivityAccess(
+            activityProgress.studentId,
+            session.user.id,
+            session.user.role,
+        );
+
+        if (!allowed) {
+            return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        // Mark as completed
+        await prisma.activityProgress.update({
+            where: { id: activityProgressId },
+            data: {
+                status: ActivityStatus.completed,
+                completedAt: new Date(),
+            },
+        });
+
+        // Unlock next activity
+        await unlockNextActivity(
+            activityProgress.studentId,
+            activityProgress.phqResultId,
+            activityProgress.activityNumber,
+        );
+
+        revalidateTag("analytics", "default");
+
+        return {
+            success: true,
+            activityNumber: activityProgress.activityNumber,
+        };
+    } catch (error) {
+        console.error("Error confirming activity completion:", error);
+        return { success: false, error: "เกิดข้อผิดพลาด" };
+    }
+}
+
+/**
  * Schedule activity with teacher
  */
 export async function scheduleActivity(
@@ -235,6 +317,14 @@ export async function scheduleActivity(
         });
 
         const session = await requireAuth();
+
+        // system_admin เป็น readonly — ไม่สามารถทำกิจกรรมได้
+        if (session.user.role === "system_admin") {
+            return {
+                success: false,
+                error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+            };
+        }
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },
@@ -288,6 +378,14 @@ export async function updateTeacherNotes(
 
         const session = await requireAuth();
 
+        // system_admin เป็น readonly — ไม่สามารถทำกิจกรรมได้
+        if (session.user.role === "system_admin") {
+            return {
+                success: false,
+                error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+            };
+        }
+
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },
             select: { studentId: true, teacherId: true },
@@ -337,6 +435,14 @@ export async function updateScheduledDate(
         });
 
         const session = await requireAuth();
+
+        // system_admin เป็น readonly — ไม่สามารถทำกิจกรรมได้
+        if (session.user.role === "system_admin") {
+            return {
+                success: false,
+                error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+            };
+        }
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },

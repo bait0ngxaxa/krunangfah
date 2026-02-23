@@ -10,6 +10,7 @@ export interface PageBannerProps {
     icon?: LucideIcon;
     imageSrc?: string;
     imageAlt?: string;
+    imageContainerClassName?: string;
 
     // Theme options
     bgClassName?: string;
@@ -29,6 +30,7 @@ export function PageBanner({
     icon: Icon,
     imageSrc,
     imageAlt = "Banner Illustration",
+    imageContainerClassName,
     bgClassName = "bg-emerald-50",
     borderClassName = "border-[#008F5D]",
     bgImage = "/image/login_bg.png",
@@ -55,7 +57,7 @@ export function PageBanner({
                 {/* Content Layer */}
                 <div className="text-gray-900 relative z-20">
                     {Icon && (
-                        <Icon className="w-10 h-10 sm:w-16 sm:h-16 mb-2 sm:mb-4 text-gray-900 fill-current" />
+                        <Icon className="w-10 h-10 sm:w-16 sm:h-16 mb-2 sm:mb-4 text-gray-900" />
                     )}
                     <h1 className="text-[28px] sm:text-[42px] font-extrabold mb-2 sm:mb-3 tracking-tight leading-none text-gray-900">
                         {title}
@@ -88,7 +90,12 @@ export function PageBanner({
 
             {/* Image Layer - Absolute Positioned to Bottom Center */}
             {imageSrc && (
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[260px] sm:w-[380px] lg:w-[460px] pointer-events-none z-10 flex items-end">
+                <div
+                    className={
+                        imageContainerClassName ??
+                        "absolute bottom-0 left-1/2 -translate-x-1/2 w-[260px] sm:w-[380px] lg:w-[460px] pointer-events-none z-10 flex items-end"
+                    }
+                >
                     <Image
                         src={imageSrc}
                         alt={imageAlt}

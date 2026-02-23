@@ -54,7 +54,7 @@ export function AcademicYearFilter({
                     id="year-filter"
                     value={currentYearId || "all"}
                     onChange={(e) => handleYearChange(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-emerald-100 rounded-lg focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none"
+                    className="flex-1 px-4 py-2 border border-emerald-100 rounded-lg focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none truncate w-full"
                 >
                     <option value="all">ทุกปีการศึกษา</option>
                     {academicYears.map((year) => (

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { SchoolSetupWizard } from "@/components/school/SchoolSetupWizard";
+import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -49,10 +50,15 @@ export default async function SchoolSetupPage() {
             <div className="relative z-10 max-w-2xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-10 relative">
-                    <div className="relative inline-flex items-center justify-center w-20 h-20 mb-6">
-                        <div className="absolute inset-0 bg-[#0BD0D9] rounded-3xl blur-xl opacity-20 animate-pulse" />
-                        <div className="relative w-full h-full bg-[#0BD0D9] rounded-3xl flex items-center justify-center shadow-md rotate-3 transition-transform hover:rotate-6">
-                            <span className="text-4xl -rotate-3">🧚‍♀️</span>
+                    <div className="relative inline-flex items-center justify-center mb-6">
+                        <div className="bg-white rounded-2xl shadow-md overflow-hidden inline-flex items-center">
+                            <Image
+                                src="/image/homepage/icon 1.png"
+                                alt="ครูนางฟ้า"
+                                width={240}
+                                height={90}
+                                className="h-20 sm:h-24 w-auto object-contain"
+                            />
                         </div>
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">

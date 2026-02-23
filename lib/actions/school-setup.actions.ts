@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type {
     SchoolClassItem,
     SchoolContextData,
@@ -131,19 +132,22 @@ export async function addSchoolClass(
             };
         }
 
+        // Normalize ชื่อห้องเรียนให้เป็นรูปแบบมาตรฐาน เช่น "ม1/2" → "ม.1/2"
+        const normalizedName = normalizeClassName(parsedName.data);
+
         const existing = await prisma.schoolClass.findUnique({
-            where: { schoolId_name: { schoolId, name: parsedName.data } },
+            where: { schoolId_name: { schoolId, name: normalizedName } },
         });
 
         if (existing) {
             return {
                 success: false,
-                message: `ห้อง "${parsedName.data}" มีอยู่แล้ว`,
+                message: `ห้อง "${normalizedName}" มีอยู่แล้ว`,
             };
         }
 
         const schoolClass = await prisma.schoolClass.create({
-            data: { schoolId, name: parsedName.data },
+            data: { schoolId, name: normalizedName },
         });
 
         revalidatePath(CLASSES_PATH);

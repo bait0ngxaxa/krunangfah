@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { uploadWorksheet, updateTeacherNotes } from "@/lib/actions/activity";
-import { ACTIVITIES, getWorksheetActivityIndices, getWorkspaceColorConfig } from "./constants";
+import {
+    uploadWorksheet,
+    updateTeacherNotes,
+    deleteWorksheetUpload,
+    confirmActivityComplete,
+} from "@/lib/actions/activity";
+import {
+    ACTIVITIES,
+    getWorksheetActivityIndices,
+    getWorkspaceColorConfig,
+} from "./constants";
 import type {
     ActivityWorkspaceProps,
     UseActivityWorkspaceReturn,
@@ -28,10 +37,6 @@ export function useActivityWorkspace({
     const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
     const [teacherNotes, setTeacherNotes] = useState<string>("");
     const [savingNotes, setSavingNotes] = useState(false);
-    const [pendingCompletion, setPendingCompletion] = useState<number | null>(null);
-    const [completedUploads, setCompletedUploads] = useState<
-        { id: string; fileName: string; fileUrl: string }[]
-    >([]);
 
     // Computed values
     const config = getWorkspaceColorConfig(riskLevel);
@@ -66,25 +71,7 @@ export function useActivityWorkspace({
 
             if (result.success) {
                 toast.success("อัปโหลดใบงานสำเร็จ");
-
-                if (result.completed && result.activityNumber) {
-                    // เก็บข้อมูลไฟล์ + activity number ไว้ใน state ก่อน revalidation จะเปลี่ยน data
-                    const uploads = currentProgress?.worksheetUploads ?? [];
-                    // เพิ่มไฟล์ที่เพิ่งอัปโหลดเข้าไปด้วย (ถ้า result มี worksheet info)
-                    const lastUpload = result.worksheet
-                        ? {
-                              id: result.worksheet.id,
-                              fileName: file.name,
-                              fileUrl: result.worksheet.filePath,
-                          }
-                        : null;
-                    setCompletedUploads(
-                        lastUpload ? [...uploads, lastUpload] : uploads,
-                    );
-                    setPendingCompletion(result.activityNumber);
-                } else {
-                    router.refresh();
-                }
+                router.refresh();
             } else {
                 toast.error(result.error || "เกิดข้อผิดพลาดในการอัปโหลด");
             }
@@ -96,19 +83,31 @@ export function useActivityWorkspace({
         }
     };
 
-    const handleConfirmComplete = () => {
-        if (!pendingCompletion) return;
+    const handleConfirmComplete = async () => {
+        if (!currentProgress) return;
 
-        const phqParam = phqResultId ? `&phqResultId=${phqResultId}` : "";
+        try {
+            const result = await confirmActivityComplete(currentProgress.id);
+            if (result.success && result.activityNumber) {
+                const phqParam = phqResultId
+                    ? `&phqResultId=${phqResultId}`
+                    : "";
 
-        if (pendingCompletion === 1) {
-            router.push(
-                `/students/${studentId}/help/start/assessment?activity=${pendingCompletion}${phqParam}`,
-            );
-        } else {
-            router.push(
-                `/students/${studentId}/help/start/encouragement?activity=${pendingCompletion}${phqParam}`,
-            );
+                if (result.activityNumber === 1) {
+                    router.push(
+                        `/students/${studentId}/help/start/assessment?activity=${result.activityNumber}${phqParam}`,
+                    );
+                } else {
+                    router.push(
+                        `/students/${studentId}/help/start/encouragement?activity=${result.activityNumber}${phqParam}`,
+                    );
+                }
+            } else {
+                toast.error(result.error || "เกิดข้อผิดพลาด");
+            }
+        } catch (error) {
+            console.error("Confirm complete error:", error);
+            toast.error("เกิดข้อผิดพลาด");
         }
     };
 
@@ -123,6 +122,21 @@ export function useActivityWorkspace({
             }
         };
         input.click();
+    };
+
+    const handleDeleteUpload = async (uploadId: string) => {
+        try {
+            const result = await deleteWorksheetUpload(uploadId);
+            if (result.success) {
+                toast.success(result.message);
+                router.refresh();
+            } else {
+                toast.error(result.message);
+            }
+        } catch (error) {
+            console.error("Delete upload error:", error);
+            toast.error("เกิดข้อผิดพลาดในการลบไฟล์");
+        }
     };
 
     const handleSaveNotes = async () => {
@@ -166,13 +180,10 @@ export function useActivityWorkspace({
         currentActivityNumber,
         currentActivity,
 
-        // Completion confirmation
-        pendingCompletion,
-        completedUploads,
-        handleConfirmComplete,
-
         // Handlers
         handleFileSelect,
+        handleDeleteUpload,
+        handleConfirmComplete,
         handleSaveNotes,
     };
 }

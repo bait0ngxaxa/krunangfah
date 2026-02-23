@@ -28,7 +28,9 @@ export function TeacherReferralModal({
     const [error, setError] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
     const [teachers, setTeachers] = useState<TeacherPickerOption[]>([]);
-    const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
+    const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(
+        null,
+    );
 
     useEffect(() => {
         setMounted(true);
@@ -57,7 +59,9 @@ export function TeacherReferralModal({
             }
         }
         void loadTeachers();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const handleSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -105,13 +109,13 @@ export function TeacherReferralModal({
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="bg-violet-500 px-8 py-6 rounded-t-3xl relative overflow-hidden">
-                    <div className="absolute inset-0 bg-linear-to-br from-violet-600/50 to-fuchsia-500/30" />
+                <div className="bg-[#0BD0D9] px-8 py-6 rounded-t-3xl relative overflow-hidden">
+                    <div className="absolute inset-0 bg-linear-to-br from-[#09B8C0]/50 to-emerald-500/30" />
                     <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
                         <UserCheck className="w-6 h-6 text-white" />
                         ส่งต่อนักเรียน
                     </h3>
-                    <p className="text-violet-100 text-sm mt-1 relative z-10">
+                    <p className="text-white/80 text-sm mt-1 relative z-10">
                         {studentName}
                     </p>
                 </div>
@@ -138,7 +142,9 @@ export function TeacherReferralModal({
                         ) : teachers.length === 0 ? (
                             <div className="flex flex-col items-center py-8 text-gray-400">
                                 <Users className="w-10 h-10 mb-2 opacity-50" />
-                                <p className="text-sm font-medium">ไม่พบครูในโรงเรียน</p>
+                                <p className="text-sm font-medium">
+                                    ไม่พบครูในโรงเรียน
+                                </p>
                             </div>
                         ) : (
                             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
@@ -147,7 +153,7 @@ export function TeacherReferralModal({
                                         key={teacher.userId}
                                         className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
                                             selectedTeacherId === teacher.userId
-                                                ? "border-violet-400 bg-violet-50 shadow-md"
+                                                ? "border-[#0BD0D9] bg-cyan-50 shadow-md"
                                                 : "border-gray-200 bg-gray-50 hover:border-gray-300"
                                         }`}
                                     >
@@ -155,20 +161,24 @@ export function TeacherReferralModal({
                                             type="radio"
                                             name="selectedTeacher"
                                             value={teacher.userId}
-                                            checked={selectedTeacherId === teacher.userId}
-                                            onChange={() => setSelectedTeacherId(teacher.userId)}
-                                            className="w-5 h-5 text-violet-500 accent-violet-500"
+                                            checked={
+                                                selectedTeacherId ===
+                                                teacher.userId
+                                            }
+                                            onChange={() =>
+                                                setSelectedTeacherId(
+                                                    teacher.userId,
+                                                )
+                                            }
+                                            className="w-5 h-5 text-[#0BD0D9] accent-[#0BD0D9]"
                                         />
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600 font-bold text-sm shrink-0">
+                                            <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center text-[#0BD0D9] font-bold text-sm shrink-0">
                                                 {teacher.name.charAt(0)}
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="font-bold text-gray-800 truncate">
                                                     {teacher.name}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    ห้องที่ปรึกษา: {teacher.advisoryClass}
                                                 </p>
                                             </div>
                                         </div>
@@ -191,7 +201,7 @@ export function TeacherReferralModal({
                         <button
                             type="submit"
                             disabled={isSubmitting || !selectedTeacherId}
-                            className="flex-1 px-6 py-3 bg-violet-500 text-white rounded-xl hover:shadow-md hover:bg-violet-600 hover:-translate-y-0.5 transition-all font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 px-6 py-3 bg-[#0BD0D9] text-white rounded-xl hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-0.5 transition-all font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>

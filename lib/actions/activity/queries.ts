@@ -88,7 +88,7 @@ export async function getActivityProgress(
             },
             include: {
                 worksheetUploads: {
-                    orderBy: { uploadedAt: "desc" },
+                    orderBy: { worksheetNumber: "asc" },
                 },
                 teacher: {
                     select: {

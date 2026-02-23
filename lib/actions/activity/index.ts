@@ -8,9 +8,10 @@ export {
     unlockNextActivity,
     scheduleActivity,
     updateTeacherNotes,
+    confirmActivityComplete,
 } from "./mutations";
 
-export { uploadWorksheet } from "./file-utils";
+export { uploadWorksheet, deleteWorksheetUpload } from "./file-utils";
 
 export { ACTIVITY_INDICES, REQUIRED_WORKSHEETS } from "./constants";
 

@@ -18,7 +18,7 @@ export default async function OnboardingLayout({
                 </div>
             </NavbarGreenBar>
             {/* pt = full navbar height */}
-            <div className="pt-[120px]">{children}</div>
+            <div className="pt-[80px]">{children}</div>
         </>
     );
 }

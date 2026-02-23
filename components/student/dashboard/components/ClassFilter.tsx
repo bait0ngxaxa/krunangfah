@@ -38,7 +38,7 @@ export function ClassFilter({
                     <select
                         value={selectedClass}
                         onChange={(e) => onClassChange(e.target.value)}
-                        className="w-full appearance-none px-4 py-2.5 pr-10 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-100 focus:border-teal-300 outline-none bg-white transition-all text-sm font-semibold text-slate-700 shadow-xs cursor-pointer"
+                        className="w-full appearance-none px-4 py-2.5 pr-10 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-100 focus:border-teal-300 outline-none bg-white transition-all text-sm font-semibold text-slate-700 shadow-xs cursor-pointer truncate"
                     >
                         <option value="all">
                             ทุกห้อง ({schoolFilteredStudents.length} คน)

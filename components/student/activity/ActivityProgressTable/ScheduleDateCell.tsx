@@ -9,6 +9,7 @@ interface ScheduleDateCellProps {
     activityProgressId: string;
     currentDate: Date | null;
     isLocked: boolean;
+    readOnly?: boolean;
 }
 
 function formatDateThai(date: Date): string {
@@ -31,6 +32,7 @@ export function ScheduleDateCell({
     activityProgressId,
     currentDate,
     isLocked,
+    readOnly = false,
 }: ScheduleDateCellProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [dateValue, setDateValue] = useState(
@@ -41,6 +43,19 @@ export function ScheduleDateCell({
 
     if (isLocked) {
         return (
+            <span className="text-gray-400 italic text-sm">
+                ยังไม่ได้นัดหมาย
+            </span>
+        );
+    }
+
+    // readOnly mode — แสดงวันที่อย่างเดียว ไม่ให้แก้ไข
+    if (readOnly) {
+        return currentDate ? (
+            <span className="text-gray-700 font-medium text-sm">
+                {formatDateThai(currentDate)}
+            </span>
+        ) : (
             <span className="text-gray-400 italic text-sm">
                 ยังไม่ได้นัดหมาย
             </span>

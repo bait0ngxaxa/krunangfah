@@ -142,6 +142,12 @@ export async function createCounselingSession(data: {
         const validated = counselingSessionSchema.parse(data);
 
         const session = await requireAuth();
+
+        // system_admin เป็น readonly — ไม่สามารถเพิ่มบันทึกได้
+        if (session.user.role === "system_admin") {
+            return { success: false, message: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม" };
+        }
+
         const userId = session.user.id;
 
         // Verify access
@@ -206,6 +212,11 @@ export async function updateCounselingSession(
 
         const session = await requireAuth();
 
+        // system_admin เป็น readonly — ไม่สามารถแก้ไขบันทึกได้
+        if (session.user.role === "system_admin") {
+            return { success: false, message: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม" };
+        }
+
         // Get session to verify access
         const counselingSession = await prisma.counselingSession.findUnique({
             where: { id: validated.sessionId },
@@ -255,6 +266,11 @@ export async function deleteCounselingSession(id: string) {
         });
 
         const session = await requireAuth();
+
+        // system_admin เป็น readonly — ไม่สามารถลบบันทึกได้
+        if (session.user.role === "system_admin") {
+            return { success: false, message: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม" };
+        }
 
         const counselingSession = await prisma.counselingSession.findUnique({
             where: { id: validated.sessionId },

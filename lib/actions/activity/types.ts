@@ -33,7 +33,7 @@ export interface UploadWorksheetResult {
     error?: string;
     uploadedCount?: number;
     requiredCount?: number;
-    completed?: boolean;
+    allUploaded?: boolean;
     activityNumber?: number;
 }
 

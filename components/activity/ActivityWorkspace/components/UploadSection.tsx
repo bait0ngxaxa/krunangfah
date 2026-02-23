@@ -1,4 +1,12 @@
-import { Upload, CheckCircle2, Eye, Loader2, FileText } from "lucide-react";
+import {
+    Upload,
+    CheckCircle2,
+    Eye,
+    Loader2,
+    FileText,
+    X,
+    ArrowRight,
+} from "lucide-react";
 import { getUploadColors, getWorksheetNames } from "../constants";
 import type { ActivityProgressData, PreviewFile } from "../types";
 
@@ -8,11 +16,14 @@ interface UploadSectionProps {
     riskLevel: "orange" | "yellow" | "green";
     uploading: string | null;
     onFileSelect: (progressId: string) => void;
+    onRemove: (uploadId: string) => Promise<void>;
+    onConfirmComplete: () => Promise<void>;
     onPreview: (file: PreviewFile) => void;
 }
 
 /**
  * Upload section for worksheet submissions
+ * Handles upload, preview, delete, and confirm completion — all in one view
  */
 export function UploadSection({
     currentProgress,
@@ -20,17 +31,28 @@ export function UploadSection({
     riskLevel,
     uploading,
     onFileSelect,
+    onRemove,
+    onConfirmComplete,
     onPreview,
 }: UploadSectionProps) {
     const requiredCount = currentActivityNumber === 5 ? 1 : 2;
     const uploadedCount = currentProgress.worksheetUploads.length;
     const remaining = requiredCount - uploadedCount;
+    const allUploaded = remaining <= 0;
     const uploadColors = getUploadColors(riskLevel);
 
-    // Get worksheet name for current upload
-    const nextWorksheetName = getWorksheetNames(currentActivityNumber).at(
-        uploadedCount,
+    // Find the next available worksheet slot
+    const existingNumbers = new Set(
+        currentProgress.worksheetUploads.map((u) => u.worksheetNumber),
     );
+    let nextSlot = 1;
+    while (existingNumbers.has(nextSlot)) {
+        nextSlot++;
+    }
+
+    // Get worksheet name for the next slot
+    const worksheetNames = getWorksheetNames(currentActivityNumber);
+    const nextWorksheetName = worksheetNames[nextSlot - 1];
 
     return (
         <div
@@ -47,7 +69,7 @@ export function UploadSection({
                 </h3>
                 <span
                     className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ${
-                        uploadedCount >= requiredCount
+                        allUploaded
                             ? `${uploadColors.completeBg} text-white`
                             : "bg-yellow-100 text-yellow-700 border border-yellow-200"
                     }`}
@@ -56,7 +78,7 @@ export function UploadSection({
                 </span>
             </div>
 
-            {/* Uploaded files */}
+            {/* Uploaded files with preview + delete */}
             {currentProgress.worksheetUploads.length > 0 && (
                 <div className="mb-4 space-y-2">
                     {currentProgress.worksheetUploads.map((upload) => (
@@ -70,24 +92,41 @@ export function UploadSection({
                                     {upload.fileName}
                                 </span>
                             </div>
-                            <button
-                                onClick={() =>
-                                    onPreview({
-                                        url: upload.fileUrl,
-                                        name: upload.fileName,
-                                    })
-                                }
-                                className={`inline-flex items-center gap-2 px-4 py-2 ${uploadColors.button} text-white rounded-lg text-xs font-bold ${uploadColors.buttonHover} transition-all shadow-sm hover:shadow-md shrink-0`}
-                            >
-                                <Eye className="w-4 h-4" />
-                                พรีวิว
-                            </button>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <button
+                                    onClick={() =>
+                                        onPreview({
+                                            url: upload.fileUrl,
+                                            name: upload.fileName,
+                                        })
+                                    }
+                                    className={`inline-flex items-center gap-2 px-4 py-2 ${uploadColors.button} text-white rounded-lg text-xs font-bold ${uploadColors.buttonHover} transition-all shadow-sm hover:shadow-md`}
+                                >
+                                    <Eye className="w-4 h-4" />
+                                    พรีวิว
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (
+                                            confirm(
+                                                "ต้องการลบไฟล์นี้เพื่ออัปโหลดใหม่หรือไม่?",
+                                            )
+                                        ) {
+                                            onRemove(upload.id);
+                                        }
+                                    }}
+                                    className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-500 rounded-lg hover:bg-red-200 hover:text-red-600 transition-all"
+                                    title="ลบไฟล์"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
             )}
 
-            {remaining > 0 ? (
+            {!allUploaded ? (
                 <>
                     <p
                         className={`${uploadColors.completeText} text-sm mb-4 font-medium flex items-center gap-2`}
@@ -112,7 +151,7 @@ export function UploadSection({
                                 <Upload className="w-5 h-5" />
                                 <div className="text-center">
                                     <div className="text-sm">
-                                        อัปโหลดใบงานที่ {uploadedCount + 1}
+                                        อัปโหลดใบงานที่ {nextSlot}
                                     </div>
                                     {nextWorksheetName && (
                                         <div className="text-xs opacity-90 font-normal">
@@ -125,11 +164,22 @@ export function UploadSection({
                     </button>
                 </>
             ) : (
-                <div
-                    className={`flex items-center justify-center gap-3 p-4 bg-white rounded-xl border-2 border-dashed ${uploadColors.border} ${uploadColors.completeText} font-bold text-lg`}
-                >
-                    <CheckCircle2 className="w-6 h-6" />
-                    เสร็จสิ้นกิจกรรมแล้ว!
+                /* All files uploaded — show confirm button */
+                <div className="flex flex-col items-center gap-4 mt-auto">
+                    <div className="flex items-center gap-2 text-green-600 font-bold">
+                        <CheckCircle2 className="w-5 h-5" />
+                        อัปโหลดใบงานครบแล้ว!
+                    </div>
+                    <p className="text-gray-500 text-sm text-center">
+                        ตรวจสอบไฟล์ แล้วกดยืนยันเพื่อจบกิจกรรม
+                    </p>
+                    <button
+                        onClick={onConfirmComplete}
+                        className="w-full px-6 py-3 bg-[#0BD0D9] text-white rounded-xl font-bold text-lg hover:shadow-md hover:-translate-y-0.5 hover:bg-[#09B8C0] transition-all flex items-center justify-center gap-2"
+                    >
+                        ยืนยันจบกิจกรรม
+                        <ArrowRight className="w-5 h-5" />
+                    </button>
                 </div>
             )}
         </div>

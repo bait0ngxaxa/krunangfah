@@ -7,6 +7,7 @@ import type { ActivityProgress } from "./types";
 interface ActivityRowProps {
     progress: ActivityProgress;
     index: number;
+    readOnly?: boolean;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -31,7 +32,7 @@ function StatusBadge({ status }: { status: string }) {
     );
 }
 
-export function ActivityRow({ progress, index }: ActivityRowProps) {
+export function ActivityRow({ progress, index, readOnly = false }: ActivityRowProps) {
     const isLocked = progress.status === "locked";
     const isCompleted = progress.status === "completed";
     const activityName = getActivityName(progress.activityNumber);
@@ -95,6 +96,7 @@ export function ActivityRow({ progress, index }: ActivityRowProps) {
                         activityProgressId={progress.id}
                         currentDate={progress.scheduledDate}
                         isLocked={isLocked}
+                        readOnly={readOnly}
                     />
                 </div>
             </td>

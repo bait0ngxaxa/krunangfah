@@ -48,7 +48,7 @@ export default async function ProtectedLayout({
             <Suspense fallback={<NavbarFallback />}>
                 <NavbarWrapper />
             </Suspense>
-            <main className="pt-[120px]">{children}</main>
+            <main className="pt-[80px]">{children}</main>
         </div>
     );
 }

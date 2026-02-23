@@ -3,7 +3,18 @@
 import { useAddTeacherForm } from "./useAddTeacherForm";
 import type { AcademicYear, TeacherRosterItem } from "./types";
 import { ErrorMessage, InviteLinkSection } from "./components";
-import { Users, UserCheck, Briefcase, GraduationCap, Mail } from "lucide-react";
+import {
+    Users,
+    UserCheck,
+    Briefcase,
+    GraduationCap,
+    Mail,
+    User,
+    Clock,
+    Building2,
+    FolderKanban,
+    CalendarDays,
+} from "lucide-react";
 
 interface AddTeacherFormProps {
     academicYears: AcademicYear[];
@@ -67,7 +78,7 @@ export function AddTeacherForm({
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                         <Users className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-emerald-500" />
-                        เลือกครูจาก Roster
+                        เลือกครูที่จะส่งคำเชิญ
                     </label>
                     <select
                         value={selectedRosterId}
@@ -116,20 +127,28 @@ export function AddTeacherForm({
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        <div>
-                            <span className="text-xs text-gray-400">
-                                ชื่อ-นามสกุล
-                            </span>
-                            <p className="font-semibold text-gray-800">
-                                {selectedTeacher.firstName}{" "}
-                                {selectedTeacher.lastName}
-                            </p>
+                        <div className="flex items-start gap-1.5">
+                            <User className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                            <div>
+                                <span className="text-xs text-gray-400">
+                                    ชื่อ-นามสกุล
+                                </span>
+                                <p className="font-semibold text-gray-800">
+                                    {selectedTeacher.firstName}{" "}
+                                    {selectedTeacher.lastName}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <span className="text-xs text-gray-400">อายุ</span>
-                            <p className="font-semibold text-gray-800">
-                                {selectedTeacher.age} ปี
-                            </p>
+                        <div className="flex items-start gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                            <div>
+                                <span className="text-xs text-gray-400">
+                                    อายุ
+                                </span>
+                                <p className="font-semibold text-gray-800">
+                                    {selectedTeacher.age} ปี
+                                </p>
+                            </div>
                         </div>
                         <div className="flex items-start gap-1.5">
                             <Briefcase className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
@@ -158,23 +177,29 @@ export function AddTeacherForm({
                                 </p>
                             </div>
                         </div>
-                        <div>
-                            <span className="text-xs text-gray-400">
-                                บทบาทในโรงเรียน
-                            </span>
-                            <p className="font-semibold text-gray-800">
-                                {selectedTeacher.schoolRole}
-                            </p>
+                        <div className="flex items-start gap-1.5">
+                            <Building2 className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                            <div>
+                                <span className="text-xs text-gray-400">
+                                    บทบาทในโรงเรียน
+                                </span>
+                                <p className="font-semibold text-gray-800">
+                                    {selectedTeacher.schoolRole}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <span className="text-xs text-gray-400">
-                                บทบาทในโครงการ
-                            </span>
-                            <p className="font-semibold text-gray-800">
-                                {PROJECT_ROLE_LABELS[
-                                    selectedTeacher.projectRole
-                                ] ?? selectedTeacher.projectRole}
-                            </p>
+                        <div className="flex items-start gap-1.5">
+                            <FolderKanban className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                            <div>
+                                <span className="text-xs text-gray-400">
+                                    บทบาทในโครงการ
+                                </span>
+                                <p className="font-semibold text-gray-800">
+                                    {PROJECT_ROLE_LABELS[
+                                        selectedTeacher.projectRole
+                                    ] ?? selectedTeacher.projectRole}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -212,6 +237,7 @@ export function AddTeacherForm({
             {selectedTeacher && (
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
+                        <CalendarDays className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-emerald-500" />
                         ปีการศึกษา <span className="text-red-500">*</span>
                     </label>
                     <select

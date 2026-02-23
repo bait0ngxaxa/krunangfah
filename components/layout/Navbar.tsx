@@ -71,7 +71,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
                 <div className="flex items-center gap-3 ml-auto pr-6 sm:pr-10 lg:pr-16 shrink-0 border-l border-transparent">
                     <div className="hidden md:flex items-center gap-3 xl:gap-4">
                         {/* Non-clickable avatar block */}
-                        <div className="relative w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-[#FFE14D] shrink-0 overflow-hidden shadow-sm border border-yellow-200 flex items-center justify-center p-1.5 lg:p-2">
+                        <div className="relative w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-[#FFE14D] shrink-0 overflow-hidden shadow-sm border border-yellow-200 flex items-center justify-center p-1 lg:p-1.5">
                             <div className="relative w-full h-full">
                                 <Image
                                     src="/image/logout.png"
@@ -102,7 +102,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
 
             {/* Mobile Menu */}
             {isMobileMenuOpen && (
-                <div className="md:hidden bg-[#00DB87] shadow-lg fixed top-[72px] left-0 right-0 z-40 rounded-b-2xl">
+                <div className="md:hidden bg-[#00DB87] shadow-lg fixed top-[56px] left-0 right-0 z-40 rounded-b-2xl">
                     <div className="px-3 pt-2 pb-3 space-y-1">
                         {navLinks.map((link) => (
                             <Link

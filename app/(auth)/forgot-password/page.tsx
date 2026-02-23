@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
                 <div className="ml-auto pr-4 sm:pr-12 lg:pr-[131px] flex items-center shrink-0">
                     <Link
                         href="/"
-                        className="text-white hover:opacity-80 transition-opacity font-medium whitespace-nowrap text-lg sm:text-2xl lg:text-[30px]"
+                        className="text-white hover:opacity-80 transition-opacity font-medium whitespace-nowrap text-base sm:text-lg lg:text-xl"
                     >
                         หน้าหลัก
                     </Link>

@@ -12,6 +12,7 @@ export async function ActivityProgressTable({
     phqResultId,
     riskLevel,
     assessmentPeriod,
+    readOnly = false,
 }: ActivityProgressTableProps) {
     const activityNumbers = getActivityNumbers(riskLevel);
 
@@ -78,6 +79,7 @@ export async function ActivityProgressTable({
                                 key={progress.id}
                                 progress={progress}
                                 index={index}
+                                readOnly={readOnly}
                             />
                         ))}
                     </tbody>

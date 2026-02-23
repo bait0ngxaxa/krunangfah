@@ -1,10 +1,10 @@
-import { LayoutGrid, Users } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { requireAuth } from "@/lib/session";
 import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
 import { getSchoolRoster } from "@/lib/actions/teacher-roster.actions";
-import { ClassListEditor } from "@/components/school/ClassListEditor";
-import { TeacherRosterEditor } from "@/components/school/TeacherRosterEditor";
+import { getSchoolAdmins } from "@/lib/actions/primary-admin.actions";
+import { SchoolClassesTabs } from "@/components/school/SchoolClassesTabs";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -17,9 +17,10 @@ export default async function SchoolClassesPage() {
     const session = await requireAuth();
     const isPrimary = session.user.isPrimary === true;
 
-    const [classes, roster] = await Promise.all([
+    const [classes, roster, schoolAdmins] = await Promise.all([
         getSchoolClasses(),
         getSchoolRoster(),
+        isPrimary ? getSchoolAdmins() : Promise.resolve([]),
     ]);
 
     return (
@@ -50,50 +51,14 @@ export default async function SchoolClassesPage() {
                     </div>
                 </div>
 
-                {/* Section: Classes */}
-                <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-emerald-100 mb-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-xl bg-[#0BD0D9] flex items-center justify-center shadow-sm">
-                            <LayoutGrid className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-base font-bold text-gray-800">
-                                ห้องเรียน
-                            </h2>
-                            <p className="text-xs text-gray-400">
-                                {classes.length} ห้อง — ใช้เป็น dropdown
-                                เมื่อเชิญครู
-                            </p>
-                        </div>
-                    </div>
-                    <ClassListEditor
-                        initialClasses={classes}
-                        readOnly={!isPrimary}
-                    />
-                </div>
-
-                {/* Section: Teacher Roster */}
-                <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-emerald-100">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-xl bg-[#0BD0D9] flex items-center justify-center shadow-sm">
-                            <Users className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-base font-bold text-gray-800">
-                                รายชื่อครู
-                            </h2>
-                            <p className="text-xs text-gray-400">
-                                {roster.length} คน —
-                                ลงข้อมูลไว้ล่วงหน้าเพื่อใช้ตอน invite
-                            </p>
-                        </div>
-                    </div>
-                    <TeacherRosterEditor
-                        initialRoster={roster}
-                        schoolClasses={classes}
-                        readOnly={!isPrimary}
-                    />
-                </div>
+                {/* Tabbed Content */}
+                <SchoolClassesTabs
+                    classes={classes}
+                    roster={roster}
+                    schoolAdmins={schoolAdmins}
+                    isPrimary={isPrimary}
+                    currentUserId={session.user.id}
+                />
             </div>
         </div>
     );

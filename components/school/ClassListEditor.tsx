@@ -6,6 +6,7 @@ import {
     addSchoolClass,
     removeSchoolClass,
 } from "@/lib/actions/school-setup.actions";
+import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type { SchoolClassItem } from "@/types/school-setup.types";
 
 interface ClassListEditorProps {
@@ -65,7 +66,7 @@ export function ClassListEditor({
     }
 
     async function handleBulkAdd() {
-        const grade = bulkGrade.trim();
+        const grade = normalizeClassName(bulkGrade.trim());
         const count = parseInt(bulkCount, 10);
         if (!grade || isNaN(count) || count < 1 || count > 20) {
             setErrorMsg("กรุณากรอกระดับชั้นและจำนวนทับที่ถูกต้อง (1-20)");
@@ -165,7 +166,8 @@ export function ClassListEditor({
                             จะสร้าง:{" "}
                             {Array.from(
                                 { length: Math.min(parseInt(bulkCount), 20) },
-                                (_, i) => `${bulkGrade}/${i + 1}`,
+                                (_, i) =>
+                                    `${normalizeClassName(bulkGrade)}/${i + 1}`,
                             ).join(", ")}
                         </p>
                     )}

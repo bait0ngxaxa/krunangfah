@@ -8,6 +8,7 @@ import {
     ClassFilter,
     EmptyPrompt,
     ScreeningSummary,
+    StudentFilterBar,
 } from "./components";
 import { ReferredOutSection } from "../referral/ReferredOutSection";
 import type { StudentDashboardProps } from "./types";
@@ -58,7 +59,7 @@ export function StudentDashboard(props: StudentDashboardProps) {
                     <ClassFilter
                         classes={dashboard.classes}
                         selectedClass={dashboard.selectedClass}
-                        onClassChange={dashboard.setSelectedClass}
+                        onClassChange={dashboard.handleClassChange}
                         schoolFilteredStudents={
                             dashboard.schoolFilteredStudents
                         }
@@ -96,14 +97,37 @@ export function StudentDashboard(props: StudentDashboardProps) {
                             }
                         />
                     ) : (
-                        <ScreeningSummary
-                            filteredStudents={dashboard.filteredStudents}
-                            groupedStudents={dashboard.groupedStudents}
-                            selectedClass={dashboard.selectedClass}
-                            classes={dashboard.classes}
-                            riskLevels={dashboard.riskLevels}
-                            onStudentClick={dashboard.handleStudentClick}
-                        />
+                        <>
+                            {/* Risk Level & Referral Filter */}
+                            <StudentFilterBar
+                                selectedRiskFilter={
+                                    dashboard.selectedRiskFilter
+                                }
+                                showReferredOnly={dashboard.showReferredOnly}
+                                referredCount={dashboard.referredCount}
+                                groupedStudents={dashboard.groupedStudents}
+                                riskLevels={dashboard.riskLevels}
+                                onRiskFilterChange={
+                                    dashboard.handleRiskFilterChange
+                                }
+                                onReferredToggle={
+                                    dashboard.handleReferredToggle
+                                }
+                            />
+
+                            <ScreeningSummary
+                                displayedStudentCount={
+                                    dashboard.displayedStudentCount
+                                }
+                                groupedStudents={
+                                    dashboard.displayedGroupedStudents
+                                }
+                                selectedClass={dashboard.selectedClass}
+                                classes={dashboard.classes}
+                                riskLevels={dashboard.displayedRiskLevels}
+                                onStudentClick={dashboard.handleStudentClick}
+                            />
+                        </>
                     )}
 
                     {/* Referred Out Students - class_teacher only */}

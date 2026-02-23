@@ -84,6 +84,7 @@ async function StudentDetailContent({
         getCounselingSessions(studentId),
     ]);
     const currentUserId = session.user.id;
+    const isSystemAdmin = session.user.role === "system_admin";
 
     if (!student) {
         notFound();
@@ -133,11 +134,13 @@ async function StudentDetailContent({
                         semester: latestResult.academicYear.semester,
                         assessmentRound: latestResult.assessmentRound,
                     }}
+                    readOnly={isSystemAdmin}
                 />
             )}
             <CounselingLogTable
                 sessions={counselingSessions}
                 studentId={studentId}
+                readOnly={isSystemAdmin}
             />
         </div>
     );
