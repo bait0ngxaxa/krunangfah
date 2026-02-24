@@ -54,13 +54,21 @@ export async function getStudentRiskCounts(
     try {
         const session = await requireAuth();
         const user = session.user;
-        const { schoolId, advisoryClass } = await getUserContext(user.id, user.role);
+        const { schoolId, advisoryClass } = await getUserContext(
+            user.id,
+            user.role,
+        );
 
         if (!schoolId && !isSystemAdmin(user.role)) return null;
 
         // Get classes and risk counts in parallel
         const [classes, rawCounts] = await Promise.all([
-            getDistinctClassesQuery(schoolId, advisoryClass, user.role, user.id),
+            getDistinctClassesQuery(
+                schoolId,
+                advisoryClass,
+                user.role,
+                user.id,
+            ),
             getRiskLevelCountsQuery(
                 schoolId,
                 advisoryClass,
@@ -127,7 +135,10 @@ export async function getStudents(
         const limit = options?.limit ?? 100;
         const classFilter = options?.classFilter;
 
-        const { schoolId, advisoryClass } = await getUserContext(user.id, user.role);
+        const { schoolId, advisoryClass } = await getUserContext(
+            user.id,
+            user.role,
+        );
 
         if (!schoolId && !isSystemAdmin(user.role)) {
             return {
@@ -138,11 +149,17 @@ export async function getStudents(
 
         // Use cached data for first page, fresh data for pagination
         if (page === 1 && !classFilter) {
-            return getCachedStudents(schoolId, advisoryClass, user.role, user.id, {
-                page,
-                limit,
-                classFilter,
-            });
+            return getCachedStudents(
+                schoolId,
+                advisoryClass,
+                user.role,
+                user.id,
+                {
+                    page,
+                    limit,
+                    classFilter,
+                },
+            );
         }
 
         const { students, total } = await getStudentsQuery(
@@ -183,7 +200,10 @@ export async function searchStudents(query: string) {
 
         const session = await requireAuth();
         const user = session.user;
-        const { schoolId, advisoryClass } = await getUserContext(user.id, user.role);
+        const { schoolId, advisoryClass } = await getUserContext(
+            user.id,
+            user.role,
+        );
 
         if (!schoolId && !isSystemAdmin(user.role)) return [];
 
@@ -231,7 +251,10 @@ export async function getStudentDetail(studentId: string) {
     try {
         const session = await requireAuth();
         const user = session.user;
-        const { schoolId, advisoryClass } = await getUserContext(user.id, user.role);
+        const { schoolId, advisoryClass } = await getUserContext(
+            user.id,
+            user.role,
+        );
 
         if (!schoolId && !isSystemAdmin(user.role)) return null;
 
@@ -245,6 +268,34 @@ export async function getStudentDetail(studentId: string) {
     } catch (error) {
         console.error("Get student detail error:", error);
         return null;
+    }
+}
+
+/**
+ * Check if round 1 PHQ data exists for the given academic year
+ * Used to prevent importing round 2 before round 1
+ */
+export async function hasRound1Data(academicYearId: string): Promise<boolean> {
+    try {
+        const session = await requireAuth();
+        const user = session.user;
+        const { schoolId } = await getUserContext(user.id, user.role);
+
+        if (!schoolId && !isSystemAdmin(user.role)) return false;
+
+        const count = await prisma.phqResult.count({
+            where: {
+                academicYearId,
+                assessmentRound: 1,
+                ...(schoolId ? { student: { schoolId } } : {}),
+            },
+            take: 1,
+        });
+
+        return count > 0;
+    } catch (error) {
+        console.error("hasRound1Data error:", error);
+        return false;
     }
 }
 

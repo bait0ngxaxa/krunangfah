@@ -88,7 +88,7 @@ function getRiskData(level: RiskLevel): {
  * - 5-9 = green (เฝ้าระวังเล็กน้อย)
  * - 10-14 = yellow (เฝ้าระวังปานกลาง)
  * - 15-19 = orange (มีความเสี่ยง)
- * - 20-27 OR q9a/q9b = true = red (ความเสี่ยงสูง)
+ * - 20-27 OR q9a = true = red (ความเสี่ยงสูง)
  */
 export function calculateRiskLevel(scores: PhqScores): ScoringResult {
     const totalScore =
@@ -104,8 +104,8 @@ export function calculateRiskLevel(scores: PhqScores): ScoringResult {
 
     let riskLevel: RiskLevel;
 
-    // Special case: q9a or q9b = true → red immediately
-    if (scores.q9a || scores.q9b) {
+    // Special case: q9a = true → red immediately (q9b is informational only)
+    if (scores.q9a) {
         riskLevel = "red";
     } else if (totalScore >= 20) {
         riskLevel = "red";

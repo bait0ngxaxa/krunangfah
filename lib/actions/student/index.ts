@@ -18,6 +18,7 @@ export {
     searchStudents,
     getStudentDetail,
     getStudentRiskCounts,
+    hasRound1Data,
 } from "./main";
 
 // Mutations

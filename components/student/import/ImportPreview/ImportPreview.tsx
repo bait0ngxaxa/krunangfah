@@ -26,13 +26,15 @@ export function ImportPreview({
         error,
         academicYears,
         selectedYearId,
-        setSelectedYearId,
+        handleYearChange,
         assessmentRound,
         setAssessmentRound,
+        hasRound1,
         teacherProfile,
         previewData,
         filteredOutStudents,
         riskCounts,
+        handleScoreUpdate,
         handleSave,
     } = useImportPreview({ data, onSuccess });
 
@@ -56,9 +58,10 @@ export function ImportPreview({
                 <ImportSettings
                     academicYears={academicYears}
                     selectedYearId={selectedYearId}
-                    onYearChange={setSelectedYearId}
+                    onYearChange={handleYearChange}
                     assessmentRound={assessmentRound}
                     onRoundChange={setAssessmentRound}
+                    hasRound1={hasRound1}
                 />
 
                 <FilteredStudentsWarning
@@ -68,7 +71,10 @@ export function ImportPreview({
             </div>
 
             {/* Data Table */}
-            <StudentPreviewTable students={previewData} />
+            <StudentPreviewTable
+                students={previewData}
+                onScoreUpdate={handleScoreUpdate}
+            />
 
             {/* Error Display */}
             <ImportError error={error} />
@@ -80,6 +86,13 @@ export function ImportPreview({
                 isLoading={isLoading}
                 canSave={!!selectedYearId && previewData.length > 0}
                 studentCount={previewData.length}
+                academicYearLabel={(() => {
+                    const y = academicYears.find(
+                        (yr) => yr.id === selectedYearId,
+                    );
+                    return y ? `${y.year} เทอม ${y.semester}` : "";
+                })()}
+                assessmentRound={assessmentRound}
             />
         </div>
     );

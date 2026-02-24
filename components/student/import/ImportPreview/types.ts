@@ -1,5 +1,5 @@
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
-import { type RiskLevel } from "@/lib/utils/phq-scoring";
+import { type RiskLevel, type PhqScores } from "@/lib/utils/phq-scoring";
 
 /**
  * Props for ImportPreview component
@@ -16,6 +16,8 @@ export interface ImportPreviewProps {
 export interface PreviewStudent extends ParsedStudent {
     totalScore: number;
     riskLevel: RiskLevel;
+    /** Index in the editableData array — used for score edits after filtering */
+    _originalIndex: number;
 }
 
 /**
@@ -58,6 +60,7 @@ export interface UseImportPreviewReturn {
     selectedYearId: string;
     assessmentRound: number;
     teacherProfile: TeacherProfile | null;
+    hasRound1: boolean;
 
     // Computed values
     previewData: PreviewStudent[];
@@ -65,7 +68,12 @@ export interface UseImportPreviewReturn {
     riskCounts: RiskCounts;
 
     // Actions
-    setSelectedYearId: (id: string) => void;
+    handleYearChange: (yearId: string) => void;
     setAssessmentRound: (round: number) => void;
+    handleScoreUpdate: (
+        studentIndex: number,
+        field: keyof PhqScores,
+        value: number | boolean,
+    ) => void;
     handleSave: () => void;
 }

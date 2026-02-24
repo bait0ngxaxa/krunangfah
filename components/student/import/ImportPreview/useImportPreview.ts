@@ -1,6 +1,12 @@
-import { useState, useEffect, useMemo, useTransition } from "react";
-import { calculateRiskLevel } from "@/lib/utils/phq-scoring";
-import { importStudents } from "@/lib/actions/student";
+import {
+    useState,
+    useEffect,
+    useMemo,
+    useTransition,
+    useCallback,
+} from "react";
+import { calculateRiskLevel, type PhqScores } from "@/lib/utils/phq-scoring";
+import { importStudents, hasRound1Data } from "@/lib/actions/student";
 import {
     getAcademicYears,
     getCurrentTeacherProfile,
@@ -30,18 +36,20 @@ export function useImportPreview({
     const [teacherProfile, setTeacherProfile] = useState<TeacherProfile | null>(
         null,
     );
+    const [round1Exists, setRound1Exists] = useState<boolean>(false);
 
-    // Calculate scores for all students
-    const allPreviewData: PreviewStudent[] = useMemo(
-        () =>
-            data.map((student) => {
-                const { totalScore, riskLevel } = calculateRiskLevel(
-                    student.scores,
-                );
-                return { ...student, totalScore, riskLevel };
-            }),
-        [data],
+    // Editable student data — initialized from parsed Excel, can be modified in preview
+    const [editableData, setEditableData] = useState(() =>
+        data.map((student, idx) => {
+            const { totalScore, riskLevel } = calculateRiskLevel(
+                student.scores,
+            );
+            return { ...student, totalScore, riskLevel, _originalIndex: idx };
+        }),
     );
+
+    // Use editableData for all downstream computations
+    const allPreviewData = editableData;
 
     // Filter data + count risk levels in a single pass (combined iterations)
     const { previewData, filteredOutStudents, riskCounts } = useMemo(() => {
@@ -92,10 +100,13 @@ export function useImportPreview({
 
             setAcademicYears(years);
             const current = years.find((y) => y.isCurrent);
-            if (current) {
-                setSelectedYearId(current.id);
-            } else if (years.length > 0) {
-                setSelectedYearId(years[0].id);
+            const initialYearId = current?.id ?? years[0]?.id ?? "";
+
+            if (initialYearId) {
+                setSelectedYearId(initialYearId);
+                // Check round 1 for the initial academic year
+                const exists = await hasRound1Data(initialYearId);
+                setRound1Exists(exists);
             }
 
             if (profile) {
@@ -108,6 +119,47 @@ export function useImportPreview({
         loadData();
     }, []);
 
+    // Handler: when user changes academic year, also check round 1
+    const handleYearChange = useCallback(async (yearId: string) => {
+        setSelectedYearId(yearId);
+        setAssessmentRound(1); // always reset to round 1 on year change
+
+        if (!yearId) {
+            setRound1Exists(false);
+            return;
+        }
+
+        const exists = await hasRound1Data(yearId);
+        setRound1Exists(exists);
+    }, []);
+
+    // Handler: update a student's score in preview (before import)
+    const handleScoreUpdate = useCallback(
+        (
+            studentIndex: number,
+            field: keyof PhqScores,
+            value: number | boolean,
+        ) => {
+            setEditableData((prev) => {
+                const student = prev.at(studentIndex);
+                if (!student) return prev;
+
+                const newScores: PhqScores = {
+                    ...student.scores,
+                    ...({ [field]: value } as Partial<PhqScores>),
+                };
+                const { totalScore, riskLevel } = calculateRiskLevel(newScores);
+
+                return prev.map((s, i) =>
+                    i === studentIndex
+                        ? { ...s, scores: newScores, totalScore, riskLevel }
+                        : s,
+                );
+            });
+        },
+        [],
+    );
+
     // Handle save action
     const handleSave = () => {
         if (!selectedYearId) {
@@ -119,8 +171,18 @@ export function useImportPreview({
 
         startTransition(async () => {
             try {
+                // Use editableData (with user's corrections) instead of raw prop data
+                const studentsToImport = editableData.map((s) => ({
+                    studentId: s.studentId,
+                    firstName: s.firstName,
+                    lastName: s.lastName,
+                    gender: s.gender,
+                    age: s.age,
+                    class: s.class,
+                    scores: s.scores,
+                }));
                 const result = await importStudents(
-                    data,
+                    studentsToImport,
                     selectedYearId,
                     assessmentRound,
                 );
@@ -145,6 +207,7 @@ export function useImportPreview({
         selectedYearId,
         assessmentRound,
         teacherProfile,
+        hasRound1: round1Exists,
 
         // Computed values
         previewData,
@@ -152,8 +215,9 @@ export function useImportPreview({
         riskCounts,
 
         // Actions
-        setSelectedYearId,
+        handleYearChange,
         setAssessmentRound,
+        handleScoreUpdate,
         handleSave,
     };
 }
