@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { TrendingUp } from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 
 interface PHQResult {
     totalScore: number;
@@ -25,21 +26,6 @@ interface PHQResult {
 
 interface PHQTrendChartProps {
     results: PHQResult[];
-}
-
-function getLineColor(level: RiskLevel): string {
-    switch (level) {
-        case "blue":
-            return "#3b82f6";
-        case "green":
-            return "#22c55e";
-        case "yellow":
-            return "#eab308";
-        case "orange":
-            return "#f97316";
-        case "red":
-            return "#ef4444";
-    }
 }
 
 interface ChartDataPoint {
@@ -109,7 +95,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
 
     // Get color based on latest risk level
     const latestRisk = results[0].riskLevel as RiskLevel;
-    const lineColor = getLineColor(latestRisk);
+    const lineColor = getRiskLevelConfig(latestRisk).hexColor;
 
     return (
         <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden group transition-all duration-300">

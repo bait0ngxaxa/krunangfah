@@ -3,6 +3,11 @@
  * คำนวณระดับความเสี่ยงจากคะแนน PHQ-A
  */
 
+import {
+    RISK_LEVEL_CONFIG,
+    getRiskLevelConfig,
+} from "@/lib/constants/risk-levels";
+
 export type RiskLevel = "blue" | "green" | "yellow" | "orange" | "red";
 
 export interface PhqScores {
@@ -27,66 +32,52 @@ export interface ScoringResult {
 }
 
 /**
- * Risk level labels in Thai
+ * @deprecated Use `getRiskLevelConfig(level).label` from `@/lib/constants/risk-levels` instead.
  */
 export const RISK_LABELS: Record<RiskLevel, string> = {
-    blue: "ปกติ",
-    green: "เฝ้าระวังเล็กน้อย",
-    yellow: "เฝ้าระวังปานกลาง",
-    orange: "มีความเสี่ยง",
-    red: "ความเสี่ยงสูง",
+    red: RISK_LEVEL_CONFIG.red.label,
+    orange: RISK_LEVEL_CONFIG.orange.label,
+    yellow: RISK_LEVEL_CONFIG.yellow.label,
+    green: RISK_LEVEL_CONFIG.green.label,
+    blue: RISK_LEVEL_CONFIG.blue.label,
 };
 
 /**
- * Risk level colors for UI
+ * @deprecated Use `getRiskLevelConfig(level).hexColor` from `@/lib/constants/risk-levels` instead.
  */
 export const RISK_COLORS: Record<RiskLevel, string> = {
-    blue: "#3B82F6",
-    green: "#22C55E",
-    yellow: "#EAB308",
-    orange: "#F97316",
-    red: "#EF4444",
+    red: RISK_LEVEL_CONFIG.red.hexColor,
+    orange: RISK_LEVEL_CONFIG.orange.hexColor,
+    yellow: RISK_LEVEL_CONFIG.yellow.hexColor,
+    green: RISK_LEVEL_CONFIG.green.hexColor,
+    blue: RISK_LEVEL_CONFIG.blue.hexColor,
 };
 
 /**
- * Risk level Tailwind classes
+ * @deprecated Use `getRiskLevelConfig(level).bgSolid` from `@/lib/constants/risk-levels` instead.
  */
 export const RISK_BG_CLASSES: Record<RiskLevel, string> = {
-    blue: "bg-blue-500",
-    green: "bg-green-500",
-    yellow: "bg-yellow-500",
-    orange: "bg-orange-500",
-    red: "bg-red-500",
+    red: RISK_LEVEL_CONFIG.red.bgSolid,
+    orange: RISK_LEVEL_CONFIG.orange.bgSolid,
+    yellow: RISK_LEVEL_CONFIG.yellow.bgSolid,
+    green: RISK_LEVEL_CONFIG.green.bgSolid,
+    blue: RISK_LEVEL_CONFIG.blue.bgSolid,
 };
 
 export function getRiskBgClass(level: RiskLevel): string {
-    switch (level) {
-        case "red":    return RISK_BG_CLASSES.red;
-        case "orange": return RISK_BG_CLASSES.orange;
-        case "yellow": return RISK_BG_CLASSES.yellow;
-        case "green":  return RISK_BG_CLASSES.green;
-        case "blue":   return RISK_BG_CLASSES.blue;
-    }
+    return getRiskLevelConfig(level).bgSolid;
 }
 
 export function getRiskLabel(level: RiskLevel): string {
-    switch (level) {
-        case "red":    return RISK_LABELS.red;
-        case "orange": return RISK_LABELS.orange;
-        case "yellow": return RISK_LABELS.yellow;
-        case "green":  return RISK_LABELS.green;
-        case "blue":   return RISK_LABELS.blue;
-    }
+    return getRiskLevelConfig(level).label;
 }
 
-function getRiskData(level: RiskLevel): { riskLabel: string; riskColor: string } {
-    switch (level) {
-        case "red":    return { riskLabel: RISK_LABELS.red,    riskColor: RISK_COLORS.red };
-        case "orange": return { riskLabel: RISK_LABELS.orange, riskColor: RISK_COLORS.orange };
-        case "yellow": return { riskLabel: RISK_LABELS.yellow, riskColor: RISK_COLORS.yellow };
-        case "green":  return { riskLabel: RISK_LABELS.green,  riskColor: RISK_COLORS.green };
-        case "blue":   return { riskLabel: RISK_LABELS.blue,   riskColor: RISK_COLORS.blue };
-    }
+function getRiskData(level: RiskLevel): {
+    riskLabel: string;
+    riskColor: string;
+} {
+    const config = getRiskLevelConfig(level);
+    return { riskLabel: config.label, riskColor: config.hexColor };
 }
 
 /**

@@ -44,8 +44,8 @@ export function SchoolClassesTabs({
                                 ห้องเรียน
                             </h2>
                             <p className="text-xs text-gray-400">
-                                {classes.length} ห้อง — ใช้เป็น dropdown
-                                เมื่อเชิญครู
+                                {classes.length} ห้อง — ใช้เป็นตัวเลือก
+                                เมื่อเชิญครูประจำชั้น
                             </p>
                         </div>
                     </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, X, UserPlus, Users, Check, Pencil } from "lucide-react";
+import { toast } from "sonner";
 import {
     addTeacherToRoster,
     removeFromRoster,
@@ -140,6 +141,7 @@ export function TeacherRosterEditor({
             const result = await updateRosterEntry(editingId, data);
             if (!result.success) {
                 setErrorMsg(result.message);
+                toast.error(result.message || "อัพเดตข้อมูลไม่สำเร็จ");
                 return;
             }
             if (result.data) {
@@ -154,12 +156,16 @@ export function TeacherRosterEditor({
                         ),
                     );
                 syncUpdate(updated);
+                toast.success(
+                    `อัพเดตข้อมูลครู "${updatedEntry.firstName} ${updatedEntry.lastName}" สำเร็จ`,
+                );
             }
         } else {
             // Add new entry
             const result = await addTeacherToRoster(data);
             if (!result.success) {
                 setErrorMsg(result.message);
+                toast.error(result.message || "เพิ่มครูไม่สำเร็จ");
                 return;
             }
             if (result.data) {
@@ -170,6 +176,9 @@ export function TeacherRosterEditor({
                     ),
                 );
                 syncUpdate(updated);
+                toast.success(
+                    `เพิ่มครู "${result.data.firstName} ${result.data.lastName}" สำเร็จ`,
+                );
             }
         }
 
@@ -178,16 +187,23 @@ export function TeacherRosterEditor({
         setEditingId(null);
     }
 
-    async function handleRemove(id: string) {
+    async function handleRemove(id: string, name: string) {
+        const confirmed = window.confirm(
+            `ต้องการลบครู "${name}" ออกจากรายชื่อใช่หรือไม่?`,
+        );
+        if (!confirmed) return;
+
         setErrorMsg(null);
         const result = await removeFromRoster(id);
         if (!result.success) {
             setErrorMsg(result.message);
+            toast.error(result.message || "ลบครูไม่สำเร็จ");
             return;
         }
         startTransition(() => {
             syncUpdate(roster.filter((t) => t.id !== id));
         });
+        toast.success(`ลบครู "${name}" สำเร็จ`);
     }
 
     // Shared form JSX (used for both add and edit)
@@ -505,7 +521,12 @@ export function TeacherRosterEditor({
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => handleRemove(t.id)}
+                                            onClick={() =>
+                                                handleRemove(
+                                                    t.id,
+                                                    `${t.firstName} ${t.lastName}`,
+                                                )
+                                            }
                                             className="text-gray-300 hover:text-red-500 transition-all cursor-pointer p-1"
                                             title="ลบออกจาก roster"
                                         >

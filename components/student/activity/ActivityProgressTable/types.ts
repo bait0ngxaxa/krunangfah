@@ -32,6 +32,9 @@ export interface ActivityProgress {
     status: string;
     worksheetUploads: WorksheetUpload[];
     scheduledDate: Date | null;
+    internalProblems: string | null;
+    externalProblems: string | null;
+    problemType: string | null;
     teacher: Teacher | null;
 }
 

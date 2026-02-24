@@ -11,6 +11,7 @@ import {
     MAX_FILE_SIZE,
 } from "./constants";
 import { revalidateTag } from "next/cache";
+import { validateFileSignature } from "@/lib/utils/file-signature";
 import type { UploadWorksheetResult } from "./types";
 
 function getValidExtension(fileName: string): string | null {
@@ -64,6 +65,15 @@ export async function uploadWorksheet(
         // Read file content
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
+
+        // Validate file signature (magic number) to prevent extension spoofing
+        if (!validateFileSignature(buffer, ext)) {
+            return {
+                success: false,
+                message:
+                    "เนื้อหาไฟล์ไม่ตรงกับนามสกุล กรุณาอัปโหลดไฟล์ที่ถูกต้อง",
+            };
+        }
 
         // Get activity progress with student info for authorization
         const activityProgress = await prisma.activityProgress.findUnique({

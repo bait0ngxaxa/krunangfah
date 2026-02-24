@@ -2,7 +2,7 @@
 
 import { User, FileText, Hospital, ClipboardCheck } from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
-import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
+import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
 
 interface StudentProfileCardProps {
@@ -32,8 +32,11 @@ export function StudentProfileCard({
     latestResult,
 }: StudentProfileCardProps) {
     const risk = latestResult
-        ? RISK_LEVEL_CONFIG[latestResult.riskLevel as RiskLevel]
+        ? getRiskLevelConfig(latestResult.riskLevel as RiskLevel)
         : null;
+    const avatarBg = risk
+        ? `bg-gradient-to-br ${risk.gradient}`
+        : "bg-[#0BD0D9]";
 
     return (
         <div className="relative bg-white rounded-2xl shadow-sm p-6 sm:p-7 md:p-8 border-2 border-gray-100 overflow-hidden group transition-all duration-300">
@@ -41,7 +44,9 @@ export function StudentProfileCard({
                 {/* Student Info */}
                 <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6">
                     <div className="relative shrink-0">
-                        <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-full bg-[#0BD0D9] flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-sm ring-4 ring-white">
+                        <div
+                            className={`w-18 h-18 sm:w-24 sm:h-24 rounded-full ${avatarBg} flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-sm ring-4 ring-white`}
+                        >
                             {student.firstName.charAt(0)}
                         </div>
                         <div className="absolute bottom-0 right-0 w-5 h-5 sm:w-6 sm:h-6 bg-[#34D399] border-3 sm:border-4 border-white rounded-full" />

@@ -48,7 +48,7 @@ export function PrimaryAdminManager({
     if (admins.length <= 1) {
         return (
             <p className="text-sm text-gray-400 text-center py-4">
-                ยังไม่มี school_admin คนอื่นในโรงเรียน
+                ยังไม่มีผู้ดูแลคนอื่นในโรงเรียน
             </p>
         );
     }
@@ -112,8 +112,8 @@ export function PrimaryAdminManager({
             })}
 
             <p className="text-xs text-gray-400 pt-1">
-                ผู้ดูแลที่มีสิทธิ์ Primary สามารถจัดการห้องเรียน
-                เชิญครู และจัดการรายชื่อครูได้
+                ผู้ดูแลที่มีสิทธิ์ Primary สามารถจัดการห้องเรียน เชิญครู
+                และจัดการรายชื่อครูได้
             </p>
         </div>
     );

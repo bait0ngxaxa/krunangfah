@@ -1,4 +1,5 @@
 import { CheckCircle2, Lock, BarChart3 } from "lucide-react";
+import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 import type { Activity } from "../constants";
 import type { ActivityProgressData } from "../types";
 
@@ -26,19 +27,7 @@ export function ProgressIndicator({
                 ?.status === "completed",
     ).length;
     const progressPercentage = (completedCount / (activities.length - 1)) * 100;
-
-    function getActiveCircleStyle(
-        level: "orange" | "yellow" | "green",
-    ): string {
-        switch (level) {
-            case "orange":
-                return "border-orange-500 text-orange-600 ring-orange-100";
-            case "yellow":
-                return "border-yellow-400 text-yellow-600 ring-yellow-100";
-            case "green":
-                return "border-green-500 text-green-600 ring-green-100";
-        }
-    }
+    const activeCircleStyle = getRiskLevelConfig(riskLevel).circleActive;
 
     return (
         <div className="mb-10 bg-white rounded-2xl p-6 sm:p-8 border-2 border-gray-100 shadow-sm">
@@ -52,11 +41,11 @@ export function ProgressIndicator({
             {/* Desktop: Horizontal Timeline (md+) */}
             <div className="hidden md:block relative">
                 {/* Background Line */}
-                <div className="absolute top-4 left-0 w-full h-1.5 bg-gray-100 rounded-full -z-10" />
+                <div className="absolute top-[17px] left-0 w-full h-1.5 bg-gray-100 rounded-full z-0" />
 
                 {/* Progress Line */}
                 <div
-                    className="absolute top-4 left-0 h-1.5 bg-[#34D399] rounded-full -z-10 transition-all duration-1000 ease-out shadow-sm"
+                    className="absolute top-[17px] left-0 h-1.5 bg-[#34D399] rounded-full z-0 transition-all duration-1000 ease-out shadow-sm"
                     style={{ width: `${progressPercentage}%` }}
                 />
 
@@ -76,8 +65,7 @@ export function ProgressIndicator({
                             circleClass =
                                 "bg-[#34D399] border-transparent text-white shadow-sm scale-110";
                         } else if (isCurrent) {
-                            const activeStyle = getActiveCircleStyle(riskLevel);
-                            circleClass = `bg-white border-4 ${activeStyle} shadow-lg ring-4 scale-110`;
+                            circleClass = `bg-white border-4 ${activeCircleStyle} shadow-lg ring-4 scale-110`;
                         }
 
                         return (
@@ -86,7 +74,7 @@ export function ProgressIndicator({
                                 className="flex flex-col items-center gap-3 flex-1 min-w-0 relative group cursor-default"
                             >
                                 <div
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 z-10 shrink-0 ${circleClass}`}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 relative z-10 shrink-0 ${circleClass}`}
                                 >
                                     {isCompleted ? (
                                         <CheckCircle2 className="w-6 h-6" />
@@ -143,11 +131,11 @@ export function ProgressIndicator({
             {/* Mobile: Vertical Timeline */}
             <div className="md:hidden relative">
                 {/* Vertical Background Line */}
-                <div className="absolute top-0 left-[19px] w-1 h-full bg-gray-100 rounded-full" />
+                <div className="absolute top-0 left-[18px] w-1 h-full bg-gray-100 rounded-full z-0" />
 
                 {/* Vertical Progress Line */}
                 <div
-                    className="absolute top-0 left-[19px] w-1 bg-[#34D399] rounded-full transition-all duration-1000 ease-out"
+                    className="absolute top-0 left-[18px] w-1 bg-[#34D399] rounded-full z-0 transition-all duration-1000 ease-out"
                     style={{ height: `${progressPercentage}%` }}
                 />
 
@@ -167,8 +155,7 @@ export function ProgressIndicator({
                             circleClass =
                                 "bg-[#34D399] border-transparent text-white shadow-sm";
                         } else if (isCurrent) {
-                            const activeStyle = getActiveCircleStyle(riskLevel);
-                            circleClass = `bg-white border-3 ${activeStyle} shadow-md ring-3`;
+                            circleClass = `bg-white border-3 ${activeCircleStyle} shadow-md ring-3`;
                         }
 
                         return (
@@ -178,7 +165,7 @@ export function ProgressIndicator({
                             >
                                 {/* Circle */}
                                 <div
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold z-10 shrink-0 ${circleClass}`}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold relative z-10 shrink-0 ${circleClass}`}
                                 >
                                     {isCompleted ? (
                                         <CheckCircle2 className="w-5 h-5" />

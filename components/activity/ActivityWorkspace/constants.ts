@@ -52,54 +52,6 @@ export const ACTIVITY_INDICES: Record<string, number[]> = {
 };
 
 /**
- * Theme colors by risk level
- */
-export const COLOR_CONFIG: Record<
-    string,
-    {
-        gradient: string;
-        bg: string;
-        bgLight: string;
-        text: string;
-        textColor: string;
-        borderColor: string;
-        glowBg: string;
-        separatorColor: string;
-    }
-> = {
-    orange: {
-        gradient: "from-orange-500 to-amber-500",
-        bg: "bg-orange-500",
-        bgLight: "bg-orange-50",
-        text: "สีส้ม",
-        textColor: "text-orange-600",
-        borderColor: "border-orange-100",
-        glowBg: "bg-orange-200",
-        separatorColor: "text-orange-300",
-    },
-    yellow: {
-        gradient: "from-yellow-400 to-amber-400",
-        bg: "bg-yellow-400",
-        bgLight: "bg-yellow-50",
-        text: "สีเหลือง",
-        textColor: "text-yellow-600",
-        borderColor: "border-yellow-100",
-        glowBg: "bg-yellow-200",
-        separatorColor: "text-yellow-300",
-    },
-    green: {
-        gradient: "from-green-500 to-emerald-500",
-        bg: "bg-green-500",
-        bgLight: "bg-green-50",
-        text: "สีเขียว",
-        textColor: "text-green-600",
-        borderColor: "border-green-100",
-        glowBg: "bg-green-200",
-        separatorColor: "text-green-300",
-    },
-};
-
-/**
  * Activity names by number (short version)
  */
 export const ACTIVITY_NAMES: Record<number, string> = {
@@ -136,166 +88,116 @@ export const ENCOURAGEMENT_MESSAGES = {
     ],
 };
 
-export function getEncouragementMessages(problemType: "internal" | "external"): string[] {
+export function getEncouragementMessages(
+    problemType: "internal" | "external",
+): string[] {
     switch (problemType) {
-        case "internal": return ENCOURAGEMENT_MESSAGES.internal;
-        case "external": return ENCOURAGEMENT_MESSAGES.external;
+        case "internal":
+            return ENCOURAGEMENT_MESSAGES.internal;
+        case "external":
+            return ENCOURAGEMENT_MESSAGES.external;
     }
 }
 
 /**
- * Assessment form colors by risk level
+ * Theme colors by risk level — derived from shared config
  */
-export const ASSESSMENT_COLOR_CONFIG: Record<
-    string,
-    {
-        bgLight: string;
-        border: string;
-        borderFocus: string;
-        text: string;
-        textDark: string;
-        button: string;
-        buttonHover: string;
-        buttonRing: string;
-        ringFocus: string;
-    }
-> = {
-    orange: {
-        bgLight: "bg-orange-50",
-        border: "border-orange-200",
-        borderFocus: "focus:border-orange-500",
-        text: "text-orange-600",
-        textDark: "text-orange-700",
-        button: "bg-orange-600",
-        buttonHover: "hover:bg-orange-200",
-        buttonRing: "ring-orange-300",
-        ringFocus: "focus:ring-orange-300",
-    },
-    yellow: {
-        bgLight: "bg-yellow-50",
-        border: "border-yellow-200",
-        borderFocus: "focus:border-yellow-500",
-        text: "text-yellow-600",
-        textDark: "text-yellow-700",
-        button: "bg-yellow-600",
-        buttonHover: "hover:bg-yellow-200",
-        buttonRing: "ring-yellow-300",
-        ringFocus: "focus:ring-yellow-300",
-    },
-    green: {
-        bgLight: "bg-green-50",
-        border: "border-green-200",
-        borderFocus: "focus:border-green-500",
-        text: "text-green-600",
-        textDark: "text-green-700",
-        button: "bg-green-600",
-        buttonHover: "hover:bg-green-200",
-        buttonRing: "ring-green-300",
-        ringFocus: "focus:ring-green-300",
-    },
-};
-
-/**
- * Upload section colors by risk level
- */
-export const UPLOAD_COLOR_CONFIG: Record<
-    string,
-    {
-        bgLight: string;
-        border: string;
-        textDark: string;
-        button: string;
-        buttonHover: string;
-        itemBorder: string;
-        completeBg: string;
-        completeText: string;
-    }
-> = {
-    orange: {
-        bgLight: "bg-orange-50",
-        border: "border-orange-200",
-        textDark: "text-orange-800",
-        button: "bg-orange-500",
-        buttonHover: "hover:bg-orange-600",
-        itemBorder: "border-orange-200",
-        completeBg: "bg-orange-500",
-        completeText: "text-orange-700",
-    },
-    yellow: {
-        bgLight: "bg-yellow-50",
-        border: "border-yellow-200",
-        textDark: "text-yellow-800",
-        button: "bg-yellow-500",
-        buttonHover: "hover:bg-yellow-600",
-        itemBorder: "border-yellow-200",
-        completeBg: "bg-yellow-500",
-        completeText: "text-yellow-700",
-    },
-    green: {
-        bgLight: "bg-green-50",
-        border: "border-green-200",
-        textDark: "text-green-800",
-        button: "bg-green-500",
-        buttonHover: "hover:bg-green-600",
-        itemBorder: "border-green-200",
-        completeBg: "bg-green-500",
-        completeText: "text-green-700",
-    },
-};
+import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 
 export type WorksheetRiskLevel = "orange" | "yellow" | "green";
 
 export function getWorkspaceColorConfig(level: WorksheetRiskLevel) {
-    switch (level) {
-        case "orange": return COLOR_CONFIG.orange;
-        case "yellow": return COLOR_CONFIG.yellow;
-        case "green":  return COLOR_CONFIG.green;
-    }
+    const c = getRiskLevelConfig(level);
+    return {
+        gradient: c.gradient,
+        bg: c.bgSolid,
+        bgLight: c.bgLight,
+        text:
+            level === "orange"
+                ? "สีส้ม"
+                : level === "yellow"
+                  ? "สีเหลือง"
+                  : "สีเขียว",
+        textColor: c.textColor,
+        borderColor: c.borderLight,
+        glowBg: c.glowBg,
+        separatorColor: c.separatorColor,
+    };
 }
 
 export function getAssessmentColors(level: WorksheetRiskLevel) {
-    switch (level) {
-        case "orange": return ASSESSMENT_COLOR_CONFIG.orange;
-        case "yellow": return ASSESSMENT_COLOR_CONFIG.yellow;
-        case "green":  return ASSESSMENT_COLOR_CONFIG.green;
-    }
+    const c = getRiskLevelConfig(level);
+    return {
+        bgLight: c.bgLight,
+        border: c.borderMedium,
+        borderFocus: c.borderFocus,
+        text: c.textColor,
+        textDark: c.textColorDark,
+        button: c.buttonBg,
+        buttonHover: c.buttonHover,
+        buttonRing: c.buttonRing,
+        ringFocus: c.ringFocus,
+    };
 }
 
 export function getUploadColors(level: WorksheetRiskLevel) {
-    switch (level) {
-        case "orange": return UPLOAD_COLOR_CONFIG.orange;
-        case "yellow": return UPLOAD_COLOR_CONFIG.yellow;
-        case "green":  return UPLOAD_COLOR_CONFIG.green;
-    }
+    const c = getRiskLevelConfig(level);
+    return {
+        bgLight: c.bgLight,
+        border: c.borderMedium,
+        textDark: c.textColorDark,
+        button: c.uploadButtonBg,
+        buttonHover: c.uploadButtonHover,
+        itemBorder: c.borderMedium,
+        completeBg: c.uploadCompleteBg,
+        completeText: c.textColorDark,
+    };
 }
 
-export function getWorksheetActivityIndices(level: WorksheetRiskLevel): number[] {
+export function getWorksheetActivityIndices(
+    level: WorksheetRiskLevel,
+): number[] {
     switch (level) {
-        case "orange": return ACTIVITY_INDICES.orange;
-        case "yellow": return ACTIVITY_INDICES.yellow;
-        case "green":  return ACTIVITY_INDICES.green;
+        case "orange":
+            return ACTIVITY_INDICES.orange;
+        case "yellow":
+            return ACTIVITY_INDICES.yellow;
+        case "green":
+            return ACTIVITY_INDICES.green;
     }
 }
 
 export function getActivityName(activityNumber: number): string {
     switch (activityNumber) {
-        case 1: return ACTIVITY_NAMES[1];
-        case 2: return ACTIVITY_NAMES[2];
-        case 3: return ACTIVITY_NAMES[3];
-        case 4: return ACTIVITY_NAMES[4];
-        case 5: return ACTIVITY_NAMES[5];
-        default: return `กิจกรรมที่ ${activityNumber}`;
+        case 1:
+            return ACTIVITY_NAMES[1];
+        case 2:
+            return ACTIVITY_NAMES[2];
+        case 3:
+            return ACTIVITY_NAMES[3];
+        case 4:
+            return ACTIVITY_NAMES[4];
+        case 5:
+            return ACTIVITY_NAMES[5];
+        default:
+            return `กิจกรรมที่ ${activityNumber}`;
     }
 }
 
 export function getWorksheetNames(activityNumber: number): string[] {
     switch (activityNumber) {
-        case 1: return WORKSHEET_NAMES[1];
-        case 2: return WORKSHEET_NAMES[2];
-        case 3: return WORKSHEET_NAMES[3];
-        case 4: return WORKSHEET_NAMES[4];
-        case 5: return WORKSHEET_NAMES[5];
-        default: return [];
+        case 1:
+            return WORKSHEET_NAMES[1];
+        case 2:
+            return WORKSHEET_NAMES[2];
+        case 3:
+            return WORKSHEET_NAMES[3];
+        case 4:
+            return WORKSHEET_NAMES[4];
+        case 5:
+            return WORKSHEET_NAMES[5];
+        default:
+            return [];
     }
 }
 
@@ -312,12 +214,18 @@ export const DOWNLOAD_URLS: Record<number, string[]> = {
 
 export function getDownloadUrls(activityNumber: number): string[] {
     switch (activityNumber) {
-        case 1: return DOWNLOAD_URLS[1];
-        case 2: return DOWNLOAD_URLS[2];
-        case 3: return DOWNLOAD_URLS[3];
-        case 4: return DOWNLOAD_URLS[4];
-        case 5: return DOWNLOAD_URLS[5];
-        default: return [];
+        case 1:
+            return DOWNLOAD_URLS[1];
+        case 2:
+            return DOWNLOAD_URLS[2];
+        case 3:
+            return DOWNLOAD_URLS[3];
+        case 4:
+            return DOWNLOAD_URLS[4];
+        case 5:
+            return DOWNLOAD_URLS[5];
+        default:
+            return [];
     }
 }
 

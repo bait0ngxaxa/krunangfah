@@ -11,6 +11,7 @@ import {
     UploadSection,
     TeacherNotesSection,
     ProgressIndicator,
+    ScheduleDateSection,
 } from "./components";
 import { getDownloadUrls } from "./constants";
 import type { ActivityWorkspaceProps } from "./types";
@@ -100,6 +101,15 @@ export function ActivityWorkspace({
                             currentActivityNumber={currentActivityNumber}
                             riskLevel={riskLevel}
                         />
+
+                        {/* Schedule Date Picker */}
+                        {currentProgress && (
+                            <ScheduleDateSection
+                                activityProgressId={currentProgress.id}
+                                currentDate={currentProgress.scheduledDate}
+                                isLocked={currentProgress.status === "locked"}
+                            />
+                        )}
 
                         {/* Upload & Teacher Notes — side by side */}
                         {currentProgress ? (

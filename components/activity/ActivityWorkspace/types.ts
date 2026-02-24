@@ -8,6 +8,7 @@ export interface ActivityProgressData {
     activityNumber: number;
     status: string;
     teacherNotes?: string | null;
+    scheduledDate: Date | string | null;
     worksheetUploads: {
         id: string;
         worksheetNumber: number;

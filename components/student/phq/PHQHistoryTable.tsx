@@ -1,6 +1,7 @@
 "use client";
 
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
 import { AlertTriangle, ClipboardList } from "lucide-react";
 
@@ -20,37 +21,6 @@ interface PHQResult {
 interface PHQHistoryTableProps {
     results: PHQResult[];
 }
-
-const riskConfig: Record<
-    RiskLevel,
-    { label: string; bgColor: string; textColor: string }
-> = {
-    blue: {
-        label: "ไม่มีความเสี่ยง",
-        bgColor: "bg-blue-100",
-        textColor: "text-blue-700",
-    },
-    green: {
-        label: "เสี่ยงน้อย",
-        bgColor: "bg-green-100",
-        textColor: "text-green-700",
-    },
-    yellow: {
-        label: "เสี่ยงปานกลาง",
-        bgColor: "bg-yellow-100",
-        textColor: "text-yellow-700",
-    },
-    orange: {
-        label: "เสี่ยงสูง",
-        bgColor: "bg-orange-100",
-        textColor: "text-orange-700",
-    },
-    red: {
-        label: "เสี่ยงสูงมาก",
-        bgColor: "bg-red-100",
-        textColor: "text-red-700",
-    },
-};
 
 export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
     if (results.length === 0) {
@@ -99,8 +69,9 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                     </thead>
                     <tbody className="divide-y divide-emerald-50">
                         {results.map((result, index) => {
-                            const risk =
-                                riskConfig[result.riskLevel as RiskLevel];
+                            const risk = getRiskLevelConfig(
+                                result.riskLevel as RiskLevel,
+                            );
                             const hasWarning = result.q9a || result.q9b;
 
                             return (
@@ -131,7 +102,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                     </td>
                                     <td className="py-4 px-6">
                                         <span
-                                            className={`inline-block px-3 py-1 rounded-full text-sm font-bold shadow-sm ${risk.bgColor} ${risk.textColor}`}
+                                            className={`inline-block px-3 py-1 rounded-full text-sm font-bold shadow-sm ${risk.bgMedium} ${risk.textColorDark}`}
                                         >
                                             {risk.label}
                                         </span>
@@ -168,7 +139,9 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
                 {results.map((result, index) => {
-                    const risk = riskConfig[result.riskLevel as RiskLevel];
+                    const risk = getRiskLevelConfig(
+                        result.riskLevel as RiskLevel,
+                    );
                     const hasWarning = result.q9a || result.q9b;
 
                     return (
@@ -227,7 +200,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                 </div>
                                 <div>
                                     <span
-                                        className={`inline-block px-4 py-2 rounded-xl text-sm font-bold w-full text-center ${risk.bgColor} ${risk.textColor}`}
+                                        className={`inline-block px-4 py-2 rounded-xl text-sm font-bold w-full text-center ${risk.bgMedium} ${risk.textColorDark}`}
                                     >
                                         {risk.label}
                                     </span>

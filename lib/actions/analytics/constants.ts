@@ -1,31 +1,19 @@
-// Analytics configuration constants
+// Analytics configuration constants — derived from shared risk-level config
 
-export const RISK_LEVEL_CONFIG = {
-    blue: {
-        label: "สีฟ้า (ปกติ)",
-        color: "#3B82F6",
-        referToNurse: false,
-    },
-    green: {
-        label: "สีเขียว (เสี่ยงเล็กน้อย)",
-        color: "#10B981",
-        referToNurse: false,
-    },
-    yellow: {
-        label: "สีเหลือง (มีปัญหา)",
-        color: "#FCD34D",
-        referToNurse: true,
-    },
-    orange: {
-        label: "สีส้ม (เสี่ยงรุนแรง)",
-        color: "#F97316",
-        referToNurse: true,
-    },
-    red: {
-        label: "สีแดง (รุนแรง)",
-        color: "#EF4444",
-        referToNurse: true,
-    },
-} as const;
+import { RISK_LEVEL_CONFIG as SHARED_CONFIG } from "@/lib/constants/risk-levels";
+
+export const RISK_LEVEL_CONFIG = Object.fromEntries(
+    Object.entries(SHARED_CONFIG).map(([level, config]) => [
+        level,
+        {
+            label: config.label,
+            color: config.hexColor,
+            referToNurse: config.referToNurse,
+        },
+    ]),
+) as Record<
+    keyof typeof SHARED_CONFIG,
+    { label: string; color: string; referToNurse: boolean }
+>;
 
 export type RiskLevel = keyof typeof RISK_LEVEL_CONFIG;
