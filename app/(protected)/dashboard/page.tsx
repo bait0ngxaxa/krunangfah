@@ -11,6 +11,10 @@ import {
 } from "lucide-react";
 import { getDashboardData } from "@/lib/actions/dashboard.actions";
 import {
+    USER_ROLE_LABELS,
+    PROJECT_ROLE_LABELS_EXT,
+} from "@/lib/constants/roles";
+import {
     DashboardHeader,
     ActionCard,
     DashboardActionList,
@@ -26,14 +30,6 @@ export const metadata: Metadata = {
     title: "หน้าหลัก | โครงการครูนางฟ้า",
     description: "หน้าหลักสำหรับครู",
 };
-
-/* ─── Constants ─── */
-
-const PROJECT_ROLE_LABEL_MAP = new Map<string, string>([
-    ["lead", "ทีมนำ (Lead)"],
-    ["care", "ทีมดูแล (Care)"],
-    ["coordinate", "ทีมประสานงาน (Coordinate)"],
-]);
 
 /* ─── Stat Builders ─── */
 
@@ -68,7 +64,8 @@ function buildTeacherStats(
     projectRole: string,
     isClassTeacher: boolean,
 ): StatItem[] {
-    const roleLabel = PROJECT_ROLE_LABEL_MAP.get(projectRole) ?? projectRole;
+    const extMap = new Map(Object.entries(PROJECT_ROLE_LABELS_EXT));
+    const roleLabel = extMap.get(projectRole) ?? projectRole;
     const stats: StatItem[] = [
         {
             icon: Users,
@@ -199,7 +196,11 @@ async function DashboardContent({ session }: { session: Session }) {
                 <DashboardHeader
                     teacherName={teacherName}
                     schoolName={schoolName}
-                    subtitle={isClassTeacher ? "ครูประจำชั้น" : "ครูนางฟ้า"}
+                    subtitle={
+                        isClassTeacher
+                            ? USER_ROLE_LABELS["class_teacher"]
+                            : USER_ROLE_LABELS["school_admin"]
+                    }
                     stats={buildTeacherStats(
                         studentCount,
                         teacher.advisoryClass,

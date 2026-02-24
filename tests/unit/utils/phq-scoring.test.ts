@@ -5,6 +5,7 @@ import {
     type PhqScores,
     type RiskLevel,
 } from "@/lib/utils/phq-scoring";
+import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
 
 /**
  * Helper function to create PHQ scores for testing
@@ -251,16 +252,20 @@ describe("calculateRiskLevel", () => {
                 expectedLevel: RiskLevel;
                 expectedColor: string;
             }> = [
-                { scores: {}, expectedLevel: "blue", expectedColor: "#3B82F6" },
+                {
+                    scores: {},
+                    expectedLevel: "blue",
+                    expectedColor: RISK_LEVEL_CONFIG.blue.hexColor,
+                },
                 {
                     scores: { q1: 1, q2: 1, q3: 1, q4: 1, q5: 1 },
                     expectedLevel: "green",
-                    expectedColor: "#22C55E",
+                    expectedColor: RISK_LEVEL_CONFIG.green.hexColor,
                 },
                 {
                     scores: { q1: 2, q2: 2, q3: 2, q4: 2, q5: 2 },
                     expectedLevel: "yellow",
-                    expectedColor: "#EAB308",
+                    expectedColor: RISK_LEVEL_CONFIG.yellow.hexColor,
                 },
                 {
                     scores: {
@@ -274,7 +279,7 @@ describe("calculateRiskLevel", () => {
                         q8: 1,
                     },
                     expectedLevel: "orange",
-                    expectedColor: "#F97316",
+                    expectedColor: RISK_LEVEL_CONFIG.orange.hexColor,
                 },
                 {
                     scores: {
@@ -288,7 +293,7 @@ describe("calculateRiskLevel", () => {
                         q8: 1,
                     },
                     expectedLevel: "red",
-                    expectedColor: "#EF4444",
+                    expectedColor: RISK_LEVEL_CONFIG.red.hexColor,
                 },
             ];
 

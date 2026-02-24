@@ -1,7 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { useAddTeacherForm } from "./useAddTeacherForm";
 import type { AcademicYear, TeacherRosterItem } from "./types";
+import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
+import { USER_ROLE_LABELS, PROJECT_ROLE_LABELS } from "@/lib/constants/roles";
 import { ErrorMessage, InviteLinkSection } from "./components";
 import {
     Users,
@@ -19,18 +22,8 @@ import {
 interface AddTeacherFormProps {
     academicYears: AcademicYear[];
     roster: TeacherRosterItem[];
+    invites: TeacherInviteWithAcademicYear[];
 }
-
-const USER_ROLE_LABELS: Record<string, string> = {
-    school_admin: "ครูนางฟ้า",
-    class_teacher: "ครูประจำชั้น",
-};
-
-const PROJECT_ROLE_LABELS: Record<string, string> = {
-    lead: "ทีมนำ",
-    care: "ทีมดูแล",
-    coordinate: "ทีมประสาน",
-};
 
 /**
  * AddTeacherForm - Roster-based invite flow
@@ -39,6 +32,7 @@ const PROJECT_ROLE_LABELS: Record<string, string> = {
 export function AddTeacherForm({
     academicYears,
     roster,
+    invites,
 }: AddTeacherFormProps): React.ReactNode {
     const {
         form,
@@ -59,8 +53,27 @@ export function AddTeacherForm({
         formState: { errors },
     } = form;
 
-    // Filter out already-invited teachers
-    const availableRoster = roster.filter((t) => !t.inviteSent);
+    // Filter out teachers who have an active (pending) invite or already accepted
+    // Only allow re-inviting if invite is expired AND not accepted
+    const blockedInvites = useMemo(() => {
+        const now = new Date();
+        return invites.filter(
+            (inv) =>
+                // Already accepted — never re-invite
+                inv.acceptedAt !== null ||
+                // Still pending (not expired) — don't re-invite yet
+                new Date(inv.expiresAt) >= now,
+        );
+    }, [invites]);
+
+    const availableRoster = roster.filter((t) => {
+        const isBlocked = blockedInvites.some(
+            (inv) =>
+                (t.email && inv.email === t.email) ||
+                (inv.firstName === t.firstName && inv.lastName === t.lastName),
+        );
+        return !isBlocked;
+    });
     const selectedTeacher = roster.find((t) => t.id === selectedRosterId);
 
     return (

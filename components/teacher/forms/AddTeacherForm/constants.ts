@@ -1,16 +1,11 @@
 /**
  * Constants for AddTeacherForm
+ * Re-exported from shared SSOT
  */
 
-export const PROJECT_ROLES = [
-    { value: "lead", label: "ทีมนำ" },
-    { value: "care", label: "ทีมดูแล" },
-    { value: "coordinate", label: "ทีมประสาน" },
-] as const;
-
-export const USER_ROLES = [
-    { value: "school_admin", label: "ครูนางฟ้า" },
-    { value: "class_teacher", label: "ครูประจำชั้น" },
-] as const;
+export {
+    PROJECT_ROLE_OPTIONS as PROJECT_ROLES,
+    USER_ROLE_OPTIONS as USER_ROLES,
+} from "@/lib/constants/roles";
 
 export const ADMIN_ADVISORY_CLASS = "ทุกห้อง";

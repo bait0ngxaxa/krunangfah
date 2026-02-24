@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
 import {
     transformRiskLevelCounts,
     transformTrendData,
@@ -86,12 +87,12 @@ describe("transformRiskLevelCounts", () => {
         const result = transformRiskLevelCounts([], 0);
 
         const blue = result.find((r) => r.riskLevel === "blue");
-        expect(blue!.label).toBe("สีฟ้า (ปกติ)");
-        expect(blue!.color).toBe("#3B82F6");
+        expect(blue!.label).toBe("ปกติ");
+        expect(blue!.color).toBe(RISK_LEVEL_CONFIG.blue.hexColor);
 
         const red = result.find((r) => r.riskLevel === "red");
-        expect(red!.label).toBe("สีแดง (รุนแรง)");
-        expect(red!.color).toBe("#EF4444");
+        expect(red!.label).toBe("เสี่ยงสูงมาก");
+        expect(red!.color).toBe(RISK_LEVEL_CONFIG.red.hexColor);
     });
 });
 
@@ -313,7 +314,7 @@ describe("transformActivityProgress", () => {
     it("should include label and color from config", () => {
         const result = transformActivityProgress([]);
         const red = result.find((r) => r.riskLevel === "red");
-        expect(red!.label).toBe("สีแดง (รุนแรง)");
+        expect(red!.label).toBe("เสี่ยงสูงมาก");
         expect(red!.color).toBe("#EF4444");
     });
 });

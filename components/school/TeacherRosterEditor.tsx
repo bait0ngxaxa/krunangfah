@@ -19,6 +19,12 @@ import type {
     TeacherRosterItem,
     SchoolClassItem,
 } from "@/types/school-setup.types";
+import {
+    USER_ROLE_LABELS,
+    USER_ROLE_OPTIONS,
+    PROJECT_ROLE_LABELS,
+    PROJECT_ROLE_OPTIONS,
+} from "@/lib/constants/roles";
 
 interface TeacherRosterEditorProps {
     initialRoster: TeacherRosterItem[];
@@ -26,28 +32,6 @@ interface TeacherRosterEditorProps {
     onUpdate?: (roster: TeacherRosterItem[]) => void;
     readOnly?: boolean;
 }
-
-const USER_ROLES = [
-    { value: "school_admin", label: "ครูนางฟ้า" },
-    { value: "class_teacher", label: "ครูประจำชั้น" },
-] as const;
-
-const PROJECT_ROLES = [
-    { value: "lead", label: "ทีมนำ" },
-    { value: "care", label: "ทีมดูแล" },
-    { value: "coordinate", label: "ทีมประสาน" },
-] as const;
-
-const USER_ROLE_LABELS: Record<string, string> = {
-    school_admin: "ครูนางฟ้า",
-    class_teacher: "ครูประจำชั้น",
-};
-
-const PROJECT_ROLE_LABELS: Record<string, string> = {
-    lead: "ทีมนำ",
-    care: "ทีมดูแล",
-    coordinate: "ทีมประสาน",
-};
 
 export function TeacherRosterEditor({
     initialRoster,
@@ -299,7 +283,7 @@ export function TeacherRosterEditor({
                         className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 transition-colors truncate"
                     >
                         <option value="">ประเภทครู *</option>
-                        {USER_ROLES.map((r) => (
+                        {USER_ROLE_OPTIONS.map((r) => (
                             <option key={r.value} value={r.value}>
                                 {r.label}
                             </option>
@@ -378,7 +362,7 @@ export function TeacherRosterEditor({
                     <span className="text-red-500">*</span>
                 </label>
                 <div className="flex flex-wrap gap-3 bg-white p-3 rounded-xl border-2 border-gray-100 shadow-sm">
-                    {PROJECT_ROLES.map((role) => (
+                    {PROJECT_ROLE_OPTIONS.map((role) => (
                         <label
                             key={role.value}
                             className="flex items-center gap-1.5 cursor-pointer group"

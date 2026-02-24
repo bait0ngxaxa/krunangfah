@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
-import { BarChart3, Target } from "lucide-react";
+import { BarChart3, Target, Home } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { getStudentDetail } from "@/lib/actions/student";
 import {
@@ -11,6 +11,7 @@ import {
     CounselingLogTable,
     AcademicYearFilter,
     ReferralButton,
+    HomeVisitTab,
 } from "@/components/student";
 
 // Dynamic import — Recharts is heavy, lazy-load for smaller initial bundle
@@ -28,6 +29,7 @@ const PHQTrendChart = dynamic(
     },
 );
 import { getCounselingSessions } from "@/lib/actions/counseling.actions";
+import { getHomeVisits } from "@/lib/actions/home-visit.actions";
 import { requireAuth } from "@/lib/session";
 import { Tabs } from "@/components/ui/Tabs";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
@@ -78,10 +80,11 @@ async function StudentDetailContent({
     selectedYearId?: string;
 }) {
     // Parallelize data fetches
-    const [session, student, counselingSessions] = await Promise.all([
+    const [session, student, counselingSessions, homeVisits] = await Promise.all([
         requireAuth(),
         getStudentDetail(studentId),
         getCounselingSessions(studentId),
+        getHomeVisits(studentId),
     ]);
     const currentUserId = session.user.id;
     const isSystemAdmin = session.user.role === "system_admin";
@@ -145,6 +148,15 @@ async function StudentDetailContent({
         </div>
     );
 
+    // Tab 3: Home Visits
+    const homeVisitsTab = (
+        <HomeVisitTab
+            visits={homeVisits}
+            studentId={studentId}
+            readOnly={isSystemAdmin}
+        />
+    );
+
     const tabs = [
         {
             id: "phq-results",
@@ -163,6 +175,15 @@ async function StudentDetailContent({
                 </span>
             ),
             content: activitiesTab,
+        },
+        {
+            id: "home-visits",
+            label: (
+                <span className="flex items-center gap-1.5">
+                    <Home className="w-4 h-4" /> เยี่ยมบ้าน
+                </span>
+            ),
+            content: homeVisitsTab,
         },
     ];
 

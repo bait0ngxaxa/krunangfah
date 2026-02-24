@@ -2,6 +2,7 @@
 
 export type {
     TeacherInvite,
+    TeacherInviteWithAcademicYear,
     InviteResponse,
     InviteListResponse,
 } from "./types";

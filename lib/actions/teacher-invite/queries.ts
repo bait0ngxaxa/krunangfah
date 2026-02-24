@@ -37,14 +37,19 @@ export async function getTeacherInvite(token: string): Promise<InviteResponse> {
 }
 
 /**
- * ดึงรายการ invites ทั้งหมดที่สร้างโดย user
+ * ดึงรายการ invites ทั้งหมดของโรงเรียน
  */
 export async function getMyTeacherInvites(): Promise<InviteListResponse> {
     try {
         const session = await requireAuth();
+        const schoolId = session.user.schoolId;
+
+        if (!schoolId) {
+            return { success: true, invites: [] };
+        }
 
         const invites = await prisma.teacherInvite.findMany({
-            where: { invitedById: session.user.id },
+            where: { schoolId },
             include: {
                 academicYear: true,
             },
@@ -53,7 +58,7 @@ export async function getMyTeacherInvites(): Promise<InviteListResponse> {
 
         return { success: true, invites };
     } catch (error) {
-        console.error("Get my teacher invites error:", error);
+        console.error("Get school teacher invites error:", error);
         return { success: false, invites: [] };
     }
 }

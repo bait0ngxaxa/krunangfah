@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calculateRiskLevelSummary } from "@/lib/actions/analytics/risk-summary";
+import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
 
 describe("calculateRiskLevelSummary", () => {
     it("should count students by risk level", async () => {
@@ -93,11 +94,11 @@ describe("calculateRiskLevelSummary", () => {
         const result = await calculateRiskLevelSummary(assessments);
 
         const blue = result.find((r) => r.riskLevel === "blue");
-        expect(blue!.label).toBe("สีฟ้า (ปกติ)");
-        expect(blue!.color).toBe("#3B82F6");
+        expect(blue!.label).toBe("ปกติ");
+        expect(blue!.color).toBe(RISK_LEVEL_CONFIG.blue.hexColor);
 
         const yellow = result.find((r) => r.riskLevel === "yellow");
-        expect(yellow!.label).toBe("สีเหลือง (มีปัญหา)");
+        expect(yellow!.label).toBe("เสี่ยงปานกลาง");
     });
 
     it("should ignore unknown risk levels", async () => {

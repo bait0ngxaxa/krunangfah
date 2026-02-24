@@ -32,27 +32,53 @@ const TOOLTIP_STYLE = {
 const TOOLTIP_ITEM_STYLE = { color: "#4B5563", fontWeight: 500 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function renderInsideLabel(props: any): React.ReactElement | null {
-    const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+function renderOuterLabel(props: any): React.ReactElement | null {
+    const { cx, cy, midAngle, outerRadius, percent, name, fill } = props;
 
-    if (percent < 0.05) return null;
+    if (percent === 0) return null;
+
+    const sin = Math.sin(-midAngle * RADIAN);
+    const cos = Math.cos(-midAngle * RADIAN);
+
+    // Point on the edge of the pie
+    const edgeX = cx + outerRadius * cos;
+    const edgeY = cy + outerRadius * sin;
+
+    // Elbow point (extends outward)
+    const elbowX = cx + (outerRadius + 14) * cos;
+    const elbowY = cy + (outerRadius + 14) * sin;
+
+    // End of the horizontal line
+    const isRight = cos >= 0;
+    const lineEndX = elbowX + (isRight ? 20 : -20);
+
+    const percentText = `${(percent * 100).toFixed(0)}%`;
 
     return (
-        <text
-            x={x}
-            y={y}
-            fill="white"
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={12}
-            fontWeight="bold"
-            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}
-        >
-            {`${(percent * 100).toFixed(0)}%`}
-        </text>
+        <g>
+            {/* Leader line: edge → elbow → horizontal */}
+            <polyline
+                points={`${edgeX},${edgeY} ${elbowX},${elbowY} ${lineEndX},${elbowY}`}
+                fill="none"
+                stroke={fill}
+                strokeWidth={1.5}
+                strokeOpacity={0.6}
+            />
+            {/* Dot at the edge */}
+            <circle cx={edgeX} cy={edgeY} r={2.5} fill={fill} />
+            {/* Label text */}
+            <text
+                x={lineEndX + (isRight ? 4 : -4)}
+                y={elbowY}
+                fill="#374151"
+                textAnchor={isRight ? "start" : "end"}
+                dominantBaseline="central"
+                fontSize={13}
+                fontWeight="600"
+            >
+                {name} {percentText}
+            </text>
+        </g>
     );
 }
 
@@ -149,7 +175,7 @@ function RiskPieChartComponent({
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={renderInsideLabel}
+                        label={renderOuterLabel}
                         outerRadius={outerRadius}
                         fill="#8884d8"
                         dataKey="value"

@@ -11,25 +11,17 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import type { GradeRiskData } from "@/lib/actions/analytics";
+import { RISK_CHART_CONFIG } from "@/lib/constants/risk-levels";
 
 interface RiskLevelByGradeChartProps {
     gradeRiskData: GradeRiskData[];
 }
 
-// Risk level configuration for legend (ordered from lowest to highest severity)
-const RISK_LEVELS = [
-    { key: "blue", label: "สีฟ้า", color: "#60A5FA" },
-    { key: "green", label: "สีเขียว", color: "#34D399" },
-    { key: "yellow", label: "สีเหลือง", color: "#FBBF24" },
-    { key: "orange", label: "สีส้ม", color: "#F97316" },
-    { key: "red", label: "สีแดง", color: "#F43F5E" },
-] as const;
-
 // Custom legend component (declared outside to avoid re-creation during render)
 function CustomLegend() {
     return (
         <div className="flex flex-wrap justify-center gap-3 pb-3">
-            {RISK_LEVELS.map((level) => (
+            {RISK_CHART_CONFIG.map((level) => (
                 <div
                     key={level.key}
                     className="flex items-center gap-2 text-xs sm:text-sm"
@@ -136,31 +128,31 @@ export function RiskLevelByGradeChart({
                     <Bar
                         dataKey="blue"
                         stackId="a"
-                        fill="#60A5FA"
+                        fill={RISK_CHART_CONFIG[0].color}
                         radius={[0, 0, 0, 0]}
                     />
                     <Bar
                         dataKey="green"
                         stackId="a"
-                        fill="#34D399"
+                        fill={RISK_CHART_CONFIG[1].color}
                         radius={[0, 0, 0, 0]}
                     />
                     <Bar
                         dataKey="yellow"
                         stackId="a"
-                        fill="#FBBF24"
+                        fill={RISK_CHART_CONFIG[2].color}
                         radius={[0, 0, 0, 0]}
                     />
                     <Bar
                         dataKey="orange"
                         stackId="a"
-                        fill="#F97316"
+                        fill={RISK_CHART_CONFIG[3].color}
                         radius={[0, 0, 0, 0]}
                     />
                     <Bar
                         dataKey="red"
                         stackId="a"
-                        fill="#F43F5E"
+                        fill={RISK_CHART_CONFIG[4].color}
                         radius={[4, 4, 0, 0]}
                     />
                 </BarChart>

@@ -11,25 +11,17 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import type { TrendDataPoint } from "@/lib/actions/analytics";
+import { RISK_CHART_CONFIG } from "@/lib/constants/risk-levels";
 
 interface RiskLevelTrendChartProps {
     trendData: TrendDataPoint[];
 }
 
-// Risk level configuration for legend (ordered from lowest to highest severity)
-const RISK_LEVELS = [
-    { key: "blue", label: "สีฟ้า", color: "#60A5FA" },
-    { key: "green", label: "สีเขียว", color: "#34D399" },
-    { key: "yellow", label: "สีเหลือง", color: "#FBBF24" },
-    { key: "orange", label: "สีส้ม", color: "#F97316" },
-    { key: "red", label: "สีแดง", color: "#F43F5E" },
-] as const;
-
 // Custom legend component (declared outside to avoid re-creation during render)
 function CustomLegend() {
     return (
         <div className="flex flex-wrap justify-center gap-3 pb-3">
-            {RISK_LEVELS.map((level) => (
+            {RISK_CHART_CONFIG.map((level) => (
                 <div
                     key={level.key}
                     className="flex items-center gap-2 text-xs sm:text-sm"
@@ -130,71 +122,26 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                             return `เทอม: ${strLabel}`;
                         }}
                     />
-                    <Line
-                        type="monotone"
-                        dataKey="blue"
-                        stroke="#60A5FA"
-                        strokeWidth={3}
-                        dot={{
-                            r: 4,
-                            fill: "#60A5FA",
-                            strokeWidth: 2,
-                            stroke: "#fff",
-                        }}
-                        activeDot={{ r: 6, stroke: "#60A5FA", strokeWidth: 0 }}
-                    />
-                    <Line
-                        type="monotone"
-                        dataKey="green"
-                        stroke="#34D399"
-                        strokeWidth={3}
-                        dot={{
-                            r: 4,
-                            fill: "#34D399",
-                            strokeWidth: 2,
-                            stroke: "#fff",
-                        }}
-                        activeDot={{ r: 6, stroke: "#34D399", strokeWidth: 0 }}
-                    />
-                    <Line
-                        type="monotone"
-                        dataKey="yellow"
-                        stroke="#FBBF24"
-                        strokeWidth={3}
-                        dot={{
-                            r: 4,
-                            fill: "#FBBF24",
-                            strokeWidth: 2,
-                            stroke: "#fff",
-                        }}
-                        activeDot={{ r: 6, stroke: "#FBBF24", strokeWidth: 0 }}
-                    />
-                    <Line
-                        type="monotone"
-                        dataKey="orange"
-                        stroke="#F97316"
-                        strokeWidth={3}
-                        dot={{
-                            r: 4,
-                            fill: "#F97316",
-                            strokeWidth: 2,
-                            stroke: "#fff",
-                        }}
-                        activeDot={{ r: 6, stroke: "#F97316", strokeWidth: 0 }}
-                    />
-                    <Line
-                        type="monotone"
-                        dataKey="red"
-                        stroke="#F43F5E"
-                        strokeWidth={3}
-                        dot={{
-                            r: 4,
-                            fill: "#F43F5E",
-                            strokeWidth: 2,
-                            stroke: "#fff",
-                        }}
-                        activeDot={{ r: 6, stroke: "#F43F5E", strokeWidth: 0 }}
-                    />
+                    {RISK_CHART_CONFIG.map((cfg) => (
+                        <Line
+                            key={cfg.key}
+                            type="monotone"
+                            dataKey={cfg.key}
+                            stroke={cfg.color}
+                            strokeWidth={3}
+                            dot={{
+                                r: 4,
+                                fill: cfg.color,
+                                strokeWidth: 2,
+                                stroke: "#fff",
+                            }}
+                            activeDot={{
+                                r: 6,
+                                stroke: cfg.color,
+                                strokeWidth: 0,
+                            }}
+                        />
+                    ))}
                 </LineChart>
             </ResponsiveContainer>
         </div>

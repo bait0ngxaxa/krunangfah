@@ -7,6 +7,8 @@ export interface RiskLevelStyle {
 
     // ── Raw hex color (for charts / canvas) ──
     hexColor: string;
+    /** Lighter hex shade used in Recharts bar/line/pie components */
+    chartColor: string;
 
     // ── Tailwind: backgrounds ──
     bgSolid: string; // e.g. "bg-red-500"
@@ -72,6 +74,7 @@ export const RISK_LEVEL_CONFIG: Record<RiskLevel, RiskLevelStyle> = {
         label: "เสี่ยงสูงมาก",
         emoji: "🔴",
         hexColor: "#EF4444",
+        chartColor: "#F43F5E",
 
         bgSolid: "bg-red-500",
         bgLight: "bg-red-50",
@@ -123,6 +126,7 @@ export const RISK_LEVEL_CONFIG: Record<RiskLevel, RiskLevelStyle> = {
         label: "เสี่ยงสูง",
         emoji: "🟠",
         hexColor: "#F97316",
+        chartColor: "#F97316",
 
         bgSolid: "bg-orange-500",
         bgLight: "bg-orange-50",
@@ -174,6 +178,7 @@ export const RISK_LEVEL_CONFIG: Record<RiskLevel, RiskLevelStyle> = {
         label: "เสี่ยงปานกลาง",
         emoji: "🟡",
         hexColor: "#EAB308",
+        chartColor: "#FBBF24",
 
         bgSolid: "bg-yellow-500",
         bgLight: "bg-yellow-50",
@@ -225,6 +230,7 @@ export const RISK_LEVEL_CONFIG: Record<RiskLevel, RiskLevelStyle> = {
         label: "เสี่ยงต่ำ",
         emoji: "🟢",
         hexColor: "#22C55E",
+        chartColor: "#34D399",
 
         bgSolid: "bg-green-500",
         bgLight: "bg-green-50",
@@ -277,6 +283,7 @@ export const RISK_LEVEL_CONFIG: Record<RiskLevel, RiskLevelStyle> = {
         label: "ปกติ",
         emoji: "🔵",
         hexColor: "#3B82F6",
+        chartColor: "#60A5FA",
 
         bgSolid: "bg-blue-500",
         bgLight: "bg-blue-50",
@@ -340,3 +347,40 @@ export function getRiskLevelConfig(level: RiskLevel): RiskLevelStyle {
             return RISK_LEVEL_CONFIG.blue;
     }
 }
+
+/** Derived config for Recharts chart components (legend, bars, lines) */
+const CHART_LABEL_MAP: Record<string, string> = {
+    blue: "สีฟ้า",
+    green: "สีเขียว",
+    yellow: "สีเหลือง",
+    orange: "สีส้ม",
+    red: "สีแดง",
+};
+
+export const RISK_CHART_CONFIG = [
+    {
+        key: "blue" as const,
+        label: CHART_LABEL_MAP.blue,
+        color: RISK_LEVEL_CONFIG.blue.chartColor,
+    },
+    {
+        key: "green" as const,
+        label: CHART_LABEL_MAP.green,
+        color: RISK_LEVEL_CONFIG.green.chartColor,
+    },
+    {
+        key: "yellow" as const,
+        label: CHART_LABEL_MAP.yellow,
+        color: RISK_LEVEL_CONFIG.yellow.chartColor,
+    },
+    {
+        key: "orange" as const,
+        label: CHART_LABEL_MAP.orange,
+        color: RISK_LEVEL_CONFIG.orange.chartColor,
+    },
+    {
+        key: "red" as const,
+        label: CHART_LABEL_MAP.red,
+        color: RISK_LEVEL_CONFIG.red.chartColor,
+    },
+];

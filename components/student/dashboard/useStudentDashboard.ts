@@ -6,6 +6,7 @@ import type {
     GroupedStudents,
     RiskLevel,
 } from "./types";
+import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
 
 export function useStudentDashboard({
     students,
@@ -142,27 +143,27 @@ export function useStudentDashboard({
             {
                 name: "สีฟ้า",
                 value: groupedStudents.blue.length,
-                color: "#3B82F6",
+                color: RISK_LEVEL_CONFIG.blue.hexColor,
             },
             {
                 name: "สีเขียว",
                 value: groupedStudents.green.length,
-                color: "#22C55E",
+                color: RISK_LEVEL_CONFIG.green.hexColor,
             },
             {
                 name: "สีเหลือง",
                 value: groupedStudents.yellow.length,
-                color: "#EAB308",
+                color: RISK_LEVEL_CONFIG.yellow.hexColor,
             },
             {
                 name: "สีส้ม",
                 value: groupedStudents.orange.length,
-                color: "#F97316",
+                color: RISK_LEVEL_CONFIG.orange.hexColor,
             },
             {
                 name: "สีแดง",
                 value: groupedStudents.red.length,
-                color: "#EF4444",
+                color: RISK_LEVEL_CONFIG.red.hexColor,
             },
         ],
         [groupedStudents],

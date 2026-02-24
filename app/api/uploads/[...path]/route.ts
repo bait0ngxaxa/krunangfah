@@ -63,6 +63,47 @@ export async function GET(
             return new NextResponse("File not found", { status: 404 });
         }
 
+        // Verify file ownership for home-visits
+        if (path[0] === "home-visits") {
+            const fileUrl = `/api/uploads/${path.join("/")}`;
+
+            const photo = await prisma.homeVisitPhoto.findFirst({
+                where: { fileUrl },
+                include: {
+                    homeVisit: {
+                        include: {
+                            student: {
+                                select: {
+                                    schoolId: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            if (!photo) {
+                return new NextResponse("File not found", { status: 404 });
+            }
+
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: {
+                    schoolId: true,
+                    role: true,
+                },
+            });
+
+            if (user?.role !== "system_admin") {
+                if (
+                    !user?.schoolId ||
+                    user.schoolId !== photo.homeVisit.student.schoolId
+                ) {
+                    return new NextResponse("Forbidden", { status: 403 });
+                }
+            }
+        }
+
         // Verify file ownership for worksheets
         if (path[0] === "worksheets") {
             const fileUrl = `/api/uploads/${path.join("/")}`;

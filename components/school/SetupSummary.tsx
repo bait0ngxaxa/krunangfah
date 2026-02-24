@@ -5,6 +5,7 @@ import type {
     SchoolClassItem,
     TeacherRosterItem,
 } from "@/types/school-setup.types";
+import { USER_ROLE_LABELS, PROJECT_ROLE_LABELS } from "@/lib/constants/roles";
 
 interface SetupSummaryProps {
     schoolName: string;
@@ -29,17 +30,6 @@ function groupClassesByGrade(classes: SchoolClassItem[]) {
 
     return Array.from(groups).sort(([a], [b]) => a.localeCompare(b, "th"));
 }
-
-const PROJECT_ROLE_LABELS: Record<string, string> = {
-    lead: "ทีมนำ",
-    care: "ทีมดูแล",
-    coordinate: "ทีมประสาน",
-};
-
-const USER_ROLE_LABELS: Record<string, string> = {
-    school_admin: "ครูนางฟ้า",
-    class_teacher: "ครูประจำชั้น",
-};
 
 export function SetupSummary({
     schoolName,

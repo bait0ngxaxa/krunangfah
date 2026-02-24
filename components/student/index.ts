@@ -41,3 +41,6 @@ export {
     ReferralButton,
     ReferredOutSection,
 } from "./referral";
+
+// Home Visit
+export { HomeVisitTab } from "./home-visit";

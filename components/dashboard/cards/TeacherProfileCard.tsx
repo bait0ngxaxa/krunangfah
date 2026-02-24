@@ -1,4 +1,8 @@
 import { School, CalendarDays, DoorOpen, Briefcase, User } from "lucide-react";
+import {
+    USER_ROLE_LABELS,
+    PROJECT_ROLE_LABELS_EXT,
+} from "@/lib/constants/roles";
 
 interface TeacherProfileCardProps {
     teacher: {
@@ -21,19 +25,13 @@ interface TeacherProfileCardProps {
     userRole: string;
 }
 
-const PROJECT_ROLE_LABELS: Record<string, string> = {
-    lead: "ทีมนำ (Lead)",
-    care: "ทีมดูแล (Care)",
-    coordinate: "ทีมประสานงาน (Coordinate)",
-};
-
 export function TeacherProfileCard({
     teacher,
     userRole,
 }: TeacherProfileCardProps) {
     const isClassTeacher = userRole === "class_teacher";
     const projectRoleLabel =
-        PROJECT_ROLE_LABELS[teacher.projectRole] || teacher.projectRole;
+        PROJECT_ROLE_LABELS_EXT[teacher.projectRole] || teacher.projectRole;
 
     return (
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 overflow-hidden">
@@ -54,7 +52,9 @@ export function TeacherProfileCard({
                             : "bg-white/25 text-white ring-1 ring-white/20"
                     }`}
                 >
-                    {isClassTeacher ? "ครูประจำชั้น" : "ครูนางฟ้า"}
+                    {isClassTeacher
+                        ? USER_ROLE_LABELS["class_teacher"]
+                        : USER_ROLE_LABELS["school_admin"]}
                 </span>
             </div>
 

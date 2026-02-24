@@ -1,7 +1,9 @@
 import { requireAuth } from "@/lib/session";
 import { AddTeacherForm } from "@/components/teacher";
+import { TeacherInviteList } from "@/components/teacher/forms/AddTeacherForm/components";
 import { getAcademicYears } from "@/lib/actions/teacher.actions";
 import { getSchoolRoster } from "@/lib/actions/teacher-roster.actions";
+import { getMyTeacherInvites } from "@/lib/actions/teacher-invite";
 import { UserPlus, Info } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import type { Metadata } from "next";
@@ -14,9 +16,10 @@ export const metadata: Metadata = {
 export default async function AddTeacherPage() {
     await requireAuth();
 
-    const [academicYears, roster] = await Promise.all([
+    const [academicYears, roster, inviteResult] = await Promise.all([
         getAcademicYears(),
         getSchoolRoster(),
+        getMyTeacherInvites(),
     ]);
 
     return (
@@ -61,7 +64,13 @@ export default async function AddTeacherPage() {
                     <AddTeacherForm
                         academicYears={academicYears}
                         roster={roster}
+                        invites={inviteResult.invites}
                     />
+                </div>
+
+                {/* Invite History */}
+                <div className="mt-6">
+                    <TeacherInviteList invites={inviteResult.invites} />
                 </div>
             </div>
         </div>

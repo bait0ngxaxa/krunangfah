@@ -103,6 +103,7 @@ model User {
   schoolAdminInvites    SchoolAdminInvite[] @relation("CreatedSchoolAdminInvites")
   referralsFrom         StudentReferral[]   @relation("ReferralsFrom")
   referralsTo           StudentReferral[]   @relation("ReferralsTo")
+  homeVisits            HomeVisit[]         @relation("HomeVisits")
 
   @@map("users")
   @@index([email])
@@ -198,6 +199,7 @@ model Student {
   activityProgress ActivityProgress[]
   counselingSessions CounselingSession[]
   referral         StudentReferral?
+  homeVisits       HomeVisit[]
 
   @@unique([studentId, schoolId]) // ป้องกันซ้ำ: รหัสนักเรียน + โรงเรียน
   @@index([schoolId, class]) // For filtering by school and class
@@ -398,4 +400,41 @@ model StudentReferral {
   @@index([fromTeacherUserId])
   @@index([toTeacherUserId])
   @@map("student_referrals")
+}
+
+// Home Visit - บันทึกการเยี่ยมบ้านนักเรียน
+model HomeVisit {
+  id                String    @id @default(cuid())
+  studentId         String
+  visitNumber       Int       // ครั้งที่ (auto-increment per student)
+  visitDate         DateTime
+  description       String    @db.Text
+  nextScheduledDate DateTime?
+  teacherName       String    // snapshot ชื่อครู
+  teacherRole       String    // snapshot บทบาทครู
+  createdById       String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  student   Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy User            @relation("HomeVisits", fields: [createdById], references: [id])
+  photos    HomeVisitPhoto[]
+
+  @@index([studentId, visitNumber])
+  @@map("home_visits")
+}
+
+// Home Visit Photo - รูปภาพการเยี่ยมบ้าน
+model HomeVisitPhoto {
+  id          String   @id @default(cuid())
+  homeVisitId String
+  fileName    String
+  fileUrl     String
+  fileType    String
+  fileSize    Int
+  uploadedAt  DateTime @default(now())
+
+  homeVisit HomeVisit @relation(fields: [homeVisitId], references: [id], onDelete: Cascade)
+
+  @@map("home_visit_photos")
 }
