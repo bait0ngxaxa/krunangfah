@@ -25,7 +25,7 @@ export function toBuddhistYear(adYear: number): number {
 /**
  * แปลงปี พ.ศ. เป็น ค.ศ.
  */
-export function toGregorianYear(beYear: number): number {
+function toGregorianYear(beYear: number): number {
     return beYear - 543;
 }
 

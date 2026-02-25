@@ -15,7 +15,7 @@ export function HelpPageHeader({
     title = "ระบบใบงานช่วยเหลือนักเรียน",
 }: HelpPageHeaderProps) {
     return (
-        <div className="relative text-center mb-8 bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-sm overflow-hidden group">
+        <div className="relative text-center mb-8 bg-white rounded-3xl p-5 sm:p-8 border-2 border-gray-100 shadow-sm overflow-hidden group">
             <div className="relative z-10">
                 <div className="relative w-24 h-24 mx-auto mb-6">
                     <div

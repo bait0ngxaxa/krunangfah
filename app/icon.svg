@@ -1,10 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#fb7185"/>
-      <stop offset="100%" style="stop-color:#f472b6"/>
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#0d9488"/>
+    </linearGradient>
+    <linearGradient id="wing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95"/>
+      <stop offset="100%" style="stop-color:#d1fae5;stop-opacity:0.85"/>
+    </linearGradient>
+    <linearGradient id="halo" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fde68a"/>
+      <stop offset="100%" style="stop-color:#fbbf24"/>
     </linearGradient>
   </defs>
-  <circle cx="32" cy="32" r="32" fill="url(#bg)"/>
-  <text x="32" y="44" font-size="36" text-anchor="middle" dominant-baseline="central">🧚‍♀️</text>
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="31" fill="url(#bg)"/>
+  <circle cx="32" cy="32" r="31" fill="none" stroke="#059669" stroke-width="1" opacity="0.3"/>
+  <!-- Left wing -->
+  <path d="M12 30 Q8 22 14 16 Q20 12 24 20 Q22 26 18 30 Z" fill="url(#wing)" opacity="0.9"/>
+  <path d="M14 32 Q10 28 14 22 Q18 18 20 24 Q18 28 16 32 Z" fill="url(#wing)" opacity="0.7"/>
+  <!-- Right wing -->
+  <path d="M52 30 Q56 22 50 16 Q44 12 40 20 Q42 26 46 30 Z" fill="url(#wing)" opacity="0.9"/>
+  <path d="M50 32 Q54 28 50 22 Q46 18 44 24 Q46 28 48 32 Z" fill="url(#wing)" opacity="0.7"/>
+  <!-- Halo -->
+  <ellipse cx="32" cy="18" rx="8" ry="2.5" fill="none" stroke="url(#halo)" stroke-width="2" opacity="0.9"/>
+  <!-- Head -->
+  <circle cx="32" cy="26" r="8" fill="#fde8d0"/>
+  <!-- Hair -->
+  <path d="M24 24 Q24 17 32 16 Q40 17 40 24 Q38 20 32 19 Q26 20 24 24 Z" fill="#4a3728"/>
+  <!-- Eyes -->
+  <circle cx="29" cy="26" r="1.2" fill="#374151"/>
+  <circle cx="35" cy="26" r="1.2" fill="#374151"/>
+  <!-- Smile -->
+  <path d="M29.5 29 Q32 31.5 34.5 29" fill="none" stroke="#d97706" stroke-width="0.8" stroke-linecap="round"/>
+  <!-- Body -->
+  <path d="M26 34 L24 48 Q28 50 32 50 Q36 50 40 48 L38 34 Q32 36 26 34 Z" fill="#6ee7b7" opacity="0.9"/>
+  <!-- Arms -->
+  <path d="M26 36 Q20 38 18 42" fill="none" stroke="#fde8d0" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M38 36 Q44 38 46 42" fill="none" stroke="#fde8d0" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Heart (care symbol) -->
+  <path d="M30 40 Q30 38 32 39 Q34 38 34 40 Q34 42 32 44 Q30 42 30 40 Z" fill="#f472b6"/>
 </svg>

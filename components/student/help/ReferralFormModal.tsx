@@ -109,7 +109,7 @@ export function ReferralFormModal({
                 className="bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-lg my-8 shadow-2xl border border-white/50 animate-fade-in-up"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="bg-[#0BD0D9] px-8 py-6 rounded-t-3xl relative overflow-hidden">
+                <div className="bg-[#0BD0D9] px-5 py-4 sm:px-8 sm:py-6 rounded-t-3xl relative overflow-hidden">
                     <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
                         <Hospital className="w-6 h-6 text-white" />
                         ส่งต่อหรือติดตาม
@@ -117,7 +117,7 @@ export function ReferralFormModal({
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="p-5 sm:p-8 space-y-6">
                     {error && (
                         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-2 text-orange-700">
                             <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />

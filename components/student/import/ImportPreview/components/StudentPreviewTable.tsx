@@ -1,9 +1,6 @@
 import { useState, useCallback } from "react";
-import {
-    RISK_LABELS,
-    RISK_BG_CLASSES,
-    type PhqScores,
-} from "@/lib/utils/phq-scoring";
+import { type PhqScores } from "@/lib/utils/phq-scoring";
+import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 import type { PreviewStudent } from "../types";
 
 interface StudentPreviewTableProps {
@@ -229,9 +226,13 @@ export function StudentPreviewTable({
                                     </td>
                                     <td className="px-4 py-2 text-center">
                                         <span
-                                            className={`inline-flex px-3 py-1 rounded-full text-xs font-bold text-white shadow-md ${RISK_BG_CLASSES[student.riskLevel]}`}
+                                            className={`inline-flex px-3 py-1 rounded-full text-xs font-bold text-white shadow-md ${getRiskLevelConfig(student.riskLevel).bgSolid}`}
                                         >
-                                            {RISK_LABELS[student.riskLevel]}
+                                            {
+                                                getRiskLevelConfig(
+                                                    student.riskLevel,
+                                                ).label
+                                            }
                                         </span>
                                     </td>
                                 </tr>

@@ -20,6 +20,7 @@ export function AcademicFields({
                     {academicYears.map((year) => (
                         <option key={year.id} value={year.id}>
                             {year.year}/{year.semester}
+                            {year.isCurrent ? " (ปัจจุบัน)" : ""}
                         </option>
                     ))}
                 </select>

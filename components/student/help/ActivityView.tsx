@@ -40,7 +40,7 @@ export function ActivityView({
                     {/* Activity Count Badge */}
                     <div className="flex justify-center mb-10">
                         <div
-                            className={`inline-flex items-center gap-3 px-8 py-4 ${config.lightBg} rounded-2xl shadow-sm border border-white/50 backdrop-blur-sm`}
+                            className={`inline-flex items-center gap-3 px-5 py-3 sm:px-8 sm:py-4 ${config.lightBg} rounded-2xl shadow-sm border border-white/50 backdrop-blur-sm`}
                         >
                             <Target className="w-6 h-6 text-gray-800 animate-bounce" />
                             <span className="text-lg font-bold text-gray-800">
@@ -65,7 +65,7 @@ export function ActivityView({
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
                             href={`/students/${studentId}/help/start?phqResultId=${phqResultId}`}
-                            className={`flex items-center justify-center gap-3 py-4 px-10 ${config.bg} text-white rounded-xl font-bold hover:shadow-md hover:-translate-y-0.5 transition-all text-xl shadow-sm group`}
+                            className={`flex items-center justify-center gap-3 py-4 px-6 sm:px-10 ${config.bg} text-white rounded-xl font-bold hover:shadow-md hover:-translate-y-0.5 transition-all text-base sm:text-xl shadow-sm group`}
                         >
                             <Rocket className="w-6 h-6 group-hover:scale-110 transition-transform" />
                             เริ่มทำกิจกรรม

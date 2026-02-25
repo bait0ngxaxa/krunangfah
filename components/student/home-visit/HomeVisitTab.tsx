@@ -47,7 +47,7 @@ export function HomeVisitTab({
 
             {/* Visit list */}
             {visits.length === 0 ? (
-                <div className="p-12 text-center bg-white/50 rounded-xl border border-emerald-100">
+                <div className="p-6 sm:p-12 text-center bg-white/50 rounded-xl border border-emerald-100">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-emerald-50 flex items-center justify-center">
                         <MapPin className="w-10 h-10 text-emerald-400" />
                     </div>

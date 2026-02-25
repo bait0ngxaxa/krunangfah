@@ -83,7 +83,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                 onDragLeave={handleDragLeave}
                 onClick={() => fileInputRef.current?.click()}
                 className={`
-                    border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer
+                    border-2 border-dashed rounded-2xl p-6 sm:p-12 text-center cursor-pointer
                     transition-all duration-300 transform
                     ${
                         isDragging

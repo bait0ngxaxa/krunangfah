@@ -13,7 +13,7 @@ export function EmptyPrompt({
     description,
 }: EmptyPromptProps) {
     return (
-        <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-10 text-center border border-white/80 ring-1 ring-slate-900/5 overflow-hidden">
+        <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-6 sm:p-10 text-center border border-white/80 ring-1 ring-slate-900/5 overflow-hidden">
             {/* Decorations */}
             <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-indigo-200/30 to-blue-300/20 rounded-full blur-2xl pointer-events-none opacity-50" />
             <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-purple-200/20 to-fuchsia-300/15 rounded-full blur-2xl pointer-events-none opacity-50" />

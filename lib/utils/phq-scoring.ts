@@ -3,10 +3,7 @@
  * คำนวณระดับความเสี่ยงจากคะแนน PHQ-A
  */
 
-import {
-    RISK_LEVEL_CONFIG,
-    getRiskLevelConfig,
-} from "@/lib/constants/risk-levels";
+import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 
 export type RiskLevel = "blue" | "green" | "yellow" | "orange" | "red";
 
@@ -30,39 +27,6 @@ export interface ScoringResult {
     riskLabel: string;
     riskColor: string;
 }
-
-/**
- * @deprecated Use `getRiskLevelConfig(level).label` from `@/lib/constants/risk-levels` instead.
- */
-export const RISK_LABELS: Record<RiskLevel, string> = {
-    red: RISK_LEVEL_CONFIG.red.label,
-    orange: RISK_LEVEL_CONFIG.orange.label,
-    yellow: RISK_LEVEL_CONFIG.yellow.label,
-    green: RISK_LEVEL_CONFIG.green.label,
-    blue: RISK_LEVEL_CONFIG.blue.label,
-};
-
-/**
- * @deprecated Use `getRiskLevelConfig(level).hexColor` from `@/lib/constants/risk-levels` instead.
- */
-export const RISK_COLORS: Record<RiskLevel, string> = {
-    red: RISK_LEVEL_CONFIG.red.hexColor,
-    orange: RISK_LEVEL_CONFIG.orange.hexColor,
-    yellow: RISK_LEVEL_CONFIG.yellow.hexColor,
-    green: RISK_LEVEL_CONFIG.green.hexColor,
-    blue: RISK_LEVEL_CONFIG.blue.hexColor,
-};
-
-/**
- * @deprecated Use `getRiskLevelConfig(level).bgSolid` from `@/lib/constants/risk-levels` instead.
- */
-export const RISK_BG_CLASSES: Record<RiskLevel, string> = {
-    red: RISK_LEVEL_CONFIG.red.bgSolid,
-    orange: RISK_LEVEL_CONFIG.orange.bgSolid,
-    yellow: RISK_LEVEL_CONFIG.yellow.bgSolid,
-    green: RISK_LEVEL_CONFIG.green.bgSolid,
-    blue: RISK_LEVEL_CONFIG.blue.bgSolid,
-};
 
 export function getRiskBgClass(level: RiskLevel): string {
     return getRiskLevelConfig(level).bgSolid;

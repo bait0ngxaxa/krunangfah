@@ -53,7 +53,7 @@ export function ImportActions({
                             <p className="font-bold text-gray-800">
                                 ยืนยันการนำเข้าข้อมูล
                             </p>
-                            <div className="grid grid-cols-3 gap-3 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                                 <div className="bg-white/80 rounded-xl px-3 py-2 border border-amber-200">
                                     <span className="text-gray-500 block text-xs">
                                         ปีการศึกษา

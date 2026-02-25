@@ -7,7 +7,6 @@ export {
     StudentProfileCard,
     StudentList,
     AcademicYearFilter,
-    HospitalReferralButton,
 } from "./profile";
 
 // PHQ

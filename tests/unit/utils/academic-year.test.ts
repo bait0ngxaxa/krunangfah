@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
     toBuddhistYear,
-    toGregorianYear,
     getCurrentAcademicYear,
     generateAcademicYearData,
     formatAcademicYear,
@@ -18,20 +17,6 @@ describe("toBuddhistYear", () => {
 
     it("should convert AD 1970 to BE 2513", () => {
         expect(toBuddhistYear(1970)).toBe(2513);
-    });
-});
-
-describe("toGregorianYear", () => {
-    it("should convert BE 2567 to AD 2024", () => {
-        expect(toGregorianYear(2567)).toBe(2024);
-    });
-
-    it("should convert BE 2543 to AD 2000", () => {
-        expect(toGregorianYear(2543)).toBe(2000);
-    });
-
-    it("should convert BE 2513 to AD 1970", () => {
-        expect(toGregorianYear(2513)).toBe(1970);
     });
 });
 

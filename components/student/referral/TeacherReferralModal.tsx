@@ -109,7 +109,7 @@ export function TeacherReferralModal({
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="bg-[#0BD0D9] px-8 py-6 rounded-t-3xl relative overflow-hidden">
+                <div className="bg-[#0BD0D9] px-5 py-4 sm:px-8 sm:py-6 rounded-t-3xl relative overflow-hidden">
                     <div className="absolute inset-0 bg-linear-to-br from-[#09B8C0]/50 to-emerald-500/30" />
                     <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
                         <UserCheck className="w-6 h-6 text-white" />
@@ -121,7 +121,7 @@ export function TeacherReferralModal({
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="p-5 sm:p-8 space-y-6">
                     {error && (
                         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-2 text-orange-700">
                             <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />

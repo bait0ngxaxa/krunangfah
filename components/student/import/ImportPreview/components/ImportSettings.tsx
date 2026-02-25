@@ -38,6 +38,7 @@ export function ImportSettings({
                             {academicYears.map((year) => (
                                 <option key={year.id} value={year.id}>
                                     {year.year} เทอม {year.semester}
+                                    {year.isCurrent ? " (ปัจจุบัน)" : ""}
                                 </option>
                             ))}
                         </select>

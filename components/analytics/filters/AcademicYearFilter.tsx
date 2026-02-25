@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { CalendarDays } from "lucide-react";
+import { getCurrentAcademicYear } from "@/lib/utils/academic-year";
 
 interface AcademicYearFilterProps {
     availableYears: number[];
@@ -8,14 +10,27 @@ interface AcademicYearFilterProps {
     onYearChange: (yearValue: string) => void;
 }
 
+const MAX_RECENT_YEARS = 3;
+
 export function AcademicYearFilter({
     availableYears,
     selectedYear,
     onYearChange,
 }: AcademicYearFilterProps) {
+    const [showAllYears, setShowAllYears] = useState(false);
+
     if (availableYears.length <= 1) {
         return null;
     }
+
+    const currentYear = getCurrentAcademicYear().year;
+
+    // Sort descending (newest first)
+    const sortedYears = [...availableYears].sort((a, b) => b - a);
+    const hasOlderYears = sortedYears.length > MAX_RECENT_YEARS;
+    const displayedYears = showAllYears
+        ? sortedYears
+        : sortedYears.slice(0, MAX_RECENT_YEARS);
 
     return (
         <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-4 flex items-center gap-4 overflow-hidden">
@@ -40,15 +55,29 @@ export function AcademicYearFilter({
                 <select
                     id="year-filter-analytics"
                     value={selectedYear}
-                    onChange={(e) => onYearChange(e.target.value)}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "__show_all__") {
+                            setShowAllYears(true);
+                            return;
+                        }
+                        onYearChange(value);
+                    }}
                     className="w-full sm:flex-1 min-w-0 px-4 py-2.5 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none bg-white/70 backdrop-blur-sm hover:border-emerald-300 text-gray-600 font-medium cursor-pointer truncate"
                 >
                     <option value="all">ทุกปีการศึกษา</option>
-                    {availableYears.map((year) => (
+                    {displayedYears.map((year) => (
                         <option key={year} value={String(year)}>
                             ปี {year}
+                            {year === currentYear ? " (ปัจจุบัน)" : ""}
                         </option>
                     ))}
+                    {hasOlderYears && !showAllYears && (
+                        <option value="__show_all__">
+                            ── ดูปีก่อนหน้านี้ (
+                            {sortedYears.length - MAX_RECENT_YEARS} ปี) ──
+                        </option>
+                    )}
                 </select>
             </div>
         </div>

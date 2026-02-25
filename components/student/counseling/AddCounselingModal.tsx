@@ -86,7 +86,7 @@ export function AddCounselingModal({
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="bg-linear-to-r from-emerald-500 to-teal-600 px-8 py-6 rounded-t-3xl relative overflow-hidden">
+                <div className="bg-linear-to-r from-emerald-500 to-teal-600 px-5 py-4 sm:px-8 sm:py-6 rounded-t-3xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2" />
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
                     <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
@@ -98,7 +98,7 @@ export function AddCounselingModal({
                 {/* Form */}
                 <form
                     onSubmit={handleSubmit}
-                    className="p-8 space-y-6 overflow-y-auto flex-1"
+                    className="p-5 sm:p-8 space-y-6 overflow-y-auto flex-1"
                 >
                     {/* Error Message */}
                     {error && (

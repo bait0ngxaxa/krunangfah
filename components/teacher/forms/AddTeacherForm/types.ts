@@ -24,6 +24,7 @@ export interface AcademicYear {
     id: string;
     year: number;
     semester: number;
+    isCurrent?: boolean;
 }
 
 export interface UseAddTeacherFormReturn {

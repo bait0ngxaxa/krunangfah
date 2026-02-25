@@ -36,7 +36,7 @@ export function WorksheetPreviewModal({
                         className="bg-white rounded-3xl shadow-2xl max-w-5xl max-h-[90vh] overflow-hidden w-full border-2 border-emerald-100 animate-zoom-in"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between px-8 py-5 border-b-2 border-emerald-100 bg-emerald-50">
+                        <div className="flex items-center justify-between px-4 py-4 sm:px-8 sm:py-5 border-b-2 border-emerald-100 bg-emerald-50">
                             <h3 className="font-bold text-gray-800 truncate flex items-center gap-3 text-lg">
                                 <span className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
                                     {isPdf ? (
