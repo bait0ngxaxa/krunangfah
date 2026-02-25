@@ -1,19 +1,19 @@
 "use client";
 
-import { Filter } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 
-interface ClassFilterProps {
-    availableClasses: string[];
-    currentClass?: string;
-    onClassChange: (classValue: string) => void;
+interface AcademicYearFilterProps {
+    availableYears: number[];
+    selectedYear: string;
+    onYearChange: (yearValue: string) => void;
 }
 
-export function ClassFilter({
-    availableClasses,
-    currentClass,
-    onClassChange,
-}: ClassFilterProps) {
-    if (availableClasses.length === 0) {
+export function AcademicYearFilter({
+    availableYears,
+    selectedYear,
+    onYearChange,
+}: AcademicYearFilterProps) {
+    if (availableYears.length <= 1) {
         return null;
     }
 
@@ -27,26 +27,26 @@ export function ClassFilter({
             <div className="relative">
                 <div className="absolute inset-0 rounded-xl bg-emerald-400 blur-md opacity-20" />
                 <div className="relative p-2.5 bg-linear-to-br from-emerald-100 to-green-100 rounded-xl shadow-inner ring-1 ring-emerald-200/50 text-emerald-500">
-                    <Filter className="w-5 h-5" />
+                    <CalendarDays className="w-5 h-5" />
                 </div>
             </div>
             <div className="relative flex-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
                 <label
-                    htmlFor="class-filter"
+                    htmlFor="year-filter-analytics"
                     className="text-sm font-bold text-gray-700 whitespace-nowrap"
                 >
-                    เลือกห้องเรียน:
+                    ปีการศึกษา:
                 </label>
                 <select
-                    id="class-filter"
-                    value={currentClass || "all"}
-                    onChange={(e) => onClassChange(e.target.value)}
+                    id="year-filter-analytics"
+                    value={selectedYear}
+                    onChange={(e) => onYearChange(e.target.value)}
                     className="w-full sm:flex-1 min-w-0 px-4 py-2.5 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none bg-white/70 backdrop-blur-sm hover:border-emerald-300 text-gray-600 font-medium cursor-pointer truncate"
                 >
-                    <option value="all">แสดงทั้งหมด</option>
-                    {availableClasses.map((className) => (
-                        <option key={className} value={className}>
-                            {className}
+                    <option value="all">ทุกปีการศึกษา</option>
+                    {availableYears.map((year) => (
+                        <option key={year} value={String(year)}>
+                            ปี {year}
                         </option>
                     ))}
                 </select>

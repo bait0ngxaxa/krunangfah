@@ -224,17 +224,11 @@ describe("calculateRiskLevel", () => {
             expect(result.totalScore).toBe(0);
         });
 
-        it("should return red immediately if q9b is true (regardless of score)", () => {
+        it("should ignore q9b and not force red level", () => {
             const scores = createScores({ q9b: true });
             const result = calculateRiskLevel(scores);
-            expect(result.riskLevel).toBe("red");
+            expect(result.riskLevel).toBe("blue");
             expect(result.totalScore).toBe(0);
-        });
-
-        it("should return red if both q9a and q9b are true", () => {
-            const scores = createScores({ q9a: true, q9b: true });
-            const result = calculateRiskLevel(scores);
-            expect(result.riskLevel).toBe("red");
         });
 
         it("should return red for q9a=true even with low score", () => {

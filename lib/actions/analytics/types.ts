@@ -55,7 +55,9 @@ export interface AnalyticsData {
     studentsWithAssessment: number;
     studentsWithoutAssessment: number;
     availableClasses: string[];
+    availableAcademicYears: number[];
     currentClass?: string;
+    currentAcademicYear?: number;
     trendData: TrendDataPoint[];
     activityProgressByRisk: ActivityProgressByRisk[];
     gradeRiskData: GradeRiskData[];

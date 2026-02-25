@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { UserRole, ProjectRole } from "@prisma/client";
+import { sanitizeName, sanitizeText } from "@/lib/utils/text-sanitizer";
 
 // ดึง enum values จาก Prisma โดยตรง — ไม่ hardcode
 const projectRoleValues = Object.values(ProjectRole) as [string, ...string[]];
@@ -12,8 +13,16 @@ export const ADMIN_ADVISORY_CLASS = "ทุกห้อง";
 
 export const teacherRosterSchema = z
     .object({
-        firstName: z.string().min(1, "กรุณากรอกชื่อ"),
-        lastName: z.string().min(1, "กรุณากรอกนามสกุล"),
+        firstName: z
+            .string()
+            .min(1, "กรุณากรอกชื่อ")
+            .max(100, "ชื่อยาวเกินไป")
+            .transform(sanitizeName),
+        lastName: z
+            .string()
+            .min(1, "กรุณากรอกนามสกุล")
+            .max(100, "นามสกุลยาวเกินไป")
+            .transform(sanitizeName),
         email: z.string().email("อีเมลไม่ถูกต้อง").optional().or(z.literal("")),
         age: z
             .number()
@@ -23,7 +32,11 @@ export const teacherRosterSchema = z
             message: "กรุณาเลือกประเภทครู",
         }),
         advisoryClass: z.string(),
-        schoolRole: z.string().min(1, "กรุณากรอกบทบาทในโรงเรียน"),
+        schoolRole: z
+            .string()
+            .min(1, "กรุณากรอกบทบาทในโรงเรียน")
+            .max(200, "บทบาทหน้าที่ยาวเกินไป")
+            .transform(sanitizeText),
         projectRole: z.enum(projectRoleValues as [string, ...string[]], {
             message: "กรุณาเลือกบทบาทในโครงการ",
         }),

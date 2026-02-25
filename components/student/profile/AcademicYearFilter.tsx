@@ -25,13 +25,18 @@ export function AcademicYearFilter({
         return null;
     }
 
-    const handleYearChange = (yearId: string) => {
+    // Extract unique years for year-level filter
+    const uniqueYears = [...new Set(academicYears.map((y) => y.year))].sort(
+        (a, b) => b - a,
+    );
+
+    const handleYearChange = (value: string) => {
         const params = new URLSearchParams(searchParams.toString());
 
-        if (yearId === "all") {
+        if (value === "all") {
             params.delete("year");
         } else {
-            params.set("year", yearId);
+            params.set("year", value);
         }
 
         router.push(`?${params.toString()}`);
@@ -39,7 +44,7 @@ export function AcademicYearFilter({
 
     return (
         <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-4 overflow-hidden">
-            <div className="relative flex items-center gap-4">
+            <div className="relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0">
                 <label
                     htmlFor="year-filter"
                     className="text-sm font-semibold text-gray-700 whitespace-nowrap"
@@ -54,14 +59,22 @@ export function AcademicYearFilter({
                     id="year-filter"
                     value={currentYearId || "all"}
                     onChange={(e) => handleYearChange(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-emerald-100 rounded-lg focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none truncate w-full"
+                    className="w-full sm:flex-1 min-w-0 px-4 py-2 border border-emerald-100 rounded-lg focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none truncate"
                 >
                     <option value="all">ทุกปีการศึกษา</option>
-                    {academicYears.map((year) => (
-                        <option key={year.id} value={year.id}>
-                            {year.year} เทอม {year.semester}
-                        </option>
-                    ))}
+                    {uniqueYears.length > 1 &&
+                        uniqueYears.map((year) => (
+                            <option key={`year:${year}`} value={`year:${year}`}>
+                                📅 ปี {year} (ทุกเทอม)
+                            </option>
+                        ))}
+                    <optgroup label="แยกรายเทอม">
+                        {academicYears.map((year) => (
+                            <option key={year.id} value={year.id}>
+                                {year.year} เทอม {year.semester}
+                            </option>
+                        ))}
+                    </optgroup>
                 </select>
             </div>
         </div>

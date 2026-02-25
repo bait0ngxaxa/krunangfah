@@ -125,7 +125,7 @@ describe("transformTrendData", () => {
         const result = transformTrendData(rawResults);
 
         expect(result).toHaveLength(1);
-        expect(result[0].period).toBe("ต้นเทอม/1");
+        expect(result[0].period).toBe("ต้นเทอม/1 (2568)");
         expect(result[0].academicYear).toBe(2568);
         expect(result[0].semester).toBe(1);
         expect(result[0].round).toBe(1);
@@ -148,7 +148,7 @@ describe("transformTrendData", () => {
         ];
 
         const result = transformTrendData(rawResults);
-        expect(result[0].period).toBe("ปลายเทอม/2");
+        expect(result[0].period).toBe("ปลายเทอม/2 (2568)");
         expect(result[0].round).toBe(2);
     });
 
@@ -207,6 +207,56 @@ describe("transformTrendData", () => {
         const result = transformTrendData(rawResults);
         expect(result).toHaveLength(1);
         expect(result[0].blue).toBe(3);
+    });
+
+    it("should include academic year in period label", () => {
+        const rawResults = [
+            {
+                academic_year: 2568,
+                semester: 1,
+                assessment_round: 1,
+                risk_level: "blue",
+                count: BigInt(5),
+            },
+            {
+                academic_year: 2569,
+                semester: 1,
+                assessment_round: 1,
+                risk_level: "blue",
+                count: BigInt(3),
+            },
+        ];
+
+        const result = transformTrendData(rawResults);
+        expect(result).toHaveLength(2);
+        expect(result[0].period).toBe("ต้นเทอม/1 (2568)");
+        expect(result[1].period).toBe("ต้นเทอม/1 (2569)");
+    });
+
+    it("should differentiate same semester across different years", () => {
+        const rawResults = [
+            {
+                academic_year: 2567,
+                semester: 2,
+                assessment_round: 2,
+                risk_level: "green",
+                count: BigInt(10),
+            },
+            {
+                academic_year: 2568,
+                semester: 2,
+                assessment_round: 2,
+                risk_level: "green",
+                count: BigInt(15),
+            },
+        ];
+
+        const result = transformTrendData(rawResults);
+        expect(result).toHaveLength(2);
+        expect(result[0].period).toBe("ปลายเทอม/2 (2567)");
+        expect(result[0].green).toBe(10);
+        expect(result[1].period).toBe("ปลายเทอม/2 (2568)");
+        expect(result[1].green).toBe(15);
     });
 });
 

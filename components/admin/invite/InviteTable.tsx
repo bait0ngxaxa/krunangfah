@@ -13,6 +13,7 @@ import {
     AlertCircle,
     Mail,
 } from "lucide-react";
+import { toast } from "sonner";
 import { revokeSchoolAdminInvite } from "@/lib/actions/school-admin-invite.actions";
 import type {
     SchoolAdminInvite,
@@ -92,20 +93,30 @@ function InviteCard({
     const status = getInviteStatus(invite);
 
     async function handleCopy() {
-        await navigator.clipboard.writeText(getInviteUrl(invite.token));
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        try {
+            await navigator.clipboard.writeText(getInviteUrl(invite.token));
+            setCopied(true);
+            toast.success("คัดลอกลิงก์คำเชิญเรียบร้อย");
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            toast.error("ไม่สามารถคัดลอกลิงก์ได้ กรุณาคัดลอกด้วยตนเอง");
+        }
     }
 
     async function handleRevoke() {
         if (!confirmRevoke) {
             setConfirmRevoke(true);
+            // Auto-dismiss confirm state after 3 seconds
+            setTimeout(() => setConfirmRevoke(false), 3000);
             return;
         }
         setIsRevoking(true);
         const result = await revokeSchoolAdminInvite(invite.id);
         if (result.success) {
+            toast.success(`ยกเลิกคำเชิญสำหรับ "${invite.email}" สำเร็จ`);
             onRevoked();
+        } else {
+            toast.error("เกิดข้อผิดพลาดในการยกเลิกคำเชิญ");
         }
         setIsRevoking(false);
         setConfirmRevoke(false);
@@ -159,7 +170,7 @@ function InviteCard({
                                 {isRevoking
                                     ? "กำลังยกเลิก..."
                                     : confirmRevoke
-                                      ? "ยืนยัน"
+                                      ? "ยืนยันยกเลิก?"
                                       : "ยกเลิก"}
                             </button>
                         </div>

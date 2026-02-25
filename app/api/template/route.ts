@@ -29,8 +29,8 @@ export async function GET() {
             "ข้อ7",
             "ข้อ8",
             "ข้อ9",
-            "ข้อ9a",
-            "ข้อ9b",
+            "opt1",
+            "opt2",
         ];
 
         // Add header row with styling
@@ -48,8 +48,8 @@ export async function GET() {
             { width: 15 }, // รหัสนักเรียน
             { width: 15 }, // ชื่อ
             { width: 15 }, // นามสกุล
-            { width: 8 },  // เพศ
-            { width: 8 },  // อายุ
+            { width: 8 }, // เพศ
+            { width: 8 }, // อายุ
             { width: 10 }, // ห้อง
             { width: 8 }, // ข้อ1
             { width: 8 }, // ข้อ2
@@ -60,8 +60,8 @@ export async function GET() {
             { width: 8 }, // ข้อ7
             { width: 8 }, // ข้อ8
             { width: 8 }, // ข้อ9
-            { width: 10 }, // ข้อ9a
-            { width: 10 }, // ข้อ9b
+            { width: 10 }, // opt1
+            { width: 10 }, // opt2
         ];
 
         // Add sample data
@@ -161,16 +161,20 @@ export async function GET() {
         instructionSheet.addRow(["ชื่อ", "ชื่อนักเรียน", "ข้อความ"]);
         instructionSheet.addRow(["นามสกุล", "นามสกุลนักเรียน", "ข้อความ"]);
         instructionSheet.addRow(["เพศ", "เพศของนักเรียน", "ชาย / หญิง"]);
-        instructionSheet.addRow(["อายุ", "อายุของนักเรียน (ปี)", "ตัวเลข เช่น 13, 14"]);
+        instructionSheet.addRow([
+            "อายุ",
+            "อายุของนักเรียน (ปี)",
+            "ตัวเลข เช่น 13, 14",
+        ]);
         instructionSheet.addRow(["ห้อง", "ห้องเรียน", "เช่น ม.1/1"]);
         instructionSheet.addRow(["ข้อ1-ข้อ9", "คะแนนแต่ละข้อ", "0, 1, 2, 3"]);
         instructionSheet.addRow([
-            "ข้อ9a",
+            "opt1",
             "มีความคิดทำร้ายตัวเอง",
             "ใช่ / ไม่ใช่",
         ]);
         instructionSheet.addRow([
-            "ข้อ9b",
+            "opt2",
             "มีความคิดทำร้ายผู้อื่น",
             "ใช่ / ไม่ใช่",
         ]);
@@ -181,7 +185,7 @@ export async function GET() {
         instructionSheet.addRow(["10-14 คะแนน", "เหลือง", "เฝ้าระวังปานกลาง"]);
         instructionSheet.addRow(["15-19 คะแนน", "ส้ม", "มีความเสี่ยง"]);
         instructionSheet.addRow([
-            "20-27 คะแนน หรือ ข้อ9a/9b ตอบใช่",
+            "20-27 คะแนน หรือ opt1/opt2 ตอบใช่",
             "แดง",
             "ความเสี่ยงสูง",
         ]);

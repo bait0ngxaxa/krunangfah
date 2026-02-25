@@ -129,10 +129,10 @@ export function StudentPreviewTable({
                                     </th>
                                 ))}
                                 <th className="px-1 py-4 text-center text-xs font-bold text-rose-500 uppercase tracking-wider">
-                                    9a
+                                    opt1
                                 </th>
                                 <th className="px-1 py-4 text-center text-xs font-bold text-rose-500 uppercase tracking-wider">
-                                    9b
+                                    opt2
                                 </th>
                                 <th className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     รวม
@@ -157,12 +157,12 @@ export function StudentPreviewTable({
                                     <td className="px-4 py-2 text-sm text-center text-gray-600">
                                         {student.class}
                                     </td>
-                                    {/* Editable score inputs (0-3) */}
-                                    {SCORE_KEYS.map((key) => {
+                                    {/* Editable score inputs (0-3) — Map created once per student */}
+                                    {(() => {
                                         const scoreMap = new Map(
                                             Object.entries(student.scores),
                                         );
-                                        return (
+                                        return SCORE_KEYS.map((key) => (
                                             <td
                                                 key={key}
                                                 className="px-0.5 py-2"
@@ -182,9 +182,9 @@ export function StudentPreviewTable({
                                                     }
                                                 />
                                             </td>
-                                        );
-                                    })}
-                                    {/* Clickable q9a toggle */}
+                                        ));
+                                    })()}
+                                    {/* Clickable opt1 toggle */}
                                     <td className="px-0.5 py-2 text-center">
                                         <button
                                             type="button"
@@ -204,7 +204,7 @@ export function StudentPreviewTable({
                                             {student.scores.q9a ? "✓" : "✗"}
                                         </button>
                                     </td>
-                                    {/* Clickable q9b toggle */}
+                                    {/* Clickable opt2 toggle */}
                                     <td className="px-0.5 py-2 text-center">
                                         <button
                                             type="button"

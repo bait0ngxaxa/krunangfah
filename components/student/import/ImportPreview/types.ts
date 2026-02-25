@@ -1,5 +1,6 @@
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { type RiskLevel, type PhqScores } from "@/lib/utils/phq-scoring";
+import { type IncompleteActivityInfo } from "@/lib/actions/student";
 
 /**
  * Props for ImportPreview component
@@ -61,6 +62,7 @@ export interface UseImportPreviewReturn {
     assessmentRound: number;
     teacherProfile: TeacherProfile | null;
     hasRound1: boolean;
+    incompleteWarning: IncompleteActivityInfo | null;
 
     // Computed values
     previewData: PreviewStudent[];

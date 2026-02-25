@@ -60,6 +60,14 @@ export interface ImportResult {
     errors?: string[];
 }
 
+// Incomplete activity warning for import confirmation
+export interface IncompleteActivityInfo {
+    hasIncomplete: boolean;
+    studentCount: number; // จำนวนนักเรียนที่ทำกิจกรรมไม่ครบ
+    activityCount: number; // จำนวนกิจกรรมที่ยังค้าง
+    previousRound: number; // รอบก่อนหน้า
+}
+
 // Raw query result types
 export interface RiskCountRaw {
     risk_level: string;

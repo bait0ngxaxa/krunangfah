@@ -31,7 +31,7 @@ export function SchoolFilter({
                     <School className="w-5 h-5" />
                 </div>
             </div>
-            <div className="relative flex-1 flex items-center gap-3">
+            <div className="relative flex-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
                 <label
                     htmlFor="school-filter"
                     className="text-sm font-bold text-gray-700 whitespace-nowrap"
@@ -42,7 +42,7 @@ export function SchoolFilter({
                     id="school-filter"
                     value={selectedSchoolId}
                     onChange={(e) => onSchoolChange(e.target.value)}
-                    className="flex-1 px-4 py-2.5 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none bg-white/70 backdrop-blur-sm hover:border-emerald-300 text-gray-600 font-medium cursor-pointer"
+                    className="w-full sm:flex-1 min-w-0 px-4 py-2.5 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none bg-white/70 backdrop-blur-sm hover:border-emerald-300 text-gray-600 font-medium cursor-pointer truncate"
                 >
                     <option value="all">ทุกโรงเรียน</option>
                     {schools.map((school) => (

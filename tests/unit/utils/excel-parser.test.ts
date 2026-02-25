@@ -177,6 +177,103 @@ describe("Excel Parser - Boolean Cell Logic", () => {
             expect(getBooleanValue("2")).toBe(false);
         });
     });
+
+    describe("q9a/q9b fallback column names", () => {
+        /**
+         * The parser now supports both "opt1"/"opt2" and "ข้อ9a"/"ข้อ9b" column names
+         * using: getBooleanCell("opt1") || getBooleanCell("ข้อ9a")
+         * This tests the OR fallback logic
+         */
+        it("should resolve true from primary column name", () => {
+            const primary = getBooleanValue("ใช่");
+            const fallback = getBooleanValue("");
+            expect(primary || fallback).toBe(true);
+        });
+
+        it("should resolve true from fallback column name when primary is empty", () => {
+            const primary = getBooleanValue("");
+            const fallback = getBooleanValue("yes");
+            expect(primary || fallback).toBe(true);
+        });
+
+        it("should resolve false when both columns are empty", () => {
+            const primary = getBooleanValue("");
+            const fallback = getBooleanValue("");
+            expect(primary || fallback).toBe(false);
+        });
+
+        it("should resolve true when both columns have truthy values", () => {
+            const primary = getBooleanValue("ใช่");
+            const fallback = getBooleanValue("yes");
+            expect(primary || fallback).toBe(true);
+        });
+    });
+});
+
+describe("Excel Parser - Year Filter Parsing Logic", () => {
+    /**
+     * Test the year-only filter parsing logic used in student profile page
+     * Format: "year:XXXX" where XXXX is the academic year number
+     */
+    interface PhqResult {
+        id: string;
+        academicYear?: { id: string; year: number };
+    }
+
+    const filterByYearId = (
+        results: PhqResult[],
+        selectedYearId: string | undefined,
+    ): PhqResult[] => {
+        if (!selectedYearId) return results;
+
+        // Year-only filter (e.g. "year:2568")
+        if (selectedYearId.startsWith("year:")) {
+            const yearNum = parseInt(selectedYearId.replace("year:", ""), 10);
+            if (isNaN(yearNum)) return results;
+            return results.filter((r) => r.academicYear?.year === yearNum);
+        }
+
+        // Specific semester filter (by academic year ID)
+        return results.filter((r) => r.academicYear?.id === selectedYearId);
+    };
+
+    const mockResults: PhqResult[] = [
+        { id: "1", academicYear: { id: "ay-1", year: 2567 } },
+        { id: "2", academicYear: { id: "ay-2", year: 2568 } },
+        { id: "3", academicYear: { id: "ay-3", year: 2568 } },
+        { id: "4", academicYear: { id: "ay-4", year: 2569 } },
+    ];
+
+    it("should return all results when no filter selected", () => {
+        expect(filterByYearId(mockResults, undefined)).toHaveLength(4);
+    });
+
+    it("should filter by year-only prefix", () => {
+        const filtered = filterByYearId(mockResults, "year:2568");
+        expect(filtered).toHaveLength(2);
+        expect(filtered.every((r) => r.academicYear?.year === 2568)).toBe(true);
+    });
+
+    it("should return all results for invalid year number (NaN guard)", () => {
+        const filtered = filterByYearId(mockResults, "year:abc");
+        expect(filtered).toHaveLength(4);
+    });
+
+    it("should filter by specific academic year ID", () => {
+        const filtered = filterByYearId(mockResults, "ay-1");
+        expect(filtered).toHaveLength(1);
+        expect(filtered[0].id).toBe("1");
+    });
+
+    it("should return empty for non-matching year", () => {
+        const filtered = filterByYearId(mockResults, "year:2570");
+        expect(filtered).toHaveLength(0);
+    });
+
+    it("should return empty for non-matching academic year ID", () => {
+        const filtered = filterByYearId(mockResults, "ay-999");
+        expect(filtered).toHaveLength(0);
+    });
 });
 
 describe("Excel Parser - Required Headers Validation", () => {

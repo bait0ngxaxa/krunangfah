@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
+import {
+    normalizeSchoolName,
+    sanitizeText,
+} from "@/lib/utils/text-sanitizer";
 import type {
     SchoolClassItem,
     SchoolContextData,
@@ -32,8 +36,16 @@ async function resolveSchoolId(
 }
 
 const schoolSetupSchema = z.object({
-    name: z.string().min(1, "กรุณากรอกชื่อโรงเรียน"),
-    province: z.string().optional(),
+    name: z
+        .string()
+        .min(1, "กรุณากรอกชื่อโรงเรียน")
+        .max(200, "ชื่อโรงเรียนยาวเกินไป")
+        .transform(normalizeSchoolName),
+    province: z
+        .string()
+        .max(100, "ชื่อจังหวัดยาวเกินไป")
+        .transform(sanitizeText)
+        .optional(),
 });
 
 const classNameSchema = z
@@ -77,8 +89,8 @@ export async function createSchoolAndLink(input: {
 
             const newSchool = await tx.school.create({
                 data: {
-                    name: parsed.data.name.trim(),
-                    province: parsed.data.province?.trim() || null,
+                    name: parsed.data.name,
+                    province: parsed.data.province || null,
                 },
             });
 

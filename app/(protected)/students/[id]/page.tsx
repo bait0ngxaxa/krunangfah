@@ -80,12 +80,13 @@ async function StudentDetailContent({
     selectedYearId?: string;
 }) {
     // Parallelize data fetches
-    const [session, student, counselingSessions, homeVisits] = await Promise.all([
-        requireAuth(),
-        getStudentDetail(studentId),
-        getCounselingSessions(studentId),
-        getHomeVisits(studentId),
-    ]);
+    const [session, student, counselingSessions, homeVisits] =
+        await Promise.all([
+            requireAuth(),
+            getStudentDetail(studentId),
+            getCounselingSessions(studentId),
+            getHomeVisits(studentId),
+        ]);
     const currentUserId = session.user.id;
     const isSystemAdmin = session.user.role === "system_admin";
 
@@ -105,12 +106,24 @@ async function StudentDetailContent({
         return b.semester - a.semester;
     });
 
-    // Filter PHQ results by selected year
-    const filteredPhqResults = selectedYearId
-        ? student.phqResults.filter(
-              (r) => r.academicYear?.id === selectedYearId,
-          )
-        : student.phqResults;
+    // Filter PHQ results by selected year or year+semester
+    const filteredPhqResults = (() => {
+        if (!selectedYearId) return student.phqResults;
+
+        // Year-only filter (e.g. "year:2568")
+        if (selectedYearId.startsWith("year:")) {
+            const yearNum = parseInt(selectedYearId.replace("year:", ""), 10);
+            if (isNaN(yearNum)) return student.phqResults;
+            return student.phqResults.filter(
+                (r) => r.academicYear?.year === yearNum,
+            );
+        }
+
+        // Specific semester filter (by academic year ID)
+        return student.phqResults.filter(
+            (r) => r.academicYear?.id === selectedYearId,
+        );
+    })();
 
     const latestResult = filteredPhqResults[0] || null;
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ShieldAlert } from "lucide-react";
+import type { IncompleteActivityInfo } from "@/lib/actions/student";
 
 interface ImportActionsProps {
     onCancel: () => void;
@@ -10,6 +11,7 @@ interface ImportActionsProps {
     /** Display label for the selected academic year (e.g. "2569 เทอม 1") */
     academicYearLabel: string;
     assessmentRound: number;
+    incompleteWarning: IncompleteActivityInfo | null;
 }
 
 /**
@@ -23,6 +25,7 @@ export function ImportActions({
     studentCount,
     academicYearLabel,
     assessmentRound,
+    incompleteWarning,
 }: ImportActionsProps) {
     const [showConfirm, setShowConfirm] = useState(false);
 
@@ -76,6 +79,29 @@ export function ImportActions({
                                     </span>
                                 </div>
                             </div>
+
+                            {/* Incomplete Activity Warning */}
+                            {incompleteWarning?.hasIncomplete && (
+                                <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <ShieldAlert className="w-5 h-5 text-red-500 shrink-0" />
+                                        <p className="font-bold text-red-700 text-sm">
+                                            ⚠️ พบนักเรียน{" "}
+                                            {incompleteWarning.studentCount} คน
+                                            ที่ยังทำกิจกรรมไม่ครบ (
+                                            {incompleteWarning.activityCount}{" "}
+                                            กิจกรรม) จากการประเมินครั้งที่{" "}
+                                            {incompleteWarning.previousRound}
+                                        </p>
+                                    </div>
+                                    <p className="text-xs text-red-600 ml-7">
+                                        เมื่อนำเข้าข้อมูลใหม่แล้ว
+                                        จะไม่สามารถย้อนกลับไปทำกิจกรรมเดิมได้
+                                        กรุณาตรวจสอบให้แน่ใจก่อนยืนยัน
+                                    </p>
+                                </div>
+                            )}
+
                             <p className="text-xs text-amber-700">
                                 กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนกดยืนยัน
                                 เมื่อนำเข้าแล้วจะไม่สามารถยกเลิกได้
@@ -120,11 +146,11 @@ export function ImportActions({
                     {isLoading ? (
                         <>
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                            กำลังบันทึก...
+                            กำลังนำเข้า...
                         </>
                     ) : (
                         <>
-                            <span>บันทึกข้อมูล</span>
+                            <span>ตรวจสอบและนำเข้า →</span>
                             <span className="bg-black/10 px-2 py-0.5 rounded-lg text-sm">
                                 {studentCount} คน
                             </span>

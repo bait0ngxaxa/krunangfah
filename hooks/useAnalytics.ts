@@ -15,6 +15,7 @@ interface UseAnalyticsReturn {
     data: AnalyticsData;
     selectedClass: string;
     selectedSchoolId: string;
+    selectedAcademicYear: string;
     isPending: boolean;
     isSystemAdmin: boolean;
     showClassFilter: boolean;
@@ -22,6 +23,7 @@ interface UseAnalyticsReturn {
     pieChartTitle: string;
     handleSchoolChange: (schoolId: string) => void;
     handleClassChange: (classValue: string) => void;
+    handleAcademicYearChange: (yearValue: string) => void;
 }
 
 export function useAnalytics(
@@ -33,6 +35,8 @@ export function useAnalytics(
     const [data, setData] = useState<AnalyticsData>(initialData);
     const [selectedClass, setSelectedClass] = useState<string>("all");
     const [selectedSchoolId, setSelectedSchoolId] = useState<string>("all");
+    const [selectedAcademicYear, setSelectedAcademicYear] =
+        useState<string>("all");
     const [isPending, startTransition] = useTransition();
 
     const isSystemAdmin =
@@ -42,6 +46,7 @@ export function useAnalytics(
     const handleSchoolChange = useCallback((schoolId: string): void => {
         setSelectedSchoolId(schoolId);
         setSelectedClass("all");
+        setSelectedAcademicYear("all");
 
         const schoolFilter = schoolId === "all" ? undefined : schoolId;
         startTransition(async () => {
@@ -62,17 +67,50 @@ export function useAnalytics(
                     ? selectedSchoolId
                     : undefined;
 
+            const yearFilter =
+                selectedAcademicYear !== "all"
+                    ? parseInt(selectedAcademicYear, 10)
+                    : undefined;
+
             startTransition(async () => {
                 const newData = await getAnalyticsSummary(
                     filterValue,
                     schoolFilter,
+                    yearFilter,
                 );
                 if (newData) {
                     setData(newData);
                 }
             });
         },
-        [isSystemAdmin, selectedSchoolId],
+        [isSystemAdmin, selectedSchoolId, selectedAcademicYear],
+    );
+
+    const handleAcademicYearChange = useCallback(
+        (yearValue: string): void => {
+            setSelectedAcademicYear(yearValue);
+
+            const classFilterValue =
+                selectedClass !== "all" ? selectedClass : undefined;
+            const schoolFilter =
+                isSystemAdmin && selectedSchoolId !== "all"
+                    ? selectedSchoolId
+                    : undefined;
+            const yearFilter =
+                yearValue !== "all" ? parseInt(yearValue, 10) : undefined;
+
+            startTransition(async () => {
+                const newData = await getAnalyticsSummary(
+                    classFilterValue,
+                    schoolFilter,
+                    yearFilter,
+                );
+                if (newData) {
+                    setData(newData);
+                }
+            });
+        },
+        [isSystemAdmin, selectedSchoolId, selectedClass],
     );
 
     const pieChartData = useMemo(
@@ -95,6 +133,7 @@ export function useAnalytics(
         data,
         selectedClass,
         selectedSchoolId,
+        selectedAcademicYear,
         isPending,
         isSystemAdmin,
         showClassFilter,
@@ -102,5 +141,6 @@ export function useAnalytics(
         pieChartTitle,
         handleSchoolChange,
         handleClassChange,
+        handleAcademicYearChange,
     };
 }

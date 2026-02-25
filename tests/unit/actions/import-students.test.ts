@@ -420,3 +420,79 @@ describe("Import Students - Access Control Logic", () => {
         });
     });
 });
+
+describe("Import Students - Incomplete Activity Warning Round Guard", () => {
+    /**
+     * Tests the logic for determining whether to show incomplete activity warnings.
+     * Round 1 has no previous round, so warnings should be skipped entirely.
+     * Round 2+ should check the previous round's activities.
+     */
+    interface IncompleteActivityInfo {
+        hasIncomplete: boolean;
+        studentCount: number;
+        activityCount: number;
+        previousRound: number;
+    }
+
+    const getNoWarning = (assessmentRound: number): IncompleteActivityInfo => ({
+        hasIncomplete: false,
+        studentCount: 0,
+        activityCount: 0,
+        previousRound: Math.max(assessmentRound - 1, 1),
+    });
+
+    /**
+     * Simulates the early-return guard logic:
+     * if (classes.length === 0 || assessmentRound <= 1) return noWarning;
+     */
+    const shouldSkipWarning = (
+        classes: string[],
+        assessmentRound: number,
+    ): boolean => {
+        return classes.length === 0 || assessmentRound <= 1;
+    };
+
+    const getPreviousRound = (assessmentRound: number): number => {
+        return assessmentRound - 1;
+    };
+
+    it("should skip warning for round 1 (no previous round)", () => {
+        expect(shouldSkipWarning(["ม.1/1"], 1)).toBe(true);
+    });
+
+    it("should skip warning for round 0 or negative", () => {
+        expect(shouldSkipWarning(["ม.1/1"], 0)).toBe(true);
+        expect(shouldSkipWarning(["ม.1/1"], -1)).toBe(true);
+    });
+
+    it("should not skip warning for round 2", () => {
+        expect(shouldSkipWarning(["ม.1/1"], 2)).toBe(false);
+    });
+
+    it("should not skip warning for round 3+", () => {
+        expect(shouldSkipWarning(["ม.1/1"], 3)).toBe(false);
+    });
+
+    it("should skip warning when classes array is empty", () => {
+        expect(shouldSkipWarning([], 2)).toBe(true);
+    });
+
+    it("should calculate correct previous round for round 2", () => {
+        expect(getPreviousRound(2)).toBe(1);
+    });
+
+    it("should calculate correct previous round for round 3", () => {
+        expect(getPreviousRound(3)).toBe(2);
+    });
+
+    it("should return noWarning with previousRound clamped to 1 for round 1", () => {
+        const noWarning = getNoWarning(1);
+        expect(noWarning.hasIncomplete).toBe(false);
+        expect(noWarning.previousRound).toBe(1);
+    });
+
+    it("should return noWarning with correct previousRound for round 2", () => {
+        const noWarning = getNoWarning(2);
+        expect(noWarning.previousRound).toBe(1);
+    });
+});

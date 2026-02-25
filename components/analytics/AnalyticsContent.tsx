@@ -6,6 +6,7 @@ import { AnalyticsSkeleton } from "./AnalyticsSkeleton";
 import { buildAnalyticsTabs } from "./AnalyticsTabContent";
 import { ClassFilter } from "./filters/ClassFilter";
 import { SchoolFilter } from "./filters/SchoolFilter";
+import { AcademicYearFilter } from "./filters/AcademicYearFilter";
 import { Tabs } from "@/components/ui/Tabs";
 import type { AnalyticsData } from "@/lib/actions/analytics";
 
@@ -30,6 +31,7 @@ export function AnalyticsContent({
     const {
         data,
         selectedSchoolId,
+        selectedAcademicYear,
         isPending,
         isSystemAdmin,
         showClassFilter,
@@ -37,6 +39,7 @@ export function AnalyticsContent({
         pieChartTitle,
         handleSchoolChange,
         handleClassChange,
+        handleAcademicYearChange,
     } = useAnalytics(initialData, isSchoolAdmin, schools, userRole);
 
     const tabs = buildAnalyticsTabs({
@@ -69,6 +72,14 @@ export function AnalyticsContent({
                     availableClasses={data.availableClasses}
                     currentClass={data.currentClass}
                     onClassChange={handleClassChange}
+                />
+            ) : null}
+
+            {data.availableAcademicYears.length > 1 ? (
+                <AcademicYearFilter
+                    availableYears={data.availableAcademicYears}
+                    selectedYear={selectedAcademicYear}
+                    onYearChange={handleAcademicYearChange}
                 />
             ) : null}
 

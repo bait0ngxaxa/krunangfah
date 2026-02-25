@@ -12,6 +12,7 @@ import {
     AlertCircle,
     User,
 } from "lucide-react";
+import { toast } from "sonner";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
 import { USER_ROLE_LABELS } from "@/lib/constants/roles";
 
@@ -63,9 +64,14 @@ function CopyButton({ token }: { token: string }) {
     const [copied, setCopied] = useState(false);
 
     async function handleCopy() {
-        await navigator.clipboard.writeText(getInviteUrl(token));
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        try {
+            await navigator.clipboard.writeText(getInviteUrl(token));
+            setCopied(true);
+            toast.success("คัดลอกลิงก์คำเชิญเรียบร้อย");
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            toast.error("ไม่สามารถคัดลอกลิงก์ได้ กรุณาคัดลอกด้วยตนเอง");
+        }
     }
 
     return (

@@ -24,8 +24,14 @@ import type {
 } from "@/types/school-setup.types";
 
 const schoolInfoSchema = z.object({
-    name: z.string().min(1, "กรุณากรอกชื่อโรงเรียน"),
-    province: z.string().optional(),
+    name: z
+        .string()
+        .min(1, "กรุณากรอกชื่อโรงเรียน")
+        .max(200, "ชื่อโรงเรียนยาวเกินไป"),
+    province: z
+        .string()
+        .max(100, "ชื่อจังหวัดยาวเกินไป")
+        .optional(),
 });
 
 type SchoolInfoData = z.infer<typeof schoolInfoSchema>;

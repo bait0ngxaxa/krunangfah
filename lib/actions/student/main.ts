@@ -20,6 +20,7 @@ import type {
     StudentListResponse,
     RiskCountsResponse,
     GetStudentsOptions,
+    IncompleteActivityInfo,
 } from "./types";
 
 // Note: Cache keys can be added here when implementing granular caching
@@ -296,6 +297,77 @@ export async function hasRound1Data(academicYearId: string): Promise<boolean> {
     } catch (error) {
         console.error("hasRound1Data error:", error);
         return false;
+    }
+}
+
+/**
+ * Check for incomplete activities from a previous assessment round
+ * Used to warn teachers before importing new round data
+ *
+ * Scoping by `classes` — the classes of students being imported (from Excel)
+ * This way both school_admin and class_teacher get warnings scoped to
+ * exactly the classes they are importing, not the entire school.
+ */
+export async function getIncompleteActivityWarning(
+    academicYearId: string,
+    assessmentRound: number,
+    classes: string[],
+): Promise<IncompleteActivityInfo> {
+    const noWarning: IncompleteActivityInfo = {
+        hasIncomplete: false,
+        studentCount: 0,
+        activityCount: 0,
+        previousRound: Math.max(assessmentRound - 1, 1),
+    };
+
+    // Round 1 has no previous round — skip warning entirely
+    if (classes.length === 0 || assessmentRound <= 1) return noWarning;
+
+    try {
+        const session = await requireAuth();
+        const user = session.user;
+        const { schoolId } = await getUserContext(user.id, user.role);
+
+        if (!schoolId && !isSystemAdmin(user.role)) return noWarning;
+
+        // Check the previous round's incomplete activities
+        // e.g. importing round 2 → check round 1
+        const previousRound = assessmentRound - 1;
+
+        // Find incomplete activities for students in the imported classes only
+        const incompleteActivities = await prisma.activityProgress.findMany({
+            where: {
+                status: { not: "completed" },
+                phqResult: {
+                    academicYearId,
+                    assessmentRound: previousRound,
+                    student: {
+                        ...(schoolId ? { schoolId } : {}),
+                        class: { in: classes },
+                    },
+                },
+            },
+            select: {
+                studentId: true,
+            },
+        });
+
+        if (incompleteActivities.length === 0) return noWarning;
+
+        // Count distinct students
+        const uniqueStudents = new Set(
+            incompleteActivities.map((a) => a.studentId),
+        );
+
+        return {
+            hasIncomplete: true,
+            studentCount: uniqueStudents.size,
+            activityCount: incompleteActivities.length,
+            previousRound,
+        };
+    } catch (error) {
+        console.error("getIncompleteActivityWarning error:", error);
+        return noWarning;
     }
 }
 

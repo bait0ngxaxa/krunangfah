@@ -148,16 +148,16 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                 ))}
             </div>
 
-            <div className="flex flex-wrap gap-6 items-center bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
-                <div className="flex items-center gap-3">
-                    <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 sm:gap-6 sm:items-center bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
+                    <label className="text-sm font-bold text-gray-700 flex items-center gap-2 whitespace-nowrap">
                         <School className="w-5 h-5 text-gray-600" />
                         กรองตามห้องเรียน:
                     </label>
                     <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
-                        className="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all cursor-pointer hover:border-emerald-200"
+                        className="w-full sm:w-auto px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all cursor-pointer hover:border-emerald-200 truncate"
                     >
                         <option value="all">แสดงทั้งหมด</option>
                         {classes.map((cls) => (
@@ -168,7 +168,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                     </select>
                 </div>
 
-                <div className="h-8 w-px bg-gray-300/50 hidden md:block" />
+                <div className="h-px sm:h-8 w-full sm:w-px bg-gray-300/50" />
 
                 <div className="text-sm text-gray-600 font-medium">
                     แสดง{" "}

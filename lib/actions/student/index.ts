@@ -10,6 +10,7 @@ export type {
     RiskCountsResponse,
     GetStudentsOptions,
     ImportResult,
+    IncompleteActivityInfo,
 } from "./types";
 
 // Main functions (with authentication)
@@ -19,6 +20,7 @@ export {
     getStudentDetail,
     getStudentRiskCounts,
     hasRound1Data,
+    getIncompleteActivityWarning,
 } from "./main";
 
 // Mutations

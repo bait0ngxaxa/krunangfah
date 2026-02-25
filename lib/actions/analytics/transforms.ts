@@ -101,7 +101,7 @@ export function transformTrendData(
     return Array.from(periodMap.values()).map((entry) => {
         const roundLabel = entry.round === 1 ? "ต้นเทอม" : "ปลายเทอม";
         return {
-            period: `${roundLabel}/${entry.semester}`,
+            period: `${roundLabel}/${entry.semester} (${entry.academicYear})`,
             academicYear: entry.academicYear,
             semester: entry.semester,
             round: entry.round,
@@ -171,7 +171,8 @@ export function transformGradeRiskData(
         }))
         .sort((a, b) => {
             // Sort by prefix group (ป before ม) then by number
-            const prefixOrder = (g: string): number => g.startsWith("ป") ? 0 : 1;
+            const prefixOrder = (g: string): number =>
+                g.startsWith("ป") ? 0 : 1;
             const prefixDiff = prefixOrder(a.grade) - prefixOrder(b.grade);
             if (prefixDiff !== 0) return prefixDiff;
             const numA = parseInt(a.grade.match(/\d+/)?.[0] || "0");
@@ -262,7 +263,8 @@ export function transformHospitalReferrals(
         }))
         .sort((a, b) => {
             // Sort by prefix group (ป before ม) then by number
-            const prefixOrder = (g: string): number => g.startsWith("ป") ? 0 : 1;
+            const prefixOrder = (g: string): number =>
+                g.startsWith("ป") ? 0 : 1;
             const prefixDiff = prefixOrder(a.grade) - prefixOrder(b.grade);
             if (prefixDiff !== 0) return prefixDiff;
             const numA = parseInt(a.grade.match(/\d+/)?.[0] || "0");

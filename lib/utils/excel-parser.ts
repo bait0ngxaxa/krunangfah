@@ -205,8 +205,12 @@ export async function parseExcelBuffer(
                         q7: getNumberCell("ข้อ7"),
                         q8: getNumberCell("ข้อ8"),
                         q9: getNumberCell("ข้อ9"),
-                        q9a: getBooleanCell("ข้อ9a"),
-                        q9b: getBooleanCell("ข้อ9b"),
+                        q9a:
+                            getBooleanCell("opt1") ||
+                            getBooleanCell("ข้อ9a"),
+                        q9b:
+                            getBooleanCell("opt2") ||
+                            getBooleanCell("ข้อ9b"),
                     },
                 };
 

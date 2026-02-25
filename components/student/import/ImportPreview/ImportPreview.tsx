@@ -36,6 +36,7 @@ export function ImportPreview({
         riskCounts,
         handleScoreUpdate,
         handleSave,
+        incompleteWarning,
     } = useImportPreview({ data, onSuccess });
 
     return (
@@ -93,6 +94,7 @@ export function ImportPreview({
                     return y ? `${y.year} เทอม ${y.semester}` : "";
                 })()}
                 assessmentRound={assessmentRound}
+                incompleteWarning={incompleteWarning}
             />
         </div>
     );

@@ -6,7 +6,11 @@ import {
     useCallback,
 } from "react";
 import { calculateRiskLevel, type PhqScores } from "@/lib/utils/phq-scoring";
-import { importStudents, hasRound1Data } from "@/lib/actions/student";
+import {
+    importStudents,
+    hasRound1Data,
+    getIncompleteActivityWarning,
+} from "@/lib/actions/student";
 import {
     getAcademicYears,
     getCurrentTeacherProfile,
@@ -19,6 +23,7 @@ import type {
     TeacherProfile,
     AcademicYear,
 } from "./types";
+import type { IncompleteActivityInfo } from "@/lib/actions/student";
 
 /**
  * Custom hook for managing ImportPreview state and logic
@@ -37,6 +42,8 @@ export function useImportPreview({
         null,
     );
     const [round1Exists, setRound1Exists] = useState<boolean>(false);
+    const [incompleteWarning, setIncompleteWarning] =
+        useState<IncompleteActivityInfo | null>(null);
 
     // Editable student data — initialized from parsed Excel, can be modified in preview
     const [editableData, setEditableData] = useState(() =>
@@ -119,19 +126,49 @@ export function useImportPreview({
         loadData();
     }, []);
 
+    // Extract unique classes from imported data — used to scope the warning
+    const importedClasses = useMemo(() => {
+        const classSet = new Set(allPreviewData.map((s) => s.class));
+        return [...classSet];
+    }, [allPreviewData]);
+
     // Handler: when user changes academic year, also check round 1
-    const handleYearChange = useCallback(async (yearId: string) => {
-        setSelectedYearId(yearId);
-        setAssessmentRound(1); // always reset to round 1 on year change
+    // Round resets to 1 on year change — round 1 has no previous round,
+    // so incomplete activity warning is always cleared here
+    const handleYearChange = useCallback(
+        async (yearId: string) => {
+            setSelectedYearId(yearId);
+            setAssessmentRound(1);
+            setIncompleteWarning(null);
 
-        if (!yearId) {
-            setRound1Exists(false);
-            return;
-        }
+            if (!yearId) {
+                setRound1Exists(false);
+                return;
+            }
 
-        const exists = await hasRound1Data(yearId);
-        setRound1Exists(exists);
-    }, []);
+            const exists = await hasRound1Data(yearId);
+            setRound1Exists(exists);
+        },
+        [],
+    );
+
+    // Handler: when user changes assessment round, check incomplete activities
+    const handleRoundChange = useCallback(
+        async (round: number) => {
+            setAssessmentRound(round);
+            if (!selectedYearId) {
+                setIncompleteWarning(null);
+                return;
+            }
+            const warning = await getIncompleteActivityWarning(
+                selectedYearId,
+                round,
+                importedClasses,
+            );
+            setIncompleteWarning(warning);
+        },
+        [selectedYearId, importedClasses],
+    );
 
     // Handler: update a student's score in preview (before import)
     const handleScoreUpdate = useCallback(
@@ -160,7 +197,7 @@ export function useImportPreview({
         [],
     );
 
-    // Handle save action
+    // Handle save action — send only previewData (filtered by role) to match the confirmed count
     const handleSave = () => {
         if (!selectedYearId) {
             setError("กรุณาเลือกปีการศึกษา");
@@ -171,8 +208,9 @@ export function useImportPreview({
 
         startTransition(async () => {
             try {
-                // Use editableData (with user's corrections) instead of raw prop data
-                const studentsToImport = editableData.map((s) => ({
+                // Send only filtered students (previewData) — not all editableData
+                // This matches the count shown in the confirm dialog
+                const studentsToImport = previewData.map((s) => ({
                     studentId: s.studentId,
                     firstName: s.firstName,
                     lastName: s.lastName,
@@ -208,6 +246,7 @@ export function useImportPreview({
         assessmentRound,
         teacherProfile,
         hasRound1: round1Exists,
+        incompleteWarning,
 
         // Computed values
         previewData,
@@ -216,7 +255,7 @@ export function useImportPreview({
 
         // Actions
         handleYearChange,
-        setAssessmentRound,
+        setAssessmentRound: handleRoundChange,
         handleScoreUpdate,
         handleSave,
     };
