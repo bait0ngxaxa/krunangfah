@@ -2,7 +2,14 @@
 
 import { useMemo, memo } from "react";
 import { Inbox } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import {
+    PieChart,
+    Pie,
+    Cell,
+    ResponsiveContainer,
+    Tooltip,
+    type PieLabelRenderProps,
+} from "recharts";
 
 export interface RiskPieChartDataItem {
     name: string;
@@ -31,11 +38,23 @@ const TOOLTIP_STYLE = {
 
 const TOOLTIP_ITEM_STYLE = { color: "#4B5563", fontWeight: 500 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function renderOuterLabel(props: any): React.ReactElement | null {
+function renderOuterLabel(
+    props: PieLabelRenderProps,
+): React.ReactElement | null {
     const { cx, cy, midAngle, outerRadius, percent, name, fill } = props;
 
-    if (percent === 0) return null;
+    if (
+        percent === null ||
+        percent === undefined ||
+        percent === 0 ||
+        midAngle === null ||
+        midAngle === undefined ||
+        typeof cx !== "number" ||
+        typeof cy !== "number" ||
+        typeof outerRadius !== "number"
+    ) {
+        return null;
+    }
 
     const sin = Math.sin(-midAngle * RADIAN);
     const cos = Math.cos(-midAngle * RADIAN);

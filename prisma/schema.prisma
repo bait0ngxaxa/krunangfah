@@ -246,6 +246,7 @@ model PhqResult {
   @@unique([studentId, academicYearId, assessmentRound]) // ป้องกันซ้ำ
   @@index([studentId, createdAt(sort: Desc)]) // For DISTINCT ON latest per student
   @@index([studentId, academicYearId, assessmentRound]) // For trend queries
+  @@index([academicYearId]) // For year-filtered analytics (JOIN academic_years)
   @@map("phq_results")
 }
 

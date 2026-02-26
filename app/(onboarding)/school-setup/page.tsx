@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { SchoolSetupWizard } from "@/components/school/SchoolSetupWizard";
+import { SchoolSetupWizard } from "@/components/school/setup";
 import Image from "next/image";
 import type { Metadata } from "next";
 

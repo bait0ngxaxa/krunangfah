@@ -32,9 +32,21 @@ const getCachedAnalyticsData = unstable_cache(
         academicYearStr: string,
     ): Promise<AnalyticsData> => {
         const classFilter = targetClass || undefined;
-        const academicYear = academicYearStr
+        let academicYear = academicYearStr
             ? parseInt(academicYearStr, 10)
             : undefined;
+
+        // system_admin ไม่มี schoolId + ไม่มี year → auto-default เป็นปีล่าสุด
+        // ป้องกัน full table scan ของ phq_results ทุกโรงเรียน
+        if (!schoolId && !academicYear) {
+            const latestYear = await prisma.academicYear.findFirst({
+                orderBy: { year: "desc" },
+                select: { year: true },
+            });
+            if (latestYear) {
+                academicYear = latestYear.year;
+            }
+        }
 
         // Build student query based on role and filter
         const studentWhere: { schoolId?: string; class?: string } = {

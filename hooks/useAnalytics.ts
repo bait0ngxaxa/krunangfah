@@ -35,24 +35,29 @@ export function useAnalytics(
     const [data, setData] = useState<AnalyticsData>(initialData);
     const [selectedClass, setSelectedClass] = useState<string>("all");
     const [selectedSchoolId, setSelectedSchoolId] = useState<string>("all");
-    const [selectedAcademicYear, setSelectedAcademicYear] =
-        useState<string>("all");
+    const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>(
+        initialData.currentAcademicYear?.toString() ?? "all",
+    );
     const [isPending, startTransition] = useTransition();
 
     const isSystemAdmin =
         userRole === "system_admin" && !!schools && schools.length > 0;
-    const showClassFilter = isSchoolAdmin || isSystemAdmin;
+    const showClassFilter =
+        isSchoolAdmin || (isSystemAdmin && selectedSchoolId !== "all");
 
     const handleSchoolChange = useCallback((schoolId: string): void => {
         setSelectedSchoolId(schoolId);
         setSelectedClass("all");
-        setSelectedAcademicYear("all");
 
         const schoolFilter = schoolId === "all" ? undefined : schoolId;
         startTransition(async () => {
             const newData = await getAnalyticsSummary(undefined, schoolFilter);
             if (newData) {
                 setData(newData);
+                // sync year dropdown กับค่าที่ server auto-default ให้
+                setSelectedAcademicYear(
+                    newData.currentAcademicYear?.toString() ?? "all",
+                );
             }
         });
     }, []);

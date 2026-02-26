@@ -1,4 +1,3 @@
-import ExcelJS from "exceljs";
 import { type PhqScores } from "./phq-scoring";
 import { normalizeClassName } from "./class-normalizer";
 
@@ -22,6 +21,7 @@ export interface ParseResult {
 
 /**
  * Parse Excel buffer to student data
+ * ExcelJS is dynamically imported to avoid bundling ~1MB into the client
  */
 export async function parseExcelBuffer(
     buffer: ArrayBuffer,
@@ -30,6 +30,8 @@ export async function parseExcelBuffer(
     const data: ParsedStudent[] = [];
 
     try {
+        // Dynamic import: ExcelJS is loaded only when user uploads a file
+        const ExcelJS = (await import("exceljs")).default;
         const workbook = new ExcelJS.Workbook();
         // @ts-expect-error - ExcelJS types don't match Node.js Buffer types
         await workbook.xlsx.load(Buffer.from(buffer));

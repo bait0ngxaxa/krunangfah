@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
     },
 
     // 5. Node.js-only packages (ไม่ bundle ไป client)
-    serverExternalPackages: ["bcryptjs"],
+    serverExternalPackages: ["bcryptjs", "nodemailer"],
 
     // Enable gzip compression
     compress: true,

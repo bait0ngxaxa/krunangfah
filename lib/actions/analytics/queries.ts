@@ -179,43 +179,6 @@ export async function getCombinedAnalytics(
 }
 
 // ========================================
-// Separate Queries (for backwards compatibility)
-// ========================================
-
-/**
- * @deprecated Use getCombinedAnalytics instead
- */
-export async function getRiskLevelCounts(
-    schoolId: string | undefined,
-    classFilter?: string,
-): Promise<RiskLevelCountResult[]> {
-    const result = await getCombinedAnalytics(schoolId, classFilter);
-    return result.riskLevelCounts;
-}
-
-/**
- * @deprecated Use getCombinedAnalytics instead
- */
-export async function getGradeRiskData(
-    schoolId: string | undefined,
-    classFilter?: string,
-): Promise<GradeRiskResult[]> {
-    const result = await getCombinedAnalytics(schoolId, classFilter);
-    return result.gradeRiskData;
-}
-
-/**
- * @deprecated Use getCombinedAnalytics instead
- */
-export async function getHospitalReferralsByGrade(
-    schoolId: string | undefined,
-    classFilter?: string,
-): Promise<HospitalReferralResult[]> {
-    const result = await getCombinedAnalytics(schoolId, classFilter);
-    return result.hospitalReferrals;
-}
-
-// ========================================
 // Trend Data (Separate - Different Pattern)
 // ========================================
 

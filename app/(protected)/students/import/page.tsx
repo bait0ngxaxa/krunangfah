@@ -2,11 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExcelUploader, ImportPreview } from "@/components/student";
+import dynamic from "next/dynamic";
+import { ExcelUploader } from "@/components/student";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { FileUp } from "lucide-react";
 import { toast } from "sonner";
 import { PageBanner } from "@/components/ui/PageBanner";
+
+const ImportPreview = dynamic(
+    () =>
+        import("@/components/student/import/ImportPreview/ImportPreview").then(
+            (mod) => mod.ImportPreview,
+        ),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex items-center justify-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
+            </div>
+        ),
+    },
+);
 
 export default function StudentImportPage() {
     const router = useRouter();

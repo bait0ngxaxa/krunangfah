@@ -2,9 +2,9 @@
 
 import { LayoutGrid, Users, Shield } from "lucide-react";
 import { Tabs, type Tab } from "@/components/ui/Tabs";
-import { ClassListEditor } from "@/components/school/ClassListEditor";
-import { TeacherRosterEditor } from "@/components/school/TeacherRosterEditor";
-import { PrimaryAdminManager } from "@/components/school/PrimaryAdminManager";
+import { ClassListEditor } from "@/components/school/classes";
+import { TeacherRosterEditor } from "@/components/school/roster";
+import { PrimaryAdminManager } from "@/components/school/admin";
 import type { SchoolClassItem } from "@/types/school-setup.types";
 import type { TeacherRosterItem } from "@/types/school-setup.types";
 import type { SchoolAdminItem } from "@/types/primary-admin.types";
