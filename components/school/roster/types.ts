@@ -39,7 +39,11 @@ export interface UseTeacherRosterReturn {
     startEdit: (teacher: TeacherRosterItem) => void;
     cancelForm: () => void;
     onSubmit: (data: TeacherRosterFormData) => Promise<void>;
-    handleRemove: (id: string, name: string) => Promise<void>;
+    deleteTarget: { id: string; name: string } | null;
+    isRemoving: boolean;
+    requestRemove: (id: string, name: string) => void;
+    confirmRemove: () => Promise<void>;
+    cancelRemove: () => void;
 }
 
 export interface RosterFormProps {
@@ -65,7 +69,7 @@ export interface RosterListProps {
     editingId: string | null;
     readOnly: boolean;
     onEdit: (teacher: TeacherRosterItem) => void;
-    onRemove: (id: string, name: string) => Promise<void>;
+    onRemove: (id: string, name: string) => void;
 }
 
 export interface RosterItemProps {
@@ -73,5 +77,5 @@ export interface RosterItemProps {
     isEditing: boolean;
     readOnly: boolean;
     onEdit: (teacher: TeacherRosterItem) => void;
-    onRemove: (id: string, name: string) => Promise<void>;
+    onRemove: (id: string, name: string) => void;
 }

@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useClassList } from "./useClassList";
 import { SingleClassAdder, BulkClassAdder, ClassGroupList } from "./components";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { ClassListEditorProps } from "./types";
 
 export function ClassListEditor({
@@ -22,6 +24,20 @@ export function ClassListEditor({
         handleRemove,
         handleBulkAdd,
     } = useClassList({ initialClasses, onUpdate });
+
+    const [pendingDelete, setPendingDelete] = useState<{
+        id: string;
+        name: string;
+    } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    async function handleConfirmRemove() {
+        if (!pendingDelete) return;
+        setIsDeleting(true);
+        await handleRemove(pendingDelete.id, pendingDelete.name);
+        setIsDeleting(false);
+        setPendingDelete(null);
+    }
 
     return (
         <div className="space-y-5">
@@ -50,7 +66,17 @@ export function ClassListEditor({
             <ClassGroupList
                 classes={classes}
                 readOnly={readOnly}
-                onRemove={handleRemove}
+                onRemove={(id, name) => setPendingDelete({ id, name })}
+            />
+
+            <ConfirmDialog
+                isOpen={!!pendingDelete}
+                title="ลบห้องเรียน"
+                message={`ต้องการลบห้อง "${pendingDelete?.name}" ใช่หรือไม่?`}
+                confirmLabel="ยืนยันลบ"
+                isLoading={isDeleting}
+                onConfirm={handleConfirmRemove}
+                onCancel={() => setPendingDelete(null)}
             />
         </div>
     );

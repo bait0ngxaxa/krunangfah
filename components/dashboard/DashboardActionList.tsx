@@ -75,7 +75,7 @@ export function DashboardActionList({
             />
 
             {/* Admin & Management Action Grid */}
-            {(isSystemAdmin || (isSchoolAdmin && isPrimary)) && (
+            {(isSystemAdmin || isSchoolAdmin) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                     {/* System Admin: User Management */}
                     {isSystemAdmin && (
@@ -98,11 +98,11 @@ export function DashboardActionList({
                     )}
 
                     {/* School Admin (Primary): Add Teacher */}
-                    {isSchoolAdmin && isPrimary && (
+                    {isSchoolAdmin && (
                         <QuickActionCard
                             href="/teachers/add"
                             icon={UserPlus}
-                            title="จัดการครูและเชิญเข้าระบบ"
+                            title="ส่งคำเชิญเข้าระบบ"
                             description="ห้องเรียน / ข้อมูลครู / เชิญครู"
                         />
                     )}

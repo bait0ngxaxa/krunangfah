@@ -49,7 +49,7 @@ export function RosterItem({
                 </div>
             </div>
             {!readOnly && (
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                <div className="flex items-center gap-1">
                     <button
                         type="button"
                         onClick={() => onEdit(teacher)}
@@ -67,7 +67,7 @@ export function RosterItem({
                             )
                         }
                         className="text-gray-300 hover:text-red-500 transition-all cursor-pointer p-1"
-                        title="ลบออกจาก roster"
+                        title="ลบออกจากรายชื่อครู"
                     >
                         <X className="w-4 h-4" />
                     </button>

@@ -3,6 +3,7 @@
 import { UserPlus } from "lucide-react";
 import { useTeacherRoster } from "./useTeacherRoster";
 import { RosterForm, RosterList, RosterEmptyState } from "./components";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { TeacherRosterEditorProps } from "./types";
 
 export function TeacherRosterEditor({
@@ -27,7 +28,11 @@ export function TeacherRosterEditor({
         startEdit,
         cancelForm,
         onSubmit,
-        handleRemove,
+        deleteTarget,
+        isRemoving,
+        requestRemove,
+        confirmRemove,
+        cancelRemove,
     } = useTeacherRoster({ initialRoster, onUpdate });
 
     return (
@@ -72,9 +77,19 @@ export function TeacherRosterEditor({
                     editingId={editingId}
                     readOnly={readOnly}
                     onEdit={startEdit}
-                    onRemove={handleRemove}
+                    onRemove={requestRemove}
                 />
             )}
+
+            <ConfirmDialog
+                isOpen={deleteTarget !== null}
+                title="ลบครูออกจากรายชื่อ"
+                message={`ต้องการลบครู "${deleteTarget?.name}" ออกจากรายชื่อใช่หรือไม่?`}
+                confirmLabel="ยืนยันลบ"
+                isLoading={isRemoving}
+                onConfirm={confirmRemove}
+                onCancel={cancelRemove}
+            />
         </div>
     );
 }

@@ -14,9 +14,10 @@ import {
     Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
 import { revokeTeacherInvite } from "@/lib/actions/teacher-invite";
-import { USER_ROLE_LABELS } from "@/lib/constants/roles";
+import { RoleBadge } from "@/components/ui/badges";
 
 const PAGE_SIZE = 5;
 
@@ -96,20 +97,17 @@ function CopyButton({ token }: { token: string }) {
 
 function RevokeButton({
     inviteId,
+    inviteName,
     onRevoked,
 }: {
     inviteId: string;
+    inviteName: string;
     onRevoked?: () => void;
 }) {
-    const [confirmRevoke, setConfirmRevoke] = useState(false);
+    const [showDialog, setShowDialog] = useState(false);
     const [isRevoking, setIsRevoking] = useState(false);
 
-    async function handleRevoke() {
-        if (!confirmRevoke) {
-            setConfirmRevoke(true);
-            setTimeout(() => setConfirmRevoke(false), 3000);
-            return;
-        }
+    async function handleConfirmRevoke() {
         setIsRevoking(true);
         const result = await revokeTeacherInvite(inviteId);
         if (result.success) {
@@ -119,28 +117,30 @@ function RevokeButton({
             toast.error(result.message);
         }
         setIsRevoking(false);
-        setConfirmRevoke(false);
+        setShowDialog(false);
     }
 
     return (
-        <button
-            type="button"
-            onClick={handleRevoke}
-            disabled={isRevoking}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 ${
-                confirmRevoke
-                    ? "bg-red-500 hover:bg-red-600 text-white"
-                    : "bg-red-50 hover:bg-red-100 text-red-600"
-            }`}
-            title="ยกเลิกคำเชิญ"
-        >
-            <Trash2 className="w-3.5 h-3.5" />
-            {isRevoking
-                ? "กำลังยกเลิก..."
-                : confirmRevoke
-                  ? "ยืนยันยกเลิก?"
-                  : "ยกเลิก"}
-        </button>
+        <>
+            <button
+                type="button"
+                onClick={() => setShowDialog(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600"
+                title="ยกเลิกคำเชิญ"
+            >
+                <Trash2 className="w-3.5 h-3.5" />
+                ยกเลิก
+            </button>
+            <ConfirmDialog
+                isOpen={showDialog}
+                title="ยกเลิกคำเชิญ"
+                message={`ต้องการยกเลิกคำเชิญของ "${inviteName}" ใช่หรือไม่?`}
+                confirmLabel="ยืนยันยกเลิก"
+                isLoading={isRevoking}
+                onConfirm={handleConfirmRevoke}
+                onCancel={() => setShowDialog(false)}
+            />
+        </>
     );
 }
 
@@ -168,10 +168,7 @@ function InviteCard({
                             {invite.email}
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                {USER_ROLE_LABELS[invite.userRole] ??
-                                    invite.userRole}
-                            </span>
+                            <RoleBadge role={invite.userRole} />
                             {invite.userRole === "class_teacher" &&
                                 invite.advisoryClass && (
                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
@@ -192,6 +189,7 @@ function InviteCard({
                             <CopyButton token={invite.token} />
                             <RevokeButton
                                 inviteId={invite.id}
+                                inviteName={`${invite.firstName} ${invite.lastName}`}
                                 onRevoked={onRevoked}
                             />
                         </div>
@@ -231,7 +229,10 @@ function InviteCard({
     );
 }
 
-export function TeacherInviteList({ invites, onRevoked }: TeacherInviteListProps) {
+export function TeacherInviteList({
+    invites,
+    onRevoked,
+}: TeacherInviteListProps) {
     const [page, setPage] = useState(1);
     const totalPages = Math.max(1, Math.ceil(invites.length / PAGE_SIZE));
     const safeCurrentPage = Math.min(page, totalPages);

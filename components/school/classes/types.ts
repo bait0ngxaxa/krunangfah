@@ -40,5 +40,5 @@ export interface BulkClassAdderProps {
 export interface ClassGroupListProps {
     classes: SchoolClassItem[];
     readOnly: boolean;
-    onRemove: (id: string, name: string) => Promise<void>;
+    onRemove: (id: string, name: string) => void;
 }

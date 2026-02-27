@@ -8,18 +8,15 @@ import {
     UserCircle,
     School,
     GraduationCap,
-    Shield,
-    ShieldCheck,
-    CheckCircle2,
-    XCircle,
     Trash2,
     Pencil,
     Check,
     X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { RoleBadge, ProfileBadge } from "@/components/ui/badges";
 import type { UserListItem } from "@/types/user-management.types";
-import { USER_ROLE_LABELS } from "@/lib/constants/roles";
 import {
     deleteUser,
     getClassesBySchool,
@@ -35,49 +32,6 @@ interface UserTableProps {
     onMutated: () => void;
 }
 
-function RoleBadge({ role, isPrimary }: { role: string; isPrimary: boolean }) {
-    if (role === "system_admin") {
-        return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100">
-                <Shield className="w-3 h-3" />
-                {USER_ROLE_LABELS[role]}
-            </span>
-        );
-    }
-    if (role === "school_admin") {
-        return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
-                <ShieldCheck className="w-3 h-3" />
-                {USER_ROLE_LABELS[role]}
-                {isPrimary && " (Primary)"}
-            </span>
-        );
-    }
-    return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-50 text-green-700 border border-green-100">
-            <GraduationCap className="w-3 h-3" />
-            {USER_ROLE_LABELS[role] ?? role}
-        </span>
-    );
-}
-
-function ProfileBadge({ hasProfile }: { hasProfile: boolean }) {
-    if (hasProfile) {
-        return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                <CheckCircle2 className="w-3 h-3" />
-                มีโปรไฟล์
-            </span>
-        );
-    }
-    return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-600 border border-amber-100">
-            <XCircle className="w-3 h-3" />
-            ยังไม่มีโปรไฟล์
-        </span>
-    );
-}
-
 function EditClassForm({
     user,
     onSaved,
@@ -91,19 +45,16 @@ function EditClassForm({
     const [selectedClass, setSelectedClass] = useState(
         user.advisoryClass ?? "",
     );
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(!!user.schoolId);
     const [isSaving, setIsSaving] = useState(false);
 
     // Load school classes on mount
     useEffect(() => {
-        if (user.schoolId) {
-            getClassesBySchool(user.schoolId).then((result) => {
-                setClasses(result);
-                setIsLoading(false);
-            });
-        } else {
+        if (!user.schoolId) return;
+        getClassesBySchool(user.schoolId).then((result) => {
+            setClasses(result);
             setIsLoading(false);
-        }
+        });
     }, [user.schoolId]);
 
     async function handleSave() {
@@ -165,7 +116,7 @@ function UserCard({
     user: UserListItem;
     onMutated: () => void;
 }) {
-    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
 
@@ -174,12 +125,7 @@ function UserCard({
         ? user.teacherName.charAt(0)
         : user.email.charAt(0).toUpperCase();
 
-    async function handleDelete() {
-        if (!confirmDelete) {
-            setConfirmDelete(true);
-            setTimeout(() => setConfirmDelete(false), 3000);
-            return;
-        }
+    async function handleConfirmDelete() {
         setIsDeleting(true);
         const result = await deleteUser(user.id);
         if (result.success) {
@@ -189,7 +135,7 @@ function UserCard({
             toast.error(result.message);
         }
         setIsDeleting(false);
-        setConfirmDelete(false);
+        setShowDeleteDialog(false);
     }
 
     return (
@@ -284,26 +230,27 @@ function UserCard({
                         {!isSystemAdmin && (
                             <button
                                 type="button"
-                                onClick={handleDelete}
-                                disabled={isDeleting}
-                                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50 ${
-                                    confirmDelete
-                                        ? "bg-red-500 hover:bg-red-600 text-white"
-                                        : "bg-red-50 hover:bg-red-100 text-red-600"
-                                }`}
+                                onClick={() => setShowDeleteDialog(true)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600"
                                 title="ลบผู้ใช้"
                             >
                                 <Trash2 className="w-3 h-3" />
-                                {isDeleting
-                                    ? "กำลังลบ..."
-                                    : confirmDelete
-                                      ? "ยืนยันลบ?"
-                                      : "ลบ"}
+                                ลบ
                             </button>
                         )}
                     </div>
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={showDeleteDialog}
+                title="ลบผู้ใช้ออกจากระบบ"
+                message={`ต้องการลบ "${user.teacherName ?? user.email}" ออกจากระบบใช่หรือไม่? ข้อมูลทั้งหมดของผู้ใช้จะถูกลบอย่างถาวร`}
+                confirmLabel="ยืนยันลบ"
+                isLoading={isDeleting}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setShowDeleteDialog(false)}
+            />
         </div>
     );
 }

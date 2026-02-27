@@ -161,7 +161,7 @@ export function useActivityWorkspace({
 
             if (result.success) {
                 toast.success("บันทึกโน๊ตสำเร็จ");
-                setTeacherNotes("");
+                router.refresh();
             } else {
                 toast.error(result.error || "เกิดข้อผิดพลาดในการบันทึก");
             }

@@ -55,9 +55,6 @@ export function useClassList({
     }
 
     async function handleRemove(id: string, name: string): Promise<void> {
-        const confirmed = window.confirm(`ต้องการลบห้อง "${name}" ใช่หรือไม่?`);
-        if (!confirmed) return;
-
         setErrorMsg(null);
         const result = await removeSchoolClass(id);
         if (!result.success) {

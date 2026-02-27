@@ -134,6 +134,7 @@ export function ActivityWorkspace({
                                     onNotesChange={setTeacherNotes}
                                     onSave={handleSaveNotes}
                                     isSaving={savingNotes}
+                                    savedNotes={currentProgress?.teacherNotes}
                                 />
                             </div>
                         ) : null}

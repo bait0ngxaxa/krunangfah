@@ -32,7 +32,7 @@ export function TeacherSetupTabs({
             label: (
                 <span className="inline-flex items-center gap-1.5">
                     <LayoutGrid className="w-4 h-4" />
-                    ห้องเรียน
+                    รายการห้องเรียน
                 </span>
             ),
             content: (
@@ -63,7 +63,7 @@ export function TeacherSetupTabs({
             label: (
                 <span className="inline-flex items-center gap-1.5">
                     <Users className="w-4 h-4" />
-                    ครูในโรงเรียน
+                    รายการครู
                 </span>
             ),
             content: (

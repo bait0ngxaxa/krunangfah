@@ -14,11 +14,12 @@ import {
     Mail,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { RoleBadge } from "@/components/ui/badges";
 import { revokeSchoolAdminInvite } from "@/lib/actions/school-admin-invite.actions";
 import type {
     SchoolAdminInvite,
     InviteStatus,
-    InviteRole,
 } from "@/types/school-admin-invite.types";
 
 const PAGE_SIZE = 10;
@@ -64,21 +65,6 @@ function StatusBadge({ status }: { status: InviteStatus }) {
     );
 }
 
-function RoleBadge({ role }: { role: InviteRole }) {
-    if (role === "system_admin") {
-        return (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100">
-                System Admin
-            </span>
-        );
-    }
-    return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
-            School Admin
-        </span>
-    );
-}
-
 function InviteCard({
     invite,
     onRevoked,
@@ -88,7 +74,7 @@ function InviteCard({
 }) {
     const [copied, setCopied] = useState(false);
     const [isRevoking, setIsRevoking] = useState(false);
-    const [confirmRevoke, setConfirmRevoke] = useState(false);
+    const [showRevokeDialog, setShowRevokeDialog] = useState(false);
 
     const status = getInviteStatus(invite);
 
@@ -103,13 +89,7 @@ function InviteCard({
         }
     }
 
-    async function handleRevoke() {
-        if (!confirmRevoke) {
-            setConfirmRevoke(true);
-            // Auto-dismiss confirm state after 3 seconds
-            setTimeout(() => setConfirmRevoke(false), 3000);
-            return;
-        }
+    async function handleConfirmRevoke() {
         setIsRevoking(true);
         const result = await revokeSchoolAdminInvite(invite.id);
         if (result.success) {
@@ -119,7 +99,7 @@ function InviteCard({
             toast.error("เกิดข้อผิดพลาดในการยกเลิกคำเชิญ");
         }
         setIsRevoking(false);
-        setConfirmRevoke(false);
+        setShowRevokeDialog(false);
     }
 
     return (
@@ -157,26 +137,27 @@ function InviteCard({
                             </button>
                             <button
                                 type="button"
-                                onClick={handleRevoke}
-                                disabled={isRevoking}
-                                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 ${
-                                    confirmRevoke
-                                        ? "bg-red-500 hover:bg-red-600 text-white"
-                                        : "bg-red-50 hover:bg-red-100 text-red-600"
-                                }`}
+                                onClick={() => setShowRevokeDialog(true)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600"
                                 title="ยกเลิกคำเชิญ"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
-                                {isRevoking
-                                    ? "กำลังยกเลิก..."
-                                    : confirmRevoke
-                                      ? "ยืนยันยกเลิก?"
-                                      : "ยกเลิก"}
+                                ยกเลิก
                             </button>
                         </div>
                     )}
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={showRevokeDialog}
+                title="ยกเลิกคำเชิญ"
+                message={`ต้องการยกเลิกคำเชิญของ "${invite.email}" ใช่หรือไม่?`}
+                confirmLabel="ยืนยันยกเลิก"
+                isLoading={isRevoking}
+                onConfirm={handleConfirmRevoke}
+                onCancel={() => setShowRevokeDialog(false)}
+            />
             <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-50 text-[11px] text-gray-400">
                 <span>
                     สร้างเมื่อ{" "}

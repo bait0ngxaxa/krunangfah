@@ -1,17 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-    Users,
-    GraduationCap,
-    ShieldCheck,
-    Pencil,
-    Check,
-    X,
-} from "lucide-react";
+import { Users, GraduationCap, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { updateTeacherProfile } from "@/lib/actions/user-management.actions";
-import { USER_ROLE_LABELS } from "@/lib/constants/roles";
+import { RoleBadge } from "@/components/ui/badges";
 import type { UserListItem } from "@/types/user-management.types";
 import type { SchoolClassItem } from "@/types/school-setup.types";
 
@@ -127,11 +120,10 @@ function TeacherCard({
                                 {teacher.email}
                             </p>
                         </div>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 shrink-0">
-                            <ShieldCheck className="w-3 h-3" />
-                            {USER_ROLE_LABELS[teacher.role] ?? teacher.role}
-                            {teacher.isPrimary && " (Primary)"}
-                        </span>
+                        <RoleBadge
+                            role={teacher.role}
+                            isPrimary={teacher.isPrimary}
+                        />
                     </div>
 
                     <div className="flex flex-wrap items-center gap-1.5 mt-1.5">

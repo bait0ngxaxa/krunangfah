@@ -164,23 +164,41 @@ export function useTeacherRoster({
         setEditingId(null);
     }
 
-    async function handleRemove(id: string, name: string): Promise<void> {
-        const confirmed = window.confirm(
-            `ต้องการลบครู "${name}" ออกจากรายชื่อใช่หรือไม่?`,
-        );
-        if (!confirmed) return;
+    // Delete confirmation state
+    const [deleteTarget, setDeleteTarget] = useState<{
+        id: string;
+        name: string;
+    } | null>(null);
+    const [isRemoving, setIsRemoving] = useState(false);
 
+    function requestRemove(id: string, name: string): void {
+        setDeleteTarget({ id, name });
+    }
+
+    function cancelRemove(): void {
+        setDeleteTarget(null);
+    }
+
+    async function confirmRemove(): Promise<void> {
+        if (!deleteTarget) return;
+
+        setIsRemoving(true);
         setErrorMsg(null);
-        const result = await removeFromRoster(id);
+        const result = await removeFromRoster(deleteTarget.id);
         if (!result.success) {
             setErrorMsg(result.message);
             toast.error(result.message || "ลบครูไม่สำเร็จ");
+            setIsRemoving(false);
+            setDeleteTarget(null);
             return;
         }
+        const removedName = deleteTarget.name;
         startTransition(() => {
-            syncUpdate(roster.filter((t) => t.id !== id));
+            syncUpdate(roster.filter((t) => t.id !== deleteTarget.id));
         });
-        toast.success(`ลบครู "${name}" สำเร็จ`);
+        toast.success(`ลบครู "${removedName}" สำเร็จ`);
+        setIsRemoving(false);
+        setDeleteTarget(null);
     }
 
     return {
@@ -199,6 +217,10 @@ export function useTeacherRoster({
         startEdit,
         cancelForm,
         onSubmit,
-        handleRemove,
+        deleteTarget,
+        isRemoving,
+        requestRemove,
+        confirmRemove,
+        cancelRemove,
     };
 }
