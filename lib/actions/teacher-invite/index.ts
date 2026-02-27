@@ -9,4 +9,8 @@ export type {
 
 export { getTeacherInvite, getMyTeacherInvites } from "./queries";
 
-export { createTeacherInvite, acceptTeacherInvite } from "./mutations";
+export {
+    createTeacherInvite,
+    acceptTeacherInvite,
+    revokeTeacherInvite,
+} from "./mutations";

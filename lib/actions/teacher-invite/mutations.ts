@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requirePrimaryAdmin } from "@/lib/session";
+import { requireAuth } from "@/lib/session";
 import { hashPassword } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
@@ -16,8 +16,21 @@ export async function createTeacherInvite(
     input: TeacherInviteFormData,
 ): Promise<InviteResponse> {
     try {
-        const session = await requirePrimaryAdmin();
+        const session = await requireAuth();
         const userId = session.user.id;
+
+        // Only primary school_admin or system_admin can create invites
+        if (
+            session.user.role === "system_admin" ||
+            (session.user.role === "school_admin" && session.user.isPrimary)
+        ) {
+            // OK
+        } else {
+            return {
+                success: false,
+                message: "ไม่มีสิทธิ์สร้างคำเชิญ",
+            };
+        }
 
         // Get user's schoolId
         const user = await prisma.user.findUnique({
@@ -180,6 +193,65 @@ export async function acceptTeacherInvite(
         return {
             success: false,
             message: "เกิดข้อผิดพลาดในการลงทะเบียน",
+        };
+    }
+}
+
+/**
+ * ยกเลิกคำเชิญครู (ลบออก)
+ * primary school_admin สามารถยกเลิก invite ของโรงเรียนตัวเอง
+ * system_admin สามารถยกเลิก invite ไหนก็ได้
+ */
+export async function revokeTeacherInvite(
+    inviteId: string,
+): Promise<InviteResponse> {
+    try {
+        const session = await requireAuth();
+
+        const invite = await prisma.teacherInvite.findUnique({
+            where: { id: inviteId },
+            select: {
+                id: true,
+                email: true,
+                acceptedAt: true,
+                schoolId: true,
+            },
+        });
+
+        if (!invite) {
+            return { success: false, message: "ไม่พบคำเชิญ" };
+        }
+
+        if (invite.acceptedAt) {
+            return { success: false, message: "คำเชิญนี้ถูกใช้งานแล้ว ไม่สามารถยกเลิกได้" };
+        }
+
+        // Access control: system_admin can revoke any, primary school_admin can revoke own school's
+        const isSystemAdmin = session.user.role === "system_admin";
+        const isPrimaryOfSchool =
+            session.user.role === "school_admin" &&
+            session.user.isPrimary &&
+            session.user.schoolId === invite.schoolId;
+
+        if (!isSystemAdmin && !isPrimaryOfSchool) {
+            return { success: false, message: "ไม่มีสิทธิ์ยกเลิกคำเชิญ" };
+        }
+
+        await prisma.teacherInvite.delete({
+            where: { id: inviteId },
+        });
+
+        revalidatePath("/teachers/add");
+
+        return {
+            success: true,
+            message: `ยกเลิกคำเชิญสำหรับ "${invite.email}" สำเร็จ`,
+        };
+    } catch (error) {
+        console.error("Revoke teacher invite error:", error);
+        return {
+            success: false,
+            message: "เกิดข้อผิดพลาดในการยกเลิกคำเชิญ",
         };
     }
 }

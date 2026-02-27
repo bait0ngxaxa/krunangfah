@@ -25,7 +25,7 @@ const protectedRoutes = [
 const adminOnlyRoutes = ["/teachers/add", "/teachers/manage"];
 
 // Routes ที่ต้องเป็น system_admin เท่านั้น
-const systemAdminOnlyRoutes = ["/admin/invites"];
+const systemAdminOnlyRoutes = ["/admin/invites", "/admin/users"];
 
 // Routes สำหรับ guest เท่านั้น (ถ้า login แล้วจะ redirect ไป dashboard)
 const guestOnlyRoutes = ["/signin", "/forgot-password", "/reset-password"];

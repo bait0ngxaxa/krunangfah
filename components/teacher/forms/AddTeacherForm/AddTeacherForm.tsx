@@ -117,14 +117,9 @@ export function AddTeacherForm({
                         ยังไม่มีครูและชั้นเรียน โปรดเพิ่มก่อน
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                        ไปเพิ่มที่{" "}
-                        <a
-                            href="/school/classes"
-                            className="text-emerald-500 underline hover:text-emerald-600"
-                        >
-                            จัดการห้องเรียนและครู
-                        </a>{" "}
-                        ก่อน
+                        เพิ่มห้องเรียนและครูในแท็บ
+                        &quot;ห้องเรียน&quot; และ
+                        &quot;ครูในโรงเรียน&quot; ก่อน
                     </p>
                 </div>
             )}

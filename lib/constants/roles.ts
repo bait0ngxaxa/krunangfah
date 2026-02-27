@@ -6,6 +6,7 @@
 // ──── User Role (ประเภทครู) ────
 
 export const USER_ROLE_LABELS: Record<string, string> = {
+    system_admin: "ผู้ดูแลระบบ",
     school_admin: "ครูนางฟ้า",
     class_teacher: "ครูประจำชั้น",
 };

@@ -9,8 +9,8 @@ import {
     Search,
     UserPlus,
     Link as LinkIcon,
-    LayoutGrid,
     Upload,
+    UsersRound,
 } from "lucide-react";
 
 interface DashboardActionListProps {
@@ -77,6 +77,16 @@ export function DashboardActionList({
             {/* Admin & Management Action Grid */}
             {(isSystemAdmin || (isSchoolAdmin && isPrimary)) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    {/* System Admin: User Management */}
+                    {isSystemAdmin && (
+                        <QuickActionCard
+                            href="/admin/users"
+                            icon={UsersRound}
+                            title="จัดการผู้ใช้งาน"
+                            description="ดูข้อมูลผู้ใช้ในระบบ"
+                        />
+                    )}
+
                     {/* System Admin: Invite Links */}
                     {isSystemAdmin && (
                         <QuickActionCard
@@ -92,18 +102,18 @@ export function DashboardActionList({
                         <QuickActionCard
                             href="/teachers/add"
                             icon={UserPlus}
-                            title="เพิ่มครูผู้ดูแล"
-                            description="เพิ่มครูผู้ดูแล"
+                            title="จัดการครูและเชิญเข้าระบบ"
+                            description="ห้องเรียน / ข้อมูลครู / เชิญครู"
                         />
                     )}
 
-                    {/* School Admin (Primary): Manage Classes */}
+                    {/* School Admin (Primary): Manage Teachers in system */}
                     {isSchoolAdmin && isPrimary && (
                         <QuickActionCard
                             href="/school/classes"
-                            icon={LayoutGrid}
-                            title="จัดการห้องเรียนและครู"
-                            description="ห้องเรียน / รายชื่อครู"
+                            icon={UsersRound}
+                            title="จัดการครูในระบบ"
+                            description="แก้ไขห้อง / จัดการสิทธิ์"
                         />
                     )}
                 </div>

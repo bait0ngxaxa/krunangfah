@@ -11,9 +11,11 @@ import {
     CheckCircle2,
     AlertCircle,
     User,
+    Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
+import { revokeTeacherInvite } from "@/lib/actions/teacher-invite";
 import { USER_ROLE_LABELS } from "@/lib/constants/roles";
 
 const PAGE_SIZE = 5;
@@ -22,6 +24,7 @@ type InviteStatus = "pending" | "accepted" | "expired";
 
 interface TeacherInviteListProps {
     invites: TeacherInviteWithAcademicYear[];
+    onRevoked?: () => void;
 }
 
 function getInviteStatus(invite: TeacherInviteWithAcademicYear): InviteStatus {
@@ -91,7 +94,63 @@ function CopyButton({ token }: { token: string }) {
     );
 }
 
-function InviteCard({ invite }: { invite: TeacherInviteWithAcademicYear }) {
+function RevokeButton({
+    inviteId,
+    onRevoked,
+}: {
+    inviteId: string;
+    onRevoked?: () => void;
+}) {
+    const [confirmRevoke, setConfirmRevoke] = useState(false);
+    const [isRevoking, setIsRevoking] = useState(false);
+
+    async function handleRevoke() {
+        if (!confirmRevoke) {
+            setConfirmRevoke(true);
+            setTimeout(() => setConfirmRevoke(false), 3000);
+            return;
+        }
+        setIsRevoking(true);
+        const result = await revokeTeacherInvite(inviteId);
+        if (result.success) {
+            toast.success(result.message);
+            onRevoked?.();
+        } else {
+            toast.error(result.message);
+        }
+        setIsRevoking(false);
+        setConfirmRevoke(false);
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={handleRevoke}
+            disabled={isRevoking}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 ${
+                confirmRevoke
+                    ? "bg-red-500 hover:bg-red-600 text-white"
+                    : "bg-red-50 hover:bg-red-100 text-red-600"
+            }`}
+            title="ยกเลิกคำเชิญ"
+        >
+            <Trash2 className="w-3.5 h-3.5" />
+            {isRevoking
+                ? "กำลังยกเลิก..."
+                : confirmRevoke
+                  ? "ยืนยันยกเลิก?"
+                  : "ยกเลิก"}
+        </button>
+    );
+}
+
+function InviteCard({
+    invite,
+    onRevoked,
+}: {
+    invite: TeacherInviteWithAcademicYear;
+    onRevoked?: () => void;
+}) {
     const status = getInviteStatus(invite);
 
     return (
@@ -129,7 +188,13 @@ function InviteCard({ invite }: { invite: TeacherInviteWithAcademicYear }) {
                 <div className="shrink-0 flex flex-col items-end gap-2">
                     <StatusBadge status={status} />
                     {status === "pending" && (
-                        <CopyButton token={invite.token} />
+                        <div className="flex items-center gap-1.5">
+                            <CopyButton token={invite.token} />
+                            <RevokeButton
+                                inviteId={invite.id}
+                                onRevoked={onRevoked}
+                            />
+                        </div>
                     )}
                 </div>
             </div>
@@ -166,7 +231,7 @@ function InviteCard({ invite }: { invite: TeacherInviteWithAcademicYear }) {
     );
 }
 
-export function TeacherInviteList({ invites }: TeacherInviteListProps) {
+export function TeacherInviteList({ invites, onRevoked }: TeacherInviteListProps) {
     const [page, setPage] = useState(1);
     const totalPages = Math.max(1, Math.ceil(invites.length / PAGE_SIZE));
     const safeCurrentPage = Math.min(page, totalPages);
@@ -194,7 +259,11 @@ export function TeacherInviteList({ invites }: TeacherInviteListProps) {
                 <>
                     <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
                         {paginatedInvites.map((invite) => (
-                            <InviteCard key={invite.id} invite={invite} />
+                            <InviteCard
+                                key={invite.id}
+                                invite={invite}
+                                onRevoked={onRevoked}
+                            />
                         ))}
                     </div>
 
