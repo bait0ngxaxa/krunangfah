@@ -45,7 +45,7 @@ export function ForgotPasswordForm() {
             <div>
                 <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-600 mb-2"
+                    className="block text-base font-medium text-gray-700 mb-2"
                 >
                     อีเมล
                 </label>
@@ -55,23 +55,25 @@ export function ForgotPasswordForm() {
                     id="email"
                     autoComplete="email"
                     disabled={isSubmitting}
-                    className="w-full px-4 py-3 border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-300 bg-white/50 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-black placeholder:text-gray-600"
+                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-gray-800 placeholder:text-gray-400"
                     placeholder="your@email.com"
                 />
                 {errors.email && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
+                    <p className="mt-1.5 text-sm text-red-500 font-medium">
                         {errors.email.message}
                     </p>
                 )}
             </div>
 
-            <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-linear-to-r from-emerald-50 to-white text-emerald-600 text-lg font-bold py-3.5 px-4 rounded-full border border-emerald-200 hover:from-emerald-100 hover:to-white focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-emerald-100 hover:shadow-xl hover:shadow-emerald-200 hover:-translate-y-0.5"
-            >
-                {isSubmitting ? "กำลังส่ง..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
-            </button>
+            <div className="flex justify-center pt-1">
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+                >
+                    {isSubmitting ? "กำลังส่ง..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
+                </button>
+            </div>
 
             <div className="text-center">
                 <Link

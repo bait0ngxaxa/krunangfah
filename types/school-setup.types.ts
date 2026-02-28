@@ -1,5 +1,7 @@
 import type { UserRole, ProjectRole } from "@prisma/client";
 
+export type RosterEntryStatus = "draft" | "pending" | "accepted";
+
 export interface SchoolClassItem {
     id: string;
     name: string;
@@ -40,6 +42,7 @@ export interface TeacherRosterItem {
     schoolRole: string;
     projectRole: ProjectRole;
     inviteSent: boolean;
+    status: RosterEntryStatus;
 }
 
 export interface RosterActionResponse {

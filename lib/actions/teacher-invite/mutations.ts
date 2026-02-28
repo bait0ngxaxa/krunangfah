@@ -213,6 +213,8 @@ export async function revokeTeacherInvite(
             select: {
                 id: true,
                 email: true,
+                firstName: true,
+                lastName: true,
                 acceptedAt: true,
                 schoolId: true,
             },
@@ -240,6 +242,26 @@ export async function revokeTeacherInvite(
         await prisma.teacherInvite.delete({
             where: { id: inviteId },
         });
+
+        // Reset inviteSent on matching roster entry (by email or name)
+        const rosterMatch = await prisma.schoolTeacherRoster.findFirst({
+            where: {
+                schoolId: invite.schoolId,
+                OR: [
+                    { email: invite.email },
+                    {
+                        firstName: invite.firstName,
+                        lastName: invite.lastName,
+                    },
+                ],
+            },
+        });
+        if (rosterMatch) {
+            await prisma.schoolTeacherRoster.update({
+                where: { id: rosterMatch.id },
+                data: { inviteSent: false },
+            });
+        }
 
         revalidatePath("/teachers/add");
 

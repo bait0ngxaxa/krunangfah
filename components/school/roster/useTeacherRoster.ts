@@ -83,6 +83,12 @@ export function useTeacherRoster({
     }
 
     function startEdit(teacher: TeacherRosterItem): void {
+        if (teacher.status === "pending") {
+            toast.error(
+                "ไม่สามารถแก้ไขได้ เนื่องจากมีคำเชิญที่รอดำเนินการ",
+            );
+            return;
+        }
         setEditingId(teacher.id);
         setShowForm(true);
         setErrorMsg(null);
@@ -172,6 +178,13 @@ export function useTeacherRoster({
     const [isRemoving, setIsRemoving] = useState(false);
 
     function requestRemove(id: string, name: string): void {
+        const entry = roster.find((t) => t.id === id);
+        if (entry?.status === "pending") {
+            toast.error(
+                "ไม่สามารถลบได้ เนื่องจากมีคำเชิญที่รอดำเนินการ กรุณายกเลิกคำเชิญก่อน",
+            );
+            return;
+        }
         setDeleteTarget({ id, name });
     }
 

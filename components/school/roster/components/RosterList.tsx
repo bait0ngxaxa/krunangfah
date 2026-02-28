@@ -10,10 +10,13 @@ export function RosterList({
     onEdit,
     onRemove,
 }: RosterListProps) {
+    const pendingCount = roster.filter((t) => t.status === "pending").length;
+
     return (
         <div className="space-y-2">
             <p className="text-xs text-gray-500 font-medium">
-                รายชื่อครูทั้งหมด ({roster.length} คน)
+                รายชื่อครูทั้งหมด ({roster.length} คน
+                {pendingCount > 0 && ` • รอตอบรับ ${pendingCount} คน`})
             </p>
             <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                 {roster.map((t) => (

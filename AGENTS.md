@@ -11,6 +11,7 @@
 **Priority Order:** Correctness > Security > Performance > Maintainability > Speed
 
 **Rules:**
+
 - Style-only changes = treat functional code as READ-ONLY. Ask before modifying logic.
 - Search codebase before creating any new type, constant, or utility. Reuse first.
 - Ask confirmation before major refactors or deletions.
@@ -44,13 +45,13 @@
 
 **🚨 NO HARDCODED SECRETS. EVER.** → env vars / secrets manager only.
 
-| Threat | Mitigation |
-|:--|:--|
-| Injection | Parameterized queries only. Never concatenate user input. |
-| Broken Auth | Validate at data access layer, not just UI. |
-| XSS | Sanitize HTML output. No raw HTML injection. |
-| CSRF | Token-based protection on all mutations. |
-| Access Control | Verify ownership server-side on every mutation. |
+| Threat         | Mitigation                                                |
+| :------------- | :-------------------------------------------------------- |
+| Injection      | Parameterized queries only. Never concatenate user input. |
+| Broken Auth    | Validate at data access layer, not just UI.               |
+| XSS            | Sanitize HTML output. No raw HTML injection.              |
+| CSRF           | Token-based protection on all mutations.                  |
+| Access Control | Verify ownership server-side on every mutation.           |
 
 **Input:** Validate ALL inputs at boundary with schema validation (Zod/Joi/Pydantic). Whitelist > blacklist. Normalize before save.
 
@@ -124,11 +125,11 @@
 
 ## 10. Testing
 
-| Layer | Scope | Target |
-|:--|:--|:--|
-| Unit | Functions, validators, utils | 80%+ business logic |
-| Integration | API routes, auth flows | Critical paths |
-| E2E | Login, payment, CRUD | Happy + error paths |
+| Layer       | Scope                        | Target              |
+| :---------- | :--------------------------- | :------------------ |
+| Unit        | Functions, validators, utils | 80%+ business logic |
+| Integration | API routes, auth flows       | Critical paths      |
+| E2E         | Login, payment, CRUD         | Happy + error paths |
 
 Test behavior, not implementation. Mock externals. Test error paths.
 
@@ -144,15 +145,15 @@ Test behavior, not implementation. Mock externals. Test error paths.
 
 ## 12. Defensive Coding
 
-| Edge Case | Rule |
-|:--|:--|
-| Stale JWT | Re-check roles server-side on every mutation |
-| Session fixation | Short-lived tokens ≤1h, rotate on role changes |
-| Privilege escalation | Validate at data access layer, not UI |
-| Optional fields | Always handle `null | undefined` explicitly |
-| Batch duplicates | Check within file AND against DB before insert |
+| Edge Case             | Rule                                                  |
+| :-------------------- | :---------------------------------------------------- | --------------------- |
+| Stale JWT             | Re-check roles server-side on every mutation          |
+| Session fixation      | Short-lived tokens ≤1h, rotate on role changes        |
+| Privilege escalation  | Validate at data access layer, not UI                 |
+| Optional fields       | Always handle `null                                   | undefined` explicitly |
+| Batch duplicates      | Check within file AND against DB before insert        |
 | Partial batch failure | Return per-item results, never silent partial success |
-| Retry storms | Exponential backoff + jitter, cap max retries |
+| Retry storms          | Exponential backoff + jitter, cap max retries         |
 
 ---
 
@@ -169,6 +170,7 @@ Test behavior, not implementation. Mock externals. Test error paths.
 
 ```markdown
 ## Tech Stack
+
 - Framework: [Next.js 14 / Django 5 / Rails 7 / ...]
 - Language: [TypeScript / Python / Go / ...]
 - Database: [PostgreSQL + Prisma / MongoDB / ...]
@@ -176,8 +178,10 @@ Test behavior, not implementation. Mock externals. Test error paths.
 - Testing: [Vitest + Playwright / pytest / ...]
 
 ## Additional Rules
+
 - [Project-specific conventions]
 
 ## Disabled Sections
+
 - [Sections from AGENTS.md that don't apply]
 ```

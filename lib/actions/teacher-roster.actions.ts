@@ -10,6 +10,7 @@ import {
 import type {
     TeacherRosterItem,
     RosterActionResponse,
+    RosterEntryStatus,
 } from "@/types/school-setup.types";
 
 /**
@@ -27,18 +28,21 @@ async function resolveSchoolId(
     return dbUser?.schoolId ?? null;
 }
 
-function toRosterItem(row: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    age: number;
-    userRole: string;
-    advisoryClass: string;
-    schoolRole: string;
-    projectRole: string;
-    inviteSent: boolean;
-}): TeacherRosterItem {
+function toRosterItem(
+    row: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string | null;
+        age: number;
+        userRole: string;
+        advisoryClass: string;
+        schoolRole: string;
+        projectRole: string;
+        inviteSent: boolean;
+    },
+    status: RosterEntryStatus = "draft",
+): TeacherRosterItem {
     return {
         id: row.id,
         firstName: row.firstName,
@@ -50,7 +54,91 @@ function toRosterItem(row: {
         schoolRole: row.schoolRole,
         projectRole: row.projectRole as TeacherRosterItem["projectRole"],
         inviteSent: row.inviteSent,
+        status,
     };
+}
+
+// --- Status resolution helpers ---
+
+interface InviteMatch {
+    email: string;
+    firstName: string;
+    lastName: string;
+    acceptedAt: Date | null;
+    expiresAt: Date;
+}
+
+interface UserMatch {
+    email: string;
+    name: string | null;
+}
+
+/**
+ * Resolve roster entry status by checking against invites and users.
+ * Priority: accepted user > pending invite > draft
+ */
+function resolveRosterStatus(
+    entry: { email: string | null; firstName: string; lastName: string },
+    invites: InviteMatch[],
+    users: UserMatch[],
+): RosterEntryStatus {
+    const now = new Date();
+
+    // Check if a user already exists (accepted invite)
+    const hasAcceptedUser = users.some(
+        (u) =>
+            (entry.email && u.email === entry.email) ||
+            u.name === `${entry.firstName} ${entry.lastName}`,
+    );
+    if (hasAcceptedUser) return "accepted";
+
+    // Check for pending (non-expired, non-accepted) invite
+    const hasPendingInvite = invites.some(
+        (inv) =>
+            !inv.acceptedAt &&
+            inv.expiresAt > now &&
+            ((entry.email && inv.email === entry.email) ||
+                (inv.firstName === entry.firstName &&
+                    inv.lastName === entry.lastName)),
+    );
+    if (hasPendingInvite) return "pending";
+
+    return "draft";
+}
+
+/**
+ * Check if a roster entry has a pending invite (for guards)
+ */
+async function hasPendingInviteForEntry(
+    schoolId: string,
+    entry: { email: string | null; firstName: string; lastName: string },
+): Promise<boolean> {
+    const now = new Date();
+
+    // Check by email first (primary match)
+    if (entry.email) {
+        const byEmail = await prisma.teacherInvite.findFirst({
+            where: {
+                schoolId,
+                email: entry.email,
+                acceptedAt: null,
+                expiresAt: { gt: now },
+            },
+        });
+        if (byEmail) return true;
+    }
+
+    // Fallback: check by name
+    const byName = await prisma.teacherInvite.findFirst({
+        where: {
+            schoolId,
+            firstName: entry.firstName,
+            lastName: entry.lastName,
+            acceptedAt: null,
+            expiresAt: { gt: now },
+        },
+    });
+    return !!byName;
 }
 
 /**
@@ -116,7 +204,7 @@ export async function addTeacherToRoster(
         return {
             success: true,
             message: "เพิ่มครูใน roster สำเร็จ",
-            data: toRosterItem(entry),
+            data: toRosterItem(entry, "draft"),
         };
     } catch (error) {
         console.error("addTeacherToRoster error:", error);
@@ -149,6 +237,16 @@ export async function removeFromRoster(
             return { success: false, message: "ไม่พบรายชื่อครูที่ต้องการลบ" };
         }
 
+        // Guard: reject if entry has a pending invite
+        const isPending = await hasPendingInviteForEntry(schoolId, entry);
+        if (isPending) {
+            return {
+                success: false,
+                message:
+                    "ไม่สามารถลบได้ เนื่องจากมีคำเชิญที่รอดำเนินการ กรุณายกเลิกคำเชิญก่อน",
+            };
+        }
+
         await prisma.schoolTeacherRoster.delete({ where: { id } });
 
         return { success: true, message: "ลบออกจาก roster สำเร็จ" };
@@ -160,6 +258,8 @@ export async function removeFromRoster(
 
 /**
  * ดึงรายชื่อครูทั้งหมดใน roster ของโรงเรียน
+ * Parallel-fetches invites + users to compute status per entry.
+ * Filters out "accepted" entries.
  */
 export async function getSchoolRoster(): Promise<TeacherRosterItem[]> {
     const session = await requireAuth();
@@ -170,12 +270,34 @@ export async function getSchoolRoster(): Promise<TeacherRosterItem[]> {
 
     if (!schoolId) return [];
 
-    const rows = await prisma.schoolTeacherRoster.findMany({
-        where: { schoolId },
-        orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
-    });
+    // Parallel fetch: roster + invites + school users
+    const [rows, invites, users] = await Promise.all([
+        prisma.schoolTeacherRoster.findMany({
+            where: { schoolId },
+            orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+        }),
+        prisma.teacherInvite.findMany({
+            where: { schoolId },
+            select: {
+                email: true,
+                firstName: true,
+                lastName: true,
+                acceptedAt: true,
+                expiresAt: true,
+            },
+        }),
+        prisma.user.findMany({
+            where: { schoolId },
+            select: { email: true, name: true },
+        }),
+    ]);
 
-    return rows.map(toRosterItem);
+    return rows
+        .map((row) => {
+            const status = resolveRosterStatus(row, invites, users);
+            return toRosterItem(row, status);
+        })
+        .filter((item) => item.status !== "accepted");
 }
 
 /**
@@ -204,6 +326,16 @@ export async function updateRosterEntry(
             return {
                 success: false,
                 message: "ไม่พบรายชื่อครูที่ต้องการแก้ไข",
+            };
+        }
+
+        // Guard: reject if entry has a pending invite
+        const isPending = await hasPendingInviteForEntry(schoolId, entry);
+        if (isPending) {
+            return {
+                success: false,
+                message:
+                    "ไม่สามารถแก้ไขได้ เนื่องจากมีคำเชิญที่รอดำเนินการ กรุณายกเลิกคำเชิญก่อน",
             };
         }
 
@@ -255,7 +387,7 @@ export async function updateRosterEntry(
         return {
             success: true,
             message: "แก้ไขข้อมูลสำเร็จ",
-            data: toRosterItem(updated),
+            data: toRosterItem(updated, "draft"),
         };
     } catch (error) {
         console.error("updateRosterEntry error:", error);

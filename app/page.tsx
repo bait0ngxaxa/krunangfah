@@ -26,7 +26,6 @@ export default async function Home() {
                 alt=""
                 fill
                 className="object-cover object-bottom overflow-hidden"
-                priority
             />
 
             {/* ─── Top Green Navbar ─── */}

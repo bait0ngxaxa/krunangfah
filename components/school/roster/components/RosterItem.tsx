@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, X } from "lucide-react";
+import { Pencil, X, Clock } from "lucide-react";
 import { USER_ROLE_LABELS, PROJECT_ROLE_LABELS } from "@/lib/constants/roles";
 import type { RosterItemProps } from "../types";
 
@@ -11,12 +11,17 @@ export function RosterItem({
     onEdit,
     onRemove,
 }: RosterItemProps) {
+    const isPending = teacher.status === "pending";
+    const canModify = !readOnly && !isPending;
+
     return (
         <div
             className={`flex items-center justify-between p-3 bg-white rounded-2xl shadow-sm border-2 transition-all group ${
-                isEditing
-                    ? "border-[#0BD0D9]"
-                    : "border-gray-100 hover:shadow-md hover:border-[#0BD0D9]/50"
+                isPending
+                    ? "border-amber-200 bg-amber-50/30"
+                    : isEditing
+                      ? "border-[#0BD0D9]"
+                      : "border-gray-100 hover:shadow-md hover:border-[#0BD0D9]/50"
             }`}
         >
             <div className="flex-1 min-w-0">
@@ -24,6 +29,12 @@ export function RosterItem({
                     <span className="font-semibold text-sm text-gray-800">
                         {teacher.firstName} {teacher.lastName}
                     </span>
+                    {isPending && (
+                        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-md font-medium">
+                            <Clock className="w-3 h-3" />
+                            รอตอบรับ
+                        </span>
+                    )}
                     <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-md font-medium">
                         {USER_ROLE_LABELS[teacher.userRole] ?? teacher.userRole}
                     </span>
@@ -48,7 +59,7 @@ export function RosterItem({
                     )}
                 </div>
             </div>
-            {!readOnly && (
+            {canModify && (
                 <div className="flex items-center gap-1">
                     <button
                         type="button"
