@@ -1,40 +1,37 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
 import { searchStudents } from "@/lib/actions/student";
+import { actionFetcher, searchSWRConfig, swrKeys } from "@/lib/swr/config";
 import { MAX_VISIBLE_RESULTS } from "./constants";
+import { useState, useEffect, useRef } from "react";
 import type { Student } from "./types";
 
 /**
- * Hook for student search logic with debounced server action.
+ * Hook for student search logic with SWR (replaces manual debounce).
  */
 export function useStudentSearch() {
     const router = useRouter();
     const [query, setQuery] = useState("");
-    const [results, setResults] = useState<Student[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
 
-    useEffect(() => {
-        const performSearch = async () => {
-            if (!query.trim()) {
-                setResults([]);
-                return;
-            }
+    // SWR with deduping replaces manual debounce
+    const { data: swrResults = [], isValidating: isSearching } = useSWR(
+        query.trim() ? swrKeys.studentsSearch(query.trim()) : null,
+        actionFetcher(() => searchStudents(query.trim())),
+        {
+            ...searchSWRConfig,
+            keepPreviousData: true, // Show previous results while loading new ones
+        },
+    );
 
-            setIsSearching(true);
-            const students = await searchStudents(query.trim());
-            setResults(students as Student[]);
-            setIsSearching(false);
-        };
+    // When query is empty, show empty results immediately (no cache)
+    const results = query.trim() ? (swrResults as Student[]) : [];
 
-        const timeoutId = setTimeout(performSearch, 300);
-        return () => clearTimeout(timeoutId);
-    }, [query]);
-
-    const handleStudentClick = (studentId: string): void => {
+    const handleStudentClick = useCallback((studentId: string): void => {
         router.push(`/students/${studentId}`);
-    };
+    }, [router]);
 
     return { query, setQuery, results, isSearching, handleStudentClick };
 }

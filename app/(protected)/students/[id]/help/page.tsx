@@ -5,7 +5,8 @@ import {
     getColorConfig,
     getActivities,
 } from "@/lib/config/help-page-config";
-import { ConversationView, ActivityView } from "@/components/student";
+import { ConversationView } from "@/components/student/help/ConversationView";
+import { ActivityView } from "@/components/student/help/ActivityView";
 
 interface PageProps {
     params: Promise<{ id: string }>;

@@ -4,10 +4,8 @@ import { getStudents } from "@/lib/actions/student";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { getReferredOutStudents } from "@/lib/actions/referral.actions";
 import { requireAuth } from "@/lib/session";
-import {
-    StudentDashboard,
-    StudentDashboardSkeleton,
-} from "@/components/student";
+import { StudentDashboard } from "@/components/student/dashboard/StudentDashboard";
+import { StudentDashboardSkeleton } from "@/components/student/dashboard/StudentDashboardSkeleton";
 import { PageBanner } from "@/components/ui/PageBanner";
 import Link from "next/link";
 

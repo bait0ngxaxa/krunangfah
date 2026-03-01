@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { ExcelUploader } from "@/components/student";
+import { ExcelUploader } from "@/components/student/import";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { FileUp } from "lucide-react";
 import { toast } from "sonner";

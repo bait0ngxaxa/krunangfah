@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useMemo, useTransition, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
+import useSWR from "swr";
 import { getAnalyticsSummary } from "@/lib/actions/analytics";
 import { toChartData, getPieChartTitle } from "@/components/analytics/utils";
+import { swrKeys, actionFetcher } from "@/lib/swr/config";
 import type { AnalyticsData } from "@/lib/actions/analytics";
 import type { RiskPieChartDataItem } from "@/components/ui/RiskPieChart";
 
@@ -32,95 +34,102 @@ export function useAnalytics(
     schools?: SchoolOption[],
     userRole?: string,
 ): UseAnalyticsReturn {
-    const [data, setData] = useState<AnalyticsData>(initialData);
     const [selectedClass, setSelectedClass] = useState<string>("all");
     const [selectedSchoolId, setSelectedSchoolId] = useState<string>("all");
     const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>(
         initialData.currentAcademicYear?.toString() ?? "all",
     );
-    const [isPending, startTransition] = useTransition();
 
     const isSystemAdmin =
         userRole === "system_admin" && !!schools && schools.length > 0;
     const showClassFilter =
         isSchoolAdmin || (isSystemAdmin && selectedSchoolId !== "all");
 
+    // Build filters for SWR key
+    const filters = useMemo(() => {
+        const classFilter = selectedClass === "all" ? undefined : selectedClass;
+        const schoolFilter =
+            isSystemAdmin && selectedSchoolId !== "all" ? selectedSchoolId : undefined;
+        const yearFilter =
+            selectedAcademicYear !== "all" ? parseInt(selectedAcademicYear, 10) : undefined;
+
+        return { classFilter, schoolFilter, yearFilter };
+    }, [selectedClass, selectedSchoolId, selectedAcademicYear, isSystemAdmin]);
+
+    // SWR for analytics data with caching
+    const { data, isValidating, mutate } = useSWR(
+        swrKeys.analytics(filters),
+        actionFetcher(() => getAnalyticsSummary(filters.classFilter, filters.schoolFilter, filters.yearFilter)),
+        {
+            fallbackData: initialData,
+            revalidateOnFocus: true,
+            revalidateOnReconnect: true,
+            dedupingInterval: 2000,
+        },
+    );
+
     const handleSchoolChange = useCallback((schoolId: string): void => {
         setSelectedSchoolId(schoolId);
         setSelectedClass("all");
-
-        const schoolFilter = schoolId === "all" ? undefined : schoolId;
-        startTransition(async () => {
-            const newData = await getAnalyticsSummary(undefined, schoolFilter);
-            if (newData) {
-                setData(newData);
-                // sync year dropdown กับค่าที่ server auto-default ให้
-                setSelectedAcademicYear(
-                    newData.currentAcademicYear?.toString() ?? "all",
-                );
-            }
-        });
-    }, []);
+        // Reset to "all" when school changes - will be updated by data.currentAcademicYear from new fetch
+        setSelectedAcademicYear("all");
+        
+        // Fetch with new school
+        const newFilters = {
+            classFilter: undefined,
+            schoolFilter: schoolId === "all" ? undefined : schoolId,
+            yearFilter: undefined,
+        };
+        void mutate(
+            actionFetcher(() => getAnalyticsSummary(newFilters.classFilter, newFilters.schoolFilter, newFilters.yearFilter))(),
+            { revalidate: false }
+        );
+    }, [mutate]);
 
     const handleClassChange = useCallback(
         (classValue: string): void => {
-            const filterValue = classValue === "all" ? undefined : classValue;
             setSelectedClass(classValue);
-
-            const schoolFilter =
-                isSystemAdmin && selectedSchoolId !== "all"
-                    ? selectedSchoolId
-                    : undefined;
-
-            const yearFilter =
-                selectedAcademicYear !== "all"
-                    ? parseInt(selectedAcademicYear, 10)
-                    : undefined;
-
-            startTransition(async () => {
-                const newData = await getAnalyticsSummary(
-                    filterValue,
-                    schoolFilter,
-                    yearFilter,
-                );
-                if (newData) {
-                    setData(newData);
-                }
-            });
+            const newFilters = {
+                classFilter: classValue === "all" ? undefined : classValue,
+                schoolFilter:
+                    isSystemAdmin && selectedSchoolId !== "all"
+                        ? selectedSchoolId
+                        : undefined,
+                yearFilter:
+                    selectedAcademicYear !== "all"
+                        ? parseInt(selectedAcademicYear, 10)
+                        : undefined,
+            };
+            void mutate(
+                actionFetcher(() => getAnalyticsSummary(newFilters.classFilter, newFilters.schoolFilter, newFilters.yearFilter))(),
+                { revalidate: false }
+            );
         },
-        [isSystemAdmin, selectedSchoolId, selectedAcademicYear],
+        [isSystemAdmin, selectedSchoolId, selectedAcademicYear, mutate],
     );
 
     const handleAcademicYearChange = useCallback(
         (yearValue: string): void => {
             setSelectedAcademicYear(yearValue);
-
-            const classFilterValue =
-                selectedClass !== "all" ? selectedClass : undefined;
-            const schoolFilter =
-                isSystemAdmin && selectedSchoolId !== "all"
-                    ? selectedSchoolId
-                    : undefined;
-            const yearFilter =
-                yearValue !== "all" ? parseInt(yearValue, 10) : undefined;
-
-            startTransition(async () => {
-                const newData = await getAnalyticsSummary(
-                    classFilterValue,
-                    schoolFilter,
-                    yearFilter,
-                );
-                if (newData) {
-                    setData(newData);
-                }
-            });
+            const newFilters = {
+                classFilter: selectedClass !== "all" ? selectedClass : undefined,
+                schoolFilter:
+                    isSystemAdmin && selectedSchoolId !== "all"
+                        ? selectedSchoolId
+                        : undefined,
+                yearFilter: yearValue !== "all" ? parseInt(yearValue, 10) : undefined,
+            };
+            void mutate(
+                actionFetcher(() => getAnalyticsSummary(newFilters.classFilter, newFilters.schoolFilter, newFilters.yearFilter))(),
+                { revalidate: false }
+            );
         },
-        [isSystemAdmin, selectedSchoolId, selectedClass],
+        [isSystemAdmin, selectedSchoolId, selectedClass, mutate],
     );
 
     const pieChartData = useMemo(
-        () => toChartData(data.riskLevelSummary),
-        [data.riskLevelSummary],
+        () => toChartData(data?.riskLevelSummary ?? initialData.riskLevelSummary),
+        [data?.riskLevelSummary, initialData.riskLevelSummary],
     );
 
     const selectedSchoolName =
@@ -135,11 +144,11 @@ export function useAnalytics(
     );
 
     return {
-        data,
+        data: data ?? initialData,
         selectedClass,
         selectedSchoolId,
         selectedAcademicYear,
-        isPending,
+        isPending: isValidating,
         isSystemAdmin,
         showClassFilter,
         pieChartData,

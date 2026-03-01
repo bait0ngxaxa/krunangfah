@@ -96,7 +96,7 @@ export function useImportPreview({
     // Load initial data
     useEffect(() => {
         const loadData = async () => {
-            // Load academic years and teacher profile in parallel
+            // Load academic years, teacher profile, and check round 1 in parallel
             const [years, profile] = await Promise.all([
                 getAcademicYears(),
                 getCurrentTeacherProfile().catch((err) => {
@@ -111,9 +111,10 @@ export function useImportPreview({
 
             if (initialYearId) {
                 setSelectedYearId(initialYearId);
-                // Check round 1 for the initial academic year
-                const exists = await hasRound1Data(initialYearId);
-                setRound1Exists(exists);
+                // Check round 1 for the initial academic year (parallel with state updates)
+                hasRound1Data(initialYearId).then((exists) => {
+                    setRound1Exists(exists);
+                });
             }
 
             if (profile) {

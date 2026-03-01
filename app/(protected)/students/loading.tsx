@@ -1,4 +1,4 @@
-import { StudentDashboardSkeleton } from "@/components/student";
+import { StudentDashboardSkeleton } from "@/components/student/dashboard/StudentDashboardSkeleton";
 
 export default function Loading() {
     return (

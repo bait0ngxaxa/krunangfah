@@ -54,20 +54,41 @@ export function HeroCard({
     }
 
     const isEmerald = theme === "emerald";
+    
+    // Centralized color tokens - Primary brand colors
     const colors = {
-        border: isEmerald ? "border-[#6EE7B7]" : "border-[#0BD0D9]",
-        iconBg: isEmerald ? "bg-[#34D399]" : "bg-[#0BD0D9]",
+        border: isEmerald 
+            ? "border-emerald-400" 
+            : "border-cyan-400",
+        iconBg: isEmerald 
+            ? "bg-emerald-400" 
+            : "bg-cyan-400",
         iconColor: "text-white",
-        badgeBg: isEmerald ? "bg-[#A7F3D0]" : "bg-[#A7F3D0]", // Emerald badge for emerald theme
+        badgeBg: isEmerald 
+            ? "bg-emerald-100" 
+            : "bg-cyan-100",
+        badgeBorder: isEmerald 
+            ? "border-emerald-300" 
+            : "border-cyan-300",
+        badgeText: isEmerald 
+            ? "text-emerald-900" 
+            : "text-cyan-900",
+        badgeIcon: isEmerald 
+            ? "text-emerald-700" 
+            : "text-cyan-700",
         titleHover: isEmerald
             ? "group-hover:text-emerald-500"
-            : "group-hover:text-[#09B8C0]",
+            : "group-hover:text-cyan-500",
     };
 
     return (
         <Link
             href={href}
-            className={`relative bg-white rounded-4xl border-2 ${colors.border} shadow-[0_4px_12px_rgba(0,0,0,0.05)] p-5 sm:p-6 flex items-stretch min-h-[140px] sm:min-h-[160px] group hover:-translate-y-1 transition-all duration-300 w-full`}
+            className={`relative bg-white rounded-4xl border-2 ${colors.border} shadow-md p-5 sm:p-6 flex items-stretch min-h-[140px] sm:min-h-[160px] group w-full
+                hover:-translate-y-1 
+                focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-400 focus-visible:outline-none
+                motion-safe:transition-transform motion-safe:duration-300
+            `}
         >
             {/* Left Image Spacer */}
             {imageSrc && (
@@ -77,7 +98,8 @@ export function HeroCard({
                         alt=""
                         width={160}
                         height={180}
-                        className="absolute -bottom-2 -left-2 sm:-left-4 w-[120px] sm:w-[150px] max-w-none object-contain origin-bottom z-10 drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+                        className="absolute -bottom-2 -left-2 sm:-left-4 w-[120px] sm:w-[150px] max-w-none object-contain origin-bottom z-10 drop-shadow-md 
+                            motion-safe:group-hover:scale-105 motion-safe:transition-transform motion-safe:duration-300"
                     />
                 </div>
             )}
@@ -104,9 +126,9 @@ export function HeroCard({
 
                     {/* Badge */}
                     {badge && (
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-[#A7F3D0] border border-[#6EE7B7] shadow-sm w-fit mb-2">
-                            <Icon className="w-4 h-4 text-emerald-800 stroke-[2.5]" />
-                            <span className="text-sm font-extrabold text-emerald-900">
+                        <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl ${colors.badgeBg} ${colors.badgeBorder} border shadow-sm w-fit mb-2`}>
+                            <Icon className={`w-4 h-4 ${colors.badgeIcon} stroke-[2.5]`} />
+                            <span className={`text-sm font-extrabold ${colors.badgeText}`}>
                                 {badge}
                             </span>
                         </div>
@@ -132,7 +154,8 @@ export function HeroCard({
 
             {/* Bottom/Center Right Circle */}
             <div
-                className={`absolute ${isEmerald ? "top-1/2 -translate-y-1/2 right-5" : "bottom-5 right-5"} w-7 h-7 sm:w-9 sm:h-9 rounded-full ${colors.iconBg} ${colors.iconColor} flex items-center justify-center shadow-lg group-hover:brightness-95 transition-all`}
+                className={`absolute ${isEmerald ? "top-1/2 -translate-y-1/2 right-5" : "bottom-5 right-5"} w-7 h-7 sm:w-9 sm:h-9 rounded-full ${colors.iconBg} ${colors.iconColor} flex items-center justify-center shadow-lg 
+                    motion-safe:group-hover:brightness-95 motion-safe:transition-transform motion-safe:duration-200`}
             >
                 <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
             </div>

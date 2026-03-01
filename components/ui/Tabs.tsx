@@ -21,13 +21,13 @@ export function Tabs({ tabs, defaultTab }: TabsProps) {
     return (
         <div className="w-full">
             {/* Tab Navigation */}
-            <div className="flex gap-2 mb-6 p-1.5 bg-gray-100/80 rounded-2xl border border-gray-200/80">
+            <div className="flex gap-2 mb-6 p-1.5 bg-gray-100/80 rounded-2xl border border-gray-200/80 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`
-                            flex-1 px-5 py-3 font-bold text-sm sm:text-base rounded-xl transition-all duration-300 cursor-pointer border
+                            flex-1 px-3 sm:px-5 py-3 font-bold text-sm sm:text-base rounded-xl transition-all duration-300 cursor-pointer border whitespace-nowrap min-w-fit
                             ${
                                 activeTab === tab.id
                                     ? "text-white bg-[#0BD0D9] border-[#09B8C0] shadow-[0_2px_8px_rgba(11,208,217,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] scale-[1.02]"

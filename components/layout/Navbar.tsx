@@ -15,6 +15,14 @@ import {
 } from "lucide-react";
 import { NavbarGreenBar } from "./NavbarGreenBar";
 
+// Add these animation styles to your global CSS or tailwind config
+// @keyframes slideDown {
+//   from { opacity: 0; transform: translateY(-10px) scaleY(0.95); }
+//   to { opacity: 1; transform: translateY(0) scaleY(1); }
+// }
+// .animate-slideDown { animation: slideDown 0.25s ease-out forwards; }
+// .animate-slideUp { animation: slideDown 0.2s ease-in reverse forwards; }
+
 interface NavbarProps {
     hasStudents: boolean;
 }
@@ -100,31 +108,49 @@ export function Navbar({ hasStudents }: NavbarProps) {
                 </div>
             </NavbarGreenBar>
 
-            {/* Mobile Menu */}
-            {isMobileMenuOpen && (
-                <div className="md:hidden bg-[#00DB87] shadow-lg fixed top-[56px] left-0 right-0 z-40 rounded-b-2xl">
+            {/* Mobile Menu - Smooth slide animation */}
+            <div
+                className={`md:hidden fixed top-[80px] left-0 right-0 z-60 transition-all duration-300 ease-out transform origin-top ${
+                    isMobileMenuOpen
+                        ? "opacity-100 translate-y-0 scale-y-100 pointer-events-auto"
+                        : "opacity-0 -translate-y-2 scale-y-95 pointer-events-none"
+                }`}
+            >
+                <div className="bg-[#00DB87] shadow-lg rounded-b-2xl overflow-hidden">
                     <div className="px-3 pt-2 pb-3 space-y-1">
-                        {navLinks.map((link) => (
+                        {navLinks.map((link, index) => (
                             <Link
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-base font-semibold transition-colors ${
+                                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-base font-semibold transition-all duration-200 hover:translate-x-1 ${
                                     isActive(link.href)
                                         ? "bg-white/25 text-white"
                                         : "text-white/80 hover:text-white hover:bg-white/15"
                                 }`}
+                                style={{
+                                    transitionDelay: isMobileMenuOpen
+                                        ? `${index * 50}ms`
+                                        : "0ms",
+                                }}
                             >
                                 <link.icon className="w-5 h-5" />
                                 {link.label}
                             </Link>
                         ))}
-                        <div className="pt-2 mt-2 border-t border-white/20">
+                        <div
+                            className="pt-2 mt-2 border-t border-white/20 transition-all duration-200"
+                            style={{
+                                transitionDelay: isMobileMenuOpen
+                                    ? `${navLinks.length * 50}ms`
+                                    : "0ms",
+                            }}
+                        >
                             <LogoutButton variant="navbar" />
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
         </>
     );
 }

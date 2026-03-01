@@ -4,15 +4,13 @@ import dynamic from "next/dynamic";
 import { BarChart3, Target, Home } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { getStudentDetail } from "@/lib/actions/student";
-import {
-    StudentProfileCard,
-    PHQHistoryTable,
-    ActivityProgressTable,
-    CounselingLogTable,
-    AcademicYearFilter,
-    ReferralButton,
-    HomeVisitTab,
-} from "@/components/student";
+import { StudentProfileCard } from "@/components/student/profile/StudentProfileCard";
+import { PHQHistoryTable } from "@/components/student/phq/PHQHistoryTable";
+import { ActivityProgressTable } from "@/components/student/activity/ActivityProgressTable";
+import { CounselingLogTable } from "@/components/student/counseling/CounselingLogTable";
+import { AcademicYearFilter } from "@/components/student/profile/AcademicYearFilter";
+import { ReferralButton } from "@/components/student/referral/ReferralButton";
+import { HomeVisitTab } from "@/components/student/home-visit/HomeVisitTab";
 
 // Dynamic import — Recharts is heavy, lazy-load for smaller initial bundle
 const PHQTrendChart = dynamic(
