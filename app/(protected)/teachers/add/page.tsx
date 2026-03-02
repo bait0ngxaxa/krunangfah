@@ -44,7 +44,7 @@ export default async function AddTeacherPage() {
                                 </span>
                             </h1>
                             <p className="text-sm text-gray-500">
-                                เพิ่มห้องเรียน / ลงข้อมูลครู / สร้างลิงก์เชิญ
+                                เพิ่ม-ลบห้องเรียน / เพิ่ม-ลบครู / สร้างลิงก์เชิญ
                             </p>
                         </div>
                     </div>

@@ -2,6 +2,7 @@ import { getStudentDetail } from "@/lib/actions/student";
 import { getActivityProgress } from "@/lib/actions/activity";
 import { redirect, notFound } from "next/navigation";
 import { TeacherAssessmentForm } from "@/components/activity";
+import { requireAuth } from "@/lib/session";
 
 const ACTIVITIES = [
     { id: "a1", number: 1, title: "กิจกรรมที่ 1: รู้จักตัวเอง" },
@@ -23,6 +24,12 @@ export default async function TeacherAssessmentPage({
     const { id: studentId } = await params;
     const { activity: activityParam, phqResultId } = await searchParams;
 
+    // system_admin เป็น readonly — ไม่สามารถเข้าหน้า help ได้
+    const session = await requireAuth();
+    if (session.user.role === "system_admin") {
+        redirect(`/students/${studentId}`);
+    }
+
     const student = await getStudentDetail(studentId);
 
     if (!student) {
@@ -30,7 +37,8 @@ export default async function TeacherAssessmentPage({
     }
 
     const latestResult = phqResultId
-        ? student.phqResults.find((r) => r.id === phqResultId) ?? student.phqResults[0]
+        ? (student.phqResults.find((r) => r.id === phqResultId) ??
+          student.phqResults[0])
         : student.phqResults[0];
 
     if (!latestResult) {
@@ -67,7 +75,9 @@ export default async function TeacherAssessmentPage({
     const phqParam = phqResultId ? `&phqResultId=${phqResultId}` : "";
 
     if (!currentProgress) {
-        redirect(`/students/${studentId}/help/start${phqResultId ? `?phqResultId=${phqResultId}` : ""}`);
+        redirect(
+            `/students/${studentId}/help/start${phqResultId ? `?phqResultId=${phqResultId}` : ""}`,
+        );
     }
 
     // Assessment page only for Activity 1

@@ -39,7 +39,7 @@ export function RoleBadge({ role, isPrimary = false }: RoleBadgeProps) {
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
                 <ShieldCheck className="w-3 h-3" />
                 {label}
-                {isPrimary && " (Primary)"}
+                {isPrimary && " (แอดมิน)"}
             </span>
         );
     }

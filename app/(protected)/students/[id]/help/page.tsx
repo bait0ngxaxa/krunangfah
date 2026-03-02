@@ -1,21 +1,28 @@
 import { notFound, redirect } from "next/navigation";
 import { getStudentDetail } from "@/lib/actions/student";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
-import {
-    getColorConfig,
-    getActivities,
-} from "@/lib/config/help-page-config";
+import { getColorConfig, getActivities } from "@/lib/config/help-page-config";
 import { ConversationView } from "@/components/student/help/ConversationView";
 import { ActivityView } from "@/components/student/help/ActivityView";
+import { requireAuth } from "@/lib/session";
 
 interface PageProps {
     params: Promise<{ id: string }>;
     searchParams: Promise<{ phqResultId?: string }>;
 }
 
-export default async function StudentHelpPage({ params, searchParams }: PageProps) {
+export default async function StudentHelpPage({
+    params,
+    searchParams,
+}: PageProps) {
     const { id: studentId } = await params;
     const { phqResultId } = await searchParams;
+
+    // system_admin เป็น readonly — ไม่สามารถเข้าหน้า help ได้
+    const session = await requireAuth();
+    if (session.user.role === "system_admin") {
+        redirect(`/students/${studentId}`);
+    }
 
     const student = await getStudentDetail(studentId);
 
@@ -24,7 +31,8 @@ export default async function StudentHelpPage({ params, searchParams }: PageProp
     }
 
     const latestResult = phqResultId
-        ? student.phqResults.find((r) => r.id === phqResultId) ?? student.phqResults[0]
+        ? (student.phqResults.find((r) => r.id === phqResultId) ??
+          student.phqResults[0])
         : student.phqResults[0];
     if (!latestResult) {
         redirect(`/students/${studentId}`);

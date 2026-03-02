@@ -125,6 +125,9 @@ export function useAddTeacherForm(
             }
 
             form.reset();
+
+            // Re-fetch server data so invite list and roster dropdown update
+            router.refresh();
         } catch (err) {
             console.error("Create invite error:", err);
             toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");

@@ -1,16 +1,27 @@
-"use client";
-
-import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-
+import { redirect } from "next/navigation";
 import { BookOpen, Pin } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { requireAuth } from "@/lib/session";
 
-export default function GuidelinesPage() {
-    const params = useParams();
-    const searchParams = useSearchParams();
-    const studentId = params.id as string;
-    const phqResultId = searchParams.get("phqResultId");
+interface PageProps {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ phqResultId?: string }>;
+}
+
+export default async function GuidelinesPage({
+    params,
+    searchParams,
+}: PageProps) {
+    const { id: studentId } = await params;
+    const { phqResultId } = await searchParams;
+
+    // system_admin เป็น readonly — ไม่สามารถเข้าหน้า help ได้
+    const session = await requireAuth();
+    if (session.user.role === "system_admin") {
+        redirect(`/students/${studentId}`);
+    }
+
     const startHref = phqResultId
         ? `/students/${studentId}/help/start?phqResultId=${phqResultId}`
         : `/students/${studentId}/help/start`;

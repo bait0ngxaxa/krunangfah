@@ -3,6 +3,7 @@ import {
     submitAssessmentSchema,
     scheduleActivitySchema,
     updateTeacherNotesSchema,
+    updateScheduledDateSchema,
     PROBLEM_TYPES,
     type SubmitAssessmentInput,
     type ScheduleActivityInput,
@@ -214,6 +215,60 @@ describe("updateTeacherNotesSchema", () => {
             if (!result.success) {
                 expect(result.error.issues[0].message).toBe("กรุณากรอกบันทึก");
             }
+        });
+    });
+});
+
+describe("updateScheduledDateSchema", () => {
+    describe("Valid inputs", () => {
+        it("should accept a valid ISO date string", () => {
+            const result = updateScheduledDateSchema.safeParse({
+                activityProgressId: "clxyz123456789abcdef",
+                scheduledDate: "2024-06-01",
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it("should accept a valid datetime string", () => {
+            const result = updateScheduledDateSchema.safeParse({
+                activityProgressId: "clxyz123456789abcdef",
+                scheduledDate: "2024-06-01T10:00:00.000Z",
+            });
+            expect(result.success).toBe(true);
+        });
+    });
+
+    describe("Invalid scheduledDate", () => {
+        it("should reject an invalid date string", () => {
+            const result = updateScheduledDateSchema.safeParse({
+                activityProgressId: "clxyz123456789abcdef",
+                scheduledDate: "not-a-date",
+            });
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues[0].message).toBe("วันที่ไม่ถูกต้อง");
+            }
+        });
+
+        it("should reject empty string date", () => {
+            const result = updateScheduledDateSchema.safeParse({
+                activityProgressId: "clxyz123456789abcdef",
+                scheduledDate: "",
+            });
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues[0].message).toBe("วันที่ไม่ถูกต้อง");
+            }
+        });
+    });
+
+    describe("Invalid activityProgressId", () => {
+        it("should reject invalid CUID format", () => {
+            const result = updateScheduledDateSchema.safeParse({
+                activityProgressId: "invalid-id",
+                scheduledDate: "2024-06-01",
+            });
+            expect(result.success).toBe(false);
         });
     });
 });

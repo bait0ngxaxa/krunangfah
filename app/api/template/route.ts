@@ -210,7 +210,7 @@ export async function GET() {
     } catch (error) {
         console.error("Generate template error:", error);
         return NextResponse.json(
-            { error: "Failed to generate template" },
+            { error: "เกิดข้อผิดพลาดในการสร้างไฟล์ต้นแบบ" },
             { status: 500 },
         );
     }

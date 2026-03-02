@@ -109,6 +109,9 @@ export async function getActivityProgress(
         return { success: true, data: progress };
     } catch (error) {
         console.error("Error getting activity progress:", error);
-        return { success: false, error: "Failed to get activity progress" };
+        return {
+            success: false,
+            error: "เกิดข้อผิดพลาดในการดึงข้อมูลความคืบหน้ากิจกรรม",
+        };
     }
 }

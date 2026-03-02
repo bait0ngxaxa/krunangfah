@@ -42,7 +42,16 @@ export async function getTeacherInvite(token: string): Promise<InviteResponse> {
 export async function getMyTeacherInvites(): Promise<InviteListResponse> {
     try {
         const session = await requireAuth();
-        const schoolId = session.user.schoolId;
+
+        // Fallback to DB when JWT is stale (e.g. right after onboarding)
+        const schoolId =
+            session.user.schoolId ??
+            (
+                await prisma.user.findUnique({
+                    where: { id: session.user.id },
+                    select: { schoolId: true },
+                })
+            )?.schoolId;
 
         if (!schoolId) {
             return { success: true, invites: [] };

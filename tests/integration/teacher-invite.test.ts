@@ -25,6 +25,8 @@ const USERS = createMockUsers("ti");
 
 const { acceptTeacherInvite } =
     await import("@/lib/actions/teacher-invite/mutations");
+const { getMyTeacherInvites } =
+    await import("@/lib/actions/teacher-invite/queries");
 
 describe("Integration: Teacher Invite", () => {
     let schoolId: string;
@@ -180,6 +182,55 @@ describe("Integration: Teacher Invite", () => {
                 "password123",
             );
             expect(result.success).toBe(false);
+        });
+    });
+
+    describe("getMyTeacherInvites — Stale JWT fallback", () => {
+        it("returns invites even when JWT has no schoolId (onboarding flow)", async () => {
+            const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+            // Create an invite in the DB for this school
+            await prisma.teacherInvite.create({
+                data: {
+                    token: `test-stale-jwt-${uid}`,
+                    email: `test-stale-${uid}@test.local`,
+                    firstName: "StaleJWT",
+                    lastName: "Teacher",
+                    age: 25,
+                    userRole: "class_teacher",
+                    advisoryClass: "ม.2/1",
+                    academicYearId,
+                    schoolId,
+                    schoolRole: "ครู",
+                    projectRole: "care",
+                    invitedById: USERS.schoolAdmin.id,
+                    expiresAt: new Date(Date.now() + 86400000),
+                },
+            });
+
+            // Simulate stale JWT: schoolId is undefined (just after onboarding)
+            mockSession({
+                ...USERS.schoolAdmin,
+                schoolId: undefined,
+            });
+
+            const result = await getMyTeacherInvites();
+
+            expect(result.success).toBe(true);
+            expect(result.invites.length).toBeGreaterThanOrEqual(1);
+            expect(
+                result.invites.some((inv) => inv.firstName === "StaleJWT"),
+            ).toBe(true);
+        });
+
+        it("returns invites normally when JWT has schoolId", async () => {
+            // Restore normal session with schoolId
+            mockSession(USERS.schoolAdmin);
+
+            const result = await getMyTeacherInvites();
+
+            expect(result.success).toBe(true);
+            expect(result.invites.length).toBeGreaterThanOrEqual(1);
         });
     });
 });

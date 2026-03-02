@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
     calculateRiskLevel,
     calculateTotalScore,
+    getRiskBgClass,
+    getRiskLabel,
     type PhqScores,
     type RiskLevel,
 } from "@/lib/utils/phq-scoring";
@@ -297,5 +299,46 @@ describe("calculateRiskLevel", () => {
                 expect(result.riskColor).toBe(expectedColor);
             });
         });
+    });
+});
+
+describe("getRiskBgClass", () => {
+    const levels: RiskLevel[] = ["blue", "green", "yellow", "orange", "red"];
+
+    it.each(levels)(
+        "should return a non-empty string for level %s",
+        (level) => {
+            const result = getRiskBgClass(level);
+            expect(typeof result).toBe("string");
+            expect(result.length).toBeGreaterThan(0);
+        },
+    );
+
+    it("should return different classes for different levels", () => {
+        const classes = levels.map(getRiskBgClass);
+        const uniqueClasses = new Set(classes);
+        expect(uniqueClasses.size).toBe(levels.length);
+    });
+});
+
+describe("getRiskLabel", () => {
+    it("should return ปกติ for blue", () => {
+        expect(getRiskLabel("blue")).toBe("ปกติ");
+    });
+
+    it("should return เสี่ยงต่ำ for green", () => {
+        expect(getRiskLabel("green")).toBe("เสี่ยงต่ำ");
+    });
+
+    it("should return เสี่ยงปานกลาง for yellow", () => {
+        expect(getRiskLabel("yellow")).toBe("เสี่ยงปานกลาง");
+    });
+
+    it("should return เสี่ยงสูง for orange", () => {
+        expect(getRiskLabel("orange")).toBe("เสี่ยงสูง");
+    });
+
+    it("should return เสี่ยงสูงมาก for red", () => {
+        expect(getRiskLabel("red")).toBe("เสี่ยงสูงมาก");
     });
 });

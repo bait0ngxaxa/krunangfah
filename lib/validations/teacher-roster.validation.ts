@@ -25,7 +25,7 @@ export const teacherRosterSchema = z
             .transform(sanitizeName),
         email: z.string().email("อีเมลไม่ถูกต้อง").optional().or(z.literal("")),
         age: z
-            .number()
+            .number({ error: "กรุณากรอกอายุเป็นตัวเลข" })
             .min(18, "อายุต้องมากกว่า 18 ปี")
             .max(100, "อายุไม่ถูกต้อง"),
         userRole: z.enum(userRoleValues as [string, ...string[]], {

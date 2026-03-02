@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { InviteCreateForm } from "@/components/admin/invite/InviteCreateForm";
 import { InviteTable } from "@/components/admin/invite/InviteTable";
@@ -15,6 +15,11 @@ export function InviteManager({ invites }: InviteManagerProps) {
     const [, startTransition] = useTransition();
     const [localInvites, setLocalInvites] = useState(invites);
 
+    // Sync localInvites whenever the server sends fresh props after router.refresh()
+    useEffect(() => {
+        setLocalInvites(invites);
+    }, [invites]);
+
     function refresh() {
         startTransition(() => {
             router.refresh();
@@ -22,8 +27,6 @@ export function InviteManager({ invites }: InviteManagerProps) {
     }
 
     function handleRevoked() {
-        // Optimistically remove from local state; server revalidation will sync
-        setLocalInvites(localInvites);
         refresh();
     }
 

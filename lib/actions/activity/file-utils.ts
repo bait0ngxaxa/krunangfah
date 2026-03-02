@@ -31,7 +31,7 @@ export async function uploadWorksheet(
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return { success: false, message: "Unauthorized" };
+            return { success: false, message: "ไม่อนุญาตให้เข้าถึง" };
         }
 
         // system_admin เป็น readonly — ไม่สามารถอัปโหลดใบงานได้
@@ -44,7 +44,7 @@ export async function uploadWorksheet(
 
         const file = formData.get("file") as File;
         if (!file) {
-            return { success: false, message: "No file provided" };
+            return { success: false, message: "ไม่พบไฟล์ใบงาน" };
         }
 
         // Validate file size
@@ -93,7 +93,7 @@ export async function uploadWorksheet(
         });
 
         if (!activityProgress) {
-            return { success: false, message: "Activity not found" };
+            return { success: false, message: "ไม่พบข้อมูลกิจกรรม" };
         }
 
         // Verify authorization by role
@@ -185,7 +185,7 @@ export async function uploadWorksheet(
 
         return {
             success: true,
-            message: "Worksheet uploaded successfully",
+            message: "อัปโหลดใบงานสำเร็จ",
             worksheet: {
                 id: upload.id,
                 worksheetNumber,
@@ -198,7 +198,7 @@ export async function uploadWorksheet(
         };
     } catch (error) {
         console.error("Error uploading worksheet:", error);
-        return { success: false, message: "Failed to upload worksheet" };
+        return { success: false, message: "เกิดข้อผิดพลาดในการอัปโหลดใบงาน" };
     }
 }
 
@@ -211,7 +211,7 @@ export async function deleteWorksheetUpload(
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return { success: false, message: "Unauthorized" };
+            return { success: false, message: "ไม่อนุญาตให้เข้าถึง" };
         }
 
         if (session.user.role === "system_admin") {

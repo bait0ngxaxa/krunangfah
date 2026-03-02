@@ -49,9 +49,13 @@ export function useAnalytics(
     const filters = useMemo(() => {
         const classFilter = selectedClass === "all" ? undefined : selectedClass;
         const schoolFilter =
-            isSystemAdmin && selectedSchoolId !== "all" ? selectedSchoolId : undefined;
+            isSystemAdmin && selectedSchoolId !== "all"
+                ? selectedSchoolId
+                : undefined;
         const yearFilter =
-            selectedAcademicYear !== "all" ? parseInt(selectedAcademicYear, 10) : undefined;
+            selectedAcademicYear !== "all"
+                ? parseInt(selectedAcademicYear, 10)
+                : undefined;
 
         return { classFilter, schoolFilter, yearFilter };
     }, [selectedClass, selectedSchoolId, selectedAcademicYear, isSystemAdmin]);
@@ -59,32 +63,47 @@ export function useAnalytics(
     // SWR for analytics data with caching
     const { data, isValidating, mutate } = useSWR(
         swrKeys.analytics(filters),
-        actionFetcher(() => getAnalyticsSummary(filters.classFilter, filters.schoolFilter, filters.yearFilter)),
+        actionFetcher(() =>
+            getAnalyticsSummary(
+                filters.classFilter,
+                filters.schoolFilter,
+                filters.yearFilter,
+            ),
+        ),
         {
             fallbackData: initialData,
-            revalidateOnFocus: true,
-            revalidateOnReconnect: true,
-            dedupingInterval: 2000,
+            revalidateOnFocus: false,
+            revalidateOnReconnect: false,
+            dedupingInterval: 60000,
         },
     );
 
-    const handleSchoolChange = useCallback((schoolId: string): void => {
-        setSelectedSchoolId(schoolId);
-        setSelectedClass("all");
-        // Reset to "all" when school changes - will be updated by data.currentAcademicYear from new fetch
-        setSelectedAcademicYear("all");
-        
-        // Fetch with new school
-        const newFilters = {
-            classFilter: undefined,
-            schoolFilter: schoolId === "all" ? undefined : schoolId,
-            yearFilter: undefined,
-        };
-        void mutate(
-            actionFetcher(() => getAnalyticsSummary(newFilters.classFilter, newFilters.schoolFilter, newFilters.yearFilter))(),
-            { revalidate: false }
-        );
-    }, [mutate]);
+    const handleSchoolChange = useCallback(
+        (schoolId: string): void => {
+            setSelectedSchoolId(schoolId);
+            setSelectedClass("all");
+            // Reset to "all" when school changes - will be updated by data.currentAcademicYear from new fetch
+            setSelectedAcademicYear("all");
+
+            // Fetch with new school
+            const newFilters = {
+                classFilter: undefined,
+                schoolFilter: schoolId === "all" ? undefined : schoolId,
+                yearFilter: undefined,
+            };
+            void mutate(
+                actionFetcher(() =>
+                    getAnalyticsSummary(
+                        newFilters.classFilter,
+                        newFilters.schoolFilter,
+                        newFilters.yearFilter,
+                    ),
+                )(),
+                { revalidate: false },
+            );
+        },
+        [mutate],
+    );
 
     const handleClassChange = useCallback(
         (classValue: string): void => {
@@ -101,8 +120,14 @@ export function useAnalytics(
                         : undefined,
             };
             void mutate(
-                actionFetcher(() => getAnalyticsSummary(newFilters.classFilter, newFilters.schoolFilter, newFilters.yearFilter))(),
-                { revalidate: false }
+                actionFetcher(() =>
+                    getAnalyticsSummary(
+                        newFilters.classFilter,
+                        newFilters.schoolFilter,
+                        newFilters.yearFilter,
+                    ),
+                )(),
+                { revalidate: false },
             );
         },
         [isSystemAdmin, selectedSchoolId, selectedAcademicYear, mutate],
@@ -112,23 +137,32 @@ export function useAnalytics(
         (yearValue: string): void => {
             setSelectedAcademicYear(yearValue);
             const newFilters = {
-                classFilter: selectedClass !== "all" ? selectedClass : undefined,
+                classFilter:
+                    selectedClass !== "all" ? selectedClass : undefined,
                 schoolFilter:
                     isSystemAdmin && selectedSchoolId !== "all"
                         ? selectedSchoolId
                         : undefined,
-                yearFilter: yearValue !== "all" ? parseInt(yearValue, 10) : undefined,
+                yearFilter:
+                    yearValue !== "all" ? parseInt(yearValue, 10) : undefined,
             };
             void mutate(
-                actionFetcher(() => getAnalyticsSummary(newFilters.classFilter, newFilters.schoolFilter, newFilters.yearFilter))(),
-                { revalidate: false }
+                actionFetcher(() =>
+                    getAnalyticsSummary(
+                        newFilters.classFilter,
+                        newFilters.schoolFilter,
+                        newFilters.yearFilter,
+                    ),
+                )(),
+                { revalidate: false },
             );
         },
         [isSystemAdmin, selectedSchoolId, selectedClass, mutate],
     );
 
     const pieChartData = useMemo(
-        () => toChartData(data?.riskLevelSummary ?? initialData.riskLevelSummary),
+        () =>
+            toChartData(data?.riskLevelSummary ?? initialData.riskLevelSummary),
         [data?.riskLevelSummary, initialData.riskLevelSummary],
     );
 

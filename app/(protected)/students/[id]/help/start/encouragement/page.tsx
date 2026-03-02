@@ -1,10 +1,15 @@
 import { getStudentDetail } from "@/lib/actions/student";
 import { redirect, notFound } from "next/navigation";
 import { EncouragementPage } from "@/components/activity";
+import { requireAuth } from "@/lib/session";
 
 interface PageProps {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ type?: string; activity?: string; phqResultId?: string }>;
+    searchParams: Promise<{
+        type?: string;
+        activity?: string;
+        phqResultId?: string;
+    }>;
 }
 
 export default async function EncouragementRoute({
@@ -12,7 +17,17 @@ export default async function EncouragementRoute({
     searchParams,
 }: PageProps) {
     const { id: studentId } = await params;
-    const { type: problemType, activity: activityParam, phqResultId } = await searchParams;
+    const {
+        type: problemType,
+        activity: activityParam,
+        phqResultId,
+    } = await searchParams;
+
+    // system_admin เป็น readonly — ไม่สามารถเข้าหน้า help ได้
+    const session = await requireAuth();
+    if (session.user.role === "system_admin") {
+        redirect(`/students/${studentId}`);
+    }
 
     const student = await getStudentDetail(studentId);
 
@@ -21,7 +36,8 @@ export default async function EncouragementRoute({
     }
 
     const latestResult = phqResultId
-        ? student.phqResults.find((r) => r.id === phqResultId) ?? student.phqResults[0]
+        ? (student.phqResults.find((r) => r.id === phqResultId) ??
+          student.phqResults[0])
         : student.phqResults[0];
 
     if (!latestResult) {

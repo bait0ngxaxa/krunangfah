@@ -26,13 +26,13 @@ export function TeacherSetupTabs({
     invites,
     isPrimary,
 }: TeacherSetupTabsProps) {
-    const tabs: Tab[] = [
+    const allTabs: Tab[] = [
         {
             id: "classes",
             label: (
                 <span className="inline-flex items-center gap-1.5">
                     <LayoutGrid className="w-4 h-4" />
-                    รายการห้องเรียน
+                    เพิ่ม-ลบ ห้องเรียน
                 </span>
             ),
             content: (
@@ -63,7 +63,7 @@ export function TeacherSetupTabs({
             label: (
                 <span className="inline-flex items-center gap-1.5">
                     <Users className="w-4 h-4" />
-                    รายการครู
+                    เพิ่ม-ลบ ครู
                 </span>
             ),
             content: (
@@ -95,7 +95,7 @@ export function TeacherSetupTabs({
             label: (
                 <span className="inline-flex items-center gap-1.5">
                     <UserPlus className="w-4 h-4" />
-                    เชิญครู
+                    สร้างลิงก์เชิญครู
                 </span>
             ),
             content: (
@@ -119,6 +119,9 @@ export function TeacherSetupTabs({
             ),
         },
     ];
+
+    // Non-primary admin เห็นแค่แท็บ invite
+    const tabs = isPrimary ? allTabs : allTabs.filter((t) => t.id === "invite");
 
     return <Tabs tabs={tabs} defaultTab="invite" />;
 }

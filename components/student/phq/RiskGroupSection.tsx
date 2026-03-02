@@ -30,12 +30,14 @@ interface RiskGroupSectionProps {
     level: RiskLevel;
     students: Student[];
     onStudentClick?: (studentId: string) => void;
+    readOnly?: boolean;
 }
 
 export function RiskGroupSection({
     level,
     students,
     onStudentClick,
+    readOnly = false,
 }: RiskGroupSectionProps) {
     const config = getRiskLevelConfig(level);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -142,26 +144,28 @@ export function RiskGroupSection({
                                 </div>
 
                                 {/* Action button */}
-                                <Link
-                                    href={`/students/${student.id}/help`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm ${config.btnBase} ${config.btnHover} hover:shadow-md hover:-translate-y-px active:translate-y-0 transition-all duration-200 whitespace-nowrap`}
-                                >
-                                    {actionLabel}
-                                    <svg
-                                        className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        strokeWidth={2.5}
+                                {!readOnly && (
+                                    <Link
+                                        href={`/students/${student.id}/help`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm ${config.btnBase} ${config.btnHover} hover:shadow-md hover:-translate-y-px active:translate-y-0 transition-all duration-200 whitespace-nowrap`}
                                     >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                                        />
-                                    </svg>
-                                </Link>
+                                        {actionLabel}
+                                        <svg
+                                            className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth={2.5}
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                                            />
+                                        </svg>
+                                    </Link>
+                                )}
                             </div>
                         ))}
                     </div>

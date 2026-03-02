@@ -73,8 +73,7 @@ export function SchoolClassesTabs({
                                 จัดการสิทธิ์ผู้ดูแล
                             </h2>
                             <p className="text-xs text-gray-400">
-                                เพิ่มหรือถอดสิทธิ์ Primary Admin
-                                ให้ผู้ดูแลคนอื่น
+                                เพิ่มหรือถอดสิทธิ์แอดมิน ให้ผู้ดูแลคนอื่น
                             </p>
                         </div>
                     </div>

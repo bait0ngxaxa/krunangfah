@@ -29,7 +29,7 @@ export function AdminListItem({
                         )}
                         {admin.isPrimary && (
                             <span className="text-xs px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded-md font-medium">
-                                Primary
+                                แอดมิน
                             </span>
                         )}
                     </div>
@@ -73,13 +73,12 @@ export function AdminListItem({
                             <ShieldAlert className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                             <div className="text-xs text-red-700 space-y-1">
                                 <p className="font-bold">
-                                    ถอดสิทธิ์ Primary Admin ของ
-                                    &quot;{displayName}&quot;?
+                                    ถอดสิทธิ์แอดมินของ &quot;{displayName}
+                                    &quot;?
                                 </p>
                                 <p className="text-red-600">
                                     ผู้ดูแลคนนี้จะไม่สามารถจัดการห้องเรียน
-                                    เชิญครู
-                                    หรือจัดการรายชื่อครูได้อีก
+                                    เชิญครู หรือจัดการรายชื่อครูได้อีก
                                 </p>
                             </div>
                         </div>

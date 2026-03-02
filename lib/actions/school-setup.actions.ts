@@ -5,10 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
-import {
-    normalizeSchoolName,
-    sanitizeText,
-} from "@/lib/utils/text-sanitizer";
+import { normalizeSchoolName, sanitizeText } from "@/lib/utils/text-sanitizer";
 import type {
     SchoolClassItem,
     SchoolContextData,
@@ -76,31 +73,34 @@ export async function createSchoolAndLink(input: {
         }
 
         // Transaction prevents race condition (double-click creating duplicate schools)
-        const school = await prisma.$transaction(async (tx) => {
-            // Re-check inside transaction to prevent concurrent double-create
-            const user = await tx.user.findUnique({
-                where: { id: session.user.id },
-                select: { schoolId: true },
-            });
+        const school = await prisma.$transaction(
+            async (tx) => {
+                // Re-check inside transaction to prevent concurrent double-create
+                const user = await tx.user.findUnique({
+                    where: { id: session.user.id },
+                    select: { schoolId: true },
+                });
 
-            if (user?.schoolId) {
-                return null; // Already has a school
-            }
+                if (user?.schoolId) {
+                    return null; // Already has a school
+                }
 
-            const newSchool = await tx.school.create({
-                data: {
-                    name: parsed.data.name,
-                    province: parsed.data.province || null,
-                },
-            });
+                const newSchool = await tx.school.create({
+                    data: {
+                        name: parsed.data.name,
+                        province: parsed.data.province || null,
+                    },
+                });
 
-            await tx.user.update({
-                where: { id: session.user.id },
-                data: { schoolId: newSchool.id },
-            });
+                await tx.user.update({
+                    where: { id: session.user.id },
+                    data: { schoolId: newSchool.id },
+                });
 
-            return newSchool;
-        });
+                return newSchool;
+            },
+            { maxWait: 10000, timeout: 15000 },
+        );
 
         if (!school) {
             return { success: false, message: "คุณมีโรงเรียนอยู่แล้ว" };

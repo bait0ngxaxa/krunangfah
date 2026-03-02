@@ -43,15 +43,22 @@ function getValidExtension(fileName: string): string | null {
 export async function uploadHomeVisitPhoto(
     homeVisitId: string,
     formData: FormData,
-): Promise<{ success: boolean; message: string; photo?: { id: string; fileUrl: string; fileName: string } }> {
+): Promise<{
+    success: boolean;
+    message: string;
+    photo?: { id: string; fileUrl: string; fileName: string };
+}> {
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return { success: false, message: "Unauthorized" };
+            return { success: false, message: "ไม่อนุญาตให้เข้าถึง" };
         }
 
         if (session.user.role === "system_admin") {
-            return { success: false, message: "system_admin ไม่มีสิทธิ์อัปโหลดรูปภาพ" };
+            return {
+                success: false,
+                message: "system_admin ไม่มีสิทธิ์อัปโหลดรูปภาพ",
+            };
         }
 
         const file = formData.get("file") as File;
@@ -81,7 +88,8 @@ export async function uploadHomeVisitPhoto(
         if (!validateFileSignature(buffer, ext)) {
             return {
                 success: false,
-                message: "เนื้อหาไฟล์ไม่ตรงกับนามสกุล กรุณาอัปโหลดไฟล์ที่ถูกต้อง",
+                message:
+                    "เนื้อหาไฟล์ไม่ตรงกับนามสกุล กรุณาอัปโหลดไฟล์ที่ถูกต้อง",
             };
         }
 
@@ -115,13 +123,24 @@ export async function uploadHomeVisitPhoto(
         });
 
         if (user?.role !== "system_admin") {
-            if (!user?.schoolId || user.schoolId !== homeVisit.student.schoolId) {
-                return { success: false, message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
+            if (
+                !user?.schoolId ||
+                user.schoolId !== homeVisit.student.schoolId
+            ) {
+                return {
+                    success: false,
+                    message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+                };
             }
         }
 
         // Create upload directory
-        const uploadDir = join(process.cwd(), ".data", "uploads", "home-visits");
+        const uploadDir = join(
+            process.cwd(),
+            ".data",
+            "uploads",
+            "home-visits",
+        );
         if (!existsSync(uploadDir)) {
             await mkdir(uploadDir, { recursive: true });
         }
@@ -182,11 +201,14 @@ export async function deleteHomeVisitPhoto(
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return { success: false, message: "Unauthorized" };
+            return { success: false, message: "ไม่อนุญาตให้เข้าถึง" };
         }
 
         if (session.user.role === "system_admin") {
-            return { success: false, message: "system_admin ไม่มีสิทธิ์ลบรูปภาพ" };
+            return {
+                success: false,
+                message: "system_admin ไม่มีสิทธิ์ลบรูปภาพ",
+            };
         }
 
         const photo = await prisma.homeVisitPhoto.findUnique({

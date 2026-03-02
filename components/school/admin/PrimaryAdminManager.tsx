@@ -34,7 +34,7 @@ export function PrimaryAdminManager({
             ))}
 
             <p className="text-xs text-gray-400 pt-1">
-                ผู้ดูแลที่มีสิทธิ์ Primary สามารถจัดการห้องเรียน เชิญครู
+                ผู้ดูแลที่มีสิทธิ์แอดมินสามารถจัดการห้องเรียน
                 และจัดการรายชื่อครูได้
             </p>
         </div>

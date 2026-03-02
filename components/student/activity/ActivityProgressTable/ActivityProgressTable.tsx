@@ -52,6 +52,7 @@ export async function ActivityProgressTable({
                 completedCount={completedCount}
                 totalCount={activityNumbers.length}
                 assessmentPeriod={assessmentPeriod}
+                readOnly={readOnly}
             />
 
             <div className="overflow-x-auto rounded-xl border border-emerald-100">

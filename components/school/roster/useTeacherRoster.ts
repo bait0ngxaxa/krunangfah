@@ -84,9 +84,7 @@ export function useTeacherRoster({
 
     function startEdit(teacher: TeacherRosterItem): void {
         if (teacher.status === "pending") {
-            toast.error(
-                "ไม่สามารถแก้ไขได้ เนื่องจากมีคำเชิญที่รอดำเนินการ",
-            );
+            toast.error("ไม่สามารถแก้ไขได้ เนื่องจากมีคำเชิญที่รอดำเนินการ");
             return;
         }
         setEditingId(teacher.id);

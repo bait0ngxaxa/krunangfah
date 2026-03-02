@@ -11,6 +11,7 @@ interface ActivityProgressHeaderProps {
     completedCount: number;
     totalCount: number;
     assessmentPeriod: AssessmentPeriod;
+    readOnly?: boolean;
 }
 
 export function ActivityProgressHeader({
@@ -20,6 +21,7 @@ export function ActivityProgressHeader({
     completedCount,
     totalCount,
     assessmentPeriod,
+    readOnly = false,
 }: ActivityProgressHeaderProps) {
     const progressPercent = (completedCount / totalCount) * 100;
 
@@ -60,13 +62,15 @@ export function ActivityProgressHeader({
                     </div>
                 </div>
             </div>
-            <Link
-                href={`/students/${studentId}/help/start?phqResultId=${phqResultId}`}
-                className="px-6 py-3 bg-linear-to-r from-emerald-400 to-teal-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-emerald-200/50 hover:-translate-y-0.5 transition-all shadow-md shadow-emerald-200/50 flex items-center justify-center gap-2"
-            >
-                <Rocket className="w-5 h-5" />
-                ทำกิจกรรม
-            </Link>
+            {!readOnly && (
+                <Link
+                    href={`/students/${studentId}/help/start?phqResultId=${phqResultId}`}
+                    className="px-6 py-3 bg-linear-to-r from-emerald-400 to-teal-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-emerald-200/50 hover:-translate-y-0.5 transition-all shadow-md shadow-emerald-200/50 flex items-center justify-center gap-2"
+                >
+                    <Rocket className="w-5 h-5" />
+                    ทำกิจกรรม
+                </Link>
+            )}
         </div>
     );
 }

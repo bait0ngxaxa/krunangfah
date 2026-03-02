@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 function getRoleLabel(role: InviteRole): string {
     switch (role) {
         case "system_admin":
-            return "System Admin";
+            return "ผู้ดูแลระบบ";
         case "school_admin":
-            return "School Admin";
+            return "ครูนางฟ้า(แอดมิน)";
     }
 }
 
@@ -152,10 +152,6 @@ export default async function AdminInvitePage({
                         }
                     />
                 </div>
-
-                <p className="mt-8 text-center text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] font-medium">
-                    © {new Date().getFullYear()} Kru Nangfah Project
-                </p>
             </div>
         </div>
     );

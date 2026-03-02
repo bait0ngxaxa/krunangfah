@@ -14,7 +14,10 @@ export const teacherProfileSchema = z.object({
         .min(1, "กรุณากรอกนามสกุล")
         .max(100, "นามสกุลยาวเกินไป")
         .transform(sanitizeName),
-    age: z.number().min(18, "อายุต้องมากกว่า 18 ปี").max(100, "อายุไม่ถูกต้อง"),
+    age: z
+        .number({ error: "กรุณากรอกอายุเป็นตัวเลข" })
+        .min(18, "อายุต้องมากกว่า 18 ปี")
+        .max(100, "อายุไม่ถูกต้อง"),
     advisoryClass: z.string().min(1, "กรุณากรอกชั้นที่ปรึกษา"),
     academicYearId: z.string().min(1, "กรุณาเลือกปีการศึกษา"),
     schoolRole: z

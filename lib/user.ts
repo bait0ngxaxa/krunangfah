@@ -64,7 +64,7 @@ export async function createUser(
 
         return {
             success: true,
-            message: "User created successfully. Please complete your profile.",
+            message: "สร้างบัญชีผู้ใช้สำเร็จ กรุณาสร้างโปรไฟล์ของคุณ",
             user: {
                 id: user.id,
                 email: user.email,
@@ -80,7 +80,7 @@ export async function createUser(
         console.error("Create user error:", error);
         return {
             success: false,
-            message: "Failed to create user",
+            message: "เกิดข้อผิดพลาดในการสร้างบัญชีผู้ใช้",
         };
     }
 }

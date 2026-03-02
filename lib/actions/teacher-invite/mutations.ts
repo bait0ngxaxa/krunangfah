@@ -19,13 +19,11 @@ export async function createTeacherInvite(
         const session = await requireAuth();
         const userId = session.user.id;
 
-        // Only primary school_admin or system_admin can create invites
+        // school_admin (ทุกคน) และ system_admin สร้าง invite ได้
         if (
-            session.user.role === "system_admin" ||
-            (session.user.role === "school_admin" && session.user.isPrimary)
+            session.user.role !== "system_admin" &&
+            session.user.role !== "school_admin"
         ) {
-            // OK
-        } else {
             return {
                 success: false,
                 message: "ไม่มีสิทธิ์สร้างคำเชิญ",
@@ -225,7 +223,10 @@ export async function revokeTeacherInvite(
         }
 
         if (invite.acceptedAt) {
-            return { success: false, message: "คำเชิญนี้ถูกใช้งานแล้ว ไม่สามารถยกเลิกได้" };
+            return {
+                success: false,
+                message: "คำเชิญนี้ถูกใช้งานแล้ว ไม่สามารถยกเลิกได้",
+            };
         }
 
         // Access control: system_admin can revoke any, primary school_admin can revoke own school's

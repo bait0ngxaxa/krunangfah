@@ -105,7 +105,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
                 <div className="text-center mb-6">
                     <div className="bg-white/70 backdrop-blur-sm px-6 py-4 rounded-2xl inline-block shadow-sm border border-emerald-100">
                         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
-                            สร้างบัญชี ครูผู้ดูแล
+                            สร้างบัญชีครูนางฟ้า
                         </h2>
                         <p className="text-sm text-gray-700 font-medium">
                             คุณได้รับคำเชิญให้เข้าร่วมระบบ กรุณาตั้งรหัสผ่าน
@@ -120,10 +120,6 @@ export default async function InvitePage({ params }: InvitePageProps) {
                         inviteData={result.invite}
                     />
                 </div>
-
-                <p className="mt-8 text-center text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] font-medium">
-                    © {new Date().getFullYear()} Kru Nangfah Project
-                </p>
             </div>
         </div>
     );

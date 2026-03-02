@@ -12,7 +12,10 @@ import { projectRoles } from "./teacher.validation";
 export const profileUpdateSchema = z.object({
     firstName: z.string().min(1, "กรุณากรอกชื่อ"),
     lastName: z.string().min(1, "กรุณากรอกนามสกุล"),
-    age: z.number().min(18, "อายุต้องมากกว่า 18 ปี").max(100, "อายุไม่ถูกต้อง"),
+    age: z
+        .number({ error: "กรุณากรอกอายุเป็นตัวเลข" })
+        .min(18, "อายุต้องมากกว่า 18 ปี")
+        .max(100, "อายุไม่ถูกต้อง"),
     advisoryClass: z.string().min(1, "กรุณากรอกชั้นที่ปรึกษา"),
     academicYearId: z.string().min(1, "กรุณาเลือกปีการศึกษา"),
     schoolRole: z.string().min(1, "กรุณากรอกบทบาทหน้าที่ในโรงเรียน"),
@@ -27,9 +30,7 @@ export type ProfileUpdateFormData = z.infer<typeof profileUpdateSchema>;
 export const passwordChangeSchema = z
     .object({
         currentPassword: z.string().min(1, "กรุณากรอกรหัสผ่านปัจจุบัน"),
-        newPassword: z
-            .string()
-            .min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
+        newPassword: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
         confirmPassword: z.string(),
     })
     .refine((data) => data.newPassword === data.confirmPassword, {

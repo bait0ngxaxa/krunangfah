@@ -14,6 +14,7 @@ import { getStudentDetail } from "@/lib/actions/student";
 import { getColorConfig } from "@/lib/config/help-page-config";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { HelpPageHeader } from "@/components/student/help";
+import { requireAuth } from "@/lib/session";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -23,6 +24,12 @@ export default async function ConversationGuidelinesPage({
     params,
 }: PageProps) {
     const { id: studentId } = await params;
+
+    // system_admin เป็น readonly — ไม่สามารถเข้าหน้า help ได้
+    const session = await requireAuth();
+    if (session.user.role === "system_admin") {
+        redirect(`/students/${studentId}`);
+    }
 
     const student = await getStudentDetail(studentId);
     if (!student) {

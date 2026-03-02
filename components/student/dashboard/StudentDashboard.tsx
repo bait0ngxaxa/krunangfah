@@ -126,14 +126,18 @@ export function StudentDashboard(props: StudentDashboardProps) {
                                 classes={dashboard.classes}
                                 riskLevels={dashboard.displayedRiskLevels}
                                 onStudentClick={dashboard.handleStudentClick}
+                                readOnly={dashboard.isSystemAdmin}
                             />
                         </>
                     )}
 
                     {/* Referred Out Students - class_teacher only */}
-                    {props.referredOutStudents && props.referredOutStudents.length > 0 && (
-                        <ReferredOutSection students={props.referredOutStudents} />
-                    )}
+                    {props.referredOutStudents &&
+                        props.referredOutStudents.length > 0 && (
+                            <ReferredOutSection
+                                students={props.referredOutStudents}
+                            />
+                        )}
                 </>
             )}
         </div>

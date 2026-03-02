@@ -27,6 +27,7 @@ interface ScreeningSummaryProps {
     classes: string[];
     riskLevels: RiskLevel[];
     onStudentClick: (studentId: string) => void;
+    readOnly?: boolean;
 }
 
 export function ScreeningSummary({
@@ -36,6 +37,7 @@ export function ScreeningSummary({
     classes,
     riskLevels,
     onStudentClick,
+    readOnly = false,
 }: ScreeningSummaryProps) {
     return (
         <div className="space-y-5">
@@ -77,6 +79,7 @@ export function ScreeningSummary({
                     level={level}
                     students={getStudentsByLevel(groupedStudents, level)}
                     onStudentClick={onStudentClick}
+                    readOnly={readOnly}
                 />
             ))}
         </div>

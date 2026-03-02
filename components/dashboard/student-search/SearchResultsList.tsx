@@ -25,13 +25,13 @@ export function SearchResultsList({
         <div className="space-y-3">
             {/* Limit Indicator */}
             {results.length === 50 && (
-                <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5 flex items-start gap-3 backdrop-blur-sm">
-                    <AlertTriangle className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
+                <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3 backdrop-blur-sm">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
                     <div className="flex-1">
-                        <p className="text-sm font-bold text-emerald-700">
+                        <p className="text-sm font-bold text-amber-700">
                             แสดง 50 รายการแรก
                         </p>
-                        <p className="text-xs text-emerald-600 mt-0.5">
+                        <p className="text-xs text-amber-600 mt-0.5">
                             พิมพ์ชื่อให้ชัดเจนขึ้นเพื่อค้นหาที่แม่นยำยิ่งขึ้น
                         </p>
                     </div>

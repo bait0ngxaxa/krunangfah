@@ -102,7 +102,7 @@ export async function createTeacherProfile(
         if (existing) {
             return {
                 success: false,
-                message: "Teacher profile already exists",
+                message: "คุณมีโปรไฟล์ครูแล้ว",
             };
         }
 
@@ -143,7 +143,7 @@ export async function createTeacherProfile(
 
         return {
             success: true,
-            message: "Teacher profile created",
+            message: "สร้างโปรไฟล์ครูสำเร็จ",
             teacher: {
                 ...teacher,
                 school: teacher.user.school ?? undefined,
@@ -152,6 +152,9 @@ export async function createTeacherProfile(
         };
     } catch (error) {
         console.error("Create teacher profile error:", error);
-        return { success: false, message: "Failed to create teacher profile" };
+        return {
+            success: false,
+            message: "เกิดข้อผิดพลาดในการสร้างโปรไฟล์ครู",
+        };
     }
 }

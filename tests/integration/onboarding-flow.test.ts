@@ -27,18 +27,15 @@ setupAuthMocks();
 const USERS = createMockUsers("ob");
 
 // Dynamic import ต้องมาหลัง setupAuthMocks()
-const { createTeacherProfile } = await import(
-    "@/lib/actions/teacher.actions"
-);
+const { createTeacherProfile } = await import("@/lib/actions/teacher.actions");
 const {
     createSchoolAndLink,
     addSchoolClass,
     removeSchoolClass,
     getSchoolClasses,
 } = await import("@/lib/actions/school-setup.actions");
-const { addTeacherToRoster, removeFromRoster, getSchoolRoster } = await import(
-    "@/lib/actions/teacher-roster.actions"
-);
+const { addTeacherToRoster, removeFromRoster, getSchoolRoster } =
+    await import("@/lib/actions/teacher-roster.actions");
 
 describe("Integration: Onboarding Flow", () => {
     // ใช้ปีที่ unique มากเพื่อไม่ชนกับ test อื่นที่รัน parallel
@@ -190,7 +187,7 @@ describe("Integration: Onboarding Flow", () => {
             });
 
             expect(result.success).toBe(false);
-            expect(result.message).toContain("already exists");
+            expect(result.message).toContain("คุณมีโปรไฟล์ครูแล้ว");
         });
 
         it("unauthenticated สร้าง teacher profile ไม่ได้", async () => {

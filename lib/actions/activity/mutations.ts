@@ -113,7 +113,10 @@ export async function initializeActivityProgress(
         return { success: true, count: records.length };
     } catch (error) {
         console.error("Error initializing activity progress:", error);
-        return { success: false, error: "Failed to initialize activities" };
+        return {
+            success: false,
+            error: "เกิดข้อผิดพลาดในการสร้างกิจกรรมเริ่มต้น",
+        };
     }
 }
 
