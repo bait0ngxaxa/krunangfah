@@ -19,6 +19,7 @@ import {
 } from "@/lib/validations/home-visit.validation";
 import { existsSync } from "fs";
 import { join } from "path";
+import { logError } from "@/lib/utils/logging";
 
 export interface HomeVisitPhotoData {
     id: string;
@@ -113,7 +114,7 @@ export async function getHomeVisits(
         );
 
         if (!allowed) {
-            console.error("Access denied:", error);
+            logError("Access denied:", error);
             return [];
         }
 
@@ -144,7 +145,7 @@ export async function getHomeVisits(
 
         return visits;
     } catch (error) {
-        console.error("Error fetching home visits:", error);
+        logError("Error fetching home visits:", error);
         return [];
     }
 }
@@ -228,7 +229,7 @@ export async function createHomeVisit(data: {
 
         return { success: true, visitId: visit.id };
     } catch (error) {
-        console.error("Error creating home visit:", error);
+        logError("Error creating home visit:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" };
     }
 }
@@ -295,7 +296,7 @@ export async function deleteHomeVisit(
 
         return { success: true };
     } catch (error) {
-        console.error("Error deleting home visit:", error);
+        logError("Error deleting home visit:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการลบข้อมูล" };
     }
 }

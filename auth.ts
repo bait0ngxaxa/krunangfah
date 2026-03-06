@@ -1,8 +1,21 @@
-import NextAuth from "next-auth";
+﻿import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
+import {
+    RATE_LIMIT_AUTH_SIGNIN,
+    RATE_LIMIT_AUTH_GENERAL,
+} from "@/lib/constants/rate-limit";
 import type { ExtendedUser, UserRole } from "@/types/auth.types";
+import { logError } from "@/lib/utils/logging";
+
+// Enforce signin rate-limit at the auth endpoint layer.
+// 1) Per credential key (IP + email) reduces false positives on shared IP.
+// 2) Per IP guard limits broad flooding attempts.
+const signinAttemptLimiter = createRateLimiter(RATE_LIMIT_AUTH_SIGNIN);
+const signinFloodLimiter = createRateLimiter(RATE_LIMIT_AUTH_GENERAL);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     pages: {
@@ -28,10 +41,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 const email = credentials.email as string;
                 const password = credentials.password as string;
 
-                // Rate limiting is handled at client-side via server action
-                // to provide better error messages
-
                 try {
+                    const headerStore = await headers();
+                    const ip = extractClientIp((name) => headerStore.get(name));
+                    const credentialKey = `${ip}:${email.toLowerCase()}`;
+                    const credentialLimit = signinAttemptLimiter.check(credentialKey);
+                    const floodLimit = signinFloodLimiter.check(ip);
+
+                    if (!credentialLimit.allowed || !floodLimit.allowed) {
+                        return null;
+                    }
+
                     const user = await prisma.user.findUnique({
                         where: { email },
                     });
@@ -84,7 +104,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         updatedAt: user.updatedAt,
                     };
                 } catch (error) {
-                    console.error(
+                    logError(
                         "Authorization error:",
                         error instanceof Error
                             ? error.message
@@ -145,3 +165,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
     },
 });
+

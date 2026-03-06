@@ -6,6 +6,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { getAcademicYears as getAcademicYearsAction } from "./academic-year.actions";
 import { teacherProfileSchema } from "@/lib/validations/teacher.validation";
+import { logError } from "@/lib/utils/logging";
 import type {
     CreateTeacherInput,
     TeacherResponse,
@@ -35,7 +36,7 @@ export async function getTeacherProfile(
         });
         return teacher;
     } catch (error) {
-        console.error("Get teacher profile error:", error);
+        logError("Get teacher profile error:", error);
         return null;
     }
 }
@@ -79,7 +80,7 @@ export async function getCurrentTeacherProfile() {
             },
         };
     } catch (error) {
-        console.error("Get current teacher profile error:", error);
+        logError("Get current teacher profile error:", error);
         return null;
     }
 }
@@ -151,7 +152,7 @@ export async function createTeacherProfile(
             newRole: session.user.role,
         };
     } catch (error) {
-        console.error("Create teacher profile error:", error);
+        logError("Create teacher profile error:", error);
         return {
             success: false,
             message: "เกิดข้อผิดพลาดในการสร้างโปรไฟล์ครู",

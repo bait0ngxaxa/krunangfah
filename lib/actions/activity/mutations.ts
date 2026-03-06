@@ -6,6 +6,7 @@ import { revalidateTag } from "next/cache";
 import { ActivityStatus } from "@prisma/client";
 import { ACTIVITY_INDICES } from "./constants";
 import type { SubmitAssessmentData, ScheduleActivityData } from "./types";
+import { logError } from "@/lib/utils/logging";
 import {
     submitAssessmentSchema,
     scheduleActivitySchema,
@@ -112,7 +113,7 @@ export async function initializeActivityProgress(
 
         return { success: true, count: records.length };
     } catch (error) {
-        console.error("Error initializing activity progress:", error);
+        logError("Error initializing activity progress:", error);
         return {
             success: false,
             error: "เกิดข้อผิดพลาดในการสร้างกิจกรรมเริ่มต้น",
@@ -189,7 +190,7 @@ export async function submitTeacherAssessment(
 
         return { success: true };
     } catch (error) {
-        console.error("Error submitting assessment:", error);
+        logError("Error submitting assessment:", error);
         return { success: false, error: "เกิดข้อผิดพลาดในการบันทึก" };
     }
 }
@@ -227,7 +228,7 @@ export async function unlockNextActivity(
             });
         }
     } catch (error) {
-        console.error("Error unlocking next activity:", error);
+        logError("Error unlocking next activity:", error);
     }
 }
 
@@ -300,7 +301,7 @@ export async function confirmActivityComplete(
             activityNumber: activityProgress.activityNumber,
         };
     } catch (error) {
-        console.error("Error confirming activity completion:", error);
+        logError("Error confirming activity completion:", error);
         return { success: false, error: "เกิดข้อผิดพลาด" };
     }
 }
@@ -360,7 +361,7 @@ export async function scheduleActivity(
 
         return { success: true, data: updated };
     } catch (error) {
-        console.error("Error scheduling activity:", error);
+        logError("Error scheduling activity:", error);
         return { success: false, error: "เกิดข้อผิดพลาดในการนัดหมาย" };
     }
 }
@@ -419,7 +420,7 @@ export async function updateTeacherNotes(
 
         return { success: true, data: updated };
     } catch (error) {
-        console.error("Error updating teacher notes:", error);
+        logError("Error updating teacher notes:", error);
         return { success: false, error: "เกิดข้อผิดพลาดในการแก้ไข" };
     }
 }
@@ -485,7 +486,7 @@ export async function updateScheduledDate(
 
         return { success: true };
     } catch (error) {
-        console.error("Error updating scheduled date:", error);
+        logError("Error updating scheduled date:", error);
         return { success: false, error: "เกิดข้อผิดพลาดในการบันทึกวันนัดหมาย" };
     }
 }

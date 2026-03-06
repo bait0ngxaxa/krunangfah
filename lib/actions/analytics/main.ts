@@ -18,6 +18,7 @@ import {
 import { RISK_LEVEL_CONFIG } from "./constants";
 
 import type { AnalyticsData } from "./types";
+import { logError } from "@/lib/utils/logging";
 
 /**
  * Cached analytics data fetcher
@@ -221,7 +222,7 @@ export async function getAnalyticsSummary(
             academicYear?.toString() ?? "",
         );
     } catch (error) {
-        console.error("Get analytics summary error:", error);
+        logError("Get analytics summary error:", error);
         return null;
     }
 }

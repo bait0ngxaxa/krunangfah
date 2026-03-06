@@ -7,6 +7,7 @@ import { calculateRiskLevel } from "@/lib/utils/phq-scoring";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { revalidatePath, revalidateTag } from "next/cache";
 import type { ImportResult } from "./types";
+import { logError } from "@/lib/utils/logging";
 
 /**
  * Import students with PHQ-A results
@@ -172,7 +173,7 @@ export async function importStudents(
 
                 importedCount++;
             } catch (err) {
-                console.error("Import student error:", err);
+                logError("Import student error:", err);
                 errors.push(
                     `${studentData.firstName} ${studentData.lastName}: เกิดข้อผิดพลาด`,
                 );
@@ -212,7 +213,7 @@ export async function importStudents(
             errors: errors.length > 0 ? errors : undefined,
         };
     } catch (error) {
-        console.error("Import students error:", error);
+        logError("Import students error:", error);
         return {
             success: false,
             message: "เกิดข้อผิดพลาดในการนำเข้าข้อมูล",

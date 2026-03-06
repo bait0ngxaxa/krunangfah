@@ -1,5 +1,6 @@
 import { type PhqScores } from "./phq-scoring";
 import { normalizeClassName } from "./class-normalizer";
+import { logError } from "@/lib/utils/logging";
 
 export type ParsedGender = "MALE" | "FEMALE";
 
@@ -248,7 +249,7 @@ export async function parseExcelBuffer(
             errors,
         };
     } catch (err) {
-        console.error("Excel parse error:", err);
+        logError("Excel parse error:", err);
         return {
             success: false,
             data: [],

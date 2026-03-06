@@ -13,6 +13,7 @@ import { hashPassword } from "@/lib/user";
 import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
 import { RATE_LIMIT_PASSWORD_CHANGE } from "@/lib/constants/rate-limit";
 import { passwordChangeSchema } from "@/lib/validations/profile.validation";
+import { logError } from "@/lib/utils/logging";
 import type {
     PasswordChangeInput,
     PasswordChangeResponse,
@@ -102,7 +103,7 @@ export async function changePassword(
             message: "เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่",
         };
     } catch (error) {
-        console.error(
+        logError(
             "Change password error:",
             error instanceof Error ? error.message : "Unknown error",
         );

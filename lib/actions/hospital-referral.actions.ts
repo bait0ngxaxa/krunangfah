@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAuth } from "@/lib/session";
 import { updateHospitalReferralSchema } from "@/lib/validations/hospital-referral.validation";
+import { logError } from "@/lib/utils/logging";
 
 interface UpdateHospitalReferralParams {
     phqResultId: string;
@@ -112,7 +113,7 @@ export async function updateHospitalReferral(
             referredToHospital: validated.referredToHospital,
         };
     } catch (error) {
-        console.error("Error updating hospital referral:", error);
+        logError("Error updating hospital referral:", error);
         return { success: false, error: "เกิดข้อผิดพลาดในการอัปเดตสถานะ" };
     }
 }

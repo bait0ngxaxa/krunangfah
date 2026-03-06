@@ -1,3 +1,4 @@
+import { logError } from "@/lib/utils/logging";
 // SWR fetcher for Server Actions
 type FetcherFunction<T> = () => Promise<T | null>;
 
@@ -5,7 +6,7 @@ export const actionFetcher = <T>(action: FetcherFunction<T>) => async (): Promis
     try {
         return await action();
     } catch (error) {
-        console.error("SWR fetch error:", error);
+        logError("SWR fetch error:", error);
         throw error;
     }
 };

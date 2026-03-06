@@ -16,6 +16,7 @@ import {
     getStudentDetailQuery,
 } from "./queries";
 import { transformRiskCounts } from "./transforms";
+import { logError } from "@/lib/utils/logging";
 import type {
     StudentListResponse,
     RiskCountsResponse,
@@ -81,7 +82,7 @@ export async function getStudentRiskCounts(
 
         return transformRiskCounts(rawCounts, classes);
     } catch (error) {
-        console.error("Get student risk counts error:", error);
+        logError("Get student risk counts error:", error);
         return null;
     }
 }
@@ -181,7 +182,7 @@ export async function getStudents(
             },
         };
     } catch (error) {
-        console.error("Get students error:", error);
+        logError("Get students error:", error);
         return {
             students: [],
             pagination: { total: 0, page: 1, limit: 100, totalPages: 0 },
@@ -216,7 +217,7 @@ export async function searchStudents(query: string) {
             sanitizedQuery,
         );
     } catch (error) {
-        console.error("Search students error:", error);
+        logError("Search students error:", error);
         return [];
     }
 }
@@ -267,7 +268,7 @@ export async function getStudentDetail(studentId: string) {
             studentId,
         );
     } catch (error) {
-        console.error("Get student detail error:", error);
+        logError("Get student detail error:", error);
         return null;
     }
 }
@@ -295,7 +296,7 @@ export async function hasRound1Data(academicYearId: string): Promise<boolean> {
 
         return count > 0;
     } catch (error) {
-        console.error("hasRound1Data error:", error);
+        logError("hasRound1Data error:", error);
         return false;
     }
 }
@@ -366,7 +367,7 @@ export async function getIncompleteActivityWarning(
             previousRound,
         };
     } catch (error) {
-        console.error("getIncompleteActivityWarning error:", error);
+        logError("getIncompleteActivityWarning error:", error);
         return noWarning;
     }
 }

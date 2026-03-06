@@ -1,9 +1,11 @@
-import { type NextRequest, NextResponse } from "next/server";
+﻿import { type NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import { join, resolve, normalize } from "path";
 import { existsSync } from "fs";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { canAccessStudentByRole } from "@/lib/security/student-access";
+import { logError } from "@/lib/utils/logging";
 
 /** Allowed file extensions for serving (must match upload whitelist) */
 const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "pdf"]);
@@ -11,10 +13,14 @@ const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "pdf"]);
 function getContentType(ext: string): string {
     switch (ext) {
         case "jpg":
-        case "jpeg": return "image/jpeg";
-        case "png":  return "image/png";
-        case "pdf":  return "application/pdf";
-        default:     return "application/octet-stream";
+        case "jpeg":
+            return "image/jpeg";
+        case "png":
+            return "image/png";
+        case "pdf":
+            return "application/pdf";
+        default:
+            return "application/octet-stream";
     }
 }
 
@@ -63,6 +69,19 @@ export async function GET(
             return new NextResponse("File not found", { status: 404 });
         }
 
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                schoolId: true,
+                role: true,
+                teacher: { select: { advisoryClass: true } },
+            },
+        });
+
+        if (!user) {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
+
         // Verify file ownership for home-visits
         if (path[0] === "home-visits") {
             const fileUrl = `/api/uploads/${path.join("/")}`;
@@ -75,6 +94,7 @@ export async function GET(
                             student: {
                                 select: {
                                     schoolId: true,
+                                    class: true,
                                 },
                             },
                         },
@@ -86,21 +106,20 @@ export async function GET(
                 return new NextResponse("File not found", { status: 404 });
             }
 
-            const user = await prisma.user.findUnique({
-                where: { id: session.user.id },
-                select: {
-                    schoolId: true,
-                    role: true,
+            const canAccess = canAccessStudentByRole(
+                {
+                    role: user.role,
+                    schoolId: user.schoolId,
+                    advisoryClass: user.teacher?.advisoryClass,
                 },
-            });
+                {
+                    schoolId: photo.homeVisit.student.schoolId,
+                    className: photo.homeVisit.student.class,
+                },
+            );
 
-            if (user?.role !== "system_admin") {
-                if (
-                    !user?.schoolId ||
-                    user.schoolId !== photo.homeVisit.student.schoolId
-                ) {
-                    return new NextResponse("Forbidden", { status: 403 });
-                }
+            if (!canAccess) {
+                return new NextResponse("Forbidden", { status: 403 });
             }
         }
 
@@ -128,25 +147,20 @@ export async function GET(
                 return new NextResponse("File not found", { status: 404 });
             }
 
-            // Verify user has access to this file
-            const user = await prisma.user.findUnique({
-                where: { id: session.user.id },
-                select: {
-                    schoolId: true,
-                    role: true,
+            const canAccess = canAccessStudentByRole(
+                {
+                    role: user.role,
+                    schoolId: user.schoolId,
+                    advisoryClass: user.teacher?.advisoryClass,
                 },
-            });
+                {
+                    schoolId: worksheet.activityProgress.student.schoolId,
+                    className: worksheet.activityProgress.student.class,
+                },
+            );
 
-            // system_admin / school_admin can view all files (school_admin scoped to own school)
-            // class_teacher: schoolId check only — UI already filters by advisory class
-            if (user?.role !== "system_admin") {
-                if (
-                    !user?.schoolId ||
-                    user.schoolId !==
-                        worksheet.activityProgress.student.schoolId
-                ) {
-                    return new NextResponse("Forbidden", { status: 403 });
-                }
+            if (!canAccess) {
+                return new NextResponse("Forbidden", { status: 403 });
             }
         }
 
@@ -168,7 +182,8 @@ export async function GET(
             },
         });
     } catch (error) {
-        console.error("Error serving file:", error);
+        logError("Error serving file:", error);
         return new NextResponse("Internal Server Error", { status: 500 });
     }
 }
+

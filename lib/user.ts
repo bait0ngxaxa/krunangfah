@@ -7,6 +7,7 @@
 
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { logError } from "@/lib/utils/logging";
 import type {
     ExtendedUser,
     SignUpCredentials,
@@ -77,7 +78,7 @@ export async function createUser(
             },
         };
     } catch (error) {
-        console.error("Create user error:", error);
+        logError("Create user error:", error);
         return {
             success: false,
             message: "เกิดข้อผิดพลาดในการสร้างบัญชีผู้ใช้",
@@ -113,7 +114,7 @@ export async function getUserById(
             updatedAt: user.updatedAt,
         };
     } catch (error) {
-        console.error("Get user by ID error:", error);
+        logError("Get user by ID error:", error);
         return null;
     }
 }

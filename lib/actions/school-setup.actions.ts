@@ -6,6 +6,7 @@ import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { normalizeSchoolName, sanitizeText } from "@/lib/utils/text-sanitizer";
+import { logError } from "@/lib/utils/logging";
 import type {
     SchoolClassItem,
     SchoolContextData,
@@ -114,7 +115,7 @@ export async function createSchoolAndLink(input: {
             data: { schoolId: school.id },
         };
     } catch (error) {
-        console.error("createSchoolAndLink error:", error);
+        logError("createSchoolAndLink error:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการสร้างโรงเรียน" };
     }
 }
@@ -170,7 +171,7 @@ export async function addSchoolClass(
             data: { id: schoolClass.id, name: schoolClass.name },
         };
     } catch (error) {
-        console.error("addSchoolClass error:", error);
+        logError("addSchoolClass error:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการเพิ่มห้องเรียน" };
     }
 }
@@ -206,7 +207,7 @@ export async function removeSchoolClass(
 
         return { success: true, message: "ลบห้องเรียนสำเร็จ" };
     } catch (error) {
-        console.error("removeSchoolClass error:", error);
+        logError("removeSchoolClass error:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการลบห้องเรียน" };
     }
 }

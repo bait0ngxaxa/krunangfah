@@ -12,7 +12,9 @@ import {
 } from "./constants";
 import { revalidateTag } from "next/cache";
 import { validateFileSignature } from "@/lib/utils/file-signature";
+import { canAccessStudentByRole } from "@/lib/security/student-access";
 import type { UploadWorksheetResult } from "./types";
+import { logError } from "@/lib/utils/logging";
 
 function getValidExtension(fileName: string): string | null {
     const parts = fileName.split(".");
@@ -96,27 +98,39 @@ export async function uploadWorksheet(
             return { success: false, message: "ไม่พบข้อมูลกิจกรรม" };
         }
 
-        // Verify authorization by role
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: {
                 schoolId: true,
                 role: true,
+                teacher: { select: { advisoryClass: true } },
             },
         });
 
-        // system_admin / school_admin can access all files (school_admin scoped to own school)
-        // class_teacher: schoolId check only — UI already filters by advisory class
-        if (user?.role !== "system_admin") {
-            if (
-                !user?.schoolId ||
-                user.schoolId !== activityProgress.student.schoolId
-            ) {
-                return {
-                    success: false,
-                    message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
-                };
-            }
+        if (!user) {
+            return {
+                success: false,
+                message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+            };
+        }
+
+        const canAccess = canAccessStudentByRole(
+            {
+                role: user.role,
+                schoolId: user.schoolId,
+                advisoryClass: user.teacher?.advisoryClass,
+            },
+            {
+                schoolId: activityProgress.student.schoolId,
+                className: activityProgress.student.class,
+            },
+        );
+
+        if (!canAccess) {
+            return {
+                success: false,
+                message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+            };
         }
 
         // Create upload directory if not exists
@@ -197,7 +211,7 @@ export async function uploadWorksheet(
             activityNumber: activityProgress.activityNumber,
         };
     } catch (error) {
-        console.error("Error uploading worksheet:", error);
+        logError("Error uploading worksheet:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการอัปโหลดใบงาน" };
     }
 }
@@ -227,7 +241,7 @@ export async function deleteWorksheetUpload(
             include: {
                 activityProgress: {
                     include: {
-                        student: { select: { schoolId: true } },
+                        student: { select: { schoolId: true, class: true } },
                         worksheetUploads: { select: { id: true } },
                     },
                 },
@@ -238,19 +252,33 @@ export async function deleteWorksheetUpload(
             return { success: false, message: "ไม่พบไฟล์ที่ต้องการลบ" };
         }
 
-        // Verify authorization
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { schoolId: true, role: true },
+            select: {
+                schoolId: true,
+                role: true,
+                teacher: { select: { advisoryClass: true } },
+            },
         });
 
-        if (user?.role !== "system_admin") {
-            if (
-                !user?.schoolId ||
-                user.schoolId !== upload.activityProgress.student.schoolId
-            ) {
-                return { success: false, message: "ไม่มีสิทธิ์ลบไฟล์นี้" };
-            }
+        if (!user) {
+            return { success: false, message: "ไม่มีสิทธิ์ลบไฟล์นี้" };
+        }
+
+        const canAccess = canAccessStudentByRole(
+            {
+                role: user.role,
+                schoolId: user.schoolId,
+                advisoryClass: user.teacher?.advisoryClass,
+            },
+            {
+                schoolId: upload.activityProgress.student.schoolId,
+                className: upload.activityProgress.student.class,
+            },
+        );
+
+        if (!canAccess) {
+            return { success: false, message: "ไม่มีสิทธิ์ลบไฟล์นี้" };
         }
 
         // Delete file from disk
@@ -296,7 +324,8 @@ export async function deleteWorksheetUpload(
 
         return { success: true, message: "ลบไฟล์สำเร็จ" };
     } catch (error) {
-        console.error("Error deleting worksheet:", error);
+        logError("Error deleting worksheet:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการลบไฟล์" };
     }
 }
+

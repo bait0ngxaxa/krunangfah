@@ -3,6 +3,7 @@
 import type { UserRole, ProjectRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
+import { logError } from "@/lib/utils/logging";
 import {
     teacherRosterSchema,
     type TeacherRosterFormData,
@@ -207,7 +208,7 @@ export async function addTeacherToRoster(
             data: toRosterItem(entry, "draft"),
         };
     } catch (error) {
-        console.error("addTeacherToRoster error:", error);
+        logError("addTeacherToRoster error:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการเพิ่มครู" };
     }
 }
@@ -251,7 +252,7 @@ export async function removeFromRoster(
 
         return { success: true, message: "ลบออกจาก roster สำเร็จ" };
     } catch (error) {
-        console.error("removeFromRoster error:", error);
+        logError("removeFromRoster error:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการลบครู" };
     }
 }
@@ -390,7 +391,7 @@ export async function updateRosterEntry(
             data: toRosterItem(updated, "draft"),
         };
     } catch (error) {
-        console.error("updateRosterEntry error:", error);
+        logError("updateRosterEntry error:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการแก้ไข" };
     }
 }
@@ -427,7 +428,7 @@ export async function markRosterInviteSent(
 
         return { success: true, message: "อัปเดตสถานะสำเร็จ" };
     } catch (error) {
-        console.error("markRosterInviteSent error:", error);
+        logError("markRosterInviteSent error:", error);
         return { success: false, message: "เกิดข้อผิดพลาด" };
     }
 }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Test Cleanup Helper
  *
  * Deletes all test data created during integration tests.
@@ -71,15 +71,6 @@ export async function cleanupAll() {
             .catch(() => {});
     }
 
-    // Delete teacher invites created during tests
-    await prisma.teacherInvite
-        .deleteMany({
-            where: {
-                email: { startsWith: "test-" },
-            },
-        })
-        .catch(() => {});
-
     if (ids.users.length > 0) {
         await prisma.user
             .deleteMany({
@@ -109,3 +100,4 @@ export async function cleanupAll() {
         (ids as Record<string, string[]>)[key] = [];
     });
 }
+

@@ -13,6 +13,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidateTag } from "next/cache";
 import { requireAuth, isSystemAdmin } from "@/lib/session";
+import { logError } from "@/lib/utils/logging";
 import {
     createReferralSchema,
     revokeReferralSchema,
@@ -165,7 +166,7 @@ export async function createStudentReferral(input: {
             },
         };
     } catch (error) {
-        console.error("Error creating student referral:", error);
+        logError("Error creating student referral:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการส่งต่อนักเรียน" };
     }
 }
@@ -230,7 +231,7 @@ export async function revokeStudentReferral(input: {
 
         return { success: true, message: "เรียกคืนการส่งต่อเรียบร้อยแล้ว" };
     } catch (error) {
-        console.error("Error revoking student referral:", error);
+        logError("Error revoking student referral:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการเรียกคืน" };
     }
 }
@@ -279,7 +280,7 @@ export async function getReferredOutStudents(): Promise<ReferredOutStudent[]> {
             referredAt: r.createdAt,
         }));
     } catch (error) {
-        console.error("Error getting referred out students:", error);
+        logError("Error getting referred out students:", error);
         return [];
     }
 }
@@ -330,7 +331,7 @@ export async function getTeachersForReferral(): Promise<TeacherPickerOption[]> {
             advisoryClass: t.advisoryClass,
         }));
     } catch (error) {
-        console.error("Error getting teachers for referral:", error);
+        logError("Error getting teachers for referral:", error);
         return [];
     }
 }

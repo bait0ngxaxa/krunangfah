@@ -54,28 +54,15 @@ export function HeroCard({
     }
 
     const isEmerald = theme === "emerald";
-    
-    // Centralized color tokens - Primary brand colors
+
     const colors = {
-        border: isEmerald 
-            ? "border-emerald-400" 
-            : "border-cyan-400",
-        iconBg: isEmerald 
-            ? "bg-emerald-400" 
-            : "bg-cyan-400",
+        border: isEmerald ? "border-emerald-400" : "border-cyan-400",
+        iconBg: isEmerald ? "bg-emerald-400" : "bg-cyan-400",
         iconColor: "text-white",
-        badgeBg: isEmerald 
-            ? "bg-emerald-100" 
-            : "bg-cyan-100",
-        badgeBorder: isEmerald 
-            ? "border-emerald-300" 
-            : "border-cyan-300",
-        badgeText: isEmerald 
-            ? "text-emerald-900" 
-            : "text-cyan-900",
-        badgeIcon: isEmerald 
-            ? "text-emerald-700" 
-            : "text-cyan-700",
+        badgeBg: isEmerald ? "bg-emerald-100" : "bg-cyan-100",
+        badgeBorder: isEmerald ? "border-emerald-300" : "border-cyan-300",
+        badgeText: isEmerald ? "text-emerald-900" : "text-cyan-900",
+        badgeIcon: isEmerald ? "text-emerald-700" : "text-cyan-700",
         titleHover: isEmerald
             ? "group-hover:text-emerald-500"
             : "group-hover:text-cyan-500",
@@ -85,12 +72,11 @@ export function HeroCard({
         <Link
             href={href}
             className={`relative bg-white rounded-4xl border-2 ${colors.border} shadow-md p-5 sm:p-6 flex items-stretch min-h-[140px] sm:min-h-[160px] group w-full
-                hover:-translate-y-1 
+                hover:-translate-y-1
                 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-400 focus-visible:outline-none
                 motion-safe:transition-transform motion-safe:duration-300
             `}
         >
-            {/* Left Image Spacer */}
             {imageSrc && (
                 <div className="w-[80px] sm:w-[100px] shrink-0 relative">
                     <Image
@@ -98,17 +84,15 @@ export function HeroCard({
                         alt=""
                         width={160}
                         height={180}
-                        className="absolute -bottom-2 -left-2 sm:-left-4 w-[120px] sm:w-[150px] max-w-none object-contain origin-bottom z-10 drop-shadow-md 
+                        className="absolute -bottom-2 -left-2 sm:-left-4 w-[120px] sm:w-[150px] max-w-none object-contain origin-bottom z-10 drop-shadow-md
                             motion-safe:group-hover:scale-105 motion-safe:transition-transform motion-safe:duration-300"
                     />
                 </div>
             )}
 
-            {/* Right Content */}
             <div
-                className={`flex-1 flex flex-col sm:flex-row sm:items-center justify-between relative z-0 ${!imageSrc ? "pl-2" : "pl-12 sm:pl-10"} pr-6 sm:pr-24`}
+                className={`flex-1 flex flex-col sm:flex-row sm:items-center justify-between relative z-0 ${!imageSrc ? "pl-1 sm:pl-2" : "pl-7 sm:pl-10"} pr-12 sm:pr-24`}
             >
-                {/* Main Titles */}
                 <div className="flex flex-col justify-center">
                     {!isEmerald && (
                         <div className="mb-2">
@@ -124,17 +108,21 @@ export function HeroCard({
                         {title}
                     </h3>
 
-                    {/* Badge */}
                     {badge && (
-                        <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl ${colors.badgeBg} ${colors.badgeBorder} border shadow-sm w-fit mb-2`}>
-                            <Icon className={`w-4 h-4 ${colors.badgeIcon} stroke-[2.5]`} />
-                            <span className={`text-sm font-extrabold ${colors.badgeText}`}>
+                        <div
+                            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl ${colors.badgeBg} ${colors.badgeBorder} border shadow-sm w-fit mb-2`}
+                        >
+                            <Icon
+                                className={`w-4 h-4 ${colors.badgeIcon} stroke-[2.5]`}
+                            />
+                            <span
+                                className={`text-sm font-extrabold ${colors.badgeText}`}
+                            >
                                 {badge}
                             </span>
                         </div>
                     )}
 
-                    {/* Emerald explicitly has description on the right, Teal has it under */}
                     {!isEmerald && description && (
                         <p className="text-[14px] sm:text-[15px] text-gray-400 font-bold leading-tight">
                             {description}
@@ -142,7 +130,6 @@ export function HeroCard({
                     )}
                 </div>
 
-                {/* Rightmost Description (Emerald Theme) */}
                 {isEmerald && description && (
                     <div className="hidden sm:flex items-center justify-end text-right">
                         <p className="text-[13px] text-gray-400 font-bold max-w-[120px] leading-snug mr-2">
@@ -152,9 +139,8 @@ export function HeroCard({
                 )}
             </div>
 
-            {/* Bottom/Center Right Circle */}
             <div
-                className={`absolute ${isEmerald ? "top-1/2 -translate-y-1/2 right-5" : "bottom-5 right-5"} w-7 h-7 sm:w-9 sm:h-9 rounded-full ${colors.iconBg} ${colors.iconColor} flex items-center justify-center shadow-lg 
+                className={`absolute ${isEmerald ? "top-1/2 -translate-y-1/2 right-5" : "bottom-5 right-5"} w-7 h-7 sm:w-9 sm:h-9 rounded-full ${colors.iconBg} ${colors.iconColor} flex items-center justify-center shadow-lg
                     motion-safe:group-hover:brightness-95 motion-safe:transition-transform motion-safe:duration-200`}
             >
                 <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />

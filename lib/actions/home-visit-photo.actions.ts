@@ -16,7 +16,9 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 import { validateFileSignature } from "@/lib/utils/file-signature";
+import { canAccessStudentByRole } from "@/lib/security/student-access";
 import { revalidatePath } from "next/cache";
+import { logError } from "@/lib/utils/logging";
 
 /** Allowed image extensions for home visit photos */
 const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
@@ -99,7 +101,7 @@ export async function uploadHomeVisitPhoto(
             select: {
                 id: true,
                 studentId: true,
-                student: { select: { schoolId: true } },
+                student: { select: { schoolId: true, class: true } },
                 photos: { select: { id: true } },
             },
         });
@@ -116,22 +118,39 @@ export async function uploadHomeVisitPhoto(
             };
         }
 
-        // Verify authorization (school-scoped)
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { schoolId: true, role: true },
+            select: {
+                schoolId: true,
+                role: true,
+                teacher: { select: { advisoryClass: true } },
+            },
         });
 
-        if (user?.role !== "system_admin") {
-            if (
-                !user?.schoolId ||
-                user.schoolId !== homeVisit.student.schoolId
-            ) {
-                return {
-                    success: false,
-                    message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
-                };
-            }
+        if (!user) {
+            return {
+                success: false,
+                message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+            };
+        }
+
+        const canAccess = canAccessStudentByRole(
+            {
+                role: user.role,
+                schoolId: user.schoolId,
+                advisoryClass: user.teacher?.advisoryClass,
+            },
+            {
+                schoolId: homeVisit.student.schoolId,
+                className: homeVisit.student.class,
+            },
+        );
+
+        if (!canAccess) {
+            return {
+                success: false,
+                message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+            };
         }
 
         // Create upload directory
@@ -187,7 +206,7 @@ export async function uploadHomeVisitPhoto(
             },
         };
     } catch (error) {
-        console.error("Error uploading home visit photo:", error);
+        logError("Error uploading home visit photo:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ" };
     }
 }
@@ -217,7 +236,7 @@ export async function deleteHomeVisitPhoto(
                 homeVisit: {
                     select: {
                         studentId: true,
-                        student: { select: { schoolId: true } },
+                        student: { select: { schoolId: true, class: true } },
                     },
                 },
             },
@@ -227,19 +246,33 @@ export async function deleteHomeVisitPhoto(
             return { success: false, message: "ไม่พบรูปภาพที่ต้องการลบ" };
         }
 
-        // Verify authorization
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { schoolId: true, role: true },
+            select: {
+                schoolId: true,
+                role: true,
+                teacher: { select: { advisoryClass: true } },
+            },
         });
 
-        if (user?.role !== "system_admin") {
-            if (
-                !user?.schoolId ||
-                user.schoolId !== photo.homeVisit.student.schoolId
-            ) {
-                return { success: false, message: "ไม่มีสิทธิ์ลบรูปภาพนี้" };
-            }
+        if (!user) {
+            return { success: false, message: "ไม่มีสิทธิ์ลบรูปภาพนี้" };
+        }
+
+        const canAccess = canAccessStudentByRole(
+            {
+                role: user.role,
+                schoolId: user.schoolId,
+                advisoryClass: user.teacher?.advisoryClass,
+            },
+            {
+                schoolId: photo.homeVisit.student.schoolId,
+                className: photo.homeVisit.student.class,
+            },
+        );
+
+        if (!canAccess) {
+            return { success: false, message: "ไม่มีสิทธิ์ลบรูปภาพนี้" };
         }
 
         // Delete file from disk
@@ -266,7 +299,8 @@ export async function deleteHomeVisitPhoto(
 
         return { success: true, message: "ลบรูปภาพสำเร็จ" };
     } catch (error) {
-        console.error("Error deleting home visit photo:", error);
+        logError("Error deleting home visit photo:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการลบรูปภาพ" };
     }
 }
+

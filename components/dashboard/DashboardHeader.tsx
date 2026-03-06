@@ -72,7 +72,7 @@ export function DashboardHeader({
     return (
         <div className="relative bg-white rounded-[2.5rem] p-5 sm:p-7 mb-6 overflow-hidden border-[3px] border-[#0BD0D9] shadow-[0_8px_24px_-4px_rgba(11,208,217,0.15)] flex flex-col sm:flex-row gap-6 sm:gap-8 items-center sm:items-start group">
             {/* Left Avatar (Big image) */}
-            <div className="shrink-0 relative w-[140px] h-[140px] sm:w-[160px] sm:h-[160px] rounded-4xl bg-[#FDE24F] flex items-center justify-center overflow-hidden shadow-inner flex-none">
+            <div className="shrink-0 relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] rounded-4xl bg-[#FDE24F] flex items-center justify-center overflow-hidden shadow-inner flex-none">
                 <Image
                     src="/image/dashboard/teacherprofile.png"
                     alt="Teacher Avatar"
@@ -133,7 +133,7 @@ export function DashboardHeader({
                             return (
                                 <div
                                     key={stat.label}
-                                    className={`flex flex-col items-center justify-center min-w-[140px] px-4 py-2.5 rounded-2xl ${style.bg} ${style.border} border-b-[3px] border-r-2 ${style.shadow} transition-transform hover:scale-105 active:scale-95`}
+                                    className={`flex flex-col items-center justify-center w-full sm:w-auto min-w-0 sm:min-w-[140px] px-4 py-2.5 rounded-2xl ${style.bg} ${style.border} border-b-[3px] border-r-2 ${style.shadow} transition-transform hover:scale-105 active:scale-95`}
                                 >
                                     <div className="flex items-center gap-1.5 mb-0.5">
                                         <Icon className="w-3.5 h-3.5 text-gray-900 stroke-[2.5]" />

@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { logError } from "@/lib/utils/logging";
 
 export async function GET() {
     try {
@@ -208,7 +209,7 @@ export async function GET() {
             },
         });
     } catch (error) {
-        console.error("Generate template error:", error);
+        logError("Generate template error:", error);
         return NextResponse.json(
             { error: "เกิดข้อผิดพลาดในการสร้างไฟล์ต้นแบบ" },
             { status: 500 },

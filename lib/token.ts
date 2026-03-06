@@ -1,7 +1,7 @@
 /**
  * Password-reset token management
  *
- * Uses crypto.randomUUID() for secure, unpredictable tokens.
+ * Stores SHA-256 hash of tokens in DB (never plaintext).
  * Each email may have at most ONE active token — older ones are deleted first.
  */
 
@@ -25,13 +25,20 @@ interface TokenVerificationError {
 type VerifyResult = TokenVerificationResult | TokenVerificationError;
 
 /**
+ * One-way hash for password reset tokens before DB persistence.
+ */
+export function hashPasswordResetToken(token: string): string {
+    return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+/**
  * Generate a password-reset token for the given email.
  *
  * 1. Deletes any existing tokens for the email (one-token-per-email rule)
- * 2. Creates a new token with a 1-hour expiry
+ * 2. Creates a new token hash with a 1-hour expiry
  *
  * @param email - The user's email address
- * @returns The generated token string
+ * @returns The generated plaintext token string (send via email only)
  */
 export async function generatePasswordResetToken(
     email: string,
@@ -42,10 +49,11 @@ export async function generatePasswordResetToken(
     });
 
     const token = crypto.randomUUID();
+    const tokenHash = hashPasswordResetToken(token);
     const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MS);
 
     await prisma.passwordResetToken.create({
-        data: { email, token, expiresAt },
+        data: { email, token: tokenHash, expiresAt },
     });
 
     return token;
@@ -54,14 +62,16 @@ export async function generatePasswordResetToken(
 /**
  * Verify a password-reset token.
  *
- * @param token - The token string from the reset link
+ * @param token - The plaintext token string from the reset link
  * @returns Object with `valid: true` + email/tokenId, or `valid: false` + error message
  */
 export async function verifyPasswordResetToken(
     token: string,
 ): Promise<VerifyResult> {
+    const tokenHash = hashPasswordResetToken(token);
+
     const record = await prisma.passwordResetToken.findUnique({
-        where: { token },
+        where: { token: tokenHash },
     });
 
     if (!record) {
@@ -76,3 +86,4 @@ export async function verifyPasswordResetToken(
 
     return { valid: true, email: record.email, tokenId: record.id };
 }
+

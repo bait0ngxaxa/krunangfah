@@ -17,6 +17,7 @@ import {
     verifyPasswordResetToken,
 } from "@/lib/token";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { logError } from "@/lib/utils/logging";
 import {
     forgotPasswordSchema,
     resetPasswordSchema,
@@ -72,7 +73,7 @@ export async function requestPasswordReset(input: {
             const token = await generatePasswordResetToken(email);
             await sendPasswordResetEmail(email, token);
         } catch (error) {
-            console.error(
+            logError(
                 "Failed to send password reset email:",
                 error instanceof Error ? error.message : "Unknown error",
             );

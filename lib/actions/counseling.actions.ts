@@ -12,6 +12,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { revalidatePath } from "next/cache";
+import { logError } from "@/lib/utils/logging";
 import {
     counselingSessionSchema,
     updateCounselingSessionSchema,
@@ -104,7 +105,7 @@ export async function getCounselingSessions(
         );
 
         if (!allowed) {
-            console.error("Access denied:", error);
+            logError("Access denied:", error);
             return [];
         }
 
@@ -123,7 +124,7 @@ export async function getCounselingSessions(
 
         return sessions;
     } catch (error) {
-        console.error("Error fetching counseling sessions:", error);
+        logError("Error fetching counseling sessions:", error);
         return [];
     }
 }
@@ -187,7 +188,7 @@ export async function createCounselingSession(data: {
 
         return { success: true, session: counselingSession };
     } catch (error) {
-        console.error("Error creating counseling session:", error);
+        logError("Error creating counseling session:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" };
     }
 }
@@ -250,7 +251,7 @@ export async function updateCounselingSession(
 
         return { success: true, session: updated };
     } catch (error) {
-        console.error("Error updating counseling session:", error);
+        logError("Error updating counseling session:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการแก้ไขข้อมูล" };
     }
 }
@@ -299,7 +300,7 @@ export async function deleteCounselingSession(id: string) {
 
         return { success: true };
     } catch (error) {
-        console.error("Error deleting counseling session:", error);
+        logError("Error deleting counseling session:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการลบข้อมูล" };
     }
 }

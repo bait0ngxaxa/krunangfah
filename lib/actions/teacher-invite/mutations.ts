@@ -8,6 +8,7 @@ import { randomBytes } from "crypto";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
 import type { InviteResponse } from "./types";
+import { logError } from "@/lib/utils/logging";
 
 /**
  * สร้าง invite สำหรับครูผู้ดูแล
@@ -112,7 +113,7 @@ export async function createTeacherInvite(
             inviteLink,
         };
     } catch (error) {
-        console.error("Create teacher invite error:", error);
+        logError("Create teacher invite error:", error);
         return {
             success: false,
             message: "เกิดข้อผิดพลาดในการสร้างคำเชิญ",
@@ -187,7 +188,7 @@ export async function acceptTeacherInvite(
             message: "ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ",
         };
     } catch (error) {
-        console.error("Accept teacher invite error:", error);
+        logError("Accept teacher invite error:", error);
         return {
             success: false,
             message: "เกิดข้อผิดพลาดในการลงทะเบียน",
@@ -271,7 +272,7 @@ export async function revokeTeacherInvite(
             message: `ยกเลิกคำเชิญสำหรับ "${invite.email}" สำเร็จ`,
         };
     } catch (error) {
-        console.error("Revoke teacher invite error:", error);
+        logError("Revoke teacher invite error:", error);
         return {
             success: false,
             message: "เกิดข้อผิดพลาดในการยกเลิกคำเชิญ",

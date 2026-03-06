@@ -10,6 +10,7 @@ import { requireAuth } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { profileUpdateSchema } from "@/lib/validations/profile.validation";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
+import { logError } from "@/lib/utils/logging";
 import type {
     ProfileUpdateInput,
     ProfileUpdateResponse,
@@ -62,7 +63,7 @@ export async function getCurrentUserProfile(): Promise<UserProfileData | null> {
             school: user.school,
         };
     } catch (error) {
-        console.error("Get user profile error:", error);
+        logError("Get user profile error:", error);
         return null;
     }
 }
@@ -129,7 +130,7 @@ export async function updateTeacherProfile(
             message: "บันทึกข้อมูลสำเร็จ",
         };
     } catch (error) {
-        console.error("Update profile error:", error);
+        logError("Update profile error:", error);
         return {
             success: false,
             message: "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",

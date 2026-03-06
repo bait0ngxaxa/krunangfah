@@ -31,8 +31,6 @@ export const metadata: Metadata = {
     description: "หน้าหลักสำหรับครู",
 };
 
-/* ─── Stat Builders ─── */
-
 function buildAdminStats(
     studentCount: number,
     schoolCount?: number,
@@ -92,8 +90,6 @@ function buildTeacherStats(
     return stats;
 }
 
-/* ─── Page Component ─── */
-
 export default async function DashboardPage() {
     const session = await requireAuth();
 
@@ -106,8 +102,6 @@ export default async function DashboardPage() {
     );
 }
 
-/* ─── Async Content (streamed via Suspense) ─── */
-
 async function DashboardContent({ session }: { session: Session }) {
     const dashboardData = await getDashboardData();
 
@@ -119,7 +113,6 @@ async function DashboardContent({ session }: { session: Session }) {
             ? (dashboardData as { schoolCount?: number }).schoolCount
             : undefined;
 
-    // ─── System Admin ───
     if (isSystemAdmin) {
         return (
             <div className="max-w-4xl mx-auto relative z-10 px-4 sm:px-6 lg:px-8 py-6 space-y-4">
@@ -138,7 +131,6 @@ async function DashboardContent({ session }: { session: Session }) {
         );
     }
 
-    // ─── No Teacher Profile ───
     if (!teacher) {
         return (
             <div className="max-w-4xl mx-auto relative z-10 px-4 sm:px-6 lg:px-8 py-6">
@@ -164,7 +156,6 @@ async function DashboardContent({ session }: { session: Session }) {
         );
     }
 
-    // ─── Teacher Dashboard ───
     const isClassTeacher = userRole === "class_teacher";
     const teacherName = `${teacher.firstName} ${teacher.lastName}`;
     const schoolName = teacher.user.school?.name || "ไม่ระบุ";
@@ -183,7 +174,7 @@ async function DashboardContent({ session }: { session: Session }) {
                 }
                 imageSrc="/image/dashboard/main.PNG"
                 imageAlt="Dashboard Banner"
-                imageContainerClassName="absolute bottom-0 left-1/2 -translate-x-1/2 w-[400px] sm:w-[560px] lg:w-[680px] pointer-events-none z-10 flex items-end"
+                imageContainerClassName="absolute bottom-0 left-1/2 -translate-x-1/2 w-[280px] sm:w-[560px] lg:w-[680px] pointer-events-none z-10 flex items-end"
                 showBackButton={false}
                 actionNode={
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-400 rounded-full text-sm font-bold text-white shadow-md border border-emerald-300">
@@ -217,8 +208,6 @@ async function DashboardContent({ session }: { session: Session }) {
         </>
     );
 }
-
-/* ─── Layout Shell ─── */
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
     return <div className="min-h-screen">{children}</div>;

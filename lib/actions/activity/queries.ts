@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
+import { logError } from "@/lib/utils/logging";
 
 /**
  * Verify user has access to student's activity
@@ -108,7 +109,7 @@ export async function getActivityProgress(
 
         return { success: true, data: progress };
     } catch (error) {
-        console.error("Error getting activity progress:", error);
+        logError("Error getting activity progress:", error);
         return {
             success: false,
             error: "เกิดข้อผิดพลาดในการดึงข้อมูลความคืบหน้ากิจกรรม",

@@ -11,6 +11,7 @@ import { createTestSchool, createTestUser } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { hashPasswordResetToken } from "@/lib/token";
 
 setupAuthMocks();
 
@@ -35,7 +36,7 @@ describe("Integration: Password Reset", () => {
         await cleanupAll();
     });
 
-    describe("resetPassword — Token + Password Atomicity", () => {
+    describe("resetPassword - Token + Password Atomicity", () => {
         it("rejects invalid token", async () => {
             const result = await resetPassword({
                 token: "nonexistent-token",
@@ -46,35 +47,37 @@ describe("Integration: Password Reset", () => {
         });
 
         it("rejects expired token", async () => {
+            const expiredPlainToken = `test-expired-${Date.now()}`;
             const expiredToken = await prisma.passwordResetToken.create({
                 data: {
                     email: testUserEmail,
-                    token: `test-expired-${Date.now()}`,
+                    token: hashPasswordResetToken(expiredPlainToken),
                     expiresAt: new Date(Date.now() - 3600000),
                 },
             });
 
             const result = await resetPassword({
-                token: expiredToken.token,
+                token: expiredPlainToken,
                 password: "NewPassword123!",
                 confirmPassword: "NewPassword123!",
             });
             expect(result.success).toBe(false);
 
-            await prisma.passwordResetToken
-                .delete({ where: { id: expiredToken.id } })
-                .catch(() => {});
+            await prisma.passwordResetToken.deleteMany({
+                where: { id: expiredToken.id },
+            });
         });
 
         it("successfully resets password and deletes token", async () => {
+            const plainToken = `test-valid-${Date.now()}`;
             const token = await prisma.passwordResetToken.create({
                 data: {
                     email: testUserEmail,
-                    token: `test-valid-${Date.now()}`,
+                    token: hashPasswordResetToken(plainToken),
                     expiresAt: new Date(Date.now() + 3600000),
                 },
             });
-            validToken = token.token;
+            validToken = plainToken;
 
             const newPassword = "NewSecurePassword123!";
             const result = await resetPassword({
@@ -98,7 +101,7 @@ describe("Integration: Password Reset", () => {
 
             // Verify token was deleted
             const deletedToken = await prisma.passwordResetToken.findUnique({
-                where: { token: validToken },
+                where: { token: token.token },
             });
             expect(deletedToken).toBeNull();
         });
@@ -113,3 +116,4 @@ describe("Integration: Password Reset", () => {
         });
     });
 });
+
