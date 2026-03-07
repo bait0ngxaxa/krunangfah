@@ -10,7 +10,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-import type { GradeRiskData } from "@/lib/actions/analytics";
+import type { GradeRiskData } from "@/lib/actions/analytics/types";
 import { RISK_CHART_CONFIG } from "@/lib/constants/risk-levels";
 
 interface RiskLevelByGradeChartProps {

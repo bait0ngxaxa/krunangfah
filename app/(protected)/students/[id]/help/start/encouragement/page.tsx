@@ -1,6 +1,6 @@
-import { getStudentDetail } from "@/lib/actions/student";
+import { getStudentDetail } from "@/lib/actions/student/main";
 import { redirect, notFound } from "next/navigation";
-import { EncouragementPage } from "@/components/activity";
+import { EncouragementPage } from "@/components/activity/EncouragementPage";
 import { requireAuth } from "@/lib/session";
 
 interface PageProps {

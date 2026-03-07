@@ -1,5 +1,3 @@
-"use client";
-
 import { Users, CheckCircle, AlertCircle, type LucideIcon } from "lucide-react";
 
 interface AnalyticsSummaryCardsProps {

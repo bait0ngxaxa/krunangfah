@@ -1,7 +1,5 @@
-"use client";
-
 import { Hospital } from "lucide-react";
-import type { HospitalReferralByGrade } from "@/lib/actions/analytics";
+import type { HospitalReferralByGrade } from "@/lib/actions/analytics/types";
 
 interface HospitalReferralTableProps {
     hospitalReferralsByGrade: HospitalReferralByGrade[];

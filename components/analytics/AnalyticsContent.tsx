@@ -1,14 +1,10 @@
-"use client";
-
-import { useAnalytics } from "@/hooks/useAnalytics";
-import { AnalyticsSummaryCards } from "./AnalyticsSummaryCards";
-import { AnalyticsSkeleton } from "./AnalyticsSkeleton";
-import { buildAnalyticsTabs } from "./AnalyticsTabContent";
-import { ClassFilter } from "./filters/ClassFilter";
-import { SchoolFilter } from "./filters/SchoolFilter";
-import { AcademicYearFilter } from "./filters/AcademicYearFilter";
 import { Tabs } from "@/components/ui/Tabs";
-import type { AnalyticsData } from "@/lib/actions/analytics";
+import { toChartData, getPieChartTitle } from "./utils";
+import { AnalyticsFilters } from "./AnalyticsFilters";
+import { AnalyticsSummaryCards } from "./AnalyticsSummaryCards";
+import { buildAnalyticsTabs } from "./AnalyticsTabContent";
+import type { AnalyticsData } from "@/lib/actions/analytics/types";
+import type { UserRole } from "@/types/auth.types";
 
 interface SchoolOption {
     id: string;
@@ -16,37 +12,41 @@ interface SchoolOption {
 }
 
 interface AnalyticsContentProps {
-    initialData: AnalyticsData;
-    isSchoolAdmin: boolean;
+    data: AnalyticsData;
     schools?: SchoolOption[];
-    userRole?: string;
+    userRole: UserRole;
+    selectedClass: string;
+    selectedSchoolId: string;
+    selectedAcademicYear: string;
 }
 
 export function AnalyticsContent({
-    initialData,
-    isSchoolAdmin,
+    data,
     schools,
     userRole,
+    selectedClass,
+    selectedSchoolId,
+    selectedAcademicYear,
 }: AnalyticsContentProps) {
-    const {
-        data,
-        selectedSchoolId,
-        selectedAcademicYear,
-        isPending,
-        isSystemAdmin,
-        showClassFilter,
-        pieChartData,
-        pieChartTitle,
-        handleSchoolChange,
-        handleClassChange,
-        handleAcademicYearChange,
-    } = useAnalytics(initialData, isSchoolAdmin, schools, userRole);
-
+    const isSystemAdmin = userRole === "system_admin" && !!schools?.length;
+    const showClassFilter =
+        userRole === "school_admin" ||
+        (isSystemAdmin && selectedSchoolId !== "all");
+    const selectedSchoolName =
+        isSystemAdmin && selectedSchoolId !== "all"
+            ? schools?.find((school) => school.id === selectedSchoolId)?.name
+            : undefined;
+    const pieChartData = toChartData(data.riskLevelSummary);
+    const pieChartTitle = getPieChartTitle(
+        selectedClass,
+        selectedSchoolName,
+        userRole,
+    );
     const tabs = buildAnalyticsTabs({
         data,
         pieChartData,
         pieChartTitle,
-        showAdminTables: isSchoolAdmin || isSystemAdmin,
+        showAdminTables: userRole === "school_admin" || isSystemAdmin,
         userRole,
     });
 
@@ -58,36 +58,17 @@ export function AnalyticsContent({
                 studentsWithoutAssessment={data.studentsWithoutAssessment}
                 currentClass={data.currentClass}
             />
-
-            {isSystemAdmin && schools ? (
-                <SchoolFilter
-                    schools={schools}
-                    selectedSchoolId={selectedSchoolId}
-                    onSchoolChange={handleSchoolChange}
-                />
-            ) : null}
-
-            {showClassFilter && data.availableClasses.length > 0 ? (
-                <ClassFilter
-                    availableClasses={data.availableClasses}
-                    currentClass={data.currentClass}
-                    onClassChange={handleClassChange}
-                />
-            ) : null}
-
-            {data.availableAcademicYears.length > 1 ? (
-                <AcademicYearFilter
-                    availableYears={data.availableAcademicYears}
-                    selectedYear={selectedAcademicYear}
-                    onYearChange={handleAcademicYearChange}
-                />
-            ) : null}
-
-            {isPending ? (
-                <AnalyticsSkeleton />
-            ) : (
-                <Tabs tabs={tabs} defaultTab="summary" />
-            )}
+            <AnalyticsFilters
+                schools={schools}
+                availableClasses={data.availableClasses}
+                availableYears={data.availableAcademicYears}
+                selectedSchoolId={selectedSchoolId}
+                selectedClass={selectedClass}
+                selectedAcademicYear={selectedAcademicYear}
+                isSystemAdmin={isSystemAdmin}
+                showClassFilter={showClassFilter}
+            />
+            <Tabs tabs={tabs} defaultTab="summary" />
         </>
     );
 }

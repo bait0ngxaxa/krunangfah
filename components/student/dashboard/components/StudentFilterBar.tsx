@@ -1,33 +1,19 @@
 import { SlidersHorizontal, ArrowRightLeft } from "lucide-react";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
-import type { RiskLevel, GroupedStudents } from "../types";
+import type {
+    DashboardRiskFilter,
+    RiskLevel,
+    StudentGroupCounts,
+} from "../types";
 
 interface StudentFilterBarProps {
-    selectedRiskFilter: RiskLevel | "all";
+    selectedRiskFilter: DashboardRiskFilter;
     showReferredOnly: boolean;
     referredCount: number;
-    groupedStudents: GroupedStudents;
+    groupedStudentCounts: StudentGroupCounts;
     riskLevels: RiskLevel[];
-    onRiskFilterChange: (level: RiskLevel | "all") => void;
+    onRiskFilterChange: (level: DashboardRiskFilter) => void;
     onReferredToggle: () => void;
-}
-
-function getRiskChipCount(
-    groupedStudents: GroupedStudents,
-    level: RiskLevel,
-): number {
-    switch (level) {
-        case "red":
-            return groupedStudents.red.length;
-        case "orange":
-            return groupedStudents.orange.length;
-        case "yellow":
-            return groupedStudents.yellow.length;
-        case "green":
-            return groupedStudents.green.length;
-        case "blue":
-            return groupedStudents.blue.length;
-    }
 }
 
 function getRiskChipColors(level: RiskLevel): {
@@ -68,11 +54,29 @@ function getRiskChipColors(level: RiskLevel): {
     }
 }
 
+function getGroupedStudentCount(
+    groupedStudentCounts: StudentGroupCounts,
+    level: RiskLevel,
+): number {
+    switch (level) {
+        case "red":
+            return groupedStudentCounts.red;
+        case "orange":
+            return groupedStudentCounts.orange;
+        case "yellow":
+            return groupedStudentCounts.yellow;
+        case "green":
+            return groupedStudentCounts.green;
+        case "blue":
+            return groupedStudentCounts.blue;
+    }
+}
+
 export function StudentFilterBar({
     selectedRiskFilter,
     showReferredOnly,
     referredCount,
-    groupedStudents,
+    groupedStudentCounts,
     riskLevels,
     onRiskFilterChange,
     onReferredToggle,
@@ -82,14 +86,10 @@ export function StudentFilterBar({
 
     return (
         <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/80 ring-1 ring-slate-900/5 overflow-hidden">
-            {/* Top Edge Highlight */}
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-indigo-300/30 to-transparent" />
-
-            {/* Corner decoration */}
             <div className="absolute -top-12 -right-12 w-32 h-32 bg-linear-to-br from-indigo-200/30 to-violet-300/20 rounded-full blur-2xl pointer-events-none opacity-50" />
 
             <div className="px-5 py-4 relative z-10">
-                {/* Header */}
                 <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-linear-to-br from-indigo-50 to-violet-50 rounded-xl border border-indigo-100 shadow-sm text-indigo-600">
                         <SlidersHorizontal className="w-4 h-4" />
@@ -99,9 +99,7 @@ export function StudentFilterBar({
                     </span>
                 </div>
 
-                {/* Filter Chips */}
                 <div className="flex flex-wrap gap-2">
-                    {/* "ทั้งหมด" chip */}
                     <button
                         type="button"
                         onClick={() => onRiskFilterChange("all")}
@@ -114,12 +112,11 @@ export function StudentFilterBar({
                         ทั้งหมด
                     </button>
 
-                    {/* Risk level chips */}
                     {riskLevels.map((level) => {
                         const config = getRiskLevelConfig(level);
                         const colors = getRiskChipColors(level);
-                        const count = getRiskChipCount(
-                            groupedStudents,
+                        const count = getGroupedStudentCount(
+                            groupedStudentCounts,
                             level,
                         );
                         const isActive = selectedRiskFilter === level;
@@ -130,18 +127,14 @@ export function StudentFilterBar({
                                 type="button"
                                 onClick={() => onRiskFilterChange(level)}
                                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all duration-200 cursor-pointer shadow-xs ${
-                                    isActive
-                                        ? colors.active
-                                        : colors.inactive
+                                    isActive ? colors.active : colors.inactive
                                 }`}
                             >
                                 <span>{config.emoji}</span>
                                 <span>{config.label}</span>
                                 <span
                                     className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                                        isActive
-                                            ? "bg-white/50"
-                                            : "bg-slate-100"
+                                        isActive ? "bg-white/50" : "bg-slate-100"
                                     }`}
                                 >
                                     {count}
@@ -150,13 +143,11 @@ export function StudentFilterBar({
                         );
                     })}
 
-                    {/* Divider */}
-                    {referredCount > 0 && (
+                    {referredCount > 0 ? (
                         <div className="w-px h-6 bg-slate-200 self-center mx-0.5" />
-                    )}
+                    ) : null}
 
-                    {/* "ส่งต่อมา" referral chip */}
-                    {referredCount > 0 && (
+                    {referredCount > 0 ? (
                         <button
                             type="button"
                             onClick={onReferredToggle}
@@ -178,7 +169,7 @@ export function StudentFilterBar({
                                 {referredCount}
                             </span>
                         </button>
-                    )}
+                    ) : null}
                 </div>
             </div>
         </div>

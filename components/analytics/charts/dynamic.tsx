@@ -16,7 +16,7 @@ function ChartSkeleton({ height = 400 }: { height?: number }) {
         >
             <div className="animate-pulse text-gray-400">
                 <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4" />
-                <p className="text-center">กำลังโหลดกราฟ...</p>
+                <p className="text-center">Loading chart...</p>
             </div>
         </div>
     );

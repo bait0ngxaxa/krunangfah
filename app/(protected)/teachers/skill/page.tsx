@@ -1,5 +1,6 @@
 import { Tabs, type Tab } from "@/components/ui/Tabs";
-import { VideoUpskillTab, ToolsIntroTab } from "@/components/teacher";
+import { VideoUpskillTab } from "@/components/teacher/skill/VideoUpskillTab";
+import { ToolsIntroTab } from "@/components/teacher/skill/ToolsIntroTab";
 import { BookOpen, Package, GraduationCap } from "lucide-react";
 import { PageBanner } from "@/components/ui/PageBanner";
 

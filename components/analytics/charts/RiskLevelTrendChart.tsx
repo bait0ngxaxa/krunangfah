@@ -10,7 +10,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-import type { TrendDataPoint } from "@/lib/actions/analytics";
+import type { TrendDataPoint } from "@/lib/actions/analytics/types";
 import { RISK_CHART_CONFIG } from "@/lib/constants/risk-levels";
 
 interface RiskLevelTrendChartProps {

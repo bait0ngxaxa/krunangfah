@@ -1,5 +1,5 @@
 import { requireAuth } from "@/lib/session";
-import { SecuritySettingsForm } from "@/components/settings";
+import { SecuritySettingsForm } from "@/components/settings/SecuritySettingsForm/SecuritySettingsForm";
 import { Lock } from "lucide-react";
 import type { Metadata } from "next";
 

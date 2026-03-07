@@ -1,1 +1,0 @@
-export { StudentSearch } from "./StudentSearch";

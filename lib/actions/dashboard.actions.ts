@@ -1,13 +1,11 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
 import { unstable_cache, revalidateTag } from "next/cache";
+import { getRequiredSessionUser } from "@/lib/auth/viewer-context";
 
-// Cached dashboard data (revalidates every 60 seconds)
 const getCachedDashboardData = unstable_cache(
     async (userId: string, role: string) => {
-        // system_admin: show aggregate data without teacher profile
         if (role === "system_admin") {
             const studentCount = await prisma.student.count();
             const schoolCount = await prisma.school.count();
@@ -41,33 +39,25 @@ const getCachedDashboardData = unstable_cache(
     },
     ["dashboard-data"],
     {
-        revalidate: 60, // Cache for 60 seconds
+        revalidate: 60,
         tags: ["dashboard"],
-    }
+    },
 );
 
 export async function getDashboardData() {
-    const session = await requireAuth();
-    const userId = session.user.id;
-    const role = session.user.role;
+    const sessionUser = await getRequiredSessionUser();
 
-    // Use cached data
-    return getCachedDashboardData(userId, role);
+    return getCachedDashboardData(sessionUser.userId, sessionUser.role);
 }
 
-// Function to revalidate dashboard cache (call after mutations)
 export async function revalidateDashboard() {
     revalidateTag("dashboard", "default");
 }
 
-/**
- * Get all schools for school selector dropdown
- * Used by system_admin to filter students by school
- */
 export async function getSchools(): Promise<{ id: string; name: string }[]> {
-    const session = await requireAuth();
+    const sessionUser = await getRequiredSessionUser();
 
-    if (session.user.role !== "system_admin") {
+    if (sessionUser.role !== "system_admin") {
         return [];
     }
 

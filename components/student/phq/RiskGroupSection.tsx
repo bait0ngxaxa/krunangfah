@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 
@@ -29,17 +30,16 @@ interface Student {
 interface RiskGroupSectionProps {
     level: RiskLevel;
     students: Student[];
-    onStudentClick?: (studentId: string) => void;
     readOnly?: boolean;
 }
 
 export function RiskGroupSection({
     level,
     students,
-    onStudentClick,
     readOnly = false,
 }: RiskGroupSectionProps) {
     const config = getRiskLevelConfig(level);
+    const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
     const [scrolledToBottom, setScrolledToBottom] = useState(false);
 
@@ -47,22 +47,22 @@ export function RiskGroupSection({
     const showFade = isScrollable && !scrolledToBottom;
 
     const checkScroll = useCallback(() => {
-        const el = scrollRef.current;
-        if (!el) return;
+        const element = scrollRef.current;
+        if (!element) return;
         const distanceFromBottom =
-            el.scrollHeight - el.scrollTop - el.clientHeight;
+            element.scrollHeight - element.scrollTop - element.clientHeight;
         setScrolledToBottom(distanceFromBottom <= 8);
     }, []);
 
     useEffect(() => {
         if (!isScrollable) return;
-        const el = scrollRef.current;
-        if (!el) return;
+        const element = scrollRef.current;
+        if (!element) return;
         const rafId = requestAnimationFrame(() => checkScroll());
-        el.addEventListener("scroll", checkScroll, { passive: true });
+        element.addEventListener("scroll", checkScroll, { passive: true });
         return () => {
             cancelAnimationFrame(rafId);
-            el.removeEventListener("scroll", checkScroll);
+            element.removeEventListener("scroll", checkScroll);
         };
     }, [isScrollable, checkScroll]);
 
@@ -79,7 +79,6 @@ export function RiskGroupSection({
         <div
             className={`rounded-2xl overflow-hidden shadow-lg ${config.cardBorder} border ring-1 ${config.cardRing}`}
         >
-            {/* Header */}
             <div
                 className={`${config.headerGradient} ${config.headerTextColor} px-5 py-3.5 flex items-center justify-between`}
             >
@@ -98,7 +97,6 @@ export function RiskGroupSection({
                 </span>
             </div>
 
-            {/* Student List */}
             <div className="relative">
                 <div
                     ref={scrollRef}
@@ -116,15 +114,17 @@ export function RiskGroupSection({
                                 className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3 ${config.hoverBg} cursor-pointer transition-all duration-200 group`}
                                 role="button"
                                 tabIndex={0}
-                                onClick={() => onStudentClick?.(student.id)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        onStudentClick?.(student.id);
+                                onClick={() => router.push(`/students/${student.id}`)}
+                                onKeyDown={(event) => {
+                                    if (
+                                        event.key === "Enter" ||
+                                        event.key === " "
+                                    ) {
+                                        event.preventDefault();
+                                        router.push(`/students/${student.id}`);
                                     }
                                 }}
                             >
-                                {/* Student info */}
                                 <div className="flex items-center gap-3 min-w-0">
                                     <span
                                         className={`${config.badgeBg} ${config.badgeText} text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0`}
@@ -136,18 +136,17 @@ export function RiskGroupSection({
                                     >
                                         {student.firstName} {student.lastName}
                                     </span>
-                                    {student.referral && (
+                                    {student.referral ? (
                                         <span className="bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">
                                             ส่งต่อ
                                         </span>
-                                    )}
+                                    ) : null}
                                 </div>
 
-                                {/* Action button */}
-                                {!readOnly && (
+                                {!readOnly ? (
                                     <Link
                                         href={`/students/${student.id}/help`}
-                                        onClick={(e) => e.stopPropagation()}
+                                        onClick={(event) => event.stopPropagation()}
                                         className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm ${config.btnBase} ${config.btnHover} hover:shadow-md hover:-translate-y-px active:translate-y-0 transition-all duration-200 whitespace-nowrap`}
                                     >
                                         {actionLabel}
@@ -165,19 +164,18 @@ export function RiskGroupSection({
                                             />
                                         </svg>
                                     </Link>
-                                )}
+                                ) : null}
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Scroll fade indicator */}
-                {isScrollable && showFade && (
+                {isScrollable && showFade ? (
                     <div
-                        className={`absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-white to-transparent pointer-events-none`}
+                        className="absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-white to-transparent pointer-events-none"
                         aria-hidden="true"
                     />
-                )}
+                ) : null}
             </div>
         </div>
     );

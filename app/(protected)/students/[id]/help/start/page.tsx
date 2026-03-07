@@ -1,10 +1,10 @@
-import { getStudentDetail } from "@/lib/actions/student";
+import { getStudentDetail } from "@/lib/actions/student/main";
 import {
     getActivityProgress,
     initializeActivityProgress,
 } from "@/lib/actions/activity";
 import { redirect, notFound } from "next/navigation";
-import { ActivityWorkspace } from "@/components/activity";
+import { ActivityWorkspace } from "@/components/activity/ActivityWorkspace/ActivityWorkspace";
 import { requireAuth } from "@/lib/session";
 
 interface PageProps {

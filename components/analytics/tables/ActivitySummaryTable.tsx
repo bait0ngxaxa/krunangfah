@@ -1,7 +1,5 @@
-"use client";
-
 import { ClipboardList } from "lucide-react";
-import type { ActivityProgressByRisk } from "@/lib/actions/analytics";
+import type { ActivityProgressByRisk } from "@/lib/actions/analytics/types";
 
 interface ActivityProgressTableProps {
     activityProgressByRisk: ActivityProgressByRisk[];

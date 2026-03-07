@@ -1,27 +1,62 @@
-import { Suspense } from "react";
 import { BarChart3 } from "lucide-react";
-import { PageBanner } from "@/components/ui/PageBanner";
-import { requireAuth } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { getAnalyticsSummary } from "@/lib/actions/analytics";
+
+import { AnalyticsContent } from "@/components/analytics/AnalyticsContent";
+import { PageBanner } from "@/components/ui/PageBanner";
+import { getAnalyticsSummary } from "@/lib/actions/analytics/main";
 import { getSchools } from "@/lib/actions/dashboard.actions";
-import { AnalyticsContent } from "@/components/analytics";
-import { AnalyticsSkeleton } from "@/components/analytics/AnalyticsSkeleton";
+import { requireAuth } from "@/lib/session";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "สรุปข้อมูลนักเรียน | โครงการครูนางฟ้า",
-    description: "Dashboard และสรุปข้อมูลการคัดกรอง PHQ-A",
+    title: "สรุปข้อมูล | โครงการครูนางฟ้า",
+    description: "Dashboard and PHQ-A screening summary.",
 };
 
-export default async function AnalyticsPage() {
+interface AnalyticsPageProps {
+    searchParams: Promise<{
+        class?: string;
+        school?: string;
+        year?: string;
+    }>;
+}
+
+function parseYearFilter(yearValue?: string): number | undefined {
+    if (!yearValue) return undefined;
+
+    const parsedYear = Number.parseInt(yearValue, 10);
+    return Number.isNaN(parsedYear) ? undefined : parsedYear;
+}
+
+export default async function AnalyticsPage({
+    searchParams,
+}: AnalyticsPageProps) {
     const session = await requireAuth();
+    const params = await searchParams;
+    const userRole = session.user.role;
+    const isSystemAdmin = userRole === "system_admin";
+    const selectedSchoolId = isSystemAdmin ? (params.school ?? "all") : "all";
+    const selectedClass = params.class ?? "all";
+    const selectedAcademicYear = params.year ?? "all";
+
+    const [analyticsData, schools] = await Promise.all([
+        getAnalyticsSummary(
+            selectedClass !== "all" ? selectedClass : undefined,
+            selectedSchoolId !== "all" ? selectedSchoolId : undefined,
+            parseYearFilter(params.year),
+        ),
+        isSystemAdmin ? getSchools() : Promise.resolve(undefined),
+    ]);
+
+    if (!analyticsData) {
+        redirect("/dashboard");
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 relative overflow-hidden">
             <PageBanner
                 title="Analytics"
-                subtitle="สรุปข้อมูลการคัดกรองสุขภาพจิตนักเรียน (PHQ-A)"
+                subtitle="PHQ-A screening summary for students"
                 icon={BarChart3}
                 imageSrc="/image/dashboard/analytics.png"
                 imageAlt="Analytics Dashboard"
@@ -30,40 +65,15 @@ export default async function AnalyticsPage() {
             />
 
             <div className="max-w-7xl mx-auto space-y-6 relative z-10 px-4 py-8">
-                {/* Analytics Content (streamed via Suspense) */}
-                <Suspense fallback={<AnalyticsSkeleton />}>
-                    <AnalyticsData session={session} />
-                </Suspense>
+                <AnalyticsContent
+                    data={analyticsData}
+                    schools={schools}
+                    userRole={userRole}
+                    selectedClass={selectedClass}
+                    selectedSchoolId={selectedSchoolId}
+                    selectedAcademicYear={selectedAcademicYear}
+                />
             </div>
         </div>
-    );
-}
-
-/* ─── Async Content (streamed via Suspense) ─── */
-
-async function AnalyticsData({
-    session,
-}: {
-    session: Awaited<ReturnType<typeof requireAuth>>;
-}) {
-    const userRole = session.user.role;
-    const isSystemAdmin = userRole === "system_admin";
-
-    const [analyticsData, schools] = await Promise.all([
-        getAnalyticsSummary(),
-        isSystemAdmin ? getSchools() : Promise.resolve([]),
-    ]);
-
-    if (!analyticsData) {
-        redirect("/dashboard");
-    }
-
-    return (
-        <AnalyticsContent
-            initialData={analyticsData}
-            isSchoolAdmin={userRole === "school_admin"}
-            schools={isSystemAdmin ? schools : undefined}
-            userRole={userRole}
-        />
     );
 }

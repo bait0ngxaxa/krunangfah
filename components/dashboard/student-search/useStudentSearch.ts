@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { searchStudents } from "@/lib/actions/student";
+import { searchStudents } from "@/lib/actions/student/main";
 import { actionFetcher, searchSWRConfig, swrKeys } from "@/lib/swr/config";
 import { MAX_VISIBLE_RESULTS } from "./constants";
 import { useState, useEffect, useRef } from "react";

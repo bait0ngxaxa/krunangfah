@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { FileUp, ClipboardList, Users } from "lucide-react";
-import { getStudents } from "@/lib/actions/student";
+import { getStudents } from "@/lib/actions/student/main";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { getReferredOutStudents } from "@/lib/actions/referral.actions";
 import { requireAuth } from "@/lib/session";
@@ -8,9 +8,27 @@ import { StudentDashboard } from "@/components/student/dashboard/StudentDashboar
 import { StudentDashboardSkeleton } from "@/components/student/dashboard/StudentDashboardSkeleton";
 import { PageBanner } from "@/components/ui/PageBanner";
 import Link from "next/link";
+import type { Metadata } from "next";
 
-export default async function MyStudentsPage() {
+export const metadata: Metadata = {
+    title: "นักเรียนทั้งหมด | โครงการครูนางฟ้า",
+    description: "ข้อมูลนักเรียนและผลคัดกรอง PHQ-A",
+};
+
+interface StudentsPageProps {
+    searchParams: Promise<{
+        class?: string;
+        referred?: string;
+        risk?: string;
+        school?: string;
+    }>;
+}
+
+export default async function MyStudentsPage({
+    searchParams,
+}: StudentsPageProps) {
     const session = await requireAuth();
+    const params = await searchParams;
     const userRole = session.user.role;
     const isAdmin = userRole === "system_admin";
 
@@ -39,23 +57,30 @@ export default async function MyStudentsPage() {
                 }
             />
 
-            {/* Main Content Area */}
             <div className="max-w-4xl mx-auto relative z-10 px-4 py-8">
-                {/* Main Content (streamed via Suspense) */}
                 <Suspense fallback={<StudentDashboardSkeleton />}>
-                    <StudentsContent userRole={userRole} isAdmin={isAdmin} />
+                    <StudentsContent
+                        filters={params}
+                        userRole={userRole}
+                        isAdmin={isAdmin}
+                    />
                 </Suspense>
             </div>
         </div>
     );
 }
 
-/* ─── Async Content (streamed via Suspense) ─── */
-
 async function StudentsContent({
+    filters,
     userRole,
     isAdmin,
 }: {
+    filters: {
+        class?: string;
+        referred?: string;
+        risk?: string;
+        school?: string;
+    };
     userRole: string;
     isAdmin: boolean;
 }) {
@@ -99,7 +124,15 @@ async function StudentsContent({
             students={students}
             schools={isAdmin ? schools : undefined}
             userRole={userRole}
-            referredOutStudents={isClassTeacher ? referredOutStudents : undefined}
+            referredOutStudents={
+                isClassTeacher ? referredOutStudents : undefined
+            }
+            filters={{
+                schoolId: filters.school,
+                className: filters.class,
+                riskLevel: filters.risk,
+                referredOnly: filters.referred,
+            }}
         />
     );
 }

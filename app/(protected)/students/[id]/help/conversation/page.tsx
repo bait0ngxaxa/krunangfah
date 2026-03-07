@@ -10,10 +10,10 @@ import {
     Hospital,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
-import { getStudentDetail } from "@/lib/actions/student";
+import { getStudentDetail } from "@/lib/actions/student/main";
 import { getColorConfig } from "@/lib/config/help-page-config";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
-import { HelpPageHeader } from "@/components/student/help";
+import { HelpPageHeader } from "@/components/student/help/HelpPageHeader";
 import { requireAuth } from "@/lib/session";
 
 interface PageProps {

@@ -6,8 +6,9 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth, isSystemAdmin } from "@/lib/session";
+import { isSystemAdmin } from "@/lib/session";
 import { unstable_cache, revalidateTag } from "next/cache";
+import { getViewerContext } from "@/lib/auth/viewer-context";
 import {
     getRiskLevelCountsQuery,
     getDistinctClassesQuery,
@@ -27,26 +28,6 @@ import type {
 // Note: Cache keys can be added here when implementing granular caching
 
 /**
- * Fetch user context (schoolId, advisoryClass) needed by query functions
- */
-async function getUserContext(userId: string, userRole: string) {
-    const dbUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-            schoolId: true,
-            teacher: { select: { advisoryClass: true } },
-        },
-    });
-
-    const schoolId = isSystemAdmin(userRole)
-        ? undefined
-        : (dbUser?.schoolId ?? undefined);
-    const advisoryClass = dbUser?.teacher?.advisoryClass ?? undefined;
-
-    return { schoolId, advisoryClass };
-}
-
-/**
  * Get risk level counts using database aggregation (fast)
  * Cached for 30 seconds
  */
@@ -54,28 +35,23 @@ export async function getStudentRiskCounts(
     classFilter?: string,
 ): Promise<RiskCountsResponse | null> {
     try {
-        const session = await requireAuth();
-        const user = session.user;
-        const { schoolId, advisoryClass } = await getUserContext(
-            user.id,
-            user.role,
-        );
+        const viewer = await getViewerContext();
 
-        if (!schoolId && !isSystemAdmin(user.role)) return null;
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return null;
 
         // Get classes and risk counts in parallel
         const [classes, rawCounts] = await Promise.all([
             getDistinctClassesQuery(
-                schoolId,
-                advisoryClass,
-                user.role,
-                user.id,
+                viewer.schoolId,
+                viewer.advisoryClass,
+                viewer.role,
+                viewer.userId,
             ),
             getRiskLevelCountsQuery(
-                schoolId,
-                advisoryClass,
-                user.role,
-                user.id,
+                viewer.schoolId,
+                viewer.advisoryClass,
+                viewer.role,
+                viewer.userId,
                 classFilter,
             ),
         ]);
@@ -121,7 +97,7 @@ const getCachedStudents = unstable_cache(
     },
     ["students-list"],
     {
-        revalidate: 30, // Cache for 30 seconds
+        revalidate: 30,
         tags: ["students"],
     },
 );
@@ -130,32 +106,25 @@ export async function getStudents(
     options?: GetStudentsOptions,
 ): Promise<StudentListResponse> {
     try {
-        const session = await requireAuth();
-        const user = session.user;
+        const viewer = await getViewerContext();
 
         const page = options?.page ?? 1;
         const limit = options?.limit ?? 100;
         const classFilter = options?.classFilter;
 
-        const { schoolId, advisoryClass } = await getUserContext(
-            user.id,
-            user.role,
-        );
-
-        if (!schoolId && !isSystemAdmin(user.role)) {
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
             return {
                 students: [],
                 pagination: { total: 0, page, limit, totalPages: 0 },
             };
         }
 
-        // Use cached data for first page, fresh data for pagination
         if (page === 1 && !classFilter) {
             return getCachedStudents(
-                schoolId,
-                advisoryClass,
-                user.role,
-                user.id,
+                viewer.schoolId,
+                viewer.advisoryClass,
+                viewer.role,
+                viewer.userId,
                 {
                     page,
                     limit,
@@ -165,10 +134,10 @@ export async function getStudents(
         }
 
         const { students, total } = await getStudentsQuery(
-            schoolId,
-            advisoryClass,
-            user.role,
-            user.id,
+            viewer.schoolId,
+            viewer.advisoryClass,
+            viewer.role,
+            viewer.userId,
             { classFilter, page, limit },
         );
 
@@ -196,24 +165,19 @@ export async function getStudents(
  */
 export async function searchStudents(query: string) {
     try {
-        // SECURITY: จำกัดความยาว input ป้องกัน query ที่ใหญ่เกินไป
+        // SECURITY: limit input length to keep search queries bounded
         const sanitizedQuery = (query ?? "").trim().slice(0, 100);
         if (!sanitizedQuery) return [];
 
-        const session = await requireAuth();
-        const user = session.user;
-        const { schoolId, advisoryClass } = await getUserContext(
-            user.id,
-            user.role,
-        );
+        const viewer = await getViewerContext();
 
-        if (!schoolId && !isSystemAdmin(user.role)) return [];
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return [];
 
         return searchStudentsQuery(
-            schoolId,
-            advisoryClass,
-            user.role,
-            user.id,
+            viewer.schoolId,
+            viewer.advisoryClass,
+            viewer.role,
+            viewer.userId,
             sanitizedQuery,
         );
     } catch (error) {
@@ -251,20 +215,15 @@ const getCachedStudentDetail = unstable_cache(
 
 export async function getStudentDetail(studentId: string) {
     try {
-        const session = await requireAuth();
-        const user = session.user;
-        const { schoolId, advisoryClass } = await getUserContext(
-            user.id,
-            user.role,
-        );
+        const viewer = await getViewerContext();
 
-        if (!schoolId && !isSystemAdmin(user.role)) return null;
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return null;
 
         return getCachedStudentDetail(
-            schoolId,
-            advisoryClass,
-            user.role,
-            user.id,
+            viewer.schoolId,
+            viewer.advisoryClass,
+            viewer.role,
+            viewer.userId,
             studentId,
         );
     } catch (error) {
@@ -279,17 +238,15 @@ export async function getStudentDetail(studentId: string) {
  */
 export async function hasRound1Data(academicYearId: string): Promise<boolean> {
     try {
-        const session = await requireAuth();
-        const user = session.user;
-        const { schoolId } = await getUserContext(user.id, user.role);
+        const viewer = await getViewerContext();
 
-        if (!schoolId && !isSystemAdmin(user.role)) return false;
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return false;
 
         const count = await prisma.phqResult.count({
             where: {
                 academicYearId,
                 assessmentRound: 1,
-                ...(schoolId ? { student: { schoolId } } : {}),
+                ...(viewer.schoolId ? { student: { schoolId: viewer.schoolId } } : {}),
             },
             take: 1,
         });
@@ -305,7 +262,7 @@ export async function hasRound1Data(academicYearId: string): Promise<boolean> {
  * Check for incomplete activities from a previous assessment round
  * Used to warn teachers before importing new round data
  *
- * Scoping by `classes` — the classes of students being imported (from Excel)
+ * Scope by the imported class list from the Excel file.
  * This way both school_admin and class_teacher get warnings scoped to
  * exactly the classes they are importing, not the entire school.
  */
@@ -321,21 +278,15 @@ export async function getIncompleteActivityWarning(
         previousRound: Math.max(assessmentRound - 1, 1),
     };
 
-    // Round 1 has no previous round — skip warning entirely
+    // Round 1 has no previous round, so skip the warning entirely.
     if (classes.length === 0 || assessmentRound <= 1) return noWarning;
 
     try {
-        const session = await requireAuth();
-        const user = session.user;
-        const { schoolId } = await getUserContext(user.id, user.role);
+        const viewer = await getViewerContext();
 
-        if (!schoolId && !isSystemAdmin(user.role)) return noWarning;
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return noWarning;
 
-        // Check the previous round's incomplete activities
-        // e.g. importing round 2 → check round 1
         const previousRound = assessmentRound - 1;
-
-        // Find incomplete activities for students in the imported classes only
         const incompleteActivities = await prisma.activityProgress.findMany({
             where: {
                 status: { not: "completed" },
@@ -343,7 +294,7 @@ export async function getIncompleteActivityWarning(
                     academicYearId,
                     assessmentRound: previousRound,
                     student: {
-                        ...(schoolId ? { schoolId } : {}),
+                        ...(viewer.schoolId ? { schoolId: viewer.schoolId } : {}),
                         class: { in: classes },
                     },
                 },
@@ -355,7 +306,6 @@ export async function getIncompleteActivityWarning(
 
         if (incompleteActivities.length === 0) return noWarning;
 
-        // Count distinct students
         const uniqueStudents = new Set(
             incompleteActivities.map((a) => a.studentId),
         );

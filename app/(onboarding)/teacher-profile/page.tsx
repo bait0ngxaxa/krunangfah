@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { GraduationCap } from "lucide-react";
-import { TeacherProfileForm } from "@/components/teacher";
+import { TeacherProfileForm } from "@/components/teacher/forms/TeacherProfileForm/TeacherProfileForm";
 import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import {

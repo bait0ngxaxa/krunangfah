@@ -26,7 +26,6 @@ interface ScreeningSummaryProps {
     selectedClass: string;
     classes: string[];
     riskLevels: RiskLevel[];
-    onStudentClick: (studentId: string) => void;
     readOnly?: boolean;
 }
 
@@ -36,17 +35,12 @@ export function ScreeningSummary({
     selectedClass,
     classes,
     riskLevels,
-    onStudentClick,
     readOnly = false,
 }: ScreeningSummaryProps) {
     return (
         <div className="space-y-5">
-            {/* Summary Header */}
             <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/80 ring-1 ring-slate-900/5 overflow-hidden">
-                {/* Subtle Top Edge Highlight */}
                 <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
-
-                {/* Corner decoration */}
                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-linear-to-br from-emerald-200/30 to-green-300/20 rounded-full blur-2xl pointer-events-none opacity-60" />
 
                 <div className="px-5 py-4 flex items-center justify-between relative z-10">
@@ -78,7 +72,6 @@ export function ScreeningSummary({
                     key={level}
                     level={level}
                     students={getStudentsByLevel(groupedStudents, level)}
-                    onStudentClick={onStudentClick}
                     readOnly={readOnly}
                 />
             ))}

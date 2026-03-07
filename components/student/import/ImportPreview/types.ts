@@ -1,6 +1,6 @@
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { type RiskLevel, type PhqScores } from "@/lib/utils/phq-scoring";
-import { type IncompleteActivityInfo } from "@/lib/actions/student";
+import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 
 /**
  * Props for ImportPreview component

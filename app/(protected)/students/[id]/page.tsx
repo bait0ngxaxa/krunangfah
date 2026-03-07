@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
 import { BarChart3, Target, Home } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
-import { getStudentDetail } from "@/lib/actions/student";
+import { getStudentDetail } from "@/lib/actions/student/main";
 import { StudentProfileCard } from "@/components/student/profile/StudentProfileCard";
 import { PHQHistoryTable } from "@/components/student/phq/PHQHistoryTable";
 import { ActivityProgressTable } from "@/components/student/activity/ActivityProgressTable";

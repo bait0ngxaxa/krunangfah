@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
-import type { IncompleteActivityInfo } from "@/lib/actions/student";
+import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 
 interface ImportActionsProps {
     onCancel: () => void;

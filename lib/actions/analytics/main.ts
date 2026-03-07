@@ -1,8 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
 import { unstable_cache } from "next/cache";
+import { getViewerContext } from "@/lib/auth/viewer-context";
 import {
     getCombinedAnalytics,
     getTrendData,
@@ -20,11 +20,6 @@ import { RISK_LEVEL_CONFIG } from "./constants";
 import type { AnalyticsData } from "./types";
 import { logError } from "@/lib/utils/logging";
 
-/**
- * Cached analytics data fetcher
- * Caches expensive DB queries (CTE + ROW_NUMBER) for 5 minutes
- * Invalidated via revalidateTag("analytics") when data changes
- */
 const getCachedAnalyticsData = unstable_cache(
     async (
         schoolId: string | undefined,
@@ -37,8 +32,6 @@ const getCachedAnalyticsData = unstable_cache(
             ? parseInt(academicYearStr, 10)
             : undefined;
 
-        // system_admin ไม่มี schoolId + ไม่มี year → auto-default เป็นปีล่าสุด
-        // ป้องกัน full table scan ของ phq_results ทุกโรงเรียน
         if (!schoolId && !academicYear) {
             const latestYear = await prisma.academicYear.findFirst({
                 orderBy: { year: "desc" },
@@ -49,7 +42,6 @@ const getCachedAnalyticsData = unstable_cache(
             }
         }
 
-        // Build student query based on role and filter
         const studentWhere: { schoolId?: string; class?: string } = {
             ...(schoolId ? { schoolId } : {}),
         };
@@ -57,12 +49,9 @@ const getCachedAnalyticsData = unstable_cache(
             studentWhere.class = classFilter;
         }
 
-        // school_admin and system_admin can see class filter dropdown
         const showClassFilter =
             role === "school_admin" || role === "system_admin";
 
-        // When filtering by academic year, count only students with PHQ results in that year
-        // Otherwise totalStudents - studentsWithAssessment would be incorrect
         const studentCountWhere = academicYear
             ? {
                   ...studentWhere,
@@ -72,7 +61,6 @@ const getCachedAnalyticsData = unstable_cache(
               }
             : studentWhere;
 
-        // Get total students + available classes + available years in parallel with analytics
         const [
             totalStudents,
             availableClasses,
@@ -92,7 +80,6 @@ const getCachedAnalyticsData = unstable_cache(
                       })
                       .then((classes) => classes.map((c) => c.class))
                 : Promise.resolve([]),
-            // Fetch distinct academic years that have PHQ results (scoped to school + class)
             prisma.academicYear.findMany({
                 where: {
                     phqResults: {
@@ -165,60 +152,37 @@ const getCachedAnalyticsData = unstable_cache(
     { revalidate: 300, tags: ["analytics"] },
 );
 
-/**
- * Get analytics summary for current teacher's students
- * Uses cached data (5 min TTL) to avoid repeated heavy queries
- * @param classFilter - Optional class filter for school_admin (e.g. "ม.1/1")
- * @param schoolFilter - Optional school filter for system_admin
- * @param academicYear - Optional academic year number filter (e.g. 2568)
- */
 export async function getAnalyticsSummary(
     classFilter?: string,
     schoolFilter?: string,
     academicYear?: number,
 ): Promise<AnalyticsData | null> {
     try {
-        const session = await requireAuth();
-        const userId = session.user.id;
+        const viewer = await getViewerContext();
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                schoolId: true,
-                role: true,
-                teacher: {
-                    select: {
-                        advisoryClass: true,
-                    },
-                },
-            },
-        });
-
-        // system_admin doesn't need schoolId
-        const isSystemAdminRole = user?.role === "system_admin";
-        if (!user?.schoolId && !isSystemAdminRole) {
+        if (!viewer.schoolId && viewer.role !== "system_admin") {
             return null;
         }
 
         let targetClass: string | undefined;
-        if (user.role === "class_teacher") {
-            targetClass = user.teacher?.advisoryClass;
+        if (viewer.role === "class_teacher") {
+            targetClass = viewer.advisoryClass;
             if (!targetClass) {
                 return null;
             }
-        } else if (user.role === "school_admin" || isSystemAdminRole) {
+        } else {
             targetClass = classFilter;
         }
 
-        // system_admin: use schoolFilter if provided, otherwise undefined (all schools)
-        const schoolId = isSystemAdminRole
-            ? schoolFilter || undefined
-            : (user.schoolId ?? undefined);
+        const schoolId =
+            viewer.role === "system_admin"
+                ? schoolFilter || undefined
+                : viewer.schoolId;
 
         return getCachedAnalyticsData(
             schoolId,
             targetClass ?? "",
-            user.role,
+            viewer.role,
             academicYear?.toString() ?? "",
         );
     } catch (error) {
@@ -227,9 +191,6 @@ export async function getAnalyticsSummary(
     }
 }
 
-/**
- * Get risk level configuration
- */
 export async function getRiskLevelConfig() {
     return RISK_LEVEL_CONFIG;
 }

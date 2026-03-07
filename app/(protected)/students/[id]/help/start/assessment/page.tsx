@@ -1,7 +1,7 @@
-import { getStudentDetail } from "@/lib/actions/student";
+import { getStudentDetail } from "@/lib/actions/student/main";
 import { getActivityProgress } from "@/lib/actions/activity";
 import { redirect, notFound } from "next/navigation";
-import { TeacherAssessmentForm } from "@/components/activity";
+import { TeacherAssessmentForm } from "@/components/activity/TeacherAssessmentForm";
 import { requireAuth } from "@/lib/session";
 
 const ACTIVITIES = [

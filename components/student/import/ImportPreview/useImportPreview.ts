@@ -7,10 +7,10 @@ import {
 } from "react";
 import { calculateRiskLevel, type PhqScores } from "@/lib/utils/phq-scoring";
 import {
-    importStudents,
     hasRound1Data,
     getIncompleteActivityWarning,
-} from "@/lib/actions/student";
+} from "@/lib/actions/student/main";
+import { importStudents } from "@/lib/actions/student/mutations";
 import {
     getAcademicYears,
     getCurrentTeacherProfile,
@@ -23,7 +23,7 @@ import type {
     TeacherProfile,
     AcademicYear,
 } from "./types";
-import type { IncompleteActivityInfo } from "@/lib/actions/student";
+import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 
 /**
  * Custom hook for managing ImportPreview state and logic

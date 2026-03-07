@@ -14,12 +14,10 @@ import {
     USER_ROLE_LABELS,
     PROJECT_ROLE_LABELS_EXT,
 } from "@/lib/constants/roles";
-import {
-    DashboardHeader,
-    ActionCard,
-    DashboardActionList,
-    DashboardContentSkeleton,
-} from "@/components/dashboard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { ActionCard } from "@/components/dashboard/cards/ActionCard";
+import { DashboardActionList } from "@/components/dashboard/DashboardActionList";
+import { DashboardContentSkeleton } from "@/components/dashboard/DashboardContentSkeleton";
 import { PageBanner } from "@/components/ui/PageBanner";
 import type { StatItem } from "@/components/dashboard/DashboardHeader";
 

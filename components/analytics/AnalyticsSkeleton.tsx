@@ -3,8 +3,6 @@
  * Loading skeleton for analytics content
  */
 
-"use client";
-
 export function AnalyticsSkeleton() {
     return (
         <div className="space-y-6 animate-pulse">

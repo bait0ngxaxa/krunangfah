@@ -1,59 +1,14 @@
-"use client";
-
-import dynamic from "next/dynamic";
 import { BarChart3, TrendingUp, Target } from "lucide-react";
-import {
-    PhqSummaryTable,
-    HospitalReferralTable,
-    ActivitySummaryTable,
-} from "./index";
-import type { AnalyticsData } from "@/lib/actions/analytics";
+
+import { RiskPieChart } from "@/components/ui/RiskPieChart";
 import type { RiskPieChartDataItem } from "@/components/ui/RiskPieChart";
 import type { Tab } from "@/components/ui/Tabs";
-
-// Dynamic chart imports (ssr: false to prevent hydration warnings)
-const RiskPieChart = dynamic(
-    () =>
-        import("@/components/ui/RiskPieChart").then((mod) => ({
-            default: mod.RiskPieChart,
-        })),
-    {
-        ssr: false,
-        loading: () => <ChartLoadingSkeleton />,
-    },
-);
-
-const RiskLevelTrendChart = dynamic(
-    () =>
-        import("./charts/RiskLevelTrendChart").then((mod) => ({
-            default: mod.RiskLevelTrendChart,
-        })),
-    {
-        ssr: false,
-        loading: () => <ChartLoadingSkeleton />,
-    },
-);
-
-const RiskLevelByGradeChart = dynamic(
-    () =>
-        import("./charts/RiskLevelByGradeChart").then((mod) => ({
-            default: mod.RiskLevelByGradeChart,
-        })),
-    {
-        ssr: false,
-        loading: () => <ChartLoadingSkeleton />,
-    },
-);
-
-function ChartLoadingSkeleton() {
-    return (
-        <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-6 overflow-hidden flex flex-col justify-center min-h-[400px]">
-            <div className="animate-pulse text-gray-400 text-sm font-semibold mx-auto">
-                กำลังโหลดกราฟ...
-            </div>
-        </div>
-    );
-}
+import type { AnalyticsData } from "@/lib/actions/analytics/types";
+import { RiskLevelByGradeChart } from "./charts/RiskLevelByGradeChart";
+import { RiskLevelTrendChart } from "./charts/RiskLevelTrendChart";
+import { ActivitySummaryTable } from "./tables/ActivitySummaryTable";
+import { HospitalReferralTable } from "./tables/HospitalReferralTable";
+import { PhqSummaryTable } from "./tables/PhqSummaryTable";
 
 interface AnalyticsTabContentProps {
     data: AnalyticsData;
@@ -77,7 +32,7 @@ export function buildAnalyticsTabs({
             id: "summary",
             label: (
                 <span className="flex items-center gap-1.5">
-                    <BarChart3 className="w-4 h-4" /> สรุปผลรวม
+                    <BarChart3 className="w-4 h-4" /> ภาพรวม
                 </span>
             ),
             content: (
@@ -94,13 +49,13 @@ export function buildAnalyticsTabs({
                             showPercentageInLegend
                         />
                     </div>
-                    {showAdminTables && (
+                    {showAdminTables ? (
                         <HospitalReferralTable
                             hospitalReferralsByGrade={
                                 data.hospitalReferralsByGrade
                             }
                         />
-                    )}
+                    ) : null}
                 </>
             ),
         },
@@ -126,7 +81,7 @@ export function buildAnalyticsTabs({
             id: "progress",
             label: (
                 <span className="flex items-center gap-1.5">
-                    <Target className="w-4 h-4" /> กิจกรรมช่วยเหลือ
+                    <Target className="w-4 h-4" /> การทำกิจกรรม
                 </span>
             ),
             content: (

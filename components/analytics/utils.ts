@@ -1,4 +1,4 @@
-import type { RiskLevelSummary } from "@/lib/actions/analytics";
+import type { RiskLevelSummary } from "@/lib/actions/analytics/types";
 import type { RiskPieChartDataItem } from "@/components/ui/RiskPieChart";
 
 const RISK_LEVEL_ORDER: Record<string, number> = {

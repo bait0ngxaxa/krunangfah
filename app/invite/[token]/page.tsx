@@ -1,5 +1,5 @@
 import { getTeacherInvite } from "@/lib/actions/teacher-invite";
-import { AcceptInviteForm } from "@/components/teacher";
+import { AcceptInviteForm } from "@/components/teacher/forms/AcceptInviteForm";
 import { XCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";

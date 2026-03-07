@@ -1,5 +1,6 @@
-import { StudentSearch } from "@/components/dashboard/student-search";
-import { HeroCard, QuickActionCard } from "@/components/dashboard/cards";
+import dynamic from "next/dynamic";
+import { HeroCard } from "@/components/dashboard/cards/HeroCard";
+import { QuickActionCard } from "@/components/dashboard/cards/QuickActionCard";
 import { type UserRole } from "@/types/auth.types";
 import {
     GraduationCap,
@@ -12,6 +13,18 @@ import {
     Upload,
     UsersRound,
 } from "lucide-react";
+
+const StudentSearch = dynamic(
+    () =>
+        import("@/components/dashboard/student-search/StudentSearch").then(
+            (mod) => ({ default: mod.StudentSearch }),
+        ),
+    {
+        loading: () => (
+            <div className="h-14 rounded-2xl bg-slate-100 animate-pulse" />
+        ),
+    },
+);
 
 interface DashboardActionListProps {
     userRole: UserRole;
@@ -29,7 +42,6 @@ export function DashboardActionList({
 
     return (
         <div className="space-y-3">
-            {/* Teacher-only actions (First Row for Teachers) */}
             {!isSystemAdmin && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                     <QuickActionCard
@@ -43,7 +55,7 @@ export function DashboardActionList({
                         href="/students/import"
                         icon={FileSpreadsheet}
                         title="นำเข้าข้อมูลนักเรียน"
-                        description="" // Handled by button
+                        description=""
                         imageSrc="/image/dashboard/import.png"
                         imageClassName="w-[85px] sm:w-[95px]"
                         actionButton={
@@ -56,7 +68,6 @@ export function DashboardActionList({
                 </div>
             )}
 
-            {/* Featured Hero Card — Students */}
             <HeroCard
                 href="/students"
                 icon={Users}
@@ -74,10 +85,8 @@ export function DashboardActionList({
                 emptyDescription="นำเข้าข้อมูลนักเรียนเพื่อเริ่มใช้งานระบบคัดกรอง"
             />
 
-            {/* Admin & Management Action Grid */}
             {(isSystemAdmin || isSchoolAdmin) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                    {/* System Admin: User Management */}
                     {isSystemAdmin && (
                         <QuickActionCard
                             href="/admin/users"
@@ -87,7 +96,6 @@ export function DashboardActionList({
                         />
                     )}
 
-                    {/* System Admin: Invite Links */}
                     {isSystemAdmin && (
                         <QuickActionCard
                             href="/admin/invites"
@@ -97,7 +105,6 @@ export function DashboardActionList({
                         />
                     )}
 
-                    {/* School Admin (Primary): Add Teacher */}
                     {isSchoolAdmin && (
                         <QuickActionCard
                             href="/teachers/add"
@@ -107,7 +114,6 @@ export function DashboardActionList({
                         />
                     )}
 
-                    {/* School Admin (Primary): Manage Teachers in system */}
                     {isSchoolAdmin && isPrimary && (
                         <QuickActionCard
                             href="/school/classes"
@@ -119,7 +125,6 @@ export function DashboardActionList({
                 </div>
             )}
 
-            {/* Analytics Hero Card */}
             <HeroCard
                 href="/analytics"
                 icon={BarChart3}
@@ -129,12 +134,9 @@ export function DashboardActionList({
                 theme="teal"
             />
 
-            {/* Search Section */}
             <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 overflow-hidden group">
-                {/* Corner decoration */}
                 <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-green-200/40 to-emerald-300/30 rounded-full blur-xl pointer-events-none" />
                 <div className="bg-linear-to-r from-emerald-400 via-green-400 to-emerald-500 px-5 py-3 flex items-center gap-2.5 relative">
-                    {/* Header shimmer */}
                     <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
                     <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-inner ring-1 ring-white/20">
                         <Search className="w-4 h-4 text-white" />

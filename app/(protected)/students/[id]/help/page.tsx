@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getStudentDetail } from "@/lib/actions/student";
+import { getStudentDetail } from "@/lib/actions/student/main";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { getColorConfig, getActivities } from "@/lib/config/help-page-config";
 import { ConversationView } from "@/components/student/help/ConversationView";
