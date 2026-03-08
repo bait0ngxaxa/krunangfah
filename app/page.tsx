@@ -22,10 +22,11 @@ export default async function Home() {
         <div className="relative h-screen flex flex-col overflow-hidden bg-linear-to-b from-sky-300 via-sky-100 to-white">
             {/* Background image — rainbow */}
             <Image
-                src="/image/homepage/rainbow.png"
+                src="/image/homepage/rainbow.webp"
                 alt=""
                 fill
                 className="object-cover object-bottom overflow-hidden"
+                priority
             />
 
             {/* ─── Top Green Navbar ─── */}
@@ -72,7 +73,7 @@ export default async function Home() {
                 <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none mt-24 sm:mt-0 animate-fade-in-right animation-delay-200">
                     <div className="relative w-[280px] sm:w-[360px] md:w-[440px] lg:w-[500px] xl:w-[560px] animate-float">
                         <Image
-                            src="/image/homepage/hero.png"
+                            src="/image/homepage/hero.webp"
                             alt="ครูนางฟ้าพานักเรียนบิน"
                             width={860}
                             height={750}
@@ -96,11 +97,11 @@ export default async function Home() {
                 </p>
             </div>
 
-            {/* Subtle ambient blobs */}
+            {/* Subtle ambient blobs — GPU-accelerated */}
             <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[30%] left-[5%] w-48 sm:w-64 h-48 sm:h-64 bg-emerald-200 rounded-full mix-blend-multiply blur-3xl opacity-25 animate-pulse" />
-                <div className="absolute top-[50%] right-[15%] w-40 sm:w-56 h-40 sm:h-56 bg-teal-100 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-pulse delay-150" />
-                <div className="absolute bottom-[20%] left-[30%] w-56 sm:w-72 h-56 sm:h-72 bg-cyan-100 rounded-full mix-blend-multiply blur-3xl opacity-15 animate-pulse delay-300" />
+                <div className="absolute top-[30%] left-[5%] w-48 sm:w-64 h-48 sm:h-64 bg-emerald-200 rounded-full blur-2xl opacity-25 animate-pulse will-change-transform" />
+                <div className="absolute top-[50%] right-[15%] w-40 sm:w-56 h-40 sm:h-56 bg-teal-100 rounded-full blur-2xl opacity-20 animate-pulse delay-150 will-change-transform" />
+                <div className="absolute bottom-[20%] left-[30%] w-56 sm:w-72 h-56 sm:h-72 bg-cyan-100 rounded-full blur-2xl opacity-15 animate-pulse delay-300 will-change-transform" />
             </div>
         </div>
     );

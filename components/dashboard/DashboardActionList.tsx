@@ -56,7 +56,7 @@ export function DashboardActionList({
                         icon={FileSpreadsheet}
                         title="นำเข้าข้อมูลนักเรียน"
                         description=""
-                        imageSrc="/image/dashboard/import.png"
+                        imageSrc="/image/dashboard/import.webp"
                         imageClassName="w-[85px] sm:w-[95px]"
                         actionButton={
                             <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0BD0D9] text-white text-[11px] sm:text-xs font-bold rounded-xl shadow-sm hover:brightness-95 transition-all">
@@ -78,7 +78,7 @@ export function DashboardActionList({
                         : undefined
                 }
                 description="ดูรายชื่อและข้อมูลคัดกรอง"
-                imageSrc="/image/dashboard/students.png"
+                imageSrc="/image/dashboard/students.webp"
                 theme="emerald"
                 isEmpty={!isSystemAdmin && studentCount === 0}
                 emptyTitle="ยังไม่มีข้อมูลนักเรียน"

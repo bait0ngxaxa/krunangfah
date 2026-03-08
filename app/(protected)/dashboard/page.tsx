@@ -170,7 +170,7 @@ async function DashboardContent({ session }: { session: Session }) {
                         Angel Teacher Creative Assets
                     </>
                 }
-                imageSrc="/image/dashboard/main.PNG"
+                imageSrc="/image/dashboard/main.webp"
                 imageAlt="Dashboard Banner"
                 imageContainerClassName="absolute bottom-0 left-1/2 -translate-x-1/2 w-[280px] sm:w-[560px] lg:w-[680px] pointer-events-none z-10 flex items-end"
                 showBackButton={false}

@@ -58,7 +58,7 @@ export default function StudentImportPage() {
                     </>
                 }
                 icon={FileUp}
-                imageSrc="/image/dashboard/import.png"
+                imageSrc="/image/dashboard/import.webp"
                 imageAlt="Import Students"
                 imageContainerClassName="absolute bottom-0 left-1/2 -translate-x-1/2 w-[100px] sm:w-[150px] lg:w-[190px] pointer-events-none z-10 flex items-end"
                 backUrl="/students"

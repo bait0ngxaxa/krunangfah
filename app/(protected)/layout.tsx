@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { NavbarWrapper } from "@/components/layout/NavbarWrapper";
 import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { Providers } from "@/components/ui/Providers";
 
 function NavbarFallback() {
     return (
@@ -44,11 +45,13 @@ export default async function ProtectedLayout({
     }
 
     return (
-        <div className="min-h-screen">
-            <Suspense fallback={<NavbarFallback />}>
-                <NavbarWrapper />
-            </Suspense>
-            <main className="pt-[80px]">{children}</main>
-        </div>
+        <Providers>
+            <div className="min-h-screen">
+                <Suspense fallback={<NavbarFallback />}>
+                    <NavbarWrapper />
+                </Suspense>
+                <main className="pt-[80px]">{children}</main>
+            </div>
+        </Providers>
     );
 }

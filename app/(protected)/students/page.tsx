@@ -44,7 +44,7 @@ export default async function MyStudentsPage({
                     </>
                 }
                 icon={Users}
-                imageSrc="/image/dashboard/students.png"
+                imageSrc="/image/dashboard/students.webp"
                 actionNode={
                     !isAdmin ? (
                         <Link

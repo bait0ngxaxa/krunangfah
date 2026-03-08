@@ -33,7 +33,7 @@ export function PageBanner({
     imageContainerClassName,
     bgClassName = "bg-emerald-50",
     borderClassName = "border-[#008F5D]",
-    bgImage = "/image/login_bg.png",
+    bgImage = "/image/login_bg.webp",
     actionNode,
     showBackButton = true,
     backUrl = "/dashboard",

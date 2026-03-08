@@ -1,6 +1,7 @@
 import { requireAuth } from "@/lib/session";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
+import { Providers } from "@/components/ui/Providers";
 
 export default async function OnboardingLayout({
     children,
@@ -10,7 +11,7 @@ export default async function OnboardingLayout({
     await requireAuth();
 
     return (
-        <>
+        <Providers>
             <NavbarGreenBar fixed>
                 {/* Right side — logout */}
                 <div className="ml-auto pr-6 sm:pr-10 lg:pr-16">
@@ -19,6 +20,6 @@ export default async function OnboardingLayout({
             </NavbarGreenBar>
             {/* pt = full navbar height */}
             <div className="pt-[80px]">{children}</div>
-        </>
+        </Providers>
     );
 }

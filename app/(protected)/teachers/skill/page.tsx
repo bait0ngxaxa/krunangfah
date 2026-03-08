@@ -33,7 +33,7 @@ export default function TeacherSkillPage() {
                 title="อัพสกิลสำหรับคุณครู"
                 subtitle="เรียนรู้และพัฒนาทักษะในการดูแลสุขภาพจิตนักเรียน"
                 icon={GraduationCap}
-                imageSrc="/image/upskills.png"
+                imageSrc="/image/upskills.webp"
             />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8 relative z-10 w-full space-y-6">

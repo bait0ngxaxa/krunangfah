@@ -50,7 +50,7 @@ export default async function AdminInvitePage({
         return (
             <div className="relative min-h-dvh flex flex-col overflow-hidden">
                 <Image
-                    src="/image/login_bg.png"
+                    src="/image/login_bg.webp"
                     alt=""
                     fill
                     className="object-cover object-bottom"
@@ -93,7 +93,7 @@ export default async function AdminInvitePage({
         <div className="relative min-h-dvh flex flex-col overflow-hidden">
             {/* Background image — grass/flowers */}
             <Image
-                src="/image/login_bg.png"
+                src="/image/login_bg.webp"
                 alt=""
                 fill
                 className="object-cover object-bottom"
