@@ -36,7 +36,7 @@ describe("lib/token", () => {
     it("generatePasswordResetToken deletes old tokens and stores hashed token", async () => {
         const uuidSpy = vi
             .spyOn(crypto, "randomUUID")
-            .mockReturnValue("token-123");
+            .mockReturnValue("123e4567-e89b-12d3-a456-426614174000");
         vi.mocked(prisma.passwordResetToken.deleteMany).mockResolvedValue({
             count: 1,
         });
@@ -46,14 +46,14 @@ describe("lib/token", () => {
 
         const token = await generatePasswordResetToken("u@test.local");
 
-        expect(token).toBe("token-123");
+        expect(token).toBe("123e4567-e89b-12d3-a456-426614174000");
         expect(prisma.passwordResetToken.deleteMany).toHaveBeenCalledWith({
             where: { email: "u@test.local" },
         });
         expect(prisma.passwordResetToken.create).toHaveBeenCalledWith({
             data: {
                 email: "u@test.local",
-                token: hashPasswordResetToken("token-123"),
+                token: hashPasswordResetToken("123e4567-e89b-12d3-a456-426614174000"),
                 expiresAt: expect.any(Date),
             },
         });

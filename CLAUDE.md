@@ -24,8 +24,9 @@
 - **API:** Versioned endpoints, cursor-based pagination for large datasets, idempotent mutations.
 - **Database:** No `SELECT *`. Use transactions for multi-step ops. Production schema changes via migrations ONLY.
 
-## 5. Performance & Testing
+## 5. Performance, Algorithms & Testing
 
+- **Big O Notation:** Avoid time complexities worse than $O(n \log n)$ (e.g., nested loops $O(n^2)$). Prefer Hash Maps/Sets for $O(1)$ lookups over Array traversals $O(n)$ to optimize Time/Space complexity.
 - **Performance:** Parallel fetching (`Promise.all`), dynamic imports, multi-layer caching (CDN, App, DB).
 - **Testing:** Test behavior, not implementation. Cover Unit (business logic), Integration (critical paths), and E2E (happy + error paths).
 
