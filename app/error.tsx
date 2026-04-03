@@ -26,9 +26,14 @@ export default function Error({
                 <p className="text-gray-600 mb-6">
                     ขออภัย ไม่สามารถโหลดหน้านี้ได้ กรุณาลองใหม่อีกครั้ง
                 </p>
-                {error.message && (
+                {process.env.NODE_ENV === "development" && error.message && (
                     <p className="text-sm text-gray-500 mb-4 p-3 bg-gray-50 rounded-lg font-mono text-left overflow-auto max-h-32">
                         {error.message}
+                    </p>
+                )}
+                {error.digest && (
+                    <p className="text-xs text-gray-400 mb-4">
+                        Error ID: {error.digest}
                     </p>
                 )}
                 <div className="flex gap-3 justify-center">

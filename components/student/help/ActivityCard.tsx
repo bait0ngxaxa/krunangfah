@@ -9,12 +9,13 @@ interface ActivityCardProps {
 
 export function ActivityCard({ activity, index, config }: ActivityCardProps) {
     return (
-        <div className="bg-white rounded-2xl p-5 sm:p-8 border-2 border-gray-100 shadow-sm transition-all duration-300">
+        <div className="group relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/90 p-5 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.4)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_42px_-24px_rgba(15,23,42,0.48)] sm:p-8">
+            <div className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-emerald-100/30 blur-2xl" />
             <div className="flex items-center gap-6 mb-8">
                 <div
-                    className={`w-16 h-16 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-3xl font-bold shrink-0 shadow-lg relative group`}
+                    className={`relative flex h-16 w-16 shrink-0 rotate-3 items-center justify-center rounded-3xl text-3xl font-bold text-white shadow-lg ${config.bg}`}
                 >
-                    <span className="relative z-10 group-hover:scale-110 transition-transform">
+                    <span className="relative z-10 transition-transform group-hover:scale-110">
                         {index + 1}
                     </span>
                     <div className="absolute inset-0 bg-black/5 rounded-3xl transform scale-110 -z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -34,7 +35,7 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                 {activity.worksheets.map((worksheet, wIndex) => (
                     <div
                         key={wIndex}
-                        className="shrink-0 w-48 h-64 bg-white rounded-2xl overflow-hidden shadow-md border-4 border-white relative transform hover:scale-105 hover:rotate-1 hover:shadow-xl transition-all duration-300 group"
+                        className="group relative h-64 w-48 shrink-0 overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-md transition-all duration-300 hover:rotate-1 hover:scale-105 hover:shadow-xl"
                     >
                         <Image
                             src={worksheet}
@@ -45,7 +46,7 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center">
                             <span
-                                className={`text-white text-xs font-bold ${config.bg} px-2 py-1 rounded-full border-2 border-white shadow-sm`}
+                                className={`rounded-full border border-white/80 px-2 py-1 text-xs font-bold text-white shadow-sm ${config.bg}`}
                             >
                                 ใบที่ {wIndex + 1}
                             </span>

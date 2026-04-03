@@ -34,6 +34,12 @@ export function EncouragementPage({
     const [showButton, setShowButton] = useState(false);
 
     const config = getWorkspaceColorConfig(riskLevel);
+    const continueButtonClass =
+        riskLevel === "orange"
+            ? "bg-orange-500 hover:bg-orange-600"
+            : riskLevel === "yellow"
+              ? "bg-yellow-400 hover:bg-yellow-500"
+              : "bg-green-500 hover:bg-green-600";
     const mainMessages = getEncouragementMessages(problemType);
     const tipMessages = ENCOURAGEMENT_MESSAGES.tips;
 
@@ -102,12 +108,12 @@ export function EncouragementPage({
 
     return (
         <div
-            className={`min-h-screen ${config.bgLight} flex items-center justify-center py-12 px-4`}
+            className={`min-h-screen ${config.bgLight} flex items-center justify-center px-4 py-12`}
         >
             <div className="max-w-2xl mx-auto text-center w-full">
                 {/* Decorative icon */}
                 <div
-                    className={`w-28 h-28 ${config.bg} rounded-full flex items-center justify-center text-white mx-auto mb-10 shadow-sm`}
+                    className={`mx-auto mb-10 flex h-28 w-28 items-center justify-center rounded-full ${config.bg} text-white shadow-sm`}
                 >
                     <Heart className="w-14 h-14" />
                 </div>
@@ -130,7 +136,7 @@ export function EncouragementPage({
 
                 {/* Tips Section */}
                 <div
-                    className={`bg-white rounded-3xl p-8 md:p-10 shadow-sm border-2 border-gray-100 mb-12 transition-all duration-1000 mx-4 transform hover:scale-[1.02] ${
+                    className={`mx-4 mb-12 transform rounded-3xl border border-gray-200/80 bg-white/90 p-8 shadow-sm transition-all duration-1000 hover:scale-[1.02] md:p-10 ${
                         showTips
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"
@@ -179,7 +185,7 @@ export function EncouragementPage({
                 {/* Continue Button */}
                 <button
                     onClick={handleContinue}
-                    className={`inline-flex items-center gap-3 px-10 py-5 bg-[#0BD0D9] text-white rounded-full font-bold text-xl shadow-sm hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
+                    className={`group relative inline-flex items-center gap-3 overflow-hidden rounded-full px-10 py-5 text-xl font-bold text-white shadow-sm transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-md ${continueButtonClass} ${
                         showButton
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"

@@ -15,25 +15,27 @@ export function HelpPageHeader({
     title = "ระบบใบงานช่วยเหลือนักเรียน",
 }: HelpPageHeaderProps) {
     return (
-        <div className="relative text-center mb-8 bg-white rounded-3xl p-5 sm:p-8 border-2 border-gray-100 shadow-sm overflow-hidden group">
+        <div className="relative mb-8 overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-5 text-center shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] sm:p-8">
+            <div className="pointer-events-none absolute -top-14 -right-14 h-36 w-36 rounded-full bg-emerald-200/30 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-14 -left-10 h-32 w-32 rounded-full bg-cyan-200/20 blur-3xl" />
             <div className="relative z-10">
                 <div className="relative w-24 h-24 mx-auto mb-6">
                     <div
                         className={`absolute inset-0 rounded-3xl ${config.bg} blur-lg opacity-25`}
                     />
                     <div
-                        className={`relative w-full h-full ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-4xl shadow-inner ring-2 ring-white/20 hover:rotate-6 hover:scale-110 transition-transform duration-300`}
+                        className={`relative flex h-full w-full rotate-3 items-center justify-center rounded-3xl ${config.bg} text-4xl text-white shadow-lg ring-2 ring-white/30 transition-transform duration-300 hover:rotate-6 hover:scale-105`}
                     >
                         {icon}
                     </div>
                 </div>
 
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3">
+                <h1 className="mb-3 text-3xl font-bold tracking-tight text-gray-800 md:text-4xl">
                     {title}
                 </h1>
 
                 <div
-                    className={`inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border-2 ${config.borderColor} shadow-sm`}
+                    className={`inline-flex items-center gap-2 rounded-full border bg-white/90 px-4 py-2 shadow-sm ${config.borderColor}`}
                 >
                     <span className="font-bold text-gray-700">
                         {studentName}

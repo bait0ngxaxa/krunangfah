@@ -55,7 +55,7 @@ export function ActionButtons({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <Link
                 href={`/students/${studentId}/help/guidelines${phqResultId ? `?phqResultId=${phqResultId}` : ""}`}
-                className={`group flex items-center justify-center gap-3 py-4 px-6 bg-[#34D399] text-white rounded-xl font-bold hover:shadow-md hover:bg-emerald-400 hover:-translate-y-0.5 transition-all shadow-sm`}
+                className="group flex items-center justify-center gap-3 rounded-2xl bg-emerald-500 px-6 py-4 font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-lg"
             >
                 <BookOpen className="w-6 h-6 group-hover:scale-110 transition-transform" />
                 <span className="text-lg">หลักการใช้ใบงาน</span>
@@ -65,7 +65,7 @@ export function ActionButtons({
             <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-[#0BD0D9] text-white rounded-xl font-bold hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-0.5 transition-all shadow-sm group"
+                    className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-cyan-500 px-6 py-4 font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-lg"
                 >
                     <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
                     <span className="text-lg">ดาวน์โหลดใบงาน</span>
@@ -78,7 +78,7 @@ export function ActionButtons({
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                    <div className="absolute top-full mt-3 left-0 right-0 bg-white rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden z-50 animate-fade-in-up">
+                    <div className="absolute left-0 right-0 top-full z-50 mt-3 overflow-hidden rounded-2xl border border-gray-200/80 bg-white/95 shadow-lg backdrop-blur-sm">
                         {downloadUrls.map((url, index) => {
                             const worksheetNames =
                                 getWorksheetNames(activityNumber);
@@ -88,10 +88,10 @@ export function ActionButtons({
                                 <button
                                     key={url}
                                     onClick={() => handleDownload(url)}
-                                    className="w-full px-6 py-4 text-left hover:bg-emerald-50 transition-colors flex items-center gap-4 border-b last:border-b-0 border-emerald-50/50 group"
+                                    className="group flex w-full items-center gap-4 border-b border-gray-100 px-6 py-4 text-left transition-colors last:border-b-0 hover:bg-slate-50"
                                 >
-                                    <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <FileText className="w-5 h-5 text-emerald-600" />
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm transition-transform group-hover:scale-105">
+                                        <FileText className="w-5 h-5 text-gray-500" />
                                     </div>
                                     <div className="flex-1">
                                         {downloadUrls.length > 1 ? (
@@ -110,7 +110,7 @@ export function ActionButtons({
                                             </div>
                                         )}
                                     </div>
-                                    <div className="text-gray-300 group-hover:text-emerald-500 transition-colors">
+                                    <div className="text-gray-300 transition-colors group-hover:text-cyan-500">
                                         <Download className="w-5 h-5" />
                                     </div>
                                 </button>

@@ -1,50 +1,18 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
-import { ExcelUploader } from "@/components/student/import/ExcelUploader";
-import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { FileUp } from "lucide-react";
-import { toast } from "sonner";
 import { PageBanner } from "@/components/ui/PageBanner";
+import { ImportClient } from "@/components/student/import/ImportClient";
+import { requireAuth } from "@/lib/session";
+import type { Metadata } from "next";
 
-const ImportPreview = dynamic(
-    () =>
-        import("@/components/student/import/ImportPreview/ImportPreview").then(
-            (mod) => mod.ImportPreview,
-        ),
-    {
-        ssr: false,
-        loading: () => (
-            <div className="flex items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
-            </div>
-        ),
-    },
-);
+export const metadata: Metadata = {
+    title: "นำเข้าข้อมูลนักเรียน | โครงการครูนางฟ้า",
+    description: "อัพโหลดไฟล์ Excel ที่มีข้อมูลนักเรียนและผลคะแนน PHQ-A",
+};
 
-export default function StudentImportPage() {
-    const router = useRouter();
-    const [parsedData, setParsedData] = useState<ParsedStudent[] | null>(null);
-
-    const handleDataParsed = (data: ParsedStudent[]) => {
-        setParsedData(data);
-    };
-
-    const handleCancel = () => {
-        setParsedData(null);
-    };
-
-    const handleSuccess = () => {
-        setParsedData(null);
-        toast.success("บันทึกข้อมูลสำเร็จ!", {
-            description: "กำลังกลับไปหน้า Dashboard...",
-        });
-        setTimeout(() => {
-            router.push("/dashboard");
-        }, 2000);
-    };
+export default async function StudentImportPage() {
+    // Server-side auth check — prevents unauthenticated access without
+    // shipping the auth logic to the client bundle
+    await requireAuth();
 
     return (
         <div className="min-h-screen bg-slate-50 relative overflow-hidden">
@@ -66,18 +34,7 @@ export default function StudentImportPage() {
             />
 
             <div className="max-w-6xl mx-auto relative z-10 px-4 py-8">
-                {/* Main Content */}
-                <div className="relative bg-white rounded-3xl shadow-sm p-6 md:p-8 border-2 border-gray-100 overflow-hidden">
-                    {!parsedData ? (
-                        <ExcelUploader onDataParsed={handleDataParsed} />
-                    ) : (
-                        <ImportPreview
-                            data={parsedData}
-                            onCancel={handleCancel}
-                            onSuccess={handleSuccess}
-                        />
-                    )}
-                </div>
+                <ImportClient />
             </div>
         </div>
     );

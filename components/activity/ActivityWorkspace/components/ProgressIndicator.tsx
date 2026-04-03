@@ -30,9 +30,9 @@ export function ProgressIndicator({
     const activeCircleStyle = getRiskLevelConfig(riskLevel).circleActive;
 
     return (
-        <div className="mb-10 bg-white rounded-2xl p-6 sm:p-8 border-2 border-gray-100 shadow-sm">
+        <div className="mb-10 rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-sm sm:p-8">
             <h3 className="text-xl font-bold mb-8 sm:mb-10 flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-[#0BD0D9] flex items-center justify-center text-white shadow-sm shadow-cyan-100">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm">
                     <BarChart3 className="w-6 h-6" />
                 </div>
                 <span className="text-gray-900">ความคืบหน้า</span>
@@ -104,7 +104,7 @@ export function ProgressIndicator({
                                             isCompleted
                                                 ? "bg-green-100 text-green-700 border border-green-100"
                                                 : isCurrent
-                                                  ? "bg-yellow-100 text-yellow-700 border border-yellow-100"
+                                                  ? "border border-amber-100 bg-amber-100 text-amber-700"
                                                   : "bg-gray-100 text-gray-500 border border-gray-100"
                                         }`}
                                     >

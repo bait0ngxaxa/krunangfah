@@ -23,6 +23,7 @@ interface ReferralButtonProps {
     studentName: string;
     referral?: ReferralData | null;
     currentUserId: string;
+    currentUserRole: string;
 }
 
 export function ReferralButton({
@@ -30,12 +31,17 @@ export function ReferralButton({
     studentName,
     referral,
     currentUserId,
+    currentUserRole,
 }: ReferralButtonProps) {
     const [showModal, setShowModal] = useState(false);
     const router = useRouter();
 
     // If student was referred TO the current user, show badge
-    if (referral && referral.toTeacherUserId === currentUserId) {
+    if (
+        referral &&
+        currentUserRole !== "class_teacher" &&
+        referral.toTeacherUserId === currentUserId
+    ) {
         const fromName = referral.fromTeacher?.teacher
             ? `${referral.fromTeacher.teacher.firstName} ${referral.fromTeacher.teacher.lastName}`
             : "ครูท่านอื่น";

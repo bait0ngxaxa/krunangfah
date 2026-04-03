@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ClipboardCheck } from "lucide-react";
 import { RiskGroupSection } from "../../phq/RiskGroupSection";
 import type { Student, GroupedStudents, RiskLevel } from "../types";
@@ -22,19 +23,65 @@ function getStudentsByLevel(
 
 interface ScreeningSummaryProps {
     displayedStudentCount: number;
+    filteredStudentCount: number;
     groupedStudents: GroupedStudents;
     selectedClass: string;
     classes: string[];
     riskLevels: RiskLevel[];
+    filters?: {
+        schoolId?: string;
+        className?: string;
+        riskLevel?: string;
+        referredOnly?: string;
+    };
+    pagination: {
+        page: number;
+        totalPages: number;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+    };
     readOnly?: boolean;
+}
+
+function buildPageHref(
+    filters: ScreeningSummaryProps["filters"],
+    page: number,
+): string {
+    const searchParams = new URLSearchParams();
+
+    if (filters?.schoolId) {
+        searchParams.set("school", filters.schoolId);
+    }
+
+    if (filters?.className && filters.className !== "all") {
+        searchParams.set("class", filters.className);
+    }
+
+    if (filters?.riskLevel && filters.riskLevel !== "all") {
+        searchParams.set("risk", filters.riskLevel);
+    }
+
+    if (filters?.referredOnly === "true") {
+        searchParams.set("referred", "true");
+    }
+
+    if (page > 1) {
+        searchParams.set("page", String(page));
+    }
+
+    const queryString = searchParams.toString();
+    return queryString ? `/students?${queryString}` : "/students";
 }
 
 export function ScreeningSummary({
     displayedStudentCount,
+    filteredStudentCount,
     groupedStudents,
     selectedClass,
     classes,
     riskLevels,
+    filters,
+    pagination,
     readOnly = false,
 }: ScreeningSummaryProps) {
     return (
@@ -62,7 +109,7 @@ export function ScreeningSummary({
                         </div>
                     </div>
                     <span className="bg-violet-50 text-violet-700 text-xs font-bold px-3.5 py-1.5 rounded-full border border-violet-100 shadow-sm">
-                        {displayedStudentCount} คน
+                        {displayedStudentCount} / {filteredStudentCount} คน
                     </span>
                 </div>
             </div>
@@ -75,6 +122,43 @@ export function ScreeningSummary({
                     readOnly={readOnly}
                 />
             ))}
+
+            {pagination.totalPages > 1 ? (
+                <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium text-slate-500">
+                        หน้า {pagination.page} จาก {pagination.totalPages}
+                    </p>
+                    <div className="flex items-center gap-2">
+                        {pagination.hasPreviousPage ? (
+                            <Link
+                                href={buildPageHref(filters, pagination.page - 1)}
+                                scroll={false}
+                                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-800"
+                            >
+                                ก่อนหน้า
+                            </Link>
+                        ) : (
+                            <span className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-400">
+                                ก่อนหน้า
+                            </span>
+                        )}
+
+                        {pagination.hasNextPage ? (
+                            <Link
+                                href={buildPageHref(filters, pagination.page + 1)}
+                                scroll={false}
+                                className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100"
+                            >
+                                ถัดไป
+                            </Link>
+                        ) : (
+                            <span className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-400">
+                                ถัดไป
+                            </span>
+                        )}
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }

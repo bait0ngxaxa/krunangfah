@@ -30,6 +30,12 @@ export function ActivityCompletionPage({
     const [finalButtonVisible, setFinalButtonVisible] = useState(false);
 
     const config = getWorkspaceColorConfig(riskLevel);
+    const completionButtonClass =
+        riskLevel === "orange"
+            ? "bg-orange-500 hover:bg-orange-600"
+            : riskLevel === "yellow"
+              ? "bg-yellow-400 hover:bg-yellow-500"
+              : "bg-green-500 hover:bg-green-600";
     const currentActivityName = getActivityName(activityNumber);
 
     // Find actual next activity from ACTIVITY_INDICES (not just +1)
@@ -81,7 +87,7 @@ export function ActivityCompletionPage({
                             ขอบคุณที่ชวนเด็กทำ
                         </h1>
                         <p
-                            className={`text-2xl md:text-3xl font-bold text-emerald-600`}
+                            className={`text-2xl md:text-3xl font-bold ${config.textColor}`}
                         >
                             กิจกรรมที่ {activityNumber}: {currentActivityName}
                         </p>
@@ -98,21 +104,21 @@ export function ActivityCompletionPage({
                         }`}
                     >
                         <div className="flex items-center justify-center gap-3 mb-6">
-                            <div className="w-12 h-12 rounded-2xl bg-white border border-emerald-200 shadow-sm flex items-center justify-center text-emerald-600 rotate-3">
+                            <div className={`w-12 h-12 rounded-2xl bg-white border ${config.borderColor} shadow-sm flex items-center justify-center ${config.textColor} rotate-3`}>
                                 <Calendar className="w-6 h-6" />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <p className="text-xl text-gray-600">
                                 อีก{" "}
-                                <span className="font-bold text-emerald-500 text-2xl">
+                                <span className={`font-bold text-2xl ${config.textColor}`}>
                                     1 สัปดาห์
                                 </span>
                             </p>
                             <p className="text-xl text-gray-800">
                                 มาชวนเด็กทำ
                                 <span
-                                    className={`block mt-2 font-bold text-2xl ${config.text}`}
+                                    className={`block mt-2 text-2xl font-bold ${config.textColor}`}
                                 >
                                     กิจกรรมที่ {nextActivityNumber}:{" "}
                                     {nextActivityName}
@@ -132,16 +138,16 @@ export function ActivityCompletionPage({
                                 : "opacity-0 translate-y-8"
                         }`}
                     >
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                            <PartyPopper className="w-8 h-8 text-green-600" />
+                        <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${config.bgLight} animate-bounce`}>
+                            <PartyPopper className={`h-8 w-8 ${config.textColor}`} />
                         </div>
                         <p className="text-2xl text-gray-800 mb-2 font-bold">
-                            <span className="text-green-600">ยินดีด้วย!</span>
+                            <span className={config.textColor}>ยินดีด้วย!</span>
                         </p>
                         <p className="text-xl text-gray-600">
                             ทำกิจกรรมครบทุกกิจกรรมแล้ว
                             {assessmentPeriodLabel && (
-                                <span className="block text-base text-emerald-500 font-medium mt-2">
+                                <span className={`mt-2 block text-base font-medium ${config.textColor}`}>
                                     ({assessmentPeriodLabel})
                                 </span>
                             )}
@@ -152,7 +158,7 @@ export function ActivityCompletionPage({
                 {/* Back to Dashboard Button */}
                 <button
                     onClick={handleBackToDashboard}
-                    className={`pointer-events-auto mt-12 inline-flex items-center gap-3 px-10 py-5 bg-[#0BD0D9] text-white rounded-full font-bold text-xl shadow-sm hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${
+                    className={`pointer-events-auto mt-12 inline-flex items-center gap-3 px-10 py-5 text-white rounded-full font-bold text-xl shadow-sm hover:shadow-md hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${completionButtonClass} ${
                         finalButtonVisible
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"

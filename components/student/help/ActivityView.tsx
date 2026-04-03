@@ -23,20 +23,22 @@ export function ActivityView({
     const activityCount = activities.length;
 
     return (
-        <div className="min-h-screen bg-slate-50 py-8 px-4 relative overflow-hidden">
+        <div className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-8">
             <div className="max-w-5xl mx-auto relative z-10">
                 <BackButton
                     href={`/students/${studentId}`}
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
-                <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden animate-fade-in-up">
+                <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-8">
+                    <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-cyan-200/25 blur-3xl" />
                     <HelpPageHeader studentName={studentName} config={config} />
 
                     {/* Activity Count Badge */}
                     <div className="flex justify-center mb-10">
                         <div
-                            className={`inline-flex items-center gap-3 px-5 py-3 sm:px-8 sm:py-4 ${config.lightBg} rounded-2xl shadow-sm border border-white/50 backdrop-blur-sm`}
+                            className={`inline-flex items-center gap-3 rounded-2xl border border-gray-200/70 px-5 py-3 shadow-sm backdrop-blur-sm sm:px-8 sm:py-4 ${config.lightBg}`}
                         >
                             <Target className={`w-6 h-6 animate-bounce ${config.textColor}`} />
                             <span className="text-lg font-bold text-gray-800">
@@ -61,7 +63,7 @@ export function ActivityView({
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
                             href={`/students/${studentId}/help/start?phqResultId=${phqResultId}`}
-                            className={`flex items-center justify-center gap-3 py-4 px-6 sm:px-10 ${config.bg} text-white rounded-xl font-bold hover:shadow-md hover:-translate-y-0.5 transition-all text-base sm:text-xl shadow-sm group`}
+                            className={`group flex items-center justify-center gap-3 rounded-2xl px-6 py-4 text-base font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-10 sm:text-xl ${config.bg}`}
                         >
                             <Rocket className="w-6 h-6 group-hover:scale-110 transition-transform" />
                             เริ่มทำกิจกรรม

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
     ClipboardCheck,
@@ -46,13 +46,15 @@ export function TeacherAssessmentForm({
         "internal" | "external" | null
     >(null);
     const [submitting, setSubmitting] = useState(false);
+    const submitLockRef = useRef(false);
 
     const canSubmit =
         internalProblems.trim() && externalProblems.trim() && problemType;
 
     const handleSubmit = async () => {
-        if (!canSubmit) return;
+        if (!canSubmit || submitLockRef.current) return;
 
+        submitLockRef.current = true;
         setSubmitting(true);
         try {
             const result = await submitTeacherAssessment(activityProgressId, {
@@ -77,6 +79,7 @@ export function TeacherAssessmentForm({
             toast.error("เกิดข้อผิดพลาดในการบันทึก");
         } finally {
             setSubmitting(false);
+            submitLockRef.current = false;
         }
     };
 
@@ -88,9 +91,11 @@ export function TeacherAssessmentForm({
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
-                <div className="bg-white rounded-3xl shadow-sm p-8 md:p-12 border-2 border-gray-100 relative overflow-hidden">
+                <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-8 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-12">
+                    <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-cyan-200/25 blur-3xl" />
                     {/* Header */}
-                    <div className="text-center mb-12">
+                    <div className="relative z-10 mb-12 text-center">
                         <div className="relative inline-block mb-6">
                             <div
                                 className={`w-24 h-24 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-4xl shadow-xl relative z-10 transition-transform hover:rotate-6 hover:scale-110`}
@@ -101,21 +106,19 @@ export function TeacherAssessmentForm({
                         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
                             แบบประเมินจากใบงาน
                         </h1>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full border-2 border-emerald-100 shadow-sm">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/90 px-4 py-2 shadow-sm">
                             <span className="font-bold text-gray-700">
                                 {activityTitle}
                             </span>
-                            <span className="text-emerald-300">•</span>
-                            <span className="text-emerald-600 font-medium">
+                            <span className={config.separatorColor}>•</span>
+                            <span className={`font-medium ${config.textColor}`}>
                                 {studentName}
                             </span>
                         </div>
                     </div>
 
                     {/* Part 1: Problem Assessment */}
-                    <div
-                        className={`${assessmentColors.bgLight} rounded-3xl p-8 md:p-10 mb-8 border border-white/50 shadow-inner`}
-                    >
+                    <div className={`${assessmentColors.bgLight} mb-8 rounded-3xl border border-gray-200/60 p-8 shadow-sm md:p-10`}>
                         <h2
                             className={`text-2xl font-bold ${assessmentColors.textDark} text-center mb-8 flex flex-col gap-2`}
                         >
@@ -190,12 +193,12 @@ export function TeacherAssessmentForm({
                     </div>
 
                     {/* Part 2: Problem Type Selection */}
-                    <div className="bg-gray-50 rounded-3xl p-8 md:p-10 mb-10 border-2 border-gray-100 shadow-sm text-center">
+                    <div className="mb-10 rounded-3xl border border-gray-200/80 bg-white/85 p-8 text-center shadow-sm md:p-10">
                         <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-8 leading-relaxed">
                             จากการดูใบงานแล้ว คุณครูคิดว่าเด็กคนนี้
                             <br className="hidden md:block" />
                             มี{" "}
-                            <span className="text-emerald-600 underline decoration-wavy underline-offset-4">
+                            <span className="text-cyan-600 underline decoration-wavy underline-offset-4">
                                 ปัญหาหลัก
                             </span>{" "}
                             เป็นด้านใดมากกว่ากัน?
@@ -236,9 +239,9 @@ export function TeacherAssessmentForm({
                     <button
                         onClick={handleSubmit}
                         disabled={!canSubmit || submitting}
-                        className={`w-full py-5 rounded-2xl font-bold text-xl transition-all flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-[0.98] ${
+                            className={`w-full py-5 rounded-2xl font-bold text-xl transition-all flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-[0.98] ${
                             canSubmit
-                                ? `bg-[#0BD0D9] text-white hover:bg-[#09B8C0] shadow-sm`
+                                ? "bg-cyan-500 text-white shadow-sm hover:bg-cyan-600"
                                 : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none border border-gray-200"
                         }`}
                     >

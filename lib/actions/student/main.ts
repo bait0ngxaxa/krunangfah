@@ -13,6 +13,7 @@ import {
     getRiskLevelCountsQuery,
     getDistinctClassesQuery,
     getStudentsQuery,
+    getStudentsForDashboardQuery,
     searchStudentsQuery,
     getStudentDetailQuery,
 } from "./queries";
@@ -23,6 +24,7 @@ import type {
     RiskCountsResponse,
     GetStudentsOptions,
     IncompleteActivityInfo,
+    StudentWithLatestPhq,
 } from "./types";
 
 // Note: Cache keys can be added here when implementing granular caching
@@ -52,7 +54,9 @@ export async function getStudentRiskCounts(
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                classFilter,
+                {
+                    classFilter,
+                },
             ),
         ]);
 
@@ -156,6 +160,60 @@ export async function getStudents(
             students: [],
             pagination: { total: 0, page: 1, limit: 100, totalPages: 0 },
         };
+    }
+}
+
+const getCachedStudentsForDashboard = unstable_cache(
+    async (
+        scopeSchoolId: string | undefined,
+        advisoryClass: string | undefined,
+        userRole: string,
+        userId: string,
+    ) => {
+        return getStudentsForDashboardQuery(
+            scopeSchoolId,
+            advisoryClass,
+            userRole,
+            userId,
+        );
+    },
+    ["students-dashboard"],
+    {
+        revalidate: 30,
+        tags: ["students"],
+    },
+);
+
+export async function getStudentsForDashboard(
+    selectedSchoolId?: string,
+): Promise<StudentWithLatestPhq[]> {
+    try {
+        const viewer = await getViewerContext();
+
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
+            return [];
+        }
+
+        const scopeSchoolId = isSystemAdmin(viewer.role)
+            ? selectedSchoolId
+            : viewer.schoolId;
+
+        // system_admin must scope the dashboard to a selected school.
+        if (isSystemAdmin(viewer.role) && !scopeSchoolId) {
+            return [];
+        }
+
+        const result = await getCachedStudentsForDashboard(
+            scopeSchoolId,
+            viewer.advisoryClass,
+            viewer.role,
+            viewer.userId,
+        );
+
+        return result.students;
+    } catch (error) {
+        logError("Get students for dashboard error:", error);
+        return [];
     }
 }
 

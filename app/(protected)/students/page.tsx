@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import { FileUp, ClipboardList, Users } from "lucide-react";
-import { getStudents } from "@/lib/actions/student/main";
+import { getStudentDashboardData } from "@/lib/actions/student/dashboard";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { getReferredOutStudents } from "@/lib/actions/referral.actions";
 import { requireAuth } from "@/lib/session";
 import { StudentDashboard } from "@/components/student/dashboard/StudentDashboard";
 import { StudentDashboardSkeleton } from "@/components/student/dashboard/StudentDashboardSkeleton";
+import { shouldShowStudentsImportEmptyState } from "@/components/student/dashboard/page-state";
 import { PageBanner } from "@/components/ui/PageBanner";
 import { buttonVariants } from "@/components/ui/Button";
 import Link from "next/link";
@@ -19,6 +20,7 @@ export const metadata: Metadata = {
 interface StudentsPageProps {
     searchParams: Promise<{
         class?: string;
+        page?: string;
         referred?: string;
         risk?: string;
         school?: string;
@@ -82,6 +84,7 @@ async function StudentsContent({
 }: {
     filters: {
         class?: string;
+        page?: string;
         referred?: string;
         risk?: string;
         school?: string;
@@ -90,13 +93,54 @@ async function StudentsContent({
     isAdmin: boolean;
 }) {
     const isClassTeacher = userRole === "class_teacher";
-    const [{ students }, schools, referredOutStudents] = await Promise.all([
-        getStudents({ limit: 10000 }),
+    const shouldLoadDashboardData = !isAdmin || Boolean(filters.school);
+    const [dashboardData, schools, referredOutStudents] = await Promise.all([
+        shouldLoadDashboardData
+            ? getStudentDashboardData({
+                  schoolId: filters.school,
+                  classFilter: filters.class,
+                  page: filters.page ? Number(filters.page) : 1,
+                  riskFilter: filters.risk,
+                  referredOnly: filters.referred === "true",
+              })
+            : Promise.resolve({
+                  students: [],
+                  classes: [],
+                  classOptions: [],
+                  riskCounts: {
+                      red: 0,
+                      orange: 0,
+                      yellow: 0,
+                      green: 0,
+                      blue: 0,
+                  },
+                  referredCount: 0,
+                  totalStudents: 0,
+                  filteredStudentCount: 0,
+                  pagination: {
+                      page: 1,
+                      limit: 24,
+                      total: 0,
+                      totalPages: 1,
+                      hasNextPage: false,
+                      hasPreviousPage: false,
+                  },
+              }),
         isAdmin ? getSchools() : Promise.resolve([]),
         isClassTeacher ? getReferredOutStudents() : Promise.resolve([]),
     ]);
+    const students = dashboardData.students;
+    const shouldShowImportEmptyState = shouldShowStudentsImportEmptyState({
+        classFilter: filters.class,
+        hasClassOptions: dashboardData.classOptions.length > 0,
+        isAdmin,
+        page: filters.page,
+        referredFilter: filters.referred,
+        riskFilter: filters.risk,
+        totalStudents: dashboardData.totalStudents,
+    });
 
-    if (students.length === 0 && !isAdmin) {
+    if (shouldShowImportEmptyState) {
         return (
             <div className="relative bg-white rounded-2xl shadow-sm p-6 md:p-12 border-2 border-gray-100 text-center overflow-hidden">
                 <div className="relative py-8">
@@ -131,6 +175,13 @@ async function StudentsContent({
     return (
         <StudentDashboard
             students={students}
+            classes={dashboardData.classes}
+            classOptions={dashboardData.classOptions}
+            riskCounts={dashboardData.riskCounts}
+            referredCount={dashboardData.referredCount}
+            totalStudents={dashboardData.totalStudents}
+            filteredStudentCount={dashboardData.filteredStudentCount}
+            pagination={dashboardData.pagination}
             schools={isAdmin ? schools : undefined}
             userRole={userRole}
             referredOutStudents={
@@ -139,6 +190,7 @@ async function StudentsContent({
             filters={{
                 schoolId: filters.school,
                 className: filters.class,
+                page: filters.page,
                 riskLevel: filters.risk,
                 referredOnly: filters.referred,
             }}

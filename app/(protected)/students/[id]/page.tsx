@@ -209,6 +209,7 @@ async function StudentDetailContent({
                         studentName={`${student.firstName} ${student.lastName}`}
                         referral={student.referral}
                         currentUserId={currentUserId}
+                        currentUserRole={session.user.role}
                     />
                 </div>
             )}

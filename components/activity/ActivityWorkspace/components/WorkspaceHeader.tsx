@@ -35,8 +35,9 @@ export function WorkspaceHeader({
             {/* Activity Header */}
             <div className="text-center mb-10">
                 <div className="relative inline-block mb-6">
+                    <div className="absolute -inset-4 rounded-full bg-emerald-100/35 blur-2xl" />
                     <div
-                        className={`w-24 h-24 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-4xl shadow-lg relative z-10 transition-transform hover:rotate-6 hover:scale-110`}
+                        className={`relative z-10 flex h-24 w-24 rotate-3 items-center justify-center rounded-3xl ${config.bg} text-4xl text-white shadow-lg ring-2 ring-white/30 transition-transform hover:rotate-6 hover:scale-105`}
                     >
                         <BookOpen className="w-10 h-10" />
                     </div>
@@ -47,7 +48,7 @@ export function WorkspaceHeader({
                 </h1>
 
                 <div
-                    className={`inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border-2 ${config.borderColor} shadow-sm`}
+                    className={`inline-flex items-center gap-2 rounded-full border bg-white/90 px-4 py-2 shadow-sm ${config.borderColor}`}
                 >
                     <span className="font-bold text-gray-700">
                         {studentName}

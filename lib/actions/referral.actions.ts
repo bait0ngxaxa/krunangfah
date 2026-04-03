@@ -3,7 +3,7 @@
  * ส่งต่อนักเรียนระหว่างครูในโรงเรียนเดียวกัน
  *
  * Access control:
- * - class_teacher: ส่งต่อได้เฉพาะนักเรียนใน advisoryClass หรือที่ถูกส่งต่อมาหาตน
+ * - class_teacher: ส่งต่อได้เฉพาะนักเรียนใน advisoryClass
  * - school_admin: ส่งต่อนักเรียนได้ทุกคนในโรงเรียน
  * - system_admin: ส่งต่อนักเรียนได้ทุกคน
  */
@@ -117,14 +117,12 @@ export async function createStudentReferral(input: {
                 const advisoryClass = fromUser.teacher?.advisoryClass;
                 const isInAdvisoryClass =
                     advisoryClass && student.class === advisoryClass;
-                const isReferredToMe =
-                    student.referral?.toTeacherUserId === userId;
 
-                if (!isInAdvisoryClass && !isReferredToMe) {
+                if (!isInAdvisoryClass) {
                     return {
                         success: false,
                         message:
-                            "คุณสามารถส่งต่อได้เฉพาะนักเรียนในห้องที่คุณดูแลหรือที่ถูกส่งต่อมาหาคุณเท่านั้น",
+                            "คุณสามารถส่งต่อได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
                     };
                 }
             }
@@ -291,7 +289,7 @@ export async function getReferredOutStudents(): Promise<ReferredOutStudent[]> {
  *
  * Role-based filtering:
  * - school_admin: sees only other school_admins
- * - class_teacher: sees all teachers (school_admin + class_teacher)
+ * - class_teacher: sees only school_admins
  */
 export async function getTeachersForReferral(): Promise<TeacherPickerOption[]> {
     try {

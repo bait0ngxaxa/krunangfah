@@ -85,6 +85,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
                                     src="/image/logout.png"
                                     alt="User Profile"
                                     fill
+                                    sizes="(max-width: 1024px) 36px, 40px"
                                     className="object-contain object-bottom"
                                 />
                             </div>

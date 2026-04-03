@@ -46,7 +46,7 @@ export default async function ConversationGuidelinesPage({
     const studentName = `${student.firstName} ${student.lastName}`;
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4 relative overflow-hidden">
+        <div className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-6">
             {/* Decorative Background Elements */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
@@ -60,9 +60,9 @@ export default async function ConversationGuidelinesPage({
                     label="กลับหน้าขั้นตอนการช่วยเหลือ"
                 />
 
-                <div className="relative bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 overflow-hidden animate-fade-in-up">
+                <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-8">
                     {/* Corner decoration */}
-                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-teal-300/35 rounded-full blur-xl pointer-events-none" />
+                    <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-linear-to-br from-emerald-200/45 to-teal-300/35 blur-xl" />
                     {/* Shimmer */}
                     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
 
@@ -76,7 +76,7 @@ export default async function ConversationGuidelinesPage({
                     />
 
                     {/* Guidelines Content */}
-                    <div className="bg-white/60 rounded-2xl p-8 mb-8 border border-gray-100 shadow-sm">
+                    <div className="mb-8 rounded-2xl border border-gray-200/80 bg-white/80 p-8 shadow-sm">
                         <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                             <ClipboardList className="w-6 h-6 text-gray-700" />
                             <span className="bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
@@ -116,7 +116,7 @@ export default async function ConversationGuidelinesPage({
                     {/* Back Button */}
                     <Link
                         href={`/students/${studentId}/help`}
-                        className={`block w-full py-4 bg-linear-to-r ${config.gradient} text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all text-center text-lg shadow-md flex items-center justify-center gap-2 group`}
+                        className={`group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r py-4 text-center text-lg font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${config.gradient}`}
                     >
                         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                         กลับหน้าขั้นตอนการช่วยเหลือ

@@ -9,6 +9,8 @@ export type {
     StudentListResponse,
     RiskCountsResponse,
     GetStudentsOptions,
+    StudentDashboardDataResponse,
+    StudentDashboardQueryOptions,
     ImportResult,
     IncompleteActivityInfo,
 } from "./types";
@@ -16,12 +18,15 @@ export type {
 // Main functions (with authentication)
 export {
     getStudents,
+    getStudentsForDashboard,
     searchStudents,
     getStudentDetail,
     getStudentRiskCounts,
     hasRound1Data,
     getIncompleteActivityWarning,
 } from "./main";
+
+export { getStudentDashboardData } from "./dashboard";
 
 // Mutations
 export { importStudents } from "./mutations";

@@ -56,7 +56,7 @@ export function UploadSection({
 
     return (
         <div
-            className={`h-full flex flex-col ${uploadColors.bgLight} border-2 ${uploadColors.border} p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow`}
+            className={`h-full flex flex-col rounded-2xl border ${uploadColors.border} ${uploadColors.bgLight} p-5 shadow-sm transition-shadow hover:shadow-md`}
         >
             <div className="flex items-center justify-between mb-4">
                 <h3
@@ -71,7 +71,7 @@ export function UploadSection({
                     className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ${
                         allUploaded
                             ? `${uploadColors.completeBg} text-white`
-                            : "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                            : "border border-amber-200 bg-amber-100 text-amber-700"
                     }`}
                 >
                     {uploadedCount}/{requiredCount} ไฟล์
@@ -115,7 +115,7 @@ export function UploadSection({
                                             onRemove(upload.id);
                                         }
                                     }}
-                                    className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-500 rounded-lg hover:bg-red-200 hover:text-red-600 transition-all"
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-500 transition-all hover:bg-red-200 hover:text-red-600"
                                     title="ลบไฟล์"
                                 >
                                     <X className="w-4 h-4" />
@@ -166,7 +166,7 @@ export function UploadSection({
             ) : (
                 /* All files uploaded — show confirm button */
                 <div className="flex flex-col items-center gap-4 mt-auto">
-                    <div className="flex items-center gap-2 text-green-600 font-bold">
+                    <div className="flex items-center gap-2 text-cyan-700 font-bold">
                         <CheckCircle2 className="w-5 h-5" />
                         อัปโหลดใบงานครบแล้ว!
                     </div>
@@ -175,7 +175,7 @@ export function UploadSection({
                     </p>
                     <button
                         onClick={onConfirmComplete}
-                        className="w-full px-6 py-3 bg-[#0BD0D9] text-white rounded-xl font-bold text-lg hover:shadow-md hover:-translate-y-0.5 hover:bg-[#09B8C0] transition-all flex items-center justify-center gap-2"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 text-lg font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-md"
                     >
                         ยืนยันจบกิจกรรม
                         <ArrowRight className="w-5 h-5" />

@@ -47,14 +47,15 @@ function StepCard({
     href,
     bgClass,
 }: StepCardProps) {
-    const buttonClasses = `inline-flex items-center gap-2 px-6 py-3 ${bgClass} text-white rounded-xl font-bold hover:shadow-md hover:-translate-y-0.5 transition-all text-sm shadow-sm group`;
+    const buttonClasses = `group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${bgClass}`;
 
     return (
-        <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm hover:shadow-md transition-all">
+        <div className="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white/90 p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+            <div className="pointer-events-none absolute -top-8 -right-8 h-20 w-20 rounded-full bg-slate-100/70 blur-2xl" />
             <div className="flex items-start gap-4">
                 {/* Step Number Badge */}
                 <div
-                    className={`w-10 h-10 ${bgClass} rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm`}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-bold text-white shadow-sm ${bgClass}`}
                 >
                     {stepNumber}
                 </div>
@@ -66,7 +67,7 @@ function StepCard({
                             {title}
                         </h3>
                     </div>
-                    <p className="text-gray-500 text-sm mb-4">{description}</p>
+                    <p className="mb-4 text-sm text-gray-500">{description}</p>
 
                     {href ? (
                         <Link href={href} className={buttonClasses}>
@@ -104,14 +105,16 @@ export function ConversationView({
     const showRecordSteps = riskLevel === "red";
 
     return (
-        <div className="min-h-screen bg-slate-50 py-8 px-4 relative overflow-hidden">
+        <div className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-8">
             <div className="max-w-4xl mx-auto relative z-10">
                 <BackButton
                     href={`/students/${studentId}`}
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
-                <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden animate-fade-in-up">
+                <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-8">
+                    <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-cyan-200/25 blur-3xl" />
                     <HelpPageHeader
                         studentName={studentName}
                         config={config}

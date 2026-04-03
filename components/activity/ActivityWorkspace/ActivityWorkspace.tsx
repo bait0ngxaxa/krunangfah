@@ -68,7 +68,7 @@ export function ActivityWorkspace({
                 onClose={() => setPreviewFile(null)}
             />
 
-            <div className="min-h-screen bg-slate-50 py-8 px-4 relative overflow-hidden">
+            <div className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-8">
                 <div className="max-w-4xl mx-auto relative z-10">
                     <WorkspaceHeader
                         studentId={studentId}
@@ -77,7 +77,9 @@ export function ActivityWorkspace({
                         config={config}
                     />
 
-                    <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden animate-fade-in-up">
+                    <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-8">
+                        <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
+                        <div className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-cyan-200/25 blur-3xl" />
                         {/* Action Buttons */}
                         <ActionButtons
                             studentId={studentId}
@@ -140,10 +142,10 @@ export function ActivityWorkspace({
                         ) : null}
 
                         {/* Conversation Button */}
-                        <div className="pt-6 border-t border-emerald-100 mt-8">
+                        <div className="mt-8 border-t border-slate-200/80 pt-6">
                             <Link
                                 href={`/students/${studentId}/help/conversation`}
-                                className="w-full py-4 bg-[#34D399] text-white rounded-xl font-bold hover:shadow-md hover:-translate-y-0.5 hover:bg-emerald-400 transition-all text-center text-lg flex items-center justify-center gap-2 group"
+                                className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-4 text-center text-lg font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-lg"
                             >
                                 <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
                                 หลักการพูดคุย

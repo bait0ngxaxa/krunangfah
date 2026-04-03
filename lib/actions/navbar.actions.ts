@@ -6,7 +6,7 @@ import { logError } from "@/lib/utils/logging";
 
 /**
  * Check if the current user has any students
- * class_teacher: checks students in their advisoryClass (excluding referred-out) + students referred to them
+ * class_teacher: checks students in their advisoryClass
  * school_admin/system_admin: checks students in their school
  */
 export async function hasStudents(): Promise<boolean> {
@@ -30,16 +30,10 @@ export async function hasStudents(): Promise<boolean> {
             const advisoryClass = dbUser.teacher?.advisoryClass;
             if (!advisoryClass) return false;
 
-            // Count students visible to this teacher (referral-aware)
             const count = await prisma.student.count({
                 where: {
                     ...(dbUser.schoolId ? { schoolId: dbUser.schoolId } : {}),
-                    OR: [
-                        // Students in advisory class without referral
-                        { class: advisoryClass, referral: { is: null } },
-                        // Students referred to this teacher
-                        { referral: { toTeacherUserId: session.user.id } },
-                    ],
+                    class: advisoryClass,
                 },
             });
 

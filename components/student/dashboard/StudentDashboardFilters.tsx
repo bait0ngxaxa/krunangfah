@@ -25,6 +25,7 @@ interface StudentDashboardFiltersProps {
     selectedRiskFilter: DashboardRiskFilter;
     selectedSchoolId: string;
     showReferredOnly: boolean;
+    showRiskFilters: boolean;
     totalStudents: number;
 }
 
@@ -40,6 +41,7 @@ export function StudentDashboardFilters({
     selectedRiskFilter,
     selectedSchoolId,
     showReferredOnly,
+    showRiskFilters,
     totalStudents,
 }: StudentDashboardFiltersProps) {
     const pathname = usePathname();
@@ -67,6 +69,7 @@ export function StudentDashboardFilters({
         updateSearchParams({
             school: schoolId || null,
             class: null,
+            page: null,
             risk: null,
             referred: null,
         });
@@ -75,6 +78,7 @@ export function StudentDashboardFilters({
     function handleClassChange(className: string): void {
         updateSearchParams({
             class: className,
+            page: null,
             risk: null,
             referred: null,
         });
@@ -82,17 +86,19 @@ export function StudentDashboardFilters({
 
     function handleRiskFilterChange(level: DashboardRiskFilter): void {
         if (level === "all") {
-            updateSearchParams({ risk: null, referred: null });
+            updateSearchParams({ page: null, risk: null, referred: null });
             return;
         }
 
         updateSearchParams({
+            page: null,
             risk: selectedRiskFilter === level ? null : level,
         });
     }
 
     function handleReferredToggle(): void {
         updateSearchParams({
+            page: null,
             referred: showReferredOnly ? null : "true",
         });
     }
@@ -115,15 +121,17 @@ export function StudentDashboardFilters({
                 onClassChange={handleClassChange}
             />
 
-            <StudentFilterBar
-                groupedStudentCounts={riskCounts}
-                onReferredToggle={handleReferredToggle}
-                onRiskFilterChange={handleRiskFilterChange}
-                referredCount={referredCount}
-                riskLevels={riskLevels}
-                selectedRiskFilter={selectedRiskFilter}
-                showReferredOnly={showReferredOnly}
-            />
+            {showRiskFilters ? (
+                <StudentFilterBar
+                    groupedStudentCounts={riskCounts}
+                    onReferredToggle={handleReferredToggle}
+                    onRiskFilterChange={handleRiskFilterChange}
+                    referredCount={referredCount}
+                    riskLevels={riskLevels}
+                    selectedRiskFilter={selectedRiskFilter}
+                    showReferredOnly={showReferredOnly}
+                />
+            ) : null}
         </>
     );
 }

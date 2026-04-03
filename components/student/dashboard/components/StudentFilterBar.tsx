@@ -158,7 +158,7 @@ export function StudentFilterBar({
                             }`}
                         >
                             <ArrowRightLeft className="w-3.5 h-3.5" />
-                            <span>ส่งต่อมา</span>
+                            <span>มีการส่งต่อ</span>
                             <span
                                 className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
                                     showReferredOnly

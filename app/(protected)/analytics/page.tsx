@@ -46,13 +46,11 @@ export default async function AnalyticsPage({
     const userRole = session.user.role;
     const isSystemAdmin = userRole === "system_admin";
     const warnings: string[] = [];
-    let selectedSchoolId = isSystemAdmin ? (params.school ?? "all") : "all";
-    let selectedClass = userRole === "class_teacher" ? "all" : (params.class ?? "all");
-    let selectedAcademicYear = params.year ?? "all";
-    let selectedSemester = params.semester ?? "all";
 
+    // ── Phase 1: Parse & pre-validate params (no DB calls) ──
     const parsedYear = parseYearFilter(params.year);
     const parsedSemester = parseSemesterFilter(params.semester);
+
     if (params.year && parsedYear === undefined) {
         warnings.push(`ค่า year ไม่ถูกต้อง ("${params.year}") ระบบจึงใช้ "ทุกปีการศึกษา"`);
     }
@@ -68,21 +66,15 @@ export default async function AnalyticsPage({
         warnings.push("ผู้ใช้ที่ไม่ใช่ system_admin ไม่สามารถกรอง school ได้ จึงไม่ใช้ค่า school จาก URL");
     }
 
-    const [initialAnalyticsData, schools] = await Promise.all([
-        getAnalyticsSummary(
-            selectedClass !== "all" ? selectedClass : undefined,
-            selectedSchoolId !== "all" ? selectedSchoolId : undefined,
-            parsedYear,
-            parsedSemester,
-        ),
-        isSystemAdmin ? getSchools() : Promise.resolve(undefined),
-    ]);
-    if (!initialAnalyticsData) {
-        redirect("/dashboard");
-    }
-    let analyticsData = initialAnalyticsData;
+    let selectedSchoolId = isSystemAdmin ? (params.school ?? "all") : "all";
+    let selectedClass = userRole === "class_teacher" ? "all" : (params.class ?? "all");
+    let selectedAcademicYear = params.year ?? "all";
+    let selectedSemester = params.semester ?? "all";
 
-    let needsRefetch = false;
+    // ── Phase 2: Validate schoolId against DB before main fetch ──
+    // Fetch schools first (lightweight) to validate schoolId before the heavy analytics query
+    const schools = isSystemAdmin ? await getSchools() : undefined;
+
     if (isSystemAdmin && selectedSchoolId !== "all") {
         const schoolExists = schools?.some((school) => school.id === selectedSchoolId) ?? false;
         if (!schoolExists) {
@@ -90,14 +82,27 @@ export default async function AnalyticsPage({
                 `ไม่พบโรงเรียนที่ระบุไว้ ("${selectedSchoolId}") ระบบจึงใช้ "ทุกโรงเรียน"`,
             );
             selectedSchoolId = "all";
-            needsRefetch = true;
         }
     }
 
+    // ── Phase 3: Single analytics fetch with validated params ──
+    const analyticsData = await getAnalyticsSummary(
+        selectedClass !== "all" ? selectedClass : undefined,
+        selectedSchoolId !== "all" ? selectedSchoolId : undefined,
+        parsedYear,
+        parsedSemester,
+    );
+
+    if (!analyticsData) {
+        redirect("/dashboard");
+    }
+
+    // ── Phase 4: Post-fetch validation (reset filter labels only, no refetch needed) ──
+    // When a class/year/semester doesn't exist in the result set, the query already
+    // returned an empty filtered result — resetting to "all" only affects the UI label
     if (selectedClass !== "all" && !analyticsData.availableClasses.includes(selectedClass)) {
         warnings.push(`ไม่พบห้องเรียน "${selectedClass}" ในขอบเขตข้อมูล ระบบจึงใช้ "แสดงทั้งหมด"`);
         selectedClass = "all";
-        needsRefetch = true;
     }
 
     if (
@@ -108,7 +113,6 @@ export default async function AnalyticsPage({
             `ไม่พบปีการศึกษา "${selectedAcademicYear}" ในขอบเขตข้อมูล ระบบจึงใช้ "ทุกปีการศึกษา"`,
         );
         selectedAcademicYear = "all";
-        needsRefetch = true;
     }
 
     if (
@@ -119,20 +123,6 @@ export default async function AnalyticsPage({
             `ไม่พบเทอม "${selectedSemester}" ในขอบเขตข้อมูล ระบบจึงใช้ "ทุกเทอม"`,
         );
         selectedSemester = "all";
-        needsRefetch = true;
-    }
-
-    if (needsRefetch) {
-        const refetchedAnalyticsData = await getAnalyticsSummary(
-            selectedClass !== "all" ? selectedClass : undefined,
-            selectedSchoolId !== "all" ? selectedSchoolId : undefined,
-            selectedAcademicYear !== "all" ? Number(selectedAcademicYear) : undefined,
-            selectedSemester !== "all" ? Number(selectedSemester) : undefined,
-        );
-        if (!refetchedAnalyticsData) {
-            redirect("/dashboard");
-        }
-        analyticsData = refetchedAnalyticsData;
     }
 
     return (

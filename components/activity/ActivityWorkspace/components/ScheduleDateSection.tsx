@@ -64,10 +64,10 @@ export function ScheduleDateSection({
     };
 
     return (
-        <div className="mb-6 bg-gradient-to-r from-cyan-50 to-emerald-50 rounded-xl p-4 border border-cyan-100">
+        <div className="mb-6 rounded-2xl border border-gray-200/80 bg-white/90 p-4 shadow-sm">
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-sm border border-cyan-100">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm">
                         <CalendarDays className="w-5 h-5 text-cyan-600" />
                     </div>
                     <div>
@@ -96,14 +96,14 @@ export function ScheduleDateSection({
                             type="date"
                             value={dateValue}
                             onChange={(e) => setDateValue(e.target.value)}
-                            className="border border-emerald-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white w-40"
+                            className="w-40 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-200"
                             disabled={isPending}
                         />
                         <button
                             type="button"
                             onClick={handleSave}
                             disabled={isPending || !dateValue}
-                            className="p-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                            className="rounded-lg bg-cyan-500 p-1.5 text-white shadow-sm transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-40"
                             title="บันทึก"
                         >
                             {isPending ? (
@@ -126,7 +126,7 @@ export function ScheduleDateSection({
                     <button
                         type="button"
                         onClick={() => setIsEditing(true)}
-                        className="px-3 py-1.5 rounded-lg bg-white text-sm font-medium text-cyan-700 hover:bg-cyan-100 transition-colors shadow-sm border border-cyan-200 flex items-center gap-1.5"
+                        className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-cyan-700 shadow-sm transition-colors hover:border-cyan-200 hover:bg-cyan-50"
                     >
                         <CalendarDays className="w-3.5 h-3.5" />
                         {currentDate ? "เปลี่ยนวัน" : "เลือกวันนัดหมาย"}

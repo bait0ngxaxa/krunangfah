@@ -51,6 +51,43 @@ export interface GetStudentsOptions {
     limit?: number;
 }
 
+export interface StudentDashboardQueryOptions {
+    schoolId?: string;
+    classFilter?: string;
+    riskFilter?: string;
+    referredOnly?: boolean;
+    page?: number;
+}
+
+export interface DashboardPagination {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+}
+
+export interface StudentDashboardDataResponse {
+    students: StudentWithLatestPhq[];
+    classes: string[];
+    classOptions: {
+        name: string;
+        count: number;
+    }[];
+    riskCounts: {
+        red: number;
+        orange: number;
+        yellow: number;
+        green: number;
+        blue: number;
+    };
+    referredCount: number;
+    totalStudents: number;
+    filteredStudentCount: number;
+    pagination: DashboardPagination;
+}
+
 // Import result type
 export interface ImportResult {
     success: boolean;

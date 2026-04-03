@@ -33,6 +33,7 @@ const nextConfig: NextConfig = {
     // 6. รองรับ image formats ที่เล็กกว่า + responsive sizes
     images: {
         formats: ["image/avif", "image/webp"],
+        minimumCacheTTL: 60 * 60 * 24, // 24 hours — ลด CPU load จาก image re-optimization บน VPS
         deviceSizes: [640, 750, 828, 1080, 1200, 1920],
         imageSizes: [16, 32, 48, 64, 96, 128, 256],
     },
