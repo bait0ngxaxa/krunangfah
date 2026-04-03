@@ -64,7 +64,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
     return (
         <div className="space-y-6">
             {/* Info Card */}
-            <div className="bg-white border-2 border-emerald-100 rounded-2xl p-6 shadow-sm relative overflow-hidden">
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-sm relative overflow-hidden">
                 <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <HandHelping className="w-5 h-5 text-emerald-500" />{" "}
                     ข้อมูลของคุณ

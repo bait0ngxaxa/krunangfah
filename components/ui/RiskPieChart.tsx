@@ -31,7 +31,7 @@ const RADIAN = Math.PI / 180;
 const TOOLTIP_STYLE = {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: "1rem",
-    border: "1px solid #D1FAE5",
+    border: "1px solid #CBD5E1",
     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
     padding: "12px",
 };
@@ -158,16 +158,18 @@ function RiskPieChartComponent({
 
     if (chartData.length === 0) {
         return (
-            <div className="relative bg-white rounded-2xl shadow-sm border-2 border-emerald-100 p-8 flex flex-col items-center justify-center min-h-[300px] overflow-hidden">
+            <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-8 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
+                <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 blur-3xl" />
                 {title && (
-                    <h2 className="relative text-lg sm:text-xl font-bold text-gray-800 mb-4 text-center">
+                    <h2 className="relative mb-4 text-center text-lg font-bold text-slate-800 sm:text-xl">
                         {title}
                     </h2>
                 )}
-                <div className="relative text-gray-400 flex flex-col items-center gap-3">
+                <div className="relative flex flex-col items-center gap-3 text-gray-400">
                     <div className="relative w-16 h-16">
-                        <div className="absolute inset-0 rounded-full bg-emerald-300 blur-lg opacity-20" />
-                        <div className="relative w-full h-full bg-gray-50 rounded-full flex items-center justify-center ring-1 ring-gray-100">
+                        <div className="absolute inset-0 rounded-full bg-emerald-300/35 blur-lg" />
+                        <div className="relative flex h-full w-full items-center justify-center rounded-full bg-white/85 ring-1 ring-gray-200/70">
                             <Inbox className="w-8 h-8 text-gray-400" />
                         </div>
                     </div>
@@ -179,15 +181,16 @@ function RiskPieChartComponent({
 
     return (
         <div
-            className="relative bg-white rounded-2xl shadow-sm border-2 border-emerald-100 p-4 sm:p-6 pb-6 sm:pb-8 overflow-hidden"
-            style={{ contain: "layout style paint" }}
+            className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-4 pb-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] sm:p-6 sm:pb-8"
         >
+            <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 blur-3xl" />
             {title && (
-                <h2 className="relative text-lg sm:text-xl font-bold text-emerald-600 mb-4 sm:mb-6 text-center">
+                <h2 className="relative mb-4 text-center text-lg font-bold text-slate-800 sm:mb-6 sm:text-xl">
                     {title}
                 </h2>
             )}
-            <ResponsiveContainer width="100%" height={height}>
+            <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={height}>
                 <PieChart tabIndex={-1}>
                     <Pie
                         data={chartData}

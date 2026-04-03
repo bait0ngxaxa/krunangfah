@@ -6,6 +6,7 @@ import type { HomeVisitData, HomeVisitPhotoData } from "@/lib/actions/home-visit
 import { deleteHomeVisit } from "@/lib/actions/home-visit.actions";
 import { HomeVisitPhotoViewer } from "./HomeVisitPhotoViewer";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/Button";
 
 interface HomeVisitCardProps {
     visit: HomeVisitData;
@@ -47,11 +48,11 @@ export function HomeVisitCard({
     };
 
     return (
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-emerald-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3 bg-emerald-50/80 border-b border-emerald-100">
+            <div className="flex items-center justify-between border-b border-gray-200 bg-slate-50/90 px-5 py-3">
                 <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 bg-emerald-500 text-white text-sm font-bold rounded-full">
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">
                         ครั้งที่ {visit.visitNumber}
                     </span>
                     <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
@@ -61,14 +62,16 @@ export function HomeVisitCard({
                 </div>
 
                 {!readOnly && (
-                    <button
+                    <Button
                         onClick={handleDelete}
                         disabled={deleting}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        variant="danger"
+                        size="sm"
+                        className="h-8 w-8 p-0 rounded-lg bg-white"
                         title="ลบบันทึก"
                     >
                         <Trash2 className="w-4 h-4" />
-                    </button>
+                    </Button>
                 )}
             </div>
 

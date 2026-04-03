@@ -103,7 +103,7 @@ export const COLOR_CONFIG: Record<RiskLevel, ColorTheme> = {
     blue: {
         gradient: "from-blue-500 to-cyan-500",
         bg: "bg-blue-500",
-        text: "สีน้ำเงิน",
+        text: "สีฟ้า",
         lightBg: "bg-blue-50",
         textColor: "text-blue-600",
         borderColor: "border-blue-200",

@@ -45,15 +45,15 @@ export default async function StudentDetailPage({
     const { year: selectedYearId } = await searchParams;
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4 relative overflow-hidden">
+        <div className="relative min-h-screen overflow-hidden bg-linear-to-br from-slate-50 via-white to-emerald-50/40 py-6 px-4">
             {/* Decorative Background Elements */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
-                <div className="absolute bottom-10 left-10 w-64 h-64 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
-                <div className="absolute top-1/3 left-1/4 w-48 h-48 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow delay-500" />
+            <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+                <div className="absolute -top-16 -right-12 h-72 w-72 rounded-full bg-emerald-100/60 blur-3xl" />
+                <div className="absolute bottom-8 -left-16 h-72 w-72 rounded-full bg-cyan-100/45 blur-3xl" />
+                <div className="absolute top-1/3 left-1/4 h-52 w-52 rounded-full bg-teal-100/40 blur-3xl" />
             </div>
 
-            <div className="max-w-6xl mx-auto relative z-10">
+            <div className="relative z-10 mx-auto max-w-7xl">
                 <BackButton href="/students" label="กลับหน้านักเรียน" />
 
                 {/* Content (streamed via Suspense) */}
@@ -199,7 +199,7 @@ async function StudentDetailContent({
     ];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-7">
             <StudentProfileCard student={student} latestResult={latestResult} />
 
             {latestResult && (
@@ -229,9 +229,9 @@ async function StudentDetailContent({
 
 function StudentDetailSkeleton() {
     return (
-        <div className="space-y-6">
+        <div className="space-y-7">
             {/* Profile Card Skeleton */}
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 border border-emerald-200 ring-1 ring-emerald-50">
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center gap-4 mb-4">
                     <div className="w-16 h-16 bg-gray-200 rounded-2xl animate-pulse" />
                     <div className="flex-1">
@@ -250,7 +250,7 @@ function StudentDetailSkeleton() {
             </div>
 
             {/* Tabs Skeleton */}
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 border border-emerald-200 ring-1 ring-emerald-50">
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div className="flex gap-4 mb-6">
                     <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
                     <div className="h-10 w-40 bg-gray-200 rounded-lg animate-pulse" />

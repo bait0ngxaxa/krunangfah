@@ -98,7 +98,7 @@ function TeacherCard({
     const initials = teacher.teacherName?.charAt(0) ?? "?";
 
     return (
-        <div className="p-4 bg-white rounded-xl border border-emerald-100 hover:border-emerald-200 transition-colors">
+        <div className="p-4 bg-white rounded-xl border border-gray-100 transition-colors">
             <div className="flex items-start gap-3">
                 <div className="shrink-0 w-9 h-9 rounded-full bg-linear-to-br from-emerald-100 to-teal-100 flex items-center justify-center ring-1 ring-emerald-200/50">
                     <span className="text-sm font-bold text-emerald-600">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { UserCheck, ArrowRightLeft } from "lucide-react";
 import { TeacherReferralModal } from "./TeacherReferralModal";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 
 interface ReferralData {
     id: string;
@@ -40,21 +41,23 @@ export function ReferralButton({
             : "ครูท่านอื่น";
 
         return (
-            <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-cyan-50 border border-[#0BD0D9]/30 rounded-xl text-[#09B8C0]">
+            <div className="flex flex-wrap items-center justify-end gap-3">
+                <div className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-[#09B8C0] shadow-sm">
                     <ArrowRightLeft className="w-4 h-4" />
                     <span className="text-sm font-bold">
                         ได้รับส่งต่อจาก {fromName}
                     </span>
                 </div>
-                <button
+                <Button
                     type="button"
                     onClick={() => setShowModal(true)}
-                    className="px-5 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 justify-center shadow-sm hover:shadow-md active:scale-95 hover:-translate-y-0.5 border border-white/20 bg-[#0BD0D9] text-white hover:bg-[#09B8C0]"
+                    variant="primary"
+                    size="md"
+                    className="active:scale-95"
                 >
                     <UserCheck className="w-4 h-4" />
                     ส่งต่อต่อ
-                </button>
+                </Button>
 
                 {showModal && (
                     <TeacherReferralModal
@@ -75,7 +78,7 @@ export function ReferralButton({
             : "ครูท่านอื่น";
 
         return (
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-700">
+            <div className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-amber-700 shadow-sm">
                 <ArrowRightLeft className="w-4 h-4" />
                 <span className="text-sm font-bold">
                     ส่งต่อให้ {toName} แล้ว
@@ -87,14 +90,16 @@ export function ReferralButton({
     // Default: show referral button
     return (
         <>
-            <button
+            <Button
                 type="button"
                 onClick={() => setShowModal(true)}
-                className="px-6 py-3 rounded-xl font-bold transition-all duration-300 flex items-center gap-3 justify-center shadow-md hover:shadow-xl active:scale-95 hover:-translate-y-0.5 border border-white/20 relative overflow-hidden group bg-[#0BD0D9] text-white hover:bg-[#09B8C0]"
+                variant="primary"
+                size="lg"
+                className="active:scale-95"
             >
                 <UserCheck className="w-5 h-5" />
                 <span>ส่งต่อให้ครูนางฟ้าดูแล</span>
-            </button>
+            </Button>
 
             {showModal && (
                 <TeacherReferralModal

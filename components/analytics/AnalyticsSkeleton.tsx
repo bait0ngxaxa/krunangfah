@@ -7,16 +7,18 @@ export function AnalyticsSkeleton() {
     return (
         <div className="space-y-6 animate-pulse">
             {/* Tab skeleton */}
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-6">
+            <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
+                <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 blur-3xl" />
                 {/* Fake tab buttons */}
-                <div className="flex gap-4 mb-6 border-b border-gray-100 pb-4">
+                <div className="relative z-10 mb-6 flex gap-4 border-b border-gray-200 pb-4">
                     <div className="h-10 w-28 bg-gray-100 rounded-xl" />
                     <div className="h-10 w-28 bg-gray-100 rounded-xl" />
                     <div className="h-10 w-32 bg-gray-100 rounded-xl" />
                 </div>
 
                 {/* Fake content grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="relative z-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
                     {/* Fake table */}
                     <div className="space-y-3">
                         <div className="h-6 w-48 bg-gray-200 rounded" />

@@ -34,7 +34,7 @@ export function TeacherProfileCard({
         PROJECT_ROLE_LABELS_EXT[teacher.projectRole] || teacher.projectRole;
 
     return (
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-100 overflow-hidden">
             {/* Gradient Header */}
             <div className="bg-linear-to-r from-emerald-500 via-teal-500 to-emerald-600 px-5 py-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">

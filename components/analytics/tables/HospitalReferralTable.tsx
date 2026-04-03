@@ -26,11 +26,13 @@ export function HospitalReferralTable({
     );
 
     return (
-        <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-6 overflow-hidden">
-            <h2 className="relative text-xl font-extrabold text-slate-800 mb-6 text-center tracking-tight">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 blur-3xl" />
+            <h2 className="relative mb-6 text-center text-xl font-extrabold tracking-tight text-slate-800">
                 จำนวนนักเรียนที่ส่งต่อโรงพยาบาล
             </h2>
-            <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-xs">
+            <div className="relative overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-sm">
                 <table className="w-full border-collapse">
                     <thead>
                         <tr>
@@ -75,12 +77,12 @@ export function HospitalReferralTable({
                     </tbody>
                 </table>
             </div>
-            {hospitalReferralsByGrade.length === 0 && (
-                <div className="text-center text-gray-400 mt-8 py-8 border-t border-emerald-50 flex flex-col items-center gap-2">
+            {hospitalReferralsByGrade.length === 0 ? (
+                <div className="mt-8 flex flex-col items-center gap-2 border-t border-slate-200/70 py-8 text-center text-gray-400">
                     <Hospital className="w-6 h-6 text-gray-400" />
                     <span>ยังไม่มีข้อมูลการส่งต่อโรงพยาบาล</span>
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }

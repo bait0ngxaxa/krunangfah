@@ -99,7 +99,7 @@ export function StudentPreviewTable({
     onScoreUpdate,
 }: StudentPreviewTableProps) {
     return (
-        <div className="bg-white/60 backdrop-blur-xl rounded-4xl shadow-2xl overflow-hidden border border-emerald-200 relative">
+        <div className="bg-white rounded-4xl shadow-sm overflow-hidden border-2 border-gray-100 relative">
             <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-emerald-300 to-teal-300" />
 
             <div className="max-h-[600px] overflow-y-auto custom-scrollbar">

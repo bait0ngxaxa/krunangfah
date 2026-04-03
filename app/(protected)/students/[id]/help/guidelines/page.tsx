@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BookOpen, Pin } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { buttonVariants } from "@/components/ui/Button";
 import { requireAuth } from "@/lib/session";
 
 interface PageProps {
@@ -31,7 +32,7 @@ export default async function GuidelinesPage({
             <div className="max-w-4xl mx-auto">
                 <BackButton href={startHref} label="กลับหน้าใบงาน" />
 
-                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 overflow-hidden">
+                <div className="relative bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 overflow-hidden">
                     {/* Corner decoration */}
                     <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-teal-300/35 rounded-full blur-xl pointer-events-none" />
                     <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-teal-200/20 to-emerald-300/15 rounded-full blur-xl pointer-events-none" />
@@ -42,8 +43,8 @@ export default async function GuidelinesPage({
                     {/* Header */}
                     <div className="relative flex items-center gap-4 mb-8">
                         <div className="relative w-16 h-16">
-                            <div className="absolute inset-0 rounded-full bg-emerald-400 blur-lg opacity-25" />
-                            <div className="relative w-full h-full bg-emerald-500 rounded-full flex items-center justify-center text-white text-2xl shadow-inner ring-2 ring-emerald-400/30">
+                            <div className="absolute inset-0 rounded-full bg-emerald-200 blur-lg opacity-35" />
+                            <div className="relative w-full h-full rounded-full bg-white border border-emerald-200 flex items-center justify-center text-emerald-600 text-2xl shadow-sm ring-1 ring-emerald-100/70">
                                 <BookOpen className="w-8 h-8" />
                             </div>
                         </div>
@@ -85,7 +86,11 @@ export default async function GuidelinesPage({
                     <div className="mt-8 pt-6 border-t border-gray-200">
                         <Link
                             href={startHref}
-                            className="block w-full py-3 bg-linear-to-r from-emerald-400 to-teal-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity text-center"
+                            className={buttonVariants({
+                                variant: "primary",
+                                size: "lg",
+                                fullWidth: true,
+                            })}
                         >
                             กลับหน้าใบงาน
                         </Link>

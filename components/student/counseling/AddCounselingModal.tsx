@@ -8,9 +8,14 @@ import {
     Info,
     Loader2,
     Save,
+    X,
+    CalendarDays,
+    User,
+    FileText,
 } from "lucide-react";
 import { createCounselingSession } from "@/lib/actions/counseling.actions";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/Button";
 
 interface AddCounselingModalProps {
     studentId: string;
@@ -78,42 +83,57 @@ export function AddCounselingModal({
 
     const modalContent = (
         <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-9999 p-4 overflow-y-auto"
+            className="fixed inset-0 z-9999 flex items-center justify-center overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm"
             onClick={onClose}
         >
             <div
-                className="bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-2xl my-8 shadow-2xl border border-white/50 animate-fade-in-up"
+                className="my-4 flex max-h-[92vh] w-full max-w-2xl animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="bg-linear-to-r from-emerald-500 to-teal-600 px-5 py-4 sm:px-8 sm:py-6 rounded-t-3xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2" />
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
-                    <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
-                        <MessageCircle className="w-6 h-6 text-white" />
-                        เพิ่มบันทึกการให้คำปรึกษา
-                    </h3>
+                <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+                                <MessageCircle className="h-6 w-6 text-emerald-600" />
+                                เพิ่มบันทึกการให้คำปรึกษา
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                                บันทึกรายละเอียดการพูดคุยเพื่อติดตามความคืบหน้าของนักเรียน
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={isSubmitting}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                            aria-label="ปิดหน้าต่าง"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Form */}
                 <form
                     onSubmit={handleSubmit}
-                    className="p-5 sm:p-8 space-y-6 overflow-y-auto flex-1"
+                    className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-8"
                 >
                     {/* Error Message */}
                     {error && (
-                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-2 text-orange-700">
-                            <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />
+                        <div className="flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 p-4 text-orange-700">
+                            <AlertTriangle className="h-5 w-5 shrink-0 text-orange-600" />
                             <p className="text-sm font-medium">{error}</p>
                         </div>
                     )}
 
                     {/* Session Date */}
-                    <div>
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                         <label
                             htmlFor="sessionDate"
-                            className="block text-sm font-bold text-gray-700 mb-2"
+                            className="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-gray-700"
                         >
+                            <CalendarDays className="h-4 w-4 text-emerald-600" />
                             วันที่ <span className="text-emerald-500">*</span>
                         </label>
                         <input
@@ -127,16 +147,17 @@ export function AddCounselingModal({
                                     sessionDate: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all outline-none font-medium"
+                            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-800 outline-none transition-all hover:border-emerald-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                         />
                     </div>
 
                     {/* Counselor Name */}
-                    <div>
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                         <label
                             htmlFor="counselorName"
-                            className="block text-sm font-bold text-gray-700 mb-2"
+                            className="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-gray-700"
                         >
+                            <User className="h-4 w-4 text-emerald-600" />
                             ครูที่พูดคุย{" "}
                             <span className="text-emerald-500">*</span>
                         </label>
@@ -152,16 +173,17 @@ export function AddCounselingModal({
                                     counselorName: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all outline-none font-medium"
+                            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-800 outline-none transition-all hover:border-emerald-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                         />
                     </div>
 
                     {/* Summary */}
-                    <div>
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                         <label
                             htmlFor="summary"
-                            className="block text-sm font-bold text-gray-700 mb-2"
+                            className="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-gray-700"
                         >
+                            <FileText className="h-4 w-4 text-emerald-600" />
                             สรุปประเด็นที่พูดคุย{" "}
                             <span className="text-emerald-500">*</span>
                         </label>
@@ -177,42 +199,55 @@ export function AddCounselingModal({
                                     summary: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all resize-none outline-none font-medium"
+                            className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-800 outline-none transition-all hover:border-emerald-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                         />
-                        <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                            <Info className="w-4 h-4 text-gray-400 shrink-0" />
-                            ระบุรายละเอียดการพูดคุย ปัญหาที่พบ
-                            และแนวทางการช่วยเหลือ
-                        </p>
+                        <div className="mt-2 flex items-start justify-between gap-2">
+                            <p className="flex items-center gap-1 text-xs text-gray-500">
+                                <Info className="h-4 w-4 shrink-0 text-gray-400" />
+                                ระบุปัญหาที่พบและแนวทางช่วยเหลือที่ตกลงร่วมกัน
+                            </p>
+                            <span className="shrink-0 text-xs font-medium text-gray-400">
+                                {formData.summary.length} ตัวอักษร
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-xs text-emerald-700">
+                        <span className="font-semibold">คำแนะนำ:</span>{" "}
+                        เขียนสรุปให้กระชับและระบุ action ที่จะติดตามในการนัดครั้งถัดไป
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-4 pt-4 border-t border-gray-100">
-                        <button
+                    <div className="flex gap-4 border-t border-gray-100 pt-4">
+                        <Button
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                            variant="secondary"
+                            size="lg"
+                            className="flex-1"
                         >
                             ยกเลิก
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            variant="primary"
+                            size="lg"
+                            className="flex-1"
                         >
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <Loader2 className="h-5 w-5 animate-spin" />
                                     กำลังบันทึก...
                                 </>
                             ) : (
                                 <>
-                                    <Save className="w-5 h-5" />
+                                    <Save className="h-5 w-5" />
                                     บันทึกข้อมูล
                                 </>
                             )}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>

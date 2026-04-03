@@ -42,7 +42,7 @@ export function ImportPreview({
     return (
         <div className="space-y-6">
             {/* Summary Section */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl shadow-emerald-100/50 p-6 md:p-8 border border-emerald-200 relative overflow-hidden group">
+            <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden group">
                 <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-emerald-400 via-teal-300 to-cyan-400 opacity-60" />
 
                 <h3 className="text-xl font-bold mb-6 flex items-center gap-2">

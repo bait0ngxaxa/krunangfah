@@ -24,10 +24,8 @@ export async function ActivityProgressTable({
 
     if (!result.success || !result.data) {
         return (
-            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 border border-emerald-200 ring-1 ring-emerald-50 overflow-hidden">
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-emerald-200/40 to-teal-300/30 rounded-full blur-xl pointer-events-none" />
-                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
-                <p className="relative text-gray-500 text-center">
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+                <p className="text-gray-500 text-center">
                     ไม่สามารถโหลดข้อมูลกิจกรรมได้
                 </p>
             </div>
@@ -38,13 +36,8 @@ export async function ActivityProgressTable({
     const completedCount = getCompletedCount(progressData);
 
     return (
-        <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 md:p-8 border border-emerald-200 ring-1 ring-emerald-50 overflow-hidden group hover:shadow-xl transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-emerald-300 via-teal-300 to-cyan-300" />
-            {/* Corner decoration */}
-            <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-teal-300/35 rounded-full blur-xl pointer-events-none" />
-            {/* Shimmer */}
-            <div className="absolute inset-x-0 top-[6px] h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
-
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-all duration-300 hover:shadow-md md:p-8">
+            <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-100/40 blur-3xl" />
             <ActivityProgressHeader
                 studentId={studentId}
                 phqResultId={phqResultId}
@@ -55,10 +48,10 @@ export async function ActivityProgressTable({
                 readOnly={readOnly}
             />
 
-            <div className="overflow-x-auto rounded-xl border border-emerald-100">
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
                 <table className="w-full">
                     <thead className="hidden md:table-header-group">
-                        <tr className="bg-emerald-50/80 border-b border-emerald-200 text-gray-700">
+                        <tr className="border-b border-gray-200 bg-slate-50/90 text-gray-700">
                             <th className="px-6 py-4 text-left font-bold">
                                 กิจกรรมที่ต้องทำ
                             </th>
@@ -74,7 +67,7 @@ export async function ActivityProgressTable({
                         </tr>
                     </thead>
 
-                    <tbody className="block md:table-row-group divide-y divide-emerald-50">
+                    <tbody className="block divide-y divide-gray-100 md:table-row-group">
                         {progressData.map((progress, index) => (
                             <ActivityRow
                                 key={progress.id}

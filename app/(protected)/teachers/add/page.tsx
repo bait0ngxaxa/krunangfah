@@ -30,7 +30,7 @@ export default async function AddTeacherPage() {
                 <BackButton href="/dashboard" label="กลับหน้าหลัก" />
 
                 {/* Header */}
-                <div className="relative bg-white rounded-2xl shadow-sm border-2 border-emerald-100 p-5 sm:p-6 mb-6 overflow-hidden group">
+                <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-5 sm:p-6 mb-6 overflow-hidden group">
                     <div className="relative flex items-center gap-4">
                         <div className="relative shrink-0">
                             <div className="relative w-12 h-12 rounded-2xl bg-[#0BD0D9] flex items-center justify-center shadow-sm group-hover:scale-105 group-hover:rotate-3 transition-all duration-500">

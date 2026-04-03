@@ -52,7 +52,7 @@ export function ActionCard({
     const styles = getVariantStyles(variant);
 
     return (
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 overflow-hidden group hover:shadow-[0_8px_24px_-4px_rgba(16,185,129,0.25),0_4px_12px_-2px_rgba(0,0,0,0.06)] hover:border-emerald-300 transition-all duration-300">
+        <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-100 overflow-hidden group hover:shadow-md transition-all duration-300">
             <div
                 className={`${styles.gradient} h-1 group-hover:h-1.5 transition-all duration-300`}
             />

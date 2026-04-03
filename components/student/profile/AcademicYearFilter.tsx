@@ -69,23 +69,21 @@ export function AcademicYearFilter({
         year.semester === currentAcademicYear.semester;
 
     return (
-        <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-4 overflow-hidden">
-            <div className="relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0">
+        <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm">
+            <div className="pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-emerald-100/50 blur-2xl" />
+            <div className="relative flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                 <label
                     htmlFor="year-filter"
-                    className="text-sm font-semibold text-gray-700 whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-gray-700"
                 >
-                    <div className="relative inline-block mr-1.5">
-                        <div className="absolute inset-0 rounded-full bg-emerald-400 blur-md opacity-20" />
-                        <CalendarDays className="relative w-4 h-4 text-emerald-500" />
-                    </div>
+                    <CalendarDays className="h-4 w-4 text-emerald-600" />
                     ปีการศึกษา:
                 </label>
                 <select
                     id="year-filter"
                     value={currentYearId || "all"}
                     onChange={(e) => handleYearChange(e.target.value)}
-                    className="w-full sm:flex-1 min-w-0 px-4 py-2 border border-emerald-100 rounded-lg focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none truncate"
+                    className="w-full min-w-0 truncate rounded-xl border border-emerald-200 bg-white px-4 py-2.5 shadow-sm outline-none transition-all hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:flex-1"
                 >
                     <option value="all">ทุกปีการศึกษา</option>
                     {uniqueYears.length > 1 &&

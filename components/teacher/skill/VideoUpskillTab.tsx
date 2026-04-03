@@ -30,7 +30,7 @@ export function VideoUpskillTab() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="bg-white rounded-2xl p-6 border-2 border-emerald-100 shadow-sm relative overflow-hidden group">
+            <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm relative overflow-hidden group">
                 <div className="relative z-10">
                     <h2 className="text-2xl font-bold text-emerald-600 mb-2 flex items-center gap-2 drop-shadow-sm">
                         <BookOpen className="w-6 h-6 text-emerald-500" />
@@ -47,7 +47,7 @@ export function VideoUpskillTab() {
                 {videos.map((video) => (
                     <div
                         key={video.id}
-                        className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-2 border-emerald-100 hover:-translate-y-1 flex flex-col"
+                        className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-2 border-gray-100 hover:-translate-y-1 flex flex-col"
                     >
                         {/* Video Embed */}
                         <div className="aspect-video bg-gray-100 relative shrink-0">

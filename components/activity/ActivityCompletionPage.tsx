@@ -76,7 +76,7 @@ export function ActivityCompletionPage({
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-3xl p-8 border-2 border-emerald-100 shadow-sm mb-8">
+                    <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-sm mb-8">
                         <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 tracking-tight">
                             ขอบคุณที่ชวนเด็กทำ
                         </h1>
@@ -91,14 +91,14 @@ export function ActivityCompletionPage({
                 {/* Schedule Section - Only show if there's a next activity */}
                 {hasNextActivity && nextActivityName && (
                     <div
-                        className={`mt-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-emerald-100 pointer-events-auto hover:shadow-md transition-all duration-1000 ${
+                        className={`mt-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-gray-100 pointer-events-auto hover:shadow-md transition-all duration-1000 ${
                             scheduleVisible
                                 ? "opacity-100 translate-y-0"
                                 : "opacity-0 translate-y-8"
                         }`}
                     >
                         <div className="flex items-center justify-center gap-3 mb-6">
-                            <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-500 rotate-3">
+                            <div className="w-12 h-12 rounded-2xl bg-white border border-emerald-200 shadow-sm flex items-center justify-center text-emerald-600 rotate-3">
                                 <Calendar className="w-6 h-6" />
                             </div>
                         </div>
@@ -126,7 +126,7 @@ export function ActivityCompletionPage({
                 {/* All activities completed message */}
                 {!hasNextActivity && (
                     <div
-                        className={`mt-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-emerald-100 pointer-events-auto transition-all duration-1000 ${
+                        className={`mt-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-gray-100 pointer-events-auto transition-all duration-1000 ${
                             scheduleVisible
                                 ? "opacity-100 translate-y-0"
                                 : "opacity-0 translate-y-8"

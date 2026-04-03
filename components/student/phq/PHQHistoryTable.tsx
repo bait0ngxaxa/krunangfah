@@ -25,7 +25,7 @@ interface PHQHistoryTableProps {
 export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
     if (results.length === 0) {
         return (
-            <div className="relative bg-white rounded-2xl shadow-sm p-8 border-2 border-gray-100 text-center overflow-hidden">
+            <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm">
                 <p className="relative text-gray-500">
                     ยังไม่มีประวัติการคัดกรอง
                 </p>
@@ -34,7 +34,8 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
     }
 
     return (
-        <div className="relative bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 overflow-hidden group transition-all duration-300">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-all duration-300 md:p-8">
+            <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-100/45 blur-3xl" />
             <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-2">
                 <ClipboardList className="w-6 h-6 text-[#0BD0D9]" />
                 <span className="text-gray-800">
@@ -43,10 +44,10 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
             </h2>
 
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto rounded-xl border border-emerald-100">
+            <div className="hidden overflow-x-auto rounded-2xl border border-gray-200 md:block">
                 <table className="w-full">
                     <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
+                        <tr className="border-b border-gray-200 bg-slate-50/90">
                             <th className="text-left py-4 px-6 font-bold text-gray-700">
                                 ครั้งที่
                             </th>
@@ -67,7 +68,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-emerald-50">
+                    <tbody className="divide-y divide-gray-100">
                         {results.map((result, index) => {
                             const risk = getRiskLevelConfig(
                                 result.riskLevel as RiskLevel,
@@ -77,7 +78,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                             return (
                                 <tr
                                     key={result.id}
-                                    className="hover:bg-emerald-50/30 transition-colors"
+                                    className="transition-colors hover:bg-slate-50/80"
                                 >
                                     <td className="py-4 px-6 font-medium text-gray-700">
                                         {results.length - index}
@@ -147,11 +148,11 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                     return (
                         <div
                             key={result.id}
-                            className="p-5 bg-white rounded-2xl border-2 border-gray-100 shadow-sm hover:shadow-md transition-all"
+                            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <div className="text-sm text-emerald-500 font-medium mb-1">
+                                    <div className="mb-1 text-sm font-medium text-slate-500">
                                         ครั้งที่ {results.length - index}
                                     </div>
                                     <div className="font-bold text-gray-800">

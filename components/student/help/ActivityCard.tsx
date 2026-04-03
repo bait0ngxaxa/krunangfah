@@ -34,7 +34,7 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                 {activity.worksheets.map((worksheet, wIndex) => (
                     <div
                         key={wIndex}
-                        className="shrink-0 w-48 h-64 bg-white rounded-2xl overflow-hidden shadow-md shadow-emerald-100/30 border-4 border-white relative transform hover:scale-105 hover:rotate-1 hover:shadow-xl hover:shadow-emerald-200 transition-all duration-300 group"
+                        className="shrink-0 w-48 h-64 bg-white rounded-2xl overflow-hidden shadow-md border-4 border-white relative transform hover:scale-105 hover:rotate-1 hover:shadow-xl transition-all duration-300 group"
                     >
                         <Image
                             src={worksheet}
@@ -44,7 +44,9 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                             sizes="(max-width: 768px) 100vw, 33vw"
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center">
-                            <span className="text-white text-xs font-bold bg-[#0BD0D9] px-2 py-1 rounded-full border-2 border-white shadow-sm">
+                            <span
+                                className={`text-white text-xs font-bold ${config.bg} px-2 py-1 rounded-full border-2 border-white shadow-sm`}
+                            >
                                 ใบที่ {wIndex + 1}
                             </span>
                         </div>

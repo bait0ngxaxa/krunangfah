@@ -14,7 +14,7 @@ export function ToolsIntroTab() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="bg-white rounded-2xl p-6 border-2 border-emerald-100 shadow-sm relative overflow-hidden">
+            <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm relative overflow-hidden">
                 <div className="relative z-10">
                     <h2 className="text-2xl font-bold text-emerald-600 mb-2 flex items-center gap-2 drop-shadow-sm">
                         <Package className="w-6 h-6 text-emerald-500" />

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Check, X, Loader2 } from "lucide-react";
 import { updateScheduledDate } from "@/lib/actions/activity/mutations";
+import { Button } from "@/components/ui/Button";
 
 interface ScheduleDateCellProps {
     activityProgressId: string;
@@ -72,7 +73,7 @@ export function ScheduleDateCell({
                     className="border border-emerald-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-36"
                     disabled={isPending}
                 />
-                <button
+                <Button
                     type="button"
                     onClick={() => {
                         if (!dateValue) return;
@@ -88,7 +89,9 @@ export function ScheduleDateCell({
                         });
                     }}
                     disabled={isPending || !dateValue}
-                    className="p-1 rounded-md hover:bg-emerald-100 text-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 w-7 p-0 rounded-md text-emerald-600"
                     title="บันทึก"
                 >
                     {isPending ? (
@@ -96,8 +99,8 @@ export function ScheduleDateCell({
                     ) : (
                         <Check className="w-4 h-4" />
                     )}
-                </button>
-                <button
+                </Button>
+                <Button
                     type="button"
                     onClick={() => {
                         setDateValue(
@@ -106,11 +109,13 @@ export function ScheduleDateCell({
                         setIsEditing(false);
                     }}
                     disabled={isPending}
-                    className="p-1 rounded-md hover:bg-red-100 text-red-500 disabled:opacity-40 transition-colors"
+                    variant="danger"
+                    size="sm"
+                    className="h-7 w-7 p-0 rounded-md"
                     title="ยกเลิก"
                 >
                     <X className="w-4 h-4" />
-                </button>
+                </Button>
             </div>
         );
     }

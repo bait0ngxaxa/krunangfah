@@ -13,7 +13,7 @@ export default function Loading() {
 
                 <div className="space-y-6">
                     {/* Profile Card Skeleton */}
-                    <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 border border-emerald-200 ring-1 ring-emerald-50">
+                    <div className="bg-white rounded-2xl shadow-sm p-6 border-2 border-gray-100">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="w-16 h-16 bg-gray-200 rounded-2xl animate-pulse" />
                             <div className="flex-1">
@@ -32,7 +32,7 @@ export default function Loading() {
                     </div>
 
                     {/* Tabs Skeleton */}
-                    <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg shadow-emerald-100/30 p-6 border border-emerald-200 ring-1 ring-emerald-50">
+                    <div className="bg-white rounded-2xl shadow-sm p-6 border-2 border-gray-100">
                         <div className="flex gap-4 mb-6">
                             <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
                             <div className="h-10 w-40 bg-gray-200 rounded-lg animate-pulse" />

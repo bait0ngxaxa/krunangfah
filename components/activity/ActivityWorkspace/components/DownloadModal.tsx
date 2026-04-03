@@ -1,6 +1,7 @@
 "use client";
 
 import { X, ClipboardList, FileText } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 interface DownloadModalProps {
     isOpen: boolean;
@@ -26,50 +27,60 @@ export function DownloadModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in">
-            <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8 relative border-2 border-gray-100 animate-zoom-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm animate-fade-in">
+            <div className="my-4 w-full max-w-md overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl animate-zoom-in sm:my-8">
                 {/* Close Button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-all"
-                >
-                    <X className="w-5 h-5" />
-                </button>
-
-                {/* Header */}
-                <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
-                    <ClipboardList className="w-6 h-6 text-gray-700" />
-                    <span className="text-gray-900">เลือกใบงาน</span>
-                </h3>
-                <p className="text-sm text-gray-600 mb-8 font-medium">
-                    กิจกรรมที่ {activityNumber}
-                </p>
-
-                {/* Download Buttons */}
-                <div className="space-y-4">
-                    {downloadUrls.map((url, index) => (
-                        <button
-                            key={url}
-                            onClick={() => handleDownload(url)}
-                            className="w-full py-4 px-6 bg-[#0BD0D9] text-white rounded-xl font-bold hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-0.5 transition-all shadow-sm flex items-center justify-center gap-3 group"
-                        >
-                            <FileText className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                            <span className="text-lg">
-                                {downloadUrls.length > 1
-                                    ? `ใบงาน ${index + 1}`
-                                    : "ดาวน์โหลดใบงาน"}
-                            </span>
-                        </button>
-                    ))}
+                <div className="flex items-start justify-between border-b border-gray-200 bg-white px-6 py-5">
+                    <div>
+                        <h3 className="flex items-center gap-2 text-xl font-bold text-gray-900">
+                            <ClipboardList className="w-6 h-6 text-emerald-600" />
+                            เลือกใบงาน
+                        </h3>
+                        <p className="mt-1 text-sm font-medium text-gray-500">
+                            กิจกรรมที่ {activityNumber}
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
                 </div>
 
-                {/* Cancel Button */}
-                <button
-                    onClick={onClose}
-                    className="mt-6 w-full py-3 text-gray-500 hover:text-gray-800 font-bold transition-colors hover:bg-gray-50 rounded-xl"
-                >
-                    ปิด
-                </button>
+                <div className="p-6">
+                    {/* Download Buttons */}
+                    <div className="space-y-4">
+                        {downloadUrls.map((url, index) => (
+                            <Button
+                                key={url}
+                                onClick={() => handleDownload(url)}
+                                variant="primary"
+                                size="lg"
+                                fullWidth
+                                className="group"
+                            >
+                                <FileText className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                <span className="text-lg">
+                                    {downloadUrls.length > 1
+                                        ? `ใบงาน ${index + 1}`
+                                        : "ดาวน์โหลดใบงาน"}
+                                </span>
+                            </Button>
+                        ))}
+                    </div>
+
+                    {/* Cancel Button */}
+                    <Button
+                        onClick={onClose}
+                        variant="secondary"
+                        size="lg"
+                        fullWidth
+                        className="mt-4"
+                    >
+                        ปิด
+                    </Button>
+                </div>
             </div>
         </div>
     );

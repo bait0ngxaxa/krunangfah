@@ -31,7 +31,7 @@ export function SchoolClassesTabs({
                 </span>
             ),
             content: (
-                <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-emerald-100">
+                <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-gray-100">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-8 h-8 rounded-xl bg-[#0BD0D9] flex items-center justify-center shadow-sm">
                             <UserCheck className="w-4 h-4 text-white" />
@@ -63,7 +63,7 @@ export function SchoolClassesTabs({
                 </span>
             ),
             content: (
-                <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-emerald-100">
+                <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-gray-100">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-8 h-8 rounded-xl bg-amber-400 flex items-center justify-center shadow-sm">
                             <Shield className="w-4 h-4 text-white" />

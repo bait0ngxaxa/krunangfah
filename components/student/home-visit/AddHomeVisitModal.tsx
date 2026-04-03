@@ -2,11 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Home, AlertTriangle, Info, Loader2, Save, Camera } from "lucide-react";
+import {
+    Home,
+    AlertTriangle,
+    Info,
+    Loader2,
+    Save,
+    Camera,
+    X,
+} from "lucide-react";
 import { createHomeVisit } from "@/lib/actions/home-visit.actions";
 import type { HomeVisitPhotoData } from "@/lib/actions/home-visit.actions";
 import { HomeVisitPhotoUploader } from "./HomeVisitPhotoUploader";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/Button";
 
 interface AddHomeVisitModalProps {
     studentId: string;
@@ -82,37 +91,53 @@ export function AddHomeVisitModal({
 
     const modalContent = (
         <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-9999 p-4 overflow-y-auto"
+            className="fixed inset-0 z-9999 flex items-center justify-center overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm"
             onClick={onClose}
         >
             <div
-                className="bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-2xl my-8 shadow-2xl border border-white/50 animate-fade-in-up"
+                className="my-4 flex max-h-[92vh] w-full max-w-2xl animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="bg-linear-to-r from-emerald-500 to-teal-600 px-5 py-4 sm:px-8 sm:py-6 rounded-t-3xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2" />
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
-                    <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
-                        {step === "form" ? (
-                            <>
-                                <Home className="w-6 h-6 text-white" />
-                                เพิ่มบันทึกการเยี่ยมบ้าน
-                            </>
-                        ) : (
-                            <>
-                                <Camera className="w-6 h-6 text-white" />
-                                เพิ่มรูปภาพ
-                            </>
-                        )}
-                    </h3>
+                <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+                                {step === "form" ? (
+                                    <>
+                                        <Home className="w-6 h-6 text-emerald-600" />
+                                        เพิ่มบันทึกการเยี่ยมบ้าน
+                                    </>
+                                ) : (
+                                    <>
+                                        <Camera className="w-6 h-6 text-emerald-600" />
+                                        เพิ่มรูปภาพ
+                                    </>
+                                )}
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                                {step === "form"
+                                    ? "บันทึกรายละเอียดการเยี่ยมบ้านก่อนอัปโหลดรูปภาพ"
+                                    : "อัปโหลดรูปภาพประกอบการเยี่ยมบ้าน (สูงสุด 5 รูป)"}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={isSubmitting}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                            aria-label="ปิดหน้าต่าง"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
                 </div>
 
                 {step === "form" ? (
                     /* Step 1: Form */
                     <form
                         onSubmit={handleSubmit}
-                        className="p-5 sm:p-8 space-y-6 overflow-y-auto flex-1"
+                        className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-8"
                     >
                         {/* Error Message */}
                         {error && (
@@ -203,18 +228,22 @@ export function AddHomeVisitModal({
 
                         {/* Actions */}
                         <div className="flex gap-4 pt-4 border-t border-gray-100">
-                            <button
+                            <Button
                                 type="button"
                                 onClick={onClose}
                                 disabled={isSubmitting}
-                                className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                variant="secondary"
+                                size="lg"
+                                className="flex-1"
                             >
                                 ยกเลิก
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="flex-1 px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                variant="primary"
+                                size="lg"
+                                className="flex-1"
                             >
                                 {isSubmitting ? (
                                     <>
@@ -227,12 +256,12 @@ export function AddHomeVisitModal({
                                         บันทึกและเพิ่มรูปภาพ
                                     </>
                                 )}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 ) : (
                     /* Step 2: Photo upload */
-                    <div className="p-5 sm:p-8 space-y-6">
+                    <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-8">
                         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                             <p className="text-sm text-emerald-700 font-medium">
                                 บันทึกข้อมูลเรียบร้อยแล้ว
@@ -249,13 +278,15 @@ export function AddHomeVisitModal({
                         )}
 
                         <div className="flex gap-4 pt-4 border-t border-gray-100">
-                            <button
+                            <Button
                                 type="button"
                                 onClick={handleDone}
-                                className="w-full px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all font-bold shadow-md flex items-center justify-center gap-2"
+                                variant="primary"
+                                size="lg"
+                                fullWidth
                             >
                                 เสร็จสิ้น
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 )}

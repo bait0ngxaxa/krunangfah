@@ -8,9 +8,11 @@ import {
     Loader2,
     Save,
     ClipboardCheck,
+    X,
 } from "lucide-react";
 import { updateHospitalReferral } from "@/lib/actions/hospital-referral.actions";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/Button";
 
 type ReferralOption = "refer" | "follow_up";
 
@@ -102,22 +104,41 @@ export function ReferralFormModal({
 
     const modalContent = (
         <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-9999 p-4 overflow-y-auto"
+            className="fixed inset-0 z-9999 flex items-center justify-center overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm"
             onClick={onClose}
         >
             <div
-                className="bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-lg my-8 shadow-2xl border border-white/50 animate-fade-in-up"
+                className="my-4 flex max-h-[92vh] w-full max-w-lg animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="bg-[#0BD0D9] px-5 py-4 sm:px-8 sm:py-6 rounded-t-3xl relative overflow-hidden">
-                    <h3 className="text-2xl font-bold text-white relative z-10 flex items-center gap-2">
-                        <Hospital className="w-6 h-6 text-white" />
-                        ส่งต่อหรือติดตาม
-                    </h3>
+                <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+                                <Hospital className="w-6 h-6 text-emerald-600" />
+                                ส่งต่อหรือติดตาม
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                                เลือกแนวทางดูแลต่อและบันทึกผลการตัดสินใจ
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={isSubmitting}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                            aria-label="ปิดหน้าต่าง"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-5 sm:p-8 space-y-6">
+                <form
+                    onSubmit={handleSubmit}
+                    className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-8"
+                >
                     {error && (
                         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-2 text-orange-700">
                             <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />
@@ -227,17 +248,21 @@ export function ReferralFormModal({
 
                     {/* Actions */}
                     <div className="flex gap-4 pt-4 border-t border-gray-100">
-                        <button
+                        <Button
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                            variant="secondary"
+                            size="lg"
+                            className="flex-1"
                         >
                             ยกเลิก
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
-                            className="flex-1 px-6 py-3 bg-[#0BD0D9] text-white rounded-xl hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-0.5 transition-all font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            variant="primary"
+                            size="lg"
+                            className="flex-1"
                         >
                             {isSubmitting ? (
                                 <>
@@ -250,7 +275,7 @@ export function ReferralFormModal({
                                     บันทึก
                                 </>
                             )}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>

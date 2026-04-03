@@ -2,11 +2,13 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
+import { RotateCcw } from "lucide-react";
 
 import { AcademicYearFilter } from "./filters/AcademicYearFilter";
 import { ClassFilter } from "./filters/ClassFilter";
 import { SemesterFilter } from "./filters/SemesterFilter";
 import { SchoolFilter } from "./filters/SchoolFilter";
+import { Button } from "@/components/ui/Button";
 
 interface SchoolOption {
     id: string;
@@ -42,6 +44,11 @@ export function AnalyticsFilters({
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
+    const hasActiveFilters =
+        selectedSchoolId !== "all" ||
+        selectedClass !== "all" ||
+        selectedAcademicYear !== "all" ||
+        selectedSemester !== "all";
 
     const updateParams = (updates: Record<string, string | null>): void => {
         const params = new URLSearchParams(searchParams.toString());
@@ -117,6 +124,27 @@ export function AnalyticsFilters({
                         updateParams({ semester: semesterValue })
                     }
                 />
+            ) : null}
+
+            {hasActiveFilters ? (
+                <div className="flex justify-end">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                            updateParams({
+                                school: null,
+                                class: null,
+                                year: null,
+                                semester: null,
+                            })
+                        }
+                    >
+                        <RotateCcw className="h-4 w-4" />
+                        รีเซ็ตตัวกรอง
+                    </Button>
+                </div>
             ) : null}
         </div>
     );

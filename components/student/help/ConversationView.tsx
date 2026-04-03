@@ -112,10 +112,6 @@ export function ConversationView({
                 />
 
                 <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden animate-fade-in-up">
-                    <div
-                        className={`absolute top-0 left-0 w-full h-1.5 ${config.bg}`}
-                    />
-
                     <HelpPageHeader
                         studentName={studentName}
                         config={config}
@@ -133,7 +129,7 @@ export function ConversationView({
                             title="พูดคุยเพื่อประเมินซ้ำ"
                             description="ดูหลักการและแนวทางในการพูดคุยกับนักเรียน"
                             icon={
-                                <MessageCircle className="w-5 h-5 text-emerald-500" />
+                                <MessageCircle className={`w-5 h-5 ${config.textColor}`} />
                             }
                             buttonLabel="หลักการพูดคุย"
                             href={`/students/${studentId}/help/conversation`}
@@ -148,7 +144,7 @@ export function ConversationView({
                                     title="สรุปประเด็นการพูดคุย"
                                     description="บันทึกสรุปประเด็นที่พูดคุยกับนักเรียน"
                                     icon={
-                                        <ClipboardEdit className="w-5 h-5 text-emerald-500" />
+                                        <ClipboardEdit className={`w-5 h-5 ${config.textColor}`} />
                                     }
                                     buttonLabel="กรอกข้อมูล"
                                     onClick={() => setShowCounselingModal(true)}
@@ -161,7 +157,7 @@ export function ConversationView({
                                     title="ส่งต่อโรงพยาบาล หรือ ติดตามต่อ"
                                     description="เลือกส่งต่อผู้เชี่ยวชาญ หรือติดตามดูแลต่อเนื่อง"
                                     icon={
-                                        <Hospital className="w-5 h-5 text-emerald-500" />
+                                        <Hospital className={`w-5 h-5 ${config.textColor}`} />
                                     }
                                     buttonLabel="กรอกข้อมูล"
                                     onClick={() => setShowReferralModal(true)}

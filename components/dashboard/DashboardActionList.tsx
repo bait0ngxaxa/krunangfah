@@ -134,7 +134,7 @@ export function DashboardActionList({
                 theme="teal"
             />
 
-            <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 overflow-hidden group">
+            <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 overflow-hidden group">
                 <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-green-200/40 to-emerald-300/30 rounded-full blur-xl pointer-events-none" />
                 <div className="bg-linear-to-r from-emerald-400 via-green-400 to-emerald-500 px-5 py-3 flex items-center gap-2.5 relative">
                     <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />

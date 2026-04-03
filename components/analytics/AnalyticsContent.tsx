@@ -58,8 +58,9 @@ export function AnalyticsContent({
     return (
         <>
             {filterWarnings.length > 0 ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-amber-900">
-                    <div className="flex items-start gap-2">
+                <div className="relative overflow-hidden rounded-3xl border border-amber-200/70 bg-linear-to-br from-white via-amber-50/60 to-orange-50/50 px-5 py-4 text-amber-900 shadow-[0_14px_30px_-24px_rgba(180,83,9,0.55)]">
+                    <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-amber-200/45 blur-3xl" />
+                    <div className="relative z-10 flex items-start gap-2.5">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                         <div className="space-y-1 text-sm">
                             {filterWarnings.map((warning, index) => (

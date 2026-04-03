@@ -18,6 +18,7 @@ import {
     FolderKanban,
     CalendarDays,
 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 interface AddTeacherFormProps {
     academicYears: AcademicYear[];
@@ -75,6 +76,7 @@ export function AddTeacherForm({
         return !isBlocked;
     });
     const selectedTeacher = roster.find((t) => t.id === selectedRosterId);
+    const blockedCount = blockedInvites.length;
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -87,6 +89,12 @@ export function AddTeacherForm({
             />
 
             {/* Roster Picker */}
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-sm text-emerald-800">
+                ขั้นที่ 1: เลือกครูจากรายการที่พร้อมเชิญ
+                {blockedCount > 0
+                    ? ` (ซ่อนครู ${blockedCount} คนที่มีคำเชิญค้างหรือเปิดใช้งานแล้ว)`
+                    : ""}
+            </div>
             {availableRoster.length > 0 ? (
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -117,8 +125,8 @@ export function AddTeacherForm({
                         ยังไม่มีครูและชั้นเรียน โปรดเพิ่มก่อน
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                        เพิ่มห้องเรียนและครูในแท็บ &quot;เพิ่ม-ลบ
-                        ห้องเรียน&quot; และ &quot;เพิ่ม-ลบ ครู&quot; ก่อน
+                        เพิ่มห้องเรียนและครูในส่วน &quot;ขั้นตอน 1&quot; และ
+                        &quot;ขั้นตอน 2&quot; ด้านบนก่อน
                     </p>
                 </div>
             )}
@@ -126,6 +134,9 @@ export function AddTeacherForm({
             {/* Selected Teacher Info Display */}
             {selectedTeacher && (
                 <div className="p-4 bg-white border border-emerald-100 rounded-xl space-y-3">
+                    <p className="text-sm font-semibold text-emerald-800">
+                        ขั้นที่ 2: ตรวจสอบข้อมูลครูก่อนสร้างคำเชิญ
+                    </p>
                     <div className="flex items-center gap-2 mb-2">
                         <UserCheck className="w-4 h-4 text-green-500" />
                         <span className="text-sm font-bold text-gray-700">
@@ -243,6 +254,9 @@ export function AddTeacherForm({
             {/* Academic Year — only show when teacher is selected */}
             {selectedTeacher && (
                 <div>
+                    <p className="text-sm font-semibold text-emerald-800 mb-2">
+                        ขั้นที่ 3: เลือกปีการศึกษาและสร้างลิงก์
+                    </p>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                         <CalendarDays className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-emerald-500" />
                         ปีการศึกษา <span className="text-red-500">*</span>
@@ -282,10 +296,12 @@ export function AddTeacherForm({
             {/* Submit / Cancel */}
             {selectedTeacher && (
                 <div className="flex gap-4 pt-4 border-t border-emerald-100">
-                    <button
+                    <Button
                         type="submit"
                         disabled={isLoading}
-                        className="flex-1 py-3 px-4 bg-[#0BD0D9] text-white font-bold rounded-xl hover:bg-[#09B8C0] disabled:opacity-50 transition-all duration-200 shadow-sm"
+                        variant="primary"
+                        size="lg"
+                        className="flex-1"
                     >
                         {isLoading ? (
                             <span className="flex items-center justify-center gap-2">
@@ -295,14 +311,15 @@ export function AddTeacherForm({
                         ) : (
                             "สร้างลิงค์คำเชิญ"
                         )}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="button"
                         onClick={handleCancel}
-                        className="px-6 py-3 border border-emerald-200 text-gray-600 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 transition-all font-medium"
+                        variant="secondary"
+                        size="lg"
                     >
                         ยกเลิก
-                    </button>
+                    </Button>
                 </div>
             )}
         </form>

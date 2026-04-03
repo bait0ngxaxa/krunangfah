@@ -12,39 +12,36 @@ function SummaryCard({
     label,
     value,
     unit,
-    bgColor,
-    iconColor,
+    glowColor,
+    accentColor,
 }: {
     icon: LucideIcon;
     label: string;
     value: number;
     unit: string;
-    bgColor: string;
-    iconColor: string;
+    glowColor: string;
+    accentColor: string;
 }) {
     return (
-        <div
-            className={`relative ${bgColor} rounded-2xl shadow-sm border-2 border-transparent p-6 overflow-hidden group transition-all duration-300 hover:shadow-md hover:border-[#0BD0D9]/20`}
-        >
-            <div className="relative flex items-center gap-5 z-10">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_44px_-24px_rgba(15,23,42,0.5)]">
+            <div
+                className={`pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full blur-3xl ${glowColor}`}
+            />
+            <div className="relative z-10 flex items-center gap-5">
                 <div className="relative shrink-0">
-                    <div className="p-3.5 rounded-xl bg-white shadow-sm ring-1 ring-black/5 group-hover:scale-105 transition-transform duration-300">
-                        <Icon className={`w-6 h-6 ${iconColor}`} />
+                    <div className="rounded-2xl border border-white/80 bg-white/85 p-3.5 shadow-md ring-1 ring-slate-900/5">
+                        <Icon className={`h-6 w-6 ${accentColor}`} />
                     </div>
                 </div>
                 <div>
-                    <p className="text-sm font-bold text-gray-500 tracking-wide mb-1 uppercase">
+                    <p className="mb-1 text-sm font-bold tracking-wide text-slate-500 uppercase">
                         {label}
                     </p>
                     <div className="flex items-baseline gap-2">
-                        <p
-                            className={`text-3xl font-extrabold text-gray-900 tracking-tight`}
-                        >
+                        <p className="text-3xl font-extrabold tracking-tight text-slate-900">
                             {value}
                         </p>
-                        <p
-                            className={`text-sm font-bold ${iconColor} opacity-80`}
-                        >
+                        <p className={`text-sm font-bold ${accentColor}`}>
                             {unit}
                         </p>
                     </div>
@@ -67,24 +64,24 @@ export function AnalyticsSummaryCards({
                 label={`นักเรียนทั้งหมด${currentClass ? ` (${currentClass})` : ""}`}
                 value={totalStudents}
                 unit="คน"
-                bgColor="bg-cyan-50/50"
-                iconColor="text-[#09B8C0]"
+                glowColor="bg-cyan-200/35"
+                accentColor="text-cyan-600"
             />
             <SummaryCard
                 icon={CheckCircle}
                 label="คัดกรองแล้ว"
                 value={studentsWithAssessment}
                 unit="คน"
-                bgColor="bg-emerald-50/50"
-                iconColor="text-[#059669]"
+                glowColor="bg-emerald-200/35"
+                accentColor="text-emerald-600"
             />
             <SummaryCard
                 icon={AlertCircle}
                 label="ยังไม่ได้คัดกรอง"
                 value={studentsWithoutAssessment}
                 unit="คน"
-                bgColor="bg-gray-50"
-                iconColor="text-gray-500"
+                glowColor="bg-amber-200/35"
+                accentColor="text-amber-600"
             />
         </div>
     );

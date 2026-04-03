@@ -8,8 +8,9 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
+    ReferenceArea,
 } from "recharts";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Activity, Clock3 } from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 
@@ -46,16 +47,22 @@ function CustomTooltip({
 }) {
     if (active && payload && payload.length > 0) {
         const data = payload[0].payload;
+        const risk = getRiskLevelConfig(data.riskLevel as RiskLevel);
 
         return (
-            <div className="bg-white/95 backdrop-blur-sm p-4 rounded-lg shadow-lg border border-gray-200">
+            <div className="rounded-xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur-sm">
                 <p className="font-semibold text-gray-800 mb-2">{data.date}</p>
                 <p className="text-sm text-gray-600 mb-1">
                     {data.academicYear}
                 </p>
-                <p className="text-lg font-bold text-emerald-600">
+                <p className="text-lg font-bold text-gray-900">
                     คะแนน: {data.score}
                 </p>
+                <span
+                    className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${risk.bgLight} ${risk.textColorDark}`}
+                >
+                    {risk.label}
+                </span>
             </div>
         );
     }
@@ -93,87 +100,164 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
         riskLevel: result.riskLevel,
     }));
 
-    // Get color based on latest risk level
-    const latestRisk = results[0].riskLevel as RiskLevel;
-    const lineColor = getRiskLevelConfig(latestRisk).hexColor;
+    const latestResult = sortedResults.at(-1);
+    const previousResult = sortedResults.at(-2);
+    const latestRisk = (latestResult?.riskLevel ?? "blue") as RiskLevel;
+    const latestRiskConfig = getRiskLevelConfig(latestRisk);
+    const lineColor = latestRiskConfig.hexColor;
+    const latestScore = latestResult?.totalScore ?? 0;
+    const previousScore = previousResult?.totalScore ?? latestScore;
+    const scoreDelta = latestScore - previousScore;
+    const highestScore = sortedResults.reduce(
+        (maxScore, current) => Math.max(maxScore, current.totalScore),
+        0,
+    );
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden group transition-all duration-300">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <TrendingUp className="w-6 h-6 text-[#0BD0D9]" />
-                <span className="text-gray-800">กราฟแนวโน้มคะแนน PHQ-A</span>
-            </h2>
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-all duration-300 hover:shadow-[0_24px_44px_-24px_rgba(15,23,42,0.5)] md:p-8">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-emerald-200/35 blur-3xl" />
+            <div className="pointer-events-none absolute -left-24 -bottom-20 h-56 w-56 rounded-full bg-cyan-200/20 blur-3xl" />
 
-            <div className="w-full h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                        data={chartData}
-                        margin={{ top: 10, right: 30, left: 20, bottom: 60 }}
-                        tabIndex={-1}
+            <div className="relative z-10">
+                <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                    <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-800">
+                        <TrendingUp className="h-6 w-6 text-[#0BD0D9]" />
+                        กราฟแนวโน้มคะแนน PHQ-A
+                    </h2>
+                    <span
+                        className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-bold ${latestRiskConfig.bgLight} ${latestRiskConfig.textColorDark}`}
                     >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#D1FAE5" />
-                        <XAxis
-                            dataKey="academicYear"
-                            stroke="#9CA3AF"
-                            style={{ fontSize: "11px" }}
-                            angle={-45}
-                            textAnchor="end"
-                            height={80}
-                            label={{
-                                value: "ปีการศึกษา / ครั้งที่",
-                                position: "insideBottom",
-                                offset: -10,
-                                style: {
-                                    fontSize: "13px",
-                                    fontWeight: "bold",
-                                    fill: "#6B7280",
-                                },
-                            }}
-                            tick={{ fill: "#6B7280" }}
-                            axisLine={{ stroke: "#A7F3D0" }}
-                        />
-                        <YAxis
-                            domain={[0, 27]}
-                            ticks={[0, 5, 10, 15, 20, 25, 27]}
-                            stroke="#9CA3AF"
-                            style={{ fontSize: "12px" }}
-                            label={{
-                                value: "คะแนน PHQ-A",
-                                angle: -90,
-                                position: "insideLeft",
-                                style: {
-                                    fontSize: "13px",
-                                    fontWeight: "bold",
-                                    fill: "#6B7280",
-                                },
-                            }}
-                            tick={{ fill: "#6B7280" }}
-                            axisLine={{ stroke: "#A7F3D0" }}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Line
-                            type="monotone"
-                            dataKey="score"
-                            stroke={lineColor}
-                            strokeWidth={3}
-                            dot={{
-                                fill: lineColor,
-                                r: 5,
-                                strokeWidth: 2,
-                                stroke: "#fff",
-                            }}
-                            activeDot={{ r: 7 }}
-                        />
-                    </LineChart>
-                </ResponsiveContainer>
+                        สถานะล่าสุด: {latestRiskConfig.label}
+                    </span>
+                </div>
+
+                <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-gray-200 bg-white/85 px-4 py-3 shadow-sm">
+                        <p className="text-xs font-semibold text-gray-500">
+                            คะแนนล่าสุด
+                        </p>
+                        <p className="mt-1 text-2xl font-extrabold text-gray-900">
+                            {latestScore}
+                        </p>
+                    </div>
+                    <div className="rounded-2xl border border-gray-200 bg-white/85 px-4 py-3 shadow-sm">
+                        <p className="text-xs font-semibold text-gray-500">
+                            เปลี่ยนจากครั้งก่อน
+                        </p>
+                        <p
+                            className={`mt-1 text-2xl font-extrabold ${
+                                scoreDelta > 0
+                                    ? "text-red-600"
+                                    : scoreDelta < 0
+                                      ? "text-emerald-600"
+                                      : "text-gray-700"
+                            }`}
+                        >
+                            {scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta}
+                        </p>
+                    </div>
+                    <div className="rounded-2xl border border-gray-200 bg-white/85 px-4 py-3 shadow-sm">
+                        <p className="text-xs font-semibold text-gray-500">
+                            ค่าสูงสุดที่เคยได้
+                        </p>
+                        <p className="mt-1 text-2xl font-extrabold text-gray-900">
+                            {highestScore}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm">
+                    <div className="h-96 w-full">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
+                            <LineChart
+                                data={chartData}
+                                margin={{
+                                    top: 12,
+                                    right: 20,
+                                    left: 8,
+                                    bottom: 58,
+                                }}
+                                tabIndex={-1}
+                            >
+                                <ReferenceArea y1={0} y2={6} fill="#dbeafe" fillOpacity={0.25} />
+                                <ReferenceArea y1={7} y2={12} fill="#dcfce7" fillOpacity={0.25} />
+                                <ReferenceArea y1={13} y2={18} fill="#fef9c3" fillOpacity={0.3} />
+                                <ReferenceArea y1={19} y2={24} fill="#ffedd5" fillOpacity={0.3} />
+                                <ReferenceArea y1={25} y2={27} fill="#fee2e2" fillOpacity={0.35} />
+                                <CartesianGrid
+                                    strokeDasharray="4 4"
+                                    stroke="#E5E7EB"
+                                />
+                                <XAxis
+                                    dataKey="academicYear"
+                                    stroke="#9CA3AF"
+                                    style={{ fontSize: "11px" }}
+                                    angle={-45}
+                                    textAnchor="end"
+                                    height={84}
+                                    label={{
+                                        value: "ปีการศึกษา / ครั้งที่",
+                                        position: "insideBottom",
+                                        offset: -6,
+                                        style: {
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            fill: "#6B7280",
+                                        },
+                                    }}
+                                    tick={{ fill: "#6B7280" }}
+                                    axisLine={{ stroke: "#D1D5DB" }}
+                                />
+                                <YAxis
+                                    domain={[0, 27]}
+                                    ticks={[0, 5, 10, 15, 20, 25, 27]}
+                                    stroke="#9CA3AF"
+                                    style={{ fontSize: "12px" }}
+                                    label={{
+                                        value: "คะแนน PHQ-A",
+                                        angle: -90,
+                                        position: "insideLeft",
+                                        style: {
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            fill: "#6B7280",
+                                        },
+                                    }}
+                                    tick={{ fill: "#6B7280" }}
+                                    axisLine={{ stroke: "#D1D5DB" }}
+                                />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Line
+                                    type="monotone"
+                                    dataKey="score"
+                                    stroke={lineColor}
+                                    strokeWidth={3}
+                                    dot={{
+                                        fill: lineColor,
+                                        r: 5,
+                                        strokeWidth: 2,
+                                        stroke: "#fff",
+                                    }}
+                                    activeDot={{
+                                        r: 7,
+                                        fill: lineColor,
+                                        stroke: "#fff",
+                                        strokeWidth: 2,
+                                    }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
             </div>
 
-            <div className="mt-4 p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                <p className="text-sm text-gray-600 flex items-center gap-2">
-                    <span className="font-semibold text-emerald-600">
-                        หมายเหตุ:
-                    </span>{" "}
-                    คะแนนรวม 0-27 คะแนน | กราฟแสดงแนวโน้มจากเก่าสุด → ใหม่สุด
+            <div className="relative z-10 mt-4 rounded-2xl border border-gray-200 bg-white/75 p-4">
+                <p className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                    <Activity className="h-4 w-4 text-[#0BD0D9]" />
+                    คะแนนรวม 0-27 คะแนน
+                    <span className="text-gray-300">|</span>
+                    <Clock3 className="h-4 w-4 text-[#0BD0D9]" />
+                    แสดงแนวโน้มจากเก่าสุด → ใหม่สุด
                 </p>
             </div>
         </div>

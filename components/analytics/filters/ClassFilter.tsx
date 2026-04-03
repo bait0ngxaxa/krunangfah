@@ -18,22 +18,19 @@ export function ClassFilter({
     }
 
     return (
-        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-4 flex items-center gap-4 overflow-hidden">
-            {/* Corner decoration */}
-            <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-emerald-200/30 to-green-300/20 rounded-full blur-lg pointer-events-none" />
-            {/* Shimmer */}
-            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/30 to-transparent" />
+        <div className="relative flex items-center gap-4 overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-4 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
+            <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-emerald-200/35 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-12 h-36 w-36 rounded-full bg-cyan-200/25 blur-3xl" />
 
-            <div className="relative">
-                <div className="absolute inset-0 rounded-xl bg-emerald-400 blur-md opacity-20" />
-                <div className="relative p-2.5 bg-linear-to-br from-emerald-100 to-green-100 rounded-xl shadow-inner ring-1 ring-emerald-200/50 text-emerald-500">
+            <div className="relative z-10">
+                <div className="rounded-2xl border border-white/80 bg-white/85 p-2.5 text-emerald-600 shadow-md ring-1 ring-slate-900/5">
                     <Filter className="w-5 h-5" />
                 </div>
             </div>
-            <div className="relative flex-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
+            <div className="relative z-10 flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                 <label
                     htmlFor="class-filter"
-                    className="text-sm font-bold text-gray-700 whitespace-nowrap"
+                    className="text-sm font-bold whitespace-nowrap text-slate-700"
                 >
                     เลือกห้องเรียน:
                 </label>
@@ -41,7 +38,7 @@ export function ClassFilter({
                     id="class-filter"
                     value={currentClass || "all"}
                     onChange={(e) => onClassChange(e.target.value)}
-                    className="w-full sm:flex-1 min-w-0 px-4 py-2.5 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none bg-white/70 backdrop-blur-sm hover:border-emerald-300 text-gray-600 font-medium cursor-pointer truncate"
+                    className="w-full min-w-0 cursor-pointer truncate rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 font-medium text-slate-600 outline-none transition-all hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 sm:flex-1"
                 >
                     <option value="all">แสดงทั้งหมด</option>
                     {availableClasses.map((className) => (

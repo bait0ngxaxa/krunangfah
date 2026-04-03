@@ -6,6 +6,7 @@ import { revokeStudentReferral } from "@/lib/actions/referral.actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { ReferredOutStudent } from "@/types/referral.types";
+import { Button } from "@/components/ui/Button";
 
 interface ReferredOutSectionProps {
     students: ReferredOutStudent[];
@@ -85,11 +86,13 @@ export function ReferredOutSection({ students }: ReferredOutSectionProps) {
                             </div>
                         </div>
 
-                        <button
+                        <Button
                             type="button"
                             onClick={() => handleRevoke(student.referralId)}
                             disabled={revokingId === student.referralId}
-                            className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-violet-600 bg-violet-50 border border-violet-200 hover:bg-violet-100 hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            variant="secondary"
+                            size="sm"
+                            className="shrink-0 rounded-full px-3.5 py-1.5 text-xs text-violet-600 border-violet-200 hover:bg-violet-100"
                         >
                             {revokingId === student.referralId ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -97,7 +100,7 @@ export function ReferredOutSection({ students }: ReferredOutSectionProps) {
                                 <Undo2 className="w-3.5 h-3.5" />
                             )}
                             เรียกคืน
-                        </button>
+                        </Button>
                     </div>
                 ))}
             </div>

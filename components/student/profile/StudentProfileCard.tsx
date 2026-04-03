@@ -1,6 +1,14 @@
 "use client";
 
-import { User, FileText, Hospital, ClipboardCheck } from "lucide-react";
+import {
+    User,
+    FileText,
+    Hospital,
+    ClipboardCheck,
+    School,
+    Hash,
+    Cake,
+} from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
@@ -39,39 +47,43 @@ export function StudentProfileCard({
         : "bg-[#0BD0D9]";
 
     return (
-        <div className="relative bg-white rounded-2xl shadow-sm p-6 sm:p-7 md:p-8 border-2 border-gray-100 overflow-hidden group transition-all duration-300">
-            <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6 z-10">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 sm:p-7 md:p-8 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-all duration-300 hover:shadow-[0_24px_44px_-24px_rgba(15,23,42,0.5)]">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-cyan-200/25 blur-3xl" />
+            <div className="relative flex flex-col gap-7 md:flex-row md:items-start md:justify-between z-10">
                 {/* Student Info */}
-                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                     <div className="relative shrink-0">
                         <div
-                            className={`w-18 h-18 sm:w-24 sm:h-24 rounded-full ${avatarBg} flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-sm ring-4 ring-white`}
+                            className={`h-18 w-18 sm:h-24 sm:w-24 rounded-full ${avatarBg} flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-lg ring-4 ring-white/90`}
                         >
                             {student.firstName.charAt(0)}
                         </div>
-                        <div className="absolute bottom-0 right-0 w-5 h-5 sm:w-6 sm:h-6 bg-[#34D399] border-3 sm:border-4 border-white rounded-full" />
                     </div>
-                    <div className="text-center sm:text-left min-w-0">
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 wrap-break-words">
+                    <div className="min-w-0 text-center sm:text-left">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 wrap-break-words">
                             {student.firstName} {student.lastName}
                         </h1>
-                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2 text-gray-500 font-medium">
-                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-sm border border-emerald-100">
+                        <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-gray-500 font-medium">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-emerald-200 bg-emerald-50/70 text-emerald-700 shadow-sm">
+                                <School className="w-3.5 h-3.5" />
                                 ห้อง {student.class}
                             </span>
                             {student.gender && (
-                                <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-sm border border-purple-100">
-                                    <User className="w-3.5 h-3.5 inline -mt-0.5" />{" "}
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-purple-200 bg-purple-50/70 text-purple-700 shadow-sm">
+                                    <User className="w-3.5 h-3.5" />
                                     {student.gender === "MALE" ? "ชาย" : "หญิง"}
                                 </span>
                             )}
                             {student.age && (
-                                <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-sm border border-blue-100">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-blue-200 bg-blue-50/70 text-blue-700 shadow-sm">
+                                    <Cake className="w-3.5 h-3.5" />
                                     อายุ {student.age} ปี
                                 </span>
                             )}
                             {student.studentId && (
-                                <span className="text-sm border-l-2 border-gray-200 pl-2">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-gray-200 bg-white/90 text-gray-700 shadow-sm">
+                                    <Hash className="w-3.5 h-3.5" />
                                     รหัส {student.studentId}
                                 </span>
                             )}
@@ -81,9 +93,9 @@ export function StudentProfileCard({
 
                 {/* Risk Badge */}
                 {risk && latestResult && (
-                    <div className="flex flex-col items-end gap-3">
+                    <div className="flex w-full md:w-auto flex-col items-stretch md:items-end gap-3">
                         <div
-                            className={`${risk.headerGradient} ${risk.headerTextColor} pl-4 pr-5 py-2.5 rounded-2xl font-bold text-base shadow-md flex items-center gap-2.5 transition-transform hover:scale-105`}
+                            className={`${risk.headerGradient} ${risk.headerTextColor} pl-4 pr-5 py-2.5 rounded-2xl font-bold text-base shadow-md flex items-center gap-2.5`}
                         >
                             <span className="text-lg leading-none">
                                 {risk.emoji}
@@ -113,7 +125,7 @@ export function StudentProfileCard({
                                 )}
                             </div>
                         )}
-                        <div className="flex flex-col items-end gap-1">
+                        <div className="rounded-2xl border border-gray-200 bg-white/75 px-4 py-3 shadow-sm md:text-right">
                             <div className="text-sm text-gray-500 font-medium">
                                 ประเมินล่าสุด:{" "}
                                 <span className="text-emerald-600">
@@ -124,7 +136,7 @@ export function StudentProfileCard({
                                     )}
                                 </span>
                             </div>
-                            <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+                            <div className="mt-1 inline-flex rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-500">
                                 {new Date(
                                     latestResult.createdAt,
                                 ).toLocaleDateString("th-TH", {

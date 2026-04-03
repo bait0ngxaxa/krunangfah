@@ -56,7 +56,7 @@ export default async function SignInPage({
                 </div>
 
                 {/* Sign-in card */}
-                <div className="w-full max-w-sm bg-white/90 backdrop-blur-sm rounded-3xl border-2 border-emerald-200 shadow-lg px-6 sm:px-8 py-7 sm:py-8">
+                <div className="w-full max-w-sm bg-white/90 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-sm px-6 sm:px-8 py-7 sm:py-8">
                     <SignInForm callbackUrl={callbackUrl} />
                 </div>
             </div>

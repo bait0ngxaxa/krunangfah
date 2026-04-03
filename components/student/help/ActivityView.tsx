@@ -31,10 +31,6 @@ export function ActivityView({
                 />
 
                 <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden animate-fade-in-up">
-                    <div
-                        className={`absolute top-0 left-0 w-full h-1.5 ${config.bg}`}
-                    />
-
                     <HelpPageHeader studentName={studentName} config={config} />
 
                     {/* Activity Count Badge */}
@@ -42,7 +38,7 @@ export function ActivityView({
                         <div
                             className={`inline-flex items-center gap-3 px-5 py-3 sm:px-8 sm:py-4 ${config.lightBg} rounded-2xl shadow-sm border border-white/50 backdrop-blur-sm`}
                         >
-                            <Target className="w-6 h-6 text-gray-800 animate-bounce" />
+                            <Target className={`w-6 h-6 animate-bounce ${config.textColor}`} />
                             <span className="text-lg font-bold text-gray-800">
                                 ต้องทำทั้งหมด {activityCount} กิจกรรม
                             </span>

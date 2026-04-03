@@ -36,8 +36,8 @@ export function HeroCard({
         return (
             <div className="relative flex items-center gap-4 bg-white/90 backdrop-blur-md rounded-4xl shadow-sm border border-gray-200 p-5 overflow-hidden">
                 <div className="relative shrink-0">
-                    <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-gray-300 to-gray-400 flex items-center justify-center shadow-inner">
-                        <Inbox className="w-7 h-7 text-white" />
+                    <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-gray-200 shadow-inner">
+                        <Inbox className="w-7 h-7 text-gray-400" />
                     </div>
                 </div>
                 <div className="relative flex-1 min-w-0">
@@ -57,8 +57,10 @@ export function HeroCard({
 
     const colors = {
         border: isEmerald ? "border-emerald-400" : "border-cyan-400",
-        iconBg: isEmerald ? "bg-emerald-400" : "bg-cyan-400",
-        iconColor: "text-white",
+        iconBg: isEmerald
+            ? "bg-white/95 border border-emerald-200 shadow-sm"
+            : "bg-white/95 border border-cyan-200 shadow-sm",
+        iconColor: isEmerald ? "text-emerald-600" : "text-cyan-600",
         badgeBg: isEmerald ? "bg-emerald-100" : "bg-cyan-100",
         badgeBorder: isEmerald ? "border-emerald-300" : "border-cyan-300",
         badgeText: isEmerald ? "text-emerald-900" : "text-cyan-900",

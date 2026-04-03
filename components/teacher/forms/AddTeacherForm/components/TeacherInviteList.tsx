@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Button } from "@/components/ui/Button";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
 import { revokeTeacherInvite } from "@/lib/actions/teacher-invite";
 import { RoleBadge } from "@/components/ui/badges";
@@ -79,10 +80,12 @@ function CopyButton({ token }: { token: string }) {
     }
 
     return (
-        <button
+        <Button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+            variant="secondary"
+            size="sm"
+            className="px-2.5 py-1.5 text-xs"
             title="คัดลอก Link"
         >
             {copied ? (
@@ -91,7 +94,7 @@ function CopyButton({ token }: { token: string }) {
                 <Copy className="w-3.5 h-3.5" />
             )}
             {copied ? "คัดลอกแล้ว" : "Copy Link"}
-        </button>
+        </Button>
     );
 }
 
@@ -122,15 +125,17 @@ function RevokeButton({
 
     return (
         <>
-            <button
+            <Button
                 type="button"
                 onClick={() => setShowDialog(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600"
+                variant="danger"
+                size="sm"
+                className="px-2.5 py-1.5 text-xs"
                 title="ยกเลิกคำเชิญ"
             >
                 <Trash2 className="w-3.5 h-3.5" />
                 ยกเลิก
-            </button>
+            </Button>
             <ConfirmDialog
                 isOpen={showDialog}
                 title="ยกเลิกคำเชิญ"
@@ -154,10 +159,10 @@ function InviteCard({
     const status = getInviteStatus(invite);
 
     return (
-        <div className="p-4 bg-white rounded-xl border border-emerald-100 hover:border-emerald-200 transition-colors">
+        <div className="p-4 bg-white rounded-xl border border-gray-100 transition-colors">
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <div className="shrink-0 w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <div className="shrink-0 w-9 h-9 rounded-full bg-white border border-emerald-200 shadow-sm flex items-center justify-center">
                         <User className="w-4 h-4 text-emerald-600" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -240,7 +245,7 @@ export function TeacherInviteList({
     const paginatedInvites = invites.slice(start, start + PAGE_SIZE);
 
     return (
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-emerald-100 shadow-sm relative overflow-hidden">
+        <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-gray-100 shadow-sm relative overflow-hidden">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <ClipboardList className="w-5 h-5 text-[#0BD0D9] stroke-[2.5]" />
                 <span className="text-gray-800">

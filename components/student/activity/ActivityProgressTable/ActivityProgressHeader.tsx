@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getRiskLevelLabel } from "./utils";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import type { AssessmentPeriod } from "./types";
+import { buttonVariants } from "@/components/ui/Button";
+import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 
 interface ActivityProgressHeaderProps {
     studentId: string;
@@ -24,17 +26,18 @@ export function ActivityProgressHeader({
     readOnly = false,
 }: ActivityProgressHeaderProps) {
     const progressPercent = (completedCount / totalCount) * 100;
+    const riskStyle = getRiskLevelConfig(riskLevel);
 
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-4">
-                <div className="p-2.5 rounded-xl bg-emerald-100 flex items-center justify-center">
-                    <FileText className="w-7 h-7 text-emerald-500" />
+                <div className="p-2.5 rounded-xl bg-white border border-emerald-200 shadow-sm flex items-center justify-center">
+                    <FileText className="w-7 h-7 text-emerald-600" />
                 </div>
                 <div>
                     <h2 className="text-xl md:text-2xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                         กิจกรรมช่วยเหลือนักเรียนกลุ่มสี
-                        <span className="text-emerald-600 ml-2">
+                        <span className={`ml-2 ${riskStyle.textColor}`}>
                             {getRiskLevelLabel(riskLevel)}
                         </span>
                     </h2>
@@ -65,7 +68,10 @@ export function ActivityProgressHeader({
             {!readOnly && (
                 <Link
                     href={`/students/${studentId}/help/start?phqResultId=${phqResultId}`}
-                    className="px-6 py-3 bg-linear-to-r from-emerald-400 to-teal-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-emerald-200/50 hover:-translate-y-0.5 transition-all shadow-md shadow-emerald-200/50 flex items-center justify-center gap-2"
+                    className={buttonVariants({
+                        variant: "primary",
+                        size: "lg",
+                    })}
                 >
                     <Rocket className="w-5 h-5" />
                     ทำกิจกรรม

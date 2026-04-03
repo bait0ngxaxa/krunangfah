@@ -61,7 +61,7 @@ export function UserManagement({ initialData, schools }: UserManagementProps) {
             )}
 
             {/* Search */}
-            <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(16,185,129,0.15)] border border-emerald-200 ring-1 ring-white/80 p-4 flex items-center gap-3 overflow-hidden">
+            <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-4 flex items-center gap-3 overflow-hidden">
                 <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-emerald-200/30 to-green-300/20 rounded-full blur-lg pointer-events-none" />
                 <div className="relative p-2.5 bg-linear-to-br from-emerald-100 to-green-100 rounded-xl shadow-inner ring-1 ring-emerald-200/50 text-emerald-500">
                     {isValidating ? (

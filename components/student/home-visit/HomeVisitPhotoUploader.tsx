@@ -10,6 +10,7 @@ import {
 import type { HomeVisitPhotoData } from "@/lib/actions/home-visit.actions";
 import { HomeVisitPhotoViewer } from "./HomeVisitPhotoViewer";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/Button";
 
 interface HomeVisitPhotoUploaderProps {
     homeVisitId: string;
@@ -105,26 +106,30 @@ export function HomeVisitPhotoUploader({
                         />
                         {/* Delete overlay */}
                         {!readOnly && (
-                            <button
+                            <Button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleDelete(photo.id);
                                 }}
-                                className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                variant="danger"
+                                size="sm"
+                                className="absolute top-1 right-1 h-6 w-6 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                             >
                                 <X className="w-3.5 h-3.5" />
-                            </button>
+                            </Button>
                         )}
                     </div>
                 ))}
 
                 {/* Upload button */}
                 {!readOnly && photos.length < MAX_PHOTOS && (
-                    <button
+                    <Button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="aspect-square rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100/50 transition-colors flex flex-col items-center justify-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        variant="secondary"
+                        size="md"
+                        className="aspect-square h-auto border-2 border-dashed border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100/50 flex flex-col gap-1"
                     >
                         {uploading ? (
                             <Loader2 className="w-6 h-6 text-emerald-400 animate-spin" />
@@ -136,7 +141,7 @@ export function HomeVisitPhotoUploader({
                                 </span>
                             </>
                         )}
-                    </button>
+                    </Button>
                 )}
 
                 {/* Empty state placeholder */}

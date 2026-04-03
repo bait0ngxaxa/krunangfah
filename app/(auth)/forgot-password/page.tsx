@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
                     </div>
                 </div>
 
-                <div className="w-full max-w-sm bg-white/90 backdrop-blur-sm rounded-3xl border-2 border-emerald-200 shadow-lg px-6 sm:px-8 py-7 sm:py-8 text-center">
+                <div className="w-full max-w-sm bg-white/90 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-sm px-6 sm:px-8 py-7 sm:py-8 text-center">
                     <h2 className="text-xl sm:text-2xl font-bold text-emerald-800 mb-2">
                         ลืมรหัสผ่าน
                     </h2>

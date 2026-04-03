@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import type { InviteLinkSectionProps } from "../types";
 
 export function InviteLinkSection({
@@ -28,13 +29,15 @@ export function InviteLinkSection({
                             value={inviteLink}
                             className="flex-1 px-3 py-2 text-sm border-2 border-green-100 rounded-lg bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-200 min-w-0"
                         />
-                        <button
+                        <Button
                             type="button"
                             onClick={onCopy}
-                            className="px-4 py-2 text-sm font-bold bg-[#34D399] text-white rounded-lg hover:bg-emerald-500 shadow-sm transition-all hover:shadow-md shrink-0"
+                            variant="primary"
+                            size="sm"
+                            className="shrink-0"
                         >
                             คัดลอก
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}

@@ -3,6 +3,27 @@
 :root {
     --background: #ffffff;
     --foreground: #171717;
+    --ui-text-heading: #1f2937; /* gray-800 */
+    --ui-text-body: #4b5563; /* gray-600 */
+    --btn-primary-from: #34d399;
+    --btn-primary-to: #14b8a6;
+    --btn-primary-from-hover: #10b981;
+    --btn-primary-to-hover: #0d9488;
+    --btn-primary-border: #34d399;
+    --btn-secondary-bg: #ffffff;
+    --btn-secondary-bg-hover: #ecfdf5;
+    --btn-secondary-text: #0f766e;
+    --btn-secondary-text-hover: #065f46;
+    --btn-secondary-border: #a7f3d0;
+    --btn-secondary-border-hover: #6ee7b7;
+    --btn-ghost-text: #0f766e;
+    --btn-ghost-bg-hover: #f0fdfa;
+    --btn-ghost-text-hover: #0f766e;
+    --btn-danger-bg: #ffffff;
+    --btn-danger-bg-hover: #fee2e2;
+    --btn-danger-text: #b91c1c;
+    --btn-danger-border: #fecaca;
+    --btn-danger-border-hover: #fca5a5;
 }
 
 @theme inline {
@@ -22,6 +43,28 @@ body {
         system-ui,
         -apple-system,
         sans-serif;
+}
+
+/* Global Typography Contract:
+   - Heading: single tone across app
+   - Body copy: single tone across app
+   - Risk-level colors remain on explicit utility classes (e.g. text-red-*, badges)
+*/
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--ui-text-heading) !important;
+}
+
+p,
+li,
+label,
+th,
+td {
+    color: var(--ui-text-body);
 }
 
 /* Global Form Elements Reset */

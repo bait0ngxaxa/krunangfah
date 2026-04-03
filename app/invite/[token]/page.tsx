@@ -103,7 +103,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
 
                 {/* Info Text */}
                 <div className="text-center mb-6">
-                    <div className="bg-white/70 backdrop-blur-sm px-6 py-4 rounded-2xl inline-block shadow-sm border border-emerald-100">
+                    <div className="bg-white/70 backdrop-blur-sm px-6 py-4 rounded-2xl inline-block shadow-sm border border-gray-100">
                         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
                             สร้างบัญชีครูนางฟ้า
                         </h2>
@@ -114,7 +114,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
                 </div>
 
                 {/* Form Card */}
-                <div className="w-full max-w-sm bg-white/90 backdrop-blur-sm rounded-3xl border-2 border-emerald-200 shadow-lg px-6 sm:px-8 py-7 sm:py-8">
+                <div className="w-full max-w-sm bg-white/90 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-sm px-6 sm:px-8 py-7 sm:py-8">
                     <AcceptInviteForm
                         token={token}
                         inviteData={result.invite}

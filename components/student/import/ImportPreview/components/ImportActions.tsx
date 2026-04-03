@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
+import { Button } from "@/components/ui/Button";
 
 interface ImportActionsProps {
     onCancel: () => void;
@@ -107,20 +108,24 @@ export function ImportActions({
                                 เมื่อนำเข้าแล้วจะไม่สามารถยกเลิกได้
                             </p>
                             <div className="flex gap-3 justify-end">
-                                <button
+                                <Button
                                     type="button"
                                     onClick={handleCancelConfirm}
-                                    className="px-5 py-2 rounded-xl text-gray-600 font-bold hover:bg-white transition-all border border-gray-200"
+                                    variant="secondary"
+                                    size="sm"
+                                    className="px-5 py-2"
                                 >
                                     กลับไปแก้ไข
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
                                     onClick={handleConfirm}
-                                    className="px-5 py-2 bg-amber-500 text-white rounded-xl font-bold shadow-sm hover:bg-amber-600 transition-all"
+                                    variant="primary"
+                                    size="sm"
+                                    className="px-5 py-2"
                                 >
                                     ยืนยันนำเข้าข้อมูล
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -129,19 +134,23 @@ export function ImportActions({
 
             {/* Main Action Buttons */}
             <div className="flex justify-end gap-4">
-                <button
+                <Button
                     type="button"
                     onClick={onCancel}
                     disabled={isLoading}
-                    className="px-8 py-3 rounded-2xl text-gray-600 font-bold hover:bg-gray-100 hover:text-gray-800 transition-all disabled:opacity-50 border-2 border-transparent hover:border-gray-200"
+                    variant="secondary"
+                    size="lg"
+                    className="rounded-2xl px-8"
                 >
                     ยกเลิก
-                </button>
-                <button
+                </Button>
+                <Button
                     type="button"
                     onClick={handleSaveClick}
                     disabled={!canSave || isLoading || showConfirm}
-                    className="px-8 py-3 bg-[#0BD0D9] text-white rounded-2xl font-bold shadow-sm hover:shadow-md hover:bg-[#09B8C0] hover:-translate-y-1 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+                    variant="primary"
+                    size="lg"
+                    className="rounded-2xl px-8 active:scale-[0.98]"
                 >
                     {isLoading ? (
                         <>
@@ -156,7 +165,7 @@ export function ImportActions({
                             </span>
                         </>
                     )}
-                </button>
+                </Button>
             </div>
         </div>
     );

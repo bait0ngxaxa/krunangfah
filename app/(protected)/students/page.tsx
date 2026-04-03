@@ -7,6 +7,7 @@ import { requireAuth } from "@/lib/session";
 import { StudentDashboard } from "@/components/student/dashboard/StudentDashboard";
 import { StudentDashboardSkeleton } from "@/components/student/dashboard/StudentDashboardSkeleton";
 import { PageBanner } from "@/components/ui/PageBanner";
+import { buttonVariants } from "@/components/ui/Button";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -49,7 +50,11 @@ export default async function MyStudentsPage({
                     !isAdmin ? (
                         <Link
                             href="/students/import"
-                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-600 rounded-2xl font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-sm border-2 border-emerald-400 relative z-30"
+                            className={buttonVariants({
+                                variant: "secondary",
+                                size: "md",
+                                className: "relative z-30 rounded-2xl",
+                            })}
                         >
                             <FileUp className="w-4 h-4 stroke-3" /> นำเข้าข้อมูล
                         </Link>
@@ -96,8 +101,8 @@ async function StudentsContent({
             <div className="relative bg-white rounded-2xl shadow-sm p-6 md:p-12 border-2 border-gray-100 text-center overflow-hidden">
                 <div className="relative py-8">
                     <div className="relative w-24 h-24 mx-auto mb-6">
-                        <div className="relative w-full h-full rounded-full bg-emerald-50 shadow-sm flex items-center justify-center ring-1 ring-emerald-100/50">
-                            <ClipboardList className="w-10 h-10 text-emerald-500" />
+                        <div className="relative w-full h-full rounded-full bg-gray-100 shadow-sm flex items-center justify-center ring-1 ring-gray-200/70">
+                            <ClipboardList className="w-10 h-10 text-gray-400" />
                         </div>
                     </div>
                     <h2 className="text-2xl font-bold text-slate-800 mb-3 tracking-tight">
@@ -109,7 +114,11 @@ async function StudentsContent({
                     </p>
                     <Link
                         href="/students/import"
-                        className="inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 transition-all font-bold shadow-sm hover:shadow-md hover:-translate-y-1 duration-300"
+                        className={buttonVariants({
+                            variant: "primary",
+                            size: "lg",
+                            className: "rounded-full",
+                        })}
                     >
                         <FileUp className="w-5 h-5 stroke-[2.5]" />{" "}
                         นำเข้าข้อมูลนักเรียน

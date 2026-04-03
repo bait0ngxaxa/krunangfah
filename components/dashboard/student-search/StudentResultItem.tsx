@@ -16,6 +16,9 @@ export function StudentResultItem({
     const risk = latestResult
         ? RISK_CONFIG[latestResult.riskLevel as RiskLevel]
         : null;
+    const avatarClass = risk
+        ? `${risk.bgColor} ${risk.textColor} border ${risk.borderColor}`
+        : "bg-slate-100 text-slate-600 border border-slate-200";
 
     return (
         <button
@@ -24,7 +27,9 @@ export function StudentResultItem({
         >
             {/* Student Info */}
             <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-400 to-green-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-emerald-200/40 group-hover:scale-105 transition-transform shrink-0">
+                <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm group-hover:scale-105 transition-transform shrink-0 ${avatarClass}`}
+                >
                     {student.firstName.charAt(0)}
                 </div>
                 <div className="min-w-0">

@@ -72,11 +72,11 @@ export function ActivityRow({ progress, index, readOnly = false }: ActivityRowPr
                 className={`
                     block md:table-row
                     bg-white md:bg-transparent
-                    border border-emerald-100 md:border-none rounded-2xl md:rounded-none
+                    border border-gray-200 md:border-none rounded-2xl md:rounded-none
                     p-5 md:p-0
                     mb-4 md:mb-0
                     shadow-sm md:shadow-none
-                    hover:bg-emerald-50/30 transition-colors
+                    hover:bg-slate-50/80 transition-colors
                     ${isLocked ? "opacity-60 grayscale" : ""}
                 `}
             >

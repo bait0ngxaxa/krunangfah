@@ -14,11 +14,13 @@ export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
         .filter((item): item is RiskLevelSummary => item !== undefined);
 
     return (
-        <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-6 overflow-hidden">
-            <h2 className="relative text-xl font-extrabold text-slate-800 mb-6 text-center tracking-tight">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 blur-3xl" />
+            <h2 className="relative mb-6 text-center text-xl font-extrabold tracking-tight text-slate-800">
                 ผลการคัดกรอง PHQ-A
             </h2>
-            <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-xs">
+            <div className="relative overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-sm">
                 <table className="w-full">
                     <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-200">
@@ -65,7 +67,7 @@ export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         {item.referralCount > 0 ? (
-                                            <span className="inline-flex items-center justify-center min-w-8 h-8 px-3 rounded-full bg-cyan-100 text-[#09B8C0] font-bold text-sm shadow-sm">
+                                            <span className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full bg-cyan-100 px-3 text-sm font-bold text-cyan-600 shadow-sm">
                                                 {item.referralCount}
                                             </span>
                                         ) : (
