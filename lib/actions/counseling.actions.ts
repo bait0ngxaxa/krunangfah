@@ -9,6 +9,7 @@
 
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { revalidatePath } from "next/cache";
@@ -27,6 +28,8 @@ export interface CounselingSession {
     summary: string;
     createdAt: Date;
 }
+
+const MAX_SESSION_NUMBER_RETRIES = 3;
 
 /**
  * Verify user has access to student
@@ -162,27 +165,63 @@ export async function createCounselingSession(data: {
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        // Use transaction to prevent race condition on sessionNumber
-        const counselingSession = await prisma.$transaction(async (tx) => {
-            const lastSession = await tx.counselingSession.findFirst({
-                where: { studentId: validated.studentId },
-                orderBy: { sessionNumber: "desc" },
-                select: { sessionNumber: true },
-            });
+        let counselingSession:
+            | {
+                  id: string;
+                  studentId: string;
+                  sessionNumber: number;
+                  sessionDate: Date;
+                  counselorName: string;
+                  summary: string;
+                  createdById: string;
+                  createdAt: Date;
+                  updatedAt: Date;
+              }
+            | undefined;
 
-            const sessionNumber = (lastSession?.sessionNumber || 0) + 1;
+        for (let attempt = 0; attempt < MAX_SESSION_NUMBER_RETRIES; attempt++) {
+            try {
+                counselingSession = await prisma.$transaction(
+                    async (tx) => {
+                        const lastSession = await tx.counselingSession.findFirst({
+                            where: { studentId: validated.studentId },
+                            orderBy: { sessionNumber: "desc" },
+                            select: { sessionNumber: true },
+                        });
 
-            return tx.counselingSession.create({
-                data: {
-                    studentId: validated.studentId,
-                    sessionNumber,
-                    sessionDate: validated.sessionDate,
-                    counselorName: validated.counselorName,
-                    summary: validated.summary,
-                    createdById: userId,
-                },
-            });
-        });
+                        const sessionNumber = (lastSession?.sessionNumber || 0) + 1;
+
+                        return tx.counselingSession.create({
+                            data: {
+                                studentId: validated.studentId,
+                                sessionNumber,
+                                sessionDate: validated.sessionDate,
+                                counselorName: validated.counselorName,
+                                summary: validated.summary,
+                                createdById: userId,
+                            },
+                        });
+                    },
+                    {
+                        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+                    },
+                );
+                break;
+            } catch (txError) {
+                if (
+                    txError instanceof Prisma.PrismaClientKnownRequestError &&
+                    (txError.code === "P2002" || txError.code === "P2034") &&
+                    attempt < MAX_SESSION_NUMBER_RETRIES - 1
+                ) {
+                    continue;
+                }
+                throw txError;
+            }
+        }
+
+        if (!counselingSession) {
+            return { success: false, message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" };
+        }
 
         revalidatePath(`/students/${validated.studentId}`);
 

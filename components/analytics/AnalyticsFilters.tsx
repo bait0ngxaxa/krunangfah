@@ -5,6 +5,7 @@ import { useTransition } from "react";
 
 import { AcademicYearFilter } from "./filters/AcademicYearFilter";
 import { ClassFilter } from "./filters/ClassFilter";
+import { SemesterFilter } from "./filters/SemesterFilter";
 import { SchoolFilter } from "./filters/SchoolFilter";
 
 interface SchoolOption {
@@ -16,9 +17,11 @@ interface AnalyticsFiltersProps {
     schools?: SchoolOption[];
     availableClasses: string[];
     availableYears: number[];
+    availableSemesters: number[];
     selectedSchoolId: string;
     selectedClass: string;
     selectedAcademicYear: string;
+    selectedSemester: string;
     isSystemAdmin: boolean;
     showClassFilter: boolean;
 }
@@ -27,9 +30,11 @@ export function AnalyticsFilters({
     schools,
     availableClasses,
     availableYears,
+    availableSemesters,
     selectedSchoolId,
     selectedClass,
     selectedAcademicYear,
+    selectedSemester,
     isSystemAdmin,
     showClassFilter,
 }: AnalyticsFiltersProps) {
@@ -76,6 +81,7 @@ export function AnalyticsFilters({
                             school: schoolId,
                             class: null,
                             year: null,
+                            semester: null,
                         })
                     }
                 />
@@ -88,7 +94,7 @@ export function AnalyticsFilters({
                         selectedClass === "all" ? undefined : selectedClass
                     }
                     onClassChange={(classValue) =>
-                        updateParams({ class: classValue })
+                        updateParams({ class: classValue, semester: null })
                     }
                 />
             ) : null}
@@ -98,7 +104,17 @@ export function AnalyticsFilters({
                     availableYears={availableYears}
                     selectedYear={selectedAcademicYear}
                     onYearChange={(yearValue) =>
-                        updateParams({ year: yearValue })
+                        updateParams({ year: yearValue, semester: null })
+                    }
+                />
+            ) : null}
+
+            {availableSemesters.length > 1 ? (
+                <SemesterFilter
+                    availableSemesters={availableSemesters}
+                    selectedSemester={selectedSemester}
+                    onSemesterChange={(semesterValue) =>
+                        updateParams({ semester: semesterValue })
                     }
                 />
             ) : null}

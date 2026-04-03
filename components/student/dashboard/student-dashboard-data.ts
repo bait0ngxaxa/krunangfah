@@ -38,8 +38,12 @@ function isRiskLevel(value: string | undefined): value is RiskLevel {
 function getValidSchoolId(
     schoolId: string | undefined,
     students: Student[],
+    schools: { id: string }[] | undefined,
 ): string {
     if (!schoolId) return "";
+    if (schools && schools.length > 0) {
+        return schools.some((school) => school.id === schoolId) ? schoolId : "";
+    }
     return students.some((student) => student.schoolId === schoolId)
         ? schoolId
         : "";
@@ -209,7 +213,7 @@ export function deriveStudentDashboardView(
     const isSystemAdmin =
         props.userRole === "system_admin" && (props.schools?.length ?? 0) > 0;
     const selectedSchoolId = isSystemAdmin
-        ? getValidSchoolId(filters.schoolId, props.students)
+        ? getValidSchoolId(filters.schoolId, props.students, props.schools)
         : "";
     const schoolFilteredStudents =
         isSystemAdmin && selectedSchoolId

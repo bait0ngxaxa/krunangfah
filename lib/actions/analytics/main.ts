@@ -26,13 +26,15 @@ const getCachedAnalyticsData = unstable_cache(
         targetClass: string,
         role: string,
         academicYearStr: string,
+        semesterStr: string,
     ): Promise<AnalyticsData> => {
         const classFilter = targetClass || undefined;
         let academicYear = academicYearStr
             ? parseInt(academicYearStr, 10)
             : undefined;
+        const semester = semesterStr ? parseInt(semesterStr, 10) : undefined;
 
-        if (!schoolId && !academicYear) {
+        if (!schoolId && !academicYear && !semester) {
             const latestYear = await prisma.academicYear.findFirst({
                 orderBy: { year: "desc" },
                 select: { year: true },
@@ -64,7 +66,7 @@ const getCachedAnalyticsData = unstable_cache(
         const [
             totalStudents,
             availableClasses,
-            availableYearsRaw,
+            availableAcademicTermsRaw,
             combinedData,
             trendDataRaw,
             activityProgressRaw,
@@ -93,16 +95,24 @@ const getCachedAnalyticsData = unstable_cache(
                         },
                     },
                 },
-                select: { year: true },
-                distinct: ["year"],
-                orderBy: { year: "desc" },
+                select: {
+                    year: true,
+                    semester: true,
+                },
+                distinct: ["year", "semester"],
+                orderBy: [{ year: "desc" }, { semester: "asc" }],
             }),
-            getCombinedAnalytics(schoolId, classFilter, academicYear),
-            getTrendData(schoolId, classFilter, academicYear),
-            getActivityProgressByRisk(schoolId, classFilter, academicYear),
+            getCombinedAnalytics(schoolId, classFilter, academicYear, semester),
+            getTrendData(schoolId, classFilter, academicYear, semester),
+            getActivityProgressByRisk(schoolId, classFilter, academicYear, semester),
         ]);
 
-        const availableAcademicYears = availableYearsRaw.map((y) => y.year);
+        const availableAcademicYears = Array.from(
+            new Set(availableAcademicTermsRaw.map((term) => term.year)),
+        );
+        const availableSemesters = Array.from(
+            new Set(availableAcademicTermsRaw.map((term) => term.semester)),
+        ).sort((a, b) => a - b);
 
         const {
             riskLevelCounts: riskLevelCountsRaw,
@@ -139,8 +149,10 @@ const getCachedAnalyticsData = unstable_cache(
             studentsWithoutAssessment,
             availableClasses,
             availableAcademicYears,
+            availableSemesters,
             currentClass: classFilter,
             currentAcademicYear: academicYear,
+            currentSemester: semester,
             trendData,
             activityProgressByRisk,
             gradeRiskData,
@@ -156,6 +168,7 @@ export async function getAnalyticsSummary(
     classFilter?: string,
     schoolFilter?: string,
     academicYear?: number,
+    semester?: number,
 ): Promise<AnalyticsData | null> {
     try {
         const viewer = await getViewerContext();
@@ -184,6 +197,7 @@ export async function getAnalyticsSummary(
             targetClass ?? "",
             viewer.role,
             academicYear?.toString() ?? "",
+            semester?.toString() ?? "",
         );
     } catch (error) {
         logError("Get analytics summary error:", error);

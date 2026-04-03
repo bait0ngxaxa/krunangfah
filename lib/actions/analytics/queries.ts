@@ -61,6 +61,7 @@ export async function getCombinedAnalytics(
     schoolId: string | undefined,
     classFilter?: string,
     academicYear?: number,
+    semester?: number,
 ): Promise<CombinedAnalyticsResult> {
     const schoolCondition = schoolId
         ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
@@ -70,12 +71,18 @@ export async function getCombinedAnalytics(
         ? Prisma.sql`AND s.class = ${classFilter}`
         : Prisma.empty;
 
-    const yearJoin = academicYear
+    const shouldJoinAcademicYear = academicYear !== undefined || semester !== undefined;
+
+    const yearJoin = shouldJoinAcademicYear
         ? Prisma.sql`JOIN academic_years ay ON pr."academicYearId" = ay.id`
         : Prisma.empty;
 
-    const yearCondition = academicYear
+    const yearCondition = academicYear !== undefined
         ? Prisma.sql`AND ay.year = ${academicYear}`
+        : Prisma.empty;
+
+    const semesterCondition = semester !== undefined
+        ? Prisma.sql`AND ay.semester = ${semester}`
         : Prisma.empty;
 
     // Single query that computes everything from one table scan
@@ -103,6 +110,7 @@ export async function getCombinedAnalytics(
             ${schoolCondition}
               ${classCondition}
               ${yearCondition}
+              ${semesterCondition}
         ),
         latest_phq AS (
             SELECT "studentId", "riskLevel", "referredToHospital", grade
@@ -190,6 +198,7 @@ export async function getTrendData(
     schoolId: string | undefined,
     classFilter?: string,
     academicYear?: number,
+    semester?: number,
 ): Promise<TrendDataResult[]> {
     const schoolCondition = schoolId
         ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
@@ -199,8 +208,12 @@ export async function getTrendData(
         ? Prisma.sql`AND s.class = ${classFilter}`
         : Prisma.empty;
 
-    const yearCondition = academicYear
+    const yearCondition = academicYear !== undefined
         ? Prisma.sql`AND ay.year = ${academicYear}`
+        : Prisma.empty;
+
+    const semesterCondition = semester !== undefined
+        ? Prisma.sql`AND ay.semester = ${semester}`
         : Prisma.empty;
 
     return prisma.$queryRaw<TrendDataResult[]>`
@@ -220,6 +233,7 @@ export async function getTrendData(
             ${schoolCondition}
               ${classCondition}
               ${yearCondition}
+              ${semesterCondition}
         )
         SELECT
             academic_year,
@@ -246,6 +260,7 @@ export async function getActivityProgressByRisk(
     schoolId: string | undefined,
     classFilter?: string,
     academicYear?: number,
+    semester?: number,
 ): Promise<ActivityProgressResult[]> {
     const schoolCondition = schoolId
         ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
@@ -255,12 +270,18 @@ export async function getActivityProgressByRisk(
         ? Prisma.sql`AND s.class = ${classFilter}`
         : Prisma.empty;
 
-    const yearJoin = academicYear
+    const shouldJoinAcademicYear = academicYear !== undefined || semester !== undefined;
+
+    const yearJoin = shouldJoinAcademicYear
         ? Prisma.sql`JOIN academic_years ay ON pr."academicYearId" = ay.id`
         : Prisma.empty;
 
-    const yearCondition = academicYear
+    const yearCondition = academicYear !== undefined
         ? Prisma.sql`AND ay.year = ${academicYear}`
+        : Prisma.empty;
+
+    const semesterCondition = semester !== undefined
+        ? Prisma.sql`AND ay.semester = ${semester}`
         : Prisma.empty;
 
     return prisma.$queryRaw<ActivityProgressResult[]>`
@@ -279,6 +300,7 @@ export async function getActivityProgressByRisk(
             ${schoolCondition}
               ${classCondition}
               ${yearCondition}
+              ${semesterCondition}
         ),
         latest_phq AS (
             SELECT phq_id, "studentId", risk_level

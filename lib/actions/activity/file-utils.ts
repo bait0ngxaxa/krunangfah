@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
@@ -15,6 +16,8 @@ import { validateFileSignature } from "@/lib/utils/file-signature";
 import { canAccessStudentByRole } from "@/lib/security/student-access";
 import type { UploadWorksheetResult } from "./types";
 import { logError } from "@/lib/utils/logging";
+
+const MAX_WORKSHEET_NUMBER_RETRIES = 3;
 
 function getValidExtension(fileName: string): string | null {
     const parts = fileName.split(".");
@@ -152,28 +155,58 @@ export async function uploadWorksheet(
 
         // Save to database — clean up file if DB write fails
         const fileUrl = `/api/uploads/worksheets/${fileName}`;
-        let upload;
-        // Determine worksheet number: fill the first available slot
-        const existingNumbers = new Set(
-            activityProgress.worksheetUploads.map((u) => u.worksheetNumber),
-        );
+        let upload:
+            | {
+                  id: string;
+              }
+            | undefined;
         let worksheetNumber = 1;
-        while (existingNumbers.has(worksheetNumber)) {
-            worksheetNumber++;
-        }
 
         try {
-            upload = await prisma.worksheetUpload.create({
-                data: {
-                    activityProgressId,
-                    worksheetNumber,
-                    fileName: file.name,
-                    fileUrl,
-                    fileType: file.type,
-                    fileSize: file.size,
-                    uploadedById: session.user.id,
-                },
-            });
+            for (let attempt = 0; attempt < MAX_WORKSHEET_NUMBER_RETRIES; attempt++) {
+                const existingNumbers = new Set(
+                    (
+                        await prisma.worksheetUpload.findMany({
+                            where: { activityProgressId },
+                            select: { worksheetNumber: true },
+                        })
+                    ).map((item) => item.worksheetNumber),
+                );
+
+                worksheetNumber = 1;
+                while (existingNumbers.has(worksheetNumber)) {
+                    worksheetNumber++;
+                }
+
+                try {
+                    upload = await prisma.worksheetUpload.create({
+                        data: {
+                            activityProgressId,
+                            worksheetNumber,
+                            fileName: file.name,
+                            fileUrl,
+                            fileType: file.type,
+                            fileSize: file.size,
+                            uploadedById: session.user.id,
+                        },
+                        select: { id: true },
+                    });
+                    break;
+                } catch (createError) {
+                    if (
+                        createError instanceof Prisma.PrismaClientKnownRequestError &&
+                        createError.code === "P2002" &&
+                        attempt < MAX_WORKSHEET_NUMBER_RETRIES - 1
+                    ) {
+                        continue;
+                    }
+                    throw createError;
+                }
+            }
+
+            if (!upload) {
+                throw new Error("ไม่สามารถกำหนดหมายเลขใบงานได้");
+            }
         } catch (dbError) {
             // Clean up orphaned file if DB insert fails
             const { unlink } = await import("fs/promises");
@@ -184,7 +217,9 @@ export async function uploadWorksheet(
         // Check if all required worksheets are uploaded
         const requiredCount =
             REQUIRED_WORKSHEETS[activityProgress.activityNumber] || 2;
-        const currentUploadCount = activityProgress.worksheetUploads.length + 1;
+        const currentUploadCount = await prisma.worksheetUpload.count({
+            where: { activityProgressId },
+        });
         const allUploaded = currentUploadCount >= requiredCount;
 
         // Update teacherId if not set
@@ -328,4 +363,3 @@ export async function deleteWorksheetUpload(
         return { success: false, message: "เกิดข้อผิดพลาดในการลบไฟล์" };
     }
 }
-

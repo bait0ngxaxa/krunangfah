@@ -18,6 +18,7 @@ interface AnalyticsPageProps {
         class?: string;
         school?: string;
         year?: string;
+        semester?: string;
     }>;
 }
 
@@ -28,6 +29,15 @@ function parseYearFilter(yearValue?: string): number | undefined {
     return Number.isNaN(parsedYear) ? undefined : parsedYear;
 }
 
+function parseSemesterFilter(semesterValue?: string): number | undefined {
+    if (!semesterValue) return undefined;
+
+    const parsedSemester = Number.parseInt(semesterValue, 10);
+    if (Number.isNaN(parsedSemester)) return undefined;
+    if (parsedSemester !== 1 && parsedSemester !== 2) return undefined;
+    return parsedSemester;
+}
+
 export default async function AnalyticsPage({
     searchParams,
 }: AnalyticsPageProps) {
@@ -35,21 +45,94 @@ export default async function AnalyticsPage({
     const params = await searchParams;
     const userRole = session.user.role;
     const isSystemAdmin = userRole === "system_admin";
-    const selectedSchoolId = isSystemAdmin ? (params.school ?? "all") : "all";
-    const selectedClass = params.class ?? "all";
-    const selectedAcademicYear = params.year ?? "all";
+    const warnings: string[] = [];
+    let selectedSchoolId = isSystemAdmin ? (params.school ?? "all") : "all";
+    let selectedClass = userRole === "class_teacher" ? "all" : (params.class ?? "all");
+    let selectedAcademicYear = params.year ?? "all";
+    let selectedSemester = params.semester ?? "all";
 
-    const [analyticsData, schools] = await Promise.all([
+    const parsedYear = parseYearFilter(params.year);
+    const parsedSemester = parseSemesterFilter(params.semester);
+    if (params.year && parsedYear === undefined) {
+        warnings.push(`ค่า year ไม่ถูกต้อง ("${params.year}") ระบบจึงใช้ "ทุกปีการศึกษา"`);
+    }
+    if (params.semester && parsedSemester === undefined) {
+        warnings.push(
+            `ค่า semester ไม่ถูกต้อง ("${params.semester}") ระบบจึงใช้ "ทุกเทอม"`,
+        );
+    }
+    if (userRole === "class_teacher" && params.class && params.class !== "all") {
+        warnings.push("ผู้ใช้บทบาทครูประจำชั้นถูกล็อกห้องอัตโนมัติ จึงไม่ใช้ค่า class จาก URL");
+    }
+    if (!isSystemAdmin && params.school && params.school !== "all") {
+        warnings.push("ผู้ใช้ที่ไม่ใช่ system_admin ไม่สามารถกรอง school ได้ จึงไม่ใช้ค่า school จาก URL");
+    }
+
+    const [initialAnalyticsData, schools] = await Promise.all([
         getAnalyticsSummary(
             selectedClass !== "all" ? selectedClass : undefined,
             selectedSchoolId !== "all" ? selectedSchoolId : undefined,
-            parseYearFilter(params.year),
+            parsedYear,
+            parsedSemester,
         ),
         isSystemAdmin ? getSchools() : Promise.resolve(undefined),
     ]);
-
-    if (!analyticsData) {
+    if (!initialAnalyticsData) {
         redirect("/dashboard");
+    }
+    let analyticsData = initialAnalyticsData;
+
+    let needsRefetch = false;
+    if (isSystemAdmin && selectedSchoolId !== "all") {
+        const schoolExists = schools?.some((school) => school.id === selectedSchoolId) ?? false;
+        if (!schoolExists) {
+            warnings.push(
+                `ไม่พบโรงเรียนที่ระบุไว้ ("${selectedSchoolId}") ระบบจึงใช้ "ทุกโรงเรียน"`,
+            );
+            selectedSchoolId = "all";
+            needsRefetch = true;
+        }
+    }
+
+    if (selectedClass !== "all" && !analyticsData.availableClasses.includes(selectedClass)) {
+        warnings.push(`ไม่พบห้องเรียน "${selectedClass}" ในขอบเขตข้อมูล ระบบจึงใช้ "แสดงทั้งหมด"`);
+        selectedClass = "all";
+        needsRefetch = true;
+    }
+
+    if (
+        selectedAcademicYear !== "all" &&
+        !analyticsData.availableAcademicYears.includes(Number(selectedAcademicYear))
+    ) {
+        warnings.push(
+            `ไม่พบปีการศึกษา "${selectedAcademicYear}" ในขอบเขตข้อมูล ระบบจึงใช้ "ทุกปีการศึกษา"`,
+        );
+        selectedAcademicYear = "all";
+        needsRefetch = true;
+    }
+
+    if (
+        selectedSemester !== "all" &&
+        !analyticsData.availableSemesters.includes(Number(selectedSemester))
+    ) {
+        warnings.push(
+            `ไม่พบเทอม "${selectedSemester}" ในขอบเขตข้อมูล ระบบจึงใช้ "ทุกเทอม"`,
+        );
+        selectedSemester = "all";
+        needsRefetch = true;
+    }
+
+    if (needsRefetch) {
+        const refetchedAnalyticsData = await getAnalyticsSummary(
+            selectedClass !== "all" ? selectedClass : undefined,
+            selectedSchoolId !== "all" ? selectedSchoolId : undefined,
+            selectedAcademicYear !== "all" ? Number(selectedAcademicYear) : undefined,
+            selectedSemester !== "all" ? Number(selectedSemester) : undefined,
+        );
+        if (!refetchedAnalyticsData) {
+            redirect("/dashboard");
+        }
+        analyticsData = refetchedAnalyticsData;
     }
 
     return (
@@ -72,6 +155,8 @@ export default async function AnalyticsPage({
                     selectedClass={selectedClass}
                     selectedSchoolId={selectedSchoolId}
                     selectedAcademicYear={selectedAcademicYear}
+                    selectedSemester={selectedSemester}
+                    filterWarnings={warnings}
                 />
             </div>
         </div>

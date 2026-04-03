@@ -303,6 +303,7 @@ model WorksheetUpload {
   activityProgress    ActivityProgress @relation(fields: [activityProgressId], references: [id], onDelete: Cascade)
   uploadedBy          User             @relation(fields: [uploadedById], references: [id])
 
+  @@unique([activityProgressId, worksheetNumber])
   @@map("worksheet_uploads")
 }
 
@@ -321,6 +322,7 @@ model CounselingSession {
   student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   createdBy       User      @relation("CounselingSessions", fields: [createdById], references: [id])
 
+  @@unique([studentId, sessionNumber])
   @@map("counseling_sessions")
 }
 
@@ -421,7 +423,7 @@ model HomeVisit {
   createdBy User            @relation("HomeVisits", fields: [createdById], references: [id])
   photos    HomeVisitPhoto[]
 
-  @@index([studentId, visitNumber])
+  @@unique([studentId, visitNumber])
   @@map("home_visits")
 }
 

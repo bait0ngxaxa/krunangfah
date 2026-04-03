@@ -10,6 +10,7 @@
 
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { revalidatePath } from "next/cache";
@@ -20,6 +21,8 @@ import {
 import { existsSync } from "fs";
 import { join } from "path";
 import { logError } from "@/lib/utils/logging";
+
+const MAX_VISIT_NUMBER_RETRIES = 3;
 
 export interface HomeVisitPhotoData {
     id: string;
@@ -201,29 +204,58 @@ export async function createHomeVisit(data: {
             teacherRole = `ครูประจำชั้น ห้อง ${user.teacher.advisoryClass}`;
         }
 
-        // Use transaction to prevent race condition on visitNumber
-        const visit = await prisma.$transaction(async (tx) => {
-            const lastVisit = await tx.homeVisit.findFirst({
-                where: { studentId: validated.studentId },
-                orderBy: { visitNumber: "desc" },
-                select: { visitNumber: true },
-            });
+        let visit:
+            | {
+                  id: string;
+              }
+            | undefined;
 
-            const visitNumber = (lastVisit?.visitNumber || 0) + 1;
+        for (let attempt = 0; attempt < MAX_VISIT_NUMBER_RETRIES; attempt++) {
+            try {
+                visit = await prisma.$transaction(
+                    async (tx) => {
+                        const lastVisit = await tx.homeVisit.findFirst({
+                            where: { studentId: validated.studentId },
+                            orderBy: { visitNumber: "desc" },
+                            select: { visitNumber: true },
+                        });
 
-            return tx.homeVisit.create({
-                data: {
-                    studentId: validated.studentId,
-                    visitNumber,
-                    visitDate: validated.visitDate,
-                    description: validated.description,
-                    nextScheduledDate: validated.nextScheduledDate,
-                    teacherName,
-                    teacherRole,
-                    createdById: userId,
-                },
-            });
-        });
+                        const visitNumber = (lastVisit?.visitNumber || 0) + 1;
+
+                        return tx.homeVisit.create({
+                            data: {
+                                studentId: validated.studentId,
+                                visitNumber,
+                                visitDate: validated.visitDate,
+                                description: validated.description,
+                                nextScheduledDate: validated.nextScheduledDate,
+                                teacherName,
+                                teacherRole,
+                                createdById: userId,
+                            },
+                            select: { id: true },
+                        });
+                    },
+                    {
+                        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+                    },
+                );
+                break;
+            } catch (txError) {
+                if (
+                    txError instanceof Prisma.PrismaClientKnownRequestError &&
+                    (txError.code === "P2002" || txError.code === "P2034") &&
+                    attempt < MAX_VISIT_NUMBER_RETRIES - 1
+                ) {
+                    continue;
+                }
+                throw txError;
+            }
+        }
+
+        if (!visit) {
+            return { success: false, message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" };
+        }
 
         revalidatePath(`/students/${validated.studentId}`);
 
