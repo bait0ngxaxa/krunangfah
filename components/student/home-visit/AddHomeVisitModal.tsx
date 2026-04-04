@@ -102,7 +102,6 @@ export function AddHomeVisitModal({
                 aria-labelledby="homevisit-modal-title"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
                 <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
                     <div className="flex items-start justify-between gap-3">
                         <div>
@@ -141,12 +140,10 @@ export function AddHomeVisitModal({
                 </div>
 
                 {step === "form" ? (
-                    /* Step 1: Form */
                     <form
                         onSubmit={handleSubmit}
                         className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-8"
                     >
-                        {/* Error Message */}
                         {error && (
                             <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-2 text-orange-700">
                                 <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />
@@ -154,7 +151,6 @@ export function AddHomeVisitModal({
                             </div>
                         )}
 
-                        {/* Visit Date */}
                         <div>
                             <label
                                 htmlFor="visitDate"
@@ -180,7 +176,6 @@ export function AddHomeVisitModal({
                             />
                         </div>
 
-                        {/* Description */}
                         <div>
                             <label
                                 htmlFor="description"
@@ -212,7 +207,6 @@ export function AddHomeVisitModal({
                             </p>
                         </div>
 
-                        {/* Next Scheduled Date */}
                         <div>
                             <label
                                 htmlFor="nextScheduledDate"
@@ -239,7 +233,6 @@ export function AddHomeVisitModal({
                             />
                         </div>
 
-                        {/* Actions */}
                         <div className="flex gap-4 pt-4 border-t border-gray-100">
                             <Button
                                 type="button"
@@ -273,7 +266,6 @@ export function AddHomeVisitModal({
                         </div>
                     </form>
                 ) : (
-                    /* Step 2: Photo upload */
                     <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-8">
                         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                             <p className="text-sm text-emerald-700 font-medium">

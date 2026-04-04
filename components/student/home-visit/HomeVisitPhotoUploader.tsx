@@ -35,14 +35,14 @@ export function HomeVisitPhotoUploader({
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Reset input so same file can be selected again
+        // Reset value so selecting the same file triggers onChange again.
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
 
         setUploading(true);
         try {
-            // Compress image before upload
+            // Compress before upload to cap payload size and improve UX.
             const compressed = await compressImage(file);
 
             const formData = new FormData();
@@ -91,7 +91,6 @@ export function HomeVisitPhotoUploader({
             </label>
 
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                {/* Existing photos */}
                 {photos.map((photo, index) => (
                     <div
                         key={photo.id}
@@ -104,7 +103,6 @@ export function HomeVisitPhotoUploader({
                             alt={photo.fileName}
                             className="w-full h-full object-cover"
                         />
-                        {/* Delete overlay */}
                         {!readOnly && (
                             <Button
                                 onClick={(e) => {
@@ -122,7 +120,6 @@ export function HomeVisitPhotoUploader({
                     </div>
                 ))}
 
-                {/* Upload button */}
                 {!readOnly && photos.length < MAX_PHOTOS && (
                     <Button
                         type="button"
@@ -145,7 +142,6 @@ export function HomeVisitPhotoUploader({
                     </Button>
                 )}
 
-                {/* Empty state placeholder */}
                 {photos.length === 0 && readOnly && (
                     <div className="col-span-full flex flex-col items-center justify-center py-6 text-gray-400">
                         <ImageIcon className="w-8 h-8 mb-1" />
@@ -154,7 +150,6 @@ export function HomeVisitPhotoUploader({
                 )}
             </div>
 
-            {/* Hidden file input */}
             <input
                 ref={fileInputRef}
                 type="file"
@@ -163,7 +158,6 @@ export function HomeVisitPhotoUploader({
                 className="hidden"
             />
 
-            {/* Full-screen viewer */}
             {viewerIndex !== null && (
                 <HomeVisitPhotoViewer
                     photos={photos}

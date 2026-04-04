@@ -19,13 +19,13 @@ export default async function ActivityStartPage({
     const { id: studentId } = await params;
     const { phqResultId } = await searchParams;
 
-    // system_admin เป็น readonly — ไม่สามารถเข้าหน้าทำกิจกรรมได้
+    // Activity workspace is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
         redirect(`/students/${studentId}`);
     }
 
-    // Parallelize independent fetches
+    // Fetch detail + optional progress in parallel.
     const [student, initialProgress] = await Promise.all([
         getStudentDetail(studentId),
         phqResultId
@@ -37,7 +37,7 @@ export default async function ActivityStartPage({
         notFound();
     }
 
-    // Use specific PHQ result if provided, otherwise fall back to latest
+    // Use requested PHQ result when present; fallback to latest.
     const latestResult = phqResultId
         ? (student.phqResults.find((r) => r.id === phqResultId) ??
           student.phqResults[0])
@@ -49,18 +49,18 @@ export default async function ActivityStartPage({
 
     const riskLevel = latestResult.riskLevel;
 
-    // Only orange/yellow/green have activities
+    // Activity flow exists only for orange/yellow/green.
     if (!["orange", "yellow", "green"].includes(riskLevel)) {
         redirect(`/students/${studentId}/help`);
     }
 
-    // Use parallel result if phqResultId matched, otherwise fetch now
+    // Reuse prefetched progress only when it targets selected PHQ result.
     let progressResult =
         initialProgress && phqResultId === latestResult.id
             ? initialProgress
             : await getActivityProgress(studentId, latestResult.id);
 
-    // Auto-initialize if no progress exists
+    // First access initializes sequence records for this PHQ result.
     if (!progressResult.success || !progressResult.data?.length) {
         await initializeActivityProgress(
             studentId,

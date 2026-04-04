@@ -47,6 +47,7 @@ export function RiskGroupSection({
     const checkScroll = useCallback(() => {
         const element = scrollRef.current;
         if (!element) return;
+        // Small threshold prevents flicker when browser reports sub-pixel scroll positions.
         const distanceFromBottom =
             element.scrollHeight - element.scrollTop - element.clientHeight;
         setScrolledToBottom(distanceFromBottom <= 8);

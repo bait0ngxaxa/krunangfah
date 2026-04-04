@@ -22,7 +22,7 @@ async function verifyActivityAccess(
     userId: string,
     userRole: string,
 ): Promise<{ allowed: boolean; error?: string }> {
-    // system_admin can access all students
+    // system_admin reads all students, but write operations still gate separately.
     if (userRole === "system_admin") {
         const student = await prisma.student.findUnique({
             where: { id: studentId },
@@ -82,7 +82,7 @@ export async function initializeActivityProgress(
     riskLevel: string,
 ) {
     try {
-        // SECURITY: ป้องกัน client เรียก "use server" function โดยตรง
+        // Require authenticated server context even when function is imported client-side.
         await requireAuth();
 
         const activityNumbers = Object.hasOwn(ACTIVITY_INDICES, riskLevel)
@@ -90,11 +90,11 @@ export async function initializeActivityProgress(
             : [];
 
         if (activityNumbers.length === 0) {
-            // No activities for red/blue
+            // Red/blue risk groups do not use worksheet activity flow.
             return { success: true, count: 0 };
         }
 
-        // Create activity progress records
+        // Create full sequence once; first step unlocked, remaining steps locked.
         const records = activityNumbers.map((activityNumber, index) => ({
             studentId,
             phqResultId,
@@ -102,7 +102,7 @@ export async function initializeActivityProgress(
             status:
                 index === 0
                     ? ActivityStatus.in_progress
-                    : ActivityStatus.locked, // First activity unlocked
+                    : ActivityStatus.locked, // Only first activity is immediately actionable
             unlockedAt: index === 0 ? new Date() : null,
         }));
 
@@ -129,7 +129,7 @@ export async function submitTeacherAssessment(
     data: SubmitAssessmentData,
 ) {
     try {
-        // Validate input
+        // Validate shape and field constraints before touching DB.
         const validated = submitAssessmentSchema.parse({
             activityProgressId,
             ...data,
@@ -137,7 +137,7 @@ export async function submitTeacherAssessment(
 
         const session = await requireAuth();
 
-        // system_admin เป็น readonly — ไม่สามารถทำกิจกรรมได้
+        // system_admin is readonly in activity workflow.
         if (session.user.role === "system_admin") {
             return {
                 success: false,
@@ -154,8 +154,7 @@ export async function submitTeacherAssessment(
             return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
         }
 
-        // Allow assessment when activity is pending_assessment or completed
-        // (current flow: upload completes → status becomes "completed" → teacher assesses)
+        // Assessment is valid after uploads are submitted (pending_assessment/completed).
         if (
             activityProgress.status !== "pending_assessment" &&
             activityProgress.status !== "completed"
@@ -166,7 +165,7 @@ export async function submitTeacherAssessment(
             };
         }
 
-        // Verify access
+        // Enforce school/class ownership before update.
         const { allowed, error } = await verifyActivityAccess(
             activityProgress.studentId,
             session.user.id,
@@ -177,7 +176,7 @@ export async function submitTeacherAssessment(
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        // Save assessment data (activity is already completed from upload)
+        // Save assessment fields without mutating completion status.
         await prisma.activityProgress.update({
             where: { id: validated.activityProgressId },
             data: {
@@ -204,10 +203,10 @@ export async function unlockNextActivity(
     currentActivityNumber: number,
 ) {
     try {
-        // SECURITY: ป้องกัน client เรียก "use server" function โดยตรง
+        // Ensure this helper runs only in authenticated server context.
         await requireAuth();
 
-        // Find next locked activity
+        // Unlock nearest next locked step in same PHQ sequence.
         const nextActivity = await prisma.activityProgress.findFirst({
             where: {
                 studentId,
@@ -267,7 +266,7 @@ export async function confirmActivityComplete(
             };
         }
 
-        // Verify access
+        // Enforce school/class ownership before completion update.
         const { allowed, error } = await verifyActivityAccess(
             activityProgress.studentId,
             session.user.id,
@@ -278,7 +277,7 @@ export async function confirmActivityComplete(
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        // Mark as completed
+        // Mark current step complete.
         await prisma.activityProgress.update({
             where: { id: activityProgressId },
             data: {
@@ -287,7 +286,7 @@ export async function confirmActivityComplete(
             },
         });
 
-        // Unlock next activity
+        // Advance sequence gate for next activity.
         await unlockNextActivity(
             activityProgress.studentId,
             activityProgress.phqResultId,
@@ -314,7 +313,7 @@ export async function scheduleActivity(
     data: ScheduleActivityData,
 ) {
     try {
-        // Validate input
+        // Validate shape and constraints before DB access.
         const validated = scheduleActivitySchema.parse({
             activityProgressId,
             ...data,
@@ -322,7 +321,7 @@ export async function scheduleActivity(
 
         const session = await requireAuth();
 
-        // system_admin เป็น readonly — ไม่สามารถทำกิจกรรมได้
+        // system_admin is readonly in activity workflow.
         if (session.user.role === "system_admin") {
             return {
                 success: false,
@@ -339,7 +338,7 @@ export async function scheduleActivity(
             return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
         }
 
-        // Verify access
+        // Enforce school/class ownership before update.
         const { allowed, error } = await verifyActivityAccess(
             activityProgress.studentId,
             session.user.id,
@@ -374,7 +373,7 @@ export async function updateTeacherNotes(
     notes: string,
 ) {
     try {
-        // Validate input
+        // Validate shape and constraints before DB access.
         const validated = updateTeacherNotesSchema.parse({
             activityProgressId,
             notes,
@@ -382,7 +381,7 @@ export async function updateTeacherNotes(
 
         const session = await requireAuth();
 
-        // system_admin เป็น readonly — ไม่สามารถทำกิจกรรมได้
+        // system_admin is readonly in activity workflow.
         if (session.user.role === "system_admin") {
             return {
                 success: false,
@@ -399,7 +398,7 @@ export async function updateTeacherNotes(
             return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
         }
 
-        // Verify access
+        // Enforce school/class ownership before update.
         const { allowed, error } = await verifyActivityAccess(
             activityProgress.studentId,
             session.user.id,
@@ -426,7 +425,7 @@ export async function updateTeacherNotes(
 }
 
 /**
- * Update scheduled date for an activity (lightweight — no teacherNotes required)
+ * Update activity scheduled date without requiring teacher notes payload.
  */
 export async function updateScheduledDate(
     activityProgressId: string,
@@ -440,7 +439,7 @@ export async function updateScheduledDate(
 
         const session = await requireAuth();
 
-        // system_admin เป็น readonly — ไม่สามารถทำกิจกรรมได้
+        // system_admin is readonly in activity workflow.
         if (session.user.role === "system_admin") {
             return {
                 success: false,

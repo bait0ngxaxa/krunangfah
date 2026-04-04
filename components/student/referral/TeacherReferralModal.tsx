@@ -49,7 +49,7 @@ export function TeacherReferralModal({
         };
     }, []);
 
-    // Load teachers list
+    // Fetch teacher options once per modal open.
     useEffect(() => {
         let cancelled = false;
         async function loadTeachers(): Promise<void> {
@@ -120,7 +120,6 @@ export function TeacherReferralModal({
                 aria-labelledby="referral-modal-title"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
                 <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
                     <div className="flex items-start justify-between gap-3">
                         <div>
@@ -147,7 +146,6 @@ export function TeacherReferralModal({
                     </div>
                 </div>
 
-                {/* Form */}
                 <form
                     onSubmit={handleSubmit}
                     className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-8"
@@ -218,7 +216,6 @@ export function TeacherReferralModal({
                         )}
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-4 pt-4 border-t border-gray-100">
                         <Button
                             type="button"

@@ -38,10 +38,9 @@ export function AddCounselingModal({
         summary: "",
     });
 
-    // Ensure component is mounted before rendering portal
+    // Body scroll lock keeps focus/context inside modal while it is open.
     useEffect(() => {
         setMounted(true);
-        // Prevent body scroll when modal is open
         document.body.style.overflow = "hidden";
 
         return () => {
@@ -76,7 +75,7 @@ export function AddCounselingModal({
         }
     };
 
-    // Prevent SSR issues - only render on client after mount
+    // Portal target (document.body) is available only on client.
     if (!mounted) {
         return null;
     }
@@ -94,7 +93,6 @@ export function AddCounselingModal({
                 aria-labelledby="counseling-modal-title"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
                 <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
                     <div className="flex items-start justify-between gap-3">
                         <div>
@@ -121,12 +119,10 @@ export function AddCounselingModal({
                     </div>
                 </div>
 
-                {/* Form */}
                 <form
                     onSubmit={handleSubmit}
                     className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-8"
                 >
-                    {/* Error Message */}
                     {error && (
                         <div className="flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 p-4 text-orange-700">
                             <AlertTriangle className="h-5 w-5 shrink-0 text-orange-600" />
@@ -134,7 +130,6 @@ export function AddCounselingModal({
                         </div>
                     )}
 
-                    {/* Session Date */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                         <label
                             htmlFor="sessionDate"
@@ -160,7 +155,6 @@ export function AddCounselingModal({
                         />
                     </div>
 
-                    {/* Counselor Name */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                         <label
                             htmlFor="counselorName"
@@ -188,7 +182,6 @@ export function AddCounselingModal({
                         />
                     </div>
 
-                    {/* Summary */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                         <label
                             htmlFor="summary"
@@ -230,7 +223,6 @@ export function AddCounselingModal({
                         เขียนสรุปให้กระชับและระบุ action ที่จะติดตามในการนัดครั้งถัดไป
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-4 border-t border-gray-100 pt-4">
                         <Button
                             type="button"

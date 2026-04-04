@@ -87,8 +87,8 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          UserRole  @default(school_admin) // school_admin (invite only), class_teacher (invite only)
-  isPrimary     Boolean   @default(false) // true = invited by system_admin, can manage school data
+  role          UserRole  @default(school_admin) // effective role used by access control
+  isPrimary     Boolean   @default(false) // true = primary school_admin for school-level management
   schoolId      String?   // FK to School
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -138,7 +138,7 @@ model Teacher {
   advisoryClass   String        // ชั้นที่ปรึกษา เช่น "ม.1/1"
   academicYearId  String        // FK to AcademicYear
   schoolRole      String        // บทบาทหน้าที่ในโรงเรียน
-  projectRole     ProjectRole        // บทบาทหน้าที่ในโครงการครูนางฟ้า: LEAD, CARE, COORDINATE
+  projectRole     ProjectRole        // บทบาทในโครงการครูนางฟ้า: lead, care, coordinate
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -156,12 +156,12 @@ model TeacherInvite {
   firstName       String
   lastName        String
   age             Int
-  userRole        UserRole  // SCHOOL_ADMIN or CLASS_TEACHER
+  userRole        UserRole  // target account role after accept invite
   advisoryClass   String
   academicYearId  String
   schoolId        String
   schoolRole      String
-  projectRole     ProjectRole    // lead, care, coordinate
+  projectRole     ProjectRole    // target project role after accept invite
   invitedById     String
   expiresAt       DateTime
   acceptedAt      DateTime?
@@ -228,7 +228,7 @@ model PhqResult {
   
   // ข้อพิเศษ (ตอบใช่/ไม่ใช่)
   q9a             Boolean  @default(false) // ความคิดทำร้ายตัวเอง
-  q9b             Boolean  @default(false) // ความคิดทำร้ายผู้อื่น
+  q9b             Boolean  @default(false) // เคยพยายามทำร้ายตัวเอง
   
   // ผลคำนวณ
   totalScore      Int      // รวมคะแนน q1-q9
@@ -294,7 +294,7 @@ model WorksheetUpload {
   worksheetNumber     Int      @default(1) // ลำดับใบงาน (1, 2) — fixed, ไม่เปลี่ยนเมื่อลบ
   
   fileName            String   // ชื่อไฟล์
-  fileUrl             String   // URL ของไฟล์ (path ใน public/uploads)
+  fileUrl             String   // API path สำหรับไฟล์ (เสิร์ฟผ่าน /api/uploads)
   fileType            String   // image/jpeg, image/png, application/pdf
   fileSize            Int      // ขนาดไฟล์ (bytes)
   
@@ -337,12 +337,12 @@ model SystemAdminWhitelist {
   @@map("system_admin_whitelist")
 }
 
-// School Admin Invite - คำเชิญสร้างบัญชี admin (system_admin หรือ school_admin)
+// School Admin Invite - คำเชิญสร้างบัญชี school_admin
 model SchoolAdminInvite {
   id        String    @id @default(cuid())
   token     String    @unique
   email     String    @unique  // email ที่ระบุล่วงหน้า
-  role      UserRole  @default(school_admin) // role ที่จะได้รับเมื่อ accept invite
+  role      UserRole  @default(school_admin) // role ที่จะได้รับเมื่อ accept invite (ปัจจุบันใช้ school_admin)
   usedAt    DateTime?
   expiresAt DateTime
   createdBy String

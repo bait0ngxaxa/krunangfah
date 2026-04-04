@@ -12,7 +12,7 @@ import { AcademicYearFilter } from "@/components/student/profile/AcademicYearFil
 import { ReferralButton } from "@/components/student/referral/ReferralButton";
 import { HomeVisitTab } from "@/components/student/home-visit/HomeVisitTab";
 
-// Dynamic import — Recharts is heavy, lazy-load for smaller initial bundle
+// Lazy-load chart library to keep initial bundle for detail page smaller.
 const PHQTrendChart = dynamic(
     () =>
         import("@/components/student/phq/PHQTrendChart").then(
@@ -46,7 +46,6 @@ export default async function StudentDetailPage({
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-linear-to-br from-slate-50 via-white to-emerald-50/40 py-6 px-4">
-            {/* Decorative Background Elements */}
             <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
                 <div className="absolute -top-16 -right-12 h-72 w-72 rounded-full bg-emerald-100/60 blur-3xl" />
                 <div className="absolute bottom-8 -left-16 h-72 w-72 rounded-full bg-cyan-100/45 blur-3xl" />
@@ -56,7 +55,6 @@ export default async function StudentDetailPage({
             <div className="relative z-10 mx-auto max-w-7xl">
                 <BackButton href="/students" label="กลับหน้านักเรียน" />
 
-                {/* Content (streamed via Suspense) */}
                 <Suspense fallback={<StudentDetailSkeleton />}>
                     <StudentDetailContent
                         studentId={id}
@@ -68,8 +66,6 @@ export default async function StudentDetailPage({
     );
 }
 
-/* ─── Async Content (streamed via Suspense) ─── */
-
 async function StudentDetailContent({
     studentId,
     selectedYearId,
@@ -77,7 +73,7 @@ async function StudentDetailContent({
     studentId: string;
     selectedYearId?: string;
 }) {
-    // Parallelize data fetches
+    // Fetch independent datasets in parallel.
     const [session, student, counselingSessions, homeVisits] =
         await Promise.all([
             requireAuth(),
@@ -92,7 +88,7 @@ async function StudentDetailContent({
         notFound();
     }
 
-    // Extract unique academic years from PHQ results
+    // Build unique academic year list for filter options.
     const uniqueYears = Array.from(
         new Map(
             student.phqResults
@@ -104,11 +100,10 @@ async function StudentDetailContent({
         return b.semester - a.semester;
     });
 
-    // Filter PHQ results by selected year or year+semester
+    // Apply year filter (year-only or specific semester id).
     const filteredPhqResults = (() => {
         if (!selectedYearId) return student.phqResults;
 
-        // Year-only filter (e.g. "year:2568")
         if (selectedYearId.startsWith("year:")) {
             const yearNum = parseInt(selectedYearId.replace("year:", ""), 10);
             if (isNaN(yearNum)) return student.phqResults;
@@ -117,7 +112,6 @@ async function StudentDetailContent({
             );
         }
 
-        // Specific semester filter (by academic year ID)
         return student.phqResults.filter(
             (r) => r.academicYear?.id === selectedYearId,
         );
@@ -125,7 +119,6 @@ async function StudentDetailContent({
 
     const latestResult = filteredPhqResults[0] || null;
 
-    // Tab 1: PHQ Results (Chart + History)
     const phqResultsTab = (
         <div className="space-y-6">
             {filteredPhqResults.length > 0 && (
@@ -135,7 +128,6 @@ async function StudentDetailContent({
         </div>
     );
 
-    // Tab 2: Activities (Activity Progress + Counseling Log)
     const activitiesTab = (
         <div className="space-y-6">
             {latestResult && latestResult.academicYear && (
@@ -159,7 +151,6 @@ async function StudentDetailContent({
         </div>
     );
 
-    // Tab 3: Home Visits
     const homeVisitsTab = (
         <HomeVisitTab
             visits={homeVisits}
@@ -235,12 +226,9 @@ async function StudentDetailContent({
     );
 }
 
-/* ─── Skeleton Fallback ─── */
-
 function StudentDetailSkeleton() {
     return (
         <div className="space-y-7">
-            {/* Profile Card Skeleton */}
             <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center gap-4 mb-4">
                     <div className="w-16 h-16 bg-gray-200 rounded-2xl animate-pulse" />
@@ -259,7 +247,6 @@ function StudentDetailSkeleton() {
                 </div>
             </div>
 
-            {/* Tabs Skeleton */}
             <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div className="flex gap-4 mb-6">
                     <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />

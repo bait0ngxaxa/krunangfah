@@ -25,7 +25,7 @@ export default async function ConversationGuidelinesPage({
 }: PageProps) {
     const { id: studentId } = await params;
 
-    // system_admin เป็น readonly — ไม่สามารถเข้าหน้า help ได้
+    // Conversation help flow is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
         redirect(`/students/${studentId}`);
@@ -47,7 +47,6 @@ export default async function ConversationGuidelinesPage({
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-6">
-            {/* Decorative Background Elements */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
                 <div className="absolute bottom-10 left-10 w-64 h-64 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
@@ -61,9 +60,7 @@ export default async function ConversationGuidelinesPage({
                 />
 
                 <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-8">
-                    {/* Corner decoration */}
                     <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-linear-to-br from-emerald-200/45 to-teal-300/35 blur-xl" />
-                    {/* Shimmer */}
                     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
 
                     <HelpPageHeader
@@ -75,7 +72,6 @@ export default async function ConversationGuidelinesPage({
                         title="หลักการพูดคุยกับนักเรียน"
                     />
 
-                    {/* Guidelines Content */}
                     <div className="mb-8 rounded-2xl border border-gray-200/80 bg-white/80 p-8 shadow-sm">
                         <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                             <ClipboardList className="w-6 h-6 text-gray-700" />
@@ -113,7 +109,6 @@ export default async function ConversationGuidelinesPage({
                         </ul>
                     </div>
 
-                    {/* Back Button */}
                     <Link
                         href={`/students/${studentId}/help`}
                         className={`group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r py-4 text-center text-lg font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg ${config.gradient}`}

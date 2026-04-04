@@ -20,7 +20,7 @@ export async function createTeacherInvite(
         const session = await requireAuth();
         const userId = session.user.id;
 
-        // school_admin (ทุกคน) และ system_admin สร้าง invite ได้
+        // Allow only school_admin and system_admin to create invites.
         if (
             session.user.role !== "system_admin" &&
             session.user.role !== "school_admin"
@@ -31,7 +31,7 @@ export async function createTeacherInvite(
             };
         }
 
-        // Get user's schoolId
+        // Use creator schoolId as invite scope.
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: { schoolId: true },
@@ -44,7 +44,7 @@ export async function createTeacherInvite(
             };
         }
 
-        // Check if email already exists
+        // Block invite when target email is already an active account.
         const existingUser = await prisma.user.findUnique({
             where: { email: input.email },
         });
@@ -56,7 +56,7 @@ export async function createTeacherInvite(
             };
         }
 
-        // Check if pending invite exists
+        // Prevent duplicate pending invite for the same email.
         const existingInvite = await prisma.teacherInvite.findFirst({
             where: {
                 email: input.email,
@@ -72,21 +72,21 @@ export async function createTeacherInvite(
             };
         }
 
-        // Generate token
+        // Token is single-use and must be unguessable.
         const token = randomBytes(32).toString("hex");
 
-        // Set expiry to 7 days
+        // Invite expires in 7 days.
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
-        // Create invite
+        // Persist invite payload as source-of-truth for registration prefill.
         const invite = await prisma.teacherInvite.create({
             data: {
                 token,
                 email: input.email,
                 firstName: input.firstName,
                 lastName: input.lastName,
-                age: Number(input.age), // Convert string to number
+                age: Number(input.age), // Validation guarantees numeric-like input
                 userRole: input.userRole,
                 advisoryClass: normalizeClassName(input.advisoryClass),
                 academicYearId: input.academicYearId,
@@ -129,7 +129,7 @@ export async function acceptTeacherInvite(
     password: string,
 ): Promise<InviteResponse> {
     try {
-        // Get invite
+        // Resolve token once and enforce single-use + expiry gates.
         const invite = await prisma.teacherInvite.findUnique({
             where: { token },
         });
@@ -146,12 +146,12 @@ export async function acceptTeacherInvite(
             return { success: false, message: "คำเชิญหมดอายุแล้ว" };
         }
 
-        // Hash password
+        // Password is stored hashed only.
         const hashedPassword = await hashPassword(password);
 
-        // Create user, teacher profile, and mark invite — all in one transaction
+        // Atomic registration: user + teacher profile + invite consumption.
         await prisma.$transaction(async (tx) => {
-            // 1. Create user
+            // Create user account
             const user = await tx.user.create({
                 data: {
                     email: invite.email,
@@ -162,7 +162,7 @@ export async function acceptTeacherInvite(
                 },
             });
 
-            // 2. Create teacher profile
+            // Create teacher profile linked to user
             await tx.teacher.create({
                 data: {
                     userId: user.id,
@@ -176,7 +176,7 @@ export async function acceptTeacherInvite(
                 },
             });
 
-            // 3. Mark invite as accepted
+            // Mark invite consumed to prevent replay
             await tx.teacherInvite.update({
                 where: { id: invite.id },
                 data: { acceptedAt: new Date() },
@@ -230,7 +230,7 @@ export async function revokeTeacherInvite(
             };
         }
 
-        // Access control: system_admin can revoke any, primary school_admin can revoke own school's
+        // Access control: system_admin (any invite) OR primary school_admin (same school only).
         const isSystemAdmin = session.user.role === "system_admin";
         const isPrimaryOfSchool =
             session.user.role === "school_admin" &&
@@ -245,7 +245,7 @@ export async function revokeTeacherInvite(
             where: { id: inviteId },
         });
 
-        // Reset inviteSent on matching roster entry (by email or name)
+        // Keep roster status consistent when invite is revoked.
         const rosterMatch = await prisma.schoolTeacherRoster.findFirst({
             where: {
                 schoolId: invite.schoolId,

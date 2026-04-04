@@ -17,12 +17,12 @@ export default async function SchoolSetupPage() {
         redirect("/signin");
     }
 
-    // system_admin ไม่ต้องตั้งค่าโรงเรียน
+    // system_admin bypasses onboarding setup screens.
     if (session.user.role === "system_admin") {
         redirect("/dashboard");
     }
 
-    // Check DB directly (JWT may be stale)
+    // Read from DB to avoid stale JWT values after profile/setup mutations.
     const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: {
@@ -31,19 +31,16 @@ export default async function SchoolSetupPage() {
         },
     });
 
-    // ต้องสร้าง teacher profile ก่อน school setup
+    // School setup is available only after teacher profile exists.
     if (!dbUser?.teacher) {
         redirect("/teacher-profile");
     }
 
-    // ส่ง flag ไปให้ client แทนการ redirect ตรงนี้
-    // เพราะ server action revalidation จะ re-run page component
-    // ถ้า redirect ที่นี่ จะข้ามขั้นตอน wizard ทันที
+    // Keep user in wizard flow; client handles post-submit navigation.
     const hasSchool = !!dbUser?.schoolId;
 
     return (
         <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4 relative overflow-hidden">
-            {/* Decorative Background */}
             <div className="absolute top-0 left-0 w-96 h-96 bg-[#0BD0D9] rounded-full mix-blend-multiply blur-3xl opacity-10 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#34D399] rounded-full mix-blend-multiply blur-3xl opacity-10 translate-x-1/2 translate-y-1/2 pointer-events-none" />
 

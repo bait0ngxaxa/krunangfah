@@ -68,8 +68,8 @@ export async function getStudentRiskCounts(
 }
 
 /**
- * Get students by class (for class_teacher) or all (for school_admin)
- * Supports pagination with caching
+ * Return paginated student list in viewer scope.
+ * First page without filters uses cache; other queries bypass cache for freshness.
  */
 const getCachedStudents = unstable_cache(
     async (
@@ -218,8 +218,8 @@ export async function getStudentsForDashboard(
 }
 
 /**
- * Search students by name or student ID
- * No caching for search (always fresh results)
+ * Search by name/studentId within viewer scope.
+ * Query is not cached because input is user-typed and highly dynamic.
  */
 export async function searchStudents(query: string) {
     try {
@@ -245,8 +245,8 @@ export async function searchStudents(query: string) {
 }
 
 /**
- * Get student detail with all PHQ results
- * Cached for 60 seconds
+ * Load student detail (including PHQ history) in viewer scope.
+ * Cached briefly to reduce repeated dashboard/detail reads.
  */
 const getCachedStudentDetail = unstable_cache(
     async (
@@ -291,8 +291,7 @@ export async function getStudentDetail(studentId: string) {
 }
 
 /**
- * Check if round 1 PHQ data exists for the given academic year
- * Used to prevent importing round 2 before round 1
+ * Guard import flow: round 2 is allowed only when round 1 exists in the same academic year.
  */
 export async function hasRound1Data(academicYearId: string): Promise<boolean> {
     try {
@@ -317,12 +316,8 @@ export async function hasRound1Data(academicYearId: string): Promise<boolean> {
 }
 
 /**
- * Check for incomplete activities from a previous assessment round
- * Used to warn teachers before importing new round data
- *
- * Scope by the imported class list from the Excel file.
- * This way both school_admin and class_teacher get warnings scoped to
- * exactly the classes they are importing, not the entire school.
+ * Warn before import when previous-round activities are still incomplete.
+ * The check is scoped to classes included in the incoming file (not whole school).
  */
 export async function getIncompleteActivityWarning(
     academicYearId: string,

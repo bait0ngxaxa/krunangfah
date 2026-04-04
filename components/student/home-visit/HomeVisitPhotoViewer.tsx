@@ -59,7 +59,6 @@ export function HomeVisitPhotoViewer({
             className="fixed inset-0 z-9999 flex items-center justify-center overscroll-contain bg-black/90 backdrop-blur-sm"
             onClick={onClose}
         >
-            {/* Close button */}
             <button
                 onClick={onClose}
                 aria-label="ปิดตัวแสดงรูปภาพ"
@@ -68,12 +67,10 @@ export function HomeVisitPhotoViewer({
                 <X className="w-5 h-5" />
             </button>
 
-            {/* Counter */}
             <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-white/10 rounded-full text-white text-sm font-medium">
                 {currentIndex + 1} / {photos.length}
             </div>
 
-            {/* Navigation arrows */}
             {currentIndex > 0 && (
                 <button
                     onClick={(e) => {
@@ -100,7 +97,6 @@ export function HomeVisitPhotoViewer({
                 </button>
             )}
 
-            {/* Image */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
                 src={currentPhoto.fileUrl}

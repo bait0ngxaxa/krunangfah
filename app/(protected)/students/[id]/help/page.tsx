@@ -18,7 +18,7 @@ export default async function StudentHelpPage({
     const { id: studentId } = await params;
     const { phqResultId } = await searchParams;
 
-    // system_admin เป็น readonly — ไม่สามารถเข้าหน้า help ได้
+    // Help workflow is teacher-facing; system_admin stays on detail page.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
         redirect(`/students/${studentId}`);
@@ -42,7 +42,7 @@ export default async function StudentHelpPage({
     const config = getColorConfig(riskLevel);
     const studentName = `${student.firstName} ${student.lastName}`;
 
-    // Red - 3-step workflow, Blue - conversation guidelines only
+    // Red/blue use conversation path (no worksheet intro view).
     if (riskLevel === "red" || riskLevel === "blue") {
         return (
             <ConversationView
@@ -59,7 +59,7 @@ export default async function StudentHelpPage({
         );
     }
 
-    // Orange, Yellow, Green - Always show worksheet introduction
+    // Orange/yellow/green enter worksheet activity flow.
     const activities = getActivities(riskLevel);
 
     return (

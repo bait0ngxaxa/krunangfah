@@ -23,7 +23,7 @@ export default async function EncouragementRoute({
         phqResultId,
     } = await searchParams;
 
-    // system_admin เป็น readonly — ไม่สามารถเข้าหน้า help ได้
+    // Encouragement flow is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
         redirect(`/students/${studentId}`);
@@ -46,19 +46,19 @@ export default async function EncouragementRoute({
 
     const riskLevel = latestResult.riskLevel;
 
-    // Only orange/yellow/green have activities
+    // Encouragement step exists only for orange/yellow/green.
     if (!["orange", "yellow", "green"].includes(riskLevel)) {
         redirect(`/students/${studentId}/help`);
     }
 
-    // Validate problem type
+    // Fallback to internal when query is missing/invalid.
     const validProblemType =
         problemType === "external" ? "external" : "internal";
 
-    // Get activity number (default to 1)
+    // Default activity number to 1 when query is missing.
     const activityNumber = activityParam ? parseInt(activityParam) : 1;
 
-    // Build assessment period label for completion message
+    // Include period label for completion summary card.
     const academicYear = latestResult.academicYear;
     const assessmentPeriodLabel = academicYear
         ? `ปีการศึกษา ${academicYear.year} เทอม ${academicYear.semester} ครั้งที่ ${latestResult.assessmentRound}`

@@ -48,6 +48,7 @@ export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
         [syncWithUrl, searchParams, router, pathname],
     );
 
+    // In URL-sync mode, the query string is the source of truth (supports back/forward reliably).
     const resolvedActiveTab = syncWithUrl ? resolveUrlTab() : activeTab;
     const activeTabContent = tabs.find((tab) => tab.id === resolvedActiveTab)?.content;
     const activeTabButtonId = `tab-${resolvedActiveTab}`;
@@ -55,7 +56,6 @@ export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
 
     return (
         <div className="w-full">
-            {/* Tab Navigation — ซ่อนเมื่อมีแท็บเดียว */}
             {tabs.length > 1 && (
                 <div
                     className="flex gap-2 mb-6 p-1.5 bg-white rounded-2xl border-2 border-gray-100 shadow-sm overflow-x-auto scrollbar-hide"
@@ -89,7 +89,6 @@ export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
                 </div>
             )}
 
-            {/* Tab Content */}
             <div
                 id={tabPanelId}
                 role="tabpanel"

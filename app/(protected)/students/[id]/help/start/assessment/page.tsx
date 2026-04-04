@@ -24,7 +24,7 @@ export default async function TeacherAssessmentPage({
     const { id: studentId } = await params;
     const { activity: activityParam, phqResultId } = await searchParams;
 
-    // system_admin เป็น readonly — ไม่สามารถเข้าหน้า help ได้
+    // Assessment flow is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
         redirect(`/students/${studentId}`);
@@ -47,12 +47,12 @@ export default async function TeacherAssessmentPage({
 
     const riskLevel = latestResult.riskLevel;
 
-    // Only orange/yellow/green have activities
+    // Assessment flow exists only for orange/yellow/green.
     if (!["orange", "yellow", "green"].includes(riskLevel)) {
         redirect(`/students/${studentId}/help`);
     }
 
-    // Get activity progress
+    // Load progress for selected PHQ result.
     const progressResult = await getActivityProgress(
         studentId,
         latestResult.id,
@@ -61,7 +61,7 @@ export default async function TeacherAssessmentPage({
         ? progressResult.data || []
         : [];
 
-    // Find the activity that needs assessment (has uploads but pending assessment)
+    // Prefer explicit activity param; fallback to the next assessable activity.
     const activityNumber = activityParam ? parseInt(activityParam) : null;
     const currentProgress = activityNumber
         ? activityProgress.find((p) => p.activityNumber === activityNumber)
@@ -80,8 +80,7 @@ export default async function TeacherAssessmentPage({
         );
     }
 
-    // Assessment page only for Activity 1
-    // Activities 2-5 skip directly to encouragement
+    // Only activity 1 uses this form; later activities go directly to encouragement.
     if (currentProgress.activityNumber !== 1) {
         redirect(
             `/students/${studentId}/help/start/encouragement?activity=${currentProgress.activityNumber}${phqParam}`,

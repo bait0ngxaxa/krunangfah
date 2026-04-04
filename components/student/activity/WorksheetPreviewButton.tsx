@@ -52,7 +52,6 @@ export function WorksheetPreviewButton({
 
     return (
         <>
-            {/* Preview Modal */}
             {previewFile &&
                 typeof document !== "undefined" &&
                 createPortal(
@@ -119,7 +118,6 @@ export function WorksheetPreviewButton({
                     document.body,
                 )}
 
-            {/* File List */}
             <div className="flex items-center gap-3 flex-wrap justify-center">
                 <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200 shadow-sm">
                     <span className="w-4 h-4 rounded-full bg-green-500 text-white flex items-center justify-center">

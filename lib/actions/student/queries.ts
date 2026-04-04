@@ -180,12 +180,12 @@ export async function getRiskLevelCountsQuery(
     userId: string | undefined,
     options?: DashboardSummaryFilterOptions,
 ): Promise<RiskCountRaw[]> {
-    // Build conditions
+    // Build base visibility scope from role + school context.
     const schoolCondition = schoolId
         ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
         : Prisma.sql`WHERE 1=1`;
 
-    // Referral-aware teacher condition
+    // class_teacher can see own advisory class plus students referred to them.
     const teacherCondition =
         userRole === "class_teacher" && advisoryClass && userId
             ? Prisma.sql`AND (
@@ -295,10 +295,10 @@ export async function getStudentsQuery(
 
     applyClassFilter(whereClause, classFilter);
 
-    // Get total count
+    // Count first to compute pagination metadata.
     const total = await prisma.student.count({ where: whereClause });
 
-    // Get students with pagination
+    // Fetch current page with stable ordering.
     const students = await prisma.student.findMany({
         where: whereClause,
         include: {
@@ -512,13 +512,13 @@ export async function searchStudentsQuery(
         { studentId: { contains: query, mode: "insensitive" } },
     ];
 
-    // Combine visibility filter (from referral-aware) with search filter
+    // Merge visibility scope with text-search predicates.
     const whereClause: Prisma.StudentWhereInput = {
         ...baseWhere,
     };
 
     if (baseWhere.OR) {
-        // class_teacher: AND visibility OR with search OR
+        // class_teacher keeps referral-aware visibility and applies search inside that scope.
         const visibilityOR = baseWhere.OR;
         delete whereClause.OR;
         whereClause.AND = [

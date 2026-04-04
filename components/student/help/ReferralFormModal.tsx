@@ -54,13 +54,13 @@ export function ReferralFormModal({
 
         const shouldRefer = selectedOption === "refer";
 
-        // Client-side validation: require hospital name when referring
+        // Hospital name is required only for the "refer" branch.
         if (shouldRefer && !hospitalName.trim()) {
             setError("กรุณาระบุชื่อโรงพยาบาล");
             return;
         }
 
-        // Skip API call if nothing changed
+        // Avoid write + revalidate churn when user submits unchanged values.
         if (
             shouldRefer === initialStatus &&
             hospitalName.trim() === (initialHospitalName ?? "")
@@ -141,7 +141,6 @@ export function ReferralFormModal({
                     </div>
                 </div>
 
-                {/* Form */}
                 <form
                     onSubmit={handleSubmit}
                     className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-8"
@@ -158,7 +157,6 @@ export function ReferralFormModal({
                             เลือกการดำเนินการ
                         </label>
 
-                        {/* Refer to Hospital */}
                         <label
                             className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-base ${
                                 selectedOption === "refer"
@@ -193,7 +191,6 @@ export function ReferralFormModal({
                             </div>
                         </label>
 
-                        {/* Hospital Name Input — shown when "refer" is selected */}
                         {selectedOption === "refer" && (
                             <div className="ml-9 pl-4 border-l-2 border-emerald-200">
                                 <label
@@ -219,7 +216,6 @@ export function ReferralFormModal({
                             </div>
                         )}
 
-                        {/* Follow Up */}
                         <label
                             className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-base ${
                                 selectedOption === "follow_up"
@@ -255,7 +251,6 @@ export function ReferralFormModal({
                         </label>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-4 pt-4 border-t border-gray-100">
                         <Button
                             type="button"

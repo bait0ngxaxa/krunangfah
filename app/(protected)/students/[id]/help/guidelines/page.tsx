@@ -17,7 +17,7 @@ export default async function GuidelinesPage({
     const { id: studentId } = await params;
     const { phqResultId } = await searchParams;
 
-    // system_admin เป็น readonly — ไม่สามารถเข้าหน้า help ได้
+    // Worksheet guideline flow is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
         redirect(`/students/${studentId}`);
@@ -33,14 +33,11 @@ export default async function GuidelinesPage({
                 <BackButton href={startHref} label="กลับหน้าใบงาน" />
 
                 <div className="relative bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 overflow-hidden">
-                    {/* Corner decoration */}
                     <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-teal-300/35 rounded-full blur-xl pointer-events-none" />
                     <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-teal-200/20 to-emerald-300/15 rounded-full blur-xl pointer-events-none" />
-                    {/* Shimmer */}
                     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
                     <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-emerald-500 to-teal-500" />
 
-                    {/* Header */}
                     <div className="relative flex items-center gap-4 mb-8">
                         <div className="relative w-16 h-16">
                             <div className="absolute inset-0 rounded-full bg-emerald-200 blur-lg opacity-35" />
@@ -58,7 +55,6 @@ export default async function GuidelinesPage({
                         </div>
                     </div>
 
-                    {/* Content Placeholder */}
                     <div className="prose prose-lg max-w-none">
                         <div className="bg-emerald-50 border-l-4 border-emerald-500 p-6 rounded-r-xl mb-6">
                             <h3 className="text-emerald-800 font-bold mb-2">
@@ -82,7 +78,6 @@ export default async function GuidelinesPage({
                         </ol>
                     </div>
 
-                    {/* Back Button */}
                     <div className="mt-8 pt-6 border-t border-gray-200">
                         <Link
                             href={startHref}
