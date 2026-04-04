@@ -37,7 +37,7 @@ export default async function Home() {
                 <div className="flex justify-end lg:hidden w-full mb-6 animate-fade-in-down">
                     <Link
                         href="/signin"
-                        className="inline-flex items-center justify-center bg-white text-emerald-700 font-bold rounded-full border-2 border-emerald-400 hover:border-emerald-500 hover:bg-emerald-50 transition-all duration-300 active:scale-95 w-32 h-10 sm:w-40 sm:h-12 text-sm sm:text-base shadow-md"
+                        className="inline-flex items-center justify-center bg-white text-emerald-700 font-bold rounded-full border-2 border-emerald-400 hover:border-emerald-500 hover:bg-emerald-50 transition-base duration-300 active:scale-95 w-32 h-10 sm:w-40 sm:h-12 text-sm sm:text-base shadow-md"
                     >
                         เข้าสู่ระบบ
                     </Link>
@@ -47,7 +47,7 @@ export default async function Home() {
                 <div className="hidden lg:block absolute z-30 lg:top-[120px] xl:top-[152px] lg:right-[60px] xl:right-[77px] animate-fade-in-down">
                     <Link
                         href="/signin"
-                        className="inline-flex items-center justify-center bg-white text-emerald-700 font-bold rounded-full border-2 border-emerald-400 hover:border-emerald-500 hover:bg-emerald-50 transition-all duration-300 hover:-translate-y-1 lg:w-[180px] lg:h-[60px] xl:w-[232px] xl:h-[73px] lg:text-base xl:text-[1.125rem]"
+                        className="inline-flex items-center justify-center bg-white text-emerald-700 font-bold rounded-full border-2 border-emerald-400 hover:border-emerald-500 hover:bg-emerald-50 transition-base duration-300 hover:-translate-y-1 lg:w-[180px] lg:h-[60px] xl:w-[232px] xl:h-[73px] lg:text-base xl:text-[1.125rem]"
                         style={{
                             filter: "drop-shadow(0px 4px 10px rgba(0, 0, 0, 0.5))",
                         }}

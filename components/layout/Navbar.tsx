@@ -63,7 +63,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
                         <Link
                             key={link.href}
                             href={link.href}
-                            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold transition-base duration-300 ${
                                 isActive(link.href)
                                     ? "bg-white/25 text-white shadow-sm"
                                     : "text-white/80 hover:text-white hover:bg-white/15"
@@ -111,7 +111,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
 
             {/* Mobile Menu - Smooth slide animation */}
             <div
-                className={`md:hidden fixed top-[80px] left-0 right-0 z-60 transition-all duration-300 ease-out transform origin-top ${
+                className={`md:hidden fixed top-[80px] left-0 right-0 z-60 transition-base duration-300 ease-out transform origin-top ${
                     isMobileMenuOpen
                         ? "opacity-100 translate-y-0 scale-y-100 pointer-events-auto"
                         : "opacity-0 -translate-y-2 scale-y-95 pointer-events-none"
@@ -124,7 +124,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-base font-semibold transition-all duration-200 hover:translate-x-1 ${
+                                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-base font-semibold transition-base duration-200 hover:translate-x-1 ${
                                     isActive(link.href)
                                         ? "bg-white/25 text-white"
                                         : "text-white/80 hover:text-white hover:bg-white/15"
@@ -140,7 +140,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
                             </Link>
                         ))}
                         <div
-                            className="pt-2 mt-2 border-t border-white/20 transition-all duration-200"
+                            className="pt-2 mt-2 border-t border-white/20 transition-base duration-200"
                             style={{
                                 transitionDelay: isMobileMenuOpen
                                     ? `${navLinks.length * 50}ms`

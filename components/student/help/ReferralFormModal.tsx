@@ -105,16 +105,23 @@ export function ReferralFormModal({
     const modalContent = (
         <div
             className="fixed inset-0 z-9999 flex items-center justify-center overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm"
+            style={{ overscrollBehavior: "contain" }}
             onClick={onClose}
         >
             <div
                 className="my-4 flex max-h-[92vh] w-full max-w-lg animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="referralform-modal-title"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
                     <div className="flex items-start justify-between gap-3">
                         <div>
-                            <h3 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+                            <h3
+                                id="referralform-modal-title"
+                                className="flex items-center gap-3 text-2xl font-bold text-gray-900"
+                            >
                                 <Hospital className="w-6 h-6 text-emerald-600" />
                                 ส่งต่อหรือติดตาม
                             </h3>
@@ -153,7 +160,7 @@ export function ReferralFormModal({
 
                         {/* Refer to Hospital */}
                         <label
-                            className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                            className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-base ${
                                 selectedOption === "refer"
                                     ? "border-emerald-400 bg-emerald-50 shadow-md"
                                     : "border-gray-200 bg-gray-50 hover:border-gray-300"
@@ -199,20 +206,22 @@ export function ReferralFormModal({
                                 <input
                                     id="hospitalName"
                                     type="text"
+                                    name="hospitalName"
+                                    autoComplete="organization"
                                     value={hospitalName}
                                     onChange={(e) =>
                                         setHospitalName(e.target.value)
                                     }
                                     placeholder="เช่น โรงพยาบาลศิริราช"
                                     maxLength={200}
-                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-gray-800 placeholder:text-gray-400"
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-base text-gray-800 placeholder:text-gray-400"
                                 />
                             </div>
                         )}
 
                         {/* Follow Up */}
                         <label
-                            className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                            className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-base ${
                                 selectedOption === "follow_up"
                                     ? "border-blue-400 bg-blue-50 shadow-md"
                                     : "border-gray-200 bg-gray-50 hover:border-gray-300"
@@ -267,7 +276,7 @@ export function ReferralFormModal({
                             {isSubmitting ? (
                                 <>
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                    กำลังบันทึก...
+                                    กำลังบันทึก…
                                 </>
                             ) : (
                                 <>

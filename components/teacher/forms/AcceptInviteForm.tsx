@@ -107,7 +107,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                     <input
                         {...register("password")}
                         type="password"
-                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all placeholder:text-gray-400 hover:border-emerald-300"
+                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-base placeholder:text-gray-400 hover:border-emerald-300"
                         placeholder="อย่างน้อย 6 ตัวอักษร"
                     />
                     {errors.password && (
@@ -124,7 +124,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                     <input
                         {...register("confirmPassword")}
                         type="password"
-                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all placeholder:text-gray-400 hover:border-emerald-300"
+                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-base placeholder:text-gray-400 hover:border-emerald-300"
                         placeholder="กรอกรหัสผ่านอีกครั้ง"
                     />
                     {errors.confirmPassword && (
@@ -137,12 +137,12 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3.5 px-4 bg-[#0BD0D9] text-white font-bold rounded-xl hover:bg-[#09B8C0] disabled:opacity-50 transition-all duration-200 shadow-sm"
+                    className="w-full py-3.5 px-4 bg-[#0BD0D9] text-white font-bold rounded-xl hover:bg-[#09B8C0] disabled:opacity-50 transition-base duration-200 shadow-sm"
                 >
                     {isLoading ? (
                         <span className="flex items-center justify-center gap-2">
                             <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                            กำลังลงทะเบียน...
+                            กำลังลงทะเบียน…
                         </span>
                     ) : (
                         "ลงทะเบียนเข้าร่วมโครงการ"

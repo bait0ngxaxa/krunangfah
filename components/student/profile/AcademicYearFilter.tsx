@@ -76,14 +76,16 @@ export function AcademicYearFilter({
                     htmlFor="year-filter"
                     className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-gray-700"
                 >
-                    <CalendarDays className="h-4 w-4 text-emerald-600" />
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-600 shadow-sm">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                    </span>
                     ปีการศึกษา:
                 </label>
                 <select
                     id="year-filter"
                     value={currentYearId || "all"}
                     onChange={(e) => handleYearChange(e.target.value)}
-                    className="w-full min-w-0 truncate rounded-xl border border-emerald-200 bg-white px-4 py-2.5 shadow-sm outline-none transition-all hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:flex-1"
+                    className="w-full min-w-0 truncate rounded-xl border border-emerald-200 bg-white px-4 py-2.5 shadow-sm outline-none transition-base hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:flex-1"
                 >
                     <option value="all">ทุกปีการศึกษา</option>
                     {uniqueYears.length > 1 &&

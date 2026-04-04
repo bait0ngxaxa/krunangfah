@@ -21,7 +21,7 @@ const PHQTrendChart = dynamic(
     {
         loading: () => (
             <div className="h-[300px] bg-gray-100 rounded-2xl animate-pulse flex items-center justify-center text-gray-400">
-                กำลังโหลดกราฟ...
+                กำลังโหลดกราฟ…
             </div>
         ),
     },
@@ -172,8 +172,11 @@ async function StudentDetailContent({
         {
             id: "phq-results",
             label: (
-                <span className="flex items-center gap-1.5">
-                    <BarChart3 className="w-4 h-4" /> ผลการคัดกรอง
+                <span className="flex items-center gap-2">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm">
+                        <BarChart3 className="w-3.5 h-3.5" />
+                    </span>
+                    ผลการคัดกรอง
                 </span>
             ),
             content: phqResultsTab,
@@ -181,8 +184,11 @@ async function StudentDetailContent({
         {
             id: "activities",
             label: (
-                <span className="flex items-center gap-1.5">
-                    <Target className="w-4 h-4" /> กิจกรรมและบันทึกการพูดคุย
+                <span className="flex items-center gap-2">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm">
+                        <Target className="w-3.5 h-3.5" />
+                    </span>
+                    กิจกรรมและบันทึกการพูดคุย
                 </span>
             ),
             content: activitiesTab,
@@ -190,8 +196,11 @@ async function StudentDetailContent({
         {
             id: "home-visits",
             label: (
-                <span className="flex items-center gap-1.5">
-                    <Home className="w-4 h-4" /> เยี่ยมบ้าน
+                <span className="flex items-center gap-2">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm">
+                        <Home className="w-3.5 h-3.5" />
+                    </span>
+                    เยี่ยมบ้าน
                 </span>
             ),
             content: homeVisitsTab,
@@ -221,7 +230,7 @@ async function StudentDetailContent({
                 />
             )}
 
-            <Tabs tabs={tabs} defaultTab="phq-results" />
+            <Tabs tabs={tabs} defaultTab="phq-results" syncWithUrl />
         </div>
     );
 }

@@ -22,7 +22,7 @@ export function PasswordFields({ register, errors }: PasswordFieldsProps) {
                     type="password"
                     id="currentPassword"
                     autoComplete="current-password"
-                    className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 transition-all outline-none"
+                    className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 transition-base outline-none"
                     placeholder="กรอกรหัสผ่านปัจจุบัน"
                 />
                 {errors.currentPassword && (
@@ -48,7 +48,7 @@ export function PasswordFields({ register, errors }: PasswordFieldsProps) {
                     type="password"
                     id="newPassword"
                     autoComplete="new-password"
-                    className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 transition-all outline-none"
+                    className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 transition-base outline-none"
                     placeholder="กรอกรหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)"
                 />
                 {errors.newPassword && (
@@ -74,7 +74,7 @@ export function PasswordFields({ register, errors }: PasswordFieldsProps) {
                     type="password"
                     id="confirmPassword"
                     autoComplete="new-password"
-                    className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 transition-all outline-none"
+                    className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 transition-base outline-none"
                     placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
                 />
                 {errors.confirmPassword && (

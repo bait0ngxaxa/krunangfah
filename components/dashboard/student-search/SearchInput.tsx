@@ -21,7 +21,7 @@ export function SearchInput({
                 value={query}
                 onChange={(e) => onQueryChange(e.target.value)}
                 placeholder="พิมพ์ชื่อ, นามสกุล หรือรหัสนักเรียน..."
-                className="w-full pl-12 pr-12 py-3.5 bg-white/60 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 outline-none transition-all text-sm text-gray-800 placeholder:text-gray-400 shadow-sm hover:shadow-md hover:border-emerald-200 backdrop-blur-sm"
+                className="w-full pl-12 pr-12 py-3.5 bg-white/60 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 outline-none transition-base text-sm text-gray-800 placeholder:text-gray-400 shadow-sm hover:shadow-md hover:border-emerald-200 backdrop-blur-sm"
             />
             {isSearching ? (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -31,7 +31,7 @@ export function SearchInput({
                 query && (
                     <button
                         onClick={() => onQueryChange("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-full transition-all"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-full transition-base"
                     >
                         <span className="sr-only">Clear</span>
                         <X className="w-4 h-4" />

@@ -103,7 +103,7 @@ export function StudentFilterBar({
                     <button
                         type="button"
                         onClick={() => onRiskFilterChange("all")}
-                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all duration-200 cursor-pointer shadow-xs ${
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-base duration-200 cursor-pointer shadow-xs ${
                             isAllSelected
                                 ? "bg-slate-800 text-white border-slate-700 ring-1 ring-slate-600"
                                 : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
@@ -126,7 +126,7 @@ export function StudentFilterBar({
                                 key={level}
                                 type="button"
                                 onClick={() => onRiskFilterChange(level)}
-                                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all duration-200 cursor-pointer shadow-xs ${
+                                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-base duration-200 cursor-pointer shadow-xs ${
                                     isActive ? colors.active : colors.inactive
                                 }`}
                             >
@@ -151,7 +151,7 @@ export function StudentFilterBar({
                         <button
                             type="button"
                             onClick={onReferredToggle}
-                            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all duration-200 cursor-pointer shadow-xs ${
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-base duration-200 cursor-pointer shadow-xs ${
                                 showReferredOnly
                                     ? "bg-purple-100 text-purple-700 border-purple-300 ring-1 ring-purple-200"
                                     : "bg-white text-slate-600 border-slate-200 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-600"

@@ -9,7 +9,7 @@ interface ActivityCardProps {
 
 export function ActivityCard({ activity, index, config }: ActivityCardProps) {
     return (
-        <div className="group relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/90 p-5 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.4)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_42px_-24px_rgba(15,23,42,0.48)] sm:p-8">
+        <div className="group relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/90 p-5 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.4)] transition-base duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_42px_-24px_rgba(15,23,42,0.48)] sm:p-8">
             <div className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-emerald-100/30 blur-2xl" />
             <div className="flex items-center gap-6 mb-8">
                 <div
@@ -35,7 +35,7 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                 {activity.worksheets.map((worksheet, wIndex) => (
                     <div
                         key={wIndex}
-                        className="group relative h-64 w-48 shrink-0 overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-md transition-all duration-300 hover:rotate-1 hover:scale-105 hover:shadow-xl"
+                        className="group relative h-64 w-48 shrink-0 overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-md transition-base duration-300 hover:rotate-1 hover:scale-105 hover:shadow-xl"
                     >
                         <Image
                             src={worksheet}

@@ -55,7 +55,7 @@ export function ActionButtons({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <Link
                 href={`/students/${studentId}/help/guidelines${phqResultId ? `?phqResultId=${phqResultId}` : ""}`}
-                className="group flex items-center justify-center gap-3 rounded-2xl bg-emerald-500 px-6 py-4 font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-lg"
+                className="group flex items-center justify-center gap-3 rounded-2xl bg-emerald-500 px-6 py-4 font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-lg"
             >
                 <BookOpen className="w-6 h-6 group-hover:scale-110 transition-transform" />
                 <span className="text-lg">หลักการใช้ใบงาน</span>
@@ -65,7 +65,7 @@ export function ActionButtons({
             <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-cyan-500 px-6 py-4 font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-lg"
+                    className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-cyan-500 px-6 py-4 font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-lg"
                 >
                     <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
                     <span className="text-lg">ดาวน์โหลดใบงาน</span>

@@ -39,13 +39,13 @@ export default function GlobalError({
                         <div className="flex gap-3 justify-center">
                             <button
                                 onClick={reset}
-                                className="px-6 py-3 bg-linear-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg font-medium"
+                                className="px-6 py-3 bg-linear-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-base shadow-md hover:shadow-lg font-medium"
                             >
                                 ลองใหม่อีกครั้ง
                             </button>
                             <Link
                                 href="/"
-                                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium"
+                                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-base font-medium"
                             >
                                 กลับหน้าหลัก
                             </Link>

@@ -48,15 +48,17 @@ export function HomeVisitCard({
     };
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-base hover:shadow-md">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-200 bg-slate-50/90 px-5 py-3">
                 <div className="flex items-center gap-3">
                     <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">
                         ครั้งที่ {visit.visitNumber}
                     </span>
-                    <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-                        <Calendar className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm text-gray-600 font-medium flex items-center gap-2">
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-500 shadow-sm">
+                            <Calendar className="w-3.5 h-3.5" />
+                        </span>
                         {formatDate(visit.visitDate)}
                     </span>
                 </div>
@@ -79,7 +81,9 @@ export function HomeVisitCard({
             <div className="p-5 space-y-4">
                 {/* Teacher info */}
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <User className="w-4 h-4 text-emerald-500" />
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-500 shadow-sm">
+                        <User className="w-3.5 h-3.5" />
+                    </span>
                     <span className="font-medium">{visit.teacherName}</span>
                     <span className="text-gray-400">({visit.teacherRole})</span>
                 </div>
@@ -97,7 +101,7 @@ export function HomeVisitCard({
                         {visit.photos.map((photo: HomeVisitPhotoData, index: number) => (
                             <div
                                 key={photo.id}
-                                className="relative aspect-square rounded-xl overflow-hidden border border-emerald-100 cursor-pointer hover:ring-2 hover:ring-emerald-300 transition-all"
+                                className="relative aspect-square rounded-xl overflow-hidden border border-emerald-100 cursor-pointer hover:ring-2 hover:ring-emerald-300 transition-base"
                                 onClick={() => setViewerIndex(index)}
                             >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -113,7 +117,9 @@ export function HomeVisitCard({
 
                 {visit.photos.length === 0 && (
                     <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <ImageIcon className="w-4 h-4" />
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm">
+                            <ImageIcon className="w-3.5 h-3.5" />
+                        </span>
                         ไม่มีรูปภาพ
                     </div>
                 )}
@@ -121,7 +127,9 @@ export function HomeVisitCard({
                 {/* Next scheduled date */}
                 {visit.nextScheduledDate && (
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
-                        <CalendarClock className="w-4 h-4 text-amber-600" />
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-amber-200 bg-white text-amber-600 shadow-sm">
+                            <CalendarClock className="w-3.5 h-3.5" />
+                        </span>
                         <span className="text-sm font-medium text-amber-700">
                             นัดครั้งถัดไป: {formatDate(visit.nextScheduledDate)}
                         </span>

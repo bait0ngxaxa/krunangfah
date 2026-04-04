@@ -13,7 +13,7 @@ interface ButtonVariantOptions {
 }
 
 const BASE_BUTTON_CLASS =
-    "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0";
+    "inline-flex items-center justify-center gap-2 font-semibold transition-base duration-200 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0";
 
 function getVariantClass(variant: ButtonVariant): string {
     switch (variant) {

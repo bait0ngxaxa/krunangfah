@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { canAccessStudentByRole } from "@/lib/security/student-access";
 
 describe("canAccessStudentByRole", () => {

@@ -27,7 +27,7 @@ export function HomeVisitTab({
     };
 
     return (
-        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-all duration-300 hover:shadow-md md:p-8">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-base duration-300 hover:shadow-md md:p-8">
             {/* Corner decoration */}
             <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-100/45 blur-3xl" />
 

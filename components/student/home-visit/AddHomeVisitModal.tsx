@@ -92,17 +92,24 @@ export function AddHomeVisitModal({
     const modalContent = (
         <div
             className="fixed inset-0 z-9999 flex items-center justify-center overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm"
+            style={{ overscrollBehavior: "contain" }}
             onClick={onClose}
         >
             <div
                 className="my-4 flex max-h-[92vh] w-full max-w-2xl animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="homevisit-modal-title"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
                     <div className="flex items-start justify-between gap-3">
                         <div>
-                            <h3 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+                            <h3
+                                id="homevisit-modal-title"
+                                className="flex items-center gap-3 text-2xl font-bold text-gray-900"
+                            >
                                 {step === "form" ? (
                                     <>
                                         <Home className="w-6 h-6 text-emerald-600" />
@@ -159,6 +166,8 @@ export function AddHomeVisitModal({
                             <input
                                 type="date"
                                 id="visitDate"
+                                name="visitDate"
+                                autoComplete="off"
                                 required
                                 value={formData.visitDate}
                                 onChange={(e) =>
@@ -167,7 +176,7 @@ export function AddHomeVisitModal({
                                         visitDate: e.target.value,
                                     })
                                 }
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all outline-none font-medium"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-base outline-none font-medium"
                             />
                         </div>
 
@@ -182,9 +191,11 @@ export function AddHomeVisitModal({
                             </label>
                             <textarea
                                 id="description"
+                                name="description"
+                                autoComplete="off"
                                 required
                                 rows={4}
-                                placeholder="บันทึกรายละเอียดการเยี่ยมบ้าน สภาพแวดล้อม ข้อสังเกต..."
+                                placeholder="บันทึกรายละเอียดการเยี่ยมบ้าน สภาพแวดล้อม ข้อสังเกต…"
                                 value={formData.description}
                                 onChange={(e) =>
                                     setFormData({
@@ -192,7 +203,7 @@ export function AddHomeVisitModal({
                                         description: e.target.value,
                                     })
                                 }
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all resize-none outline-none font-medium"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-base resize-none outline-none font-medium"
                             />
                             <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                                 <Info className="w-4 h-4 text-gray-400 shrink-0" />
@@ -215,6 +226,8 @@ export function AddHomeVisitModal({
                             <input
                                 type="date"
                                 id="nextScheduledDate"
+                                name="nextScheduledDate"
+                                autoComplete="off"
                                 value={formData.nextScheduledDate}
                                 onChange={(e) =>
                                     setFormData({
@@ -222,7 +235,7 @@ export function AddHomeVisitModal({
                                         nextScheduledDate: e.target.value,
                                     })
                                 }
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all outline-none font-medium"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-base outline-none font-medium"
                             />
                         </div>
 
@@ -248,7 +261,7 @@ export function AddHomeVisitModal({
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin" />
-                                        กำลังบันทึก...
+                                        กำลังบันทึก…
                                     </>
                                 ) : (
                                     <>

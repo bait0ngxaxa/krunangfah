@@ -32,7 +32,7 @@ export function ToolsIntroTab() {
                 {HEALTHY_EMOTION_TOOLS.map((tool) => (
                     <div
                         key={tool.id}
-                        className={`bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 p-6 border-2 ${BORDER_STYLES[tool.color]} hover:-translate-y-1 relative group overflow-hidden flex flex-col`}
+                        className={`bg-white rounded-2xl shadow-sm hover:shadow-md transition-base duration-300 p-6 border-2 ${BORDER_STYLES[tool.color]} hover:-translate-y-1 relative group overflow-hidden flex flex-col`}
                     >
                         {/* Tool Header */}
                         <div className="flex flex-col items-center mb-4 relative z-10">

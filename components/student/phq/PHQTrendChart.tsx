@@ -114,14 +114,16 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
     );
 
     return (
-        <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-all duration-300 hover:shadow-[0_24px_44px_-24px_rgba(15,23,42,0.5)] md:p-8">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-base duration-300 hover:shadow-[0_24px_44px_-24px_rgba(15,23,42,0.5)] md:p-8">
             <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-emerald-200/35 blur-3xl" />
             <div className="pointer-events-none absolute -left-24 -bottom-20 h-56 w-56 rounded-full bg-cyan-200/20 blur-3xl" />
 
             <div className="relative z-10">
                 <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-                    <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-800">
-                        <TrendingUp className="h-6 w-6 text-[#0BD0D9]" />
+                    <h2 className="flex items-center gap-3 text-2xl font-bold text-gray-800">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200 bg-white text-[#0BD0D9] shadow-sm">
+                            <TrendingUp className="h-5 w-5" />
+                        </span>
                         กราฟแนวโน้มคะแนน PHQ-A
                     </h2>
                     <span
@@ -136,7 +138,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                         <p className="text-xs font-semibold text-gray-500">
                             คะแนนล่าสุด
                         </p>
-                        <p className="mt-1 text-2xl font-extrabold text-gray-900">
+                        <p className="mt-1 text-2xl font-extrabold text-gray-900 tabular-nums">
                             {latestScore}
                         </p>
                     </div>
@@ -145,7 +147,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                             เปลี่ยนจากครั้งก่อน
                         </p>
                         <p
-                            className={`mt-1 text-2xl font-extrabold ${
+                            className={`mt-1 text-2xl font-extrabold tabular-nums ${
                                 scoreDelta > 0
                                     ? "text-red-600"
                                     : scoreDelta < 0
@@ -160,7 +162,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                         <p className="text-xs font-semibold text-gray-500">
                             ค่าสูงสุดที่เคยได้
                         </p>
-                        <p className="mt-1 text-2xl font-extrabold text-gray-900">
+                        <p className="mt-1 text-2xl font-extrabold text-gray-900 tabular-nums">
                             {highestScore}
                         </p>
                     </div>
@@ -168,7 +170,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
 
                 <div className="rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm">
                     <div className="h-96 w-full">
-                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
+                        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={320}>
                             <LineChart
                                 data={chartData}
                                 margin={{
@@ -253,10 +255,14 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
 
             <div className="relative z-10 mt-4 rounded-2xl border border-gray-200 bg-white/75 p-4">
                 <p className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                    <Activity className="h-4 w-4 text-[#0BD0D9]" />
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-cyan-200 bg-white text-[#0BD0D9] shadow-sm">
+                        <Activity className="h-3.5 w-3.5" />
+                    </span>
                     คะแนนรวม 0-27 คะแนน
                     <span className="text-gray-300">|</span>
-                    <Clock3 className="h-4 w-4 text-[#0BD0D9]" />
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-cyan-200 bg-white text-[#0BD0D9] shadow-sm">
+                        <Clock3 className="h-3.5 w-3.5" />
+                    </span>
                     แสดงแนวโน้มจากเก่าสุด → ใหม่สุด
                 </p>
             </div>

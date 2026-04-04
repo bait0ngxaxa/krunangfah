@@ -56,15 +56,16 @@ export function HomeVisitPhotoViewer({
 
     const content = (
         <div
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-9999"
+            className="fixed inset-0 z-9999 flex items-center justify-center overscroll-contain bg-black/90 backdrop-blur-sm"
             onClick={onClose}
         >
             {/* Close button */}
             <button
                 onClick={onClose}
-                className="absolute top-4 right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors z-10"
+                aria-label="ปิดตัวแสดงรูปภาพ"
+                className="absolute top-4 right-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/45 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
             >
-                <X className="w-6 h-6 text-white" />
+                <X className="w-5 h-5" />
             </button>
 
             {/* Counter */}
@@ -79,9 +80,10 @@ export function HomeVisitPhotoViewer({
                         e.stopPropagation();
                         setCurrentIndex((prev) => prev - 1);
                     }}
-                    className="absolute left-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+                    aria-label="รูปก่อนหน้า"
+                    className="absolute left-4 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/45 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
                 >
-                    <ChevronLeft className="w-8 h-8 text-white" />
+                    <ChevronLeft className="w-7 h-7" />
                 </button>
             )}
 
@@ -91,9 +93,10 @@ export function HomeVisitPhotoViewer({
                         e.stopPropagation();
                         setCurrentIndex((prev) => prev + 1);
                     }}
-                    className="absolute right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+                    aria-label="รูปถัดไป"
+                    className="absolute right-4 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/45 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
                 >
-                    <ChevronRight className="w-8 h-8 text-white" />
+                    <ChevronRight className="w-7 h-7" />
                 </button>
             )}
 

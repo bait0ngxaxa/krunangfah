@@ -26,8 +26,8 @@ export function ClassGroupList({
         <div className="p-4 bg-gray-50/50 rounded-2xl border-2 border-gray-100">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-gray-400 flex items-center justify-center">
-                        <LayoutGrid className="w-3.5 h-3.5 text-white" />
+                    <div className="w-7 h-7 rounded-lg bg-white border border-gray-400 flex items-center justify-center">
+                        <LayoutGrid className="w-3.5 h-3.5 text-gray-500" />
                     </div>
                     <h3 className="text-sm font-bold text-gray-700">
                         ห้องเรียนที่มีอยู่แล้ว

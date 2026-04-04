@@ -14,8 +14,8 @@ export function BulkClassAdder({
     return (
         <div className="p-4 bg-cyan-50/40 rounded-2xl border-2 border-cyan-100">
             <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-cyan-500 flex items-center justify-center">
-                    <Zap className="w-3.5 h-3.5 text-white" />
+                <div className="w-7 h-7 rounded-lg bg-white border border-cyan-500 flex items-center justify-center">
+                    <Zap className="w-3.5 h-3.5 text-cyan-500" />
                 </div>
                 <div>
                     <h3 className="text-sm font-bold text-gray-700">

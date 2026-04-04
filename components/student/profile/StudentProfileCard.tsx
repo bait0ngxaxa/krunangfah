@@ -47,7 +47,7 @@ export function StudentProfileCard({
         : "bg-[#0BD0D9]";
 
     return (
-        <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 sm:p-7 md:p-8 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-all duration-300 hover:shadow-[0_24px_44px_-24px_rgba(15,23,42,0.5)]">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 sm:p-7 md:p-8 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-base duration-300 hover:shadow-[0_24px_44px_-24px_rgba(15,23,42,0.5)]">
             <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-cyan-200/25 blur-3xl" />
             <div className="relative flex flex-col gap-7 md:flex-row md:items-start md:justify-between z-10">
@@ -66,24 +66,32 @@ export function StudentProfileCard({
                         </h1>
                         <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-gray-500 font-medium">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-emerald-200 bg-emerald-50/70 text-emerald-700 shadow-sm">
-                                <School className="w-3.5 h-3.5" />
+                                <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-emerald-200 bg-white">
+                                    <School className="w-3 h-3" />
+                                </span>
                                 ห้อง {student.class}
                             </span>
                             {student.gender && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-purple-200 bg-purple-50/70 text-purple-700 shadow-sm">
-                                    <User className="w-3.5 h-3.5" />
+                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-purple-200 bg-white">
+                                        <User className="w-3 h-3" />
+                                    </span>
                                     {student.gender === "MALE" ? "ชาย" : "หญิง"}
                                 </span>
                             )}
                             {student.age && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-blue-200 bg-blue-50/70 text-blue-700 shadow-sm">
-                                    <Cake className="w-3.5 h-3.5" />
+                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-blue-200 bg-white">
+                                        <Cake className="w-3 h-3" />
+                                    </span>
                                     อายุ {student.age} ปี
                                 </span>
                             )}
                             {student.studentId && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-gray-200 bg-white/90 text-gray-700 shadow-sm">
-                                    <Hash className="w-3.5 h-3.5" />
+                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-gray-200 bg-white">
+                                        <Hash className="w-3 h-3" />
+                                    </span>
                                     รหัส {student.studentId}
                                 </span>
                             )}
@@ -152,7 +160,9 @@ export function StudentProfileCard({
 
             {!latestResult && (
                 <div className="mt-8 p-6 bg-emerald-50/50 rounded-2xl border-2 border-dashed border-emerald-200 text-center text-gray-500 flex flex-col items-center gap-2">
-                    <FileText className="w-8 h-8 text-gray-400" />
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-300 bg-white text-gray-500 shadow-sm">
+                        <FileText className="w-6 h-6" />
+                    </span>
                     <p className="font-medium">ยังไม่มีผลการคัดกรอง PHQ-A</p>
                 </div>
             )}

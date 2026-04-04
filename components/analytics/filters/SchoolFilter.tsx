@@ -39,7 +39,7 @@ export function SchoolFilter({
                     id="school-filter"
                     value={selectedSchoolId}
                     onChange={(e) => onSchoolChange(e.target.value)}
-                    className="w-full min-w-0 cursor-pointer truncate rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 font-medium text-slate-600 outline-none transition-all hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 sm:flex-1"
+                    className="w-full min-w-0 cursor-pointer truncate rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 font-medium text-slate-600 outline-none transition-base hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 sm:flex-1"
                 >
                     <option value="all">ทุกโรงเรียน</option>
                     {schools.map((school) => (

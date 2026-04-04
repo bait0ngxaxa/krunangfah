@@ -1,4 +1,4 @@
-﻿import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import { join, resolve, normalize } from "path";
 import { existsSync } from "fs";
@@ -82,8 +82,11 @@ export async function GET(
             return new NextResponse("Forbidden", { status: 403 });
         }
 
+        // Deny-by-default: only serve folders with explicit access checks
+        const folder = path[0];
+
         // Verify file ownership for home-visits
-        if (path[0] === "home-visits") {
+        if (folder === "home-visits") {
             const fileUrl = `/api/uploads/${path.join("/")}`;
 
             const photo = await prisma.homeVisitPhoto.findFirst({
@@ -121,10 +124,9 @@ export async function GET(
             if (!canAccess) {
                 return new NextResponse("Forbidden", { status: 403 });
             }
-        }
 
         // Verify file ownership for worksheets
-        if (path[0] === "worksheets") {
+        } else if (folder === "worksheets") {
             const fileUrl = `/api/uploads/${path.join("/")}`;
 
             const worksheet = await prisma.worksheetUpload.findFirst({
@@ -162,6 +164,10 @@ export async function GET(
             if (!canAccess) {
                 return new NextResponse("Forbidden", { status: 403 });
             }
+
+        // Unknown folder — deny access to prevent over-exposure
+        } else {
+            return new NextResponse("Forbidden", { status: 403 });
         }
 
         // Read file

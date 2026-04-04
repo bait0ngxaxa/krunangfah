@@ -52,9 +52,9 @@ export function ActionCard({
     const styles = getVariantStyles(variant);
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-100 overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-100 overflow-hidden group hover:shadow-md transition-base duration-300">
             <div
-                className={`${styles.gradient} h-1 group-hover:h-1.5 transition-all duration-300`}
+                className={`${styles.gradient} h-1 group-hover:h-1.5 transition-base duration-300`}
             />
 
             <div className="p-5 sm:p-6">
@@ -79,7 +79,7 @@ export function ActionCard({
                 </div>
                 <Link
                     href={href}
-                    className={`flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl font-bold text-sm text-center transition-all duration-300 transform hover:-translate-y-0.5 ${styles.btn}`}
+                    className={`flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl font-bold text-sm text-center transition-base duration-300 transform hover:-translate-y-0.5 ${styles.btn}`}
                 >
                     {buttonText}
                     <ChevronRight className="w-4 h-4 opacity-70 group-hover:translate-x-0.5 transition-transform" />

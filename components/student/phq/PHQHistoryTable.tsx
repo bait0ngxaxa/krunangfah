@@ -34,10 +34,12 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
     }
 
     return (
-        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-all duration-300 md:p-8">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-base duration-300 md:p-8">
             <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-100/45 blur-3xl" />
-            <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-2">
-                <ClipboardList className="w-6 h-6 text-[#0BD0D9]" />
+            <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-3">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200 bg-white text-[#0BD0D9] shadow-sm">
+                    <ClipboardList className="w-5 h-5" />
+                </span>
                 <span className="text-gray-800">
                     ประวัติการคัดกรองสุขภาพจิต
                 </span>
@@ -80,7 +82,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                     key={result.id}
                                     className="transition-colors hover:bg-slate-50/80"
                                 >
-                                    <td className="py-4 px-6 font-medium text-gray-700">
+                                    <td className="py-4 px-6 font-medium text-gray-700 tabular-nums">
                                         {results.length - index}
                                     </td>
                                     <td className="py-4 px-6 text-gray-600">
@@ -98,7 +100,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                             result.academicYear.semester,
                                         )}
                                     </td>
-                                    <td className="py-4 px-6 text-center font-bold text-gray-800">
+                                    <td className="py-4 px-6 text-center font-bold text-gray-800 tabular-nums">
                                         {result.totalScore}
                                     </td>
                                     <td className="py-4 px-6">
@@ -148,7 +150,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                     return (
                         <div
                             key={result.id}
-                            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+                            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-base hover:shadow-md"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div>
@@ -195,7 +197,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                     <span className="text-sm text-gray-600 font-medium">
                                         คะแนนรวม
                                     </span>
-                                    <span className="font-bold text-gray-900 text-lg">
+                                    <span className="font-bold text-gray-900 text-lg tabular-nums">
                                         {result.totalScore}
                                     </span>
                                 </div>

@@ -103,7 +103,7 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
                         disabled={isSubmitting}
                         className="px-6 py-3 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer shadow-sm"
                     >
-                        {isSubmitting ? "กำลังสร้าง..." : "สร้าง Link"}
+                        {isSubmitting ? "กำลังสร้าง…" : "สร้าง Link"}
                     </button>
                 </div>
             </form>

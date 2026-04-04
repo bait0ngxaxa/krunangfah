@@ -59,7 +59,7 @@ export function DashboardActionList({
                         imageSrc="/image/dashboard/import.webp"
                         imageClassName="w-[85px] sm:w-[95px]"
                         actionButton={
-                            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0BD0D9] text-white text-[11px] sm:text-xs font-bold rounded-xl shadow-sm hover:brightness-95 transition-all">
+                            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0BD0D9] text-white text-[11px] sm:text-xs font-bold rounded-xl shadow-sm hover:brightness-95 transition-base">
                                 <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
                                 <span>Import Excel</span>
                             </div>
@@ -138,8 +138,8 @@ export function DashboardActionList({
                 <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-green-200/40 to-emerald-300/30 rounded-full blur-xl pointer-events-none" />
                 <div className="bg-linear-to-r from-emerald-400 via-green-400 to-emerald-500 px-5 py-3 flex items-center gap-2.5 relative">
                     <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
-                    <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-inner ring-1 ring-white/20">
-                        <Search className="w-4 h-4 text-white" />
+                    <div className="p-1.5 bg-white rounded-lg border border-emerald-200 shadow-inner ring-1 ring-white/20">
+                        <Search className="w-4 h-4 text-emerald-600" />
                     </div>
                     <h3 className="text-sm font-bold text-white tracking-wide">
                         ค้นหานักเรียน

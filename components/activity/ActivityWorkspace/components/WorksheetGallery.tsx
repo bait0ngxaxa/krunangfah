@@ -23,7 +23,7 @@ export function WorksheetGallery({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                 {worksheets.map((worksheet, wIndex) => (
                     <div key={wIndex} className="relative group">
-                        <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm transition-all transform group-hover:scale-[1.02] group-hover:shadow-md group-hover:rotate-1">
+                        <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm transition-base transform group-hover:scale-[1.02] group-hover:shadow-md group-hover:rotate-1">
                             <Image
                                 src={worksheet}
                                 alt={`${activityTitle} ใบงาน ${wIndex + 1}`}

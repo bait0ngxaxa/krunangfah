@@ -38,8 +38,8 @@ export function TeacherProfileCard({
             {/* Gradient Header */}
             <div className="bg-linear-to-r from-emerald-500 via-teal-500 to-emerald-600 px-5 py-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
-                        <User className="w-4 h-4 text-white" />
+                    <div className="p-1.5 bg-white rounded-lg border border-emerald-200 backdrop-blur-sm">
+                        <User className="w-4 h-4 text-emerald-600" />
                     </div>
                     <h3 className="text-sm font-bold text-white tracking-wide">
                         ข้อมูลส่วนตัว
@@ -128,7 +128,7 @@ function InfoTile({
 }) {
     return (
         <div
-            className={`bg-white/80 p-3 rounded-xl border ${borderColor} shadow-sm hover:shadow-md transition-all`}
+            className={`bg-white/80 p-3 rounded-xl border ${borderColor} shadow-sm hover:shadow-md transition-base`}
         >
             <div className="flex items-center gap-1.5 mb-1">
                 <span className={iconColor}>{icon}</span>

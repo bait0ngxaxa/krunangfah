@@ -11,8 +11,8 @@ export function SingleClassAdder({
     return (
         <div className="p-4 bg-white rounded-2xl border-2 border-gray-100">
             <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-[#0BD0D9] flex items-center justify-center">
-                    <Plus className="w-3.5 h-3.5 text-white" />
+                <div className="w-7 h-7 rounded-lg bg-white border border-[#0BD0D9] flex items-center justify-center">
+                    <Plus className="w-3.5 h-3.5 text-[#0BD0D9]" />
                 </div>
                 <h3 className="text-sm font-bold text-gray-700">
                     เพิ่มแบบกำหนดเอง

@@ -47,7 +47,7 @@ export function VideoUpskillTab() {
                 {videos.map((video) => (
                     <div
                         key={video.id}
-                        className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-2 border-gray-100 hover:-translate-y-1 flex flex-col"
+                        className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-base duration-300 overflow-hidden border-2 border-gray-100 hover:-translate-y-1 flex flex-col"
                     >
                         {/* Video Embed */}
                         <div className="aspect-video bg-gray-100 relative shrink-0">

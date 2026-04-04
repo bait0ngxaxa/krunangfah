@@ -137,7 +137,7 @@ export function RosterForm({
                                     shouldValidate: true,
                                 })
                             }
-                            className="w-full px-4 py-2 border border-violet-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-violet-100/50 focus:border-violet-300 bg-white shadow-sm text-black transition-all truncate"
+                            className="w-full px-4 py-2 border border-violet-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-violet-100/50 focus:border-violet-300 bg-white shadow-sm text-black transition-base truncate"
                         >
                             <option value="">เลือกห้องที่ปรึกษา *</option>
                             {schoolClasses.map((c) => (
@@ -201,7 +201,7 @@ export function RosterForm({
                                     {...register("projectRole")}
                                     type="radio"
                                     value={role.value}
-                                    className="peer h-4 w-4 cursor-pointer appearance-none rounded-full border-2 border-gray-300 shadow-sm transition-all checked:border-[#0BD0D9] checked:bg-[#0BD0D9] hover:border-[#0BD0D9]/50"
+                                    className="peer h-4 w-4 cursor-pointer appearance-none rounded-full border-2 border-gray-300 shadow-sm transition-base checked:border-[#0BD0D9] checked:bg-[#0BD0D9] hover:border-[#0BD0D9]/50"
                                 />
                                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform text-white opacity-0 peer-checked:opacity-100">
                                     <Check className="h-2 w-2" />
@@ -228,12 +228,12 @@ export function RosterForm({
                 {editingId ? (
                     <>
                         <Check className="w-4 h-4" />
-                        {isSubmitting ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+                        {isSubmitting ? "กำลังบันทึก…" : "บันทึกการแก้ไข"}
                     </>
                 ) : (
                     <>
                         <Plus className="w-4 h-4" />
-                        {isSubmitting ? "กำลังเพิ่ม..." : "เพิ่มครู"}
+                        {isSubmitting ? "กำลังเพิ่ม…" : "เพิ่มครู"}
                     </>
                 )}
             </button>

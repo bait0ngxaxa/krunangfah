@@ -34,7 +34,7 @@ export function PreviewModal({ file, onClose }: PreviewModalProps) {
                     </h3>
                     <button
                         onClick={onClose}
-                        className="rounded-full p-2.5 text-gray-500 transition-all duration-300 hover:rotate-90 hover:bg-gray-100 hover:text-gray-700"
+                        className="rounded-full p-2.5 text-gray-500 transition-base duration-300 hover:rotate-90 hover:bg-gray-100 hover:text-gray-700"
                     >
                         <X className="w-6 h-6" />
                     </button>

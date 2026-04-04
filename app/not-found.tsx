@@ -18,7 +18,7 @@ export default function NotFound() {
                 <div className="flex gap-3 justify-center">
                     <Link
                         href="/dashboard"
-                        className="px-6 py-3 bg-linear-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg font-medium"
+                        className="px-6 py-3 bg-linear-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-base shadow-md hover:shadow-lg font-medium"
                     >
                         กลับ Dashboard
                     </Link>

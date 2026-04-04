@@ -155,7 +155,7 @@ export function ImportActions({
                     {isLoading ? (
                         <>
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                            กำลังนำเข้า...
+                            กำลังนำเข้า…
                         </>
                     ) : (
                         <>

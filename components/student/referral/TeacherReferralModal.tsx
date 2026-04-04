@@ -110,17 +110,24 @@ export function TeacherReferralModal({
     const modalContent = (
         <div
             className="fixed inset-0 z-9999 flex items-center justify-center overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm"
+            style={{ overscrollBehavior: "contain" }}
             onClick={onClose}
         >
             <div
                 className="my-4 flex max-h-[92vh] w-full max-w-lg animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="referral-modal-title"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
                     <div className="flex items-start justify-between gap-3">
                         <div>
-                            <h3 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+                            <h3
+                                id="referral-modal-title"
+                                className="flex items-center gap-3 text-2xl font-bold text-gray-900"
+                            >
                                 <UserCheck className="w-6 h-6 text-emerald-600" />
                                 ส่งต่อนักเรียน
                             </h3>
@@ -160,7 +167,7 @@ export function TeacherReferralModal({
                         {isLoading ? (
                             <div className="flex items-center justify-center py-8 text-gray-400">
                                 <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                                กำลังโหลดรายชื่อครู...
+                                กำลังโหลดรายชื่อครู…
                             </div>
                         ) : teachers.length === 0 ? (
                             <div className="flex flex-col items-center py-8 text-gray-400">
@@ -174,7 +181,7 @@ export function TeacherReferralModal({
                                 {teachers.map((teacher) => (
                                     <label
                                         key={teacher.userId}
-                                        className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                        className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-base ${
                                             selectedTeacherId === teacher.userId
                                                 ? "border-[#0BD0D9] bg-cyan-50 shadow-md"
                                                 : "border-gray-200 bg-gray-50 hover:border-gray-300"
@@ -233,7 +240,7 @@ export function TeacherReferralModal({
                             {isSubmitting ? (
                                 <>
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                    กำลังส่งต่อ...
+                                    กำลังส่งต่อ…
                                 </>
                             ) : (
                                 <>

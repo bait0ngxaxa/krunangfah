@@ -37,7 +37,7 @@ export function ImportClient() {
     const handleSuccess = () => {
         setParsedData(null);
         toast.success("บันทึกข้อมูลสำเร็จ!", {
-            description: "กำลังกลับไปหน้า Dashboard...",
+            description: "กำลังกลับไปหน้า Dashboard…",
         });
         setTimeout(() => {
             router.push("/dashboard");

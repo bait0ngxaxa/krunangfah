@@ -84,7 +84,7 @@ export function UploadSection({
                     {currentProgress.worksheetUploads.map((upload) => (
                         <div
                             key={upload.id}
-                            className={`flex items-center justify-between bg-white p-3 rounded-xl border-2 ${uploadColors.itemBorder} hover:shadow-md transition-all group`}
+                            className={`flex items-center justify-between bg-white p-3 rounded-xl border-2 ${uploadColors.itemBorder} hover:shadow-md transition-base group`}
                         >
                             <div className="flex items-center gap-3 overflow-hidden">
                                 <FileText className="w-6 h-6 text-gray-500" />
@@ -100,7 +100,7 @@ export function UploadSection({
                                             name: upload.fileName,
                                         })
                                     }
-                                    className={`inline-flex items-center gap-2 px-4 py-2 ${uploadColors.button} text-white rounded-lg text-xs font-bold ${uploadColors.buttonHover} transition-all shadow-sm hover:shadow-md`}
+                                    className={`inline-flex items-center gap-2 px-4 py-2 ${uploadColors.button} text-white rounded-lg text-xs font-bold ${uploadColors.buttonHover} transition-base shadow-sm hover:shadow-md`}
                                 >
                                     <Eye className="w-4 h-4" />
                                     พรีวิว
@@ -115,7 +115,7 @@ export function UploadSection({
                                             onRemove(upload.id);
                                         }
                                     }}
-                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-500 transition-all hover:bg-red-200 hover:text-red-600"
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-500 transition-base hover:bg-red-200 hover:text-red-600"
                                     title="ลบไฟล์"
                                 >
                                     <X className="w-4 h-4" />
@@ -139,12 +139,12 @@ export function UploadSection({
                     <button
                         onClick={() => onFileSelect(currentProgress.id)}
                         disabled={uploading === currentProgress.id}
-                        className={`w-full py-3 ${uploadColors.button} text-white rounded-xl font-bold text-sm ${uploadColors.buttonHover} transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none`}
+                        className={`w-full py-3 ${uploadColors.button} text-white rounded-xl font-bold text-sm ${uploadColors.buttonHover} transition-base shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none`}
                     >
                         {uploading === currentProgress.id ? (
                             <>
                                 <Loader2 className="w-5 h-5 animate-spin" />
-                                <span>กำลังอัปโหลด...</span>
+                                <span>กำลังอัปโหลด…</span>
                             </>
                         ) : (
                             <>
@@ -175,7 +175,7 @@ export function UploadSection({
                     </p>
                     <button
                         onClick={onConfirmComplete}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 text-lg font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-md"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 text-lg font-bold text-white transition-base hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-md"
                     >
                         ยืนยันจบกิจกรรม
                         <ArrowRight className="w-5 h-5" />

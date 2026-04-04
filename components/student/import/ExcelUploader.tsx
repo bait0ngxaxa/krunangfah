@@ -84,7 +84,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                 onClick={() => fileInputRef.current?.click()}
                 className={`
                     border-2 border-dashed rounded-2xl p-6 sm:p-12 text-center cursor-pointer
-                    transition-all duration-300 transform
+                    transition-base duration-300 transform
                     ${
                         isDragging
                             ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg shadow-emerald-100"
@@ -104,13 +104,13 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                     <div className="flex flex-col items-center gap-4">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
                         <p className="text-gray-600 font-medium">
-                            กำลังอ่านไฟล์...
+                            กำลังอ่านไฟล์…
                         </p>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center gap-4">
                         <div
-                            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isDragging ? "bg-emerald-100 scale-110" : "bg-emerald-50"}`}
+                            className={`w-20 h-20 rounded-full flex items-center justify-center transition-base duration-300 ${isDragging ? "bg-emerald-100 scale-110" : "bg-emerald-50"}`}
                         >
                             <Upload
                                 className={`w-10 h-10 transition-colors ${isDragging ? "text-emerald-600" : "text-emerald-400"}`}
@@ -157,7 +157,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                 <a
                     href="/api/template"
                     download="phq-a-template.xlsx"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 border border-blue-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all text-sm font-bold whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 border border-blue-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-base text-sm font-bold whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5"
                 >
                     <Download className="w-5 h-5" />
                     ดาวน์โหลดไฟล์ตัวอย่าง

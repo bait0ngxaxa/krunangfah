@@ -29,10 +29,14 @@ export function ConfirmDialog({
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+            style={{ overscrollBehavior: "contain" }}
             onClick={onCancel}
         >
             <div
                 className="w-full max-w-sm animate-in fade-in zoom-in-95 duration-200 overflow-hidden rounded-2xl border border-white/60 bg-white/95 shadow-[0_24px_60px_-20px_rgba(15,23,42,0.65)] backdrop-blur-xl"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="confirm-dialog-title"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="border-b border-gray-200 bg-white px-6 py-5">
@@ -41,7 +45,10 @@ export function ConfirmDialog({
                             <AlertTriangle className="w-5 h-5 text-red-500" />
                         </div>
                         <div>
-                            <h3 className="text-base font-bold text-gray-800">
+                            <h3
+                                id="confirm-dialog-title"
+                                className="text-base font-bold text-gray-800"
+                            >
                                 {title}
                             </h3>
                             <p className="text-sm text-gray-500 mt-1">{message}</p>
@@ -71,7 +78,7 @@ export function ConfirmDialog({
                             {isLoading ? (
                                 <span className="flex items-center justify-center gap-2">
                                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/50 border-t-white" />
-                                    กำลังดำเนินการ...
+                                    กำลังดำเนินการ…
                                 </span>
                             ) : (
                                 confirmLabel

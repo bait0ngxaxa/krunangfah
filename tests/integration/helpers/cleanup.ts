@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Test Cleanup Helper
  *
  * Deletes all test data created during integration tests.

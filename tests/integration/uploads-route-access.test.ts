@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Integration Test: Upload Route Access Control
  *
  * Verifies /api/uploads/worksheets/* enforces advisory-class access

@@ -75,7 +75,7 @@ export function UserManagement({ initialData, schools }: UserManagementProps) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="ค้นหาด้วย email หรือชื่อ..."
-                    className="relative flex-1 min-w-0 px-4 py-2.5 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-all outline-none bg-white/70 backdrop-blur-sm hover:border-emerald-300 text-gray-600 font-medium placeholder:text-gray-400"
+                    className="relative flex-1 min-w-0 px-4 py-2.5 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-base outline-none bg-white/70 backdrop-blur-sm hover:border-emerald-300 text-gray-600 font-medium placeholder:text-gray-400"
                 />
             </div>
 

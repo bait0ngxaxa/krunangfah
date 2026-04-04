@@ -86,7 +86,7 @@ function ScoreInput({
             onFocus={handleFocus}
             onChange={handleChange}
             onBlur={handleBlur}
-            className="w-10 h-8 text-center text-sm font-mono border border-gray-200 rounded-lg bg-white/80 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition-all"
+            className="w-10 h-8 text-center text-sm font-mono border border-gray-200 rounded-lg bg-white/80 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition-base"
         />
     );
 }
@@ -192,7 +192,7 @@ export function StudentPreviewTable({
                                                     !student.scores.q9a,
                                                 )
                                             }
-                                            className={`w-8 h-8 rounded-lg border-2 text-sm font-bold transition-all ${
+                                            className={`w-8 h-8 rounded-lg border-2 text-sm font-bold transition-base ${
                                                 student.scores.q9a
                                                     ? "bg-red-100 border-red-400 text-red-600"
                                                     : "bg-gray-50 border-gray-200 text-gray-300 hover:border-gray-300"
@@ -212,7 +212,7 @@ export function StudentPreviewTable({
                                                     !student.scores.q9b,
                                                 )
                                             }
-                                            className={`w-8 h-8 rounded-lg border-2 text-sm font-bold transition-all ${
+                                            className={`w-8 h-8 rounded-lg border-2 text-sm font-bold transition-base ${
                                                 student.scores.q9b
                                                     ? "bg-red-100 border-red-400 text-red-600"
                                                     : "bg-gray-50 border-gray-200 text-gray-300 hover:border-gray-300"

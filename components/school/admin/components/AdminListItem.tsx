@@ -55,7 +55,7 @@ export function AdminListItem({
                         }`}
                     >
                         {isLoading
-                            ? "กำลังดำเนินการ..."
+                            ? "กำลังดำเนินการ…"
                             : isConfirming
                               ? "ยืนยันถอดสิทธิ์"
                               : admin.isPrimary

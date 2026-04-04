@@ -13,8 +13,8 @@ export function SchoolInfoStep({
     return (
         <div className="relative bg-white rounded-3xl border-2 border-gray-100 shadow-sm p-6 sm:p-8 overflow-hidden">
             <div className="flex items-center gap-3 mb-6 relative z-10">
-                <div className="w-10 h-10 rounded-2xl bg-[#0BD0D9] flex items-center justify-center shadow-md">
-                    <Building2 className="w-5 h-5 text-white stroke-[2.5]" />
+                <div className="w-10 h-10 rounded-2xl bg-white border-2 border-[#0BD0D9] flex items-center justify-center shadow-md">
+                    <Building2 className="w-5 h-5 text-[#0BD0D9] stroke-[2.5]" />
                 </div>
                 <div>
                     <h2 className="text-lg font-bold text-gray-800">
@@ -73,7 +73,7 @@ export function SchoolInfoStep({
                     disabled={isSubmitting}
                     className="w-full flex items-center justify-center gap-2 py-3 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                    {isSubmitting ? "กำลังบันทึก..." : "ถัดไป"}
+                    {isSubmitting ? "กำลังบันทึก…" : "ถัดไป"}
                     {!isSubmitting && <ArrowRight className="w-4 h-4" />}
                 </button>
             </form>

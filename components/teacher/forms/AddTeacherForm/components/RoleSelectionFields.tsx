@@ -18,7 +18,7 @@ export function RoleSelectionFields({
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                     ประเภทครู <span className="text-red-500">*</span>
                 </label>
-                <select className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-all hover:border-emerald-300">
+                <select className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-base hover:border-emerald-300">
                     <option value="">เลือกประเภทครู</option>
                     {USER_ROLES.map((role) => (
                         <option key={role.value} value={role.value}>
@@ -74,7 +74,7 @@ export function RoleSelectionFields({
                                     {...register("projectRole")}
                                     type="radio"
                                     value={role.value}
-                                    className="peer h-4 w-4 cursor-pointer appearance-none rounded-full border border-emerald-300 shadow-sm transition-all checked:border-emerald-500 checked:bg-emerald-500 hover:border-emerald-400"
+                                    className="peer h-4 w-4 cursor-pointer appearance-none rounded-full border border-emerald-300 shadow-sm transition-base checked:border-emerald-500 checked:bg-emerald-500 hover:border-emerald-400"
                                 />
                                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform text-white opacity-0 peer-checked:opacity-100">
                                     <Check className="h-2.5 w-2.5" />

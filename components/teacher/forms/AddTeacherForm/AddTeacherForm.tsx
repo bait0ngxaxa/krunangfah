@@ -104,7 +104,7 @@ export function AddTeacherForm({
                     <select
                         value={selectedRosterId}
                         onChange={(e) => onSelectRoster(e.target.value, roster)}
-                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-all hover:border-emerald-300 text-black"
+                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-base hover:border-emerald-300 text-black"
                     >
                         <option value="">— เลือกครู —</option>
                         {availableRoster.map((t) => (
@@ -231,7 +231,7 @@ export function AddTeacherForm({
                             <input
                                 {...register("email")}
                                 type="email"
-                                className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all text-black placeholder:text-gray-400 hover:border-emerald-300"
+                                className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-base text-black placeholder:text-gray-400 hover:border-emerald-300"
                                 placeholder="กรอกอีเมลสำหรับส่งคำเชิญ"
                             />
                             {errors.email && (
@@ -263,7 +263,7 @@ export function AddTeacherForm({
                     </label>
                     <select
                         {...register("academicYearId")}
-                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-all hover:border-emerald-300 text-black"
+                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-base hover:border-emerald-300 text-black"
                     >
                         <option value="">เลือกปีการศึกษา</option>
                         {academicYears.map((year) => (
@@ -306,7 +306,7 @@ export function AddTeacherForm({
                         {isLoading ? (
                             <span className="flex items-center justify-center gap-2">
                                 <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                                กำลังสร้างคำเชิญ...
+                                กำลังสร้างคำเชิญ…
                             </span>
                         ) : (
                             "สร้างลิงค์คำเชิญ"

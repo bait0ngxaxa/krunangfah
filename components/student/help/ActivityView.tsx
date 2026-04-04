@@ -63,7 +63,7 @@ export function ActivityView({
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
                             href={`/students/${studentId}/help/start?phqResultId=${phqResultId}`}
-                            className={`group flex items-center justify-center gap-3 rounded-2xl px-6 py-4 text-base font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-10 sm:text-xl ${config.bg}`}
+                            className={`group flex items-center justify-center gap-3 rounded-2xl px-6 py-4 text-base font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg sm:px-10 sm:text-xl ${config.bg}`}
                         >
                             <Rocket className="w-6 h-6 group-hover:scale-110 transition-transform" />
                             เริ่มทำกิจกรรม

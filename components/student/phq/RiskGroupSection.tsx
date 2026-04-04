@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 
@@ -39,7 +38,6 @@ export function RiskGroupSection({
     readOnly = false,
 }: RiskGroupSectionProps) {
     const config = getRiskLevelConfig(level);
-    const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
     const [scrolledToBottom, setScrolledToBottom] = useState(false);
 
@@ -111,23 +109,14 @@ export function RiskGroupSection({
                         {students.map((student, index) => (
                             <div
                                 key={student.id}
-                                className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3 ${config.hoverBg} cursor-pointer transition-all duration-200 group`}
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => router.push(`/students/${student.id}`)}
-                                onKeyDown={(event) => {
-                                    if (
-                                        event.key === "Enter" ||
-                                        event.key === " "
-                                    ) {
-                                        event.preventDefault();
-                                        router.push(`/students/${student.id}`);
-                                    }
-                                }}
+                                className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3 ${config.hoverBg} transition-base duration-200 group`}
                             >
-                                <div className="flex items-center gap-3 min-w-0">
+                                <Link
+                                    href={`/students/${student.id}`}
+                                    className="flex min-w-0 flex-1 items-center gap-3"
+                                >
                                     <span
-                                        className={`${config.badgeBg} ${config.badgeText} text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0`}
+                                        className={`${config.badgeBg} ${config.badgeText} text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0 tabular-nums`}
                                     >
                                         {index + 1}
                                     </span>
@@ -141,21 +130,21 @@ export function RiskGroupSection({
                                             ส่งต่อ
                                         </span>
                                     ) : null}
-                                </div>
+                                </Link>
 
                                 {!readOnly ? (
                                     <Link
                                         href={`/students/${student.id}/help`}
-                                        onClick={(event) => event.stopPropagation()}
-                                        className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm ${config.btnBase} ${config.btnHover} hover:shadow-md hover:-translate-y-px active:translate-y-0 transition-all duration-200 whitespace-nowrap`}
+                                        className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm ${config.btnBase} ${config.btnHover} hover:shadow-md hover:-translate-y-px active:translate-y-0 transition-base duration-200 whitespace-nowrap`}
                                     >
                                         {actionLabel}
                                         <svg
-                                            className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+                                            className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-base"
                                             fill="none"
                                             viewBox="0 0 24 24"
                                             stroke="currentColor"
                                             strokeWidth={2.5}
+                                            aria-hidden="true"
                                         >
                                             <path
                                                 strokeLinecap="round"

@@ -116,7 +116,7 @@ export default async function ConversationGuidelinesPage({
                     {/* Back Button */}
                     <Link
                         href={`/students/${studentId}/help`}
-                        className={`group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r py-4 text-center text-lg font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${config.gradient}`}
+                        className={`group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r py-4 text-center text-lg font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg ${config.gradient}`}
                     >
                         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                         กลับหน้าขั้นตอนการช่วยเหลือ

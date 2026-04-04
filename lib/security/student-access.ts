@@ -1,4 +1,4 @@
-﻿import type { UserRole } from "@/types/auth.types";
+import type { UserRole } from "@/types/auth.types";
 
 interface AccessActor {
     role: UserRole;

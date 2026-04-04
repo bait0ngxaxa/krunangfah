@@ -47,10 +47,10 @@ function StepCard({
     href,
     bgClass,
 }: StepCardProps) {
-    const buttonClasses = `group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${bgClass}`;
+    const buttonClasses = `group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-sm transition-base hover:-translate-y-0.5 hover:shadow-md ${bgClass}`;
 
     return (
-        <div className="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white/90 p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+        <div className="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white/90 p-6 shadow-sm transition-base hover:-translate-y-0.5 hover:shadow-md">
             <div className="pointer-events-none absolute -top-8 -right-8 h-20 w-20 rounded-full bg-slate-100/70 blur-2xl" />
             <div className="flex items-start gap-4">
                 {/* Step Number Badge */}

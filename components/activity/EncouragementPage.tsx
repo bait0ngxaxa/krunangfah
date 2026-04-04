@@ -123,7 +123,7 @@ export function EncouragementPage({
                     {mainMessages.map((message, index) => (
                         <p
                             key={index}
-                            className={`text-2xl md:text-4xl font-bold text-gray-800 transition-all duration-1000 leading-normal ${
+                            className={`text-2xl md:text-4xl font-bold text-gray-800 transition-base duration-1000 leading-normal ${
                                 visibleLines.includes(index)
                                     ? "opacity-100 translate-y-0 blur-0"
                                     : "opacity-0 translate-y-8 blur-sm"
@@ -136,7 +136,7 @@ export function EncouragementPage({
 
                 {/* Tips Section */}
                 <div
-                    className={`mx-4 mb-12 transform rounded-3xl border border-gray-200/80 bg-white/90 p-8 shadow-sm transition-all duration-1000 hover:scale-[1.02] md:p-10 ${
+                    className={`mx-4 mb-12 transform rounded-3xl border border-gray-200/80 bg-white/90 p-8 shadow-sm transition-base duration-1000 hover:scale-[1.02] md:p-10 ${
                         showTips
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"
@@ -165,7 +165,7 @@ export function EncouragementPage({
                         {tipMessages.map((message, index) => (
                             <div
                                 key={index}
-                                className={`flex gap-4 items-start transition-all duration-1000 ${
+                                className={`flex gap-4 items-start transition-base duration-1000 ${
                                     visibleLines.includes(
                                         mainMessages.length + index,
                                     )
@@ -185,7 +185,7 @@ export function EncouragementPage({
                 {/* Continue Button */}
                 <button
                     onClick={handleContinue}
-                    className={`group relative inline-flex items-center gap-3 overflow-hidden rounded-full px-10 py-5 text-xl font-bold text-white shadow-sm transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-md ${continueButtonClass} ${
+                    className={`group relative inline-flex items-center gap-3 overflow-hidden rounded-full px-10 py-5 text-xl font-bold text-white shadow-sm transition-base duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-md ${continueButtonClass} ${
                         showButton
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"

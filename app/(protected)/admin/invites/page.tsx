@@ -29,8 +29,8 @@ export default async function AdminInvitesPage() {
 
                     <div className="relative flex items-center gap-4">
                         <div className="relative shrink-0">
-                            <div className="w-12 h-12 rounded-2xl bg-[#0BD0D9] flex items-center justify-center shadow-md group-hover:-translate-y-1 transition-transform duration-300">
-                                <Link2 className="w-6 h-6 text-white stroke-[2.5]" />
+                            <div className="w-12 h-12 rounded-2xl bg-white border-2 border-[#0BD0D9] flex items-center justify-center shadow-md group-hover:-translate-y-1 transition-transform duration-300">
+                                <Link2 className="w-6 h-6 text-[#0BD0D9] stroke-[2.5]" />
                             </div>
                         </div>
 

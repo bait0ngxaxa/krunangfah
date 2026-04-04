@@ -47,7 +47,7 @@ export function InviteRegisterForm({
             return;
         }
 
-        toast.success("สร้างบัญชีสำเร็จ กำลังเข้าสู่ระบบ...");
+        toast.success("สร้างบัญชีสำเร็จ กำลังเข้าสู่ระบบ…");
 
         const signInResult = await signIn("credentials", {
             email,
@@ -99,7 +99,7 @@ export function InviteRegisterForm({
                     id="password"
                     autoComplete="new-password"
                     disabled={isLoading}
-                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-gray-800 placeholder:text-gray-400"
+                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
                     placeholder="อย่างน้อย 6 ตัวอักษร"
                 />
                 {errors.password && (
@@ -123,7 +123,7 @@ export function InviteRegisterForm({
                     id="confirmPassword"
                     autoComplete="new-password"
                     disabled={isLoading}
-                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-gray-800 placeholder:text-gray-400"
+                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
                     placeholder="••••••••"
                 />
                 {errors.confirmPassword && (
@@ -145,9 +145,9 @@ export function InviteRegisterForm({
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+                    className="bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-base duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
                 >
-                    {isLoading ? "กำลังสร้างบัญชี..." : "สร้างบัญชี"}
+                    {isLoading ? "กำลังสร้างบัญชี…" : "สร้างบัญชี"}
                 </button>
             </div>
         </form>

@@ -80,8 +80,9 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                     type="email"
                     id="email"
                     autoComplete="email"
+                    spellCheck={false}
                     disabled={isLoading}
-                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-gray-800 placeholder:text-gray-400"
+                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
                     placeholder="your@email.com"
                 />
                 {errors.email && (
@@ -104,7 +105,7 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                     id="password"
                     autoComplete="current-password"
                     disabled={isLoading}
-                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none text-gray-800 placeholder:text-gray-400"
+                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
                     placeholder="••••••••"
                 />
                 {errors.password && (
@@ -132,9 +133,9 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+                    className="bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-base duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
                 >
-                    {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+                    {isLoading ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบ"}
                 </button>
             </div>
 

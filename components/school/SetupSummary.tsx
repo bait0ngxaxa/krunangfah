@@ -55,9 +55,9 @@ export function SetupSummary({
             </div>
 
             {/* School info */}
-            <div className="flex items-start gap-3 p-4 bg-white rounded-2xl border-2 border-gray-100 shadow-sm transition-all hover:shadow-md hover:border-[#0BD0D9]/50">
-                <div className="w-10 h-10 rounded-xl bg-[#0BD0D9] flex items-center justify-center shadow-md border border-[#0BD0D9] shrink-0">
-                    <Building2 className="w-5 h-5 text-white stroke-[2.5]" />
+            <div className="flex items-start gap-3 p-4 bg-white rounded-2xl border-2 border-gray-100 shadow-sm transition-base hover:shadow-md hover:border-[#0BD0D9]/50">
+                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md border-2 border-[#0BD0D9] shrink-0">
+                    <Building2 className="w-5 h-5 text-[#0BD0D9] stroke-[2.5]" />
                 </div>
                 <div>
                     <p className="text-xs text-slate-400 font-semibold mb-0.5">
@@ -75,9 +75,9 @@ export function SetupSummary({
             </div>
 
             {/* Classes summary */}
-            <div className="flex items-start gap-3 p-4 bg-white rounded-2xl border-2 border-gray-100 shadow-sm transition-all hover:shadow-md hover:border-[#0BD0D9]/50">
-                <div className="w-10 h-10 rounded-xl bg-[#0BD0D9] flex items-center justify-center shadow-md border border-[#0BD0D9] shrink-0">
-                    <LayoutGrid className="w-5 h-5 text-white stroke-[2.5]" />
+            <div className="flex items-start gap-3 p-4 bg-white rounded-2xl border-2 border-gray-100 shadow-sm transition-base hover:shadow-md hover:border-[#0BD0D9]/50">
+                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md border-2 border-[#0BD0D9] shrink-0">
+                    <LayoutGrid className="w-5 h-5 text-[#0BD0D9] stroke-[2.5]" />
                 </div>
                 <div className="flex-1">
                     <p className="text-xs text-slate-400 font-semibold mb-0.5">
@@ -112,9 +112,9 @@ export function SetupSummary({
             </div>
 
             {/* Roster summary */}
-            <div className="flex items-start gap-3 p-4 bg-white rounded-2xl border-2 border-gray-100 shadow-sm transition-all hover:shadow-md hover:border-[#0BD0D9]/50">
-                <div className="w-10 h-10 rounded-xl bg-[#0BD0D9] flex items-center justify-center shadow-md border border-[#0BD0D9] shrink-0">
-                    <Users className="w-5 h-5 text-white stroke-[2.5]" />
+            <div className="flex items-start gap-3 p-4 bg-white rounded-2xl border-2 border-gray-100 shadow-sm transition-base hover:shadow-md hover:border-[#0BD0D9]/50">
+                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md border-2 border-[#0BD0D9] shrink-0">
+                    <Users className="w-5 h-5 text-[#0BD0D9] stroke-[2.5]" />
                 </div>
                 <div className="flex-1">
                     <p className="text-xs text-slate-400 font-semibold mb-0.5">

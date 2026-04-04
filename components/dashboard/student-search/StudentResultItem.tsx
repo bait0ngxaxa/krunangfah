@@ -23,7 +23,7 @@ export function StudentResultItem({
     return (
         <button
             onClick={() => onClick(student.id)}
-            className="w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 hover:bg-emerald-50/40 transition-all text-left group"
+            className="w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 hover:bg-emerald-50/40 transition-base text-left group"
         >
             {/* Student Info */}
             <div className="flex items-center gap-3 min-w-0">
@@ -61,7 +61,7 @@ export function StudentResultItem({
                         <span className="hidden sm:inline">{risk.label}</span>
                     </span>
                 )}
-                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-base" />
             </div>
         </button>
     );

@@ -131,7 +131,7 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                                 selectedRisk === level ? "all" : level,
                             )
                         }
-                        className={`${bgClass} relative overflow-hidden rounded-2xl p-4 text-white text-center transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 ${
+                        className={`${bgClass} relative overflow-hidden rounded-2xl p-4 text-white text-center transition-base duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 ${
                             selectedRisk === level
                                 ? "ring-4 ring-offset-2 ring-emerald-200 scale-105 z-10 shadow-xl"
                                 : "opacity-90 hover:opacity-100"
@@ -151,13 +151,15 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
             <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 sm:gap-6 sm:items-center bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
                     <label className="text-sm font-bold text-gray-700 flex items-center gap-2 whitespace-nowrap">
-                        <School className="w-5 h-5 text-gray-600" />
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-600 shadow-sm">
+                            <School className="w-4 h-4" />
+                        </span>
                         กรองตามห้องเรียน:
                     </label>
                     <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
-                        className="w-full sm:w-auto px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-all cursor-pointer hover:border-emerald-200 truncate"
+                        className="w-full sm:w-auto px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-base cursor-pointer hover:border-emerald-200 truncate"
                     >
                         <option value="all">แสดงทั้งหมด</option>
                         {classes.map((cls) => (
@@ -183,7 +185,9 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                 {groupedStudents.size === 0 ? (
                     <div className="text-center py-20 text-gray-500">
                         <div className="mb-4 opacity-50">
-                            <ClipboardList className="w-10 h-10 text-gray-400 mx-auto" />
+                            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-300 bg-white text-gray-500 shadow-sm mx-auto">
+                                <ClipboardList className="w-6 h-6" />
+                            </span>
                         </div>
                         <p className="font-medium text-lg">
                             ไม่พบข้อมูลนักเรียน
@@ -197,7 +201,9 @@ export function StudentList({ students, onStudentClick }: StudentListProps) {
                             <div key={className} className="space-y-4">
                                 <h3 className="text-lg font-bold text-gray-700 border-b-2 border-emerald-100 pb-2 sticky top-0 bg-slate-50 z-10 px-2 py-3 rounded-lg shadow-sm flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <BookOpen className="w-5 h-5 text-emerald-500" />
+                                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-600 shadow-sm">
+                                            <BookOpen className="w-4 h-4" />
+                                        </span>
                                         ห้อง {className}
                                     </div>
                                     <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">

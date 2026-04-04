@@ -34,12 +34,14 @@ export function CounselingLogTable({
     };
 
     return (
-        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-all duration-300 hover:shadow-md md:p-8">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-base duration-300 hover:shadow-md md:p-8">
             {/* Corner decoration */}
             <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-100/45 blur-3xl" />
 
-            <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-2">
-                <MessageCircle className="w-6 h-6 text-emerald-500" />
+            <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-3">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200 bg-white text-emerald-600 shadow-sm">
+                    <MessageCircle className="w-5 h-5" />
+                </span>
                 <span className="text-gray-800">
                     บันทึกการให้คำปรึกษารายบุคคล
                 </span>
@@ -49,7 +51,7 @@ export function CounselingLogTable({
             <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
                 {sessions.length === 0 ? (
                     <div className="p-6 sm:p-12 text-center bg-white/50">
-                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                        <div className="mx-auto mb-4 inline-flex h-20 w-20 items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-sm">
                             <FileText className="w-10 h-10 text-gray-400" />
                         </div>
                         <h3 className="text-lg font-bold text-gray-800 mb-2">

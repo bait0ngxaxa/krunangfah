@@ -35,7 +35,7 @@ export function NavbarGreenBar({
             }}
         >
             <div
-                className="relative w-full flex items-center transition-all duration-300"
+                className="relative w-full flex items-center transition-base duration-300"
                 style={{
                     background:
                         "linear-gradient(180deg, #00DB87 0%, #00C67A 100%)",

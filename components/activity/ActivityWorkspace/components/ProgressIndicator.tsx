@@ -45,7 +45,7 @@ export function ProgressIndicator({
 
                 {/* Progress Line */}
                 <div
-                    className="absolute top-[17px] left-0 h-1.5 bg-[#34D399] rounded-full z-0 transition-all duration-1000 ease-out shadow-sm"
+                    className="absolute top-[17px] left-0 h-1.5 bg-[#34D399] rounded-full z-0 transition-base duration-1000 ease-out shadow-sm"
                     style={{ width: `${progressPercentage}%` }}
                 />
 
@@ -74,7 +74,7 @@ export function ProgressIndicator({
                                 className="flex flex-col items-center gap-3 flex-1 min-w-0 relative group cursor-default"
                             >
                                 <div
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 relative z-10 shrink-0 ${circleClass}`}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-base duration-500 relative z-10 shrink-0 ${circleClass}`}
                                 >
                                     {isCompleted ? (
                                         <CheckCircle2 className="w-6 h-6" />
@@ -88,7 +88,7 @@ export function ProgressIndicator({
                                 </div>
 
                                 <div
-                                    className={`text-center transition-all duration-300 flex flex-col items-center ${isCurrent ? "scale-105" : "opacity-60 group-hover:opacity-100"}`}
+                                    className={`text-center transition-base duration-300 flex flex-col items-center ${isCurrent ? "scale-105" : "opacity-60 group-hover:opacity-100"}`}
                                 >
                                     <span
                                         className={`text-xs font-bold mb-1.5 ${isCurrent ? "text-gray-800" : "text-gray-500"}`}
@@ -135,7 +135,7 @@ export function ProgressIndicator({
 
                 {/* Vertical Progress Line */}
                 <div
-                    className="absolute top-0 left-[18px] w-1 bg-[#34D399] rounded-full z-0 transition-all duration-1000 ease-out"
+                    className="absolute top-0 left-[18px] w-1 bg-[#34D399] rounded-full z-0 transition-base duration-1000 ease-out"
                     style={{ height: `${progressPercentage}%` }}
                 />
 

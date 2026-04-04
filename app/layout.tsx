@@ -27,7 +27,10 @@ export default function RootLayout({
     return (
         <html lang="th" suppressHydrationWarning>
             <body className={`${googleSans.variable} antialiased`}>
-                {children}
+                <a href="#main-content" className="skip-link">
+                    ข้ามไปเนื้อหาหลัก
+                </a>
+                <div id="main-content">{children}</div>
                 <ToasterProvider />
             </body>
         </html>

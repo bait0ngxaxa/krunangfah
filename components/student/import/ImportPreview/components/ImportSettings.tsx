@@ -32,7 +32,7 @@ export function ImportSettings({
                         <select
                             value={selectedYearId}
                             onChange={(e) => onYearChange(e.target.value)}
-                            className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-all shadow-sm appearance-none text-gray-700 font-medium"
+                            className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-base shadow-sm appearance-none text-gray-700 font-medium"
                         >
                             <option value="">เลือกปีการศึกษา</option>
                             {academicYears.map((year) => (
@@ -59,7 +59,7 @@ export function ImportSettings({
                             onChange={(e) =>
                                 onRoundChange(Number(e.target.value))
                             }
-                            className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-all shadow-sm appearance-none text-gray-700 font-medium"
+                            className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-base shadow-sm appearance-none text-gray-700 font-medium"
                         >
                             <option value={1}>ครั้งที่ 1</option>
                             <option value={2} disabled={!hasRound1}>

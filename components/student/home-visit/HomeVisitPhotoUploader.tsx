@@ -111,6 +111,7 @@ export function HomeVisitPhotoUploader({
                                     e.stopPropagation();
                                     handleDelete(photo.id);
                                 }}
+                                aria-label="ลบรูปภาพ"
                                 variant="danger"
                                 size="sm"
                                 className="absolute top-1 right-1 h-6 w-6 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"

@@ -16,7 +16,7 @@ export function RosterItem({
 
     return (
         <div
-            className={`flex items-center justify-between p-3 bg-white rounded-2xl shadow-sm border-2 transition-all group ${
+            className={`flex items-center justify-between p-3 bg-white rounded-2xl shadow-sm border-2 transition-base group ${
                 isPending
                     ? "border-amber-200 bg-amber-50/30"
                     : isEditing
@@ -64,7 +64,7 @@ export function RosterItem({
                     <button
                         type="button"
                         onClick={() => onEdit(teacher)}
-                        className="text-gray-300 hover:text-blue-500 transition-all cursor-pointer p-1"
+                        className="text-gray-300 hover:text-blue-500 transition-base cursor-pointer p-1"
                         title="แก้ไขข้อมูล"
                     >
                         <Pencil className="w-4 h-4" />
@@ -77,7 +77,7 @@ export function RosterItem({
                                 `${teacher.firstName} ${teacher.lastName}`,
                             )
                         }
-                        className="text-gray-300 hover:text-red-500 transition-all cursor-pointer p-1"
+                        className="text-gray-300 hover:text-red-500 transition-base cursor-pointer p-1"
                         title="ลบออกจากรายชื่อครู"
                     >
                         <X className="w-4 h-4" />

@@ -338,6 +338,66 @@ textarea::placeholder {
 }
 
 /* ============================================
+   WEB INTERFACE GUIDELINES UTILITIES
+   ============================================ */
+
+/* Explicit transition properties — never use transition-all (performance anti-pattern) */
+.transition-base {
+    transition-property: transform, box-shadow, background-color, border-color, color, opacity;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+/* Touch: prevent double-tap zoom delay on interactive elements */
+button,
+a,
+[role="button"],
+input,
+select,
+textarea,
+label {
+    touch-action: manipulation;
+}
+
+/* Tabular nums for number columns and comparisons */
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Balanced text-wrap for headings (prevents widows) */
+h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+}
+
+/* Skip-to-content link for keyboard/screen-reader users */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    z-index: 9999;
+}
+
+.skip-link:focus {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    width: auto;
+    height: auto;
+    padding: 12px 24px;
+    background: #065f46;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    outline: 2px solid #34d399;
+    outline-offset: 2px;
+}
+
+/* ============================================
    PERFORMANCE OPTIMIZATIONS
    ============================================ */
 

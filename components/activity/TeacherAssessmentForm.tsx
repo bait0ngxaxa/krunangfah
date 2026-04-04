@@ -156,7 +156,7 @@ export function TeacherAssessmentForm({
                                         setInternalProblems(e.target.value)
                                     }
                                     placeholder="ระบุปัญหาภายในที่พบ..."
-                                    className={`w-full h-40 p-5 border-2 ${assessmentColors.border} bg-white rounded-2xl ${assessmentColors.borderFocus} focus:ring-4 ${assessmentColors.ringFocus} focus:ring-opacity-20 focus:outline-none resize-none transition-all shadow-sm`}
+                                    className={`w-full h-40 p-5 border-2 ${assessmentColors.border} bg-white rounded-2xl ${assessmentColors.borderFocus} focus:ring-4 ${assessmentColors.ringFocus} focus:ring-opacity-20 focus:outline-none resize-none transition-base shadow-sm`}
                                 />
                             </div>
 
@@ -186,7 +186,7 @@ export function TeacherAssessmentForm({
                                         setExternalProblems(e.target.value)
                                     }
                                     placeholder="ระบุปัญหาภายนอกที่พบ..."
-                                    className={`w-full h-40 p-5 border-2 ${assessmentColors.border} bg-white rounded-2xl ${assessmentColors.borderFocus} focus:ring-4 ${assessmentColors.ringFocus} focus:ring-opacity-20 focus:outline-none resize-none transition-all shadow-sm`}
+                                    className={`w-full h-40 p-5 border-2 ${assessmentColors.border} bg-white rounded-2xl ${assessmentColors.borderFocus} focus:ring-4 ${assessmentColors.ringFocus} focus:ring-opacity-20 focus:outline-none resize-none transition-base shadow-sm`}
                                 />
                             </div>
                         </div>
@@ -207,7 +207,7 @@ export function TeacherAssessmentForm({
                         <div className="flex flex-col sm:flex-row gap-6 justify-center max-w-2xl mx-auto">
                             <button
                                 onClick={() => setProblemType("internal")}
-                                className={`flex-1 py-6 px-8 rounded-2xl font-bold text-lg transition-all transform hover:-translate-y-1 duration-300 relative group overflow-hidden ${
+                                className={`flex-1 py-6 px-8 rounded-2xl font-bold text-lg transition-base transform hover:-translate-y-1 duration-300 relative group overflow-hidden ${
                                     problemType === "internal"
                                         ? `${assessmentColors.button} text-white shadow-xl scale-105 ring-4 ring-offset-2 ring-transparent`
                                         : "bg-white text-gray-600 hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100"
@@ -221,7 +221,7 @@ export function TeacherAssessmentForm({
 
                             <button
                                 onClick={() => setProblemType("external")}
-                                className={`flex-1 py-6 px-8 rounded-2xl font-bold text-lg transition-all transform hover:-translate-y-1 duration-300 relative group overflow-hidden ${
+                                className={`flex-1 py-6 px-8 rounded-2xl font-bold text-lg transition-base transform hover:-translate-y-1 duration-300 relative group overflow-hidden ${
                                     problemType === "external"
                                         ? `${assessmentColors.button} text-white shadow-xl scale-105 ring-4 ring-offset-2 ring-transparent`
                                         : "bg-white text-gray-600 hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100"
@@ -239,7 +239,7 @@ export function TeacherAssessmentForm({
                     <button
                         onClick={handleSubmit}
                         disabled={!canSubmit || submitting}
-                            className={`w-full py-5 rounded-2xl font-bold text-xl transition-all flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-[0.98] ${
+                            className={`w-full py-5 rounded-2xl font-bold text-xl transition-base flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-[0.98] ${
                             canSubmit
                                 ? "bg-cyan-500 text-white shadow-sm hover:bg-cyan-600"
                                 : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none border border-gray-200"
@@ -248,7 +248,7 @@ export function TeacherAssessmentForm({
                         {submitting ? (
                             <>
                                 <Loader2 className="w-6 h-6 animate-spin" />
-                                กำลังบันทึกข้อมูล...
+                                กำลังบันทึกข้อมูล…
                             </>
                         ) : (
                             <>

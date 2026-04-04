@@ -145,7 +145,7 @@ export function ActivityWorkspace({
                         <div className="mt-8 border-t border-slate-200/80 pt-6">
                             <Link
                                 href={`/students/${studentId}/help/conversation`}
-                                className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-4 text-center text-lg font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-lg"
+                                className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-4 text-center text-lg font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-lg"
                             >
                                 <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
                                 หลักการพูดคุย

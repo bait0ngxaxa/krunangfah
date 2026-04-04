@@ -79,7 +79,7 @@ export default async function AdminInvitePage({
                         <p className="text-gray-600 mb-6">{errorMessage}</p>
                         <Link
                             href="/"
-                            className="inline-block px-6 py-3 bg-[#00DB87] hover:bg-[#00c078] text-white rounded-full font-bold shadow-md hover:shadow-lg transition-all"
+                            className="inline-block px-6 py-3 bg-[#00DB87] hover:bg-[#00c078] text-white rounded-full font-bold shadow-md hover:shadow-lg transition-base"
                         >
                             กลับหน้าหลัก
                         </Link>

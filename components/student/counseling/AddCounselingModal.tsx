@@ -84,17 +84,24 @@ export function AddCounselingModal({
     const modalContent = (
         <div
             className="fixed inset-0 z-9999 flex items-center justify-center overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm"
+            style={{ overscrollBehavior: "contain" }}
             onClick={onClose}
         >
             <div
                 className="my-4 flex max-h-[92vh] w-full max-w-2xl animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="counseling-modal-title"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
                     <div className="flex items-start justify-between gap-3">
                         <div>
-                            <h3 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+                            <h3
+                                id="counseling-modal-title"
+                                className="flex items-center gap-3 text-2xl font-bold text-gray-900"
+                            >
                                 <MessageCircle className="h-6 w-6 text-emerald-600" />
                                 เพิ่มบันทึกการให้คำปรึกษา
                             </h3>
@@ -139,6 +146,8 @@ export function AddCounselingModal({
                         <input
                             type="date"
                             id="sessionDate"
+                            name="sessionDate"
+                            autoComplete="off"
                             required
                             value={formData.sessionDate}
                             onChange={(e) =>
@@ -147,7 +156,7 @@ export function AddCounselingModal({
                                     sessionDate: e.target.value,
                                 })
                             }
-                            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-800 outline-none transition-all hover:border-emerald-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-800 outline-none transition-base hover:border-emerald-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                         />
                     </div>
 
@@ -164,6 +173,8 @@ export function AddCounselingModal({
                         <input
                             type="text"
                             id="counselorName"
+                            name="counselorName"
+                            autoComplete="name"
                             required
                             placeholder="ระบุชื่อครูที่พูดคุย"
                             value={formData.counselorName}
@@ -173,7 +184,7 @@ export function AddCounselingModal({
                                     counselorName: e.target.value,
                                 })
                             }
-                            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-800 outline-none transition-all hover:border-emerald-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-800 outline-none transition-base hover:border-emerald-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                         />
                     </div>
 
@@ -189,9 +200,11 @@ export function AddCounselingModal({
                         </label>
                         <textarea
                             id="summary"
+                            name="summary"
+                            autoComplete="off"
                             required
                             rows={4}
-                            placeholder="บันทึกสรุปประเด็นที่พูดคุย..."
+                            placeholder="บันทึกสรุปประเด็นที่พูดคุย…"
                             value={formData.summary}
                             onChange={(e) =>
                                 setFormData({
@@ -199,7 +212,7 @@ export function AddCounselingModal({
                                     summary: e.target.value,
                                 })
                             }
-                            className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-800 outline-none transition-all hover:border-emerald-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                            className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-800 outline-none transition-base hover:border-emerald-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                         />
                         <div className="mt-2 flex items-start justify-between gap-2">
                             <p className="flex items-center gap-1 text-xs text-gray-500">
@@ -239,7 +252,7 @@ export function AddCounselingModal({
                             {isSubmitting ? (
                                 <>
                                     <Loader2 className="h-5 w-5 animate-spin" />
-                                    กำลังบันทึก...
+                                    กำลังบันทึก…
                                 </>
                             ) : (
                                 <>

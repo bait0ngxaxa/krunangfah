@@ -66,7 +66,7 @@ export function TeacherNotesSection({
                         value={notes}
                         onChange={(e) => onNotesChange(e.target.value)}
                         placeholder="พิมพ์บันทึกของคุณที่นี่..."
-                        className="w-full flex-1 resize-none rounded-xl border border-gray-200 bg-white p-4 transition-all placeholder:text-gray-300 focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                        className="w-full flex-1 resize-none rounded-xl border border-gray-200 bg-white p-4 transition-base placeholder:text-gray-300 focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                         rows={5}
                         autoFocus
                     />
@@ -74,7 +74,7 @@ export function TeacherNotesSection({
                         <button
                             onClick={handleSave}
                             disabled={isSaving || !notes.trim()}
-                            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 font-bold text-white shadow-sm transition-base hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {isSaving ? (
                                 <>
@@ -92,7 +92,7 @@ export function TeacherNotesSection({
                             <button
                                 onClick={handleCancel}
                                 disabled={isSaving}
-                                className="px-5 py-3 bg-white text-gray-500 border-2 border-gray-200 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-2 disabled:opacity-50"
+                                className="px-5 py-3 bg-white text-gray-500 border-2 border-gray-200 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-base flex items-center gap-2 disabled:opacity-50"
                             >
                                 <X className="w-5 h-5" />
                                 ยกเลิก
@@ -110,7 +110,7 @@ export function TeacherNotesSection({
                     </div>
                     <button
                         onClick={handleEdit}
-                        className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 font-bold text-gray-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50"
+                        className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 font-bold text-gray-700 shadow-sm transition-base hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50"
                     >
                         <Pencil className="w-5 h-5" />
                         แก้ไขบันทึก

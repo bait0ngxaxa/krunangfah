@@ -12,7 +12,7 @@ export function SubmitButton({
             {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                    กำลังบันทึก...
+                    กำลังบันทึก…
                 </span>
             ) : (
                 "บันทึกข้อมูล"

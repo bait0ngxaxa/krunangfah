@@ -68,7 +68,7 @@ export function ActivityCompletionPage({
             <div className="max-w-2xl mx-auto text-center relative pointer-events-none">
                 {/* Thank You Section */}
                 <div
-                    className={`transition-all duration-1000 ease-out pointer-events-auto ${
+                    className={`transition-base duration-1000 ease-out pointer-events-auto ${
                         thankYouVisible
                             ? "opacity-100 translate-y-0 scale-100"
                             : "opacity-0 translate-y-8 scale-95"
@@ -97,7 +97,7 @@ export function ActivityCompletionPage({
                 {/* Schedule Section - Only show if there's a next activity */}
                 {hasNextActivity && nextActivityName && (
                     <div
-                        className={`mt-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-gray-100 pointer-events-auto hover:shadow-md transition-all duration-1000 ${
+                        className={`mt-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-gray-100 pointer-events-auto hover:shadow-md transition-base duration-1000 ${
                             scheduleVisible
                                 ? "opacity-100 translate-y-0"
                                 : "opacity-0 translate-y-8"
@@ -132,7 +132,7 @@ export function ActivityCompletionPage({
                 {/* All activities completed message */}
                 {!hasNextActivity && (
                     <div
-                        className={`mt-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-gray-100 pointer-events-auto transition-all duration-1000 ${
+                        className={`mt-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-gray-100 pointer-events-auto transition-base duration-1000 ${
                             scheduleVisible
                                 ? "opacity-100 translate-y-0"
                                 : "opacity-0 translate-y-8"
@@ -158,7 +158,7 @@ export function ActivityCompletionPage({
                 {/* Back to Dashboard Button */}
                 <button
                     onClick={handleBackToDashboard}
-                    className={`pointer-events-auto mt-12 inline-flex items-center gap-3 px-10 py-5 text-white rounded-full font-bold text-xl shadow-sm hover:shadow-md hover:-translate-y-1 hover:scale-105 transition-all duration-500 group relative overflow-hidden ${completionButtonClass} ${
+                    className={`pointer-events-auto mt-12 inline-flex items-center gap-3 px-10 py-5 text-white rounded-full font-bold text-xl shadow-sm hover:shadow-md hover:-translate-y-1 hover:scale-105 transition-base duration-500 group relative overflow-hidden ${completionButtonClass} ${
                         finalButtonVisible
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-8"
@@ -170,7 +170,7 @@ export function ActivityCompletionPage({
 
                 {/* Student name */}
                 <p
-                    className={`mt-8 text-gray-500 font-medium transition-all duration-1000 ${
+                    className={`mt-8 text-gray-500 font-medium transition-base duration-1000 ${
                         finalButtonVisible ? "opacity-100" : "opacity-0"
                     }`}
                 >

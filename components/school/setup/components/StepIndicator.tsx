@@ -10,7 +10,7 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
                     <div key={label} className="flex items-center">
                         <div className="flex flex-col items-center gap-1">
                             <div
-                                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${
+                                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-base ${
                                     i < currentStep
                                         ? "bg-[#0BD0D9] border-[#0BD0D9] text-white shadow-sm"
                                         : i === currentStep
@@ -32,7 +32,7 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
                         </div>
                         {i < STEPS.length - 1 && (
                             <div
-                                className={`w-8 sm:w-16 h-0.5 mb-4 mx-1 sm:mx-2 transition-all ${i < currentStep ? "bg-[#0BD0D9]" : "bg-gray-200"}`}
+                                className={`w-8 sm:w-16 h-0.5 mb-4 mx-1 sm:mx-2 transition-base ${i < currentStep ? "bg-[#0BD0D9]" : "bg-gray-200"}`}
                             />
                         )}
                     </div>
