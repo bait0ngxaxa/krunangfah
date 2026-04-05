@@ -67,7 +67,7 @@ export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         {item.referralCount > 0 ? (
-                                            <span className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full bg-cyan-100 px-3 text-sm font-bold text-cyan-600 shadow-sm">
+                                            <span className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full bg-rose-100 px-3 text-sm font-bold text-rose-600 shadow-sm">
                                                 {item.referralCount}
                                             </span>
                                         ) : (

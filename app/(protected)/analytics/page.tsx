@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 
 import { AnalyticsContent } from "@/components/analytics/AnalyticsContent";
 import { PageBanner } from "@/components/ui/PageBanner";
-import { getAnalyticsSummary } from "@/lib/actions/analytics/main";
+import {
+    getAnalyticsSummary,
+    getSystemAnalyticsOverview,
+} from "@/lib/actions/analytics/main";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { requireAuth } from "@/lib/session";
 import type { Metadata } from "next";
@@ -66,7 +69,7 @@ export default async function AnalyticsPage({
         warnings.push("ผู้ใช้ที่ไม่ใช่ system_admin ไม่สามารถกรอง school ได้ จึงไม่ใช้ค่า school จาก URL");
     }
 
-    let selectedSchoolId = isSystemAdmin ? (params.school ?? "all") : "all";
+    let selectedSchoolId = isSystemAdmin ? (params.school ?? "") : "all";
     let selectedClass = userRole === "class_teacher" ? "all" : (params.class ?? "all");
     let selectedAcademicYear = params.year ?? "all";
     let selectedSemester = params.semester ?? "all";
@@ -75,20 +78,55 @@ export default async function AnalyticsPage({
     // Fetch schools first (lightweight) to validate schoolId before the heavy analytics query
     const schools = isSystemAdmin ? await getSchools() : undefined;
 
-    if (isSystemAdmin && selectedSchoolId !== "all") {
+    if (isSystemAdmin && selectedSchoolId) {
         const schoolExists = schools?.some((school) => school.id === selectedSchoolId) ?? false;
         if (!schoolExists) {
             warnings.push(
-                `ไม่พบโรงเรียนที่ระบุไว้ ("${selectedSchoolId}") ระบบจึงใช้ "ทุกโรงเรียน"`,
+                `ไม่พบโรงเรียนที่ระบุไว้ ("${selectedSchoolId}") กรุณาเลือกโรงเรียนใหม่`,
             );
-            selectedSchoolId = "all";
+            selectedSchoolId = "";
         }
+    }
+
+    const shouldRequireSchoolSelection = isSystemAdmin && !selectedSchoolId;
+
+    if (shouldRequireSchoolSelection) {
+        const systemOverview = await getSystemAnalyticsOverview();
+
+        return (
+            <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+                <PageBanner
+                    title="Analytics"
+                    subtitle="สรุปผลการคัดกรอง PHQ-A ของนักเรียน"
+                    icon={BarChart3}
+                    imageSrc="/image/dashboard/analytics.png"
+                    imageAlt="Analytics Dashboard"
+                    imageContainerClassName="absolute bottom-4 left-1/2 -translate-x-1/2 w-[200px] sm:w-[300px] lg:w-[360px] pointer-events-none z-10 flex items-end"
+                    backUrl="/dashboard"
+                />
+
+                <div className="max-w-7xl mx-auto space-y-6 relative z-10 px-4 py-8">
+                    <AnalyticsContent
+                        data={null}
+                        schools={schools}
+                        userRole={userRole}
+                        selectedClass={selectedClass}
+                        selectedSchoolId={selectedSchoolId}
+                        selectedAcademicYear={selectedAcademicYear}
+                        selectedSemester={selectedSemester}
+                        filterWarnings={warnings}
+                        requireSchoolSelection={true}
+                        systemOverview={systemOverview}
+                    />
+                </div>
+            </div>
+        );
     }
 
     // ── Phase 3: Single analytics fetch with validated params ──
     const analyticsData = await getAnalyticsSummary(
         selectedClass !== "all" ? selectedClass : undefined,
-        selectedSchoolId !== "all" ? selectedSchoolId : undefined,
+        selectedSchoolId,
         parsedYear,
         parsedSemester,
     );
@@ -129,7 +167,7 @@ export default async function AnalyticsPage({
         <div className="min-h-screen bg-slate-50 relative overflow-hidden">
             <PageBanner
                 title="Analytics"
-                subtitle="PHQ-A screening summary for students"
+                subtitle="สรุปผลการคัดกรอง PHQ-A ของนักเรียน"
                 icon={BarChart3}
                 imageSrc="/image/dashboard/analytics.png"
                 imageAlt="Analytics Dashboard"
@@ -147,6 +185,7 @@ export default async function AnalyticsPage({
                     selectedAcademicYear={selectedAcademicYear}
                     selectedSemester={selectedSemester}
                     filterWarnings={warnings}
+                    systemOverview={null}
                 />
             </div>
         </div>

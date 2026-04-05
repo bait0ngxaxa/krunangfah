@@ -2,11 +2,12 @@
 
 import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { revalidateTag } from "next/cache";
 import { ActivityStatus } from "@prisma/client";
 import { ACTIVITY_INDICES } from "./constants";
 import type { SubmitAssessmentData, ScheduleActivityData } from "./types";
 import { logError } from "@/lib/utils/logging";
+import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
+import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import {
     submitAssessmentSchema,
     scheduleActivitySchema,
@@ -293,7 +294,7 @@ export async function confirmActivityComplete(
             activityProgress.activityNumber,
         );
 
-        revalidateTag("analytics", "default");
+        revalidateAnalyticsCache(activityProgress.student.schoolId);
 
         return {
             success: true,
@@ -481,7 +482,7 @@ export async function updateScheduledDate(
             },
         });
 
-        revalidateTag("student-detail", "default");
+        revalidateStudentsCache(undefined, activityProgress.studentId);
 
         return { success: true };
     } catch (error) {

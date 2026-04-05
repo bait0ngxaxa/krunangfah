@@ -62,7 +62,7 @@ export function HospitalReferralTable({
                                         className="bg-white border-b border-slate-50 px-4 py-4 text-center text-slate-700"
                                     >
                                         {count > 0 ? (
-                                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 font-bold text-sm">
+                                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-600 font-bold text-sm">
                                                 {count}
                                             </span>
                                         ) : (

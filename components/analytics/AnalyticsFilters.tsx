@@ -26,6 +26,7 @@ interface AnalyticsFiltersProps {
     selectedSemester: string;
     isSystemAdmin: boolean;
     showClassFilter: boolean;
+    requireSchoolSelection?: boolean;
 }
 
 export function AnalyticsFilters({
@@ -39,13 +40,17 @@ export function AnalyticsFilters({
     selectedSemester,
     isSystemAdmin,
     showClassFilter,
+    requireSchoolSelection = false,
 }: AnalyticsFiltersProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
+    const hasSelectedSchool = requireSchoolSelection
+        ? selectedSchoolId.length > 0
+        : selectedSchoolId !== "all";
     const hasActiveFilters =
-        selectedSchoolId !== "all" ||
+        hasSelectedSchool ||
         selectedClass !== "all" ||
         selectedAcademicYear !== "all" ||
         selectedSemester !== "all";
@@ -83,6 +88,7 @@ export function AnalyticsFilters({
                 <SchoolFilter
                     schools={schools}
                     selectedSchoolId={selectedSchoolId}
+                    requireExplicitSelection={requireSchoolSelection}
                     onSchoolChange={(schoolId) =>
                         updateParams({
                             school: schoolId,
@@ -94,7 +100,9 @@ export function AnalyticsFilters({
                 />
             ) : null}
 
-            {showClassFilter && availableClasses.length > 0 ? (
+            {showClassFilter &&
+            availableClasses.length > 0 &&
+            (!requireSchoolSelection || hasSelectedSchool) ? (
                 <ClassFilter
                     availableClasses={availableClasses}
                     currentClass={
@@ -106,7 +114,8 @@ export function AnalyticsFilters({
                 />
             ) : null}
 
-            {availableYears.length > 1 ? (
+            {availableYears.length > 1 &&
+            (!requireSchoolSelection || hasSelectedSchool) ? (
                 <AcademicYearFilter
                     availableYears={availableYears}
                     selectedYear={selectedAcademicYear}
@@ -116,7 +125,8 @@ export function AnalyticsFilters({
                 />
             ) : null}
 
-            {availableSemesters.length > 1 ? (
+            {availableSemesters.length > 1 &&
+            (!requireSchoolSelection || hasSelectedSchool) ? (
                 <SemesterFilter
                     availableSemesters={availableSemesters}
                     selectedSemester={selectedSemester}

@@ -47,11 +47,11 @@ export function ConfirmDialog({
                         <div>
                             <h3
                                 id="confirm-dialog-title"
-                                className="text-base font-bold text-gray-800"
+                                className="text-base font-bold text-red-700"
                             >
                                 {title}
                             </h3>
-                            <p className="text-sm text-gray-500 mt-1">{message}</p>
+                            <p className="mt-1 text-sm text-red-600">{message}</p>
                         </div>
                     </div>
                 </div>

@@ -11,10 +11,11 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/session";
 import { updateHospitalReferralSchema } from "@/lib/validations/hospital-referral.validation";
 import { logError } from "@/lib/utils/logging";
+import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 
 interface UpdateHospitalReferralParams {
     phqResultId: string;
@@ -98,7 +99,7 @@ export async function updateHospitalReferral(
         });
 
         revalidatePath(`/students/${phqResult.studentId}`);
-        revalidateTag("analytics", "default");
+        revalidateAnalyticsCache(phqResult.student.schoolId);
 
         return {
             success: true,

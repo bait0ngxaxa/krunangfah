@@ -247,6 +247,8 @@ model PhqResult {
   @@index([studentId, createdAt(sort: Desc)]) // For DISTINCT ON latest per student
   @@index([studentId, createdAt(sort: Desc), riskLevel]) // For latest-risk dashboard filters
   @@index([studentId, academicYearId, assessmentRound]) // For trend queries
+  @@index([studentId, academicYearId, createdAt(sort: Desc)]) // For latest-by-student within academic year
+  @@index([academicYearId, createdAt(sort: Desc)]) // For year-filtered latest queries
   @@index([academicYearId]) // For year-filtered analytics (JOIN academic_years)
   @@map("phq_results")
 }

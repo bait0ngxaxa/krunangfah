@@ -10,6 +10,7 @@ import {
     CalendarDays,
 } from "lucide-react";
 import { getDashboardData } from "@/lib/actions/dashboard.actions";
+import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
 import {
     USER_ROLE_LABELS,
     PROJECT_ROLE_LABELS_EXT,
@@ -155,9 +156,12 @@ async function DashboardContent({ session }: { session: Session }) {
     }
 
     const isClassTeacher = userRole === "class_teacher";
+    const currentAcademicYear = await getCurrentAcademicYearRecord();
     const teacherName = `${teacher.firstName} ${teacher.lastName}`;
     const schoolName = teacher.user.school?.name || "ไม่ระบุ";
-    const academicYearText = `${teacher.academicYear.year} เทอม ${teacher.academicYear.semester}`;
+    const academicYearText = currentAcademicYear
+        ? `${currentAcademicYear.year} เทอม ${currentAcademicYear.semester}`
+        : "ไม่ระบุ";
 
     return (
         <>

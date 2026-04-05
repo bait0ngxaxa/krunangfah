@@ -11,9 +11,9 @@ import {
     ALLOWED_EXTENSIONS,
     MAX_FILE_SIZE,
 } from "./constants";
-import { revalidateTag } from "next/cache";
 import { validateFileSignature } from "@/lib/utils/file-signature";
 import { canAccessStudentByRole } from "@/lib/security/student-access";
+import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import type { UploadWorksheetResult } from "./types";
 import { logError } from "@/lib/utils/logging";
 
@@ -355,7 +355,7 @@ export async function deleteWorksheetUpload(
             });
         }
 
-        revalidateTag("analytics", "default");
+        revalidateAnalyticsCache(upload.activityProgress.student.schoolId);
 
         return { success: true, message: "ลบไฟล์สำเร็จ" };
     } catch (error) {

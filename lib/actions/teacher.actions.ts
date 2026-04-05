@@ -2,11 +2,12 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { getAcademicYears as getAcademicYearsAction } from "./academic-year.actions";
 import { teacherProfileSchema } from "@/lib/validations/teacher.validation";
 import { logError } from "@/lib/utils/logging";
+import { revalidateDashboardCache } from "./dashboard/cache";
 import type {
     CreateTeacherInput,
     TeacherResponse,
@@ -139,7 +140,7 @@ export async function createTeacherProfile(
         });
 
         // Revalidate dashboard data cache + page
-        revalidateTag("dashboard", "default");
+        revalidateDashboardCache();
         revalidatePath("/dashboard");
 
         return {

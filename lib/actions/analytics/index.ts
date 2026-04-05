@@ -8,10 +8,15 @@ export type {
     GradeRiskData,
     HospitalReferralByGrade,
     AnalyticsData,
+    SystemAnalyticsOverview,
 } from "./types";
 
 // Re-export constants
 export { RISK_LEVEL_CONFIG } from "./constants";
 
 // Re-export main functions
-export { getAnalyticsSummary, getRiskLevelConfig } from "./main";
+export {
+    getAnalyticsSummary,
+    getRiskLevelConfig,
+    getSystemAnalyticsOverview,
+} from "./main";

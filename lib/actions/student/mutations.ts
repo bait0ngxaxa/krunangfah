@@ -7,9 +7,10 @@ import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { calculateRiskLevel, type RiskLevel } from "@/lib/utils/phq-scoring";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { ACTIVITY_INDICES } from "@/lib/actions/activity/constants";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import type { ImportResult } from "./types";
 import { logError } from "@/lib/utils/logging";
+import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
 
@@ -267,7 +268,7 @@ export async function importStudents(
         revalidatePath("/dashboard");
         revalidatePath("/students");
         revalidatePath("/analytics");
-        revalidateTag("analytics", "default");
+        revalidateAnalyticsCache(schoolId);
 
         const importedCount = txResult.importedCount;
         const failedCount = errors.length;

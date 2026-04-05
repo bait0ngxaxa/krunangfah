@@ -32,7 +32,8 @@ describe("Integration: E2E Smoke (Role + Advisory Class)", () => {
         const school = await createTestSchool({ name: "Smoke School" });
         schoolId = school.id;
 
-        const ay = await createTestAcademicYear({ year: 2601, semester: 1 });
+        const uniqueYear = 8000 + Number(String(Date.now()).slice(-4));
+        const ay = await createTestAcademicYear({ year: uniqueYear, semester: 1 });
 
         USERS.schoolAdmin.schoolId = schoolId;
         USERS.classTeacher.schoolId = schoolId;

@@ -3,10 +3,11 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { normalizeSchoolName, sanitizeText } from "@/lib/utils/text-sanitizer";
 import { logError } from "@/lib/utils/logging";
+import { revalidateDashboardCache } from "./dashboard/cache";
 import type {
     SchoolClassItem,
     SchoolContextData,
@@ -107,7 +108,7 @@ export async function createSchoolAndLink(input: {
             return { success: false, message: "คุณมีโรงเรียนอยู่แล้ว" };
         }
 
-        revalidateTag("dashboard", "default");
+        revalidateDashboardCache();
 
         return {
             success: true,

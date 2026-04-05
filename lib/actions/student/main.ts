@@ -7,7 +7,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { isSystemAdmin } from "@/lib/session";
-import { unstable_cache, revalidateTag } from "next/cache";
+import { unstable_cache } from "next/cache";
 import { getViewerContext } from "@/lib/auth/viewer-context";
 import {
     getRiskLevelCountsQuery,
@@ -26,6 +26,14 @@ import type {
     IncompleteActivityInfo,
     StudentWithLatestPhq,
 } from "./types";
+import {
+    buildStudentDetailCacheKey,
+    buildStudentsDashboardCacheKey,
+    buildStudentsListCacheKey,
+    getStudentDetailCacheTags,
+    getStudentsCacheTags,
+    revalidateStudentsCache,
+} from "./cache";
 
 // Note: Cache keys can be added here when implementing granular caching
 
@@ -71,40 +79,52 @@ export async function getStudentRiskCounts(
  * Return paginated student list in viewer scope.
  * First page without filters uses cache; other queries bypass cache for freshness.
  */
-const getCachedStudents = unstable_cache(
-    async (
-        schoolId: string | undefined,
-        advisoryClass: string | undefined,
-        userRole: string,
-        userId: string,
-        options: GetStudentsOptions,
-    ) => {
-        const page = options.page ?? 1;
-        const limit = options.limit ?? 100;
-        const { students, total } = await getStudentsQuery(
-            schoolId,
-            advisoryClass,
-            userRole,
-            userId,
-            { classFilter: options.classFilter, page, limit },
-        );
+async function getCachedStudents(
+    schoolId: string | undefined,
+    advisoryClass: string | undefined,
+    userRole: string,
+    userId: string,
+    options: GetStudentsOptions,
+): Promise<StudentListResponse> {
+    const cacheKey = buildStudentsListCacheKey({
+        schoolId,
+        advisoryClass,
+        userRole,
+        userId,
+        options,
+    });
 
-        return {
-            students,
-            pagination: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-            },
-        };
-    },
-    ["students-list"],
-    {
-        revalidate: 30,
-        tags: ["students"],
-    },
-);
+    const cachedFetcher = unstable_cache(
+        async () => {
+            const page = options.page ?? 1;
+            const limit = options.limit ?? 100;
+            const { students, total } = await getStudentsQuery(
+                schoolId,
+                advisoryClass,
+                userRole,
+                userId,
+                { classFilter: options.classFilter, page, limit },
+            );
+
+            return {
+                students,
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
+            };
+        },
+        cacheKey,
+        {
+            revalidate: 30,
+            tags: getStudentsCacheTags(schoolId),
+        },
+    );
+
+    return cachedFetcher();
+}
 
 export async function getStudents(
     options?: GetStudentsOptions,
@@ -163,26 +183,36 @@ export async function getStudents(
     }
 }
 
-const getCachedStudentsForDashboard = unstable_cache(
-    async (
-        scopeSchoolId: string | undefined,
-        advisoryClass: string | undefined,
-        userRole: string,
-        userId: string,
-    ) => {
-        return getStudentsForDashboardQuery(
-            scopeSchoolId,
-            advisoryClass,
-            userRole,
-            userId,
-        );
-    },
-    ["students-dashboard"],
-    {
-        revalidate: 30,
-        tags: ["students"],
-    },
-);
+async function getCachedStudentsForDashboard(
+    scopeSchoolId: string | undefined,
+    advisoryClass: string | undefined,
+    userRole: string,
+    userId: string,
+) {
+    const cacheKey = buildStudentsDashboardCacheKey({
+        scopeSchoolId,
+        advisoryClass,
+        userRole,
+        userId,
+    });
+
+    const cachedFetcher = unstable_cache(
+        async () =>
+            getStudentsForDashboardQuery(
+                scopeSchoolId,
+                advisoryClass,
+                userRole,
+                userId,
+            ),
+        cacheKey,
+        {
+            revalidate: 30,
+            tags: getStudentsCacheTags(scopeSchoolId),
+        },
+    );
+
+    return cachedFetcher();
+}
 
 export async function getStudentsForDashboard(
     selectedSchoolId?: string,
@@ -248,28 +278,39 @@ export async function searchStudents(query: string) {
  * Load student detail (including PHQ history) in viewer scope.
  * Cached briefly to reduce repeated dashboard/detail reads.
  */
-const getCachedStudentDetail = unstable_cache(
-    async (
-        schoolId: string | undefined,
-        advisoryClass: string | undefined,
-        userRole: string,
-        userId: string,
-        studentId: string,
-    ) => {
-        return getStudentDetailQuery(
-            schoolId,
-            advisoryClass,
-            userRole,
-            userId,
-            studentId,
-        );
-    },
-    ["student-detail"],
-    {
-        revalidate: 60,
-        tags: ["student-detail"],
-    },
-);
+async function getCachedStudentDetail(
+    schoolId: string | undefined,
+    advisoryClass: string | undefined,
+    userRole: string,
+    userId: string,
+    studentId: string,
+) {
+    const cacheKey = buildStudentDetailCacheKey({
+        schoolId,
+        advisoryClass,
+        userRole,
+        userId,
+        studentId,
+    });
+
+    const cachedFetcher = unstable_cache(
+        async () =>
+            getStudentDetailQuery(
+                schoolId,
+                advisoryClass,
+                userRole,
+                userId,
+                studentId,
+            ),
+        cacheKey,
+        {
+            revalidate: 60,
+            tags: getStudentDetailCacheTags(schoolId, studentId),
+        },
+    );
+
+    return cachedFetcher();
+}
 
 export async function getStudentDetail(studentId: string) {
     try {
@@ -379,6 +420,5 @@ export async function getIncompleteActivityWarning(
  * Revalidate student cache after mutations
  */
 export async function revalidateStudents() {
-    revalidateTag("students", "default");
-    revalidateTag("student-detail", "default");
+    revalidateStudentsCache();
 }

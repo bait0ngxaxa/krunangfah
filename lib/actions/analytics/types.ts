@@ -66,3 +66,11 @@ export interface AnalyticsData {
     hospitalReferralsByGrade: HospitalReferralByGrade[];
     totalReferrals: number;
 }
+
+export interface SystemAnalyticsOverview {
+    totalSchools: number;
+    totalStudents: number;
+    studentsWithAssessment: number;
+    screeningCoveragePercent: number;
+    academicYearLabel: string;
+}

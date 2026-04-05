@@ -1,9 +1,8 @@
-import { Users, CheckCircle, AlertCircle, type LucideIcon } from "lucide-react";
+import { Users, CheckCircle, Gauge, type LucideIcon } from "lucide-react";
 
 interface AnalyticsSummaryCardsProps {
     totalStudents: number;
     studentsWithAssessment: number;
-    studentsWithoutAssessment: number;
     currentClass?: string;
 }
 
@@ -54,9 +53,13 @@ function SummaryCard({
 export function AnalyticsSummaryCards({
     totalStudents,
     studentsWithAssessment,
-    studentsWithoutAssessment,
     currentClass,
 }: AnalyticsSummaryCardsProps) {
+    const coveragePercent =
+        totalStudents > 0
+            ? Math.round((studentsWithAssessment / totalStudents) * 100)
+            : 0;
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <SummaryCard
@@ -76,12 +79,12 @@ export function AnalyticsSummaryCards({
                 accentColor="text-emerald-600"
             />
             <SummaryCard
-                icon={AlertCircle}
-                label="ยังไม่ได้คัดกรอง"
-                value={studentsWithoutAssessment}
-                unit="คน"
-                glowColor="bg-amber-200/35"
-                accentColor="text-amber-600"
+                icon={Gauge}
+                label="ความครอบคลุมการคัดกรอง"
+                value={coveragePercent}
+                unit="%"
+                glowColor="bg-violet-200/35"
+                accentColor="text-violet-600"
             />
         </div>
     );

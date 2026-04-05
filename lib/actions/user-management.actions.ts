@@ -10,7 +10,7 @@ import type {
     ChangeableRole,
 } from "@/types/user-management.types";
 import type { Prisma } from "@prisma/client";
-import { revalidateTag } from "next/cache";
+import { revalidateDashboardCache } from "./dashboard/cache";
 
 const DEFAULT_PAGE_SIZE = 15;
 
@@ -151,7 +151,7 @@ export async function changeUserRole(
         data: { role: newRole },
     });
 
-    revalidateTag("dashboard", "default");
+    revalidateDashboardCache();
     return { success: true, message: "เปลี่ยนบทบาทสำเร็จ" };
 }
 
@@ -200,7 +200,7 @@ export async function deleteUser(userId: string): Promise<MutationResponse> {
         prisma.user.delete({ where: { id: userId } }),
     ]);
 
-    revalidateTag("dashboard", "default");
+    revalidateDashboardCache();
     return { success: true, message: `ลบผู้ใช้ ${target.email} สำเร็จ` };
 }
 
@@ -308,7 +308,7 @@ export async function updateTeacherProfile(
         }),
     ]);
 
-    revalidateTag("dashboard", "default");
+    revalidateDashboardCache();
     return { success: true, message: "แก้ไขห้องที่ปรึกษาสำเร็จ" };
 }
 

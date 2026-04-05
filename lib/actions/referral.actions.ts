@@ -11,9 +11,9 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidateTag } from "next/cache";
 import { requireAuth, isSystemAdmin } from "@/lib/session";
 import { logError } from "@/lib/utils/logging";
+import { revalidateStudentsCache } from "./student/cache";
 import {
     createReferralSchema,
     revokeReferralSchema,
@@ -142,8 +142,7 @@ export async function createStudentReferral(input: {
             },
         });
 
-        revalidateTag("students", "default");
-        revalidateTag("student-detail", "default");
+        revalidateStudentsCache(student.schoolId, student.id);
 
         const fromName = fromUser?.teacher
             ? `${fromUser.teacher.firstName} ${fromUser.teacher.lastName}`
@@ -224,8 +223,7 @@ export async function revokeStudentReferral(input: {
             where: { id: validated.referralId },
         });
 
-        revalidateTag("students", "default");
-        revalidateTag("student-detail", "default");
+        revalidateStudentsCache(referral.student.schoolId, referral.studentId);
 
         return { success: true, message: "เรียกคืนการส่งต่อเรียบร้อยแล้ว" };
     } catch (error) {
