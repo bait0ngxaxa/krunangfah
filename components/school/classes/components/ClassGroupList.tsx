@@ -46,7 +46,7 @@ export function ClassGroupList({
                 <div className="space-y-3">
                     {groups.map(([grade, items]) => (
                         <div key={grade}>
-                            <p className="text-xs font-semibold text-[#09B8C0] mb-1">
+                            <p className="text-xs font-semibold text-[var(--brand-primary-hover)] mb-1">
                                 {grade}{" "}
                                 <span className="text-gray-400 font-normal">
                                     ({items.length} ห้อง)

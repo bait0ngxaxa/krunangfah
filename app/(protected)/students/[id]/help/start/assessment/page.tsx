@@ -3,14 +3,13 @@ import { getActivityProgress } from "@/lib/actions/activity";
 import { redirect, notFound } from "next/navigation";
 import { TeacherAssessmentForm } from "@/components/activity/TeacherAssessmentForm";
 import { requireAuth } from "@/lib/session";
-
-const ACTIVITIES = [
-    { id: "a1", number: 1, title: "กิจกรรมที่ 1: รู้จักตัวเอง" },
-    { id: "a2", number: 2, title: "กิจกรรมที่ 2: ค้นหาคุณค่าที่ฉันมี" },
-    { id: "a3", number: 3, title: "กิจกรรมที่ 3: ปรับความคิด ชีวิตเปลี่ยน" },
-    { id: "a4", number: 4, title: "กิจกรรมที่ 4: รู้จักตัวกระตุ้น" },
-    { id: "a5", number: 5, title: "กิจกรรมที่ 5: ตามติดเพื่อไปต่อ" },
-];
+import { ACTIVITIES } from "@/lib/config/help-page-config";
+import {
+    studentHelpEncouragementRoute,
+    studentHelpRoute,
+    studentHelpStartRoute,
+    studentRoute,
+} from "@/lib/constants/student-routes";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -27,7 +26,7 @@ export default async function TeacherAssessmentPage({
     // Assessment flow is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
     const student = await getStudentDetail(studentId);
@@ -42,14 +41,14 @@ export default async function TeacherAssessmentPage({
         : student.phqResults[0];
 
     if (!latestResult) {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
     const riskLevel = latestResult.riskLevel;
 
     // Assessment flow exists only for orange/yellow/green.
     if (!["orange", "yellow", "green"].includes(riskLevel)) {
-        redirect(`/students/${studentId}/help`);
+        redirect(studentHelpRoute(studentId));
     }
 
     // Load progress for selected PHQ result.
@@ -72,23 +71,23 @@ export default async function TeacherAssessmentPage({
                       p.worksheetUploads.length >= 2),
           );
 
-    const phqParam = phqResultId ? `&phqResultId=${phqResultId}` : "";
-
     if (!currentProgress) {
-        redirect(
-            `/students/${studentId}/help/start${phqResultId ? `?phqResultId=${phqResultId}` : ""}`,
-        );
+        redirect(studentHelpStartRoute(studentId, phqResultId));
     }
 
     // Only activity 1 uses this form; later activities go directly to encouragement.
     if (currentProgress.activityNumber !== 1) {
         redirect(
-            `/students/${studentId}/help/start/encouragement?activity=${currentProgress.activityNumber}${phqParam}`,
+            studentHelpEncouragementRoute(
+                studentId,
+                currentProgress.activityNumber,
+                { phqResultId },
+            ),
         );
     }
 
     const activity = ACTIVITIES.find(
-        (a) => a.number === currentProgress.activityNumber,
+        (a) => a.id === `a${currentProgress.activityNumber}`,
     );
 
     return (

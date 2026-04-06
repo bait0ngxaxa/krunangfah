@@ -3,19 +3,16 @@
 import { useState } from "react";
 import {
     ClipboardList,
-    Copy,
-    Check,
-    Trash2,
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    CheckCircle2,
-    AlertCircle,
     Mail,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { InviteActionRow } from "@/components/ui/InviteActionRow";
+import { PaginationControls } from "@/components/ui/PaginationControls";
+import { SectionCard, SectionCardHeader } from "@/components/ui/SectionCard";
 import { RoleBadge } from "@/components/ui/badges";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { TableMetaRow } from "@/components/ui/TableMetaRow";
 import { revokeSchoolAdminInvite } from "@/lib/actions/school-admin-invite.actions";
 import type {
     SchoolAdminInvite,
@@ -40,31 +37,6 @@ function getInviteUrl(token: string): string {
     return `${base}/invite/admin/${token}`;
 }
 
-function StatusBadge({ status }: { status: InviteStatus }) {
-    if (status === "pending") {
-        return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                <Clock className="w-3 h-3" />
-                รอดำเนินการ
-            </span>
-        );
-    }
-    if (status === "used") {
-        return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
-                <CheckCircle2 className="w-3 h-3" />
-                ใช้งานแล้ว
-            </span>
-        );
-    }
-    return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-600">
-            <AlertCircle className="w-3 h-3" />
-            หมดอายุ
-        </span>
-    );
-}
-
 function InviteCard({
     invite,
     onRevoked,
@@ -74,7 +46,6 @@ function InviteCard({
 }) {
     const [copied, setCopied] = useState(false);
     const [isRevoking, setIsRevoking] = useState(false);
-    const [showRevokeDialog, setShowRevokeDialog] = useState(false);
 
     const status = getInviteStatus(invite);
 
@@ -99,7 +70,6 @@ function InviteCard({
             toast.error("เกิดข้อผิดพลาดในการยกเลิกคำเชิญ");
         }
         setIsRevoking(false);
-        setShowRevokeDialog(false);
     }
 
     return (
@@ -119,45 +89,28 @@ function InviteCard({
                     </div>
                 </div>
                 <div className="shrink-0 flex flex-col items-end gap-2">
-                    <StatusBadge status={status} />
+                    <StatusBadge
+                        tone={status}
+                        label={
+                            status === "pending"
+                                ? "รอดำเนินการ"
+                                : status === "used"
+                                  ? "ใช้งานแล้ว"
+                                  : "หมดอายุ"
+                        }
+                    />
                     {status === "pending" && (
-                        <div className="flex items-center gap-1.5">
-                            <button
-                                type="button"
-                                onClick={handleCopy}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                                title="คัดลอก Link"
-                            >
-                                {copied ? (
-                                    <Check className="w-3.5 h-3.5" />
-                                ) : (
-                                    <Copy className="w-3.5 h-3.5" />
-                                )}
-                                {copied ? "คัดลอกแล้ว" : "Copy Link"}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setShowRevokeDialog(true)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600"
-                                title="ยกเลิกคำเชิญ"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                ยกเลิก
-                            </button>
-                        </div>
+                        <InviteActionRow
+                            copied={copied}
+                            isRevoking={isRevoking}
+                            onCopy={handleCopy}
+                            onConfirmRevoke={handleConfirmRevoke}
+                            revokeDialogTitle="ยกเลิกคำเชิญ"
+                            revokeDialogMessage={`ต้องการยกเลิกคำเชิญของ "${invite.email}" ใช่หรือไม่?`}
+                        />
                     )}
                 </div>
             </div>
-
-            <ConfirmDialog
-                isOpen={showRevokeDialog}
-                title="ยกเลิกคำเชิญ"
-                message={`ต้องการยกเลิกคำเชิญของ "${invite.email}" ใช่หรือไม่?`}
-                confirmLabel="ยืนยันยกเลิก"
-                isLoading={isRevoking}
-                onConfirm={handleConfirmRevoke}
-                onCancel={() => setShowRevokeDialog(false)}
-            />
             <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-50 text-[11px] text-gray-400">
                 <span>
                     สร้างเมื่อ{" "}
@@ -200,24 +153,20 @@ export function InviteTable({ invites, onRevoked }: InviteTableProps) {
     const paginatedInvites = invites.slice(start, start + PAGE_SIZE);
 
     return (
-        <div className="bg-white rounded-3xl p-6 md:p-8 border-2 border-gray-100 shadow-sm relative overflow-hidden">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-[#0BD0D9] stroke-[2.5]" />
-                <span className="text-gray-900 font-extrabold">
-                    รายการคำเชิญ ({invites.length})
-                </span>
-            </h2>
+        <SectionCard className="p-6 md:p-8">
+            <SectionCardHeader
+                icon={ClipboardList}
+                className="text-xl"
+                title={`รายการคำเชิญ (${invites.length})`}
+            />
 
             {invites.length === 0 ? (
-                <div className="p-12 text-center bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200">
-                    <ClipboardList className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500 font-bold text-lg">
-                        ยังไม่มีคำเชิญ
-                    </p>
-                    <p className="text-gray-400 text-sm mt-1 font-medium">
-                        สร้างคำเชิญด้านบนเพื่อเชิญแอดมิน
-                    </p>
-                </div>
+                <EmptyState
+                    icon={ClipboardList}
+                    title="ยังไม่มีคำเชิญ"
+                    description="สร้างคำเชิญด้านบนเพื่อเชิญแอดมิน"
+                    className="p-12"
+                />
             ) : (
                 <>
                     <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
@@ -232,45 +181,33 @@ export function InviteTable({ invites, onRevoked }: InviteTableProps) {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                            <p className="text-xs text-gray-500">
-                                แสดง {start + 1}–
-                                {Math.min(start + PAGE_SIZE, invites.length)}{" "}
-                                จาก {invites.length} รายการ
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() =>
+                        <TableMetaRow
+                            summary={
+                                <>
+                                    แสดง {start + 1}–
+                                    {Math.min(start + PAGE_SIZE, invites.length)}{" "}
+                                    จาก {invites.length} รายการ
+                                </>
+                            }
+                            controls={
+                                <PaginationControls
+                                    currentPage={safeCurrentPage}
+                                    totalPages={totalPages}
+                                    onPrevious={() =>
                                         setPage((p) => Math.max(1, p - 1))
                                     }
-                                    disabled={safeCurrentPage <= 1}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <ChevronLeft className="w-3.5 h-3.5" />
-                                    ก่อนหน้า
-                                </button>
-                                <span className="text-xs font-bold text-gray-700 px-1.5">
-                                    {safeCurrentPage} / {totalPages}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() =>
+                                    onNext={() =>
                                         setPage((p) =>
                                             Math.min(totalPages, p + 1),
                                         )
                                     }
-                                    disabled={safeCurrentPage >= totalPages}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    ถัดไป
-                                    <ChevronRight className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        </div>
+                                    className="flex items-center gap-2"
+                                />
+                            }
+                        />
                     )}
                 </>
             )}
-        </div>
+        </SectionCard>
     );
 }

@@ -24,7 +24,7 @@ export function QuickActionCard({
     return (
         <Link
             href={href}
-            className="relative bg-white rounded-4xl border-2 border-[#0BD0D9] shadow-[0_4px_12px_rgba(11,208,217,0.1)] p-4 sm:p-5 flex items-stretch min-h-[140px] group hover:-translate-y-1 transition-base duration-300"
+            className="relative bg-white rounded-4xl border-2 border-[var(--brand-primary)] shadow-[0_4px_12px_rgba(11,208,217,0.1)] p-4 sm:p-5 flex items-stretch min-h-[140px] group hover:-translate-y-1 transition-base duration-300"
         >
             {/* Left Image Spacer */}
             {imageSrc && (
@@ -46,7 +46,7 @@ export function QuickActionCard({
                 className={`flex-1 flex flex-col justify-center relative z-0 ${!imageSrc ? "pl-1" : "pl-6 sm:pl-8"} pr-4 sm:pr-8`}
             >
                 <div className="mb-2">
-                    <div className="inline-flex p-2.5 rounded-xl bg-white border-2 border-[#0BD0D9] text-[#0BD0D9] shadow-md">
+                    <div className="inline-flex p-2.5 rounded-xl bg-white border-2 border-[var(--brand-primary)] text-[var(--brand-primary)] shadow-md">
                         <Icon className="w-6 h-6 stroke-[2.5]" />
                     </div>
                 </div>
@@ -64,7 +64,7 @@ export function QuickActionCard({
             </div>
 
             {/* Bottom Right Circle */}
-            <div className="absolute bottom-4 right-4 sm:bottom-5 sm:right-5 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white border-2 border-[#0BD0D9] text-[#0BD0D9] flex items-center justify-center shadow-lg group-hover:border-[#09B8C0] group-hover:text-[#09B8C0] transition-colors">
+            <div className="absolute bottom-4 right-4 sm:bottom-5 sm:right-5 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white border-2 border-[var(--brand-primary)] text-[var(--brand-primary)] flex items-center justify-center shadow-lg group-hover:border-[var(--brand-primary-hover)] group-hover:text-[var(--brand-primary-hover)] transition-colors">
                 <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
             </div>
         </Link>

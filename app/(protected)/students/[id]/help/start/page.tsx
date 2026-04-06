@@ -6,6 +6,10 @@ import {
 import { redirect, notFound } from "next/navigation";
 import { ActivityWorkspace } from "@/components/activity/ActivityWorkspace/ActivityWorkspace";
 import { requireAuth } from "@/lib/session";
+import {
+    studentHelpRoute,
+    studentRoute,
+} from "@/lib/constants/student-routes";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -22,7 +26,7 @@ export default async function ActivityStartPage({
     // Activity workspace is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
     // Fetch detail + optional progress in parallel.
@@ -44,14 +48,14 @@ export default async function ActivityStartPage({
         : student.phqResults[0];
 
     if (!latestResult) {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
     const riskLevel = latestResult.riskLevel;
 
     // Activity flow exists only for orange/yellow/green.
     if (!["orange", "yellow", "green"].includes(riskLevel)) {
-        redirect(`/students/${studentId}/help`);
+        redirect(studentHelpRoute(studentId));
     }
 
     // Reuse prefetched progress only when it targets selected PHQ result.

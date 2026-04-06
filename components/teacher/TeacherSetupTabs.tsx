@@ -68,8 +68,8 @@ function SectionCard({
             id={id}
             className="scroll-mt-32 bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-gray-100"
         >
-            <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-xl bg-[#0BD0D9] flex items-center justify-center shadow-sm text-white">
+                <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-xl bg-[var(--brand-primary)] flex items-center justify-center shadow-sm text-white">
                     {icon}
                 </div>
                 <div>

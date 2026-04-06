@@ -52,6 +52,10 @@ export const ACTIVITIES: Activity[] = [
     },
 ];
 
+const ACTIVITY_BY_INDEX = new Map<number, Activity>(
+    ACTIVITIES.map((activity, index) => [index, activity]),
+);
+
 // Activity indices per risk level (0-indexed)
 export const ACTIVITY_INDICES: Record<string, number[]> = {
     orange: [0, 1, 2, 3, 4], // กิจกรรม 1, 2, 3, 4, 5
@@ -123,11 +127,22 @@ export function getColorConfig(level: RiskLevel): ColorTheme {
 }
 
 export function getActivities(level: RiskLevel): Activity[] {
+    let indices: number[] = [];
     switch (level) {
-        case "orange": return [ACTIVITIES[0], ACTIVITIES[1], ACTIVITIES[2], ACTIVITIES[3], ACTIVITIES[4]];
-        case "yellow": return [ACTIVITIES[0], ACTIVITIES[1], ACTIVITIES[2], ACTIVITIES[4]];
-        case "green":  return [ACTIVITIES[0], ACTIVITIES[1], ACTIVITIES[4]];
-        case "red":
-        case "blue":   return [];
+        case "orange":
+            indices = ACTIVITY_INDICES.orange;
+            break;
+        case "yellow":
+            indices = ACTIVITY_INDICES.yellow;
+            break;
+        case "green":
+            indices = ACTIVITY_INDICES.green;
+            break;
+        default:
+            return [];
     }
+
+    return indices
+        .map((index) => ACTIVITY_BY_INDEX.get(index))
+        .filter((activity): activity is Activity => activity !== undefined);
 }

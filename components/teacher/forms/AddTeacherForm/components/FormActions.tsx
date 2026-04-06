@@ -1,4 +1,5 @@
 import type { FormActionsProps } from "../types";
+import { buttonVariants } from "@/components/ui/Button";
 
 export function FormActions({
     isLoading,
@@ -9,7 +10,11 @@ export function FormActions({
             <button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 py-3 px-4 bg-[#0BD0D9] text-white font-bold rounded-xl hover:bg-[#09B8C0] disabled:opacity-50 transition-base duration-200 shadow-sm"
+                className={buttonVariants({
+                    variant: "primary",
+                    fullWidth: true,
+                    className: "py-3 px-4 font-bold shadow-sm",
+                })}
             >
                 {isLoading ? (
                     <span className="flex items-center justify-center gap-2">

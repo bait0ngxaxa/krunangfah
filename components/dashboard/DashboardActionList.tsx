@@ -59,7 +59,7 @@ export function DashboardActionList({
                         imageSrc="/image/dashboard/import.webp"
                         imageClassName="w-[85px] sm:w-[95px]"
                         actionButton={
-                            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0BD0D9] text-white text-[11px] sm:text-xs font-bold rounded-xl shadow-sm hover:brightness-95 transition-base">
+                            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand-primary)] text-white text-[11px] sm:text-xs font-bold rounded-xl shadow-sm hover:brightness-95 transition-base">
                                 <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
                                 <span>Import Excel</span>
                             </div>

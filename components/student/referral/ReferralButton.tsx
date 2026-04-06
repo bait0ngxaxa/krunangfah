@@ -48,7 +48,7 @@ export function ReferralButton({
 
         return (
             <div className="flex flex-wrap items-center justify-end gap-3">
-                <div className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-[#09B8C0] shadow-sm">
+                <div className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-[var(--brand-primary-hover)] shadow-sm">
                     <ArrowRightLeft className="w-4 h-4" />
                     <span className="text-sm font-bold">
                         ได้รับส่งต่อจาก {fromName}

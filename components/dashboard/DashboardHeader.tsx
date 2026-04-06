@@ -70,7 +70,7 @@ export function DashboardHeader({
     stats,
 }: DashboardHeaderProps) {
     return (
-        <div className="relative bg-white rounded-[2.5rem] p-5 sm:p-7 mb-6 overflow-hidden border-[3px] border-[#0BD0D9] shadow-[0_8px_24px_-4px_rgba(11,208,217,0.15)] flex flex-col sm:flex-row gap-6 sm:gap-8 items-center sm:items-start group">
+        <div className="relative bg-white rounded-[2.5rem] p-5 sm:p-7 mb-6 overflow-hidden border-[3px] border-[var(--brand-primary)] shadow-[0_8px_24px_-4px_rgba(11,208,217,0.15)] flex flex-col sm:flex-row gap-6 sm:gap-8 items-center sm:items-start group">
             {/* Left Avatar (Big image) */}
             <div className="shrink-0 relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] rounded-4xl bg-[#FDE24F] flex items-center justify-center overflow-hidden shadow-inner flex-none">
                 <Image
@@ -89,7 +89,7 @@ export function DashboardHeader({
                 <div>
                     <h1 className="text-2xl sm:text-3xl lg:text-[28px] font-extrabold pb-1">
                         <span className="text-gray-900">สวัสดี </span>
-                        <span className="text-[#0BD0D9]">
+                        <span className="text-[var(--brand-primary)]">
                             ชั้นเป็นครูนางฟ้า
                         </span>
                     </h1>
@@ -99,7 +99,7 @@ export function DashboardHeader({
                     <p className="text-base sm:text-lg font-bold text-gray-800 flex flex-col sm:flex-row items-center sm:items-start sm:gap-4 mt-1">
                         <span>{schoolName}</span>
                         {subtitle && (
-                            <span className="text-[#0BD0D9]">{subtitle}</span>
+                            <span className="text-[var(--brand-primary)]">{subtitle}</span>
                         )}
                     </p>
                 </div>

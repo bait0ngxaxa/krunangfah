@@ -3,19 +3,15 @@
 import { useState } from "react";
 import {
     ClipboardList,
-    Copy,
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    CheckCircle2,
-    AlertCircle,
     User,
-    Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { InviteActionRow } from "@/components/ui/InviteActionRow";
+import { PaginationControls } from "@/components/ui/PaginationControls";
+import { SectionCard, SectionCardHeader } from "@/components/ui/SectionCard";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { TableMetaRow } from "@/components/ui/TableMetaRow";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
 import { revokeTeacherInvite } from "@/lib/actions/teacher-invite";
 import { RoleBadge } from "@/components/ui/badges";
@@ -40,37 +36,20 @@ function getInviteUrl(token: string): string {
     return `${base}/invite/${token}`;
 }
 
-function StatusBadge({ status }: { status: InviteStatus }) {
-    if (status === "pending") {
-        return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                <Clock className="w-3 h-3" />
-                รอดำเนินการ
-            </span>
-        );
-    }
-    if (status === "accepted") {
-        return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
-                <CheckCircle2 className="w-3 h-3" />
-                ใช้งานแล้ว
-            </span>
-        );
-    }
-    return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-600">
-            <AlertCircle className="w-3 h-3" />
-            หมดอายุ
-        </span>
-    );
-}
-
-function CopyButton({ token }: { token: string }) {
+function InviteCard({
+    invite,
+    onRevoked,
+}: {
+    invite: TeacherInviteWithAcademicYear;
+    onRevoked?: () => void;
+}) {
     const [copied, setCopied] = useState(false);
+    const [isRevoking, setIsRevoking] = useState(false);
+    const status = getInviteStatus(invite);
 
     async function handleCopy() {
         try {
-            await navigator.clipboard.writeText(getInviteUrl(token));
+            await navigator.clipboard.writeText(getInviteUrl(invite.token));
             setCopied(true);
             toast.success("คัดลอกลิงก์คำเชิญเรียบร้อย");
             setTimeout(() => setCopied(false), 2000);
@@ -79,40 +58,9 @@ function CopyButton({ token }: { token: string }) {
         }
     }
 
-    return (
-        <Button
-            type="button"
-            onClick={handleCopy}
-            variant="secondary"
-            size="sm"
-            className="px-2.5 py-1.5 text-xs"
-            title="คัดลอก Link"
-        >
-            {copied ? (
-                <Check className="w-3.5 h-3.5" />
-            ) : (
-                <Copy className="w-3.5 h-3.5" />
-            )}
-            {copied ? "คัดลอกแล้ว" : "Copy Link"}
-        </Button>
-    );
-}
-
-function RevokeButton({
-    inviteId,
-    inviteName,
-    onRevoked,
-}: {
-    inviteId: string;
-    inviteName: string;
-    onRevoked?: () => void;
-}) {
-    const [showDialog, setShowDialog] = useState(false);
-    const [isRevoking, setIsRevoking] = useState(false);
-
     async function handleConfirmRevoke() {
         setIsRevoking(true);
-        const result = await revokeTeacherInvite(inviteId);
+        const result = await revokeTeacherInvite(invite.id);
         if (result.success) {
             toast.success(result.message);
             onRevoked?.();
@@ -120,43 +68,7 @@ function RevokeButton({
             toast.error(result.message);
         }
         setIsRevoking(false);
-        setShowDialog(false);
     }
-
-    return (
-        <>
-            <Button
-                type="button"
-                onClick={() => setShowDialog(true)}
-                variant="danger"
-                size="sm"
-                className="px-2.5 py-1.5 text-xs"
-                title="ยกเลิกคำเชิญ"
-            >
-                <Trash2 className="w-3.5 h-3.5" />
-                ยกเลิก
-            </Button>
-            <ConfirmDialog
-                isOpen={showDialog}
-                title="ยกเลิกคำเชิญ"
-                message={`ต้องการยกเลิกคำเชิญของ "${inviteName}" ใช่หรือไม่?`}
-                confirmLabel="ยืนยันยกเลิก"
-                isLoading={isRevoking}
-                onConfirm={handleConfirmRevoke}
-                onCancel={() => setShowDialog(false)}
-            />
-        </>
-    );
-}
-
-function InviteCard({
-    invite,
-    onRevoked,
-}: {
-    invite: TeacherInviteWithAcademicYear;
-    onRevoked?: () => void;
-}) {
-    const status = getInviteStatus(invite);
 
     return (
         <div className="p-4 bg-white rounded-xl border border-gray-100 transition-colors">
@@ -188,16 +100,25 @@ function InviteCard({
                     </div>
                 </div>
                 <div className="shrink-0 flex flex-col items-end gap-2">
-                    <StatusBadge status={status} />
+                    <StatusBadge
+                        tone={status}
+                        label={
+                            status === "pending"
+                                ? "รอดำเนินการ"
+                                : status === "accepted"
+                                  ? "ใช้งานแล้ว"
+                                  : "หมดอายุ"
+                        }
+                    />
                     {status === "pending" && (
-                        <div className="flex items-center gap-1.5">
-                            <CopyButton token={invite.token} />
-                            <RevokeButton
-                                inviteId={invite.id}
-                                inviteName={`${invite.firstName} ${invite.lastName}`}
-                                onRevoked={onRevoked}
-                            />
-                        </div>
+                        <InviteActionRow
+                            copied={copied}
+                            isRevoking={isRevoking}
+                            onCopy={handleCopy}
+                            onConfirmRevoke={handleConfirmRevoke}
+                            revokeDialogTitle="ยกเลิกคำเชิญ"
+                            revokeDialogMessage={`ต้องการยกเลิกคำเชิญของ "${invite.firstName} ${invite.lastName}" ใช่หรือไม่?`}
+                        />
                     )}
                 </div>
             </div>
@@ -245,22 +166,22 @@ export function TeacherInviteList({
     const paginatedInvites = invites.slice(start, start + PAGE_SIZE);
 
     return (
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-gray-100 shadow-sm relative overflow-hidden">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-[#0BD0D9] stroke-[2.5]" />
-                <span className="text-gray-800">
-                    รายการคำเชิญครู ({invites.length})
-                </span>
-            </h2>
+        <SectionCard className="p-5 sm:p-6">
+            <SectionCardHeader
+                icon={ClipboardList}
+                className="text-lg"
+                titleClassName="text-gray-800"
+                title={`รายการคำเชิญครู (${invites.length})`}
+            />
 
             {invites.length === 0 ? (
-                <div className="p-8 text-center bg-emerald-50/50 rounded-xl border-2 border-dashed border-emerald-200">
-                    <ClipboardList className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500 font-bold">ยังไม่มีคำเชิญ</p>
-                    <p className="text-gray-400 text-sm mt-1 font-medium">
-                        สร้างคำเชิญด้านบนเพื่อเชิญครูเข้าระบบ
-                    </p>
-                </div>
+                <EmptyState
+                    icon={ClipboardList}
+                    variant="emerald"
+                    title="ยังไม่มีคำเชิญ"
+                    description="สร้างคำเชิญด้านบนเพื่อเชิญครูเข้าระบบ"
+                    className="p-8"
+                />
             ) : (
                 <>
                     <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
@@ -275,45 +196,34 @@ export function TeacherInviteList({
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-emerald-100">
-                            <p className="text-xs text-gray-500">
-                                แสดง {start + 1}–
-                                {Math.min(start + PAGE_SIZE, invites.length)}{" "}
-                                จาก {invites.length} รายการ
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() =>
+                        <TableMetaRow
+                            borderClassName="border-emerald-100"
+                            summary={
+                                <>
+                                    แสดง {start + 1}–
+                                    {Math.min(start + PAGE_SIZE, invites.length)}{" "}
+                                    จาก {invites.length} รายการ
+                                </>
+                            }
+                            controls={
+                                <PaginationControls
+                                    currentPage={safeCurrentPage}
+                                    totalPages={totalPages}
+                                    onPrevious={() =>
                                         setPage((p) => Math.max(1, p - 1))
                                     }
-                                    disabled={safeCurrentPage <= 1}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <ChevronLeft className="w-3.5 h-3.5" />
-                                    ก่อนหน้า
-                                </button>
-                                <span className="text-xs font-bold text-gray-700 px-1.5">
-                                    {safeCurrentPage} / {totalPages}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() =>
+                                    onNext={() =>
                                         setPage((p) =>
                                             Math.min(totalPages, p + 1),
                                         )
                                     }
-                                    disabled={safeCurrentPage >= totalPages}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    ถัดไป
-                                    <ChevronRight className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        </div>
+                                    className="flex items-center gap-2"
+                                />
+                            }
+                        />
                     )}
                 </>
             )}
-        </div>
+        </SectionCard>
     );
 }

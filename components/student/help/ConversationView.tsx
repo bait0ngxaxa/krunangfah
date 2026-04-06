@@ -15,6 +15,10 @@ import type { ColorTheme } from "@/lib/config/help-page-config";
 import { HelpPageHeader } from "./HelpPageHeader";
 import { AddCounselingModal } from "../counseling/AddCounselingModal";
 import { ReferralFormModal } from "./ReferralFormModal";
+import {
+    studentHelpConversationRoute,
+    studentRoute,
+} from "@/lib/constants/student-routes";
 
 interface ConversationViewProps {
     studentName: string;
@@ -108,7 +112,7 @@ export function ConversationView({
         <div className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-8">
             <div className="max-w-4xl mx-auto relative z-10">
                 <BackButton
-                    href={`/students/${studentId}`}
+                    href={studentRoute(studentId)}
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
@@ -135,7 +139,7 @@ export function ConversationView({
                                 <MessageCircle className={`w-5 h-5 ${config.textColor}`} />
                             }
                             buttonLabel="หลักการพูดคุย"
-                            href={`/students/${studentId}/help/conversation`}
+                            href={studentHelpConversationRoute(studentId)}
                             bgClass={config.bg}
                         />
 

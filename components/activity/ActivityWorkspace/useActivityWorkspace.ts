@@ -19,6 +19,10 @@ import type {
     UseActivityWorkspaceReturn,
     PreviewFile,
 } from "./types";
+import {
+    studentHelpAssessmentRoute,
+    studentHelpEncouragementRoute,
+} from "@/lib/constants/student-routes";
 
 /**
  * Custom hook for managing ActivityWorkspace state and logic
@@ -99,17 +103,21 @@ export function useActivityWorkspace({
         try {
             const result = await confirmActivityComplete(currentProgress.id);
             if (result.success && result.activityNumber) {
-                const phqParam = phqResultId
-                    ? `&phqResultId=${phqResultId}`
-                    : "";
-
                 if (result.activityNumber === 1) {
                     router.push(
-                        `/students/${studentId}/help/start/assessment?activity=${result.activityNumber}${phqParam}`,
+                        studentHelpAssessmentRoute(
+                            studentId,
+                            result.activityNumber,
+                            phqResultId,
+                        ),
                     );
                 } else {
                     router.push(
-                        `/students/${studentId}/help/start/encouragement?activity=${result.activityNumber}${phqParam}`,
+                        studentHelpEncouragementRoute(
+                            studentId,
+                            result.activityNumber,
+                            { phqResultId },
+                        ),
                     );
                 }
             } else {

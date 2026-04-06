@@ -4,7 +4,6 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 import { existsSync } from "fs";
 import {
     REQUIRED_WORKSHEETS,
@@ -16,6 +15,13 @@ import { canAccessStudentByRole } from "@/lib/security/student-access";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import type { UploadWorksheetResult } from "./types";
 import { logError } from "@/lib/utils/logging";
+import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
+import {
+    UPLOAD_WORKSHEETS_DIR,
+    buildWorksheetFilePath,
+    buildWorksheetFileUrl,
+    extractWorksheetFileName,
+} from "@/lib/constants/uploads";
 
 const MAX_WORKSHEET_NUMBER_RETRIES = 3;
 
@@ -43,7 +49,7 @@ export async function uploadWorksheet(
         if (session.user.role === "system_admin") {
             return {
                 success: false,
-                message: "system_admin ไม่มีสิทธิ์อัปโหลดใบงาน",
+                message: ERROR_MESSAGES.role.systemAdminUploadWorksheet,
             };
         }
 
@@ -139,22 +145,24 @@ export async function uploadWorksheet(
         // Create upload directory if not exists
         // SECURITY: Store outside public/ to prevent unauthenticated access
         // Files are served exclusively through the /api/uploads/ route with auth checks
-        const uploadDir = join(process.cwd(), ".data", "uploads", "worksheets");
+        const uploadDir = UPLOAD_WORKSHEETS_DIR;
+        // eslint-disable-next-line security/detect-non-literal-fs-filename -- uploadDir is a fixed trusted constant path
         if (!existsSync(uploadDir)) {
+            // eslint-disable-next-line security/detect-non-literal-fs-filename -- uploadDir is a fixed trusted constant path
             await mkdir(uploadDir, { recursive: true });
         }
 
         // Generate unique filename using validated extension
         const timestamp = Date.now();
         const fileName = `${activityProgress.studentId}_activity${activityProgress.activityNumber}_${timestamp}.${ext}`;
-        const filePath = join(uploadDir, fileName);
+        const filePath = buildWorksheetFilePath(fileName);
 
         // Save file to disk
         // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB UUID + activityNumber + timestamp + whitelist-validated extension
         await writeFile(filePath, buffer);
 
         // Save to database — clean up file if DB write fails
-        const fileUrl = `/api/uploads/worksheets/${fileName}`;
+        const fileUrl = buildWorksheetFileUrl(fileName);
         let upload:
             | {
                   id: string;
@@ -266,7 +274,7 @@ export async function deleteWorksheetUpload(
         if (session.user.role === "system_admin") {
             return {
                 success: false,
-                message: "system_admin ไม่มีสิทธิ์ลบใบงาน",
+                message: ERROR_MESSAGES.role.systemAdminDeleteWorksheet,
             };
         }
 
@@ -317,14 +325,12 @@ export async function deleteWorksheetUpload(
         }
 
         // Delete file from disk
-        const fileName = upload.fileUrl.replace("/api/uploads/worksheets/", "");
-        const filePath = join(
-            process.cwd(),
-            ".data",
-            "uploads",
-            "worksheets",
-            fileName,
-        );
+        const fileName = extractWorksheetFileName(upload.fileUrl);
+        if (!fileName) {
+            return { success: false, message: "ไม่พบไฟล์ที่ต้องการลบ" };
+        }
+
+        const filePath = buildWorksheetFilePath(fileName);
         // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB fileUrl, not user input
         if (existsSync(filePath)) {
             const { unlink } = await import("fs/promises");

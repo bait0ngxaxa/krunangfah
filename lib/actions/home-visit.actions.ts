@@ -21,6 +21,7 @@ import {
 import { existsSync } from "fs";
 import { join } from "path";
 import { logError } from "@/lib/utils/logging";
+import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 
 const MAX_VISIT_NUMBER_RETRIES = 3;
 
@@ -167,7 +168,10 @@ export async function createHomeVisit(data: {
         const session = await requireAuth();
 
         if (session.user.role === "system_admin") {
-            return { success: false, message: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูล" };
+            return {
+                success: false,
+                message: ERROR_MESSAGES.role.systemAdminReadonly("แก้ไขข้อมูล"),
+            };
         }
 
         const userId = session.user.id;
@@ -277,7 +281,10 @@ export async function deleteHomeVisit(
         const session = await requireAuth();
 
         if (session.user.role === "system_admin") {
-            return { success: false, message: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูล" };
+            return {
+                success: false,
+                message: ERROR_MESSAGES.role.systemAdminReadonly("แก้ไขข้อมูล"),
+            };
         }
 
         const visit = await prisma.homeVisit.findUnique({

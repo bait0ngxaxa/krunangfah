@@ -8,6 +8,7 @@ import { actionFetcher, searchSWRConfig, swrKeys } from "@/lib/swr/config";
 import { MAX_VISIBLE_RESULTS } from "./constants";
 import { useState, useEffect, useRef } from "react";
 import type { Student } from "./types";
+import { studentRoute } from "@/lib/constants/student-routes";
 
 /**
  * Hook for student search logic with SWR (replaces manual debounce).
@@ -30,7 +31,7 @@ export function useStudentSearch() {
     const results = query.trim() ? (swrResults as Student[]) : [];
 
     const handleStudentClick = useCallback((studentId: string): void => {
-        router.push(`/students/${studentId}`);
+        router.push(studentRoute(studentId));
     }, [router]);
 
     return { query, setQuery, results, isSearching, handleStudentClick };

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { BookOpen, Download, ChevronDown, FileText } from "lucide-react";
 import { getWorksheetNames } from "../constants";
+import { studentHelpGuidelinesRoute } from "@/lib/constants/student-routes";
 
 interface ActionButtonsProps {
     studentId: string;
@@ -54,7 +55,7 @@ export function ActionButtons({
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <Link
-                href={`/students/${studentId}/help/guidelines${phqResultId ? `?phqResultId=${phqResultId}` : ""}`}
+                href={studentHelpGuidelinesRoute(studentId, phqResultId)}
                 className="group flex items-center justify-center gap-3 rounded-2xl bg-emerald-500 px-6 py-4 font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-lg"
             >
                 <BookOpen className="w-6 h-6 group-hover:scale-110 transition-transform" />

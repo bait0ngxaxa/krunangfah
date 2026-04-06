@@ -33,7 +33,7 @@ export function BulkClassAdder({
                     value={bulkGrade}
                     onChange={(e) => onGradeChange(e.target.value)}
                     placeholder="ระดับชั้น เช่น ม.1"
-                    className="flex-1 min-w-[100px] px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
+                    className="flex-1 min-w-[100px] px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[var(--brand-primary)] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                 />
                 <input
                     type="number"
@@ -42,7 +42,7 @@ export function BulkClassAdder({
                     min={1}
                     max={20}
                     placeholder="จำนวนทับ"
-                    className="w-28 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[#0BD0D9] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
+                    className="w-28 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[var(--brand-primary)] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                 />
                 <button
                     type="button"

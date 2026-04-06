@@ -4,6 +4,10 @@ import { BackButton } from "@/components/ui/BackButton";
 import type { Activity, ColorTheme } from "@/lib/config/help-page-config";
 import { HelpPageHeader } from "./HelpPageHeader";
 import { ActivityCard } from "./ActivityCard";
+import {
+    studentHelpStartRoute,
+    studentRoute,
+} from "@/lib/constants/student-routes";
 
 interface ActivityViewProps {
     studentName: string;
@@ -26,7 +30,7 @@ export function ActivityView({
         <div className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-8">
             <div className="max-w-5xl mx-auto relative z-10">
                 <BackButton
-                    href={`/students/${studentId}`}
+                    href={studentRoute(studentId)}
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
@@ -62,7 +66,7 @@ export function ActivityView({
                     {/* Action Button */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
-                            href={`/students/${studentId}/help/start?phqResultId=${phqResultId}`}
+                            href={studentHelpStartRoute(studentId, phqResultId)}
                             className={`group flex items-center justify-center gap-3 rounded-2xl px-6 py-4 text-base font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg sm:px-10 sm:text-xl ${config.bg}`}
                         >
                             <Rocket className="w-6 h-6 group-hover:scale-110 transition-transform" />

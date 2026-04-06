@@ -44,7 +44,7 @@ export function StudentProfileCard({
         : null;
     const avatarBg = risk
         ? `bg-gradient-to-br ${risk.gradient}`
-        : "bg-[#0BD0D9]";
+        : "bg-[var(--brand-primary)]";
 
     return (
         <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 sm:p-7 md:p-8 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-base duration-300 hover:shadow-[0_24px_44px_-24px_rgba(15,23,42,0.5)]">

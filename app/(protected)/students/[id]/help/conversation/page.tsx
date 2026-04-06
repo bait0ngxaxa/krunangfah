@@ -15,6 +15,7 @@ import { getColorConfig } from "@/lib/config/help-page-config";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { HelpPageHeader } from "@/components/student/help/HelpPageHeader";
 import { requireAuth } from "@/lib/session";
+import { studentHelpRoute, studentRoute } from "@/lib/constants/student-routes";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -28,7 +29,7 @@ export default async function ConversationGuidelinesPage({
     // Conversation help flow is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
     const student = await getStudentDetail(studentId);
@@ -38,7 +39,7 @@ export default async function ConversationGuidelinesPage({
 
     const latestResult = student.phqResults[0];
     if (!latestResult) {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
     const riskLevel = latestResult.riskLevel as RiskLevel;
@@ -55,7 +56,7 @@ export default async function ConversationGuidelinesPage({
 
             <div className="max-w-4xl mx-auto relative z-10">
                 <BackButton
-                    href={`/students/${studentId}/help`}
+                    href={studentHelpRoute(studentId)}
                     label="กลับหน้าขั้นตอนการช่วยเหลือ"
                 />
 
@@ -110,7 +111,7 @@ export default async function ConversationGuidelinesPage({
                     </div>
 
                     <Link
-                        href={`/students/${studentId}/help`}
+                        href={studentHelpRoute(studentId)}
                         className={`group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r py-4 text-center text-lg font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg ${config.gradient}`}
                     >
                         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />

@@ -181,7 +181,7 @@ export function TeacherReferralModal({
                                         key={teacher.userId}
                                         className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-base ${
                                             selectedTeacherId === teacher.userId
-                                                ? "border-[#0BD0D9] bg-cyan-50 shadow-md"
+                                                ? "border-[var(--brand-primary)] bg-cyan-50 shadow-md"
                                                 : "border-gray-200 bg-gray-50 hover:border-gray-300"
                                         }`}
                                     >
@@ -198,10 +198,10 @@ export function TeacherReferralModal({
                                                     teacher.userId,
                                                 )
                                             }
-                                            className="w-5 h-5 text-[#0BD0D9] accent-[#0BD0D9]"
+                                            className="w-5 h-5 text-[var(--brand-primary)] accent-[var(--brand-primary)]"
                                         />
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center text-[#0BD0D9] font-bold text-sm shrink-0">
+                                            <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center text-[var(--brand-primary)] font-bold text-sm shrink-0">
                                                 {teacher.name.charAt(0)}
                                             </div>
                                             <div className="min-w-0">

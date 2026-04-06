@@ -17,7 +17,7 @@ export function ProjectFields({
                 </label>
                 <select
                     {...register("academicYearId")}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[#0BD0D9] transition-colors outline-none bg-white shadow-sm text-gray-900"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900"
                 >
                     <option value="">เลือกปีการศึกษา/เทอม</option>
                     {academicYears.map((year) => (
@@ -44,7 +44,7 @@ export function ProjectFields({
                 </label>
                 <select
                     {...register("projectRole")}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[#0BD0D9] transition-colors outline-none bg-white shadow-sm text-gray-900"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900"
                 >
                     <option value="">เลือกบทบาท</option>
                     {PROJECT_ROLES.map((role) => (

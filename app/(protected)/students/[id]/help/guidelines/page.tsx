@@ -4,6 +4,10 @@ import { BookOpen, Pin } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { buttonVariants } from "@/components/ui/Button";
 import { requireAuth } from "@/lib/session";
+import {
+    studentHelpStartRoute,
+    studentRoute,
+} from "@/lib/constants/student-routes";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -20,12 +24,10 @@ export default async function GuidelinesPage({
     // Worksheet guideline flow is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
-    const startHref = phqResultId
-        ? `/students/${studentId}/help/start?phqResultId=${phqResultId}`
-        : `/students/${studentId}/help/start`;
+    const startHref = studentHelpStartRoute(studentId, phqResultId);
 
     return (
         <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4">

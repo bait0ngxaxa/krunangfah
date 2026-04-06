@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import {
     Users,
-    ChevronLeft,
-    ChevronRight,
     UserCircle,
     School,
     GraduationCap,
@@ -15,7 +13,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PaginationControls } from "@/components/ui/PaginationControls";
+import { SectionCard, SectionCardHeader } from "@/components/ui/SectionCard";
 import { RoleBadge, ProfileBadge } from "@/components/ui/badges";
+import { TableMetaRow } from "@/components/ui/TableMetaRow";
 import type { UserListItem } from "@/types/user-management.types";
 import {
     deleteUser,
@@ -267,24 +269,20 @@ export function UserTable({
     const start = (page - 1) * pageSize;
 
     return (
-        <div className="bg-white rounded-3xl p-6 md:p-8 border-2 border-gray-100 shadow-sm relative overflow-hidden">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <UserCircle className="w-5 h-5 text-[#0BD0D9] stroke-[2.5]" />
-                <span className="text-gray-900 font-extrabold">
-                    ผู้ใช้งาน ({total})
-                </span>
-            </h2>
+        <SectionCard className="p-6 md:p-8">
+            <SectionCardHeader
+                icon={UserCircle}
+                className="text-xl"
+                title={`ผู้ใช้งาน (${total})`}
+            />
 
             {users.length === 0 ? (
-                <div className="p-12 text-center bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200">
-                    <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500 font-bold text-lg">
-                        ไม่พบผู้ใช้งาน
-                    </p>
-                    <p className="text-gray-400 text-sm mt-1 font-medium">
-                        ลองเปลี่ยนตัวกรองหรือคำค้นหา
-                    </p>
-                </div>
+                <EmptyState
+                    icon={Users}
+                    title="ไม่พบผู้ใช้งาน"
+                    description="ลองเปลี่ยนตัวกรองหรือคำค้นหา"
+                    className="p-12"
+                />
             ) : (
                 <>
                     <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
@@ -299,39 +297,27 @@ export function UserTable({
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                            <p className="text-xs text-gray-500">
-                                แสดง {start + 1}–
-                                {Math.min(start + pageSize, total)} จาก {total}{" "}
-                                รายการ
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => onPageChange(page - 1)}
-                                    disabled={page <= 1}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <ChevronLeft className="w-3.5 h-3.5" />
-                                    ก่อนหน้า
-                                </button>
-                                <span className="text-xs font-bold text-gray-700 px-1.5">
-                                    {page} / {totalPages}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => onPageChange(page + 1)}
-                                    disabled={page >= totalPages}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    ถัดไป
-                                    <ChevronRight className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        </div>
+                        <TableMetaRow
+                            summary={
+                                <>
+                                    แสดง {start + 1}–
+                                    {Math.min(start + pageSize, total)} จาก{" "}
+                                    {total} รายการ
+                                </>
+                            }
+                            controls={
+                                <PaginationControls
+                                    currentPage={page}
+                                    totalPages={totalPages}
+                                    onPrevious={() => onPageChange(page - 1)}
+                                    onNext={() => onPageChange(page + 1)}
+                                    className="flex items-center gap-2"
+                                />
+                            }
+                        />
                     )}
                 </>
             )}
-        </div>
+        </SectionCard>
     );
 }

@@ -1,4 +1,5 @@
 import type { SubmitButtonProps } from "../types";
+import { buttonVariants } from "@/components/ui/Button";
 
 export function SubmitButton({
     isLoading,
@@ -7,7 +8,11 @@ export function SubmitButton({
         <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3.5 px-4 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+            className={buttonVariants({
+                variant: "primary",
+                fullWidth: true,
+                className: "py-3.5 px-4 font-bold shadow-sm",
+            })}
         >
             {isLoading ? (
                 <span className="flex items-center justify-center gap-2">

@@ -5,6 +5,7 @@ import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import type { AssessmentPeriod } from "./types";
 import { buttonVariants } from "@/components/ui/Button";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
+import { studentHelpStartRoute } from "@/lib/constants/student-routes";
 
 interface ActivityProgressHeaderProps {
     studentId: string;
@@ -67,7 +68,7 @@ export function ActivityProgressHeader({
             </div>
             {!readOnly && (
                 <Link
-                    href={`/students/${studentId}/help/start?phqResultId=${phqResultId}`}
+                    href={studentHelpStartRoute(studentId, phqResultId)}
                     className={buttonVariants({
                         variant: "primary",
                         size: "lg",

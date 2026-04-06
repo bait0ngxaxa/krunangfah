@@ -1,5 +1,6 @@
 import { UserPlus } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
 import { requireAuth } from "@/lib/session";
 import { getAcademicYears } from "@/lib/actions/teacher.actions";
 import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
@@ -29,26 +30,17 @@ export default async function AddTeacherPage() {
             <div className="max-w-2xl mx-auto relative z-10">
                 <BackButton href="/dashboard" label="กลับหน้าหลัก" />
 
-                {/* Header */}
-                <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-5 sm:p-6 mb-6 overflow-hidden group">
-                    <div className="relative flex items-center gap-4">
-                        <div className="relative shrink-0">
-                            <div className="relative w-12 h-12 rounded-2xl bg-white border-2 border-[#0BD0D9] flex items-center justify-center shadow-sm group-hover:scale-105 group-hover:rotate-3 transition-base duration-500">
-                                <UserPlus className="w-6 h-6 text-[#0BD0D9]" />
-                            </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <h1 className="text-lg sm:text-xl font-bold">
-                                <span className="text-emerald-600">
-                                    จัดการครูและเชิญเข้าระบบ
-                                </span>
-                            </h1>
-                            <p className="text-sm text-gray-500">
-                                เพิ่ม-ลบห้องเรียน / เพิ่ม-ลบครู / สร้างลิงก์เชิญ
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <PageHeaderCard
+                    icon={UserPlus}
+                    title={
+                        <span className="text-emerald-600">
+                            จัดการครูและเชิญเข้าระบบ
+                        </span>
+                    }
+                    description="เพิ่ม-ลบห้องเรียน / เพิ่ม-ลบครู / สร้างลิงก์เชิญ"
+                    variant="neutral"
+                    className="mb-6"
+                />
 
                 {/* Tabbed Content */}
                 <TeacherSetupTabs

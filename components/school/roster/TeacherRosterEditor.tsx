@@ -43,7 +43,7 @@ export function TeacherRosterEditor({
                     <button
                         type="button"
                         onClick={openAddForm}
-                        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[#0BD0D9]/50 text-[#09B8C0] rounded-xl font-bold text-sm hover:bg-cyan-50 hover:border-[#0BD0D9] transition-colors cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[var(--brand-primary)]/50 text-[var(--brand-primary-hover)] rounded-xl font-bold text-sm hover:bg-cyan-50 hover:border-[var(--brand-primary)] transition-colors cursor-pointer"
                     >
                         <UserPlus className="w-4 h-4" />
                         เพิ่มครูในโรงเรียน

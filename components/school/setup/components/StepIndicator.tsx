@@ -12,9 +12,9 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
                             <div
                                 className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-base ${
                                     i < currentStep
-                                        ? "bg-[#0BD0D9] border-[#0BD0D9] text-white shadow-sm"
+                                        ? "bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white shadow-sm"
                                         : i === currentStep
-                                          ? "border-[#0BD0D9] text-[#09B8C0] bg-cyan-50"
+                                          ? "border-[var(--brand-primary)] text-[var(--brand-primary-hover)] bg-cyan-50"
                                           : "border-gray-200 text-gray-400 bg-white"
                                 }`}
                             >
@@ -25,14 +25,14 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
                                 )}
                             </div>
                             <span
-                                className={`text-[10px] sm:text-xs font-medium whitespace-nowrap ${i === currentStep ? "text-[#09B8C0]" : "text-gray-400"}`}
+                                className={`text-[10px] sm:text-xs font-medium whitespace-nowrap ${i === currentStep ? "text-[var(--brand-primary-hover)]" : "text-gray-400"}`}
                             >
                                 {label}
                             </span>
                         </div>
                         {i < STEPS.length - 1 && (
                             <div
-                                className={`w-8 sm:w-16 h-0.5 mb-4 mx-1 sm:mx-2 transition-base ${i < currentStep ? "bg-[#0BD0D9]" : "bg-gray-200"}`}
+                                className={`w-8 sm:w-16 h-0.5 mb-4 mx-1 sm:mx-2 transition-base ${i < currentStep ? "bg-[var(--brand-primary)]" : "bg-gray-200"}`}
                             />
                         )}
                     </div>

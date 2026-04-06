@@ -5,11 +5,14 @@
     --foreground: #171717;
     --ui-text-heading: #1f2937; /* gray-800 */
     --ui-text-body: #4b5563; /* gray-600 */
-    --btn-primary-from: #34d399;
-    --btn-primary-to: #14b8a6;
-    --btn-primary-from-hover: #10b981;
-    --btn-primary-to-hover: #0d9488;
-    --btn-primary-border: #34d399;
+    --brand-primary: #0bd0d9;
+    --brand-primary-hover: #09b8c0;
+    --brand-primary-soft: #e6fafb;
+    --btn-primary-from: var(--brand-primary);
+    --btn-primary-to: var(--brand-primary);
+    --btn-primary-from-hover: var(--brand-primary-hover);
+    --btn-primary-to-hover: var(--brand-primary-hover);
+    --btn-primary-border: var(--brand-primary);
     --btn-secondary-bg: #ffffff;
     --btn-secondary-bg-hover: #ecfdf5;
     --btn-secondary-text: #0f766e;

@@ -103,6 +103,8 @@ export function StudentDashboardFilters({
         });
     }
 
+    const shouldShowScopedFilters = !isSystemAdmin || selectedSchoolId.length > 0;
+
     return (
         <>
             {isSystemAdmin ? (
@@ -113,15 +115,17 @@ export function StudentDashboardFilters({
                 />
             ) : null}
 
-            <ClassFilter
-                classOptions={classOptions}
-                classes={classes}
-                selectedClass={selectedClass}
-                totalStudents={totalStudents}
-                onClassChange={handleClassChange}
-            />
+            {shouldShowScopedFilters ? (
+                <ClassFilter
+                    classOptions={classOptions}
+                    classes={classes}
+                    selectedClass={selectedClass}
+                    totalStudents={totalStudents}
+                    onClassChange={handleClassChange}
+                />
+            ) : null}
 
-            {showRiskFilters ? (
+            {shouldShowScopedFilters && showRiskFilters ? (
                 <StudentFilterBar
                     groupedStudentCounts={riskCounts}
                     onReferredToggle={handleReferredToggle}

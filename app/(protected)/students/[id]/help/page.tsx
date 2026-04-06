@@ -5,6 +5,7 @@ import { getColorConfig, getActivities } from "@/lib/config/help-page-config";
 import { ConversationView } from "@/components/student/help/ConversationView";
 import { ActivityView } from "@/components/student/help/ActivityView";
 import { requireAuth } from "@/lib/session";
+import { studentRoute } from "@/lib/constants/student-routes";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -21,7 +22,7 @@ export default async function StudentHelpPage({
     // Help workflow is teacher-facing; system_admin stays on detail page.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
     const student = await getStudentDetail(studentId);
@@ -35,7 +36,7 @@ export default async function StudentHelpPage({
           student.phqResults[0])
         : student.phqResults[0];
     if (!latestResult) {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
     const riskLevel = latestResult.riskLevel as RiskLevel;

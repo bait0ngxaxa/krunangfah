@@ -14,6 +14,7 @@ import {
     updateTeacherNotesSchema,
     updateScheduledDateSchema,
 } from "@/lib/validations/activity.validation";
+import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 
 /**
  * Verify user has access to student's activity
@@ -142,7 +143,7 @@ export async function submitTeacherAssessment(
         if (session.user.role === "system_admin") {
             return {
                 success: false,
-                error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+                error: ERROR_MESSAGES.role.systemAdminReadonlyActivity,
             };
         }
 
@@ -245,7 +246,7 @@ export async function confirmActivityComplete(
         if (session.user.role === "system_admin") {
             return {
                 success: false,
-                error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+                error: ERROR_MESSAGES.role.systemAdminReadonlyActivity,
             };
         }
 
@@ -326,7 +327,7 @@ export async function scheduleActivity(
         if (session.user.role === "system_admin") {
             return {
                 success: false,
-                error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+                error: ERROR_MESSAGES.role.systemAdminReadonlyActivity,
             };
         }
 
@@ -386,7 +387,7 @@ export async function updateTeacherNotes(
         if (session.user.role === "system_admin") {
             return {
                 success: false,
-                error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+                error: ERROR_MESSAGES.role.systemAdminReadonlyActivity,
             };
         }
 
@@ -444,7 +445,7 @@ export async function updateScheduledDate(
         if (session.user.role === "system_admin") {
             return {
                 success: false,
-                error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+                error: ERROR_MESSAGES.role.systemAdminReadonlyActivity,
             };
         }
 

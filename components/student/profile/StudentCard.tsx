@@ -39,12 +39,12 @@ function StudentCardComponent({ student, onClick, isReferred }: StudentCardProps
     return (
         <div
             onClick={onClick}
-            className="group bg-white rounded-2xl p-5 border-2 border-gray-100 shadow-sm hover:shadow-md hover:border-[#0BD0D9]/50 transition-base cursor-pointer relative overflow-hidden"
+            className="group bg-white rounded-2xl p-5 border-2 border-gray-100 shadow-sm hover:shadow-md hover:border-[var(--brand-primary)]/50 transition-base cursor-pointer relative overflow-hidden"
             style={{ contain: "layout style paint" }}
         >
             <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#0BD0D9] flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:scale-105 transition-transform duration-300">
+                    <div className="w-12 h-12 rounded-2xl bg-[var(--brand-primary)] flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:scale-105 transition-transform duration-300">
                         {initialLetter}
                     </div>
                     <div>

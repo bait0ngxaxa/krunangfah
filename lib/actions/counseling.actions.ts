@@ -19,6 +19,7 @@ import {
     updateCounselingSessionSchema,
     deleteCounselingSessionSchema,
 } from "@/lib/validations/counseling.validation";
+import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 
 export interface CounselingSession {
     id: string;
@@ -149,7 +150,10 @@ export async function createCounselingSession(data: {
 
         // system_admin เป็น readonly — ไม่สามารถเพิ่มบันทึกได้
         if (session.user.role === "system_admin") {
-            return { success: false, message: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม" };
+            return {
+                success: false,
+                message: ERROR_MESSAGES.role.systemAdminReadonlyActivity,
+            };
         }
 
         const userId = session.user.id;
@@ -254,7 +258,10 @@ export async function updateCounselingSession(
 
         // system_admin เป็น readonly — ไม่สามารถแก้ไขบันทึกได้
         if (session.user.role === "system_admin") {
-            return { success: false, message: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม" };
+            return {
+                success: false,
+                message: ERROR_MESSAGES.role.systemAdminReadonlyActivity,
+            };
         }
 
         // Get session to verify access
@@ -309,7 +316,10 @@ export async function deleteCounselingSession(id: string) {
 
         // system_admin เป็น readonly — ไม่สามารถลบบันทึกได้
         if (session.user.role === "system_admin") {
-            return { success: false, message: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม" };
+            return {
+                success: false,
+                message: ERROR_MESSAGES.role.systemAdminReadonlyActivity,
+            };
         }
 
         const counselingSession = await prisma.counselingSession.findUnique({

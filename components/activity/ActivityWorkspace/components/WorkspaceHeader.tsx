@@ -1,5 +1,6 @@
 import { BookOpen } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { studentRoute } from "@/lib/constants/student-routes";
 
 interface WorkspaceHeaderProps {
     studentId: string;
@@ -28,7 +29,7 @@ export function WorkspaceHeader({
     return (
         <>
             <BackButton
-                href={`/students/${studentId}`}
+                href={studentRoute(studentId)}
                 label="กลับหน้าข้อมูลนักเรียน"
             />
 

@@ -19,6 +19,7 @@ import { validateFileSignature } from "@/lib/utils/file-signature";
 import { canAccessStudentByRole } from "@/lib/security/student-access";
 import { revalidatePath } from "next/cache";
 import { logError } from "@/lib/utils/logging";
+import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 
 /** Allowed image extensions for home visit photos */
 const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
@@ -59,7 +60,7 @@ export async function uploadHomeVisitPhoto(
         if (session.user.role === "system_admin") {
             return {
                 success: false,
-                message: "system_admin ไม่มีสิทธิ์อัปโหลดรูปภาพ",
+                message: ERROR_MESSAGES.role.systemAdminReadonly("อัปโหลดรูปภาพ"),
             };
         }
 
@@ -226,7 +227,7 @@ export async function deleteHomeVisitPhoto(
         if (session.user.role === "system_admin") {
             return {
                 success: false,
-                message: "system_admin ไม่มีสิทธิ์ลบรูปภาพ",
+                message: ERROR_MESSAGES.role.systemAdminReadonly("ลบรูปภาพ"),
             };
         }
 

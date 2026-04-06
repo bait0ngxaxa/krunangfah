@@ -1,5 +1,6 @@
 import { UsersRound } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
 import { requireAuth } from "@/lib/session";
 import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
 import { getSchoolAdmins } from "@/lib/actions/primary-admin.actions";
@@ -28,28 +29,17 @@ export default async function SchoolClassesPage() {
             <div className="max-w-2xl mx-auto relative z-10">
                 <BackButton href="/dashboard" label="กลับหน้าหลัก" />
 
-                {/* Header */}
-                <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-5 sm:p-6 mb-8 overflow-hidden group">
-                    <div className="relative flex items-center gap-4">
-                        <div className="relative shrink-0">
-                            <div className="relative w-12 h-12 rounded-2xl bg-white border-2 border-[#0BD0D9] flex items-center justify-center shadow-sm group-hover:scale-105 group-hover:rotate-3 transition-base duration-500">
-                                <UsersRound className="w-6 h-6 text-[#0BD0D9]" />
-                            </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <h1 className="text-lg sm:text-xl font-bold">
-                                <span className="text-emerald-600">
-                                    จัดการครูในระบบ
-                                </span>
-                            </h1>
-                            <p className="text-sm text-gray-500">
-                                {isPrimary
-                                    ? "แก้ไขห้องที่ปรึกษา / จัดการสิทธิ์ผู้ดูแล"
-                                    : "ดูข้อมูลครูในระบบ (อ่านอย่างเดียว)"}
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <PageHeaderCard
+                    icon={UsersRound}
+                    title={<span className="text-emerald-600">จัดการครูในระบบ</span>}
+                    description={
+                        isPrimary
+                            ? "แก้ไขห้องที่ปรึกษา / จัดการสิทธิ์ผู้ดูแล"
+                            : "ดูข้อมูลครูในระบบ (อ่านอย่างเดียว)"
+                    }
+                    variant="neutral"
+                    className="mb-8"
+                />
 
                 {/* Tabbed Content */}
                 <SchoolClassesTabs

@@ -137,7 +137,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3.5 px-4 bg-[#0BD0D9] text-white font-bold rounded-xl hover:bg-[#09B8C0] disabled:opacity-50 transition-base duration-200 shadow-sm"
+                    className="w-full py-3.5 px-4 bg-[var(--brand-primary)] text-white font-bold rounded-xl hover:bg-[var(--brand-primary-hover)] disabled:opacity-50 transition-base duration-200 shadow-sm"
                 >
                     {isLoading ? (
                         <span className="flex items-center justify-center gap-2">

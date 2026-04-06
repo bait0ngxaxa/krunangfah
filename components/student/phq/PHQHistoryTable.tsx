@@ -37,7 +37,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
         <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-base duration-300 md:p-8">
             <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-100/45 blur-3xl" />
             <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200 bg-white text-[#0BD0D9] shadow-sm">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200 bg-white text-[var(--brand-primary)] shadow-sm">
                     <ClipboardList className="w-5 h-5" />
                 </span>
                 <span className="text-gray-800">

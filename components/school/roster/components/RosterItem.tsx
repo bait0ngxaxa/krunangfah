@@ -20,8 +20,8 @@ export function RosterItem({
                 isPending
                     ? "border-amber-200 bg-amber-50/30"
                     : isEditing
-                      ? "border-[#0BD0D9]"
-                      : "border-gray-100 hover:shadow-md hover:border-[#0BD0D9]/50"
+                      ? "border-[var(--brand-primary)]"
+                      : "border-gray-100 hover:shadow-md hover:border-[var(--brand-primary)]/50"
             }`}
         >
             <div className="flex-1 min-w-0">

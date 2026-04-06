@@ -16,7 +16,7 @@ export function NameFields({
                 <input
                     {...register("firstName")}
                     type="text"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[#0BD0D9] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="กรอกชื่อ"
                 />
                 {errors.firstName && (
@@ -36,7 +36,7 @@ export function NameFields({
                 <input
                     {...register("lastName")}
                     type="text"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[#0BD0D9] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="กรอกนามสกุล"
                 />
                 {errors.lastName && (

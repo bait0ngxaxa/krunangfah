@@ -2,6 +2,7 @@ import { getStudentDetail } from "@/lib/actions/student/main";
 import { redirect, notFound } from "next/navigation";
 import { EncouragementPage } from "@/components/activity/EncouragementPage";
 import { requireAuth } from "@/lib/session";
+import { studentHelpRoute, studentRoute } from "@/lib/constants/student-routes";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -26,7 +27,7 @@ export default async function EncouragementRoute({
     // Encouragement flow is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
     if (session.user.role === "system_admin") {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
     const student = await getStudentDetail(studentId);
@@ -41,14 +42,14 @@ export default async function EncouragementRoute({
         : student.phqResults[0];
 
     if (!latestResult) {
-        redirect(`/students/${studentId}`);
+        redirect(studentRoute(studentId));
     }
 
     const riskLevel = latestResult.riskLevel;
 
     // Encouragement step exists only for orange/yellow/green.
     if (!["orange", "yellow", "green"].includes(riskLevel)) {
-        redirect(`/students/${studentId}/help`);
+        redirect(studentHelpRoute(studentId));
     }
 
     // Fallback to internal when query is missing/invalid.

@@ -14,8 +14,8 @@ export function RosterStep({
     return (
         <div className="relative bg-white rounded-3xl border-2 border-gray-100 shadow-sm p-6 sm:p-8 overflow-hidden">
             <div className="flex items-center gap-3 mb-6 relative z-10">
-                <div className="w-10 h-10 rounded-2xl bg-white border-2 border-[#0BD0D9] flex items-center justify-center shadow-md">
-                    <Users className="w-5 h-5 text-[#0BD0D9] stroke-[2.5]" />
+                <div className="w-10 h-10 rounded-2xl bg-white border-2 border-[var(--brand-primary)] flex items-center justify-center shadow-md">
+                    <Users className="w-5 h-5 text-[var(--brand-primary)] stroke-[2.5]" />
                 </div>
                 <div>
                     <h2 className="text-lg font-bold text-gray-800">
@@ -46,7 +46,7 @@ export function RosterStep({
                 <button
                     type="button"
                     onClick={onNext}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#0BD0D9] hover:bg-[#09B8C0] text-white rounded-xl font-bold transition-colors shadow-sm cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white rounded-xl font-bold transition-colors shadow-sm cursor-pointer"
                 >
                     ถัดไป
                     <ArrowRight className="w-4 h-4" />

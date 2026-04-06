@@ -16,6 +16,10 @@ import {
     getWorkspaceColorConfig,
     getAssessmentColors,
 } from "./ActivityWorkspace/constants";
+import {
+    studentHelpEncouragementRoute,
+    studentRoute,
+} from "@/lib/constants/student-routes";
 
 interface TeacherAssessmentFormProps {
     studentId: string;
@@ -66,10 +70,13 @@ export function TeacherAssessmentForm({
             if (result.success) {
                 // Redirect to encouragement page with problem type and activity number
                 const phqParam = phqResultId
-                    ? `&phqResultId=${phqResultId}`
-                    : "";
+                    ? phqResultId
+                    : undefined;
                 router.push(
-                    `/students/${studentId}/help/start/encouragement?type=${problemType}&activity=${activityNumber}${phqParam}`,
+                    studentHelpEncouragementRoute(studentId, activityNumber, {
+                        type: problemType,
+                        phqResultId: phqParam,
+                    }),
                 );
             } else {
                 toast.error(result.error || "เกิดข้อผิดพลาด");
@@ -87,7 +94,7 @@ export function TeacherAssessmentForm({
         <div className="min-h-screen bg-slate-50 py-10 px-4">
             <div className="max-w-4xl mx-auto">
                 <BackButton
-                    href={`/students/${studentId}`}
+                    href={studentRoute(studentId)}
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 

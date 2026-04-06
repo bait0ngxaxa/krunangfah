@@ -3,6 +3,7 @@
 import { AlertTriangle } from "lucide-react";
 import { useSecuritySettingsForm } from "./useSecuritySettingsForm";
 import { PasswordFields } from "./components";
+import { buttonVariants } from "@/components/ui/Button";
 
 export function SecuritySettingsForm() {
     const { form, isLoading, onSubmit } = useSecuritySettingsForm();
@@ -36,7 +37,12 @@ export function SecuritySettingsForm() {
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#0BD0D9] hover:bg-[#09B8C0] text-white text-lg font-bold py-3.5 px-4 rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-base duration-300 shadow-sm"
+                className={buttonVariants({
+                    variant: "primary",
+                    fullWidth: true,
+                    className:
+                        "py-3.5 px-4 text-lg font-bold shadow-sm focus:ring-4 focus:ring-[var(--brand-primary)]/30",
+                })}
             >
                 {isLoading ? "กำลังเปลี่ยนรหัสผ่าน…" : "เปลี่ยนรหัสผ่าน"}
             </button>
