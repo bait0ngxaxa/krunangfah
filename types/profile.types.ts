@@ -3,6 +3,7 @@
  */
 
 import type { ProjectRole } from "./teacher.types";
+import type { RateLimitErrorPayload } from "./rate-limit.types";
 
 /**
  * User profile data returned from getCurrentUserProfile
@@ -64,4 +65,5 @@ export interface PasswordChangeInput {
 export interface PasswordChangeResponse {
     success: boolean;
     message: string;
+    error?: RateLimitErrorPayload;
 }

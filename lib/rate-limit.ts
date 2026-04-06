@@ -128,3 +128,29 @@ export function extractClientIp(
 
     return "unknown";
 }
+
+/**
+ * Build stable rate-limit key from request headers.
+ * Falls back to normalized user-agent when IP is unavailable.
+ */
+export function extractRateLimitKey(
+    headerGetter: (name: string) => string | null,
+): string {
+    const ip = extractClientIp(headerGetter);
+    if (ip !== "unknown") {
+        return ip;
+    }
+
+    const userAgent = headerGetter("user-agent");
+    if (!userAgent) {
+        return "unknown";
+    }
+
+    const normalizedUserAgent = userAgent
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .slice(0, 160);
+
+    return normalizedUserAgent ? `ua:${normalizedUserAgent}` : "unknown";
+}

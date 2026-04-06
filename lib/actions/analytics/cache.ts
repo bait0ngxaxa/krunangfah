@@ -1,9 +1,9 @@
 import { revalidateTag } from "next/cache";
 
-export const ANALYTICS_TAG = "analytics";
+const ANALYTICS_TAG = "analytics";
 export const ANALYTICS_OVERVIEW_TAG = "analytics-overview";
 
-export function getAnalyticsSchoolTag(schoolId: string): string {
+function getAnalyticsSchoolTag(schoolId: string): string {
     return `analytics:school:${schoolId}`;
 }
 

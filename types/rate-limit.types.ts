@@ -31,6 +31,20 @@ export interface RateLimitResult {
 }
 
 /**
+ * Standardized rate-limit error payload returned to clients.
+ */
+export interface RateLimitErrorPayload {
+    /** Stable error code for rate-limit violations */
+    code: "RATE_LIMIT_EXCEEDED";
+    /** Human-readable localized message */
+    message: string;
+    /** Seconds until client should retry */
+    retryAfterSeconds: number;
+    /** Unix timestamp (seconds) when current window resets */
+    resetAt: number;
+}
+
+/**
  * Internal record of request timestamps for a single key (IP)
  */
 export interface RateLimitEntry {

@@ -10,8 +10,11 @@
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/user";
-import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
-import { RATE_LIMIT_FORGOT_PASSWORD } from "@/lib/constants/rate-limit";
+import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
+import {
+    RATE_LIMIT_FORGOT_PASSWORD,
+    RATE_LIMIT_PASSWORD_RESET_SUBMIT,
+} from "@/lib/constants/rate-limit";
 import {
     generatePasswordResetToken,
     verifyPasswordResetToken,
@@ -22,14 +25,22 @@ import {
     forgotPasswordSchema,
     resetPasswordSchema,
 } from "@/lib/validations/auth.validation";
+import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
+import type { RateLimitErrorPayload } from "@/types/rate-limit.types";
 
 interface ActionResult {
     success: boolean;
     message: string;
+    error?: RateLimitErrorPayload;
 }
 
-// Module-level singleton: 3 requests per hour per IP
-const forgotPasswordLimiter = createRateLimiter(RATE_LIMIT_FORGOT_PASSWORD);
+// Module-level singletons
+const forgotPasswordRequestLimiter = createRateLimiter(
+    RATE_LIMIT_FORGOT_PASSWORD,
+);
+const passwordResetSubmitLimiter = createRateLimiter(
+    RATE_LIMIT_PASSWORD_RESET_SUBMIT,
+);
 
 /**
  * Request a password-reset email.
@@ -41,19 +52,16 @@ export async function requestPasswordReset(input: {
 }): Promise<ActionResult> {
     // --- Rate limit ---
     const headerStore = await headers();
-    const ip = extractClientIp((name) => headerStore.get(name));
-    const rateLimitResult = forgotPasswordLimiter.check(ip);
+    const rateLimitKey = extractRateLimitKey((name) => headerStore.get(name));
+    const rateLimitResult = forgotPasswordRequestLimiter.check(rateLimitKey);
 
     if (!rateLimitResult.allowed) {
-        const minutes = Math.ceil(rateLimitResult.retryAfterSeconds / 60);
-        const timeMessage =
-            minutes > 1
-                ? `${minutes} นาที`
-                : `${rateLimitResult.retryAfterSeconds} วินาที`;
+        const rateLimitError = createRateLimitErrorPayload(rateLimitResult);
 
         return {
             success: false,
-            message: `ส่งคำขอมากเกินไป กรุณารอ ${timeMessage}`,
+            message: rateLimitError.message,
+            error: rateLimitError,
         };
     }
 
@@ -99,12 +107,15 @@ export async function resetPassword(input: {
 }): Promise<ActionResult> {
     // --- Rate limit (ป้องกัน brute-force token) ---
     const headerStore = await headers();
-    const ip = extractClientIp((name) => headerStore.get(name));
-    const rateLimitResult = forgotPasswordLimiter.check(ip);
+    const rateLimitKey = extractRateLimitKey((name) => headerStore.get(name));
+    const rateLimitResult = passwordResetSubmitLimiter.check(rateLimitKey);
     if (!rateLimitResult.allowed) {
+        const rateLimitError = createRateLimitErrorPayload(rateLimitResult);
+
         return {
             success: false,
-            message: `ส่งคำขอมากเกินไป กรุณารอสักครู่`,
+            message: rateLimitError.message,
+            error: rateLimitError,
         };
     }
 

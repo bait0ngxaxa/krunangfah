@@ -11,6 +11,7 @@ import {
     type InviteRegisterFormData,
 } from "@/lib/validations/auth.validation";
 import { acceptSchoolAdminInvite } from "@/lib/actions/school-admin-invite.actions";
+import { getRateLimitMessageFromNextAuthCode } from "@/lib/rate-limit-errors";
 
 interface InviteRegisterFormProps {
     token: string;
@@ -56,6 +57,15 @@ export function InviteRegisterForm({
         });
 
         if (signInResult?.error) {
+            const rateLimitMessage = getRateLimitMessageFromNextAuthCode(
+                signInResult.code,
+            );
+            if (rateLimitMessage) {
+                toast.error(rateLimitMessage);
+                router.push("/signin");
+                return;
+            }
+
             toast.error("สร้างบัญชีสำเร็จ กรุณาเข้าสู่ระบบด้วยตัวเอง");
             router.push("/signin");
             return;

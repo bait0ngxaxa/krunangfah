@@ -19,7 +19,7 @@ setupAuthMocks();
 
 const USERS = createMockUsers("e2e-smoke-real");
 
-const { importStudents } = await import("@/lib/actions/student");
+const { importStudents } = await import("@/lib/actions/student/mutations");
 const { getStudents } = await import("@/lib/actions/student/main");
 const { deleteWorksheetUpload } = await import("@/lib/actions/activity/file-utils");
 

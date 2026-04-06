@@ -3,7 +3,7 @@ import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 
 export const MAX_VISIBLE_RESULTS = 6;
-export const RESULT_ROW_HEIGHT = 72;
+const RESULT_ROW_HEIGHT = 72;
 export const MAX_LIST_HEIGHT = MAX_VISIBLE_RESULTS * RESULT_ROW_HEIGHT;
 
 /**

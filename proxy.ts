@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
-import type { RateLimitResult } from "@/types/rate-limit.types";
+import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
 import { RATE_LIMIT_AUTH_GENERAL } from "@/lib/constants/rate-limit";
+import {
+    attachRateLimitHeaders,
+    createRateLimitApiResponse,
+} from "@/lib/rate-limit-response";
 
 // Rate limiter singletons (persist across requests)
 // Note: signin rate limiting is handled in auth.ts authorize() function
@@ -30,46 +33,6 @@ const systemAdminOnlyRoutes = ["/admin/invites", "/admin/users"];
 // Routes สำหรับ guest เท่านั้น (ถ้า login แล้วจะ redirect ไป dashboard)
 const guestOnlyRoutes = ["/signin", "/forgot-password", "/reset-password"];
 
-/**
- * Build a 429 Too Many Requests response with rate limit headers
- */
-function buildRateLimitResponse(result: RateLimitResult): NextResponse {
-    const minutes = Math.ceil(result.retryAfterSeconds / 60);
-    const timeMessage =
-        minutes > 1 ? `${minutes} นาที` : `${result.retryAfterSeconds} วินาที`;
-
-    return NextResponse.json(
-        {
-            error: {
-                code: "RATE_LIMIT_EXCEEDED",
-                message: `ส่งคำขอมากเกินไป กรุณารออีก ${timeMessage}`,
-            },
-        },
-        {
-            status: 429,
-            headers: {
-                "Retry-After": result.retryAfterSeconds.toString(),
-                "X-RateLimit-Limit": result.limit.toString(),
-                "X-RateLimit-Remaining": "0",
-                "X-RateLimit-Reset": result.resetAt.toString(),
-            },
-        },
-    );
-}
-
-/**
- * Attach rate limit info headers to an allowed response
- */
-function attachRateLimitHeaders(
-    response: NextResponse,
-    result: RateLimitResult,
-): NextResponse {
-    response.headers.set("X-RateLimit-Limit", result.limit.toString());
-    response.headers.set("X-RateLimit-Remaining", result.remaining.toString());
-    response.headers.set("X-RateLimit-Reset", result.resetAt.toString());
-    return response;
-}
-
 export default auth((req) => {
     const { nextUrl, auth: session } = req;
     const pathname = nextUrl.pathname;
@@ -78,7 +41,9 @@ export default auth((req) => {
     // Note: signin rate limiting is handled in auth.ts authorize() function
     // to properly return error messages through NextAuth
     if (pathname.startsWith("/api/auth/") && req.method === "POST") {
-        const ip = extractClientIp((name) => req.headers.get(name));
+        const rateLimitKey = extractRateLimitKey((name) =>
+            req.headers.get(name),
+        );
 
         // Skip rate limiting for signin endpoint (handled in auth.ts)
         if (pathname === "/api/auth/callback/credentials") {
@@ -86,9 +51,9 @@ export default auth((req) => {
         }
 
         // General limit for other auth POST requests
-        const result = generalAuthLimiter.check(ip);
+        const result = generalAuthLimiter.check(rateLimitKey);
         if (!result.allowed) {
-            return buildRateLimitResponse(result);
+            return createRateLimitApiResponse(result);
         }
         return attachRateLimitHeaders(NextResponse.next(), result);
     }

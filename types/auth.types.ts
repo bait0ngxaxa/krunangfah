@@ -1,6 +1,8 @@
 /**
  * User roles in the system
  */
+import type { RateLimitErrorPayload } from "./rate-limit.types";
+
 export type UserRole =
     | "school_admin"
     | "system_admin"
@@ -56,6 +58,7 @@ export interface AuthResponse {
     message: string;
     user?: ExtendedUser;
     redirectTo?: string;
+    error?: RateLimitErrorPayload;
 }
 
 /**

@@ -11,7 +11,7 @@ import {
     inviteRegisterSchema,
     inviteRoleSchema,
 } from "@/lib/validations/auth.validation";
-import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
+import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
 import { RATE_LIMIT_AUTH_SIGNIN } from "@/lib/constants/rate-limit";
 import type {
     SchoolAdminInvite,
@@ -20,10 +20,11 @@ import type {
 } from "@/types/school-admin-invite.types";
 import type { AuthResponse } from "@/types/auth.types";
 import { logError } from "@/lib/utils/logging";
+import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
 
 const INVITES_PATH = "/admin/invites";
 
-// Rate limiter: 5 invite-accept attempts per 15min per IP (reuse signin config)
+// Rate limiter: 8 invite-accept attempts per 15min per key (reuse signin config)
 const inviteAcceptLimiter = createRateLimiter(RATE_LIMIT_AUTH_SIGNIN);
 
 const emailSchema = z.string().email("อีเมลไม่ถูกต้อง");
@@ -209,19 +210,16 @@ export async function acceptSchoolAdminInvite(
 ): Promise<AuthResponse> {
     // Rate limiting
     const headerStore = await headers();
-    const ip = extractClientIp((name) => headerStore.get(name));
-    const rateLimitResult = inviteAcceptLimiter.check(ip);
+    const rateLimitKey = extractRateLimitKey((name) => headerStore.get(name));
+    const rateLimitResult = inviteAcceptLimiter.check(rateLimitKey);
 
     if (!rateLimitResult.allowed) {
-        const minutes = Math.ceil(rateLimitResult.retryAfterSeconds / 60);
-        const timeMessage =
-            minutes > 1
-                ? `${minutes} นาที`
-                : `${rateLimitResult.retryAfterSeconds} วินาที`;
+        const rateLimitError = createRateLimitErrorPayload(rateLimitResult);
 
         return {
             success: false,
-            message: `ส่งคำขอมากเกินไป กรุณารอ ${timeMessage}`,
+            message: rateLimitError.message,
+            error: rateLimitError,
         };
     }
 

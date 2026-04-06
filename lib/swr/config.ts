@@ -12,7 +12,7 @@ export const actionFetcher = <T>(action: FetcherFunction<T>) => async (): Promis
 };
 
 // SWR Key types for type safety
-export interface AnalyticsFilters {
+interface AnalyticsFilters {
     classFilter?: string;
     schoolFilter?: string;
     yearFilter?: number;
@@ -35,7 +35,7 @@ export const swrKeys = {
 } as const;
 
 // Default SWR config
-export const defaultSWRConfig = {
+const defaultSWRConfig = {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
     dedupingInterval: 2000, // 2 seconds

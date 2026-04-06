@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
+import {
+    createRateLimiter,
+    extractClientIp,
+    extractRateLimitKey,
+} from "@/lib/rate-limit";
 
 describe("createRateLimiter", () => {
     let limiter: ReturnType<typeof createRateLimiter>;
@@ -194,5 +198,31 @@ describe("extractClientIp", () => {
     it("should return 'unknown' when no headers are present", () => {
         const getter = () => null;
         expect(extractClientIp(getter)).toBe("unknown");
+    });
+});
+
+describe("extractRateLimitKey", () => {
+    it("should use IP when available", () => {
+        const getter = (name: string) => {
+            if (name === "x-forwarded-for") return "1.2.3.4";
+            if (name === "user-agent") return "Mozilla/5.0";
+            return null;
+        };
+
+        expect(extractRateLimitKey(getter)).toBe("1.2.3.4");
+    });
+
+    it("should fall back to normalized user-agent when IP is unknown", () => {
+        const getter = (name: string) => {
+            if (name === "user-agent") return "  Mozilla/5.0   TestAgent  ";
+            return null;
+        };
+
+        expect(extractRateLimitKey(getter)).toBe("ua:mozilla/5.0 testagent");
+    });
+
+    it("should return unknown when both IP and user-agent are missing", () => {
+        const getter = () => null;
+        expect(extractRateLimitKey(getter)).toBe("unknown");
     });
 });

@@ -4,13 +4,12 @@ import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { ActivityStatus } from "@prisma/client";
 import { ACTIVITY_INDICES } from "./constants";
-import type { SubmitAssessmentData, ScheduleActivityData } from "./types";
+import type { SubmitAssessmentData } from "./types";
 import { logError } from "@/lib/utils/logging";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import {
     submitAssessmentSchema,
-    scheduleActivitySchema,
     updateTeacherNotesSchema,
     updateScheduledDateSchema,
 } from "@/lib/validations/activity.validation";
@@ -199,7 +198,7 @@ export async function submitTeacherAssessment(
 /**
  * Unlock next activity when current is completed
  */
-export async function unlockNextActivity(
+async function unlockNextActivity(
     studentId: string,
     phqResultId: string,
     currentActivityNumber: number,
@@ -304,66 +303,6 @@ export async function confirmActivityComplete(
     } catch (error) {
         logError("Error confirming activity completion:", error);
         return { success: false, error: "เกิดข้อผิดพลาด" };
-    }
-}
-
-/**
- * Schedule activity with teacher
- */
-export async function scheduleActivity(
-    activityProgressId: string,
-    data: ScheduleActivityData,
-) {
-    try {
-        // Validate shape and constraints before DB access.
-        const validated = scheduleActivitySchema.parse({
-            activityProgressId,
-            ...data,
-        });
-
-        const session = await requireAuth();
-
-        // system_admin is readonly in activity workflow.
-        if (session.user.role === "system_admin") {
-            return {
-                success: false,
-                error: ERROR_MESSAGES.role.systemAdminReadonlyActivity,
-            };
-        }
-
-        const activityProgress = await prisma.activityProgress.findUnique({
-            where: { id: validated.activityProgressId },
-            select: { studentId: true },
-        });
-
-        if (!activityProgress) {
-            return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
-        }
-
-        // Enforce school/class ownership before update.
-        const { allowed, error } = await verifyActivityAccess(
-            activityProgress.studentId,
-            session.user.id,
-            session.user.role,
-        );
-
-        if (!allowed) {
-            return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
-        }
-
-        const updated = await prisma.activityProgress.update({
-            where: { id: validated.activityProgressId },
-            data: {
-                scheduledDate: validated.scheduledDate,
-                teacherId: validated.teacherId,
-                teacherNotes: validated.teacherNotes,
-            },
-        });
-
-        return { success: true, data: updated };
-    } catch (error) {
-        logError("Error scheduling activity:", error);
-        return { success: false, error: "เกิดข้อผิดพลาดในการนัดหมาย" };
     }
 }
 

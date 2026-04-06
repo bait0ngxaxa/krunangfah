@@ -1,3 +1,5 @@
+import type { RateLimitErrorPayload } from "./rate-limit.types";
+
 export type InviteRole = "system_admin" | "school_admin";
 
 export interface SchoolAdminInvite {
@@ -17,4 +19,5 @@ export interface InviteActionResponse {
     success: boolean;
     message: string;
     data?: { inviteUrl: string };
+    error?: RateLimitErrorPayload;
 }

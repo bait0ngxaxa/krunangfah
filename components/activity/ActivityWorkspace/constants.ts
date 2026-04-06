@@ -45,7 +45,7 @@ export const ACTIVITIES: Activity[] = [
 /**
  * Activity indices by risk level
  */
-export const ACTIVITY_INDICES: Record<string, number[]> = {
+const ACTIVITY_INDICES: Record<string, number[]> = {
     orange: [1, 2, 3, 4, 5],
     yellow: [1, 2, 3, 5],
     green: [1, 2, 5],
@@ -54,7 +54,7 @@ export const ACTIVITY_INDICES: Record<string, number[]> = {
 /**
  * Activity names by number (short version)
  */
-export const ACTIVITY_NAMES: Record<number, string> = {
+const ACTIVITY_NAMES: Record<number, string> = {
     1: "รู้จักตัวเอง",
     2: "ค้นหาคุณค่าที่ฉันมี",
     3: "ปรับความคิด ชีวิตเปลี่ยน",
@@ -204,7 +204,7 @@ export function getWorksheetNames(activityNumber: number): string[] {
 /**
  * Download URLs for worksheet PDFs by activity number
  */
-export const DOWNLOAD_URLS: Record<number, string[]> = {
+const DOWNLOAD_URLS: Record<number, string[]> = {
     1: ["/download/a1/d1-1.pdf", "/download/a1/d1-2.pdf"],
     2: ["/download/a2/d2-1.pdf", "/download/a2/d2-2.pdf"],
     3: ["/download/a3/d3-1.pdf", "/download/a3/d3-2.pdf"],
@@ -232,7 +232,7 @@ export function getDownloadUrls(activityNumber: number): string[] {
 /**
  * Worksheet names by activity number
  */
-export const WORKSHEET_NAMES: Record<number, string[]> = {
+const WORKSHEET_NAMES: Record<number, string[]> = {
     1: ["ฉันชอบตัวเอง", "กราฟวัดลอยจม"],
     2: ["ค้นหาคุณค่าที่ฉันมี", "เสริมสร้างพลังใจ"],
     3: ["ปรับความคิดชีวิตเปลี่ยน", "ตั้งเป้าหมาย"],

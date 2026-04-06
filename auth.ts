@@ -3,7 +3,9 @@ import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
+import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
+import { pickRateLimitResult } from "@/lib/rate-limit-errors";
+import { RateLimitCredentialsSignin } from "@/lib/rate-limit-response";
 import {
     RATE_LIMIT_AUTH_SIGNIN,
     RATE_LIMIT_AUTH_GENERAL,
@@ -43,13 +45,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                 try {
                     const headerStore = await headers();
-                    const ip = extractClientIp((name) => headerStore.get(name));
-                    const credentialKey = `${ip}:${email.toLowerCase()}`;
+                    const rateLimitKey = extractRateLimitKey((name) =>
+                        headerStore.get(name),
+                    );
+                    const credentialKey = `${rateLimitKey}:${email.toLowerCase()}`;
                     const credentialLimit = signinAttemptLimiter.check(credentialKey);
-                    const floodLimit = signinFloodLimiter.check(ip);
+                    const floodLimit = signinFloodLimiter.check(rateLimitKey);
 
                     if (!credentialLimit.allowed || !floodLimit.allowed) {
-                        return null;
+                        throw new RateLimitCredentialsSignin(
+                            pickRateLimitResult([credentialLimit, floodLimit]),
+                        );
                     }
 
                     const user = await prisma.user.findUnique({
@@ -104,6 +110,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         updatedAt: user.updatedAt,
                     };
                 } catch (error) {
+                    if (error instanceof RateLimitCredentialsSignin) {
+                        throw error;
+                    }
+
                     logError(
                         "Authorization error:",
                         error instanceof Error

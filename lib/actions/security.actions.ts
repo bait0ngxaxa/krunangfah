@@ -10,10 +10,11 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { hashPassword } from "@/lib/user";
-import { createRateLimiter, extractClientIp } from "@/lib/rate-limit";
+import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
 import { RATE_LIMIT_PASSWORD_CHANGE } from "@/lib/constants/rate-limit";
 import { passwordChangeSchema } from "@/lib/validations/profile.validation";
 import { logError } from "@/lib/utils/logging";
+import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
 import type {
     PasswordChangeInput,
     PasswordChangeResponse,
@@ -40,19 +41,18 @@ export async function changePassword(
     try {
         // CRITICAL: Rate limit FIRST (before validation to prevent timing attacks)
         const headerStore = await headers();
-        const ip = extractClientIp((name) => headerStore.get(name));
+        const rateLimitKey = extractRateLimitKey((name) =>
+            headerStore.get(name),
+        );
 
-        const rateLimitResult = passwordChangeLimiter.check(ip);
+        const rateLimitResult = passwordChangeLimiter.check(rateLimitKey);
         if (!rateLimitResult.allowed) {
-            const minutes = Math.ceil(rateLimitResult.retryAfterSeconds / 60);
-            const timeMessage =
-                minutes > 1
-                    ? `${minutes} นาที`
-                    : `${rateLimitResult.retryAfterSeconds} วินาที`;
+            const rateLimitError = createRateLimitErrorPayload(rateLimitResult);
 
             return {
                 success: false,
-                message: `ส่งคำขอมากเกินไป กรุณารอ ${timeMessage}`,
+                message: rateLimitError.message,
+                error: rateLimitError,
             };
         }
 

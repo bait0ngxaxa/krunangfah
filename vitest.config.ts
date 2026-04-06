@@ -19,7 +19,6 @@ export default defineConfig({
                 "lib/actions/academic-year.actions.ts",
                 "lib/actions/dashboard.actions.ts",
                 "lib/actions/navbar.actions.ts",
-                "lib/actions/auth.actions.ts",
                 "lib/actions/teacher.actions.ts",
                 "lib/actions/activity/**",
                 "lib/actions/student/**",

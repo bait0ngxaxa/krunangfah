@@ -63,7 +63,7 @@ export const ACTIVITY_INDICES: Record<string, number[]> = {
     green: [0, 1, 4], // กิจกรรม 1, 2, 5
 };
 
-export const COLOR_CONFIG: Record<RiskLevel, ColorTheme> = {
+const COLOR_CONFIG: Record<RiskLevel, ColorTheme> = {
     orange: {
         gradient: "from-orange-500 to-amber-500",
         bg: "bg-orange-500",

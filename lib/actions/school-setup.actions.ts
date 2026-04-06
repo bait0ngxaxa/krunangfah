@@ -10,10 +10,8 @@ import { logError } from "@/lib/utils/logging";
 import { revalidateDashboardCache } from "./dashboard/cache";
 import type {
     SchoolClassItem,
-    SchoolContextData,
     SchoolSetupResponse,
     ClassActionResponse,
-    TeacherOption,
 } from "@/types/school-setup.types";
 
 const CLASSES_PATH = "/school/classes";
@@ -234,43 +232,3 @@ export async function getSchoolClasses(): Promise<SchoolClassItem[]> {
     return classes;
 }
 
-/**
- * ดึง context ของโรงเรียน (classes + teachers) ใช้สำหรับ populate dropdowns
- */
-export async function getSchoolContext(): Promise<SchoolContextData> {
-    const session = await requireAuth();
-    const schoolId = await resolveSchoolId(
-        session.user.id,
-        session.user.schoolId,
-    );
-
-    if (!schoolId) return { classes: [], teachers: [] };
-
-    const [classes, teacherRows] = await Promise.all([
-        prisma.schoolClass.findMany({
-            where: { schoolId },
-            orderBy: { name: "asc" },
-            select: { id: true, name: true },
-        }),
-        prisma.teacher.findMany({
-            where: { user: { schoolId } },
-            select: {
-                id: true,
-                userId: true,
-                firstName: true,
-                lastName: true,
-                advisoryClass: true,
-            },
-            orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
-        }),
-    ]);
-
-    const teachers: TeacherOption[] = teacherRows.map((t) => ({
-        id: t.id,
-        userId: t.userId,
-        name: `${t.firstName} ${t.lastName}`,
-        advisoryClass: t.advisoryClass,
-    }));
-
-    return { classes, teachers };
-}

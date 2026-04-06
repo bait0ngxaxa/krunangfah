@@ -32,7 +32,6 @@ import {
     buildStudentsListCacheKey,
     getStudentDetailCacheTags,
     getStudentsCacheTags,
-    revalidateStudentsCache,
 } from "./cache";
 
 // Note: Cache keys can be added here when implementing granular caching
@@ -416,9 +415,3 @@ export async function getIncompleteActivityWarning(
     }
 }
 
-/**
- * Revalidate student cache after mutations
- */
-export async function revalidateStudents() {
-    revalidateStudentsCache();
-}

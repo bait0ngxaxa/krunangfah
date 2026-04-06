@@ -1,14 +1,14 @@
 import { revalidateTag } from "next/cache";
 import type { GetStudentsOptions } from "./types";
 
-export const STUDENTS_TAG = "students";
-export const STUDENT_DETAIL_TAG = "student-detail";
+const STUDENTS_TAG = "students";
+const STUDENT_DETAIL_TAG = "student-detail";
 
-export function getStudentsSchoolTag(schoolId: string): string {
+function getStudentsSchoolTag(schoolId: string): string {
     return `students:school:${schoolId}`;
 }
 
-export function getStudentDetailItemTag(studentId: string): string {
+function getStudentDetailItemTag(studentId: string): string {
     return `student-detail:item:${studentId}`;
 }
 

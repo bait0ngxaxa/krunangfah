@@ -15,7 +15,6 @@ import {
     transformActivityProgress,
     transformHospitalReferrals,
 } from "./transforms";
-import { RISK_LEVEL_CONFIG } from "./constants";
 import {
     ANALYTICS_OVERVIEW_TAG,
     getAnalyticsCacheTags,
@@ -242,10 +241,6 @@ export async function getAnalyticsSummary(
         logError("Get analytics summary error:", error);
         return null;
     }
-}
-
-export async function getRiskLevelConfig() {
-    return RISK_LEVEL_CONFIG;
 }
 
 async function fetchSystemAnalyticsOverview(): Promise<SystemAnalyticsOverview> {

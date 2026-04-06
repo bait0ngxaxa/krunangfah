@@ -8,7 +8,6 @@ import {
     SCHOOLS_TAG,
     buildDashboardDataCacheKey,
     buildSchoolsListCacheKey,
-    revalidateDashboardCache,
 } from "./dashboard/cache";
 
 async function getCachedDashboardData(userId: string, role: string) {
@@ -77,10 +76,6 @@ export async function getDashboardData() {
     const sessionUser = await getRequiredSessionUser();
 
     return getCachedDashboardData(sessionUser.userId, sessionUser.role);
-}
-
-export async function revalidateDashboard() {
-    revalidateDashboardCache();
 }
 
 export async function getSchools(): Promise<{ id: string; name: string }[]> {

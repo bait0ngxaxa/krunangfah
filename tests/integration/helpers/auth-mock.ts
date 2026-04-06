@@ -34,7 +34,7 @@ export function mockUnauthenticated() {
     currentSession = null;
 }
 
-export function getMockSession() {
+function getMockSession() {
     return currentSession;
 }
 
