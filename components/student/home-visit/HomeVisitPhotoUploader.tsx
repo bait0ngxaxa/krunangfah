@@ -20,6 +20,28 @@ interface HomeVisitPhotoUploaderProps {
 }
 
 const MAX_PHOTOS = 5;
+const UPLOAD_ACTION_TIMEOUT_MS = 45000;
+
+async function withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    timeoutMessage: string,
+): Promise<T> {
+    let timeoutId: number | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(() => {
+            reject(new Error(timeoutMessage));
+        }, timeoutMs);
+    });
+
+    try {
+        return await Promise.race([promise, timeoutPromise]);
+    } finally {
+        if (timeoutId !== undefined) {
+            window.clearTimeout(timeoutId);
+        }
+    }
+}
 
 export function HomeVisitPhotoUploader({
     homeVisitId,
@@ -48,7 +70,11 @@ export function HomeVisitPhotoUploader({
             const formData = new FormData();
             formData.append("file", compressed);
 
-            const result = await uploadHomeVisitPhoto(homeVisitId, formData);
+            const result = await withTimeout(
+                uploadHomeVisitPhoto(homeVisitId, formData),
+                UPLOAD_ACTION_TIMEOUT_MS,
+                "อัปโหลดใช้เวลานานเกินไป",
+            );
 
             if (result.success && result.photo) {
                 onPhotosChange([

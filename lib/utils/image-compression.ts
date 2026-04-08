@@ -5,6 +5,8 @@
 
 const MAX_DIMENSION = 1920;
 const JPEG_QUALITY = 0.8;
+const IMAGE_LOAD_TIMEOUT_MS = 15000;
+const CANVAS_BLOB_TIMEOUT_MS = 10000;
 const COMPRESSIBLE_TYPES: ReadonlySet<string> = new Set([
     "image/jpeg",
     "image/png",
@@ -13,8 +15,19 @@ const COMPRESSIBLE_TYPES: ReadonlySet<string> = new Set([
 function loadImage(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error("Failed to load image"));
+        const timeoutId = window.setTimeout(() => {
+            img.onload = null;
+            img.onerror = null;
+            reject(new Error("Image load timeout"));
+        }, IMAGE_LOAD_TIMEOUT_MS);
+        img.onload = () => {
+            window.clearTimeout(timeoutId);
+            resolve(img);
+        };
+        img.onerror = () => {
+            window.clearTimeout(timeoutId);
+            reject(new Error("Failed to load image"));
+        };
         img.src = url;
     });
 }
@@ -40,11 +53,16 @@ function canvasToBlob(
     quality?: number,
 ): Promise<Blob> {
     return new Promise((resolve, reject) => {
+        const timeoutId = window.setTimeout(() => {
+            reject(new Error("Canvas toBlob timeout"));
+        }, CANVAS_BLOB_TIMEOUT_MS);
         canvas.toBlob(
             (blob) => {
                 if (blob) {
+                    window.clearTimeout(timeoutId);
                     resolve(blob);
                 } else {
+                    window.clearTimeout(timeoutId);
                     reject(new Error("Canvas toBlob failed"));
                 }
             },

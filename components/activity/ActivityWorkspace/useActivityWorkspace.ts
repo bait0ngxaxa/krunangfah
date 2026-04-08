@@ -23,6 +23,29 @@ import {
     studentHelpEncouragementRoute,
 } from "@/lib/constants/student-routes";
 
+const UPLOAD_ACTION_TIMEOUT_MS = 45000;
+
+async function withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    timeoutMessage: string,
+): Promise<T> {
+    let timeoutId: number | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(() => {
+            reject(new Error(timeoutMessage));
+        }, timeoutMs);
+    });
+
+    try {
+        return await Promise.race([promise, timeoutPromise]);
+    } finally {
+        if (timeoutId !== undefined) {
+            window.clearTimeout(timeoutId);
+        }
+    }
+}
+
 /**
  * Custom hook for managing ActivityWorkspace state and logic
  */
@@ -74,7 +97,11 @@ export function useActivityWorkspace({
             const formData = new FormData();
             formData.append("file", processedFile);
 
-            const result = await uploadWorksheet(progressId, formData);
+            const result = await withTimeout(
+                uploadWorksheet(progressId, formData),
+                UPLOAD_ACTION_TIMEOUT_MS,
+                "อัปโหลดใช้เวลานานเกินไป",
+            );
 
             if (result.success) {
                 toast.success("อัปโหลดใบงานสำเร็จ");
