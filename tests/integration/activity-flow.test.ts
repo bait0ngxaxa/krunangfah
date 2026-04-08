@@ -23,6 +23,7 @@ import {
     createTestActivityProgress,
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
+import { prisma } from "@/lib/prisma";
 
 setupAuthMocks();
 
@@ -37,7 +38,7 @@ const SAME_SCHOOL_OTHER_CLASS_TEACHER: MockUser = {
 };
 
 const { getActivityProgress } = await import("@/lib/actions/activity/queries");
-const { submitTeacherAssessment } = await import(
+const { submitTeacherAssessment, confirmActivityComplete } = await import(
     "@/lib/actions/activity/mutations"
 );
 
@@ -178,6 +179,63 @@ describe("Integration: Activity Flow", () => {
             });
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
+        });
+    });
+
+    describe("confirmActivityComplete - Atomic Completion + Unlock", () => {
+        it("marks current activity complete and unlocks the next activity in the same flow", async () => {
+            const current = await createTestActivityProgress(
+                studentId,
+                phqResultId,
+                4,
+                { status: "in_progress" },
+            );
+            const next = await createTestActivityProgress(studentId, phqResultId, 5, {
+                status: "locked",
+            });
+
+            mockSession(USERS.classTeacher);
+            const result = await confirmActivityComplete(current.id);
+
+            expect(result.success).toBe(true);
+            expect(result.activityNumber).toBe(4);
+
+            const [updatedCurrent, updatedNext] = await Promise.all([
+                prisma.activityProgress.findUnique({
+                    where: { id: current.id },
+                    select: {
+                        status: true,
+                        completedAt: true,
+                    },
+                }),
+                prisma.activityProgress.findUnique({
+                    where: { id: next.id },
+                    select: {
+                        status: true,
+                        unlockedAt: true,
+                    },
+                }),
+            ]);
+
+            expect(updatedCurrent?.status).toBe("completed");
+            expect(updatedCurrent?.completedAt).not.toBeNull();
+            expect(updatedNext?.status).toBe("in_progress");
+            expect(updatedNext?.unlockedAt).not.toBeNull();
+        });
+
+        it("is idempotent when activity is already completed", async () => {
+            const completed = await createTestActivityProgress(
+                studentId,
+                phqResultId,
+                6,
+                { status: "completed" },
+            );
+
+            mockSession(USERS.classTeacher);
+            const result = await confirmActivityComplete(completed.id);
+
+            expect(result.success).toBe(true);
+            expect(result.activityNumber).toBe(6);
         });
     });
 });

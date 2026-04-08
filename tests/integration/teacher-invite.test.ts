@@ -25,6 +25,8 @@ const USERS = createMockUsers("ti");
 
 const { acceptTeacherInvite } =
     await import("@/lib/actions/teacher-invite/mutations");
+const { createTeacherInvite } =
+    await import("@/lib/actions/teacher-invite/mutations");
 const { getMyTeacherInvites } =
     await import("@/lib/actions/teacher-invite/queries");
 
@@ -182,6 +184,130 @@ describe("Integration: Teacher Invite", () => {
                 "password123",
             );
             expect(result.success).toBe(false);
+        });
+
+        it("returns a domain error when the same invite token is reused after success", async () => {
+            const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const invite = await prisma.teacherInvite.create({
+                data: {
+                    token: `test-reuse-${uid}`,
+                    email: `test-reuse-${uid}@test.local`,
+                    firstName: "Reuse",
+                    lastName: "Teacher",
+                    age: 31,
+                    userRole: "class_teacher",
+                    advisoryClass: "ม.6/1",
+                    academicYearId,
+                    schoolId,
+                    schoolRole: "ครู",
+                    projectRole: "care",
+                    invitedById: USERS.schoolAdmin.id,
+                    expiresAt: new Date(Date.now() + 86400000),
+                },
+            });
+
+            const firstResult = await acceptTeacherInvite(
+                invite.token,
+                "Password123!",
+            );
+            expect(firstResult.success).toBe(true);
+
+            const secondResult = await acceptTeacherInvite(
+                invite.token,
+                "Password123!",
+            );
+            expect(secondResult.success).toBe(false);
+            expect(secondResult.message).toBe("คำเชิญนี้ถูกใช้งานแล้ว");
+        });
+    });
+
+    describe("createTeacherInvite — Pending Invite Invariant", () => {
+        it("rejects creating a second active pending invite for the same email", async () => {
+            mockSession(USERS.schoolAdmin);
+            const inviteEmail = `duplicate-${Date.now()}@test.local`;
+
+            const firstResult = await createTeacherInvite({
+                email: inviteEmail,
+                firstName: "First",
+                lastName: "Invite",
+                age: "29",
+                userRole: "class_teacher",
+                advisoryClass: "ม.1/1",
+                academicYearId,
+                schoolRole: "ครู",
+                projectRole: "care",
+            });
+            expect(firstResult.success).toBe(true);
+
+            const secondResult = await createTeacherInvite({
+                email: inviteEmail,
+                firstName: "Second",
+                lastName: "Invite",
+                age: "30",
+                userRole: "class_teacher",
+                advisoryClass: "ม.1/2",
+                academicYearId,
+                schoolRole: "ครู",
+                projectRole: "lead",
+            });
+            expect(secondResult.success).toBe(false);
+            expect(secondResult.message).toBe(
+                "มีคำเชิญที่รอดำเนินการสำหรับอีเมลนี้แล้ว",
+            );
+
+            const inviteCount = await prisma.teacherInvite.count({
+                where: {
+                    email: inviteEmail,
+                    acceptedAt: null,
+                },
+            });
+            expect(inviteCount).toBe(1);
+        });
+
+        it("reissues an expired pending invite without creating a duplicate row", async () => {
+            mockSession(USERS.schoolAdmin);
+            const inviteEmail = `expired-${Date.now()}@test.local`;
+
+            const expiredInvite = await prisma.teacherInvite.create({
+                data: {
+                    token: `expired-token-${Date.now()}`,
+                    email: inviteEmail,
+                    firstName: "Expired",
+                    lastName: "Invite",
+                    age: 30,
+                    userRole: "class_teacher",
+                    advisoryClass: "ม.2/1",
+                    academicYearId,
+                    schoolId,
+                    schoolRole: "ครู",
+                    projectRole: "care",
+                    invitedById: USERS.schoolAdmin.id,
+                    expiresAt: new Date(Date.now() - 86400000),
+                },
+            });
+
+            const result = await createTeacherInvite({
+                email: inviteEmail,
+                firstName: "Reissued",
+                lastName: "Invite",
+                age: "32",
+                userRole: "class_teacher",
+                advisoryClass: "ม.2/2",
+                academicYearId,
+                schoolRole: "ครูประจำชั้น",
+                projectRole: "lead",
+            });
+            expect(result.success).toBe(true);
+
+            const invites = await prisma.teacherInvite.findMany({
+                where: { email: inviteEmail },
+                orderBy: { createdAt: "asc" },
+            });
+            expect(invites).toHaveLength(1);
+            expect(invites[0].id).toBe(expiredInvite.id);
+            expect(invites[0].firstName).toBe("Reissued");
+            expect(invites[0].acceptedAt).toBeNull();
+            expect(invites[0].expiresAt.getTime()).toBeGreaterThan(Date.now());
         });
     });
 

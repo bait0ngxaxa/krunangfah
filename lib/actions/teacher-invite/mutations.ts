@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { hashPassword } from "@/lib/user";
@@ -9,6 +10,7 @@ import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
 import type { InviteResponse } from "./types";
 import { logError } from "@/lib/utils/logging";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 /**
  * สร้าง invite สำหรับครูผู้ดูแล
@@ -44,75 +46,104 @@ export async function createTeacherInvite(
             };
         }
 
-        // Block invite when target email is already an active account.
-        const existingUser = await prisma.user.findUnique({
-            where: { email: input.email },
+        const schoolId = user.schoolId;
+
+        // Token is single-use and must be unguessable.
+        const token = randomBytes(32).toString("hex");
+
+        // Invite expires in 7 days.
+        const invite = await runSerializableTransaction(async (tx) => {
+            const existingUser = await tx.user.findUnique({
+                where: { email: input.email },
+                select: { id: true },
+            });
+
+            if (existingUser) {
+                return {
+                    success: false,
+                    message: "อีเมลนี้มีผู้ใช้งานแล้ว",
+                } satisfies InviteResponse;
+            }
+
+            const existingInvite = await tx.teacherInvite.findFirst({
+                where: {
+                    email: input.email,
+                    acceptedAt: null,
+                },
+                select: {
+                    id: true,
+                    expiresAt: true,
+                },
+            });
+
+            if (existingInvite && existingInvite.expiresAt > new Date()) {
+                return {
+                    success: false,
+                    message: "มีคำเชิญที่รอดำเนินการสำหรับอีเมลนี้แล้ว",
+                } satisfies InviteResponse;
+            }
+
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 7);
+
+            const inviteData = {
+                token,
+                email: input.email,
+                firstName: input.firstName,
+                lastName: input.lastName,
+                age: Number(input.age),
+                userRole: input.userRole,
+                advisoryClass: normalizeClassName(input.advisoryClass),
+                academicYearId: input.academicYearId,
+                schoolId,
+                schoolRole: input.schoolRole,
+                projectRole: input.projectRole,
+                invitedById: userId,
+                expiresAt,
+            };
+
+            const persistedInvite = existingInvite
+                ? await tx.teacherInvite.update({
+                      where: { id: existingInvite.id },
+                      data: inviteData,
+                      include: {
+                          school: true,
+                          academicYear: true,
+                      },
+                  })
+                : await tx.teacherInvite.create({
+                      data: inviteData,
+                      include: {
+                          school: true,
+                          academicYear: true,
+                      },
+                  });
+
+            return {
+                success: true,
+                message: "สร้างคำเชิญสำเร็จ",
+                invite: persistedInvite,
+                inviteLink: `${process.env.NEXTAUTH_URL}/invite/${token}`,
+            } satisfies InviteResponse;
         });
 
-        if (existingUser) {
-            return {
-                success: false,
-                message: "อีเมลนี้มีผู้ใช้งานแล้ว",
-            };
+        if (!invite.success) {
+            return invite;
         }
 
-        // Prevent duplicate pending invite for the same email.
-        const existingInvite = await prisma.teacherInvite.findFirst({
-            where: {
-                email: input.email,
-                acceptedAt: null,
-                expiresAt: { gt: new Date() },
-            },
-        });
-
-        if (existingInvite) {
+        revalidatePath("/teachers/add");
+        return invite;
+    } catch (error) {
+        if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === "P2002"
+        ) {
             return {
                 success: false,
                 message: "มีคำเชิญที่รอดำเนินการสำหรับอีเมลนี้แล้ว",
             };
         }
 
-        // Token is single-use and must be unguessable.
-        const token = randomBytes(32).toString("hex");
-
-        // Invite expires in 7 days.
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7);
-
-        // Persist invite payload as source-of-truth for registration prefill.
-        const invite = await prisma.teacherInvite.create({
-            data: {
-                token,
-                email: input.email,
-                firstName: input.firstName,
-                lastName: input.lastName,
-                age: Number(input.age), // Validation guarantees numeric-like input
-                userRole: input.userRole,
-                advisoryClass: normalizeClassName(input.advisoryClass),
-                academicYearId: input.academicYearId,
-                schoolId: user.schoolId,
-                schoolRole: input.schoolRole,
-                projectRole: input.projectRole,
-                invitedById: userId,
-                expiresAt,
-            },
-            include: {
-                school: true,
-                academicYear: true,
-            },
-        });
-
-        const inviteLink = `${process.env.NEXTAUTH_URL}/invite/${token}`;
-
-        revalidatePath("/teachers/add");
-
-        return {
-            success: true,
-            message: "สร้างคำเชิญสำเร็จ",
-            invite,
-            inviteLink,
-        };
-    } catch (error) {
         logError("Create teacher invite error:", error);
         return {
             success: false,
@@ -129,29 +160,48 @@ export async function acceptTeacherInvite(
     password: string,
 ): Promise<InviteResponse> {
     try {
-        // Resolve token once and enforce single-use + expiry gates.
-        const invite = await prisma.teacherInvite.findUnique({
-            where: { token },
-        });
-
-        if (!invite) {
-            return { success: false, message: "ไม่พบคำเชิญ" };
-        }
-
-        if (invite.acceptedAt) {
-            return { success: false, message: "คำเชิญนี้ถูกใช้งานแล้ว" };
-        }
-
-        if (invite.expiresAt < new Date()) {
-            return { success: false, message: "คำเชิญหมดอายุแล้ว" };
-        }
-
         // Password is stored hashed only.
         const hashedPassword = await hashPassword(password);
 
-        // Atomic registration: user + teacher profile + invite consumption.
-        await prisma.$transaction(async (tx) => {
-            // Create user account
+        return await runSerializableTransaction(async (tx) => {
+            const claimResult = await tx.teacherInvite.updateMany({
+                where: {
+                    token,
+                    acceptedAt: null,
+                    expiresAt: { gt: new Date() },
+                },
+                data: { acceptedAt: new Date() },
+            });
+
+            if (claimResult.count === 0) {
+                const inviteState = await tx.teacherInvite.findUnique({
+                    where: { token },
+                    select: {
+                        id: true,
+                        acceptedAt: true,
+                        expiresAt: true,
+                    },
+                });
+
+                if (!inviteState) {
+                    return { success: false, message: "ไม่พบคำเชิญ" };
+                }
+
+                if (inviteState.acceptedAt) {
+                    return { success: false, message: "คำเชิญนี้ถูกใช้งานแล้ว" };
+                }
+
+                return { success: false, message: "คำเชิญหมดอายุแล้ว" };
+            }
+
+            const invite = await tx.teacherInvite.findUnique({
+                where: { token },
+            });
+
+            if (!invite) {
+                return { success: false, message: "ไม่พบคำเชิญ" };
+            }
+
             const user = await tx.user.create({
                 data: {
                     email: invite.email,
@@ -162,7 +212,6 @@ export async function acceptTeacherInvite(
                 },
             });
 
-            // Create teacher profile linked to user
             await tx.teacher.create({
                 data: {
                     userId: user.id,
@@ -176,18 +225,22 @@ export async function acceptTeacherInvite(
                 },
             });
 
-            // Mark invite consumed to prevent replay
-            await tx.teacherInvite.update({
-                where: { id: invite.id },
-                data: { acceptedAt: new Date() },
-            });
+            return {
+                success: true,
+                message: "ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ",
+            };
         });
-
-        return {
-            success: true,
-            message: "ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ",
-        };
     } catch (error) {
+        if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === "P2002"
+        ) {
+            return {
+                success: false,
+                message: "อีเมลนี้มีผู้ใช้งานแล้ว",
+            };
+        }
+
         logError("Accept teacher invite error:", error);
         return {
             success: false,

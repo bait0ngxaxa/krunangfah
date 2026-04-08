@@ -3,6 +3,7 @@
 import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { ActivityStatus } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { ACTIVITY_INDICES } from "./constants";
 import type { SubmitAssessmentData } from "./types";
 import { logError } from "@/lib/utils/logging";
@@ -14,6 +15,7 @@ import {
     updateScheduledDateSchema,
 } from "@/lib/validations/activity.validation";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 /**
  * Verify user has access to student's activity
@@ -199,36 +201,33 @@ export async function submitTeacherAssessment(
  * Unlock next activity when current is completed
  */
 async function unlockNextActivity(
+    tx: Prisma.TransactionClient,
     studentId: string,
     phqResultId: string,
     currentActivityNumber: number,
 ) {
-    try {
-        // Ensure this helper runs only in authenticated server context.
-        await requireAuth();
+    // Unlock nearest next locked step in same PHQ sequence.
+    const nextActivity = await tx.activityProgress.findFirst({
+        where: {
+            studentId,
+            phqResultId,
+            activityNumber: { gt: currentActivityNumber },
+            status: ActivityStatus.locked,
+        },
+        orderBy: { activityNumber: "asc" },
+    });
 
-        // Unlock nearest next locked step in same PHQ sequence.
-        const nextActivity = await prisma.activityProgress.findFirst({
+    if (nextActivity) {
+        await tx.activityProgress.updateMany({
             where: {
-                studentId,
-                phqResultId,
-                activityNumber: { gt: currentActivityNumber },
+                id: nextActivity.id,
                 status: ActivityStatus.locked,
             },
-            orderBy: { activityNumber: "asc" },
+            data: {
+                status: ActivityStatus.in_progress,
+                unlockedAt: new Date(),
+            },
         });
-
-        if (nextActivity) {
-            await prisma.activityProgress.update({
-                where: { id: nextActivity.id },
-                data: {
-                    status: ActivityStatus.in_progress,
-                    unlockedAt: new Date(),
-                },
-            });
-        }
-    } catch (error) {
-        logError("Error unlocking next activity:", error);
     }
 }
 
@@ -278,28 +277,55 @@ export async function confirmActivityComplete(
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        // Mark current step complete.
-        await prisma.activityProgress.update({
-            where: { id: activityProgressId },
-            data: {
-                status: ActivityStatus.completed,
-                completedAt: new Date(),
-            },
+        const result = await runSerializableTransaction(async (tx) => {
+            const currentActivity = await tx.activityProgress.findUnique({
+                where: { id: activityProgressId },
+                select: {
+                    id: true,
+                    status: true,
+                    studentId: true,
+                    phqResultId: true,
+                    activityNumber: true,
+                },
+            });
+
+            if (!currentActivity) {
+                return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+            }
+
+            if (currentActivity.status === ActivityStatus.completed) {
+                return {
+                    success: true,
+                    activityNumber: currentActivity.activityNumber,
+                };
+            }
+
+            await tx.activityProgress.update({
+                where: { id: currentActivity.id },
+                data: {
+                    status: ActivityStatus.completed,
+                    completedAt: new Date(),
+                },
+            });
+
+            await unlockNextActivity(
+                tx,
+                currentActivity.studentId,
+                currentActivity.phqResultId,
+                currentActivity.activityNumber,
+            );
+
+            return {
+                success: true,
+                activityNumber: currentActivity.activityNumber,
+            };
         });
 
-        // Advance sequence gate for next activity.
-        await unlockNextActivity(
-            activityProgress.studentId,
-            activityProgress.phqResultId,
-            activityProgress.activityNumber,
-        );
+        if (result.success) {
+            revalidateAnalyticsCache(activityProgress.student.schoolId);
+        }
 
-        revalidateAnalyticsCache(activityProgress.student.schoolId);
-
-        return {
-            success: true,
-            activityNumber: activityProgress.activityNumber,
-        };
+        return result;
     } catch (error) {
         logError("Error confirming activity completion:", error);
         return { success: false, error: "เกิดข้อผิดพลาด" };

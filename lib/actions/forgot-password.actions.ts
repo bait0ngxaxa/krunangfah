@@ -17,7 +17,7 @@ import {
 } from "@/lib/constants/rate-limit";
 import {
     generatePasswordResetToken,
-    verifyPasswordResetToken,
+    hashPasswordResetToken,
 } from "@/lib/token";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { logError } from "@/lib/utils/logging";
@@ -27,6 +27,7 @@ import {
 } from "@/lib/validations/auth.validation";
 import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
 import type { RateLimitErrorPayload } from "@/types/rate-limit.types";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 interface ActionResult {
     success: boolean;
@@ -127,27 +128,62 @@ export async function resetPassword(input: {
 
     const { token, password } = parsed.data;
 
-    // --- Verify token ---
-    const verification = await verifyPasswordResetToken(token);
-    if (!verification.valid) {
-        return { success: false, message: verification.error };
-    }
-
     // --- Update password and delete token atomically ---
     const hashedPassword = await hashPassword(password);
+    const tokenHash = hashPasswordResetToken(token);
 
-    await prisma.$transaction([
-        prisma.user.update({
-            where: { email: verification.email },
+    const result = await runSerializableTransaction(async (tx) => {
+        const record = await tx.passwordResetToken.findUnique({
+            where: { token: tokenHash },
+            select: {
+                id: true,
+                email: true,
+                expiresAt: true,
+            },
+        });
+
+        if (!record) {
+            return {
+                success: false,
+                message: "โทเค็นไม่ถูกต้องหรือถูกใช้ไปแล้ว",
+            } satisfies ActionResult;
+        }
+
+        if (record.expiresAt < new Date()) {
+            await tx.passwordResetToken.delete({
+                where: { id: record.id },
+            });
+
+            return {
+                success: false,
+                message: "โทเค็นหมดอายุแล้ว กรุณาขอลิงก์ใหม่",
+            } satisfies ActionResult;
+        }
+
+        const deleteResult = await tx.passwordResetToken.deleteMany({
+            where: {
+                id: record.id,
+                token: tokenHash,
+            },
+        });
+
+        if (deleteResult.count === 0) {
+            return {
+                success: false,
+                message: "โทเค็นไม่ถูกต้องหรือถูกใช้ไปแล้ว",
+            } satisfies ActionResult;
+        }
+
+        await tx.user.update({
+            where: { email: record.email },
             data: { password: hashedPassword },
-        }),
-        prisma.passwordResetToken.delete({
-            where: { id: verification.tokenId },
-        }),
-    ]);
+        });
 
-    return {
-        success: true,
-        message: "รีเซ็ตรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่",
-    };
+        return {
+            success: true,
+            message: "รีเซ็ตรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่",
+        } satisfies ActionResult;
+    });
+
+    return result;
 }

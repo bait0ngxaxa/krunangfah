@@ -11,7 +11,10 @@ import { createTestSchool, createTestUser } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { hashPasswordResetToken } from "@/lib/token";
+import {
+    generatePasswordResetToken,
+    hashPasswordResetToken,
+} from "@/lib/token";
 
 setupAuthMocks();
 
@@ -37,6 +40,21 @@ describe("Integration: Password Reset", () => {
     });
 
     describe("resetPassword - Token + Password Atomicity", () => {
+        it("keeps only one active token per email when generating twice", async () => {
+            const firstToken = await generatePasswordResetToken(testUserEmail);
+            const secondToken = await generatePasswordResetToken(testUserEmail);
+
+            expect(firstToken).not.toBe(secondToken);
+
+            const tokens = await prisma.passwordResetToken.findMany({
+                where: { email: testUserEmail },
+                orderBy: { createdAt: "asc" },
+            });
+
+            expect(tokens).toHaveLength(1);
+            expect(tokens[0].token).toBe(hashPasswordResetToken(secondToken));
+        });
+
         it("rejects invalid token", async () => {
             const result = await resetPassword({
                 token: "nonexistent-token",
@@ -48,8 +66,13 @@ describe("Integration: Password Reset", () => {
 
         it("rejects expired token", async () => {
             const expiredPlainToken = `test-expired-${Date.now()}`;
-            const expiredToken = await prisma.passwordResetToken.create({
-                data: {
+            const expiredToken = await prisma.passwordResetToken.upsert({
+                where: { email: testUserEmail },
+                update: {
+                    token: hashPasswordResetToken(expiredPlainToken),
+                    expiresAt: new Date(Date.now() - 3600000),
+                },
+                create: {
                     email: testUserEmail,
                     token: hashPasswordResetToken(expiredPlainToken),
                     expiresAt: new Date(Date.now() - 3600000),
@@ -70,8 +93,13 @@ describe("Integration: Password Reset", () => {
 
         it("successfully resets password and deletes token", async () => {
             const plainToken = `test-valid-${Date.now()}`;
-            const token = await prisma.passwordResetToken.create({
-                data: {
+            const token = await prisma.passwordResetToken.upsert({
+                where: { email: testUserEmail },
+                update: {
+                    token: hashPasswordResetToken(plainToken),
+                    expiresAt: new Date(Date.now() + 3600000),
+                },
+                create: {
                     email: testUserEmail,
                     token: hashPasswordResetToken(plainToken),
                     expiresAt: new Date(Date.now() + 3600000),

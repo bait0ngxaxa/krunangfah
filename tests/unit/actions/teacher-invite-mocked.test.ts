@@ -14,40 +14,62 @@ import { hashPassword } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
 
+const prismaMocks = vi.hoisted(() => ({
+    mockUserFindUnique: vi.fn(),
+    mockUserCreate: vi.fn(),
+    mockTeacherInviteFindFirst: vi.fn(),
+    mockTeacherInviteFindUnique: vi.fn(),
+    mockTeacherInviteCreate: vi.fn(),
+    mockTeacherInviteFindMany: vi.fn(),
+    mockTeacherInviteUpdate: vi.fn(),
+    mockTeacherInviteUpdateMany: vi.fn(),
+    mockTeacherInviteDelete: vi.fn(),
+    mockTeacherCreate: vi.fn(),
+    mockRosterFindFirst: vi.fn(),
+    mockRosterUpdate: vi.fn(),
+}));
+
 // Mock external dependencies
 vi.mock("@/lib/prisma", () => ({
     prisma: {
         user: {
-            findUnique: vi.fn(),
-            create: vi.fn(),
+            findUnique: prismaMocks.mockUserFindUnique,
+            create: prismaMocks.mockUserCreate,
         },
         teacherInvite: {
-            findFirst: vi.fn(),
-            findUnique: vi.fn(),
-            create: vi.fn(),
-            findMany: vi.fn(),
-            update: vi.fn(),
-            delete: vi.fn(),
+            findFirst: prismaMocks.mockTeacherInviteFindFirst,
+            findUnique: prismaMocks.mockTeacherInviteFindUnique,
+            create: prismaMocks.mockTeacherInviteCreate,
+            findMany: prismaMocks.mockTeacherInviteFindMany,
+            update: prismaMocks.mockTeacherInviteUpdate,
+            updateMany: prismaMocks.mockTeacherInviteUpdateMany,
+            delete: prismaMocks.mockTeacherInviteDelete,
         },
         teacher: {
-            create: vi.fn(),
+            create: prismaMocks.mockTeacherCreate,
         },
         schoolTeacherRoster: {
-            findFirst: vi.fn(),
-            update: vi.fn(),
+            findFirst: prismaMocks.mockRosterFindFirst,
+            update: prismaMocks.mockRosterUpdate,
         },
-        $transaction: vi.fn(async (callback) => {
-            // Provide a mock transaction client that mirrors the prisma mock
-            const tx = {
+        $transaction: vi.fn(async (callback) =>
+            callback({
                 user: {
-                    create: vi.fn().mockResolvedValue({ id: "new-user-id" }),
+                    findUnique: prismaMocks.mockUserFindUnique,
+                    create: prismaMocks.mockUserCreate,
                 },
-                teacher: { create: vi.fn() },
-                teacherInvite: { update: vi.fn() },
-            };
-            await callback(tx);
-            return true;
-        }),
+                teacher: {
+                    create: prismaMocks.mockTeacherCreate,
+                },
+                teacherInvite: {
+                    findFirst: prismaMocks.mockTeacherInviteFindFirst,
+                    findUnique: prismaMocks.mockTeacherInviteFindUnique,
+                    create: prismaMocks.mockTeacherInviteCreate,
+                    update: prismaMocks.mockTeacherInviteUpdate,
+                    updateMany: prismaMocks.mockTeacherInviteUpdateMany,
+                },
+            }),
+        ),
     },
 }));
 
@@ -112,8 +134,8 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
                 user: { id: "u1", role: "school_admin" },
             } as any);
             vi.mocked(prisma.user.findUnique)
-                .mockResolvedValueOnce({ schoolId: "s1" } as any) // for user
-                .mockResolvedValueOnce({ id: "exist", email: "x" } as any); // for existingUser
+                .mockResolvedValueOnce({ schoolId: "s1" } as any)
+                .mockResolvedValueOnce({ id: "exist", email: "x" } as any);
 
             const res = await createTeacherInvite(baseInput);
 
@@ -130,6 +152,7 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
                 .mockResolvedValueOnce(null as any);
             vi.mocked(prisma.teacherInvite.findFirst).mockResolvedValue({
                 id: "pending-inv",
+                expiresAt: new Date(Date.now() + 10000),
             } as any);
 
             const res = await createTeacherInvite(baseInput);
@@ -153,6 +176,8 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
             vi.mocked(prisma.teacherInvite.create).mockResolvedValue({
                 id: "new-invite",
                 token: "random-token",
+                school: { id: "s1" },
+                academicYear: { id: "ay-1" },
             } as any);
 
             const res = await createTeacherInvite(baseInput);
@@ -160,6 +185,34 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
             expect(res.success).toBe(true);
             expect(res.message).toBe("สร้างคำเชิญสำเร็จ");
             expect(revalidatePath).toHaveBeenCalledWith("/teachers/add");
+        });
+
+        it("reissues an expired pending invite by updating the existing row", async () => {
+            vi.mocked(requireAuth).mockResolvedValue({
+                user: { id: "u1", role: "school_admin" },
+            } as any);
+            vi.mocked(prisma.user.findUnique)
+                .mockResolvedValueOnce({ schoolId: "s1" } as any)
+                .mockResolvedValueOnce(null as any);
+            vi.mocked(prisma.teacherInvite.findFirst).mockResolvedValue({
+                id: "expired-invite",
+                expiresAt: new Date(Date.now() - 10000),
+            } as any);
+            vi.mocked(prisma.teacherInvite.update).mockResolvedValue({
+                id: "expired-invite",
+                token: "new-token",
+                school: { id: "s1" },
+                academicYear: { id: "ay-1" },
+            } as any);
+
+            const res = await createTeacherInvite(baseInput);
+
+            expect(res.success).toBe(true);
+            expect(prisma.teacherInvite.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "expired-invite" },
+                }),
+            );
         });
 
         it("catches errors and returns false", async () => {
@@ -172,6 +225,10 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
 
     describe("acceptTeacherInvite", () => {
         it("fails if invite not found", async () => {
+            vi.mocked(hashPassword).mockResolvedValue("hashed");
+            vi.mocked(prisma.teacherInvite.updateMany).mockResolvedValue({
+                count: 0,
+            } as any);
             vi.mocked(prisma.teacherInvite.findUnique).mockResolvedValue(
                 null as any,
             );
@@ -181,6 +238,10 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
         });
 
         it("fails if already accepted", async () => {
+            vi.mocked(hashPassword).mockResolvedValue("hashed");
+            vi.mocked(prisma.teacherInvite.updateMany).mockResolvedValue({
+                count: 0,
+            } as any);
             vi.mocked(prisma.teacherInvite.findUnique).mockResolvedValue({
                 acceptedAt: new Date(),
             } as any);
@@ -190,8 +251,11 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
         });
 
         it("fails if expired", async () => {
+            vi.mocked(hashPassword).mockResolvedValue("hashed");
+            vi.mocked(prisma.teacherInvite.updateMany).mockResolvedValue({
+                count: 0,
+            } as any);
             vi.mocked(prisma.teacherInvite.findUnique).mockResolvedValue({
-                acceptedAt: null,
                 expiresAt: new Date(Date.now() - 10000), // past
             } as any);
             const res = await acceptTeacherInvite("token", "pass");
@@ -200,6 +264,13 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
         });
 
         it("succeeds for valid invite", async () => {
+            vi.mocked(hashPassword).mockResolvedValue("hashed");
+            vi.mocked(prisma.teacherInvite.updateMany).mockResolvedValue({
+                count: 1,
+            } as any);
+            vi.mocked(prisma.user.create).mockResolvedValue({
+                id: "new-user-id",
+            } as any);
             vi.mocked(prisma.teacherInvite.findUnique).mockResolvedValue({
                 id: "inv-1",
                 email: "x@x.com",
@@ -210,16 +281,14 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
                 acceptedAt: null,
                 expiresAt: new Date(Date.now() + 10000), // future
             } as any);
-            vi.mocked(hashPassword).mockResolvedValue("hashed");
-            vi.mocked(prisma.$transaction).mockResolvedValue(true);
-
             const res = await acceptTeacherInvite("token", "pass");
             expect(res.success).toBe(true);
             expect(res.message).toBe("ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ");
         });
 
         it("catches errors and returns false", async () => {
-            vi.mocked(prisma.teacherInvite.findUnique).mockRejectedValue(
+            vi.mocked(hashPassword).mockResolvedValue("hashed");
+            vi.mocked(prisma.teacherInvite.updateMany).mockRejectedValue(
                 new Error("DB error"),
             );
             const res = await acceptTeacherInvite("tok", "pass");

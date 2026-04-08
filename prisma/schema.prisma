@@ -381,7 +381,7 @@ model SchoolTeacherRoster {
 // Password Reset Token - โทเค็นรีเซ็ตรหัสผ่าน
 model PasswordResetToken {
   id        String   @id @default(cuid())
-  email     String
+  email     String   @unique
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())

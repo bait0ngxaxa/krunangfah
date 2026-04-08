@@ -2,11 +2,12 @@
  * Password-reset token management
  *
  * Stores SHA-256 hash of tokens in DB (never plaintext).
- * Each email may have at most ONE active token — older ones are deleted first.
+ * Each email may have at most ONE active token — newer requests replace the old one.
  */
 
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 /** Token lifetime: 1 hour */
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000;
@@ -34,8 +35,8 @@ export function hashPasswordResetToken(token: string): string {
 /**
  * Generate a password-reset token for the given email.
  *
- * 1. Deletes any existing tokens for the email (one-token-per-email rule)
- * 2. Creates a new token hash with a 1-hour expiry
+ * 1. Replaces any existing token for the email atomically
+ * 2. Stores a new token hash with a 1-hour expiry
  *
  * @param email - The user's email address
  * @returns The generated plaintext token string (send via email only)
@@ -43,20 +44,26 @@ export function hashPasswordResetToken(token: string): string {
 export async function generatePasswordResetToken(
     email: string,
 ): Promise<string> {
-    // Remove any existing tokens for this email
-    await prisma.passwordResetToken.deleteMany({
-        where: { email },
+    return runSerializableTransaction(async (tx) => {
+        const token = crypto.randomUUID();
+        const tokenHash = hashPasswordResetToken(token);
+        const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MS);
+
+        await tx.passwordResetToken.upsert({
+            where: { email },
+            update: {
+                token: tokenHash,
+                expiresAt,
+            },
+            create: {
+                email,
+                token: tokenHash,
+                expiresAt,
+            },
+        });
+
+        return token;
     });
-
-    const token = crypto.randomUUID();
-    const tokenHash = hashPasswordResetToken(token);
-    const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MS);
-
-    await prisma.passwordResetToken.create({
-        data: { email, token: tokenHash, expiresAt },
-    });
-
-    return token;
 }
 
 /**

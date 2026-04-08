@@ -3,11 +3,11 @@ import crypto from "crypto";
 
 vi.mock("@/lib/prisma", () => ({
     prisma: {
+        $transaction: vi.fn(),
         passwordResetToken: {
-            deleteMany: vi.fn(),
-            create: vi.fn(),
             findUnique: vi.fn(),
             delete: vi.fn(),
+            upsert: vi.fn(),
         },
     },
 }));
@@ -33,34 +33,38 @@ describe("lib/token", () => {
         expect(hash1).toMatch(/^[a-f0-9]{64}$/);
     });
 
-    it("generatePasswordResetToken deletes old tokens and stores hashed token", async () => {
+    it("generatePasswordResetToken upserts hashed token in a transaction", async () => {
         const uuidSpy = vi
             .spyOn(crypto, "randomUUID")
             .mockReturnValue("123e4567-e89b-12d3-a456-426614174000");
-        vi.mocked(prisma.passwordResetToken.deleteMany).mockResolvedValue({
-            count: 1,
-        });
-        vi.mocked(prisma.passwordResetToken.create).mockResolvedValue(
+        vi.mocked(prisma.$transaction).mockImplementation(
+            async (callback: (tx: typeof prisma) => Promise<string>) =>
+                callback(prisma as typeof prisma),
+        );
+        vi.mocked(prisma.passwordResetToken.upsert).mockResolvedValue(
             {} as never,
         );
 
         const token = await generatePasswordResetToken("u@test.local");
 
         expect(token).toBe("123e4567-e89b-12d3-a456-426614174000");
-        expect(prisma.passwordResetToken.deleteMany).toHaveBeenCalledWith({
+        expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+        expect(prisma.passwordResetToken.upsert).toHaveBeenCalledWith({
             where: { email: "u@test.local" },
-        });
-        expect(prisma.passwordResetToken.create).toHaveBeenCalledWith({
-            data: {
+            update: {
+                token: hashPasswordResetToken("123e4567-e89b-12d3-a456-426614174000"),
+                expiresAt: expect.any(Date),
+            },
+            create: {
                 email: "u@test.local",
                 token: hashPasswordResetToken("123e4567-e89b-12d3-a456-426614174000"),
                 expiresAt: expect.any(Date),
             },
         });
 
-        const createArg = vi.mocked(prisma.passwordResetToken.create).mock
-            .calls[0][0] as { data: { expiresAt: Date } };
-        const delta = createArg.data.expiresAt.getTime() - Date.now();
+        const upsertArg = vi.mocked(prisma.passwordResetToken.upsert).mock
+            .calls[0][0] as { create: { expiresAt: Date } };
+        const delta = upsertArg.create.expiresAt.getTime() - Date.now();
         expect(delta).toBeGreaterThan(59 * 60 * 1000);
         expect(delta).toBeLessThanOrEqual(60 * 60 * 1000);
 
