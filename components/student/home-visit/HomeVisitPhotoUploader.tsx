@@ -20,7 +20,7 @@ interface HomeVisitPhotoUploaderProps {
 }
 
 const MAX_PHOTOS = 5;
-const UPLOAD_ACTION_TIMEOUT_MS = 45000;
+const UPLOAD_ACTION_TIMEOUT_MS = 120000;
 
 async function withTimeout<T>(
     promise: Promise<T>,
