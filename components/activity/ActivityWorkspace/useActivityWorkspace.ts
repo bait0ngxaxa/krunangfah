@@ -87,7 +87,7 @@ export function useActivityWorkspace({
                 toast.success("อัปโหลดใบงานสำเร็จ");
                 router.refresh();
             } else {
-                toast.error(result.error || "เกิดข้อผิดพลาดในการอัปโหลด");
+                toast.error(result.message || "เกิดข้อผิดพลาดในการอัปโหลด");
             }
         } catch (error) {
             console.error("Upload error:", error);

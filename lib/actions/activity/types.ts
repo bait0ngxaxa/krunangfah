@@ -30,7 +30,18 @@ export interface UploadWorksheetResult {
         worksheetNumber: number;
         filePath: string;
     };
-    error?: string;
+    error?:
+        | "UPLOAD_UNAUTHORIZED"
+        | "UPLOAD_FILE_MISSING"
+        | "UPLOAD_FILE_TOO_LARGE"
+        | "UPLOAD_INVALID_EXTENSION"
+        | "UPLOAD_SIGNATURE_MISMATCH"
+        | "UPLOAD_ACTIVITY_NOT_FOUND"
+        | "UPLOAD_ACCESS_DENIED"
+        | "UPLOAD_FILE_WRITE_FAILED"
+        | "UPLOAD_DB_FAILED"
+        | "UPLOAD_POST_PROCESS_FAILED"
+        | "UPLOAD_UNKNOWN_ERROR";
     uploadedCount?: number;
     requiredCount?: number;
     allUploaded?: boolean;

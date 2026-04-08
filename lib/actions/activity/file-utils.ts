@@ -25,6 +25,23 @@ import {
 
 const MAX_WORKSHEET_NUMBER_RETRIES = 3;
 
+class UploadWorksheetError extends Error {
+    constructor(
+        public readonly code:
+            | "UPLOAD_FILE_WRITE_FAILED"
+            | "UPLOAD_DB_FAILED"
+            | "UPLOAD_POST_PROCESS_FAILED",
+        message: string,
+        options?: { cause?: unknown },
+    ) {
+        super(message);
+        this.name = "UploadWorksheetError";
+        if (options?.cause !== undefined) {
+            this.cause = options.cause;
+        }
+    }
+}
+
 function getValidExtension(fileName: string): string | null {
     const parts = fileName.split(".");
     if (parts.length < 2) {
@@ -42,7 +59,11 @@ export async function uploadWorksheet(
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return { success: false, message: "ไม่อนุญาตให้เข้าถึง" };
+            return {
+                success: false,
+                message: "ไม่อนุญาตให้เข้าถึง",
+                error: "UPLOAD_UNAUTHORIZED",
+            };
         }
 
         // system_admin เป็น readonly — ไม่สามารถอัปโหลดใบงานได้
@@ -50,17 +71,26 @@ export async function uploadWorksheet(
             return {
                 success: false,
                 message: ERROR_MESSAGES.role.systemAdminUploadWorksheet,
+                error: "UPLOAD_ACCESS_DENIED",
             };
         }
 
         const file = formData.get("file") as File;
         if (!file) {
-            return { success: false, message: "ไม่พบไฟล์ใบงาน" };
+            return {
+                success: false,
+                message: "ไม่พบไฟล์ใบงาน",
+                error: "UPLOAD_FILE_MISSING",
+            };
         }
 
         // Validate file size
         if (file.size > MAX_FILE_SIZE) {
-            return { success: false, message: "ไฟล์ใหญ่เกินไป (สูงสุด 10MB)" };
+            return {
+                success: false,
+                message: "ไฟล์ใหญ่เกินไป (สูงสุด 10MB)",
+                error: "UPLOAD_FILE_TOO_LARGE",
+            };
         }
 
         // Validate file extension (whitelist only)
@@ -70,6 +100,7 @@ export async function uploadWorksheet(
                 success: false,
                 message:
                     "นามสกุลไฟล์ไม่ถูกต้อง (รองรับ .jpg, .jpeg, .png, .pdf เท่านั้น)",
+                error: "UPLOAD_INVALID_EXTENSION",
             };
         }
 
@@ -83,6 +114,7 @@ export async function uploadWorksheet(
                 success: false,
                 message:
                     "เนื้อหาไฟล์ไม่ตรงกับนามสกุล กรุณาอัปโหลดไฟล์ที่ถูกต้อง",
+                error: "UPLOAD_SIGNATURE_MISMATCH",
             };
         }
 
@@ -104,7 +136,11 @@ export async function uploadWorksheet(
         });
 
         if (!activityProgress) {
-            return { success: false, message: "ไม่พบข้อมูลกิจกรรม" };
+            return {
+                success: false,
+                message: "ไม่พบข้อมูลกิจกรรม",
+                error: "UPLOAD_ACTIVITY_NOT_FOUND",
+            };
         }
 
         const user = await prisma.user.findUnique({
@@ -120,6 +156,7 @@ export async function uploadWorksheet(
             return {
                 success: false,
                 message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+                error: "UPLOAD_ACCESS_DENIED",
             };
         }
 
@@ -139,6 +176,7 @@ export async function uploadWorksheet(
             return {
                 success: false,
                 message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+                error: "UPLOAD_ACCESS_DENIED",
             };
         }
 
@@ -158,8 +196,16 @@ export async function uploadWorksheet(
         const filePath = buildWorksheetFilePath(fileName);
 
         // Save file to disk
-        // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB UUID + activityNumber + timestamp + whitelist-validated extension
-        await writeFile(filePath, buffer);
+        try {
+            // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB UUID + activityNumber + timestamp + whitelist-validated extension
+            await writeFile(filePath, buffer);
+        } catch (error) {
+            throw new UploadWorksheetError(
+                "UPLOAD_FILE_WRITE_FAILED",
+                "ไม่สามารถบันทึกไฟล์ได้ กรุณาลองใหม่อีกครั้ง",
+                { cause: error },
+            );
+        }
 
         // Save to database — clean up file if DB write fails
         const fileUrl = buildWorksheetFileUrl(fileName);
@@ -219,25 +265,39 @@ export async function uploadWorksheet(
             // Clean up orphaned file if DB insert fails
             const { unlink } = await import("fs/promises");
             await unlink(filePath).catch(() => {});
-            throw dbError;
+            throw new UploadWorksheetError(
+                "UPLOAD_DB_FAILED",
+                "ไม่สามารถบันทึกข้อมูลไฟล์ได้ กรุณาลองใหม่อีกครั้ง",
+                { cause: dbError },
+            );
         }
 
         // Check if all required worksheets are uploaded
         const requiredCount =
             REQUIRED_WORKSHEETS[activityProgress.activityNumber] || 2;
-        const currentUploadCount = await prisma.worksheetUpload.count({
-            where: { activityProgressId },
-        });
-        const allUploaded = currentUploadCount >= requiredCount;
-
-        // Update teacherId if not set
-        if (!activityProgress.teacherId) {
-            await prisma.activityProgress.update({
-                where: { id: activityProgressId },
-                data: {
-                    teacherId: session.user.id,
-                },
+        let currentUploadCount = 0;
+        let allUploaded = false;
+        try {
+            currentUploadCount = await prisma.worksheetUpload.count({
+                where: { activityProgressId },
             });
+            allUploaded = currentUploadCount >= requiredCount;
+
+            // Update teacherId if not set
+            if (!activityProgress.teacherId) {
+                await prisma.activityProgress.update({
+                    where: { id: activityProgressId },
+                    data: {
+                        teacherId: session.user.id,
+                    },
+                });
+            }
+        } catch (error) {
+            throw new UploadWorksheetError(
+                "UPLOAD_POST_PROCESS_FAILED",
+                "อัปโหลดไฟล์สำเร็จ แต่ไม่สามารถอัปเดตสถานะได้ กรุณารีเฟรชหน้า",
+                { cause: error },
+            );
         }
 
         return {
@@ -255,7 +315,19 @@ export async function uploadWorksheet(
         };
     } catch (error) {
         logError("Error uploading worksheet:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการอัปโหลดใบงาน" };
+        if (error instanceof UploadWorksheetError) {
+            return {
+                success: false,
+                message: error.message,
+                error: error.code,
+            };
+        }
+
+        return {
+            success: false,
+            message: "เกิดข้อผิดพลาดในการอัปโหลดใบงาน",
+            error: "UPLOAD_UNKNOWN_ERROR",
+        };
     }
 }
 
