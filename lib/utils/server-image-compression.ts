@@ -3,7 +3,7 @@ import { TARGET_COMPRESSED_IMAGE_SIZE } from "@/lib/constants/image-upload";
 
 const MAX_DIMENSION = 1920;
 const PNG_COMPRESSION_LEVEL = 9;
-const COMPRESSION_QUALITIES = [80, 68] as const;
+const COMPRESSION_QUALITIES = [80, 70, 60, 50] as const;
 
 type SupportedWorksheetExtension = "jpg" | "jpeg" | "png";
 type OutputWorksheetExtension = "jpg" | "png";
@@ -45,12 +45,13 @@ export async function compressWorksheetImageBuffer(
                           compressionLevel: PNG_COMPRESSION_LEVEL,
                           palette: true,
                           quality,
-                          effort: 6,
+                          effort: 10,
                       })
                       .toBuffer()
                 : await buildBasePipeline(inputBuffer)
                       .jpeg({
                           quality,
+                          mozjpeg: true,
                       })
                       .toBuffer();
 

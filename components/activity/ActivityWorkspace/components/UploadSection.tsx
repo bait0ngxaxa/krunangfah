@@ -7,6 +7,8 @@ import {
     X,
     ArrowRight,
 } from "lucide-react";
+import { useState } from "react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getUploadColors, getWorksheetNames } from "../constants";
 import type { ActivityProgressData, PreviewFile } from "../types";
 
@@ -35,6 +37,11 @@ export function UploadSection({
     onConfirmComplete,
     onPreview,
 }: UploadSectionProps) {
+    const [deleteDialogUploadId, setDeleteDialogUploadId] = useState<
+        string | null
+    >(null);
+    const [removing, setRemoving] = useState(false);
+
     const requiredCount = currentActivityNumber === 5 ? 1 : 2;
     const uploadedCount = currentProgress.worksheetUploads.length;
     const remaining = requiredCount - uploadedCount;
@@ -54,134 +61,159 @@ export function UploadSection({
     const worksheetNames = getWorksheetNames(currentActivityNumber);
     const nextWorksheetName = worksheetNames[nextSlot - 1];
 
+    const handleDeleteConfirm = async (): Promise<void> => {
+        if (!deleteDialogUploadId) {
+            return;
+        }
+
+        setRemoving(true);
+        try {
+            await onRemove(deleteDialogUploadId);
+            setDeleteDialogUploadId(null);
+        } finally {
+            setRemoving(false);
+        }
+    };
+
     return (
-        <div
-            className={`h-full flex flex-col rounded-2xl border ${uploadColors.border} ${uploadColors.bgLight} p-5 shadow-sm transition-shadow hover:shadow-md`}
-        >
-            <div className="flex items-center justify-between mb-4">
-                <h3
-                    className={`text-base font-bold ${uploadColors.textDark} flex items-center gap-2`}
-                >
-                    <div className="p-1.5 bg-white rounded-lg shadow-sm">
-                        <Upload className="w-4 h-4" />
+        <>
+            <div
+                className={`h-full flex flex-col rounded-2xl border ${uploadColors.border} ${uploadColors.bgLight} p-5 shadow-sm transition-shadow hover:shadow-md`}
+            >
+                <div className="flex items-center justify-between mb-4">
+                    <h3
+                        className={`text-base font-bold ${uploadColors.textDark} flex items-center gap-2`}
+                    >
+                        <div className="p-1.5 bg-white rounded-lg shadow-sm">
+                            <Upload className="w-4 h-4" />
+                        </div>
+                        อัปโหลดใบงาน
+                    </h3>
+                    <span
+                        className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ${
+                            allUploaded
+                                ? `${uploadColors.completeBg} text-white`
+                                : "border border-amber-200 bg-amber-100 text-amber-700"
+                        }`}
+                    >
+                        {uploadedCount}/{requiredCount} ไฟล์
+                    </span>
+                </div>
+
+                {/* Uploaded files with preview + delete */}
+                {currentProgress.worksheetUploads.length > 0 && (
+                    <div className="mb-4 space-y-2">
+                        {currentProgress.worksheetUploads.map((upload) => (
+                            <div
+                                key={upload.id}
+                                className={`flex items-center justify-between bg-white p-3 rounded-xl border-2 ${uploadColors.itemBorder} hover:shadow-md transition-base group`}
+                            >
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <FileText className="w-6 h-6 text-gray-500" />
+                                    <span className="text-gray-700 font-bold truncate group-hover:text-gray-900 transition-colors">
+                                        {upload.fileName}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        onClick={() =>
+                                            onPreview({
+                                                url: upload.fileUrl,
+                                                name: upload.fileName,
+                                            })
+                                        }
+                                        className={`inline-flex items-center gap-2 px-4 py-2 ${uploadColors.button} text-white rounded-lg text-xs font-bold ${uploadColors.buttonHover} transition-base shadow-sm hover:shadow-md`}
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                        พรีวิว
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setDeleteDialogUploadId(upload.id)
+                                        }
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-500 transition-base hover:bg-red-200 hover:text-red-600"
+                                        title="ลบไฟล์"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    อัปโหลดใบงาน
-                </h3>
-                <span
-                    className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ${
-                        allUploaded
-                            ? `${uploadColors.completeBg} text-white`
-                            : "border border-amber-200 bg-amber-100 text-amber-700"
-                    }`}
-                >
-                    {uploadedCount}/{requiredCount} ไฟล์
-                </span>
+                )}
+
+                {!allUploaded ? (
+                    <>
+                        <p
+                            className={`${uploadColors.completeText} text-sm mb-4 font-medium flex items-center gap-2`}
+                        >
+                            <FileText className="w-4 h-4 animate-pulse" />
+                            ต้องอัปโหลดอีก{" "}
+                            <span className="font-bold">{remaining}</span> ไฟล์
+                            เพื่อเสร็จสิ้นกิจกรรมนี้
+                        </p>
+                        <button
+                            onClick={() => onFileSelect(currentProgress.id)}
+                            disabled={uploading === currentProgress.id}
+                            className={`w-full py-3 ${uploadColors.button} text-white rounded-xl font-bold text-sm ${uploadColors.buttonHover} transition-base shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none`}
+                        >
+                            {uploading === currentProgress.id ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <span>กำลังอัปโหลด…</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Upload className="w-5 h-5" />
+                                    <div className="text-center">
+                                        <div className="text-sm">
+                                            อัปโหลดใบงานที่ {nextSlot}
+                                        </div>
+                                        {nextWorksheetName && (
+                                            <div className="text-xs opacity-90 font-normal">
+                                                ({nextWorksheetName})
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </button>
+                    </>
+                ) : (
+                    /* All files uploaded — show confirm button */
+                    <div className="flex flex-col items-center gap-4 mt-auto">
+                        <div className="flex items-center gap-2 text-cyan-700 font-bold">
+                            <CheckCircle2 className="w-5 h-5" />
+                            อัปโหลดใบงานครบแล้ว!
+                        </div>
+                        <p className="text-gray-500 text-sm text-center">
+                            ตรวจสอบไฟล์ แล้วกดยืนยันเพื่อจบกิจกรรม
+                        </p>
+                        <button
+                            onClick={onConfirmComplete}
+                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 text-lg font-bold text-white transition-base hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-md"
+                        >
+                            ยืนยันจบกิจกรรม
+                            <ArrowRight className="w-5 h-5" />
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {/* Uploaded files with preview + delete */}
-            {currentProgress.worksheetUploads.length > 0 && (
-                <div className="mb-4 space-y-2">
-                    {currentProgress.worksheetUploads.map((upload) => (
-                        <div
-                            key={upload.id}
-                            className={`flex items-center justify-between bg-white p-3 rounded-xl border-2 ${uploadColors.itemBorder} hover:shadow-md transition-base group`}
-                        >
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <FileText className="w-6 h-6 text-gray-500" />
-                                <span className="text-gray-700 font-bold truncate group-hover:text-gray-900 transition-colors">
-                                    {upload.fileName}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                                <button
-                                    onClick={() =>
-                                        onPreview({
-                                            url: upload.fileUrl,
-                                            name: upload.fileName,
-                                        })
-                                    }
-                                    className={`inline-flex items-center gap-2 px-4 py-2 ${uploadColors.button} text-white rounded-lg text-xs font-bold ${uploadColors.buttonHover} transition-base shadow-sm hover:shadow-md`}
-                                >
-                                    <Eye className="w-4 h-4" />
-                                    พรีวิว
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (
-                                            confirm(
-                                                "ต้องการลบไฟล์นี้เพื่ออัปโหลดใหม่หรือไม่?",
-                                            )
-                                        ) {
-                                            onRemove(upload.id);
-                                        }
-                                    }}
-                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-500 transition-base hover:bg-red-200 hover:text-red-600"
-                                    title="ลบไฟล์"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {!allUploaded ? (
-                <>
-                    <p
-                        className={`${uploadColors.completeText} text-sm mb-4 font-medium flex items-center gap-2`}
-                    >
-                        <FileText className="w-4 h-4 animate-pulse" />
-                        ต้องอัปโหลดอีก{" "}
-                        <span className="font-bold">{remaining}</span> ไฟล์
-                        เพื่อเสร็จสิ้นกิจกรรมนี้
-                    </p>
-                    <button
-                        onClick={() => onFileSelect(currentProgress.id)}
-                        disabled={uploading === currentProgress.id}
-                        className={`w-full py-3 ${uploadColors.button} text-white rounded-xl font-bold text-sm ${uploadColors.buttonHover} transition-base shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none`}
-                    >
-                        {uploading === currentProgress.id ? (
-                            <>
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                <span>กำลังอัปโหลด…</span>
-                            </>
-                        ) : (
-                            <>
-                                <Upload className="w-5 h-5" />
-                                <div className="text-center">
-                                    <div className="text-sm">
-                                        อัปโหลดใบงานที่ {nextSlot}
-                                    </div>
-                                    {nextWorksheetName && (
-                                        <div className="text-xs opacity-90 font-normal">
-                                            ({nextWorksheetName})
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </button>
-                </>
-            ) : (
-                /* All files uploaded — show confirm button */
-                <div className="flex flex-col items-center gap-4 mt-auto">
-                    <div className="flex items-center gap-2 text-cyan-700 font-bold">
-                        <CheckCircle2 className="w-5 h-5" />
-                        อัปโหลดใบงานครบแล้ว!
-                    </div>
-                    <p className="text-gray-500 text-sm text-center">
-                        ตรวจสอบไฟล์ แล้วกดยืนยันเพื่อจบกิจกรรม
-                    </p>
-                    <button
-                        onClick={onConfirmComplete}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 text-lg font-bold text-white transition-base hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-md"
-                    >
-                        ยืนยันจบกิจกรรม
-                        <ArrowRight className="w-5 h-5" />
-                    </button>
-                </div>
-            )}
-        </div>
+            <ConfirmDialog
+                isOpen={deleteDialogUploadId !== null}
+                title="ยืนยันการลบไฟล์"
+                message="ต้องการลบไฟล์นี้เพื่ออัปโหลดใหม่หรือไม่?"
+                confirmLabel="ลบไฟล์"
+                cancelLabel="ยกเลิก"
+                isLoading={removing}
+                onCancel={() => {
+                    if (!removing) {
+                        setDeleteDialogUploadId(null);
+                    }
+                }}
+                onConfirm={handleDeleteConfirm}
+            />
+        </>
     );
 }

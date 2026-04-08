@@ -11,6 +11,7 @@ import type { HomeVisitPhotoData } from "@/lib/actions/home-visit.actions";
 import { HomeVisitPhotoViewer } from "./HomeVisitPhotoViewer";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface HomeVisitPhotoUploaderProps {
     homeVisitId: string;
@@ -20,7 +21,7 @@ interface HomeVisitPhotoUploaderProps {
 }
 
 const MAX_PHOTOS = 5;
-const UPLOAD_ACTION_TIMEOUT_MS = 120000;
+const UPLOAD_ACTION_TIMEOUT_MS = 45000;
 
 async function withTimeout<T>(
     promise: Promise<T>,
@@ -58,6 +59,10 @@ export function HomeVisitPhotoUploader({
 }: HomeVisitPhotoUploaderProps) {
     const [uploading, setUploading] = useState(false);
     const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+    const [deleteDialogPhotoId, setDeleteDialogPhotoId] = useState<string | null>(
+        null,
+    );
+    const [deletingPhoto, setDeletingPhoto] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,15 +110,23 @@ export function HomeVisitPhotoUploader({
         }
     };
 
-    const handleDelete = async (photoId: string) => {
-        if (!confirm("ต้องการลบรูปภาพนี้หรือไม่?")) return;
+    const handleDeleteConfirm = async () => {
+        if (!deleteDialogPhotoId) {
+            return;
+        }
 
-        const result = await deleteHomeVisitPhoto(photoId);
-        if (result.success) {
-            onPhotosChange(photos.filter((p) => p.id !== photoId));
-            toast.success("ลบรูปภาพสำเร็จ");
-        } else {
-            toast.error(result.message);
+        setDeletingPhoto(true);
+        try {
+            const result = await deleteHomeVisitPhoto(deleteDialogPhotoId);
+            if (result.success) {
+                onPhotosChange(photos.filter((p) => p.id !== deleteDialogPhotoId));
+                toast.success("ลบรูปภาพสำเร็จ");
+                setDeleteDialogPhotoId(null);
+            } else {
+                toast.error(result.message);
+            }
+        } finally {
+            setDeletingPhoto(false);
         }
     };
 
@@ -140,7 +153,7 @@ export function HomeVisitPhotoUploader({
                             <Button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDelete(photo.id);
+                                    setDeleteDialogPhotoId(photo.id);
                                 }}
                                 aria-label="ลบรูปภาพ"
                                 variant="danger"
@@ -198,6 +211,21 @@ export function HomeVisitPhotoUploader({
                     onClose={() => setViewerIndex(null)}
                 />
             )}
+
+            <ConfirmDialog
+                isOpen={deleteDialogPhotoId !== null}
+                title="ยืนยันการลบรูปภาพ"
+                message="ต้องการลบรูปภาพนี้หรือไม่?"
+                confirmLabel="ลบรูปภาพ"
+                cancelLabel="ยกเลิก"
+                isLoading={deletingPhoto}
+                onCancel={() => {
+                    if (!deletingPhoto) {
+                        setDeleteDialogPhotoId(null);
+                    }
+                }}
+                onConfirm={handleDeleteConfirm}
+            />
         </div>
     );
 }

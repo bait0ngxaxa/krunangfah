@@ -7,6 +7,7 @@ import { deleteHomeVisit } from "@/lib/actions/home-visit.actions";
 import { HomeVisitPhotoViewer } from "./HomeVisitPhotoViewer";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface HomeVisitCardProps {
     visit: HomeVisitData;
@@ -29,20 +30,20 @@ export function HomeVisitCard({
 }: HomeVisitCardProps) {
     const [deleting, setDeleting] = useState(false);
     const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-    const handleDelete = async () => {
-        if (!confirm("ต้องการลบบันทึกการเยี่ยมบ้านนี้หรือไม่? รูปภาพทั้งหมดจะถูกลบด้วย")) {
-            return;
-        }
-
+    const handleDeleteConfirm = async () => {
         setDeleting(true);
-        const result = await deleteHomeVisit(visit.id);
-
-        if (result.success) {
-            toast.success("ลบบันทึกการเยี่ยมบ้านสำเร็จ");
-            onDeleted();
-        } else {
+        try {
+            const result = await deleteHomeVisit(visit.id);
+            if (result.success) {
+                toast.success("ลบบันทึกการเยี่ยมบ้านสำเร็จ");
+                setIsDeleteDialogOpen(false);
+                onDeleted();
+                return;
+            }
             toast.error(result.message || "เกิดข้อผิดพลาด");
+        } finally {
             setDeleting(false);
         }
     };
@@ -65,14 +66,14 @@ export function HomeVisitCard({
 
                 {!readOnly && (
                     <Button
-                        onClick={handleDelete}
+                        onClick={() => setIsDeleteDialogOpen(true)}
                         disabled={deleting}
                         variant="danger"
                         size="sm"
-                        className="h-8 w-8 p-0 rounded-lg bg-white"
+                        className="h-8 w-8 !p-0 rounded-lg bg-white"
                         title="ลบบันทึก"
                     >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="h-4 w-4 shrink-0" />
                     </Button>
                 )}
             </div>
@@ -145,6 +146,21 @@ export function HomeVisitCard({
                     onClose={() => setViewerIndex(null)}
                 />
             )}
+
+            <ConfirmDialog
+                isOpen={isDeleteDialogOpen}
+                title="ยืนยันการลบบันทึก"
+                message="ต้องการลบบันทึกการเยี่ยมบ้านนี้หรือไม่? รูปภาพทั้งหมดจะถูกลบด้วย"
+                confirmLabel="ลบบันทึก"
+                cancelLabel="ยกเลิก"
+                isLoading={deleting}
+                onCancel={() => {
+                    if (!deleting) {
+                        setIsDeleteDialogOpen(false);
+                    }
+                }}
+                onConfirm={handleDeleteConfirm}
+            />
         </div>
     );
 }

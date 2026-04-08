@@ -23,7 +23,7 @@ import {
     studentHelpEncouragementRoute,
 } from "@/lib/constants/student-routes";
 
-const UPLOAD_ACTION_TIMEOUT_MS = 120000;
+const UPLOAD_ACTION_TIMEOUT_MS = 45000;
 
 async function withTimeout<T>(
     promise: Promise<T>,
