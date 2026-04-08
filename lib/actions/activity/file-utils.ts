@@ -99,7 +99,7 @@ export async function uploadWorksheet(
             return {
                 success: false,
                 message:
-                    "นามสกุลไฟล์ไม่ถูกต้อง (รองรับ .jpg, .jpeg, .png, .pdf เท่านั้น)",
+                    "นามสกุลไฟล์ไม่ถูกต้อง (รองรับ .jpg, .jpeg, .png เท่านั้น)",
                 error: "UPLOAD_INVALID_EXTENSION",
             };
         }

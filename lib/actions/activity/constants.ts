@@ -15,8 +15,8 @@ export const REQUIRED_WORKSHEETS: Record<number, number> = {
     5: 1, // Activity 5 has only 1 worksheet
 };
 
-// Allowed file extensions for worksheet uploads (whitelist)
-export const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "pdf"]);
+// Allowed file extensions for worksheet uploads (images only)
+export const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
 
 // Maximum file size (10MB)
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;

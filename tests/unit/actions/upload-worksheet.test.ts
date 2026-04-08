@@ -53,8 +53,8 @@ describe("Upload Worksheet - Extension Validation", () => {
             expect(ALLOWED_EXTENSIONS.has("png")).toBe(true);
         });
 
-        it("should allow pdf", () => {
-            expect(ALLOWED_EXTENSIONS.has("pdf")).toBe(true);
+        it("should not allow pdf", () => {
+            expect(ALLOWED_EXTENSIONS.has("pdf")).toBe(false);
         });
 
         it("should not allow exe", () => {
@@ -87,14 +87,14 @@ describe("Upload Worksheet - Extension Validation", () => {
             expect(getValidExtension("image.png")).toBe("png");
         });
 
-        it("should return pdf for document.pdf", () => {
-            expect(getValidExtension("document.pdf")).toBe("pdf");
+        it("should return null for document.pdf", () => {
+            expect(getValidExtension("document.pdf")).toBe(null);
         });
 
         it("should normalize uppercase extensions to lowercase", () => {
             expect(getValidExtension("file.JPG")).toBe("jpg");
             expect(getValidExtension("file.PNG")).toBe("png");
-            expect(getValidExtension("file.PDF")).toBe("pdf");
+            expect(getValidExtension("file.PDF")).toBe(null);
         });
 
         it("should return null for filename with no extension", () => {
@@ -109,7 +109,7 @@ describe("Upload Worksheet - Extension Validation", () => {
 
         it("should use only the last extension for files with multiple dots", () => {
             expect(getValidExtension("my.file.name.jpg")).toBe("jpg");
-            expect(getValidExtension("document.v2.pdf")).toBe("pdf");
+            expect(getValidExtension("document.v2.pdf")).toBe(null);
         });
 
         it("should reject double extension attacks (e.g. file.jpg.exe)", () => {
@@ -197,8 +197,8 @@ describe("Upload Worksheet - Filename Generation", () => {
     });
 
     it("should include extension", () => {
-        const filename = generateFileName("student123", 1, "pdf");
-        expect(filename).toMatch(/\.pdf$/);
+        const filename = generateFileName("student123", 1, "png");
+        expect(filename).toMatch(/\.png$/);
     });
 
     it("should generate unique filenames (different timestamps)", async () => {

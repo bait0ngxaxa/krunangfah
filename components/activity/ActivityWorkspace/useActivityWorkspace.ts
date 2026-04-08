@@ -132,7 +132,7 @@ export function useActivityWorkspace({
     const handleFileSelect = (progressId: string) => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = "image/*,.pdf";
+        input.accept = "image/jpeg,image/png";
         input.onchange = (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (file) {
