@@ -46,6 +46,13 @@ async function withTimeout<T>(
     }
 }
 
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error && error.message.trim().length > 0) {
+        return error.message;
+    }
+    return "เกิดข้อผิดพลาดในการอัปโหลด";
+}
+
 /**
  * Custom hook for managing ActivityWorkspace state and logic
  */
@@ -111,7 +118,7 @@ export function useActivityWorkspace({
             }
         } catch (error) {
             console.error("Upload error:", error);
-            toast.error("เกิดข้อผิดพลาดในการอัปโหลด");
+            toast.error(getErrorMessage(error));
         } finally {
             setUploading(null);
         }

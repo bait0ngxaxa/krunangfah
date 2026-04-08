@@ -43,6 +43,13 @@ async function withTimeout<T>(
     }
 }
 
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error && error.message.trim().length > 0) {
+        return error.message;
+    }
+    return "เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ";
+}
+
 export function HomeVisitPhotoUploader({
     homeVisitId,
     photos,
@@ -91,8 +98,8 @@ export function HomeVisitPhotoUploader({
             } else {
                 toast.error(result.message);
             }
-        } catch {
-            toast.error("เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ");
+        } catch (error) {
+            toast.error(getErrorMessage(error));
         } finally {
             setUploading(false);
         }
