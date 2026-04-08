@@ -8,15 +8,14 @@ const JPEG_QUALITY = 0.8;
 const COMPRESSIBLE_TYPES: ReadonlySet<string> = new Set([
     "image/jpeg",
     "image/png",
-    "image/webp",
 ]);
 
-function loadImage(file: File): Promise<HTMLImageElement> {
+function loadImage(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => resolve(img);
         img.onerror = () => reject(new Error("Failed to load image"));
-        img.src = URL.createObjectURL(file);
+        img.src = url;
     });
 }
 
@@ -38,7 +37,7 @@ function calculateDimensions(
 function canvasToBlob(
     canvas: HTMLCanvasElement,
     type: string,
-    quality: number,
+    quality?: number,
 ): Promise<Blob> {
     return new Promise((resolve, reject) => {
         canvas.toBlob(
@@ -61,11 +60,19 @@ function replaceExtension(filename: string): string {
     return `${baseName}.jpg`;
 }
 
+function getOutputType(fileType: string): "image/jpeg" | "image/png" {
+    if (fileType === "image/png") {
+        return "image/png";
+    }
+    return "image/jpeg";
+}
+
 /**
  * Compress an image file using Canvas API before upload.
  *
  * - Non-image files (PDF, etc.) are returned unchanged.
- * - Images are resized to max 1920px and converted to JPEG quality 0.8.
+ * - Images are resized to max 1920px.
+ * - JPEG stays JPEG (quality 0.8), PNG stays PNG.
  * - If the compressed result is larger than the original, the original is returned.
  */
 export async function compressImage(file: File): Promise<File> {
@@ -73,33 +80,46 @@ export async function compressImage(file: File): Promise<File> {
         return file;
     }
 
-    const img = await loadImage(file);
-    const { width, height } = calculateDimensions(
-        img.naturalWidth,
-        img.naturalHeight,
-    );
+    const objectUrl = URL.createObjectURL(file);
+    try {
+        const img = await loadImage(objectUrl);
+        const { width, height } = calculateDimensions(
+            img.naturalWidth,
+            img.naturalHeight,
+        );
 
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            return file;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const outputType = getOutputType(file.type);
+        const quality = outputType === "image/jpeg" ? JPEG_QUALITY : undefined;
+        const blob = await canvasToBlob(canvas, outputType, quality);
+
+        // If compressed is larger, return original
+        if (blob.size >= file.size) {
+            return file;
+        }
+
+        const outputName =
+            outputType === "image/jpeg"
+                ? replaceExtension(file.name)
+                : file.name;
+        return new File([blob], outputName, {
+            type: outputType,
+            lastModified: Date.now(),
+        });
+    } catch {
+        // Compression is best-effort; do not block uploads when browser decoding fails.
         return file;
+    } finally {
+        URL.revokeObjectURL(objectUrl);
     }
-
-    ctx.drawImage(img, 0, 0, width, height);
-    URL.revokeObjectURL(img.src);
-
-    const blob = await canvasToBlob(canvas, "image/jpeg", JPEG_QUALITY);
-
-    // If compressed is larger, return original
-    if (blob.size >= file.size) {
-        return file;
-    }
-
-    return new File([blob], replaceExtension(file.name), {
-        type: "image/jpeg",
-        lastModified: Date.now(),
-    });
 }

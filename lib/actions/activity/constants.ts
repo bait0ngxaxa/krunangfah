@@ -1,4 +1,5 @@
 // Activity configuration constants
+import { MAX_IMAGE_UPLOAD_SIZE } from "@/lib/constants/image-upload";
 
 export const ACTIVITY_INDICES: Record<string, number[]> = {
     orange: [1, 2, 3, 4, 5],
@@ -18,5 +19,5 @@ export const REQUIRED_WORKSHEETS: Record<number, number> = {
 // Allowed file extensions for worksheet uploads (images only)
 export const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
 
-// Maximum file size (10MB)
-export const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// Maximum file size after server-side compression (5MB)
+export const MAX_FILE_SIZE = MAX_IMAGE_UPLOAD_SIZE;

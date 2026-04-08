@@ -38,6 +38,7 @@ export interface UploadWorksheetResult {
         | "UPLOAD_SIGNATURE_MISMATCH"
         | "UPLOAD_ACTIVITY_NOT_FOUND"
         | "UPLOAD_ACCESS_DENIED"
+        | "UPLOAD_IMAGE_COMPRESSION_FAILED"
         | "UPLOAD_FILE_WRITE_FAILED"
         | "UPLOAD_DB_FAILED"
         | "UPLOAD_POST_PROCESS_FAILED"

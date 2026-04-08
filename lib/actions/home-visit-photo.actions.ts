@@ -20,12 +20,17 @@ import { canAccessStudentByRole } from "@/lib/security/student-access";
 import { revalidatePath } from "next/cache";
 import { logError } from "@/lib/utils/logging";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
+import { MAX_IMAGE_UPLOAD_SIZE } from "@/lib/constants/image-upload";
+import {
+    compressWorksheetImageBuffer,
+    isSupportedWorksheetImageExtension,
+} from "@/lib/utils/server-image-compression";
 
 /** Allowed image extensions for home visit photos */
 const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
 
-/** Maximum file size: 10MB */
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+/** Maximum file size after compression: 5MB */
+const MAX_FILE_SIZE = MAX_IMAGE_UPLOAD_SIZE;
 
 /** Maximum photos per home visit */
 const MAX_PHOTOS_PER_VISIT = 5;
@@ -69,11 +74,6 @@ export async function uploadHomeVisitPhoto(
             return { success: false, message: "ไม่พบไฟล์" };
         }
 
-        // Validate file size
-        if (file.size > MAX_FILE_SIZE) {
-            return { success: false, message: "ไฟล์ใหญ่เกินไป (สูงสุด 10MB)" };
-        }
-
         // Validate file extension (images only)
         const ext = getValidExtension(file.name);
         if (!ext) {
@@ -85,7 +85,9 @@ export async function uploadHomeVisitPhoto(
 
         // Read file content
         const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+        let buffer: Buffer<ArrayBufferLike> = Buffer.from(bytes);
+        let outputExt = ext;
+        let outputMimeType = file.type;
 
         // Validate file signature (magic number)
         if (!validateFileSignature(buffer, ext)) {
@@ -93,6 +95,33 @@ export async function uploadHomeVisitPhoto(
                 success: false,
                 message:
                     "เนื้อหาไฟล์ไม่ตรงกับนามสกุล กรุณาอัปโหลดไฟล์ที่ถูกต้อง",
+            };
+        }
+
+        if (!isSupportedWorksheetImageExtension(ext)) {
+            return {
+                success: false,
+                message: "นามสกุลไฟล์รูปภาพไม่ถูกต้อง",
+            };
+        }
+
+        try {
+            const compressed = await compressWorksheetImageBuffer(buffer, ext);
+            buffer = compressed.buffer;
+            outputExt = compressed.extension;
+            outputMimeType = compressed.mimeType;
+        } catch (error) {
+            logError("Home visit image compression failed:", error);
+            return {
+                success: false,
+                message: "ไม่สามารถบีบอัดรูปภาพได้ กรุณาเลือกรูปอื่นแล้วลองใหม่",
+            };
+        }
+
+        if (buffer.length > MAX_FILE_SIZE) {
+            return {
+                success: false,
+                message: "ไฟล์ใหญ่เกินไปหลังบีบอัด (สูงสุด 5MB)",
             };
         }
 
@@ -167,7 +196,7 @@ export async function uploadHomeVisitPhoto(
 
         // Generate unique filename
         const timestamp = Date.now();
-        const fileName = `${homeVisit.studentId}_visit_${timestamp}.${ext}`;
+        const fileName = `${homeVisit.studentId}_visit_${timestamp}.${outputExt}`;
         const filePath = join(uploadDir, fileName);
 
         // Save file to disk
@@ -184,8 +213,8 @@ export async function uploadHomeVisitPhoto(
                     homeVisitId,
                     fileName: file.name,
                     fileUrl,
-                    fileType: file.type,
-                    fileSize: file.size,
+                    fileType: outputMimeType,
+                    fileSize: buffer.length,
                 },
             });
         } catch (dbError) {

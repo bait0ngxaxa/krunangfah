@@ -8,22 +8,22 @@ import {
 
 describe("Upload Worksheet - File Size Validation", () => {
     describe("MAX_FILE_SIZE", () => {
-        it("should be 10MB", () => {
-            expect(MAX_FILE_SIZE).toBe(10 * 1024 * 1024);
+        it("should be 5MB", () => {
+            expect(MAX_FILE_SIZE).toBe(5 * 1024 * 1024);
         });
 
-        it("should reject files larger than 10MB", () => {
-            const largeFileSize = 11 * 1024 * 1024;
+        it("should reject files larger than 5MB", () => {
+            const largeFileSize = 6 * 1024 * 1024;
             expect(largeFileSize > MAX_FILE_SIZE).toBe(true);
         });
 
-        it("should accept files smaller than 10MB", () => {
-            const smallFileSize = 5 * 1024 * 1024;
+        it("should accept files smaller than 5MB", () => {
+            const smallFileSize = 4 * 1024 * 1024;
             expect(smallFileSize <= MAX_FILE_SIZE).toBe(true);
         });
 
-        it("should accept files exactly 10MB", () => {
-            const exactFileSize = 10 * 1024 * 1024;
+        it("should accept files exactly 5MB", () => {
+            const exactFileSize = 5 * 1024 * 1024;
             expect(exactFileSize <= MAX_FILE_SIZE).toBe(true);
         });
     });

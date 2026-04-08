@@ -22,12 +22,17 @@ import {
     buildWorksheetFileUrl,
     extractWorksheetFileName,
 } from "@/lib/constants/uploads";
+import {
+    compressWorksheetImageBuffer,
+    isSupportedWorksheetImageExtension,
+} from "@/lib/utils/server-image-compression";
 
 const MAX_WORKSHEET_NUMBER_RETRIES = 3;
 
 class UploadWorksheetError extends Error {
     constructor(
         public readonly code:
+            | "UPLOAD_IMAGE_COMPRESSION_FAILED"
             | "UPLOAD_FILE_WRITE_FAILED"
             | "UPLOAD_DB_FAILED"
             | "UPLOAD_POST_PROCESS_FAILED",
@@ -84,15 +89,6 @@ export async function uploadWorksheet(
             };
         }
 
-        // Validate file size
-        if (file.size > MAX_FILE_SIZE) {
-            return {
-                success: false,
-                message: "ไฟล์ใหญ่เกินไป (สูงสุด 10MB)",
-                error: "UPLOAD_FILE_TOO_LARGE",
-            };
-        }
-
         // Validate file extension (whitelist only)
         const ext = getValidExtension(file.name);
         if (!ext) {
@@ -106,7 +102,9 @@ export async function uploadWorksheet(
 
         // Read file content
         const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+        let buffer: Buffer<ArrayBufferLike> = Buffer.from(bytes);
+        let outputExt = ext;
+        let outputFileType = file.type;
 
         // Validate file signature (magic number) to prevent extension spoofing
         if (!validateFileSignature(buffer, ext)) {
@@ -115,6 +113,37 @@ export async function uploadWorksheet(
                 message:
                     "เนื้อหาไฟล์ไม่ตรงกับนามสกุล กรุณาอัปโหลดไฟล์ที่ถูกต้อง",
                 error: "UPLOAD_SIGNATURE_MISMATCH",
+            };
+        }
+
+        // Enforce server-side compression for worksheet images.
+        // If compression fails, reject to keep storage quality policy deterministic.
+        if (!isSupportedWorksheetImageExtension(ext)) {
+            return {
+                success: false,
+                message: "นามสกุลไฟล์รูปภาพไม่ถูกต้อง",
+                error: "UPLOAD_INVALID_EXTENSION",
+            };
+        }
+        try {
+            const compressed = await compressWorksheetImageBuffer(buffer, ext);
+            buffer = compressed.buffer;
+            outputExt = compressed.extension;
+            outputFileType = compressed.mimeType;
+        } catch (error) {
+            throw new UploadWorksheetError(
+                "UPLOAD_IMAGE_COMPRESSION_FAILED",
+                "ไม่สามารถบีบอัดรูปภาพได้ กรุณาเลือกรูปอื่นแล้วลองใหม่",
+                { cause: error },
+            );
+        }
+
+        // Validate compressed output size
+        if (buffer.length > MAX_FILE_SIZE) {
+            return {
+                success: false,
+                message: "ไฟล์ใหญ่เกินไปหลังบีบอัด (สูงสุด 5MB)",
+                error: "UPLOAD_FILE_TOO_LARGE",
             };
         }
 
@@ -192,7 +221,7 @@ export async function uploadWorksheet(
 
         // Generate unique filename using validated extension
         const timestamp = Date.now();
-        const fileName = `${activityProgress.studentId}_activity${activityProgress.activityNumber}_${timestamp}.${ext}`;
+        const fileName = `${activityProgress.studentId}_activity${activityProgress.activityNumber}_${timestamp}.${outputExt}`;
         const filePath = buildWorksheetFilePath(fileName);
 
         // Save file to disk
@@ -239,8 +268,8 @@ export async function uploadWorksheet(
                             worksheetNumber,
                             fileName: file.name,
                             fileUrl,
-                            fileType: file.type,
-                            fileSize: file.size,
+                            fileType: outputFileType,
+                            fileSize: buffer.length,
                             uploadedById: session.user.id,
                         },
                         select: { id: true },

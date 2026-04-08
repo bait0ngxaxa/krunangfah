@@ -8,7 +8,6 @@ import {
     confirmActivityComplete,
 } from "@/lib/actions/activity";
 import { compressImage } from "@/lib/utils/image-compression";
-import { MAX_FILE_SIZE } from "@/lib/actions/activity/constants";
 import {
     ACTIVITIES,
     getWorksheetActivityIndices,
@@ -71,12 +70,6 @@ export function useActivityWorkspace({
         setUploading(progressId);
         try {
             const processedFile = await compressImage(file);
-
-            if (processedFile.size > MAX_FILE_SIZE) {
-                toast.error("ไฟล์ใหญ่เกินไป (สูงสุด 10MB)");
-                setUploading(null);
-                return;
-            }
 
             const formData = new FormData();
             formData.append("file", processedFile);

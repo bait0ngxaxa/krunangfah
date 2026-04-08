@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
 
     experimental: {
         serverActions: {
-            bodySizeLimit: "10mb", // เพิ่ม limit เป็น 10MB สำหรับอัปโหลดไฟล์
+            bodySizeLimit: "15mb", // เพิ่ม headroom สำหรับ multipart/form-data overhead
         },
         // 3. Tree shaking สำหรับ libraries ขนาดใหญ่
         optimizePackageImports: [
