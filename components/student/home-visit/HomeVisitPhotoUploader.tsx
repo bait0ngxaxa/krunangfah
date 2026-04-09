@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Camera, Loader2, X, ImageIcon } from "lucide-react";
 import { compressImage } from "@/lib/utils/image-compression";
+import {
+    UPLOAD_ACTION_TIMEOUT_MS,
+    withTimeout,
+} from "@/lib/utils/with-timeout";
 import {
     uploadHomeVisitPhoto,
     deleteHomeVisitPhoto,
@@ -18,31 +22,10 @@ interface HomeVisitPhotoUploaderProps {
     photos: HomeVisitPhotoData[];
     onPhotosChange: (photos: HomeVisitPhotoData[]) => void;
     readOnly?: boolean;
+    onUploadingChange?: (isUploading: boolean) => void;
 }
 
 const MAX_PHOTOS = 5;
-const UPLOAD_ACTION_TIMEOUT_MS = 45000;
-
-async function withTimeout<T>(
-    promise: Promise<T>,
-    timeoutMs: number,
-    timeoutMessage: string,
-): Promise<T> {
-    let timeoutId: number | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = window.setTimeout(() => {
-            reject(new Error(timeoutMessage));
-        }, timeoutMs);
-    });
-
-    try {
-        return await Promise.race([promise, timeoutPromise]);
-    } finally {
-        if (timeoutId !== undefined) {
-            window.clearTimeout(timeoutId);
-        }
-    }
-}
 
 function getErrorMessage(error: unknown): string {
     if (error instanceof Error && error.message.trim().length > 0) {
@@ -56,6 +39,7 @@ export function HomeVisitPhotoUploader({
     photos,
     onPhotosChange,
     readOnly = false,
+    onUploadingChange,
 }: HomeVisitPhotoUploaderProps) {
     const [uploading, setUploading] = useState(false);
     const [viewerIndex, setViewerIndex] = useState<number | null>(null);
@@ -64,6 +48,10 @@ export function HomeVisitPhotoUploader({
     );
     const [deletingPhoto, setDeletingPhoto] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        onUploadingChange?.(uploading);
+    }, [onUploadingChange, uploading]);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];

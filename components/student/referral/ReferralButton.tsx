@@ -36,6 +36,10 @@ export function ReferralButton({
     const [showModal, setShowModal] = useState(false);
     const router = useRouter();
 
+    if (currentUserRole === "system_admin") {
+        return null;
+    }
+
     // If student was referred TO the current user, show badge
     if (
         referral &&

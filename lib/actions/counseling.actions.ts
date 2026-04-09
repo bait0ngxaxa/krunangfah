@@ -18,6 +18,7 @@ import {
     counselingSessionSchema,
 } from "@/lib/validations/counseling.validation";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
+import type { OffsetPagination } from "@/types/pagination.types";
 
 export interface CounselingSession {
     id: string;
@@ -29,6 +30,41 @@ export interface CounselingSession {
 }
 
 const MAX_SESSION_NUMBER_RETRIES = 3;
+const DEFAULT_COUNSELING_PAGE_SIZE = 10;
+const MAX_COUNSELING_PAGE_SIZE = 50;
+
+function buildEmptyPagination(pageSize: number): OffsetPagination {
+    return {
+        page: 1,
+        pageSize,
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+    };
+}
+
+function normalizePaginationParams(
+    page?: number,
+    pageSize?: number,
+): { page: number; pageSize: number } {
+    const safePage =
+        typeof page === "number" && Number.isInteger(page) && page > 0 ? page : 1;
+    const safePageSize =
+        typeof pageSize === "number" &&
+        Number.isInteger(pageSize) &&
+        pageSize > 0 &&
+        pageSize <= MAX_COUNSELING_PAGE_SIZE
+            ? pageSize
+            : DEFAULT_COUNSELING_PAGE_SIZE;
+
+    return { page: safePage, pageSize: safePageSize };
+}
+
+export interface CounselingSessionListResponse {
+    sessions: CounselingSession[];
+    pagination: OffsetPagination;
+}
 
 /**
  * Verify user has access to student
@@ -97,7 +133,13 @@ async function verifyStudentAccess(
  */
 export async function getCounselingSessions(
     studentId: string,
-): Promise<CounselingSession[]> {
+    options?: { page?: number; pageSize?: number },
+): Promise<CounselingSessionListResponse> {
+    const { page: requestedPage, pageSize } = normalizePaginationParams(
+        options?.page,
+        options?.pageSize,
+    );
+
     try {
         const session = await requireAuth();
         const { allowed, error } = await verifyStudentAccess(
@@ -108,26 +150,53 @@ export async function getCounselingSessions(
 
         if (!allowed) {
             logError("Access denied:", error);
-            return [];
+            return {
+                sessions: [],
+                pagination: buildEmptyPagination(pageSize),
+            };
         }
 
-        const sessions = await prisma.counselingSession.findMany({
+        const total = await prisma.counselingSession.count({
             where: { studentId },
-            orderBy: { sessionNumber: "asc" },
-            select: {
-                id: true,
-                sessionNumber: true,
-                sessionDate: true,
-                counselorName: true,
-                summary: true,
-                createdAt: true,
-            },
         });
+        const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
+        const page = totalPages === 0 ? 1 : Math.min(requestedPage, totalPages);
 
-        return sessions;
+        const sessions =
+            total === 0
+                ? []
+                : await prisma.counselingSession.findMany({
+                      where: { studentId },
+                      orderBy: { sessionNumber: "asc" },
+                      skip: (page - 1) * pageSize,
+                      take: pageSize,
+                      select: {
+                          id: true,
+                          sessionNumber: true,
+                          sessionDate: true,
+                          counselorName: true,
+                          summary: true,
+                          createdAt: true,
+                      },
+                  });
+
+        return {
+            sessions,
+            pagination: {
+                page,
+                pageSize,
+                total,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPreviousPage: page > 1,
+            },
+        };
     } catch (error) {
         logError("Error fetching counseling sessions:", error);
-        return [];
+        return {
+            sessions: [],
+            pagination: buildEmptyPagination(pageSize),
+        };
     }
 }
 

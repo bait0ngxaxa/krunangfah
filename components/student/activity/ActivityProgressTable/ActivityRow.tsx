@@ -14,20 +14,28 @@ function ProblemTypeBadge({ problemType }: { problemType: string }) {
     const isInternal = problemType === "internal" || problemType === "INTERNAL";
     return (
         <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold ${
                 isInternal
-                    ? "bg-amber-50 text-amber-700 border border-amber-200"
-                    : "bg-blue-50 text-blue-700 border border-blue-200"
+                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                    : "border-blue-200 bg-blue-50 text-blue-700"
             }`}
         >
             {isInternal ? (
-                <AlertTriangle className="w-2.5 h-2.5" />
+                <AlertTriangle className="h-3.5 w-3.5" />
             ) : (
-                <ExternalLink className="w-2.5 h-2.5" />
+                <ExternalLink className="h-3.5 w-3.5" />
             )}
             {isInternal ? "ปัญหาภายใน" : "ปัญหาภายนอก"}
         </span>
     );
+}
+
+function toProblemPoints(text: string): string[] {
+    return text
+        .replace(/\r\n/g, "\n")
+        .split("\n")
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -56,7 +64,7 @@ export function ActivityRow({ progress, index, readOnly = false }: ActivityRowPr
     const isLocked = progress.status === "locked";
     const isCompleted = progress.status === "completed";
     const activityName = getActivityName(progress.activityNumber);
-    const hasAssessment = Boolean(
+    const hasAssessment = progress.activityNumber === 1 && Boolean(
         progress.internalProblems || progress.externalProblems,
     );
 
@@ -192,41 +200,68 @@ export function ActivityRow({ progress, index, readOnly = false }: ActivityRowPr
 }
 
 function AssessmentDetail({ progress }: { progress: ActivityProgress }) {
+    const internalPoints = progress.internalProblems
+        ? toProblemPoints(progress.internalProblems)
+        : [];
+    const externalPoints = progress.externalProblems
+        ? toProblemPoints(progress.externalProblems)
+        : [];
+
     return (
-        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-            <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-bold text-gray-600">
-                    ผลการประเมิน
+        <div className="rounded-xl border border-slate-200 bg-linear-to-br from-slate-50 to-white p-4">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
+                    กิจกรรมที่ 1
+                </span>
+                <span className="text-sm font-bold text-gray-700">
+                    ผลการประเมินปัญหาภายใน/ภายนอก
                 </span>
                 {progress.problemType && (
-                    <ProblemTypeBadge problemType={progress.problemType} />
+                    <div className="ml-auto">
+                        <ProblemTypeBadge problemType={progress.problemType} />
+                    </div>
                 )}
             </div>
+
+            <p className="mb-3 text-xs text-gray-500">
+                ประเด็นต่อไปนี้ใช้ประกอบการติดตามและวางแผนช่วยเหลือนักเรียน
+            </p>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {progress.internalProblems && (
-                    <div className="bg-white rounded-lg p-3 border border-amber-100">
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                            <AlertTriangle className="w-3 h-3 text-amber-500" />
-                            <span className="text-xs font-bold text-amber-700">
+                    <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+                        <div className="mb-2 flex items-center gap-1.5">
+                            <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                            <span className="text-xs font-bold text-amber-800">
                                 ปัญหาภายใน
                             </span>
                         </div>
-                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                            {progress.internalProblems}
-                        </p>
+                        <ul className="space-y-1 text-sm leading-relaxed text-gray-700">
+                            {internalPoints.map((point) => (
+                                <li key={point} className="flex gap-2">
+                                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                                    <span>{point}</span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 )}
                 {progress.externalProblems && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-100">
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                            <ExternalLink className="w-3 h-3 text-blue-500" />
-                            <span className="text-xs font-bold text-blue-700">
+                    <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3">
+                        <div className="mb-2 flex items-center gap-1.5">
+                            <ExternalLink className="h-3.5 w-3.5 text-blue-600" />
+                            <span className="text-xs font-bold text-blue-800">
                                 ปัญหาภายนอก
                             </span>
                         </div>
-                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                            {progress.externalProblems}
-                        </p>
+                        <ul className="space-y-1 text-sm leading-relaxed text-gray-700">
+                            {externalPoints.map((point) => (
+                                <li key={point} className="flex gap-2">
+                                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                                    <span>{point}</span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 )}
             </div>

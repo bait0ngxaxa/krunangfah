@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Calendar, User, Trash2, CalendarClock, ImageIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+    Calendar,
+    User,
+    Trash2,
+    CalendarClock,
+    ImageIcon,
+    Camera,
+} from "lucide-react";
 import type { HomeVisitData, HomeVisitPhotoData } from "@/lib/actions/home-visit.actions";
 import { deleteHomeVisit } from "@/lib/actions/home-visit.actions";
 import { HomeVisitPhotoViewer } from "./HomeVisitPhotoViewer";
+import { HomeVisitPhotoUploader } from "./HomeVisitPhotoUploader";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -29,8 +37,14 @@ export function HomeVisitCard({
     onDeleted,
 }: HomeVisitCardProps) {
     const [deleting, setDeleting] = useState(false);
+    const [photos, setPhotos] = useState<HomeVisitPhotoData[]>(visit.photos);
     const [viewerIndex, setViewerIndex] = useState<number | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isPhotoEditorOpen, setIsPhotoEditorOpen] = useState(false);
+
+    useEffect(() => {
+        setPhotos(visit.photos);
+    }, [visit.photos]);
 
     const handleDeleteConfirm = async () => {
         setDeleting(true);
@@ -65,16 +79,30 @@ export function HomeVisitCard({
                 </div>
 
                 {!readOnly && (
-                    <Button
-                        onClick={() => setIsDeleteDialogOpen(true)}
-                        disabled={deleting}
-                        variant="danger"
-                        size="sm"
-                        className="h-8 w-8 !p-0 rounded-lg bg-white"
-                        title="ลบบันทึก"
-                    >
-                        <Trash2 className="h-4 w-4 shrink-0" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={() =>
+                                setIsPhotoEditorOpen((current) => !current)
+                            }
+                            variant="secondary"
+                            size="sm"
+                            className="h-8 px-3"
+                            title="เพิ่ม/จัดการรูปภาพ"
+                        >
+                            <Camera className="h-4 w-4 shrink-0" />
+                            {isPhotoEditorOpen ? "ปิดรูปภาพ" : "เพิ่มรูปภาพ"}
+                        </Button>
+                        <Button
+                            onClick={() => setIsDeleteDialogOpen(true)}
+                            disabled={deleting}
+                            variant="danger"
+                            size="sm"
+                            className="h-8 w-8 !p-0 rounded-lg bg-white"
+                            title="ลบบันทึก"
+                        >
+                            <Trash2 className="h-4 w-4 shrink-0" />
+                        </Button>
+                    </div>
                 )}
             </div>
 
@@ -97,9 +125,9 @@ export function HomeVisitCard({
                 </div>
 
                 {/* Photos grid */}
-                {visit.photos.length > 0 && (
+                {photos.length > 0 && (
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                        {visit.photos.map((photo: HomeVisitPhotoData, index: number) => (
+                        {photos.map((photo: HomeVisitPhotoData, index: number) => (
                             <div
                                 key={photo.id}
                                 className="relative aspect-square rounded-xl overflow-hidden border border-emerald-100 cursor-pointer hover:ring-2 hover:ring-emerald-300 transition-base"
@@ -116,12 +144,22 @@ export function HomeVisitCard({
                     </div>
                 )}
 
-                {visit.photos.length === 0 && (
+                {photos.length === 0 && (
                     <div className="flex items-center gap-2 text-sm text-gray-400">
                         <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm">
                             <ImageIcon className="w-3.5 h-3.5" />
                         </span>
                         ไม่มีรูปภาพ
+                    </div>
+                )}
+
+                {!readOnly && isPhotoEditorOpen && (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+                        <HomeVisitPhotoUploader
+                            homeVisitId={visit.id}
+                            photos={photos}
+                            onPhotosChange={setPhotos}
+                        />
                     </div>
                 )}
 
@@ -141,7 +179,7 @@ export function HomeVisitCard({
             {/* Full-screen viewer */}
             {viewerIndex !== null && (
                 <HomeVisitPhotoViewer
-                    photos={visit.photos}
+                    photos={photos}
                     initialIndex={viewerIndex}
                     onClose={() => setViewerIndex(null)}
                 />

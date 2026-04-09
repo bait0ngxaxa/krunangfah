@@ -4,17 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MessageCircle, FileText, Plus } from "lucide-react";
 import type { CounselingSession } from "@/lib/actions/counseling.actions";
+import type { OffsetPagination } from "@/types/pagination.types";
 import { AddCounselingModal } from "./AddCounselingModal";
 import { Button } from "@/components/ui/Button";
+import { QueryPagination } from "@/components/ui/QueryPagination";
 
 interface CounselingLogTableProps {
     sessions: CounselingSession[];
+    pagination: OffsetPagination;
     studentId: string;
     readOnly?: boolean;
 }
 
 export function CounselingLogTable({
     sessions,
+    pagination,
     studentId,
     readOnly = false,
 }: CounselingLogTableProps) {
@@ -105,6 +109,12 @@ export function CounselingLogTable({
                     </table>
                 )}
             </div>
+
+            <QueryPagination
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                pageParam="counselingPage"
+            />
 
             {/* Add Button — ซ่อนเมื่อ readOnly */}
             {!readOnly && (

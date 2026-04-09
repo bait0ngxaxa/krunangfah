@@ -95,9 +95,10 @@ describe("Integration: Counseling Sessions", () => {
     describe("Session List", () => {
         it("should return all sessions for a student", async () => {
             mockSession(USERS.classTeacher);
-            const sessions = await getCounselingSessions(studentId);
-            expect(Array.isArray(sessions)).toBe(true);
-            expect(sessions.length).toBeGreaterThanOrEqual(3);
+            const result = await getCounselingSessions(studentId);
+            expect(Array.isArray(result.sessions)).toBe(true);
+            expect(result.sessions.length).toBeGreaterThanOrEqual(3);
+            expect(result.pagination.total).toBeGreaterThanOrEqual(3);
         });
     });
 });

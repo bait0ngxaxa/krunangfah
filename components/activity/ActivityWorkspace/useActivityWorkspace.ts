@@ -13,6 +13,10 @@ import {
     getWorksheetActivityIndices,
     getWorkspaceColorConfig,
 } from "./constants";
+import {
+    UPLOAD_ACTION_TIMEOUT_MS,
+    withTimeout,
+} from "@/lib/utils/with-timeout";
 import type {
     ActivityWorkspaceProps,
     UseActivityWorkspaceReturn,
@@ -22,29 +26,6 @@ import {
     studentHelpAssessmentRoute,
     studentHelpEncouragementRoute,
 } from "@/lib/constants/student-routes";
-
-const UPLOAD_ACTION_TIMEOUT_MS = 45000;
-
-async function withTimeout<T>(
-    promise: Promise<T>,
-    timeoutMs: number,
-    timeoutMessage: string,
-): Promise<T> {
-    let timeoutId: number | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = window.setTimeout(() => {
-            reject(new Error(timeoutMessage));
-        }, timeoutMs);
-    });
-
-    try {
-        return await Promise.race([promise, timeoutPromise]);
-    } finally {
-        if (timeoutId !== undefined) {
-            window.clearTimeout(timeoutId);
-        }
-    }
-}
 
 function getErrorMessage(error: unknown): string {
     if (error instanceof Error && error.message.trim().length > 0) {

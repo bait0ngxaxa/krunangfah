@@ -1,0 +1,5 @@
+- Project: krunangfah
+- Purpose: Web application built with Next.js (app router) for business workflows (domain-specific app).
+- Stack: Next.js 16, React 19, TypeScript 5, Prisma ORM, NextAuth, Zod, SWR, Tailwind CSS 4, Vitest, ESLint.
+- Key directories: app/, components/, hooks/, lib/, prisma/, tests/, types/.
+- Important constraints from AGENTS.md: correctness/security-first, strict type safety (no any), validate input boundaries, maintain SSOT, preserve Thai text/encoding UTF-8.

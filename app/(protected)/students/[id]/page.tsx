@@ -31,10 +31,42 @@ import { getHomeVisits } from "@/lib/actions/home-visit.actions";
 import { requireAuth } from "@/lib/session";
 import { Tabs } from "@/components/ui/Tabs";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import type { OffsetPagination } from "@/types/pagination.types";
+
+const PHQ_HISTORY_PAGE_SIZE = 10;
+const COUNSELING_PAGE_SIZE = 10;
+const HOME_VISITS_PAGE_SIZE = 5;
+
+function parsePositiveInt(value: string | undefined): number {
+    const parsed = Number.parseInt(value ?? "", 10);
+    return Number.isNaN(parsed) || parsed < 1 ? 1 : parsed;
+}
+
+function buildOffsetPagination(
+    page: number,
+    pageSize: number,
+    total: number,
+): OffsetPagination {
+    const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
+    const safePage = totalPages === 0 ? 1 : Math.min(page, totalPages);
+    return {
+        page: safePage,
+        pageSize,
+        total,
+        totalPages,
+        hasNextPage: safePage < totalPages,
+        hasPreviousPage: safePage > 1,
+    };
+}
 
 interface StudentDetailPageProps {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ year?: string }>;
+    searchParams: Promise<{
+        year?: string;
+        phqPage?: string;
+        counselingPage?: string;
+        homeVisitPage?: string;
+    }>;
 }
 
 export default async function StudentDetailPage({
@@ -42,7 +74,12 @@ export default async function StudentDetailPage({
     searchParams,
 }: StudentDetailPageProps) {
     const { id } = await params;
-    const { year: selectedYearId } = await searchParams;
+    const {
+        year: selectedYearId,
+        phqPage,
+        counselingPage,
+        homeVisitPage,
+    } = await searchParams;
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-linear-to-br from-slate-50 via-white to-emerald-50/40 py-6 px-4">
@@ -59,6 +96,9 @@ export default async function StudentDetailPage({
                     <StudentDetailContent
                         studentId={id}
                         selectedYearId={selectedYearId}
+                        phqPage={parsePositiveInt(phqPage)}
+                        counselingPage={parsePositiveInt(counselingPage)}
+                        homeVisitPage={parsePositiveInt(homeVisitPage)}
                     />
                 </Suspense>
             </div>
@@ -69,17 +109,29 @@ export default async function StudentDetailPage({
 async function StudentDetailContent({
     studentId,
     selectedYearId,
+    phqPage,
+    counselingPage,
+    homeVisitPage,
 }: {
     studentId: string;
     selectedYearId?: string;
+    phqPage: number;
+    counselingPage: number;
+    homeVisitPage: number;
 }) {
     // Fetch independent datasets in parallel.
-    const [session, student, counselingSessions, homeVisits] =
+    const [session, student, counselingSessionData, homeVisitData] =
         await Promise.all([
             requireAuth(),
             getStudentDetail(studentId),
-            getCounselingSessions(studentId),
-            getHomeVisits(studentId),
+            getCounselingSessions(studentId, {
+                page: counselingPage,
+                pageSize: COUNSELING_PAGE_SIZE,
+            }),
+            getHomeVisits(studentId, {
+                page: homeVisitPage,
+                pageSize: HOME_VISITS_PAGE_SIZE,
+            }),
         ]);
     const currentUserId = session.user.id;
     const isSystemAdmin = session.user.role === "system_admin";
@@ -118,13 +170,26 @@ async function StudentDetailContent({
     })();
 
     const latestResult = filteredPhqResults[0] || null;
+    const phqPagination = buildOffsetPagination(
+        phqPage,
+        PHQ_HISTORY_PAGE_SIZE,
+        filteredPhqResults.length,
+    );
+    const phqStart = (phqPagination.page - 1) * phqPagination.pageSize;
+    const paginatedPhqResults = filteredPhqResults.slice(
+        phqStart,
+        phqStart + phqPagination.pageSize,
+    );
 
     const phqResultsTab = (
         <div className="space-y-6">
             {filteredPhqResults.length > 0 && (
                 <PHQTrendChart results={filteredPhqResults} />
             )}
-            <PHQHistoryTable results={filteredPhqResults} />
+            <PHQHistoryTable
+                results={paginatedPhqResults}
+                pagination={phqPagination}
+            />
         </div>
     );
 
@@ -144,7 +209,8 @@ async function StudentDetailContent({
                 />
             )}
             <CounselingLogTable
-                sessions={counselingSessions}
+                sessions={counselingSessionData.sessions}
+                pagination={counselingSessionData.pagination}
                 studentId={studentId}
                 readOnly={isSystemAdmin}
             />
@@ -153,7 +219,8 @@ async function StudentDetailContent({
 
     const homeVisitsTab = (
         <HomeVisitTab
-            visits={homeVisits}
+            visits={homeVisitData.visits}
+            pagination={homeVisitData.pagination}
             studentId={studentId}
             readOnly={isSystemAdmin}
         />
@@ -202,7 +269,7 @@ async function StudentDetailContent({
         <div className="space-y-7">
             <StudentProfileCard student={student} latestResult={latestResult} />
 
-            {latestResult && (
+            {latestResult && !isSystemAdmin && (
                 <div className="flex justify-end">
                     <ReferralButton
                         studentId={studentId}

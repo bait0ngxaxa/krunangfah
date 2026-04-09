@@ -1,5 +1,6 @@
 "use client";
 
+import { useElementSize } from "@/hooks/useElementSize";
 import {
     LineChart,
     Line,
@@ -52,9 +53,7 @@ function CustomTooltip({
         return (
             <div className="rounded-xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur-sm">
                 <p className="font-semibold text-gray-800 mb-2">{data.date}</p>
-                <p className="text-sm text-gray-600 mb-1">
-                    {data.academicYear}
-                </p>
+                <p className="text-sm text-gray-600 mb-1">{data.academicYear}</p>
                 <p className="text-lg font-bold text-gray-900">
                     คะแนน: {data.score}
                 </p>
@@ -70,6 +69,9 @@ function CustomTooltip({
 }
 
 export function PHQTrendChart({ results }: PHQTrendChartProps) {
+    const { ref: chartContainerRef, isReady: isChartReady } =
+        useElementSize<HTMLDivElement>();
+
     if (results.length === 0) {
         return null;
     }
@@ -169,86 +171,85 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                 </div>
 
                 <div className="rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm">
-                    <div className="h-96 w-full">
-                        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={320}>
-                            <LineChart
-                                data={chartData}
-                                margin={{
-                                    top: 12,
-                                    right: 20,
-                                    left: 8,
-                                    bottom: 58,
-                                }}
-                                tabIndex={-1}
-                            >
-                                <ReferenceArea y1={0} y2={6} fill="#dbeafe" fillOpacity={0.25} />
-                                <ReferenceArea y1={7} y2={12} fill="#dcfce7" fillOpacity={0.25} />
-                                <ReferenceArea y1={13} y2={18} fill="#fef9c3" fillOpacity={0.3} />
-                                <ReferenceArea y1={19} y2={24} fill="#ffedd5" fillOpacity={0.3} />
-                                <ReferenceArea y1={25} y2={27} fill="#fee2e2" fillOpacity={0.35} />
-                                <CartesianGrid
-                                    strokeDasharray="4 4"
-                                    stroke="#E5E7EB"
-                                />
-                                <XAxis
-                                    dataKey="academicYear"
-                                    stroke="#9CA3AF"
-                                    style={{ fontSize: "11px" }}
-                                    angle={-45}
-                                    textAnchor="end"
-                                    height={84}
-                                    label={{
-                                        value: "ปีการศึกษา / ครั้งที่",
-                                        position: "insideBottom",
-                                        offset: -6,
-                                        style: {
-                                            fontSize: "12px",
-                                            fontWeight: "bold",
-                                            fill: "#6B7280",
-                                        },
+                    <div ref={chartContainerRef} className="h-96 min-h-[320px] w-full">
+                        {isChartReady ? (
+                            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={320}>
+                                <LineChart
+                                    data={chartData}
+                                    margin={{
+                                        top: 12,
+                                        right: 20,
+                                        left: 8,
+                                        bottom: 58,
                                     }}
-                                    tick={{ fill: "#6B7280" }}
-                                    axisLine={{ stroke: "#D1D5DB" }}
-                                />
-                                <YAxis
-                                    domain={[0, 27]}
-                                    ticks={[0, 5, 10, 15, 20, 25, 27]}
-                                    stroke="#9CA3AF"
-                                    style={{ fontSize: "12px" }}
-                                    label={{
-                                        value: "คะแนน PHQ-A",
-                                        angle: -90,
-                                        position: "insideLeft",
-                                        style: {
-                                            fontSize: "12px",
-                                            fontWeight: "bold",
-                                            fill: "#6B7280",
-                                        },
-                                    }}
-                                    tick={{ fill: "#6B7280" }}
-                                    axisLine={{ stroke: "#D1D5DB" }}
-                                />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Line
-                                    type="monotone"
-                                    dataKey="score"
-                                    stroke={lineColor}
-                                    strokeWidth={3}
-                                    dot={{
-                                        fill: lineColor,
-                                        r: 5,
-                                        strokeWidth: 2,
-                                        stroke: "#fff",
-                                    }}
-                                    activeDot={{
-                                        r: 7,
-                                        fill: lineColor,
-                                        stroke: "#fff",
-                                        strokeWidth: 2,
-                                    }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
+                                    tabIndex={-1}
+                                >
+                                    <ReferenceArea y1={0} y2={6} fill="#dbeafe" fillOpacity={0.25} />
+                                    <ReferenceArea y1={7} y2={12} fill="#dcfce7" fillOpacity={0.25} />
+                                    <ReferenceArea y1={13} y2={18} fill="#fef9c3" fillOpacity={0.3} />
+                                    <ReferenceArea y1={19} y2={24} fill="#ffedd5" fillOpacity={0.3} />
+                                    <ReferenceArea y1={25} y2={27} fill="#fee2e2" fillOpacity={0.35} />
+                                    <CartesianGrid strokeDasharray="4 4" stroke="#E5E7EB" />
+                                    <XAxis
+                                        dataKey="academicYear"
+                                        stroke="#9CA3AF"
+                                        style={{ fontSize: "11px" }}
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={84}
+                                        label={{
+                                            value: "ปีการศึกษา / ครั้งที่",
+                                            position: "insideBottom",
+                                            offset: -6,
+                                            style: {
+                                                fontSize: "12px",
+                                                fontWeight: "bold",
+                                                fill: "#6B7280",
+                                            },
+                                        }}
+                                        tick={{ fill: "#6B7280" }}
+                                        axisLine={{ stroke: "#D1D5DB" }}
+                                    />
+                                    <YAxis
+                                        domain={[0, 27]}
+                                        ticks={[0, 5, 10, 15, 20, 25, 27]}
+                                        stroke="#9CA3AF"
+                                        style={{ fontSize: "12px" }}
+                                        label={{
+                                            value: "คะแนน PHQ-A",
+                                            angle: -90,
+                                            position: "insideLeft",
+                                            style: {
+                                                fontSize: "12px",
+                                                fontWeight: "bold",
+                                                fill: "#6B7280",
+                                            },
+                                        }}
+                                        tick={{ fill: "#6B7280" }}
+                                        axisLine={{ stroke: "#D1D5DB" }}
+                                    />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="score"
+                                        stroke={lineColor}
+                                        strokeWidth={3}
+                                        dot={{
+                                            fill: lineColor,
+                                            r: 5,
+                                            strokeWidth: 2,
+                                            stroke: "#fff",
+                                        }}
+                                        activeDot={{
+                                            r: 7,
+                                            fill: lineColor,
+                                            stroke: "#fff",
+                                            strokeWidth: 2,
+                                        }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : null}
                     </div>
                 </div>
             </div>

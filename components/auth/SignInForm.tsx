@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import {
     signInSchema,
     type SignInFormData,
@@ -132,9 +133,10 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-base duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+                    className="inline-flex items-center justify-center gap-2 bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-base duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
                 >
-                    {isLoading ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบ"}
+                    {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+                    <span>{isLoading ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบ"}</span>
                 </button>
             </div>
 

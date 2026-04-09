@@ -78,7 +78,8 @@ export default async function Home() {
                             height={750}
                             className="w-full h-auto object-contain drop-shadow-2xl"
                             sizes="(min-width: 1280px) 560px, (min-width: 1024px) 500px, (min-width: 768px) 440px, (min-width: 640px) 360px, 280px"
-                            priority
+                            loading="eager"
+                            fetchPriority="high"
                         />
                     </div>
                 </div>

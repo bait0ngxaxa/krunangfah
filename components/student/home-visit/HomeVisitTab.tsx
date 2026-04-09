@@ -4,18 +4,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Home, Plus, MapPin } from "lucide-react";
 import type { HomeVisitData } from "@/lib/actions/home-visit.actions";
+import type { OffsetPagination } from "@/types/pagination.types";
 import { HomeVisitCard } from "./HomeVisitCard";
 import { AddHomeVisitModal } from "./AddHomeVisitModal";
 import { Button } from "@/components/ui/Button";
+import { QueryPagination } from "@/components/ui/QueryPagination";
 
 interface HomeVisitTabProps {
     visits: HomeVisitData[];
+    pagination: OffsetPagination;
     studentId: string;
     readOnly?: boolean;
 }
 
 export function HomeVisitTab({
     visits,
+    pagination,
     studentId,
     readOnly = false,
 }: HomeVisitTabProps) {
@@ -38,7 +42,7 @@ export function HomeVisitTab({
                 </span>
                 {visits.length > 0 && (
                     <span className="ml-2 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-sm font-bold text-emerald-700">
-                        {visits.length} ครั้ง
+                        ทั้งหมด {pagination.total} ครั้ง
                     </span>
                 )}
             </h2>
@@ -68,6 +72,12 @@ export function HomeVisitTab({
                     ))}
                 </div>
             )}
+
+            <QueryPagination
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                pageParam="homeVisitPage"
+            />
 
             {/* Add Button */}
             {!readOnly && (

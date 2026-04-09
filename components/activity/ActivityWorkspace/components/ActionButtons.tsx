@@ -47,8 +47,15 @@ export function ActionButtons({
         };
     }, [isDropdownOpen]);
 
-    const handleDownload = (url: string) => {
-        window.open(url, "_blank");
+    const handleDownload = (url: string): void => {
+        const fileName = url.split("/").pop() ?? "worksheet.pdf";
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.rel = "noopener";
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
         setIsDropdownOpen(false);
     };
 

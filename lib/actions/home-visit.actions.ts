@@ -22,8 +22,11 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { logError } from "@/lib/utils/logging";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
+import type { OffsetPagination } from "@/types/pagination.types";
 
 const MAX_VISIT_NUMBER_RETRIES = 3;
+const DEFAULT_HOME_VISIT_PAGE_SIZE = 5;
+const MAX_HOME_VISIT_PAGE_SIZE = 50;
 
 export interface HomeVisitPhotoData {
     id: string;
@@ -43,6 +46,39 @@ export interface HomeVisitData {
     teacherRole: string;
     photos: HomeVisitPhotoData[];
     createdAt: Date;
+}
+
+export interface HomeVisitListResponse {
+    visits: HomeVisitData[];
+    pagination: OffsetPagination;
+}
+
+function buildEmptyPagination(pageSize: number): OffsetPagination {
+    return {
+        page: 1,
+        pageSize,
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+    };
+}
+
+function normalizePaginationParams(
+    page?: number,
+    pageSize?: number,
+): { page: number; pageSize: number } {
+    const safePage =
+        typeof page === "number" && Number.isInteger(page) && page > 0 ? page : 1;
+    const safePageSize =
+        typeof pageSize === "number" &&
+        Number.isInteger(pageSize) &&
+        pageSize > 0 &&
+        pageSize <= MAX_HOME_VISIT_PAGE_SIZE
+            ? pageSize
+            : DEFAULT_HOME_VISIT_PAGE_SIZE;
+
+    return { page: safePage, pageSize: safePageSize };
 }
 
 /**
@@ -108,7 +144,13 @@ async function verifyStudentAccess(
  */
 export async function getHomeVisits(
     studentId: string,
-): Promise<HomeVisitData[]> {
+    options?: { page?: number; pageSize?: number },
+): Promise<HomeVisitListResponse> {
+    const { page: requestedPage, pageSize } = normalizePaginationParams(
+        options?.page,
+        options?.pageSize,
+    );
+
     try {
         const session = await requireAuth();
         const { allowed, error } = await verifyStudentAccess(
@@ -119,38 +161,65 @@ export async function getHomeVisits(
 
         if (!allowed) {
             logError("Access denied:", error);
-            return [];
+            return {
+                visits: [],
+                pagination: buildEmptyPagination(pageSize),
+            };
         }
 
-        const visits = await prisma.homeVisit.findMany({
+        const total = await prisma.homeVisit.count({
             where: { studentId },
-            orderBy: { visitNumber: "desc" },
-            select: {
-                id: true,
-                visitNumber: true,
-                visitDate: true,
-                description: true,
-                nextScheduledDate: true,
-                teacherName: true,
-                teacherRole: true,
-                createdAt: true,
-                photos: {
-                    select: {
-                        id: true,
-                        fileName: true,
-                        fileUrl: true,
-                        fileType: true,
-                        fileSize: true,
-                    },
-                    orderBy: { uploadedAt: "asc" },
-                },
-            },
         });
+        const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
+        const page = totalPages === 0 ? 1 : Math.min(requestedPage, totalPages);
 
-        return visits;
+        const visits =
+            total === 0
+                ? []
+                : await prisma.homeVisit.findMany({
+                      where: { studentId },
+                      orderBy: { visitNumber: "desc" },
+                      skip: (page - 1) * pageSize,
+                      take: pageSize,
+                      select: {
+                          id: true,
+                          visitNumber: true,
+                          visitDate: true,
+                          description: true,
+                          nextScheduledDate: true,
+                          teacherName: true,
+                          teacherRole: true,
+                          createdAt: true,
+                          photos: {
+                              select: {
+                                  id: true,
+                                  fileName: true,
+                                  fileUrl: true,
+                                  fileType: true,
+                                  fileSize: true,
+                              },
+                              orderBy: { uploadedAt: "asc" },
+                          },
+                      },
+                  });
+
+        return {
+            visits,
+            pagination: {
+                page,
+                pageSize,
+                total,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPreviousPage: page > 1,
+            },
+        };
     } catch (error) {
         logError("Error fetching home visits:", error);
-        return [];
+        return {
+            visits: [],
+            pagination: buildEmptyPagination(pageSize),
+        };
     }
 }
 

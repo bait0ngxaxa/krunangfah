@@ -32,6 +32,7 @@ export function AddHomeVisitModal({
 }: AddHomeVisitModalProps) {
     const [step, setStep] = useState<ModalStep>("form");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
     const [createdVisitId, setCreatedVisitId] = useState<string | null>(null);
@@ -87,13 +88,30 @@ export function AddHomeVisitModal({
         onClose();
     };
 
+    const handleModalClose = () => {
+        if (isUploadingPhotos) {
+            toast.info("กำลังอัปโหลดรูปภาพ กรุณารอสักครู่");
+            return;
+        }
+
+        // If visit was already created, refresh list so user can continue photo upload from card.
+        if (step === "photos" && createdVisitId) {
+            onSuccess();
+        }
+        onClose();
+    };
+
     if (!mounted) return null;
 
     const modalContent = (
         <div
             className="fixed inset-0 z-9999 flex items-center justify-center overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm"
             style={{ overscrollBehavior: "contain" }}
-            onClick={onClose}
+            onClick={() => {
+                if (!isSubmitting) {
+                    handleModalClose();
+                }
+            }}
         >
             <div
                 className="my-4 flex max-h-[92vh] w-full max-w-2xl animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
@@ -129,8 +147,8 @@ export function AddHomeVisitModal({
                         </div>
                         <button
                             type="button"
-                            onClick={onClose}
-                            disabled={isSubmitting}
+                            onClick={handleModalClose}
+                            disabled={isSubmitting || isUploadingPhotos}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
                             aria-label="ปิดหน้าต่าง"
                         >
@@ -236,7 +254,7 @@ export function AddHomeVisitModal({
                         <div className="flex gap-4 pt-4 border-t border-gray-100">
                             <Button
                                 type="button"
-                                onClick={onClose}
+                                onClick={handleModalClose}
                                 disabled={isSubmitting}
                                 variant="secondary"
                                 size="lg"
@@ -279,6 +297,7 @@ export function AddHomeVisitModal({
                                 homeVisitId={createdVisitId}
                                 photos={photos}
                                 onPhotosChange={setPhotos}
+                                onUploadingChange={setIsUploadingPhotos}
                             />
                         )}
 
@@ -286,6 +305,7 @@ export function AddHomeVisitModal({
                             <Button
                                 type="button"
                                 onClick={handleDone}
+                                disabled={isUploadingPhotos}
                                 variant="primary"
                                 size="lg"
                                 fullWidth

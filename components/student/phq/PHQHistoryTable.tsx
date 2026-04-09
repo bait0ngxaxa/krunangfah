@@ -1,9 +1,11 @@
 "use client";
 
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import type { OffsetPagination } from "@/types/pagination.types";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
 import { AlertTriangle, ClipboardList } from "lucide-react";
+import { QueryPagination } from "@/components/ui/QueryPagination";
 
 interface PHQResult {
     id: string;
@@ -20,10 +22,11 @@ interface PHQResult {
 
 interface PHQHistoryTableProps {
     results: PHQResult[];
+    pagination: OffsetPagination;
 }
 
-export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
-    if (results.length === 0) {
+export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
+    if (pagination.total === 0) {
         return (
             <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm">
                 <p className="relative text-gray-500">
@@ -76,6 +79,9 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                 result.riskLevel as RiskLevel,
                             );
                             const hasWarning = result.q9a || result.q9b;
+                            const rowNumber =
+                                pagination.total -
+                                ((pagination.page - 1) * pagination.pageSize + index);
 
                             return (
                                 <tr
@@ -83,7 +89,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                                     className="transition-colors hover:bg-slate-50/80"
                                 >
                                     <td className="py-4 px-6 font-medium text-gray-700 tabular-nums">
-                                        {results.length - index}
+                                        {rowNumber}
                                     </td>
                                     <td className="py-4 px-6 text-gray-600">
                                         {new Date(
@@ -146,6 +152,9 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                         result.riskLevel as RiskLevel,
                     );
                     const hasWarning = result.q9a || result.q9b;
+                    const rowNumber =
+                        pagination.total -
+                        ((pagination.page - 1) * pagination.pageSize + index);
 
                     return (
                         <div
@@ -155,7 +164,7 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <div className="mb-1 text-sm font-medium text-slate-500">
-                                        ครั้งที่ {results.length - index}
+                                        ครั้งที่ {rowNumber}
                                     </div>
                                     <div className="font-bold text-gray-800">
                                         {new Date(
@@ -213,6 +222,12 @@ export function PHQHistoryTable({ results }: PHQHistoryTableProps) {
                     );
                 })}
             </div>
+
+            <QueryPagination
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                pageParam="phqPage"
+            />
         </div>
     );
 }

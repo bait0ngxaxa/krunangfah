@@ -1,0 +1,10 @@
+- Install deps: `npm install`
+- Dev server: `npm run dev`
+- Build: `npm run build`
+- Start prod: `npm run start`
+- Lint: `npm run lint`
+- Test: `npm run test`
+- Coverage: `npm run test:coverage`
+- Test UI: `npm run test:ui`
+- Prisma seed: `npx prisma db seed` (uses tsx prisma/seed.ts)
+- Windows utilities commonly used: `Get-ChildItem`, `Get-Content -Encoding UTF8`, `Select-String`, `git status`, `git diff`.

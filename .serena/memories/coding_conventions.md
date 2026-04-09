@@ -1,0 +1,7 @@
+- Follow AGENTS.md rules:
+  - Keep Thai text intact; avoid encoding corruption (UTF-8).
+  - Prefer apply_patch for edits; avoid unsafe broad scripts.
+  - TypeScript: avoid any, explicit return types, boundary validation.
+  - Architecture flow UI -> Hooks -> Services -> Data Layer.
+  - Security order for mutations: rate-limit, validate, auth, ACL, business logic, revalidate cache, return result.
+  - Keep functions small and simple; prioritize reuse and defensive coding.
