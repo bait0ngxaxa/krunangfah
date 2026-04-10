@@ -19,6 +19,7 @@ import {
 } from "@/lib/validations/counseling.validation";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import type { OffsetPagination } from "@/types/pagination.types";
+import type { AcademicYearDateRange } from "@/lib/utils/student-detail-filters";
 
 export interface CounselingSession {
     id: string;
@@ -133,7 +134,11 @@ async function verifyStudentAccess(
  */
 export async function getCounselingSessions(
     studentId: string,
-    options?: { page?: number; pageSize?: number },
+    options?: {
+        page?: number;
+        pageSize?: number;
+        dateRange?: AcademicYearDateRange;
+    },
 ): Promise<CounselingSessionListResponse> {
     const { page: requestedPage, pageSize } = normalizePaginationParams(
         options?.page,
@@ -156,8 +161,19 @@ export async function getCounselingSessions(
             };
         }
 
+        const whereClause: Prisma.CounselingSessionWhereInput = {
+            studentId,
+            ...(options?.dateRange
+                ? {
+                      sessionDate: {
+                          gte: options.dateRange.startDate,
+                          lte: options.dateRange.endDate,
+                      },
+                  }
+                : {}),
+        };
         const total = await prisma.counselingSession.count({
-            where: { studentId },
+            where: whereClause,
         });
         const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
         const page = totalPages === 0 ? 1 : Math.min(requestedPage, totalPages);
@@ -166,7 +182,7 @@ export async function getCounselingSessions(
             total === 0
                 ? []
                 : await prisma.counselingSession.findMany({
-                      where: { studentId },
+                      where: whereClause,
                       orderBy: { sessionNumber: "asc" },
                       skip: (page - 1) * pageSize,
                       take: pageSize,

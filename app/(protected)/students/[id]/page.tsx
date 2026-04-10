@@ -32,6 +32,12 @@ import { requireAuth } from "@/lib/session";
 import { Tabs } from "@/components/ui/Tabs";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import type { OffsetPagination } from "@/types/pagination.types";
+import {
+    filterByAcademicYearSelection,
+    getUniqueAcademicYears,
+    resolveAcademicYearDateRange,
+} from "@/lib/utils/student-detail-filters";
+import { getLatestPhqResult } from "@/lib/utils/phq-result-selection";
 
 const PHQ_HISTORY_PAGE_SIZE = 10;
 const COUNSELING_PAGE_SIZE = 10;
@@ -119,20 +125,10 @@ async function StudentDetailContent({
     counselingPage: number;
     homeVisitPage: number;
 }) {
-    // Fetch independent datasets in parallel.
-    const [session, student, counselingSessionData, homeVisitData] =
-        await Promise.all([
-            requireAuth(),
-            getStudentDetail(studentId),
-            getCounselingSessions(studentId, {
-                page: counselingPage,
-                pageSize: COUNSELING_PAGE_SIZE,
-            }),
-            getHomeVisits(studentId, {
-                page: homeVisitPage,
-                pageSize: HOME_VISITS_PAGE_SIZE,
-            }),
-        ]);
+    const [session, student] = await Promise.all([
+        requireAuth(),
+        getStudentDetail(studentId),
+    ]);
     const currentUserId = session.user.id;
     const isSystemAdmin = session.user.role === "system_admin";
 
@@ -140,36 +136,42 @@ async function StudentDetailContent({
         notFound();
     }
 
-    // Build unique academic year list for filter options.
-    const uniqueYears = Array.from(
-        new Map(
-            student.phqResults
-                .filter((r) => r.academicYear)
-                .map((r) => [r.academicYear.id, r.academicYear]),
-        ).values(),
-    ).sort((a, b) => {
-        if (a.year !== b.year) return b.year - a.year;
-        return b.semester - a.semester;
-    });
+    const uniqueYears = getUniqueAcademicYears(
+        student.phqResults.flatMap((result) =>
+            result.academicYear ? [result.academicYear] : [],
+        ),
+    );
+    const selectedDateRange = resolveAcademicYearDateRange(
+        uniqueYears,
+        selectedYearId,
+    );
+    const filteredPhqResults = filterByAcademicYearSelection(
+        student.phqResults,
+        selectedYearId,
+    );
+    const [counselingSessionData, homeVisitData] = await Promise.all([
+        getCounselingSessions(studentId, {
+            page: counselingPage,
+            pageSize: COUNSELING_PAGE_SIZE,
+            dateRange: selectedDateRange ?? undefined,
+        }),
+        getHomeVisits(studentId, {
+            page: homeVisitPage,
+            pageSize: HOME_VISITS_PAGE_SIZE,
+            dateRange: selectedDateRange ?? undefined,
+        }),
+    ]);
 
-    // Apply year filter (year-only or specific semester id).
-    const filteredPhqResults = (() => {
-        if (!selectedYearId) return student.phqResults;
-
-        if (selectedYearId.startsWith("year:")) {
-            const yearNum = parseInt(selectedYearId.replace("year:", ""), 10);
-            if (isNaN(yearNum)) return student.phqResults;
-            return student.phqResults.filter(
-                (r) => r.academicYear?.year === yearNum,
-            );
-        }
-
-        return student.phqResults.filter(
-            (r) => r.academicYear?.id === selectedYearId,
-        );
-    })();
-
+    const activePhqResult = getLatestPhqResult(student.phqResults);
     const latestResult = filteredPhqResults[0] || null;
+    const canManageActivities =
+        latestResult?.id !== undefined &&
+        activePhqResult?.id !== undefined &&
+        latestResult.id === activePhqResult.id;
+    const activityActionLockedMessage =
+        !canManageActivities && latestResult
+            ? "กำลังดูข้อมูลย้อนหลัง จึงทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน"
+            : undefined;
     const phqPagination = buildOffsetPagination(
         phqPage,
         PHQ_HISTORY_PAGE_SIZE,
@@ -205,7 +207,8 @@ async function StudentDetailContent({
                         semester: latestResult.academicYear.semester,
                         assessmentRound: latestResult.assessmentRound,
                     }}
-                    readOnly={isSystemAdmin}
+                    readOnly={isSystemAdmin || !canManageActivities}
+                    actionLockedMessage={activityActionLockedMessage}
                 />
             )}
             <CounselingLogTable
@@ -213,6 +216,7 @@ async function StudentDetailContent({
                 pagination={counselingSessionData.pagination}
                 studentId={studentId}
                 readOnly={isSystemAdmin}
+                isFilteredByAcademicYear={Boolean(selectedYearId)}
             />
         </div>
     );
@@ -223,6 +227,7 @@ async function StudentDetailContent({
             pagination={homeVisitData.pagination}
             studentId={studentId}
             readOnly={isSystemAdmin}
+            isFilteredByAcademicYear={Boolean(selectedYearId)}
         />
     );
 

@@ -11,6 +11,7 @@ import {
     getIncompleteActivityWarning,
 } from "@/lib/actions/student/main";
 import { importStudents } from "@/lib/actions/student/mutations";
+import type { ImportResult } from "@/lib/actions/student/types";
 import {
     getAcademicYears,
     getCurrentTeacherProfile,
@@ -24,6 +25,14 @@ import type {
     AcademicYear,
 } from "./types";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
+
+function formatImportIssues(result: ImportResult): string {
+    if (!result.errors || result.errors.length === 0) {
+        return result.message;
+    }
+
+    return `${result.message}\n\n${result.errors.join("\n")}`;
+}
 
 /**
  * Custom hook for managing ImportPreview state and logic
@@ -226,10 +235,10 @@ export function useImportPreview({
                     assessmentRound,
                 );
 
-                if (result.success) {
-                    onSuccess();
+                if (result.status === "success" || result.status === "partial") {
+                    onSuccess(result);
                 } else {
-                    setError(result.message);
+                    setError(formatImportIssues(result));
                 }
             } catch (err) {
                 console.error("Import error:", err);

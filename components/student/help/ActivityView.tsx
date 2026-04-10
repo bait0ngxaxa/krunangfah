@@ -15,6 +15,8 @@ interface ActivityViewProps {
     config: ColorTheme;
     activities: Activity[];
     phqResultId: string;
+    canStartActivities?: boolean;
+    actionLockedMessage?: string;
 }
 
 export function ActivityView({
@@ -23,6 +25,8 @@ export function ActivityView({
     config,
     activities,
     phqResultId,
+    canStartActivities = true,
+    actionLockedMessage,
 }: ActivityViewProps) {
     const activityCount = activities.length;
 
@@ -34,17 +38,15 @@ export function ActivityView({
                     label="กลับหน้าข้อมูลนักเรียน"
                 />
 
-                <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-8">
-                    <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-cyan-200/25 blur-3xl" />
+                <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white to-slate-50 p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-8">
                     <HelpPageHeader studentName={studentName} config={config} />
 
                     {/* Activity Count Badge */}
                     <div className="flex justify-center mb-10">
                         <div
-                            className={`inline-flex items-center gap-3 rounded-2xl border border-gray-200/70 px-5 py-3 shadow-sm backdrop-blur-sm sm:px-8 sm:py-4 ${config.lightBg}`}
+                            className={`inline-flex items-center gap-3 rounded-2xl border border-gray-200/70 px-5 py-3 shadow-sm sm:px-8 sm:py-4 ${config.lightBg}`}
                         >
-                            <Target className={`w-6 h-6 animate-bounce ${config.textColor}`} />
+                            <Target className={`w-6 h-6 ${config.textColor}`} />
                             <span className="text-lg font-bold text-gray-800">
                                 ต้องทำทั้งหมด {activityCount} กิจกรรม
                             </span>
@@ -65,13 +67,20 @@ export function ActivityView({
 
                     {/* Action Button */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Link
-                            href={studentHelpStartRoute(studentId, phqResultId)}
-                            className={`group flex items-center justify-center gap-3 rounded-2xl px-6 py-4 text-base font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg sm:px-10 sm:text-xl ${config.bg}`}
-                        >
-                            <Rocket className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                            เริ่มทำกิจกรรม
-                        </Link>
+                        {canStartActivities ? (
+                            <Link
+                                href={studentHelpStartRoute(studentId, phqResultId)}
+                                className={`group flex items-center justify-center gap-3 rounded-2xl px-6 py-4 text-base font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg sm:px-10 sm:text-xl ${config.bg}`}
+                            >
+                                <Rocket className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                เริ่มทำกิจกรรม
+                            </Link>
+                        ) : (
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 text-center text-sm font-medium text-amber-700 shadow-sm sm:max-w-xl">
+                                {actionLockedMessage ??
+                                    "ทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน"}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

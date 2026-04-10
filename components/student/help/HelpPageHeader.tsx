@@ -15,14 +15,9 @@ export function HelpPageHeader({
     title = "ระบบใบงานช่วยเหลือนักเรียน",
 }: HelpPageHeaderProps) {
     return (
-        <div className="relative mb-8 overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-5 text-center shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] sm:p-8">
-            <div className="pointer-events-none absolute -top-14 -right-14 h-36 w-36 rounded-full bg-emerald-200/30 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-14 -left-10 h-32 w-32 rounded-full bg-cyan-200/20 blur-3xl" />
+        <div className="relative mb-8 overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white to-slate-50 p-5 text-center shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] sm:p-8">
             <div className="relative z-10">
                 <div className="relative w-24 h-24 mx-auto mb-6">
-                    <div
-                        className={`absolute inset-0 rounded-3xl ${config.bg} blur-lg opacity-25`}
-                    />
                     <div
                         className={`relative flex h-full w-full rotate-3 items-center justify-center rounded-3xl ${config.bg} text-4xl text-white shadow-lg ring-2 ring-white/30 transition-transform duration-300 hover:rotate-6 hover:scale-105`}
                     >

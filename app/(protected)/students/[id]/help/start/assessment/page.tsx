@@ -10,6 +10,10 @@ import {
     studentHelpStartRoute,
     studentRoute,
 } from "@/lib/constants/student-routes";
+import {
+    getLatestPhqResult,
+    getRequestedOrLatestPhqResult,
+} from "@/lib/utils/phq-result-selection";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -35,13 +39,18 @@ export default async function TeacherAssessmentPage({
         notFound();
     }
 
-    const latestResult = phqResultId
-        ? (student.phqResults.find((r) => r.id === phqResultId) ??
-          student.phqResults[0])
-        : student.phqResults[0];
+    const activePhqResult = getLatestPhqResult(student.phqResults);
+    const latestResult = getRequestedOrLatestPhqResult(
+        student.phqResults,
+        phqResultId,
+    );
 
     if (!latestResult) {
         redirect(studentRoute(studentId));
+    }
+
+    if (activePhqResult?.id !== latestResult.id) {
+        redirect(studentHelpRoute(studentId));
     }
 
     const riskLevel = latestResult.riskLevel;

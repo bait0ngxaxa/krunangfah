@@ -77,7 +77,7 @@ export function ImportSettings({
             </div>
 
             {/* Warning: round 2 blocked */}
-            {selectedYearId && !hasRound1 && assessmentRound === 1 && (
+            {selectedYearId && !hasRound1 && (
                 <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
                     💡 ปีการศึกษานี้ยังไม่มีข้อมูลครั้งที่ 1 —
                     กรุณานำเข้าครั้งที่ 1 ก่อน จึงจะสามารถเลือกครั้งที่ 2 ได้

@@ -3,11 +3,17 @@ import { redirect } from "next/navigation";
 import { BookOpen, Pin } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { buttonVariants } from "@/components/ui/Button";
+import { getStudentDetail } from "@/lib/actions/student/main";
 import { requireAuth } from "@/lib/session";
 import {
+    studentHelpRoute,
     studentHelpStartRoute,
     studentRoute,
 } from "@/lib/constants/student-routes";
+import {
+    getLatestPhqResult,
+    getRequestedOrLatestPhqResult,
+} from "@/lib/utils/phq-result-selection";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -27,12 +33,29 @@ export default async function GuidelinesPage({
         redirect(studentRoute(studentId));
     }
 
+    const student = await getStudentDetail(studentId);
+    if (!student) {
+        redirect(studentRoute(studentId));
+    }
+    const activePhqResult = student
+        ? getLatestPhqResult(student.phqResults)
+        : null;
+    const selectedPhqResult = student
+        ? getRequestedOrLatestPhqResult(student.phqResults, phqResultId)
+        : null;
+    const canStartActivities =
+        activePhqResult?.id !== undefined &&
+        selectedPhqResult?.id !== undefined &&
+        activePhqResult.id === selectedPhqResult.id;
     const startHref = studentHelpStartRoute(studentId, phqResultId);
+    const backHref = canStartActivities
+        ? startHref
+        : studentHelpRoute(studentId);
 
     return (
         <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4">
             <div className="max-w-4xl mx-auto">
-                <BackButton href={startHref} label="กลับหน้าใบงาน" />
+                <BackButton href={backHref} label="กลับหน้าใบงาน" />
 
                 <div className="relative bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 overflow-hidden">
                     <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-teal-300/35 rounded-full blur-xl pointer-events-none" />
@@ -81,16 +104,22 @@ export default async function GuidelinesPage({
                     </div>
 
                     <div className="mt-8 pt-6 border-t border-gray-200">
-                        <Link
-                            href={startHref}
-                            className={buttonVariants({
-                                variant: "primary",
-                                size: "lg",
-                                fullWidth: true,
-                            })}
-                        >
-                            กลับหน้าใบงาน
-                        </Link>
+                        {canStartActivities ? (
+                            <Link
+                                href={startHref}
+                                className={buttonVariants({
+                                    variant: "primary",
+                                    size: "lg",
+                                    fullWidth: true,
+                                })}
+                            >
+                                กลับหน้าใบงาน
+                            </Link>
+                        ) : (
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 text-center text-sm font-medium text-amber-700 shadow-sm">
+                                กำลังดูข้อมูลย้อนหลัง จึงเริ่มทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

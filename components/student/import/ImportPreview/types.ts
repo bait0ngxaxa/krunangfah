@@ -1,6 +1,7 @@
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { type RiskLevel, type PhqScores } from "@/lib/utils/phq-scoring";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
+import type { ImportResult } from "@/lib/actions/student/types";
 
 /**
  * Props for ImportPreview component
@@ -8,7 +9,7 @@ import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 export interface ImportPreviewProps {
     data: ParsedStudent[];
     onCancel: () => void;
-    onSuccess: () => void;
+    onSuccess: (result: ImportResult) => void;
 }
 
 /**

@@ -100,9 +100,7 @@ export function StudentPreviewTable({
 }: StudentPreviewTableProps) {
     return (
         <div className="bg-white rounded-4xl shadow-sm overflow-hidden border-2 border-gray-100 relative">
-            <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-emerald-300 to-teal-300" />
-
-            <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
+            <div className="max-h-[600px] overflow-y-auto">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-emerald-100">
                         <thead className="bg-white/80 sticky top-0 z-10 backdrop-blur-md shadow-sm">

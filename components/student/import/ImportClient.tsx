@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ExcelUploader } from "@/components/student/import/ExcelUploader";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
+import type { ImportResult } from "@/lib/actions/student/types";
 import { toast } from "sonner";
 
 const ImportPreview = dynamic(
@@ -34,11 +35,17 @@ export function ImportClient() {
         setParsedData(null);
     };
 
-    const handleSuccess = () => {
+    const handleSuccess = (result: ImportResult) => {
         setParsedData(null);
-        toast.success("บันทึกข้อมูลสำเร็จ!", {
-            description: "กำลังกลับไปหน้า Dashboard…",
-        });
+        if (result.status === "partial") {
+            toast.warning("นำเข้าข้อมูลสำเร็จบางส่วน", {
+                description: result.message,
+            });
+        } else {
+            toast.success("บันทึกข้อมูลสำเร็จ!", {
+                description: result.message,
+            });
+        }
         setTimeout(() => {
             router.push("/dashboard");
         }, 2000);

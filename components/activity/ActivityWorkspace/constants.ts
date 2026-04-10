@@ -14,31 +14,31 @@ export const ACTIVITIES: Activity[] = [
         id: "a1",
         number: 1,
         title: "กิจกรรมที่ 1: รู้จักตัวเอง",
-        worksheets: ["/activity/a1/act1-1.jpg", "/activity/a1/act1-2.jpg"],
+        worksheets: ["/activity/a1/act1-1.webp", "/activity/a1/act1-2.webp"],
     },
     {
         id: "a2",
         number: 2,
         title: "กิจกรรมที่ 2: ค้นหาคุณค่าที่ฉันมี",
-        worksheets: ["/activity/a2/act2-1.jpg", "/activity/a2/act2-2.jpg"],
+        worksheets: ["/activity/a2/act2-1.webp", "/activity/a2/act2-2.webp"],
     },
     {
         id: "a3",
         number: 3,
         title: "กิจกรรมที่ 3: ปรับความคิด ชีวิตเปลี่ยน",
-        worksheets: ["/activity/a3/act3-1.jpg", "/activity/a3/act3-2.jpg"],
+        worksheets: ["/activity/a3/act3-1.webp", "/activity/a3/act3-2.webp"],
     },
     {
         id: "a4",
         number: 4,
         title: "กิจกรรมที่ 4: รู้จักตัวกระตุ้น",
-        worksheets: ["/activity/a4/act4-1.jpg", "/activity/a4/act4-2.jpg"],
+        worksheets: ["/activity/a4/act4-1.webp", "/activity/a4/act4-2.webp"],
     },
     {
         id: "a5",
         number: 5,
         title: "กิจกรรมที่ 5: ตามติดเพื่อไปต่อ",
-        worksheets: ["/activity/a5/act5.jpg"],
+        worksheets: ["/activity/a5/act5.webp"],
     },
 ];
 

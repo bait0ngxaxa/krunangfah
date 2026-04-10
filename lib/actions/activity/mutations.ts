@@ -75,6 +75,30 @@ async function verifyActivityAccess(
     return { allowed: true };
 }
 
+async function verifyLatestActivityPhqResult(
+    studentId: string,
+    phqResultId: string,
+): Promise<{ allowed: boolean; error?: string }> {
+    const latestPhqResult = await prisma.phqResult.findFirst({
+        where: { studentId },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+    });
+
+    if (!latestPhqResult) {
+        return { allowed: false, error: "ไม่พบผลคัดกรองล่าสุดของนักเรียน" };
+    }
+
+    if (latestPhqResult.id !== phqResultId) {
+        return {
+            allowed: false,
+            error: ERROR_MESSAGES.activity.latestOnly,
+        };
+    }
+
+    return { allowed: true };
+}
+
 /**
  * Initialize activity progress for a student based on their PHQ result
  * Called automatically when a new PHQ result is created
@@ -87,6 +111,14 @@ export async function initializeActivityProgress(
     try {
         // Require authenticated server context even when function is imported client-side.
         await requireAuth();
+
+        const latestCheck = await verifyLatestActivityPhqResult(
+            studentId,
+            phqResultId,
+        );
+        if (!latestCheck.allowed) {
+            return { success: false, error: latestCheck.error };
+        }
 
         const activityNumbers = Object.hasOwn(ACTIVITY_INDICES, riskLevel)
             ? ACTIVITY_INDICES[riskLevel as keyof typeof ACTIVITY_INDICES]
@@ -150,7 +182,7 @@ export async function submitTeacherAssessment(
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },
-            select: { studentId: true, status: true },
+            select: { studentId: true, status: true, phqResultId: true },
         });
 
         if (!activityProgress) {
@@ -177,6 +209,14 @@ export async function submitTeacherAssessment(
 
         if (!allowed) {
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        const latestCheck = await verifyLatestActivityPhqResult(
+            activityProgress.studentId,
+            activityProgress.phqResultId,
+        );
+        if (!latestCheck.allowed) {
+            return { success: false, error: latestCheck.error };
         }
 
         // Save assessment fields without mutating completion status.
@@ -277,6 +317,14 @@ export async function confirmActivityComplete(
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
+        const latestCheck = await verifyLatestActivityPhqResult(
+            activityProgress.studentId,
+            activityProgress.phqResultId,
+        );
+        if (!latestCheck.allowed) {
+            return { success: false, error: latestCheck.error };
+        }
+
         const result = await runSerializableTransaction(async (tx) => {
             const currentActivity = await tx.activityProgress.findUnique({
                 where: { id: activityProgressId },
@@ -358,7 +406,7 @@ export async function updateTeacherNotes(
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },
-            select: { studentId: true, teacherId: true },
+            select: { studentId: true, teacherId: true, phqResultId: true },
         });
 
         if (!activityProgress) {
@@ -374,6 +422,14 @@ export async function updateTeacherNotes(
 
         if (!allowed) {
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        const latestCheck = await verifyLatestActivityPhqResult(
+            activityProgress.studentId,
+            activityProgress.phqResultId,
+        );
+        if (!latestCheck.allowed) {
+            return { success: false, error: latestCheck.error };
         }
 
         const updated = await prisma.activityProgress.update({
@@ -416,7 +472,7 @@ export async function updateScheduledDate(
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },
-            select: { studentId: true, status: true },
+            select: { studentId: true, status: true, phqResultId: true },
         });
 
         if (!activityProgress) {
@@ -438,6 +494,14 @@ export async function updateScheduledDate(
 
         if (!allowed) {
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        const latestCheck = await verifyLatestActivityPhqResult(
+            activityProgress.studentId,
+            activityProgress.phqResultId,
+        );
+        if (!latestCheck.allowed) {
+            return { success: false, error: latestCheck.error };
         }
 
         await prisma.activityProgress.update({

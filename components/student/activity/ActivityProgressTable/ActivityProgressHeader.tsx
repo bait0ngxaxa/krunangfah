@@ -15,6 +15,7 @@ interface ActivityProgressHeaderProps {
     totalCount: number;
     assessmentPeriod: AssessmentPeriod;
     readOnly?: boolean;
+    actionLockedMessage?: string;
 }
 
 export function ActivityProgressHeader({
@@ -25,6 +26,7 @@ export function ActivityProgressHeader({
     totalCount,
     assessmentPeriod,
     readOnly = false,
+    actionLockedMessage,
 }: ActivityProgressHeaderProps) {
     const progressPercent = (completedCount / totalCount) * 100;
     const riskStyle = getRiskLevelConfig(riskLevel);
@@ -66,7 +68,12 @@ export function ActivityProgressHeader({
                     </div>
                 </div>
             </div>
-            {!readOnly && (
+            {actionLockedMessage ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700 md:max-w-sm">
+                    {actionLockedMessage}
+                </div>
+            ) : null}
+            {!readOnly && !actionLockedMessage && (
                 <Link
                     href={studentHelpStartRoute(studentId, phqResultId)}
                     className={buttonVariants({

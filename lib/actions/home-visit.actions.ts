@@ -23,6 +23,7 @@ import { join } from "path";
 import { logError } from "@/lib/utils/logging";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import type { OffsetPagination } from "@/types/pagination.types";
+import type { AcademicYearDateRange } from "@/lib/utils/student-detail-filters";
 
 const MAX_VISIT_NUMBER_RETRIES = 3;
 const DEFAULT_HOME_VISIT_PAGE_SIZE = 5;
@@ -144,7 +145,11 @@ async function verifyStudentAccess(
  */
 export async function getHomeVisits(
     studentId: string,
-    options?: { page?: number; pageSize?: number },
+    options?: {
+        page?: number;
+        pageSize?: number;
+        dateRange?: AcademicYearDateRange;
+    },
 ): Promise<HomeVisitListResponse> {
     const { page: requestedPage, pageSize } = normalizePaginationParams(
         options?.page,
@@ -167,8 +172,19 @@ export async function getHomeVisits(
             };
         }
 
+        const whereClause: Prisma.HomeVisitWhereInput = {
+            studentId,
+            ...(options?.dateRange
+                ? {
+                      visitDate: {
+                          gte: options.dateRange.startDate,
+                          lte: options.dateRange.endDate,
+                      },
+                  }
+                : {}),
+        };
         const total = await prisma.homeVisit.count({
-            where: { studentId },
+            where: whereClause,
         });
         const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
         const page = totalPages === 0 ? 1 : Math.min(requestedPage, totalPages);
@@ -177,7 +193,7 @@ export async function getHomeVisits(
             total === 0
                 ? []
                 : await prisma.homeVisit.findMany({
-                      where: { studentId },
+                      where: whereClause,
                       orderBy: { visitNumber: "desc" },
                       skip: (page - 1) * pageSize,
                       take: pageSize,

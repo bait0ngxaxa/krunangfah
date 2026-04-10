@@ -13,6 +13,7 @@ export async function ActivityProgressTable({
     riskLevel,
     assessmentPeriod,
     readOnly = false,
+    actionLockedMessage,
 }: ActivityProgressTableProps) {
     const activityNumbers = getActivityNumbers(riskLevel);
 
@@ -46,6 +47,7 @@ export async function ActivityProgressTable({
                 totalCount={activityNumbers.length}
                 assessmentPeriod={assessmentPeriod}
                 readOnly={readOnly}
+                actionLockedMessage={actionLockedMessage}
             />
 
             <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">

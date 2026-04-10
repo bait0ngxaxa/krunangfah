@@ -50,4 +50,5 @@ export interface ActivityProgressTableProps {
     riskLevel: RiskLevel;
     assessmentPeriod: AssessmentPeriod;
     readOnly?: boolean;
+    actionLockedMessage?: string;
 }

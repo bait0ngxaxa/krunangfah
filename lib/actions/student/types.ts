@@ -91,6 +91,7 @@ export interface StudentDashboardDataResponse {
 // Import result type
 export interface ImportResult {
     success: boolean;
+    status: "success" | "partial" | "error";
     message: string;
     imported?: number;
     skipped?: number;

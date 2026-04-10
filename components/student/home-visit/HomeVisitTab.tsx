@@ -15,6 +15,7 @@ interface HomeVisitTabProps {
     pagination: OffsetPagination;
     studentId: string;
     readOnly?: boolean;
+    isFilteredByAcademicYear?: boolean;
 }
 
 export function HomeVisitTab({
@@ -22,6 +23,7 @@ export function HomeVisitTab({
     pagination,
     studentId,
     readOnly = false,
+    isFilteredByAcademicYear = false,
 }: HomeVisitTabProps) {
     const router = useRouter();
     const [showAddModal, setShowAddModal] = useState(false);
@@ -54,10 +56,14 @@ export function HomeVisitTab({
                         <MapPin className="w-10 h-10 text-gray-400" />
                     </div>
                     <h3 className="text-lg font-bold text-gray-800 mb-2">
-                        ยังไม่มีบันทึกการเยี่ยมบ้าน
+                        {isFilteredByAcademicYear
+                            ? "ยังไม่มีบันทึกการเยี่ยมบ้านในปี/เทอมที่เลือก"
+                            : "ยังไม่มีบันทึกการเยี่ยมบ้าน"}
                     </h3>
                     <p className="text-gray-500 mb-6 font-medium">
-                        เริ่มต้นบันทึกการเยี่ยมบ้านเพื่อติดตามสภาพความเป็นอยู่ของนักเรียน
+                        {isFilteredByAcademicYear
+                            ? "ลองเลือกปีการศึกษาอื่น หรือเริ่มต้นบันทึกการเยี่ยมบ้านในช่วงนี้"
+                            : "เริ่มต้นบันทึกการเยี่ยมบ้านเพื่อติดตามสภาพความเป็นอยู่ของนักเรียน"}
                     </p>
                 </div>
             ) : (

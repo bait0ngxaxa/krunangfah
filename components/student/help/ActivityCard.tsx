@@ -9,8 +9,7 @@ interface ActivityCardProps {
 
 export function ActivityCard({ activity, index, config }: ActivityCardProps) {
     return (
-        <div className="group relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/90 p-5 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.4)] transition-base duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_42px_-24px_rgba(15,23,42,0.48)] sm:p-8">
-            <div className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-emerald-100/30 blur-2xl" />
+        <div className="group relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/90 p-5 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.4)] transition-base duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_42px_-24px_rgba(15,23,42,0.48)] content-visibility-auto sm:p-8">
             <div className="flex items-center gap-6 mb-8">
                 <div
                     className={`relative flex h-16 w-16 shrink-0 rotate-3 items-center justify-center rounded-3xl text-3xl font-bold text-white shadow-lg ${config.bg}`}
@@ -31,17 +30,18 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
             </div>
 
             {/* Worksheet previews - Large horizontal layout */}
-            <div className="flex flex-row gap-6 justify-center overflow-x-auto pb-4 custom-scrollbar">
+            <div className="flex flex-row gap-6 justify-center overflow-x-auto pb-4">
                 {activity.worksheets.map((worksheet, wIndex) => (
                     <div
                         key={wIndex}
-                        className="group relative h-64 w-48 shrink-0 overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-md transition-base duration-300 hover:rotate-1 hover:scale-105 hover:shadow-xl"
+                        className="group relative h-64 w-48 shrink-0 overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-md transition-base duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                     >
                         <Image
                             src={worksheet}
                             alt={`${activity.title} ใบงาน ${wIndex + 1}`}
                             fill
-                            className="object-cover transition-transform group-hover:scale-110"
+                            className="object-cover"
+                            quality={65}
                             sizes="(max-width: 768px) 100vw, 33vw"
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center">

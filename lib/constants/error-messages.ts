@@ -6,5 +6,8 @@ export const ERROR_MESSAGES = {
         systemAdminUploadWorksheet: "system_admin ไม่มีสิทธิ์อัปโหลดใบงาน",
         systemAdminDeleteWorksheet: "system_admin ไม่มีสิทธิ์ลบใบงาน",
     },
+    activity: {
+        latestOnly: "ทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+    },
 } as const;
 

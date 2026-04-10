@@ -38,6 +38,14 @@ export async function importStudents(
         const userId = session.user.id;
         const userRole = session.user.role;
 
+        if (assessmentRound !== 1 && assessmentRound !== 2) {
+            return {
+                success: false,
+                status: "error",
+                message: "รอบการประเมินไม่ถูกต้อง",
+            };
+        }
+
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -53,6 +61,7 @@ export async function importStudents(
         if (!user?.schoolId) {
             return {
                 success: false,
+                status: "error",
                 message:
                     userRole === "system_admin"
                         ? "System admin ต้องเลือกโรงเรียนก่อนนำเข้าข้อมูล"
@@ -67,8 +76,28 @@ export async function importStudents(
         if (isClassTeacher && !advisoryClass) {
             return {
                 success: false,
+                status: "error",
                 message: "ไม่พบข้อมูลห้องที่คุณดูแล กรุณาตั้งค่าโปรไฟล์ก่อน",
             };
+        }
+
+        if (assessmentRound === 2) {
+            const schoolRound1Count = await prisma.phqResult.count({
+                where: {
+                    academicYearId,
+                    assessmentRound: 1,
+                    student: { schoolId },
+                },
+            });
+
+            if (schoolRound1Count === 0) {
+                return {
+                    success: false,
+                    status: "error",
+                    message:
+                        "ปีการศึกษานี้ยังไม่มีข้อมูลการประเมินครั้งที่ 1 จึงยังนำเข้าครั้งที่ 2 ไม่ได้",
+                };
+            }
         }
 
         const errors: string[] = [];
@@ -171,12 +200,41 @@ export async function importStudents(
             const hasExistingResultSet = new Set(
                 existingPhqResults.map((result) => result.studentId),
             );
+            const round1StudentSet =
+                assessmentRound === 2
+                    ? new Set(
+                          (
+                              await tx.phqResult.findMany({
+                                  where: {
+                                      studentId: {
+                                          in: scopedStudents.map(
+                                              (student) => student.id,
+                                          ),
+                                      },
+                                      academicYearId,
+                                      assessmentRound: 1,
+                                  },
+                                  select: { studentId: true },
+                              })
+                          ).map((result) => result.studentId),
+                      )
+                    : null;
             const duplicateRoundErrors: string[] = [];
             const phqResultsToCreate: Prisma.PhqResultCreateManyInput[] = [];
 
             for (const row of eligibleRows) {
                 const student = studentByStudentId.get(row.studentId);
                 if (!student) {
+                    continue;
+                }
+                if (
+                    assessmentRound === 2 &&
+                    round1StudentSet &&
+                    !round1StudentSet.has(student.id)
+                ) {
+                    duplicateRoundErrors.push(
+                        `${row.firstName} ${row.lastName} (${row.studentId}): ยังไม่มีข้อมูลการประเมินครั้งที่ 1 สำหรับปีการศึกษานี้`,
+                    );
                     continue;
                 }
                 if (hasExistingResultSet.has(student.id)) {
@@ -290,7 +348,13 @@ export async function importStudents(
         }
 
         return {
-            success: failedCount === 0,
+            success: importedCount > 0,
+            status:
+                failedCount === 0
+                    ? "success"
+                    : importedCount > 0
+                      ? "partial"
+                      : "error",
             message,
             imported: importedCount,
             skipped: skippedCount,
@@ -304,6 +368,7 @@ export async function importStudents(
         }
         return {
             success: false,
+            status: "error",
             message: "เกิดข้อผิดพลาดในการนำเข้าข้อมูล",
         };
     }

@@ -14,6 +14,7 @@ interface CounselingLogTableProps {
     pagination: OffsetPagination;
     studentId: string;
     readOnly?: boolean;
+    isFilteredByAcademicYear?: boolean;
 }
 
 export function CounselingLogTable({
@@ -21,6 +22,7 @@ export function CounselingLogTable({
     pagination,
     studentId,
     readOnly = false,
+    isFilteredByAcademicYear = false,
 }: CounselingLogTableProps) {
     const router = useRouter();
     const [showAddModal, setShowAddModal] = useState(false);
@@ -59,10 +61,14 @@ export function CounselingLogTable({
                             <FileText className="w-10 h-10 text-gray-400" />
                         </div>
                         <h3 className="text-lg font-bold text-gray-800 mb-2">
-                            ยังไม่มีบันทึกการให้คำปรึกษา
+                            {isFilteredByAcademicYear
+                                ? "ยังไม่มีบันทึกการให้คำปรึกษาในปี/เทอมที่เลือก"
+                                : "ยังไม่มีบันทึกการให้คำปรึกษา"}
                         </h3>
                         <p className="text-gray-500 mb-6 font-medium">
-                            เริ่มต้นบันทึกการให้คำปรึกษาเพื่อติดตามความคืบหน้า
+                            {isFilteredByAcademicYear
+                                ? "ลองเลือกปีการศึกษาอื่น หรือเริ่มต้นบันทึกการให้คำปรึกษาในช่วงนี้"
+                                : "เริ่มต้นบันทึกการให้คำปรึกษาเพื่อติดตามความคืบหน้า"}
                         </p>
                     </div>
                 ) : (

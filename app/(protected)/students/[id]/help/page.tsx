@@ -6,6 +6,10 @@ import { ConversationView } from "@/components/student/help/ConversationView";
 import { ActivityView } from "@/components/student/help/ActivityView";
 import { requireAuth } from "@/lib/session";
 import { studentRoute } from "@/lib/constants/student-routes";
+import {
+    getLatestPhqResult,
+    getRequestedOrLatestPhqResult,
+} from "@/lib/utils/phq-result-selection";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -31,15 +35,19 @@ export default async function StudentHelpPage({
         notFound();
     }
 
-    const latestResult = phqResultId
-        ? (student.phqResults.find((r) => r.id === phqResultId) ??
-          student.phqResults[0])
-        : student.phqResults[0];
-    if (!latestResult) {
+    const activePhqResult = getLatestPhqResult(student.phqResults);
+    const selectedResult = getRequestedOrLatestPhqResult(
+        student.phqResults,
+        phqResultId,
+    );
+    if (!selectedResult) {
         redirect(studentRoute(studentId));
     }
 
-    const riskLevel = latestResult.riskLevel as RiskLevel;
+    const canManageActivities =
+        activePhqResult?.id !== undefined &&
+        selectedResult.id === activePhqResult.id;
+    const riskLevel = selectedResult.riskLevel as RiskLevel;
     const config = getColorConfig(riskLevel);
     const studentName = `${student.firstName} ${student.lastName}`;
 
@@ -52,9 +60,9 @@ export default async function StudentHelpPage({
                 riskLevel={riskLevel}
                 config={config}
                 {...(riskLevel === "red" && {
-                    phqResultId: latestResult.id,
-                    initialReferralStatus: latestResult.referredToHospital,
-                    initialHospitalName: latestResult.hospitalName ?? undefined,
+                    phqResultId: selectedResult.id,
+                    initialReferralStatus: selectedResult.referredToHospital,
+                    initialHospitalName: selectedResult.hospitalName ?? undefined,
                 })}
             />
         );
@@ -69,7 +77,13 @@ export default async function StudentHelpPage({
             studentId={studentId}
             config={config}
             activities={activities}
-            phqResultId={latestResult.id}
+            phqResultId={selectedResult.id}
+            canStartActivities={canManageActivities}
+            actionLockedMessage={
+                canManageActivities
+                    ? undefined
+                    : "กำลังดูข้อมูลย้อนหลัง จึงเริ่มทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน"
+            }
         />
     );
 }
