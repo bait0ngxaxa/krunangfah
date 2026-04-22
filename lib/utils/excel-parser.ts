@@ -1,5 +1,9 @@
 import { type PhqScores } from "./phq-scoring";
 import { normalizeClassName } from "./class-normalizer";
+import {
+    MAX_IMPORT_FILE_SIZE_BYTES,
+    MAX_IMPORT_ROW_COUNT,
+} from "@/lib/constants/import";
 import { logError } from "@/lib/utils/logging";
 
 export type ParsedGender = "MALE" | "FEMALE";
@@ -31,6 +35,16 @@ export async function parseExcelBuffer(
     const data: ParsedStudent[] = [];
 
     try {
+        if (buffer.byteLength > MAX_IMPORT_FILE_SIZE_BYTES) {
+            return {
+                success: false,
+                data: [],
+                errors: [
+                    `ไฟล์มีขนาดใหญ่เกินไป (สูงสุด ${Math.floor(MAX_IMPORT_FILE_SIZE_BYTES / (1024 * 1024))}MB)`,
+                ],
+            };
+        }
+
         // Dynamic import: ExcelJS is loaded only when user uploads a file
         const ExcelJS = (await import("exceljs")).default;
         const workbook = new ExcelJS.Workbook();
@@ -62,6 +76,17 @@ export async function parseExcelBuffer(
 
         if (errors.length > 0) {
             return { success: false, data: [], errors };
+        }
+
+        const dataRowCount = Math.max(worksheet.actualRowCount - 1, 0);
+        if (dataRowCount > MAX_IMPORT_ROW_COUNT) {
+            return {
+                success: false,
+                data: [],
+                errors: [
+                    `ไฟล์มีข้อมูลเกิน ${MAX_IMPORT_ROW_COUNT} แถว กรุณาแบ่งไฟล์แล้วนำเข้าใหม่`,
+                ],
+            };
         }
 
         // Parse rows

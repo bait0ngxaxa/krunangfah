@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import {
     createHomeVisitSchema,
     deleteHomeVisitSchema,
@@ -64,6 +65,17 @@ describe("createHomeVisitSchema", () => {
     it("should reject empty description", () => {
         const result = createHomeVisitSchema.safeParse(
             validInput({ description: "" }),
+        );
+        expect(result.success).toBe(false);
+    });
+
+    it("should reject description longer than configured limit", () => {
+        const result = createHomeVisitSchema.safeParse(
+            validInput({
+                description: "ก".repeat(
+                    INPUT_LIMITS.homeVisit.description + 1,
+                ),
+            }),
         );
         expect(result.success).toBe(false);
     });

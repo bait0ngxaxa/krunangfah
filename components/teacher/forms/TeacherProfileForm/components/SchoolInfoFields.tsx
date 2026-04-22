@@ -1,4 +1,5 @@
 import type { SchoolInfoFieldsProps } from "../types";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 
 export function SchoolInfoFields({
     register,
@@ -39,6 +40,7 @@ export function SchoolInfoFields({
                 <input
                     {...register("schoolRole")}
                     type="text"
+                    maxLength={INPUT_LIMITS.teacher.schoolRole}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="เช่น ครูประจำชั้น, หัวหน้ากลุ่มสาระ"
                 />

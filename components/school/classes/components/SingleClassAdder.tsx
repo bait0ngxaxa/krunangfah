@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import type { SingleClassAdderProps } from "../types";
 
 export function SingleClassAdder({
@@ -22,6 +23,7 @@ export function SingleClassAdder({
                 <input
                     type="text"
                     value={inputValue}
+                    maxLength={INPUT_LIMITS.school.className}
                     onChange={(e) => onInputChange(e.target.value)}
                     onKeyDown={(e) =>
                         e.key === "Enter" && (e.preventDefault(), onAdd())

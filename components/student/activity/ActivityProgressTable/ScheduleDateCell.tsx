@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Check, X, Loader2 } from "lucide-react";
 import { updateScheduledDate } from "@/lib/actions/activity/mutations";
-import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils/cn";
 
 interface ScheduleDateCellProps {
     activityProgressId: string;
@@ -27,6 +27,19 @@ function toInputDateValue(date: Date): string {
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+}
+
+function iconButtonClassName(
+    tone: "confirm" | "cancel",
+    disabled: boolean,
+): string {
+    return cn(
+        "inline-flex h-7 w-7 items-center justify-center rounded-md border transition-colors",
+        tone === "confirm"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+            : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100",
+        disabled && "cursor-not-allowed opacity-50 hover:bg-inherit",
+    );
 }
 
 export function ScheduleDateCell({
@@ -73,7 +86,7 @@ export function ScheduleDateCell({
                     className="border border-emerald-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-36"
                     disabled={isPending}
                 />
-                <Button
+                <button
                     type="button"
                     onClick={() => {
                         if (!dateValue) return;
@@ -89,18 +102,20 @@ export function ScheduleDateCell({
                         });
                     }}
                     disabled={isPending || !dateValue}
-                    variant="secondary"
-                    size="sm"
-                    className="h-7 w-7 p-0 rounded-md text-emerald-600"
+                    className={iconButtonClassName(
+                        "confirm",
+                        isPending || !dateValue,
+                    )}
                     title="บันทึก"
+                    aria-label="บันทึกวันนัดหมาย"
                 >
                     {isPending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                         <Check className="w-4 h-4" />
                     )}
-                </Button>
-                <Button
+                </button>
+                <button
                     type="button"
                     onClick={() => {
                         setDateValue(
@@ -109,13 +124,12 @@ export function ScheduleDateCell({
                         setIsEditing(false);
                     }}
                     disabled={isPending}
-                    variant="danger"
-                    size="sm"
-                    className="h-7 w-7 p-0 rounded-md"
+                    className={iconButtonClassName("cancel", isPending)}
                     title="ยกเลิก"
+                    aria-label="ยกเลิกการแก้ไขวันนัดหมาย"
                 >
                     <X className="w-4 h-4" />
-                </Button>
+                </button>
             </div>
         );
     }

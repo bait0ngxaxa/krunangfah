@@ -10,6 +10,7 @@ import {
     Globe,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { toast } from "sonner";
 import { submitTeacherAssessment } from "@/lib/actions/activity";
 import {
@@ -159,6 +160,9 @@ export function TeacherAssessmentForm({
                                 </div>
                                 <textarea
                                     value={internalProblems}
+                                    maxLength={
+                                        INPUT_LIMITS.activity.internalProblems
+                                    }
                                     onChange={(e) =>
                                         setInternalProblems(e.target.value)
                                     }
@@ -189,6 +193,9 @@ export function TeacherAssessmentForm({
                                 </div>
                                 <textarea
                                     value={externalProblems}
+                                    maxLength={
+                                        INPUT_LIMITS.activity.externalProblems
+                                    }
                                     onChange={(e) =>
                                         setExternalProblems(e.target.value)
                                     }

@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ExcelJS from "exceljs";
+import { parseExcelBuffer } from "@/lib/utils/excel-parser";
+import {
+    MAX_IMPORT_FILE_SIZE_BYTES,
+    MAX_IMPORT_ROW_COUNT,
+} from "@/lib/constants/import";
 
 // Since parseExcelBuffer requires actual Excel parsing which is complex to mock,
 // we'll test the helper functions logic that can be extracted
@@ -400,5 +405,82 @@ describe("Excel Parser - Duplicate StudentId Detection", () => {
 
     it("should handle empty array", () => {
         expect(findDuplicateStudentIds([])).toHaveLength(0);
+    });
+});
+
+describe("Excel Parser - Resource Guards", () => {
+    async function createWorkbookBuffer(rowCount: number): Promise<ArrayBuffer> {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
+
+        worksheet.addRow([
+            "รหัสนักเรียน",
+            "ชื่อ",
+            "นามสกุล",
+            "ห้อง",
+            "ข้อ1",
+            "ข้อ2",
+            "ข้อ3",
+            "ข้อ4",
+            "ข้อ5",
+            "ข้อ6",
+            "ข้อ7",
+            "ข้อ8",
+            "ข้อ9",
+            "opt1",
+            "opt2",
+        ]);
+
+        for (let index = 0; index < rowCount; index++) {
+            worksheet.addRow([
+                `${index + 1}`,
+                "สมชาย",
+                "ใจดี",
+                "ม.1/1",
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                "ไม่ใช่",
+                "ไม่ใช่",
+            ]);
+        }
+
+        const output = await workbook.xlsx.writeBuffer();
+        if (output instanceof ArrayBuffer) {
+            return output;
+        }
+
+        return output.buffer.slice(
+            output.byteOffset,
+            output.byteOffset + output.byteLength,
+        );
+    }
+
+    it("rejects files larger than the configured import size", async () => {
+        const result = await parseExcelBuffer(
+            new ArrayBuffer(MAX_IMPORT_FILE_SIZE_BYTES + 1),
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.errors).toContain(
+            `ไฟล์มีขนาดใหญ่เกินไป (สูงสุด ${Math.floor(MAX_IMPORT_FILE_SIZE_BYTES / (1024 * 1024))}MB)`,
+        );
+    });
+
+    it("rejects workbooks with more rows than the preview can safely render", async () => {
+        const buffer = await createWorkbookBuffer(MAX_IMPORT_ROW_COUNT + 1);
+
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(false);
+        expect(result.errors).toContain(
+            `ไฟล์มีข้อมูลเกิน ${MAX_IMPORT_ROW_COUNT} แถว กรุณาแบ่งไฟล์แล้วนำเข้าใหม่`,
+        );
     });
 });

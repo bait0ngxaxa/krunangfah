@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import { parseExcelBuffer, type ParsedStudent } from "@/lib/utils/excel-parser";
+import { MAX_IMPORT_FILE_SIZE_BYTES } from "@/lib/constants/import";
 import { Upload, Download, Info } from "lucide-react";
 
 interface ExcelUploaderProps {
@@ -21,6 +22,12 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
         ];
         if (!validTypes.includes(file.type) && !file.name.endsWith(".xlsx")) {
             setError("กรุณาอัพโหลดไฟล์ Excel (.xlsx) เท่านั้น");
+            return;
+        }
+        if (file.size > MAX_IMPORT_FILE_SIZE_BYTES) {
+            setError(
+                `ไฟล์มีขนาดใหญ่เกินไป (สูงสุด ${Math.floor(MAX_IMPORT_FILE_SIZE_BYTES / (1024 * 1024))}MB)`,
+            );
             return;
         }
 

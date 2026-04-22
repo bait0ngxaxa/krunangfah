@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import {
     teacherProfileSchema,
     projectRoles,
@@ -85,6 +86,20 @@ describe("teacherProfileSchema", () => {
             if (!result.success) {
                 expect(result.error.issues[0].message).toBe("กรุณากรอกชื่อ");
             }
+        });
+
+        it("should reject firstName longer than configured limit", () => {
+            const data = {
+                firstName: "ก".repeat(INPUT_LIMITS.teacher.firstName + 1),
+                lastName: "ใจดี",
+                age: 30,
+                advisoryClass: "ม.1/1",
+                academicYearId: "test123",
+                schoolRole: "Teacher",
+                projectRole: "lead" as const,
+            };
+            const result = teacherProfileSchema.safeParse(data);
+            expect(result.success).toBe(false);
         });
     });
 
@@ -205,6 +220,20 @@ describe("teacherProfileSchema", () => {
                     "กรุณากรอกบทบาทหน้าที่ในโรงเรียน",
                 );
             }
+        });
+
+        it("should reject schoolRole longer than configured limit", () => {
+            const data = {
+                firstName: "Test",
+                lastName: "User",
+                age: 30,
+                advisoryClass: "ม.1/1",
+                academicYearId: "test123",
+                schoolRole: "ก".repeat(INPUT_LIMITS.teacher.schoolRole + 1),
+                projectRole: "lead" as const,
+            };
+            const result = teacherProfileSchema.safeParse(data);
+            expect(result.success).toBe(false);
         });
     });
 

@@ -4,7 +4,10 @@ import type {
     RateLimitEntry,
     RateLimiter,
 } from "@/types/rate-limit.types";
-import { RATE_LIMIT_CLEANUP_INTERVAL_MS } from "@/lib/constants/rate-limit";
+import {
+    RATE_LIMIT_CLEANUP_INTERVAL_MS,
+    RATE_LIMIT_MAX_ENTRIES,
+} from "@/lib/constants/rate-limit";
 
 /**
  * Creates an in-memory rate limiter with sliding window algorithm.
@@ -14,6 +17,18 @@ import { RATE_LIMIT_CLEANUP_INTERVAL_MS } from "@/lib/constants/rate-limit";
  */
 export function createRateLimiter(config: RateLimitConfig): RateLimiter {
     const store = new Map<string, RateLimitEntry>();
+    const maxEntries = config.maxEntries ?? RATE_LIMIT_MAX_ENTRIES;
+
+    function ensureCapacity(nextKey: string): void {
+        if (store.has(nextKey) || store.size < maxEntries) {
+            return;
+        }
+
+        const oldestKey = store.keys().next().value;
+        if (typeof oldestKey === "string") {
+            store.delete(oldestKey);
+        }
+    }
 
     /**
      * Remove expired entries from the store
@@ -57,6 +72,7 @@ export function createRateLimiter(config: RateLimitConfig): RateLimiter {
 
         // Denied: too many requests in the current window
         if (validTimestamps.length >= config.maxRequests) {
+            ensureCapacity(key);
             const oldestInWindow = validTimestamps[0];
             const resetAtMs = oldestInWindow + config.windowMs;
             const resetAt = Math.ceil(resetAtMs / 1000);
@@ -77,6 +93,7 @@ export function createRateLimiter(config: RateLimitConfig): RateLimiter {
         }
 
         // Allowed: record this request timestamp
+        ensureCapacity(key);
         validTimestamps.push(now);
         store.set(key, { timestamps: validTimestamps });
 

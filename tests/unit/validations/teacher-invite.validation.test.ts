@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import {
     teacherInviteSchema,
     acceptInviteSchema,
@@ -78,6 +79,15 @@ describe("teacherInviteSchema", () => {
             if (!result.success) {
                 expect(result.error.issues[0].message).toBe("กรุณากรอกชื่อ");
             }
+        });
+
+        it("should reject firstName longer than configured limit", () => {
+            const data = {
+                ...validData,
+                firstName: "ก".repeat(INPUT_LIMITS.teacher.firstName + 1),
+            };
+            const result = teacherInviteSchema.safeParse(data);
+            expect(result.success).toBe(false);
         });
     });
 
@@ -206,6 +216,15 @@ describe("teacherInviteSchema", () => {
                     "กรุณากรอกบทบาทในโรงเรียน",
                 );
             }
+        });
+
+        it("should reject schoolRole longer than configured limit", () => {
+            const data = {
+                ...validData,
+                schoolRole: "ก".repeat(INPUT_LIMITS.teacher.schoolRole + 1),
+            };
+            const result = teacherInviteSchema.safeParse(data);
+            expect(result.success).toBe(false);
         });
     });
 

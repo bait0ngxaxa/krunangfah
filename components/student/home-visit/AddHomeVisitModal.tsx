@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { createHomeVisit } from "@/lib/actions/home-visit.actions";
 import type { HomeVisitPhotoData } from "@/lib/actions/home-visit.actions";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { HomeVisitPhotoUploader } from "./HomeVisitPhotoUploader";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
@@ -208,6 +209,7 @@ export function AddHomeVisitModal({
                                 autoComplete="off"
                                 required
                                 rows={4}
+                                maxLength={INPUT_LIMITS.homeVisit.description}
                                 placeholder="บันทึกรายละเอียดการเยี่ยมบ้าน สภาพแวดล้อม ข้อสังเกต…"
                                 value={formData.description}
                                 onChange={(e) =>

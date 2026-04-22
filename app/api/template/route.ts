@@ -156,7 +156,7 @@ export async function GET() {
         instructionSheet.addRow(["คอลัมน์", "คำอธิบาย", "ค่าที่รับ"]);
         instructionSheet.addRow([
             "รหัสนักเรียน",
-            "รหัสประจำตัวนักเรียน (ไม่บังคับ)",
+            "รหัสประจำตัวนักเรียน (บังคับ)",
             "ตัวเลข",
         ]);
         instructionSheet.addRow(["ชื่อ", "ชื่อนักเรียน", "ข้อความ"]);
@@ -186,7 +186,7 @@ export async function GET() {
         instructionSheet.addRow(["10-14 คะแนน", "เหลือง", "เฝ้าระวังปานกลาง"]);
         instructionSheet.addRow(["15-19 คะแนน", "ส้ม", "มีความเสี่ยง"]);
         instructionSheet.addRow([
-            "20-27 คะแนน หรือ opt1/opt2 ตอบใช่",
+            "20-27 คะแนน หรือ opt1 ตอบใช่",
             "แดง",
             "ความเสี่ยงสูง",
         ]);

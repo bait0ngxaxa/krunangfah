@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import {
     submitAssessmentSchema,
     scheduleActivitySchema,
@@ -68,6 +69,19 @@ describe("submitAssessmentSchema", () => {
                     "กรุณากรอกปัญหาภายใน",
                 );
             }
+        });
+
+        it("should reject internalProblems longer than configured limit", () => {
+            const data = {
+                activityProgressId: "clxyz123456789abcdef",
+                internalProblems: "ก".repeat(
+                    INPUT_LIMITS.activity.internalProblems + 1,
+                ),
+                externalProblems: "ปัญหาภายนอก",
+                problemType: "internal" as const,
+            };
+            const result = submitAssessmentSchema.safeParse(data);
+            expect(result.success).toBe(false);
         });
     });
 
@@ -215,6 +229,15 @@ describe("updateTeacherNotesSchema", () => {
             if (!result.success) {
                 expect(result.error.issues[0].message).toBe("กรุณากรอกบันทึก");
             }
+        });
+
+        it("should reject notes longer than configured limit", () => {
+            const data = {
+                activityProgressId: "clxyz123456789abcdef",
+                notes: "ก".repeat(INPUT_LIMITS.activity.teacherNotes + 1),
+            };
+            const result = updateTeacherNotesSchema.safeParse(data);
+            expect(result.success).toBe(false);
         });
     });
 });

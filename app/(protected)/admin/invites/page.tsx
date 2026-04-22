@@ -1,10 +1,11 @@
 import { Link2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
-import { requireAdmin } from "@/lib/session";
+import { requireAuth } from "@/lib/session";
 import { getSchoolAdminInvites } from "@/lib/actions/school-admin-invite.actions";
 import { InviteManager } from "@/components/admin/invite/InviteManager";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
     title: "จัดการคำเชิญ Admin | โครงการครูนางฟ้า",
@@ -12,7 +13,12 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminInvitesPage() {
-    await requireAdmin();
+    const session = await requireAuth();
+
+    if (session.user.role !== "system_admin") {
+        redirect("/dashboard");
+    }
+
     const invites = await getSchoolAdminInvites();
 
     return (

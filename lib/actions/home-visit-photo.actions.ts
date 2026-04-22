@@ -20,7 +20,10 @@ import { canAccessStudentByRole } from "@/lib/security/student-access";
 import { revalidatePath } from "next/cache";
 import { logError } from "@/lib/utils/logging";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
-import { MAX_IMAGE_UPLOAD_SIZE } from "@/lib/constants/image-upload";
+import {
+    MAX_IMAGE_UPLOAD_INPUT_SIZE,
+    MAX_IMAGE_UPLOAD_SIZE,
+} from "@/lib/constants/image-upload";
 import {
     compressWorksheetImageBuffer,
     isSupportedWorksheetImageExtension,
@@ -72,6 +75,12 @@ export async function uploadHomeVisitPhoto(
         const file = formData.get("file") as File;
         if (!file) {
             return { success: false, message: "ไม่พบไฟล์" };
+        }
+        if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {
+            return {
+                success: false,
+                message: "ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด 8MB)",
+            };
         }
 
         // Validate file extension (images only)

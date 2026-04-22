@@ -14,6 +14,7 @@ import {
     FileText,
 } from "lucide-react";
 import { createCounselingSession } from "@/lib/actions/counseling.actions";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 
@@ -170,6 +171,7 @@ export function AddCounselingModal({
                             name="counselorName"
                             autoComplete="name"
                             required
+                            maxLength={INPUT_LIMITS.counseling.counselorName}
                             placeholder="ระบุชื่อครูที่พูดคุย"
                             value={formData.counselorName}
                             onChange={(e) =>
@@ -197,6 +199,7 @@ export function AddCounselingModal({
                             autoComplete="off"
                             required
                             rows={4}
+                            maxLength={INPUT_LIMITS.counseling.summary}
                             placeholder="บันทึกสรุปประเด็นที่พูดคุย…"
                             value={formData.summary}
                             onChange={(e) =>

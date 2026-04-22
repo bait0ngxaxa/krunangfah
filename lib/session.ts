@@ -6,7 +6,33 @@
  */
 
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import type { UserRole } from "@/types/auth.types";
+import type { Session } from "next-auth";
 import { cache } from "react";
+
+interface FreshAccessClaims {
+    role: UserRole;
+    isPrimary: boolean;
+    schoolId: string | null;
+}
+
+async function getFreshAccessClaims(
+    userId: string,
+): Promise<FreshAccessClaims | null> {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true, isPrimary: true, schoolId: true },
+    });
+
+    if (!user) return null;
+
+    return {
+        role: user.role as UserRole,
+        isPrimary: user.isPrimary,
+        schoolId: user.schoolId,
+    };
+}
 
 /**
  * Get current session on server side
@@ -31,7 +57,20 @@ export async function requireAuth() {
         throw new Error("Unauthorized");
     }
 
-    return session;
+    const freshClaims = await getFreshAccessClaims(session.user.id);
+    if (!freshClaims) {
+        throw new Error("Unauthorized");
+    }
+
+    return {
+        ...session,
+        user: {
+            ...session.user,
+            role: freshClaims.role,
+            isPrimary: freshClaims.isPrimary,
+            schoolId: freshClaims.schoolId,
+        },
+    } satisfies Session;
 }
 
 /**

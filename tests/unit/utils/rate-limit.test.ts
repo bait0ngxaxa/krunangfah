@@ -142,6 +142,25 @@ describe("createRateLimiter", () => {
             expect(second.allowed).toBe(false);
         });
     });
+
+    describe("memory guard", () => {
+        it("evicts the oldest key when maxEntries is exceeded", () => {
+            limiter = createRateLimiter({
+                maxRequests: 1,
+                windowMs: 60_000,
+                name: "bounded-limiter",
+                maxEntries: 2,
+            });
+
+            limiter.check("ip-1");
+            limiter.check("ip-2");
+            limiter.check("ip-3");
+
+            const result = limiter.check("ip-1");
+            expect(result.allowed).toBe(true);
+            expect(result.remaining).toBe(0);
+        });
+    });
 });
 
 describe("extractClientIp", () => {

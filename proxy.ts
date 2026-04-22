@@ -24,12 +24,6 @@ const protectedRoutes = [
     "/settings",
 ];
 
-// Routes ที่ต้องเป็น school_admin หรือ system_admin
-const adminOnlyRoutes = ["/teachers/add", "/teachers/manage"];
-
-// Routes ที่ต้องเป็น system_admin เท่านั้น
-const systemAdminOnlyRoutes = ["/admin/invites", "/admin/users"];
-
 // Routes สำหรับ guest เท่านั้น (ถ้า login แล้วจะ redirect ไป dashboard)
 const guestOnlyRoutes = ["/signin", "/forgot-password", "/reset-password"];
 
@@ -61,8 +55,6 @@ export default auth((req) => {
     // ─── Route Protection ───
 
     const isLoggedIn = !!session;
-    const userRole = session?.user?.role;
-
     // ถ้าเป็น public routes ให้ผ่าน
     if (pathname === "/" || pathname.startsWith("/invite/")) {
         return NextResponse.next();
@@ -88,25 +80,9 @@ export default auth((req) => {
     // Both teacher profile and schoolId checks are in (protected)/layout.tsx via DB query
     // No JWT-based onboarding check here — avoids stale JWT loop
 
-    // ถ้าเป็น system_admin-only routes แต่ไม่ใช่ system_admin redirect ไป dashboard
-    const isSystemAdminOnlyRoute = systemAdminOnlyRoutes.some((route) =>
-        pathname.startsWith(route),
-    );
-    if (isSystemAdminOnlyRoute && userRole !== "system_admin") {
-        return NextResponse.redirect(new URL("/dashboard", nextUrl));
-    }
-
-    // ถ้าเป็น admin-only routes แต่ไม่ใช่ school_admin หรือ system_admin redirect ไป dashboard
-    const isAdminOnlyRoute = adminOnlyRoutes.some((route) =>
-        pathname.startsWith(route),
-    );
-    if (
-        isAdminOnlyRoute &&
-        userRole !== "school_admin" &&
-        userRole !== "system_admin"
-    ) {
-        return NextResponse.redirect(new URL("/dashboard", nextUrl));
-    }
+    // NOTE: Role-based checks must happen in server components/actions
+    // using DB-refreshed claims (see requireAuth in lib/session.ts).
+    // Avoid role gating in proxy because it reads JWT claims that can be stale.
 
     return NextResponse.next();
 });

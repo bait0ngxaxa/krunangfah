@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import {
     counselingSessionSchema,
     updateCounselingSessionSchema,
@@ -81,6 +82,19 @@ describe("counselingSessionSchema", () => {
                 );
             }
         });
+
+        it("should reject counselorName longer than configured limit", () => {
+            const data = {
+                studentId: "clxyz123456789abcdef",
+                sessionDate: new Date(),
+                counselorName: "ก".repeat(
+                    INPUT_LIMITS.counseling.counselorName + 1,
+                ),
+                summary: "บันทึก",
+            };
+            const result = counselingSessionSchema.safeParse(data);
+            expect(result.success).toBe(false);
+        });
     });
 
     describe("Invalid summary", () => {
@@ -98,6 +112,17 @@ describe("counselingSessionSchema", () => {
                     "กรุณากรอกบันทึกการให้คำปรึกษา",
                 );
             }
+        });
+
+        it("should reject summary longer than configured limit", () => {
+            const data = {
+                studentId: "clxyz123456789abcdef",
+                sessionDate: new Date(),
+                counselorName: "ครูสมชาย",
+                summary: "ก".repeat(INPUT_LIMITS.counseling.summary + 1),
+            };
+            const result = counselingSessionSchema.safeParse(data);
+            expect(result.success).toBe(false);
         });
     });
 });

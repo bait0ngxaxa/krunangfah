@@ -12,6 +12,8 @@ export interface RateLimitConfig {
     windowMs: number;
     /** Human-readable identifier for this limiter (for logging) */
     name: string;
+    /** Maximum number of distinct keys stored in memory at once */
+    maxEntries?: number;
 }
 
 /**

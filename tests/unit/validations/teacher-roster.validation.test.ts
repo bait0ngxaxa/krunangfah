@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import {
     teacherRosterSchema,
     ADMIN_ADVISORY_CLASS,
@@ -150,6 +151,15 @@ describe("teacherRosterSchema", () => {
             expect(result.success).toBe(false);
         });
 
+        it("should reject firstName longer than configured limit", () => {
+            const result = teacherRosterSchema.safeParse(
+                validClassTeacher({
+                    firstName: "ก".repeat(INPUT_LIMITS.teacher.firstName + 1),
+                }),
+            );
+            expect(result.success).toBe(false);
+        });
+
         it("should reject empty lastName", () => {
             const result = teacherRosterSchema.safeParse(
                 validClassTeacher({ lastName: "" }),
@@ -160,6 +170,17 @@ describe("teacherRosterSchema", () => {
         it("should reject empty schoolRole", () => {
             const result = teacherRosterSchema.safeParse(
                 validClassTeacher({ schoolRole: "" }),
+            );
+            expect(result.success).toBe(false);
+        });
+
+        it("should reject schoolRole longer than configured limit", () => {
+            const result = teacherRosterSchema.safeParse(
+                validClassTeacher({
+                    schoolRole: "ก".repeat(
+                        INPUT_LIMITS.teacher.schoolRole + 1,
+                    ),
+                }),
             );
             expect(result.success).toBe(false);
         });

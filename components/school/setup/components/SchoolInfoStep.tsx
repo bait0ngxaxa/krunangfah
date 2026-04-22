@@ -1,6 +1,7 @@
 "use client";
 
 import { Building2, ArrowRight } from "lucide-react";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import type { SchoolInfoStepProps } from "../types";
 
 export function SchoolInfoStep({
@@ -35,6 +36,7 @@ export function SchoolInfoStep({
                     <input
                         {...register("name")}
                         type="text"
+                        maxLength={INPUT_LIMITS.school.name}
                         placeholder="เช่น โรงเรียนสาธิตมหาวิทยาลัย"
                         className="w-full px-4 py-3 border-2 border-gray-200 hover:border-gray-300 focus:border-[var(--brand-primary)] rounded-xl outline-none text-gray-900 placeholder:text-gray-400 transition-colors"
                         disabled={isSubmitting}
@@ -56,6 +58,7 @@ export function SchoolInfoStep({
                     <input
                         {...register("province")}
                         type="text"
+                        maxLength={INPUT_LIMITS.school.province}
                         placeholder="เช่น กรุงเทพมหานคร"
                         className="w-full px-4 py-3 border-2 border-gray-200 hover:border-gray-300 focus:border-[var(--brand-primary)] rounded-xl outline-none text-gray-900 placeholder:text-gray-400 transition-colors"
                         disabled={isSubmitting}

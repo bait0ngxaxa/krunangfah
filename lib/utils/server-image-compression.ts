@@ -2,6 +2,7 @@ import sharp from "sharp";
 import { TARGET_COMPRESSED_IMAGE_SIZE } from "@/lib/constants/image-upload";
 
 const MAX_DIMENSION = 1920;
+const MAX_INPUT_PIXELS = 40_000_000;
 const PNG_COMPRESSION_LEVEL = 9;
 const COMPRESSION_QUALITIES = [80, 70, 60, 50] as const;
 
@@ -21,7 +22,10 @@ export function isSupportedWorksheetImageExtension(
 }
 
 function buildBasePipeline(inputBuffer: Buffer<ArrayBufferLike>): sharp.Sharp {
-    return sharp(inputBuffer, { failOn: "error" })
+    return sharp(inputBuffer, {
+        failOn: "error",
+        limitInputPixels: MAX_INPUT_PIXELS,
+    })
         .rotate()
         .resize({
             width: MAX_DIMENSION,

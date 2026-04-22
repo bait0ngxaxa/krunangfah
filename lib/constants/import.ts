@@ -1,0 +1,3 @@
+export const MAX_IMPORT_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+export const MAX_IMPORT_ROW_COUNT = 1000;
+export const IMPORT_PREVIEW_PAGE_SIZE = 100;

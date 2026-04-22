@@ -16,6 +16,7 @@ import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import type { UploadWorksheetResult } from "./types";
 import { logError } from "@/lib/utils/logging";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
+import { MAX_IMAGE_UPLOAD_INPUT_SIZE } from "@/lib/constants/image-upload";
 import {
     UPLOAD_WORKSHEETS_DIR,
     buildWorksheetFilePath,
@@ -86,6 +87,13 @@ export async function uploadWorksheet(
                 success: false,
                 message: "ไม่พบไฟล์ใบงาน",
                 error: "UPLOAD_FILE_MISSING",
+            };
+        }
+        if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {
+            return {
+                success: false,
+                message: "ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด 8MB)",
+                error: "UPLOAD_FILE_TOO_LARGE",
             };
         }
 

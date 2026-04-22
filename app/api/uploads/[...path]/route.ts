@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { readFile } from "fs/promises";
+import { createReadStream } from "fs";
 import { join, resolve, normalize } from "path";
 import { existsSync } from "fs";
+import { Readable } from "stream";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { canAccessStudentByRole } from "@/lib/security/student-access";
@@ -170,16 +171,15 @@ export async function GET(
             return new NextResponse("Forbidden", { status: 403 });
         }
 
-        // Read file
-        // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath validated via startsWith(uploadsDir) and extension whitelist above
-        const fileBuffer = await readFile(filePath);
         const contentType = getContentType(ext);
+        // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath validated via startsWith(uploadsDir) and extension whitelist above
+        const fileStream = createReadStream(filePath);
 
         // Sanitize filename for Content-Disposition header
         const rawFileName = path[path.length - 1];
         const safeFileName = rawFileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 
-        return new NextResponse(fileBuffer, {
+        return new NextResponse(Readable.toWeb(fileStream) as ReadableStream, {
             headers: {
                 "Content-Type": contentType,
                 "Content-Disposition": `inline; filename="${safeFileName}"`,

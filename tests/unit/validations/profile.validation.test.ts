@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import {
     profileUpdateSchema,
     passwordChangeSchema,
@@ -32,6 +33,15 @@ describe("profileUpdateSchema", () => {
         expect(result.success).toBe(false);
     });
 
+    it("should reject firstName longer than configured limit", () => {
+        const result = profileUpdateSchema.safeParse(
+            validProfile({
+                firstName: "ก".repeat(INPUT_LIMITS.teacher.firstName + 1),
+            }),
+        );
+        expect(result.success).toBe(false);
+    });
+
     it("should reject empty lastName", () => {
         const result = profileUpdateSchema.safeParse(
             validProfile({ lastName: "" }),
@@ -59,6 +69,15 @@ describe("profileUpdateSchema", () => {
     it("should reject invalid projectRole", () => {
         const result = profileUpdateSchema.safeParse(
             validProfile({ projectRole: "boss" }),
+        );
+        expect(result.success).toBe(false);
+    });
+
+    it("should reject schoolRole longer than configured limit", () => {
+        const result = profileUpdateSchema.safeParse(
+            validProfile({
+                schoolRole: "ก".repeat(INPUT_LIMITS.teacher.schoolRole + 1),
+            }),
         );
         expect(result.success).toBe(false);
     });

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
 import { revalidatePath } from "next/cache";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { normalizeSchoolName, sanitizeText } from "@/lib/utils/text-sanitizer";
 import { logError } from "@/lib/utils/logging";
@@ -36,11 +37,11 @@ const schoolSetupSchema = z.object({
     name: z
         .string()
         .min(1, "กรุณากรอกชื่อโรงเรียน")
-        .max(200, "ชื่อโรงเรียนยาวเกินไป")
+        .max(INPUT_LIMITS.school.name, "ชื่อโรงเรียนยาวเกินไป")
         .transform(normalizeSchoolName),
     province: z
         .string()
-        .max(100, "ชื่อจังหวัดยาวเกินไป")
+        .max(INPUT_LIMITS.school.province, "ชื่อจังหวัดยาวเกินไป")
         .transform(sanitizeText)
         .optional(),
 });
@@ -48,7 +49,7 @@ const schoolSetupSchema = z.object({
 const classNameSchema = z
     .string()
     .min(1, "กรุณากรอกชื่อห้องเรียน")
-    .max(50, "ชื่อห้องเรียนยาวเกินไป");
+    .max(INPUT_LIMITS.school.className, "ชื่อห้องเรียนยาวเกินไป");
 
 /**
  * สร้างโรงเรียนและผูก schoolId เข้ากับ user ปัจจุบัน (school_admin only)

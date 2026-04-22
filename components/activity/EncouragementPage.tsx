@@ -46,28 +46,32 @@ export function EncouragementPage({
     // Step 1 animations
     useEffect(() => {
         if (step !== 1) return;
+        const timers: number[] = [];
 
         // Animate main messages one by one
         mainMessages.forEach((_, index) => {
-            setTimeout(
+            const timer = window.setTimeout(
                 () => {
                     setVisibleLines((prev) => [...prev, index]);
                 },
                 800 * (index + 1),
             );
+            timers.push(timer);
         });
 
         // Show tips section after main messages
-        setTimeout(
+        timers.push(
+            window.setTimeout(
             () => {
                 setShowTips(true);
             },
             800 * (mainMessages.length + 1),
+            ),
         );
 
         // Animate tip messages
         tipMessages.forEach((_, index) => {
-            setTimeout(
+            const timer = window.setTimeout(
                 () => {
                     setVisibleLines((prev) => [
                         ...prev,
@@ -76,15 +80,22 @@ export function EncouragementPage({
                 },
                 800 * (mainMessages.length + 2 + index),
             );
+            timers.push(timer);
         });
 
         // Show continue button at the end
-        setTimeout(
+        timers.push(
+            window.setTimeout(
             () => {
                 setShowButton(true);
             },
             800 * (mainMessages.length + tipMessages.length + 3),
+            ),
         );
+
+        return () => {
+            timers.forEach((timer) => window.clearTimeout(timer));
+        };
     }, [step, mainMessages, tipMessages]);
 
     const handleContinue = () => {

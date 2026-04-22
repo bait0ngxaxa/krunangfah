@@ -5,6 +5,7 @@ import {
     USER_ROLE_OPTIONS,
     PROJECT_ROLE_OPTIONS,
 } from "@/lib/constants/roles";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import type { RosterFormProps } from "../types";
 
 export function RosterForm({
@@ -53,6 +54,7 @@ export function RosterForm({
                 <div className="col-span-1 sm:col-span-2">
                     <input
                         {...register("firstName")}
+                        maxLength={INPUT_LIMITS.teacher.firstName}
                         placeholder="ชื่อ *"
                         className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[var(--brand-primary)] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                     />
@@ -65,6 +67,7 @@ export function RosterForm({
                 <div className="col-span-1 sm:col-span-2">
                     <input
                         {...register("lastName")}
+                        maxLength={INPUT_LIMITS.teacher.lastName}
                         placeholder="นามสกุล *"
                         className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[var(--brand-primary)] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                     />
@@ -156,6 +159,7 @@ export function RosterForm({
                     <div>
                         <input
                             {...register("schoolRole")}
+                            maxLength={INPUT_LIMITS.teacher.schoolRole}
                             placeholder="บทบาทในโรงเรียน *"
                             className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-[var(--brand-primary)] bg-white text-gray-900 placeholder:text-gray-400"
                         />
@@ -170,6 +174,7 @@ export function RosterForm({
                     <div>
                         <input
                             {...register("schoolRole")}
+                            maxLength={INPUT_LIMITS.teacher.schoolRole}
                             placeholder="บทบาทในโรงเรียน *"
                             className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-[var(--brand-primary)] bg-white text-gray-900 placeholder:text-gray-400"
                         />

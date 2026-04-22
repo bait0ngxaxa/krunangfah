@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { projectRoles } from "./teacher.validation";
 
 /**
@@ -10,15 +11,27 @@ import { projectRoles } from "./teacher.validation";
  * School information cannot be edited to maintain data integrity
  */
 export const profileUpdateSchema = z.object({
-    firstName: z.string().min(1, "กรุณากรอกชื่อ"),
-    lastName: z.string().min(1, "กรุณากรอกนามสกุล"),
+    firstName: z
+        .string()
+        .min(1, "กรุณากรอกชื่อ")
+        .max(INPUT_LIMITS.teacher.firstName, "ชื่อยาวเกินไป"),
+    lastName: z
+        .string()
+        .min(1, "กรุณากรอกนามสกุล")
+        .max(INPUT_LIMITS.teacher.lastName, "นามสกุลยาวเกินไป"),
     age: z
         .number({ error: "กรุณากรอกอายุเป็นตัวเลข" })
         .min(18, "อายุต้องมากกว่า 18 ปี")
         .max(100, "อายุไม่ถูกต้อง"),
-    advisoryClass: z.string().min(1, "กรุณากรอกชั้นที่ปรึกษา"),
+    advisoryClass: z
+        .string()
+        .min(1, "กรุณากรอกชั้นที่ปรึกษา")
+        .max(INPUT_LIMITS.teacher.advisoryClass, "ชั้นที่ปรึกษายาวเกินไป"),
     academicYearId: z.string().min(1, "กรุณาเลือกปีการศึกษา"),
-    schoolRole: z.string().min(1, "กรุณากรอกบทบาทหน้าที่ในโรงเรียน"),
+    schoolRole: z
+        .string()
+        .min(1, "กรุณากรอกบทบาทหน้าที่ในโรงเรียน")
+        .max(INPUT_LIMITS.teacher.schoolRole, "บทบาทหน้าที่ยาวเกินไป"),
     projectRole: z.enum(projectRoles, { message: "กรุณาเลือกบทบาทในโครงการ" }),
 });
 

@@ -1,12 +1,19 @@
 import { z } from "zod";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 
 export const PROJECT_ROLE_VALUES = ["lead", "care", "coordinate"] as const;
 export const USER_ROLE_VALUES = ["school_admin", "class_teacher"] as const;
 
 export const teacherInviteSchema = z.object({
     email: z.string().email("อีเมลไม่ถูกต้อง"),
-    firstName: z.string().min(1, "กรุณากรอกชื่อ"),
-    lastName: z.string().min(1, "กรุณากรอกสกุล"),
+    firstName: z
+        .string()
+        .min(1, "กรุณากรอกชื่อ")
+        .max(INPUT_LIMITS.teacher.firstName, "ชื่อยาวเกินไป"),
+    lastName: z
+        .string()
+        .min(1, "กรุณากรอกสกุล")
+        .max(INPUT_LIMITS.teacher.lastName, "นามสกุลยาวเกินไป"),
     age: z
         .string()
         .min(1, "กรุณากรอกอายุ")
@@ -20,9 +27,15 @@ export const teacherInviteSchema = z.object({
     userRole: z.enum(USER_ROLE_VALUES, {
         message: "กรุณาเลือกประเภทครู",
     }),
-    advisoryClass: z.string().min(1, "กรุณากรอกชั้นที่ปรึกษา"),
+    advisoryClass: z
+        .string()
+        .min(1, "กรุณากรอกชั้นที่ปรึกษา")
+        .max(INPUT_LIMITS.teacher.advisoryClass, "ชั้นที่ปรึกษายาวเกินไป"),
     academicYearId: z.string().min(1, "กรุณาเลือกปีการศึกษา"),
-    schoolRole: z.string().min(1, "กรุณากรอกบทบาทในโรงเรียน"),
+    schoolRole: z
+        .string()
+        .min(1, "กรุณากรอกบทบาทในโรงเรียน")
+        .max(INPUT_LIMITS.teacher.schoolRole, "บทบาทหน้าที่ยาวเกินไป"),
     projectRole: z.enum(PROJECT_ROLE_VALUES, {
         message: "กรุณาเลือกบทบาทในโครงการ",
     }),

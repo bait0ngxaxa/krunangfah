@@ -8,6 +8,7 @@ import { getSchoolRoster } from "@/lib/actions/teacher-roster.actions";
 import { getMyTeacherInvites } from "@/lib/actions/teacher-invite";
 import { TeacherSetupTabs } from "@/components/teacher/TeacherSetupTabs";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
     title: "จัดการครูและเชิญเข้าระบบ | โครงการครูนางฟ้า",
@@ -16,6 +17,14 @@ export const metadata: Metadata = {
 
 export default async function AddTeacherPage() {
     const session = await requireAuth();
+    const canManageTeachers =
+        session.user.role === "system_admin" ||
+        session.user.role === "school_admin";
+
+    if (!canManageTeachers) {
+        redirect("/dashboard");
+    }
+
     const isPrimary = session.user.isPrimary === true;
 
     const [academicYears, classes, roster, inviteResult] = await Promise.all([

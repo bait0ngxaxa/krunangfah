@@ -52,9 +52,24 @@ export function ActivityCompletionPage({
 
     // Animate elements
     useEffect(() => {
-        setTimeout(() => setThankYouVisible(true), 500);
-        setTimeout(() => setScheduleVisible(true), 1500);
-        setTimeout(() => setFinalButtonVisible(true), 2500);
+        const thankYouTimer = window.setTimeout(
+            () => setThankYouVisible(true),
+            500,
+        );
+        const scheduleTimer = window.setTimeout(
+            () => setScheduleVisible(true),
+            1500,
+        );
+        const finalButtonTimer = window.setTimeout(
+            () => setFinalButtonVisible(true),
+            2500,
+        );
+
+        return () => {
+            window.clearTimeout(thankYouTimer);
+            window.clearTimeout(scheduleTimer);
+            window.clearTimeout(finalButtonTimer);
+        };
     }, []);
 
     const handleBackToDashboard = () => {

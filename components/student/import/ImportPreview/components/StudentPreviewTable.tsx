@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { type PhqScores } from "@/lib/utils/phq-scoring";
+import { IMPORT_PREVIEW_PAGE_SIZE } from "@/lib/constants/import";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 import type { PreviewStudent } from "../types";
 
@@ -23,6 +24,32 @@ const SCORE_KEYS = [
     "q8",
     "q9",
 ] as const;
+
+function getScoreValue(
+    scores: PhqScores,
+    key: (typeof SCORE_KEYS)[number],
+): number {
+    switch (key) {
+        case "q1":
+            return scores.q1;
+        case "q2":
+            return scores.q2;
+        case "q3":
+            return scores.q3;
+        case "q4":
+            return scores.q4;
+        case "q5":
+            return scores.q5;
+        case "q6":
+            return scores.q6;
+        case "q7":
+            return scores.q7;
+        case "q8":
+            return scores.q8;
+        case "q9":
+            return scores.q9;
+    }
+}
 
 /**
  * Controlled score input with local editing state.
@@ -98,8 +125,60 @@ export function StudentPreviewTable({
     students,
     onScoreUpdate,
 }: StudentPreviewTableProps) {
+    const [currentPage, setCurrentPage] = useState(1);
+    const totalPages = Math.max(
+        1,
+        Math.ceil(students.length / IMPORT_PREVIEW_PAGE_SIZE),
+    );
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+    const pageStudents = useMemo(() => {
+        const startIndex = (safeCurrentPage - 1) * IMPORT_PREVIEW_PAGE_SIZE;
+        return students.slice(startIndex, startIndex + IMPORT_PREVIEW_PAGE_SIZE);
+    }, [safeCurrentPage, students]);
+
+    const pageStart = (safeCurrentPage - 1) * IMPORT_PREVIEW_PAGE_SIZE;
+
     return (
         <div className="bg-white rounded-4xl shadow-sm overflow-hidden border-2 border-gray-100 relative">
+            {students.length > 0 && (
+                <div className="flex flex-col gap-3 border-b border-gray-100 bg-white px-4 py-3 text-sm text-gray-600 md:flex-row md:items-center md:justify-between">
+                    <p>
+                        แสดงข้อมูล {pageStart + 1}-
+                        {Math.min(
+                            pageStart + IMPORT_PREVIEW_PAGE_SIZE,
+                            students.length,
+                        )}{" "}
+                        จากทั้งหมด {students.length} คน
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setCurrentPage((page) => Math.max(1, page - 1))
+                            }
+                            disabled={safeCurrentPage === 1}
+                            className="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 transition-base hover:border-emerald-300 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            ก่อนหน้า
+                        </button>
+                        <span className="min-w-20 text-center font-medium text-gray-700">
+                            หน้า {safeCurrentPage}/{totalPages}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setCurrentPage((page) =>
+                                    Math.min(totalPages, page + 1),
+                                )
+                            }
+                            disabled={safeCurrentPage === totalPages}
+                            className="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 transition-base hover:border-emerald-300 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            ถัดไป
+                        </button>
+                    </div>
+                </div>
+            )}
             <div className="max-h-[600px] overflow-y-auto">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-emerald-100">
@@ -138,13 +217,13 @@ export function StudentPreviewTable({
                             </tr>
                         </thead>
                         <tbody className="bg-white/30 divide-y divide-emerald-50">
-                            {students.map((student, index) => (
+                            {pageStudents.map((student, index) => (
                                 <tr
-                                    key={index}
+                                    key={student._originalIndex}
                                     className="hover:bg-white/60 transition-colors group"
                                 >
                                     <td className="px-4 py-2 text-sm text-gray-500 font-medium">
-                                        {index + 1}
+                                        {pageStart + index + 1}
                                     </td>
                                     <td className="px-4 py-2 text-sm font-bold text-gray-800 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
                                         {student.firstName} {student.lastName}
@@ -152,33 +231,23 @@ export function StudentPreviewTable({
                                     <td className="px-4 py-2 text-sm text-center text-gray-600">
                                         {student.class}
                                     </td>
-                                    {/* Editable score inputs (0-3) — Map created once per student */}
-                                    {(() => {
-                                        const scoreMap = new Map(
-                                            Object.entries(student.scores),
-                                        );
-                                        return SCORE_KEYS.map((key) => (
-                                            <td
-                                                key={key}
-                                                className="px-0.5 py-2"
-                                            >
-                                                <ScoreInput
-                                                    value={
-                                                        (scoreMap.get(
-                                                            key,
-                                                        ) as number) ?? 0
-                                                    }
-                                                    onChange={(val) =>
-                                                        onScoreUpdate(
-                                                            student._originalIndex,
-                                                            key,
-                                                            val,
-                                                        )
-                                                    }
-                                                />
-                                            </td>
-                                        ));
-                                    })()}
+                                    {SCORE_KEYS.map((key) => (
+                                        <td key={key} className="px-0.5 py-2">
+                                            <ScoreInput
+                                                value={getScoreValue(
+                                                    student.scores,
+                                                    key,
+                                                )}
+                                                onChange={(val) =>
+                                                    onScoreUpdate(
+                                                        student._originalIndex,
+                                                        key,
+                                                        val,
+                                                    )
+                                                }
+                                            />
+                                        </td>
+                                    ))}
                                     {/* Clickable opt1 toggle */}
                                     <td className="px-0.5 py-2 text-center">
                                         <button

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ExcelUploader } from "@/components/student/import/ExcelUploader";
@@ -26,6 +26,15 @@ const ImportPreview = dynamic(
 export function ImportClient() {
     const router = useRouter();
     const [parsedData, setParsedData] = useState<ParsedStudent[] | null>(null);
+    const redirectTimerRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (redirectTimerRef.current) {
+                window.clearTimeout(redirectTimerRef.current);
+            }
+        };
+    }, []);
 
     const handleDataParsed = (data: ParsedStudent[]) => {
         setParsedData(data);
@@ -46,7 +55,10 @@ export function ImportClient() {
                 description: result.message,
             });
         }
-        setTimeout(() => {
+        if (redirectTimerRef.current) {
+            window.clearTimeout(redirectTimerRef.current);
+        }
+        redirectTimerRef.current = window.setTimeout(() => {
             router.push("/dashboard");
         }, 2000);
     };

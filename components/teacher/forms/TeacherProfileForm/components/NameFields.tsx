@@ -1,4 +1,5 @@
 import type { NameFieldsProps } from "../types";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 
 export function NameFields({
     register,
@@ -16,6 +17,7 @@ export function NameFields({
                 <input
                     {...register("firstName")}
                     type="text"
+                    maxLength={INPUT_LIMITS.teacher.firstName}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="กรอกชื่อ"
                 />
@@ -36,6 +38,7 @@ export function NameFields({
                 <input
                     {...register("lastName")}
                     type="text"
+                    maxLength={INPUT_LIMITS.teacher.lastName}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="กรอกนามสกุล"
                 />

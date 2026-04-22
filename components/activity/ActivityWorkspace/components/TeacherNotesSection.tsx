@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, FileText, Save, Pencil, X } from "lucide-react";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 
 interface TeacherNotesSectionProps {
     notes: string;
@@ -64,6 +65,7 @@ export function TeacherNotesSection({
                     </p>
                     <textarea
                         value={notes}
+                        maxLength={INPUT_LIMITS.activity.teacherNotes}
                         onChange={(e) => onNotesChange(e.target.value)}
                         placeholder="พิมพ์บันทึกของคุณที่นี่..."
                         className="w-full flex-1 resize-none rounded-xl border border-gray-200 bg-white p-4 transition-base placeholder:text-gray-300 focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"

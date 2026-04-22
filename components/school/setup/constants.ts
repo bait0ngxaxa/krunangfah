@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Building2, LayoutGrid, Users, ClipboardCheck } from "lucide-react";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 
 /** Normalize school name: trim → remove space after "โรงเรียน" → add prefix if missing */
 function normalizeSchoolName(raw: string): string {
@@ -17,9 +18,12 @@ export const schoolInfoSchema = z.object({
     name: z
         .string()
         .min(1, "กรุณากรอกชื่อโรงเรียน")
-        .max(200, "ชื่อโรงเรียนยาวเกินไป")
+        .max(INPUT_LIMITS.school.name, "ชื่อโรงเรียนยาวเกินไป")
         .transform(normalizeSchoolName),
-    province: z.string().max(100, "ชื่อจังหวัดยาวเกินไป").optional(),
+    province: z
+        .string()
+        .max(INPUT_LIMITS.school.province, "ชื่อจังหวัดยาวเกินไป")
+        .optional(),
 });
 
 export type SchoolInfoData = z.infer<typeof schoolInfoSchema>;

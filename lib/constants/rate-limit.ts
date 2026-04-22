@@ -56,3 +56,6 @@ export const RATE_LIMIT_PASSWORD_CHANGE: RateLimitConfig = {
 
 /** Interval for cleaning up expired rate limit entries (ms) */
 export const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60 * 1000;
+
+/** Maximum number of distinct rate-limit keys kept in memory per limiter */
+export const RATE_LIMIT_MAX_ENTRIES = 5000;

@@ -11,6 +11,7 @@ import {
     X,
 } from "lucide-react";
 import { updateHospitalReferral } from "@/lib/actions/hospital-referral.actions";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 
@@ -210,7 +211,10 @@ export function ReferralFormModal({
                                         setHospitalName(e.target.value)
                                     }
                                     placeholder="เช่น โรงพยาบาลศิริราช"
-                                    maxLength={200}
+                                    maxLength={
+                                        INPUT_LIMITS.hospitalReferral
+                                            .hospitalName
+                                    }
                                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-base text-gray-800 placeholder:text-gray-400"
                                 />
                             </div>

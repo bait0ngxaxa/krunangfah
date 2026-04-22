@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, Loader2, X, ImageIcon } from "lucide-react";
 import { compressImage } from "@/lib/utils/image-compression";
+import { MAX_IMAGE_UPLOAD_INPUT_SIZE } from "@/lib/constants/image-upload";
 import {
     UPLOAD_ACTION_TIMEOUT_MS,
     withTimeout,
@@ -60,6 +61,10 @@ export function HomeVisitPhotoUploader({
         // Reset value so selecting the same file triggers onChange again.
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
+        }
+        if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {
+            toast.error("ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด 8MB)");
+            return;
         }
 
         setUploading(true);

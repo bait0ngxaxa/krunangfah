@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { UserRole, ProjectRole } from "@prisma/client";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { sanitizeName, sanitizeText } from "@/lib/utils/text-sanitizer";
 
 // ดึง enum values จาก Prisma โดยตรง — ไม่ hardcode
@@ -16,12 +17,12 @@ export const teacherRosterSchema = z
         firstName: z
             .string()
             .min(1, "กรุณากรอกชื่อ")
-            .max(100, "ชื่อยาวเกินไป")
+            .max(INPUT_LIMITS.teacher.firstName, "ชื่อยาวเกินไป")
             .transform(sanitizeName),
         lastName: z
             .string()
             .min(1, "กรุณากรอกนามสกุล")
-            .max(100, "นามสกุลยาวเกินไป")
+            .max(INPUT_LIMITS.teacher.lastName, "นามสกุลยาวเกินไป")
             .transform(sanitizeName),
         email: z.string().email("อีเมลไม่ถูกต้อง").optional().or(z.literal("")),
         age: z
@@ -31,11 +32,13 @@ export const teacherRosterSchema = z
         userRole: z.enum(userRoleValues as [string, ...string[]], {
             message: "กรุณาเลือกประเภทครู",
         }),
-        advisoryClass: z.string(),
+        advisoryClass: z
+            .string()
+            .max(INPUT_LIMITS.teacher.advisoryClass, "ชั้นที่ปรึกษายาวเกินไป"),
         schoolRole: z
             .string()
             .min(1, "กรุณากรอกบทบาทในโรงเรียน")
-            .max(200, "บทบาทหน้าที่ยาวเกินไป")
+            .max(INPUT_LIMITS.teacher.schoolRole, "บทบาทหน้าที่ยาวเกินไป")
             .transform(sanitizeText),
         projectRole: z.enum(projectRoleValues as [string, ...string[]], {
             message: "กรุณาเลือกบทบาทในโครงการ",
