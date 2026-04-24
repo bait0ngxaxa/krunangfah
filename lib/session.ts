@@ -1,14 +1,8 @@
-/**
- * Session helpers - wrapper functions around NextAuth's auth()
- *
- * ใช้สำหรับตรวจสอบ session และสิทธิ์ผู้ใช้ใน Server Components / Server Actions
- * NextAuth config อยู่ที่ @/auth (root)
- */
-
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { UserRole } from "@/types/auth.types";
 import type { Session } from "next-auth";
+import { redirect } from "next/navigation";
 import { cache } from "react";
 
 interface FreshAccessClaims {
@@ -46,20 +40,21 @@ export const getServerSession = cache(async () => {
 });
 
 /**
- * Require authentication - throws if not authenticated
- * @returns Session object
- * @throws Error if not authenticated
+ * Require authentication - redirects to signin if not authenticated.
+ * Uses redirect() instead of throw to prevent error page loops
+ * when JWT references a deleted user (e.g. after DB reset).
+ * @returns Session object (never returns if unauthenticated)
  */
 export async function requireAuth() {
     const session = await getServerSession();
 
     if (!session || !session.user) {
-        throw new Error("Unauthorized");
+        redirect("/signin");
     }
 
     const freshClaims = await getFreshAccessClaims(session.user.id);
     if (!freshClaims) {
-        throw new Error("Unauthorized");
+        redirect("/signin");
     }
 
     return {

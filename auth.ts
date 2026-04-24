@@ -133,6 +133,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.isPrimary = user.isPrimary;
                 token.schoolId = user.schoolId;
                 token.lastActivity = Date.now();
+                token.lastDbCheck = Date.now();
             }
 
             // Re-sync role and schoolId from DB on session update
@@ -142,11 +143,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     select: { role: true, isPrimary: true, schoolId: true },
                 });
 
-                if (dbUser) {
-                    token.role = dbUser.role as UserRole;
-                    token.isPrimary = dbUser.isPrimary;
-                    token.schoolId = dbUser.schoolId;
-                }
+                if (!dbUser) return null;
+
+                token.role = dbUser.role as UserRole;
+                token.isPrimary = dbUser.isPrimary;
+                token.schoolId = dbUser.schoolId;
+                token.lastDbCheck = Date.now();
+            }
+
+            // Periodic DB existence check (every 5 minutes)
+            // Prevents stale JWT loops after DB reset
+            const DB_CHECK_INTERVAL = 5 * 60 * 1000;
+            const lastDbCheck =
+                (token.lastDbCheck as number | undefined) ?? 0;
+
+            if (token.id && Date.now() - lastDbCheck > DB_CHECK_INTERVAL) {
+                const exists = await prisma.user.findUnique({
+                    where: { id: token.id as string },
+                    select: { id: true },
+                });
+
+                if (!exists) return null;
+
+                token.lastDbCheck = Date.now();
             }
 
             // Check idle timeout (30 minutes)
