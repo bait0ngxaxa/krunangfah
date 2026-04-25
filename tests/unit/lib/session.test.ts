@@ -38,10 +38,11 @@ describe("lib/session", () => {
         vi.clearAllMocks();
     });
 
-    it("requireAuth throws when session is missing", async () => {
+    it("requireAuth redirects to /signin when session is missing", async () => {
         vi.mocked(auth).mockResolvedValue(null);
 
-        await expect(requireAuth()).rejects.toThrow("Unauthorized");
+        // redirect() in Next.js throws a NEXT_REDIRECT error internally
+        await expect(requireAuth()).rejects.toThrow("NEXT_REDIRECT");
     });
 
     it("requireAuth refreshes role/isPrimary/schoolId from DB", async () => {
@@ -63,11 +64,12 @@ describe("lib/session", () => {
         expect(session.user.schoolId).toBe("school-b");
     });
 
-    it("requireAuth throws when user no longer exists in DB", async () => {
+    it("requireAuth redirects to /signin when user no longer exists in DB", async () => {
         vi.mocked(auth).mockResolvedValue(createSession());
         vi.mocked(prisma.user.findUnique).mockResolvedValue(null as never);
 
-        await expect(requireAuth()).rejects.toThrow("Unauthorized");
+        // redirect() in Next.js throws a NEXT_REDIRECT error internally
+        await expect(requireAuth()).rejects.toThrow("NEXT_REDIRECT");
     });
 
     it("requireAdmin allows promoted user immediately from DB claims", async () => {
