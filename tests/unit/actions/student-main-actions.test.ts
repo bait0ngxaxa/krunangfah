@@ -40,16 +40,18 @@ import {
     getStudentRiskCounts,
     getStudentsForDashboard,
 } from "@/lib/actions/student/main";
+import type { ViewerContext } from "@/lib/auth/viewer-context";
 
 describe("student main actions compatibility", () => {
     beforeEach(() => {
         vi.resetAllMocks();
         vi.mocked(getViewerContext).mockResolvedValue({
             advisoryClass: "ม.1/1",
+            isPrimary: false,
             role: "school_admin",
             schoolId: "school-1",
             userId: "user-1",
-        });
+        } satisfies ViewerContext);
     });
 
     it("unwraps students array from getStudentsForDashboardQuery", async () => {
@@ -83,10 +85,11 @@ describe("student main actions compatibility", () => {
     it("returns empty array for system admin without selected school", async () => {
         vi.mocked(getViewerContext).mockResolvedValue({
             advisoryClass: undefined,
+            isPrimary: false,
             role: "system_admin",
-            schoolId: null,
+            schoolId: undefined,
             userId: "user-1",
-        });
+        } satisfies ViewerContext);
 
         const result = await getStudentsForDashboard();
 

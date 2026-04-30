@@ -7,9 +7,11 @@ import {
 import { logError } from "@/lib/utils/logging";
 
 export type ParsedGender = "MALE" | "FEMALE";
+const NATIONAL_ID_HEADER = "เลขบัตรประชาชน";
 
 export interface ParsedStudent {
     studentId: string;
+    nationalId: string;
     firstName: string;
     lastName: string;
     gender?: ParsedGender;
@@ -22,6 +24,20 @@ export interface ParseResult {
     success: boolean;
     data: ParsedStudent[];
     errors: string[];
+}
+
+function normalizeNationalId(value: string): string | undefined {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) {
+        return undefined;
+    }
+
+    const normalizedValue = trimmedValue.replace(/[-\s]/g, "");
+    if (!/^\d{13}$/.test(normalizedValue)) {
+        return undefined;
+    }
+
+    return normalizedValue;
 }
 
 /**
@@ -67,7 +83,13 @@ export async function parseExcelBuffer(
         });
 
         // Validate required headers
-        const requiredHeaders = ["รหัสนักเรียน", "ชื่อ", "นามสกุล", "ห้อง"];
+        const requiredHeaders = [
+            "รหัสนักเรียน",
+            NATIONAL_ID_HEADER,
+            "ชื่อ",
+            "นามสกุล",
+            "ห้อง",
+        ];
         for (const header of requiredHeaders) {
             if (!headers.has(header)) {
                 errors.push(`ไม่พบคอลัมน์ "${header}" ในไฟล์`);
@@ -194,6 +216,8 @@ export async function parseExcelBuffer(
                         : undefined;
                 const studentClass = getCell("ห้อง");
                 const studentId = getCell("รหัสนักเรียน");
+                const nationalIdRaw = getCell(NATIONAL_ID_HEADER);
+                const nationalId = normalizeNationalId(nationalIdRaw);
 
                 // Skip empty rows
                 if (!firstName && !lastName) return;
@@ -215,9 +239,20 @@ export async function parseExcelBuffer(
                     errors.push(`แถว ${rowNumber}: ไม่มีรหัสนักเรียน`);
                     return;
                 }
+                if (!nationalIdRaw) {
+                    errors.push(`แถว ${rowNumber}: ไม่มี${NATIONAL_ID_HEADER}`);
+                    return;
+                }
+                if (!nationalId) {
+                    errors.push(
+                        `แถว ${rowNumber}: ${NATIONAL_ID_HEADER} ต้องเป็นตัวเลข 13 หลัก`,
+                    );
+                    return;
+                }
 
                 const student: ParsedStudent = {
                     studentId,
+                    nationalId,
                     firstName,
                     lastName,
                     gender,
@@ -251,12 +286,20 @@ export async function parseExcelBuffer(
         // Check for duplicate studentId within the Excel file
         const studentIdSet = new Set<string>();
         const duplicateSet = new Set<string>();
+        const nationalIdSet = new Set<string>();
+        const duplicateNationalIdSet = new Set<string>();
 
         data.forEach((student) => {
             if (studentIdSet.has(student.studentId)) {
                 duplicateSet.add(student.studentId);
             } else {
                 studentIdSet.add(student.studentId);
+            }
+
+            if (nationalIdSet.has(student.nationalId)) {
+                duplicateNationalIdSet.add(student.nationalId);
+            } else {
+                nationalIdSet.add(student.nationalId);
             }
         });
 
@@ -265,6 +308,13 @@ export async function parseExcelBuffer(
         if (duplicateStudentIds.length > 0) {
             errors.push(
                 `พบรหัสนักเรียนซ้ำในไฟล์: ${duplicateStudentIds.join(", ")}`,
+            );
+        }
+
+        const duplicateNationalIds = [...duplicateNationalIdSet];
+        if (duplicateNationalIds.length > 0) {
+            errors.push(
+                `พบเลขบัตรประชาชนซ้ำในไฟล์: ${duplicateNationalIds.join(", ")}`,
             );
         }
 

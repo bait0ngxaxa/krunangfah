@@ -190,6 +190,9 @@ export function StudentPreviewTable({
                                 <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     ชื่อ - นามสกุล
                                 </th>
+                                <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    เลขบัตรประชาชน
+                                </th>
                                 <th className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     ห้อง
                                 </th>
@@ -227,6 +230,9 @@ export function StudentPreviewTable({
                                     </td>
                                     <td className="px-4 py-2 text-sm font-bold text-gray-800 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
                                         {student.firstName} {student.lastName}
+                                    </td>
+                                    <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
+                                        {student.nationalId || "-"}
                                     </td>
                                     <td className="px-4 py-2 text-sm text-center text-gray-600">
                                         {student.class}

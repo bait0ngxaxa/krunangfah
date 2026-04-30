@@ -17,6 +17,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireAuth, requirePrimaryAdmin } from "@/lib/session";
 
+// Cast to simple async fn to avoid NextAuth's complex overloaded signatures
+const mockAuth = vi.mocked(auth) as unknown as ReturnType<typeof vi.fn<() => Promise<Session | null>>>;
+
+
 function createSession(overrides?: Partial<Session["user"]>): Session {
     return {
         expires: "2099-01-01T00:00:00.000Z",
@@ -39,14 +43,14 @@ describe("lib/session", () => {
     });
 
     it("requireAuth redirects to /signin when session is missing", async () => {
-        vi.mocked(auth).mockResolvedValue(null);
+        mockAuth.mockResolvedValue(null);
 
         // redirect() in Next.js throws a NEXT_REDIRECT error internally
         await expect(requireAuth()).rejects.toThrow("NEXT_REDIRECT");
     });
 
     it("requireAuth refreshes role/isPrimary/schoolId from DB", async () => {
-        vi.mocked(auth).mockResolvedValue(createSession());
+        mockAuth.mockResolvedValue(createSession());
         vi.mocked(prisma.user.findUnique).mockResolvedValue({
             role: "school_admin",
             isPrimary: true,
@@ -65,7 +69,7 @@ describe("lib/session", () => {
     });
 
     it("requireAuth redirects to /signin when user no longer exists in DB", async () => {
-        vi.mocked(auth).mockResolvedValue(createSession());
+        mockAuth.mockResolvedValue(createSession());
         vi.mocked(prisma.user.findUnique).mockResolvedValue(null as never);
 
         // redirect() in Next.js throws a NEXT_REDIRECT error internally
@@ -73,7 +77,7 @@ describe("lib/session", () => {
     });
 
     it("requireAdmin allows promoted user immediately from DB claims", async () => {
-        vi.mocked(auth).mockResolvedValue(
+        mockAuth.mockResolvedValue(
             createSession({ role: "class_teacher" }),
         );
         vi.mocked(prisma.user.findUnique).mockResolvedValue({
@@ -88,7 +92,7 @@ describe("lib/session", () => {
     });
 
     it("requireAdmin blocks demoted user even if session token is stale", async () => {
-        vi.mocked(auth).mockResolvedValue(
+        mockAuth.mockResolvedValue(
             createSession({ role: "system_admin" }),
         );
         vi.mocked(prisma.user.findUnique).mockResolvedValue({
@@ -103,7 +107,7 @@ describe("lib/session", () => {
     });
 
     it("requirePrimaryAdmin allows user when DB says isPrimary=true", async () => {
-        vi.mocked(auth).mockResolvedValue(
+        mockAuth.mockResolvedValue(
             createSession({ role: "school_admin", isPrimary: false }),
         );
         vi.mocked(prisma.user.findUnique).mockResolvedValue({
@@ -118,7 +122,7 @@ describe("lib/session", () => {
     });
 
     it("requirePrimaryAdmin blocks demoted primary user", async () => {
-        vi.mocked(auth).mockResolvedValue(
+        mockAuth.mockResolvedValue(
             createSession({ role: "school_admin", isPrimary: true }),
         );
         vi.mocked(prisma.user.findUnique).mockResolvedValue({

@@ -103,6 +103,7 @@ export async function importStudents(
         const errors: string[] = [];
         let skippedCount = 0;
         const seenStudentIds = new Set<string>();
+        const seenNationalIds = new Set<string>();
         const eligibleRows: ParsedStudent[] = [];
 
         for (const studentData of students) {
@@ -120,12 +121,20 @@ export async function importStudents(
                 );
                 continue;
             }
+            if (seenNationalIds.has(studentData.nationalId)) {
+                errors.push(
+                    `${studentData.firstName} ${studentData.lastName} (${studentData.studentId}): พบเลขบัตรประชาชนซ้ำในไฟล์นำเข้า`,
+                );
+                continue;
+            }
 
             seenStudentIds.add(studentData.studentId);
+            seenNationalIds.add(studentData.nationalId);
             eligibleRows.push(studentData);
         }
 
         const importedStudentIds = eligibleRows.map((row) => row.studentId);
+        const importedNationalIds = eligibleRows.map((row) => row.nationalId);
 
         const txResult = await prisma.$transaction(async (tx) => {
             if (importedStudentIds.length === 0) {
@@ -135,9 +144,56 @@ export async function importStudents(
                 };
             }
 
+            const existingStudentsByNationalId = await tx.student.findMany({
+                where: {
+                    nationalId: { in: importedNationalIds },
+                },
+                select: {
+                    id: true,
+                    studentId: true,
+                    nationalId: true,
+                    firstName: true,
+                    lastName: true,
+                },
+            });
+
+            const studentByNationalId = new Map(
+                existingStudentsByNationalId
+                    .filter(
+                        (
+                            student,
+                        ): student is typeof student & { nationalId: string } =>
+                            typeof student.nationalId === "string",
+                    )
+                    .map((student) => [student.nationalId, student]),
+            );
+
+            const rowsSafeToImport = eligibleRows.filter((row) => {
+                const existingStudent = studentByNationalId.get(row.nationalId);
+                if (
+                    existingStudent &&
+                    existingStudent.studentId !== row.studentId
+                ) {
+                    errors.push(
+                        `${row.firstName} ${row.lastName} (${row.studentId}): เลขบัตรประชาชนซ้ำกับ ${existingStudent.firstName} ${existingStudent.lastName} (${existingStudent.studentId})`,
+                    );
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (rowsSafeToImport.length === 0) {
+                return {
+                    importedCount: 0,
+                    duplicateRoundErrors: [] as string[],
+                };
+            }
+
             await tx.student.createMany({
-                data: eligibleRows.map((row) => ({
+                data: rowsSafeToImport.map((row) => ({
                     studentId: row.studentId,
+                    nationalId: row.nationalId,
                     firstName: row.firstName,
                     lastName: row.lastName,
                     gender: row.gender ?? null,
@@ -151,7 +207,7 @@ export async function importStudents(
             const scopedStudents = await tx.student.findMany({
                 where: {
                     schoolId,
-                    studentId: { in: importedStudentIds },
+                    studentId: { in: rowsSafeToImport.map((row) => row.studentId) },
                 },
             });
 
@@ -160,13 +216,20 @@ export async function importStudents(
             );
 
             const studentUpdates: Promise<unknown>[] = [];
-            for (const row of eligibleRows) {
+            for (const row of rowsSafeToImport) {
                 const student = studentByStudentId.get(row.studentId);
                 if (!student) {
                     continue;
                 }
 
-                const updates: { gender?: ParsedStudent["gender"]; age?: number } = {};
+                const updates: {
+                    age?: number;
+                    gender?: ParsedStudent["gender"];
+                    nationalId?: string;
+                } = {};
+                if (student.nationalId !== row.nationalId) {
+                    updates.nationalId = row.nationalId;
+                }
                 if (row.gender && student.gender !== row.gender) {
                     updates.gender = row.gender;
                 }
@@ -222,7 +285,7 @@ export async function importStudents(
             const duplicateRoundErrors: string[] = [];
             const phqResultsToCreate: Prisma.PhqResultCreateManyInput[] = [];
 
-            for (const row of eligibleRows) {
+            for (const row of rowsSafeToImport) {
                 const student = studentByStudentId.get(row.studentId);
                 if (!student) {
                     continue;

@@ -266,6 +266,7 @@ export async function searchStudents(query: string) {
             viewer.role,
             viewer.userId,
             sanitizedQuery,
+            isSystemAdmin(viewer.role),
         );
     } catch (error) {
         logError("Search students error:", error);

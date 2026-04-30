@@ -73,7 +73,7 @@ export async function createTestAcademicYear(
 /**
  * Create a test user (matching mock auth user IDs)
  */
-export async function createTestUser(mockUser: MockUser, schoolId: string) {
+export async function createTestUser(mockUser: MockUser, schoolId: string = "") {
     // Check if already exists by id OR email
     const existingById = await prisma.user.findUnique({
         where: { id: mockUser.id },

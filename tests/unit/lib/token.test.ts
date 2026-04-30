@@ -38,8 +38,8 @@ describe("lib/token", () => {
             .spyOn(crypto, "randomUUID")
             .mockReturnValue("123e4567-e89b-12d3-a456-426614174000");
         vi.mocked(prisma.$transaction).mockImplementation(
-            async (callback: (tx: typeof prisma) => Promise<string>) =>
-                callback(prisma as typeof prisma),
+            async (callback: unknown) =>
+                (callback as (tx: typeof prisma) => Promise<unknown>)(prisma),
         );
         vi.mocked(prisma.passwordResetToken.upsert).mockResolvedValue(
             {} as never,

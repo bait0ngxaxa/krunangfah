@@ -495,7 +495,7 @@ export async function getReferredStudentCountQuery(
 }
 
 /**
- * Search students by name or student ID
+ * Search students by name or student ID, plus national ID for system admins only.
  */
 export async function searchStudentsQuery(
     schoolId: string | undefined,
@@ -503,6 +503,7 @@ export async function searchStudentsQuery(
     userRole: string,
     userId: string | undefined,
     query: string,
+    allowNationalIdSearch: boolean,
 ) {
     const baseWhere = buildReferralAwareWhere(schoolId, advisoryClass, userRole, userId);
 
@@ -511,6 +512,11 @@ export async function searchStudentsQuery(
         { lastName: { contains: query, mode: "insensitive" } },
         { studentId: { contains: query, mode: "insensitive" } },
     ];
+    if (allowNationalIdSearch) {
+        searchOR.push({
+            nationalId: { contains: query, mode: "insensitive" },
+        });
+    }
 
     // Merge visibility scope with text-search predicates.
     const whereClause: Prisma.StudentWhereInput = {

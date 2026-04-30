@@ -282,7 +282,7 @@ describe("Excel Parser - Year Filter Parsing Logic", () => {
 });
 
 describe("Excel Parser - Required Headers Validation", () => {
-    const requiredHeaders = ["ชื่อ", "นามสกุล", "ห้อง"];
+    const requiredHeaders = ["ชื่อ", "นามสกุล", "ห้อง", "เลขบัตรประชาชน"];
 
     const validateHeaders = (
         headers: string[],
@@ -297,7 +297,13 @@ describe("Excel Parser - Required Headers Validation", () => {
     };
 
     it("should pass when all required headers present", () => {
-        const headers = ["ชื่อ", "นามสกุล", "ห้อง", "รหัสนักเรียน"];
+        const headers = [
+            "ชื่อ",
+            "นามสกุล",
+            "ห้อง",
+            "รหัสนักเรียน",
+            "เลขบัตรประชาชน",
+        ];
         const result = validateHeaders(headers);
         expect(result.valid).toBe(true);
         expect(result.missing).toHaveLength(0);
@@ -328,10 +334,11 @@ describe("Excel Parser - Required Headers Validation", () => {
         const headers: string[] = [];
         const result = validateHeaders(headers);
         expect(result.valid).toBe(false);
-        expect(result.missing).toHaveLength(3);
+        expect(result.missing).toHaveLength(4);
         expect(result.missing).toContain("ชื่อ");
         expect(result.missing).toContain("นามสกุล");
         expect(result.missing).toContain("ห้อง");
+        expect(result.missing).toContain("เลขบัตรประชาชน");
     });
 });
 
@@ -415,6 +422,7 @@ describe("Excel Parser - Resource Guards", () => {
 
         worksheet.addRow([
             "รหัสนักเรียน",
+            "เลขบัตรประชาชน",
             "ชื่อ",
             "นามสกุล",
             "ห้อง",
@@ -434,6 +442,7 @@ describe("Excel Parser - Resource Guards", () => {
         for (let index = 0; index < rowCount; index++) {
             worksheet.addRow([
                 `${index + 1}`,
+                `1103700000${String(index + 1).padStart(3, "0")}`,
                 "สมชาย",
                 "ใจดี",
                 "ม.1/1",
@@ -451,11 +460,7 @@ describe("Excel Parser - Resource Guards", () => {
             ]);
         }
 
-        const output = await workbook.xlsx.writeBuffer();
-        if (output instanceof ArrayBuffer) {
-            return output;
-        }
-
+        const output = Buffer.from(await workbook.xlsx.writeBuffer());
         return output.buffer.slice(
             output.byteOffset,
             output.byteOffset + output.byteLength,
@@ -482,5 +487,94 @@ describe("Excel Parser - Resource Guards", () => {
         expect(result.errors).toContain(
             `ไฟล์มีข้อมูลเกิน ${MAX_IMPORT_ROW_COUNT} แถว กรุณาแบ่งไฟล์แล้วนำเข้าใหม่`,
         );
+    });
+});
+
+describe("Excel Parser - National ID Parsing", () => {
+    async function createWorkbookBuffer(
+        nationalIdValue: string,
+    ): Promise<ArrayBuffer> {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
+
+        worksheet.addRow([
+            "รหัสนักเรียน",
+            "เลขบัตรประชาชน",
+            "ชื่อ",
+            "นามสกุล",
+            "ห้อง",
+            "ข้อ1",
+            "ข้อ2",
+            "ข้อ3",
+            "ข้อ4",
+            "ข้อ5",
+            "ข้อ6",
+            "ข้อ7",
+            "ข้อ8",
+            "ข้อ9",
+            "opt1",
+            "opt2",
+        ]);
+
+        worksheet.addRow([
+            "66001",
+            nationalIdValue,
+            "สมชาย",
+            "ใจดี",
+            "ม.1/1",
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "ไม่ใช่",
+            "ไม่ใช่",
+        ]);
+
+        const output = Buffer.from(await workbook.xlsx.writeBuffer());
+        return output.buffer.slice(
+            output.byteOffset,
+            output.byteOffset + output.byteLength,
+        );
+    }
+
+    it("parses a valid 13-digit national ID", async () => {
+        const buffer = await createWorkbookBuffer("1103700000011");
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(true);
+        expect(result.data[0]?.nationalId).toBe("1103700000011");
+    });
+
+    it("normalizes national ID values with hyphens", async () => {
+        const buffer = await createWorkbookBuffer("110-3700-0000-11");
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(true);
+        expect(result.data[0]?.nationalId).toBe("1103700000011");
+    });
+
+    it("rejects national ID values that are not 13 digits", async () => {
+        const buffer = await createWorkbookBuffer("123456789012");
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(false);
+        expect(result.errors).toContain(
+            'แถว 2: เลขบัตรประชาชน ต้องเป็นตัวเลข 13 หลัก',
+        );
+        expect(result.data).toHaveLength(0);
+    });
+
+    it("rejects missing national ID values", async () => {
+        const buffer = await createWorkbookBuffer("");
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(false);
+        expect(result.errors).toContain("แถว 2: ไม่มีเลขบัตรประชาชน");
+        expect(result.data).toHaveLength(0);
     });
 });

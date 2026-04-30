@@ -153,12 +153,13 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                     <p className="text-sm text-gray-600 leading-relaxed">
                         คอลัมน์:{" "}
                         <span className="font-medium text-gray-800">
-                            รหัสนักเรียน, ชื่อ, นามสกุล, เพศ,อายุ,ห้อง,
+                            รหัสนักเรียน, เลขบัตรประชาชน, ชื่อ, นามสกุล,
+                            เพศ,อายุ,ห้อง,
                             ข้อ1-ข้อ9, opt1, opt2
                         </span>
                     </p>
                     <p className="text-xs text-gray-500 mt-2 bg-white inline-block px-2 py-1 rounded-md border border-blue-100">
-                        * ข้อ1-ข้อ9: ค่า 0-3 | opt1, opt2: ใช่/ไม่ใช่
+                        * เลขบัตรประชาชน: ต้องเป็นตัวเลข 13 หลักและห้ามซ้ำ | ข้อ1-ข้อ9: ค่า 0-3 | opt1, opt2: ใช่/ไม่ใช่
                     </p>
                 </div>
                 <a

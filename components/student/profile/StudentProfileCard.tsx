@@ -8,19 +8,21 @@ import {
     School,
     Hash,
     Cake,
+    CreditCard,
 } from "lucide-react";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
 
 interface StudentProfileCardProps {
-    student: {
-        firstName: string;
-        lastName: string;
-        studentId?: string | null;
-        gender?: string | null;
-        age?: number | null;
-        class: string;
+        student: {
+            firstName: string;
+            lastName: string;
+            studentId?: string | null;
+            nationalId?: string | null;
+            gender?: string | null;
+            age?: number | null;
+            class: string;
     };
     latestResult?: {
         totalScore: number;
@@ -93,6 +95,14 @@ export function StudentProfileCard({
                                         <Hash className="w-3 h-3" />
                                     </span>
                                     รหัส {student.studentId}
+                                </span>
+                            )}
+                            {student.nationalId && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-amber-200 bg-amber-50/70 text-amber-700 shadow-sm">
+                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-amber-200 bg-white">
+                                        <CreditCard className="w-3 h-3" />
+                                    </span>
+                                    เลขบัตร {student.nationalId}
                                 </span>
                             )}
                         </div>

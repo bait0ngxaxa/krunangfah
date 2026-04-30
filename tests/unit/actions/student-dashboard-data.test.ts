@@ -27,9 +27,11 @@ import {
     getStudentsForDashboardQuery,
 } from "@/lib/actions/student/queries";
 import { getStudentDashboardData } from "@/lib/actions/student/dashboard";
+import type { ViewerContext } from "@/lib/auth/viewer-context";
 
-const baseViewer = {
+const baseViewer: ViewerContext = {
     advisoryClass: "ม.1/1",
+    isPrimary: false,
     role: "school_admin",
     schoolId: "school-1",
     userId: "user-1",
@@ -76,8 +78,9 @@ describe("getStudentDashboardData", () => {
     it("returns empty data for system admin without selected school", async () => {
         vi.mocked(getViewerContext).mockResolvedValue({
             ...baseViewer,
+            isPrimary: false,
             role: "system_admin",
-            schoolId: null,
+            schoolId: undefined,
         });
 
         const result = await getStudentDashboardData();

@@ -16,6 +16,7 @@ export async function GET() {
         // Define headers
         const headers = [
             "รหัสนักเรียน",
+            "เลขบัตรประชาชน",
             "ชื่อ",
             "นามสกุล",
             "เพศ",
@@ -47,6 +48,7 @@ export async function GET() {
         // Set column widths
         worksheet.columns = [
             { width: 15 }, // รหัสนักเรียน
+            { width: 18 }, // เลขบัตรประชาชน
             { width: 15 }, // ชื่อ
             { width: 15 }, // นามสกุล
             { width: 8 }, // เพศ
@@ -69,6 +71,7 @@ export async function GET() {
         const sampleData = [
             [
                 "12345",
+                "1103700000011",
                 "สมชาย",
                 "ใจดี",
                 "ชาย",
@@ -88,6 +91,7 @@ export async function GET() {
             ],
             [
                 "12346",
+                "1103700000012",
                 "สมหญิง",
                 "รักเรียน",
                 "หญิง",
@@ -107,6 +111,7 @@ export async function GET() {
             ],
             [
                 "12347",
+                "1103700000013",
                 "สมศักดิ์",
                 "เก่งมาก",
                 "ชาย",
@@ -126,6 +131,7 @@ export async function GET() {
             ],
             [
                 "12348",
+                "1103700000014",
                 "สมปอง",
                 "ดีใจ",
                 "หญิง",
@@ -158,6 +164,11 @@ export async function GET() {
             "รหัสนักเรียน",
             "รหัสประจำตัวนักเรียน (บังคับ)",
             "ตัวเลข",
+        ]);
+        instructionSheet.addRow([
+            "เลขบัตรประชาชน",
+            "เลขบัตรประชาชน 13 หลัก (บังคับและห้ามซ้ำ)",
+            "ตัวเลข 13 หลัก",
         ]);
         instructionSheet.addRow(["ชื่อ", "ชื่อนักเรียน", "ข้อความ"]);
         instructionSheet.addRow(["นามสกุล", "นามสกุลนักเรียน", "ข้อความ"]);

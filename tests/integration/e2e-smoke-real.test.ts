@@ -20,7 +20,7 @@ setupAuthMocks();
 const USERS = createMockUsers("e2e-smoke-real");
 
 const { importStudents } = await import("@/lib/actions/student/mutations");
-const { getStudents } = await import("@/lib/actions/student/main");
+const { getStudents, searchStudents } = await import("@/lib/actions/student/main");
 const { deleteWorksheetUpload } = await import("@/lib/actions/activity/file-utils");
 
 describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
@@ -30,19 +30,29 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
     let class1ActivityProgressId = "";
     let class1StudentCode = "";
     let class2StudentCode = "";
+    let class1NationalId = "";
+    let class2NationalId = "";
 
     beforeAll(async () => {
         const school = await createTestSchool({ name: "E2E Smoke School" });
         schoolId = school.id;
 
-        const uniqueYear = 7000 + Number(String(Date.now()).slice(-4));
+        const uniqueSuffix = String(Date.now()).slice(-7);
+        const uniqueYear = 7000 + Number(uniqueSuffix.slice(-4));
         const ay = await createTestAcademicYear({ year: uniqueYear, semester: 1 });
         academicYearId = ay.id;
+
+        // Generate unique 13-digit national IDs per run to avoid unique constraint collisions
+        // "11037" (5) + uniqueSuffix (7) = 12 chars + 1 discriminator = 13 digits
+        const nidBase = `11037${uniqueSuffix}`;
+        const nid1 = `${nidBase}1`;
+        const nid2 = `${nidBase}2`;
 
         USERS.schoolAdmin.schoolId = schoolId;
         USERS.classTeacher.schoolId = schoolId;
         USERS.otherTeacher.schoolId = schoolId;
 
+        await createTestUser(USERS.systemAdmin);
         await createTestUser(USERS.schoolAdmin, schoolId);
         await createTestUser(USERS.classTeacher, schoolId);
         await createTestUser(USERS.otherTeacher, schoolId);
@@ -57,6 +67,7 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         const rows: ParsedStudent[] = [
             {
                 studentId: `E2E-1-${Date.now()}`,
+                nationalId: nid1,
                 firstName: "Smoke",
                 lastName: "Class1",
                 class: "class-1",
@@ -76,6 +87,7 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
             },
             {
                 studentId: `E2E-2-${Date.now()}`,
+                nationalId: nid2,
                 firstName: "Smoke",
                 lastName: "Class2",
                 class: "class-2",
@@ -97,6 +109,8 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
 
         class1StudentCode = rows[0].studentId;
         class2StudentCode = rows[1].studentId;
+        class1NationalId = rows[0].nationalId;
+        class2NationalId = rows[1].nationalId;
 
         mockSession(USERS.schoolAdmin);
         const importResult = await importStudents(rows, academicYearId, 1);
@@ -109,6 +123,7 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
 
         expect(class1Student).toBeTruthy();
         class1StudentDbId = class1Student!.id;
+        expect(class1Student?.nationalId).toBe(nid1);
 
         const progress = await prisma.activityProgress.findFirst({
             where: { studentId: class1StudentDbId },
@@ -192,6 +207,25 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         expect(result.students.length).toBeGreaterThan(0);
         expect(result.students.every((s) => s.class === "class-2")).toBe(true);
         expect(result.students.some((s) => s.id === class1StudentDbId)).toBe(false);
+    });
+
+    it("system_admin can search students by national ID", async () => {
+        mockSession(USERS.systemAdmin);
+        const result = await searchStudents(class1NationalId);
+
+        expect(result.some((student) => student.studentId === class1StudentCode)).toBe(
+            true,
+        );
+        expect(
+            result.some((student) => student.studentId === class2StudentCode),
+        ).toBe(false);
+    });
+
+    it("class_teacher cannot search students by national ID", async () => {
+        mockSession(USERS.classTeacher);
+        const result = await searchStudents(class1NationalId);
+
+        expect(result).toEqual([]);
     });
 
     it("role action scope: owner can delete worksheet, non-owner cannot", async () => {

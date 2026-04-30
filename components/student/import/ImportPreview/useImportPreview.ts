@@ -222,6 +222,7 @@ export function useImportPreview({
                 // This matches the count shown in the confirm dialog
                 const studentsToImport = previewData.map((s) => ({
                     studentId: s.studentId,
+                    nationalId: s.nationalId,
                     firstName: s.firstName,
                     lastName: s.lastName,
                     gender: s.gender,
