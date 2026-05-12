@@ -4,36 +4,9 @@ import type { ProjectFieldsProps } from "../types";
 export function ProjectFields({
     register,
     errors,
-    academicYears,
 }: ProjectFieldsProps): React.ReactNode {
     return (
         <>
-            <div>
-                <label
-                    htmlFor="academicYearId"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                >
-                    ปีการศึกษา/เทอม <span className="text-red-500">*</span>
-                </label>
-                <select
-                    {...register("academicYearId")}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900"
-                >
-                    <option value="">เลือกปีการศึกษา/เทอม</option>
-                    {academicYears.map((year) => (
-                        <option key={year.id} value={year.id}>
-                            {year.year}/{year.semester}{" "}
-                            {year.isCurrent && "(ปัจจุบัน)"}
-                        </option>
-                    ))}
-                </select>
-                {errors.academicYearId && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
-                        {errors.academicYearId.message}
-                    </p>
-                )}
-            </div>
-
             <div>
                 <label
                     htmlFor="projectRole"

@@ -4,10 +4,7 @@ import { TeacherProfileForm } from "@/components/teacher/forms/TeacherProfileFor
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
 import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import {
-    getTeacherProfile,
-    getAcademicYears,
-} from "@/lib/actions/teacher.actions";
+import { getTeacherProfile } from "@/lib/actions/teacher.actions";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -36,9 +33,6 @@ export default async function TeacherProfilePage() {
         redirect("/dashboard");
     }
 
-    // Server-side fetch keeps form initial render complete.
-    const academicYears = await getAcademicYears();
-
     return (
         <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-96 h-96 bg-[var(--brand-primary)] rounded-full mix-blend-multiply blur-3xl opacity-10 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
@@ -54,7 +48,7 @@ export default async function TeacherProfilePage() {
 
                 <div className="max-w-2xl mx-auto">
                     <div className="bg-white py-8 px-6 sm:px-8 rounded-3xl border-2 border-gray-100 shadow-sm relative overflow-hidden">
-                        <TeacherProfileForm academicYears={academicYears} />
+                        <TeacherProfileForm />
                     </div>
                 </div>
             </div>

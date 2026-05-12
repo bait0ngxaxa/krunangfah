@@ -163,7 +163,6 @@ describe("Integration: Onboarding Flow", () => {
                 lastName: "ทดสอบ",
                 age: 35,
                 advisoryClass: "ทุกห้อง",
-                academicYearId,
                 schoolRole: "ผู้อำนวยการ",
                 projectRole: "lead",
             });
@@ -181,7 +180,6 @@ describe("Integration: Onboarding Flow", () => {
                 lastName: "ทดสอบ",
                 age: 30,
                 advisoryClass: "ม.1/1",
-                academicYearId,
                 schoolRole: "ครู",
                 projectRole: "care",
             });
@@ -198,7 +196,6 @@ describe("Integration: Onboarding Flow", () => {
                 lastName: "ทดสอบ",
                 age: 25,
                 advisoryClass: "ม.1/1",
-                academicYearId,
                 schoolRole: "ครู",
                 projectRole: "care",
             });

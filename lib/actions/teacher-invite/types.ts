@@ -9,7 +9,6 @@ export interface TeacherInvite {
     age: number;
     userRole: string;
     advisoryClass: string;
-    academicYearId: string;
     schoolId: string;
     schoolRole: string;
     projectRole: string;
@@ -22,7 +21,6 @@ export interface TeacherInvite {
 // Type for invite with relations (used when fetching with include)
 export interface TeacherInviteWithRelations extends TeacherInvite {
     school: { name: string };
-    academicYear: { year: number; semester: number };
 }
 
 export interface InviteResponse {
@@ -32,10 +30,8 @@ export interface InviteResponse {
     inviteLink?: string;
 }
 
-// Type for invite with academicYear (used in list queries)
-export interface TeacherInviteWithAcademicYear extends TeacherInvite {
-    academicYear: { year: number; semester: number };
-}
+// Type for invite in list queries (no academicYear needed)
+export type TeacherInviteWithAcademicYear = TeacherInvite;
 
 export interface InviteListResponse {
     success: boolean;

@@ -93,7 +93,6 @@ const baseInput: TeacherInviteFormData = {
     age: "30",
     userRole: "class_teacher",
     advisoryClass: "ม.1/1",
-    academicYearId: "ay-1",
     schoolRole: "ครูประจำคลาส",
     projectRole: "lead",
 };

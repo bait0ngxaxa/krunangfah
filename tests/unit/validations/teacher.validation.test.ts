@@ -14,7 +14,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "ใจดี",
                 age: 35,
                 advisoryClass: "ม.2/5",
-                academicYearId: "clxyz123456789",
                 schoolRole: "ครูประจำชั้น",
                 projectRole: "lead",
             };
@@ -32,7 +31,6 @@ describe("teacherProfileSchema", () => {
                     lastName: "User",
                     age: 30,
                     advisoryClass: "ม.1/1",
-                    academicYearId: "test123",
                     schoolRole: "Teacher",
                     projectRole: role,
                 };
@@ -47,7 +45,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "Teacher",
                 age: 18,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "Teacher",
                 projectRole: "care" as const,
             };
@@ -61,7 +58,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "Teacher",
                 age: 100,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "Teacher",
                 projectRole: "coordinate" as const,
             };
@@ -77,7 +73,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "ใจดี",
                 age: 30,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "Teacher",
                 projectRole: "lead" as const,
             };
@@ -94,7 +89,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "ใจดี",
                 age: 30,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "Teacher",
                 projectRole: "lead" as const,
             };
@@ -110,7 +104,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "",
                 age: 30,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "Teacher",
                 projectRole: "lead" as const,
             };
@@ -129,7 +122,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "Person",
                 age: 17,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "Teacher",
                 projectRole: "lead" as const,
             };
@@ -148,7 +140,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "Old",
                 age: 101,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "Teacher",
                 projectRole: "lead" as const,
             };
@@ -167,7 +158,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "User",
                 age: 30,
                 advisoryClass: "",
-                academicYearId: "test123",
                 schoolRole: "Teacher",
                 projectRole: "lead" as const,
             };
@@ -181,27 +171,6 @@ describe("teacherProfileSchema", () => {
         });
     });
 
-    describe("Invalid academicYearId", () => {
-        it("should reject empty academicYearId", () => {
-            const data = {
-                firstName: "Test",
-                lastName: "User",
-                age: 30,
-                advisoryClass: "ม.1/1",
-                academicYearId: "",
-                schoolRole: "Teacher",
-                projectRole: "lead" as const,
-            };
-            const result = teacherProfileSchema.safeParse(data);
-            expect(result.success).toBe(false);
-            if (!result.success) {
-                expect(result.error.issues[0].message).toBe(
-                    "กรุณาเลือกปีการศึกษา",
-                );
-            }
-        });
-    });
-
     describe("Invalid schoolRole", () => {
         it("should reject empty schoolRole", () => {
             const data = {
@@ -209,7 +178,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "User",
                 age: 30,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "",
                 projectRole: "lead" as const,
             };
@@ -228,7 +196,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "User",
                 age: 30,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "ก".repeat(INPUT_LIMITS.teacher.schoolRole + 1),
                 projectRole: "lead" as const,
             };
@@ -244,7 +211,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "User",
                 age: 30,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "Teacher",
                 projectRole: "invalid" as TeacherProfileFormData["projectRole"],
             };
@@ -263,7 +229,6 @@ describe("teacherProfileSchema", () => {
                 lastName: "User",
                 age: 30,
                 advisoryClass: "ม.1/1",
-                academicYearId: "test123",
                 schoolRole: "Teacher",
                 projectRole: "" as TeacherProfileFormData["projectRole"],
             };

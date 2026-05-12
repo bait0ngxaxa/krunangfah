@@ -14,7 +14,6 @@ export async function getTeacherInvite(token: string): Promise<InviteResponse> {
             where: { token },
             include: {
                 school: true,
-                academicYear: true,
             },
         });
 
@@ -60,9 +59,6 @@ export async function getMyTeacherInvites(): Promise<InviteListResponse> {
 
         const invites = await prisma.teacherInvite.findMany({
             where: { schoolId },
-            include: {
-                academicYear: true,
-            },
             orderBy: { createdAt: "desc" },
         });
 

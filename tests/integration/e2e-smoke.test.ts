@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+ï»¿import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/prisma";
 import {
     createMockUsers,
@@ -43,21 +43,21 @@ describe("Integration: E2E Smoke (Role + Advisory Class)", () => {
         await createTestUser(USERS.classTeacher, schoolId);
         await createTestUser(USERS.otherTeacher, schoolId);
 
-        await createTestTeacher(USERS.classTeacher.id, ay.id, {
-            advisoryClass: "Á.1/1",
+        await createTestTeacher(USERS.classTeacher.id, {
+            advisoryClass: "à¸¡.1/1",
         });
-        await createTestTeacher(USERS.otherTeacher.id, ay.id, {
-            advisoryClass: "Á.1/2",
+        await createTestTeacher(USERS.otherTeacher.id, {
+            advisoryClass: "à¸¡.1/2",
         });
 
         const importedBySchoolAdmin = await createTestStudent(schoolId, {
-            class: "Á.1/1",
+            class: "à¸¡.1/1",
             firstName: "SharedClass",
         });
         importedStudentId = importedBySchoolAdmin.id;
 
         await createTestStudent(schoolId, {
-            class: "Á.1/2",
+            class: "à¸¡.1/2",
             firstName: "OtherClass",
         });
 
@@ -103,7 +103,7 @@ describe("Integration: E2E Smoke (Role + Advisory Class)", () => {
         const result = await getStudents({ page: 1, limit: 50 });
 
         expect(result.students.length).toBeGreaterThan(0);
-        expect(result.students.every((s) => s.class === "Á.1/1")).toBe(true);
+        expect(result.students.every((s) => s.class === "à¸¡.1/1")).toBe(true);
         expect(result.students.some((s) => s.id === importedStudentId)).toBe(
             true,
         );
@@ -128,3 +128,4 @@ describe("Integration: E2E Smoke (Role + Advisory Class)", () => {
         expect(result.success).toBe(true);
     });
 });
+

@@ -158,7 +158,7 @@ async function DashboardContent({ session }: { session: Session }) {
     const isClassTeacher = userRole === "class_teacher";
     const currentAcademicYear = await getCurrentAcademicYearRecord();
     const teacherName = `${teacher.firstName} ${teacher.lastName}`;
-    const schoolName = teacher.user.school?.name || "ไม่ระบุ";
+    const schoolName = (teacher as { user?: { school?: { name: string } | null } }).user?.school?.name || "ไม่ระบุ";
     const academicYearText = currentAcademicYear
         ? `${currentAcademicYear.year} เทอม ${currentAcademicYear.semester}`
         : "ไม่ระบุ";

@@ -2,7 +2,6 @@
 
 import { useTeacherProfileForm } from "./useTeacherProfileForm";
 import { DEFAULT_ADVISORY_CLASS } from "./constants";
-import type { AcademicYear } from "./types";
 import {
     ErrorMessage,
     NameFields,
@@ -11,19 +10,12 @@ import {
     SubmitButton,
 } from "./components";
 
-interface TeacherProfileFormProps {
-    academicYears: AcademicYear[];
-}
-
 /**
  * TeacherProfileForm - Form for creating teacher profile (school_admin)
  * Refactored following separation of concerns and modular design
  */
-export function TeacherProfileForm({
-    academicYears,
-}: TeacherProfileFormProps): React.ReactNode {
-    const { form, isLoading, error, onSubmit } =
-        useTeacherProfileForm(academicYears);
+export function TeacherProfileForm(): React.ReactNode {
+    const { form, isLoading, error, onSubmit } = useTeacherProfileForm();
 
     const {
         register,
@@ -46,11 +38,7 @@ export function TeacherProfileForm({
                 value={DEFAULT_ADVISORY_CLASS}
             />
 
-            <ProjectFields
-                register={register}
-                errors={errors}
-                academicYears={academicYears}
-            />
+            <ProjectFields register={register} errors={errors} />
 
             <SubmitButton isLoading={isLoading} />
         </form>

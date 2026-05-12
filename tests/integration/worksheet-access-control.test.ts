@@ -39,10 +39,10 @@ describe("Integration: Worksheet Access Control", () => {
         await createTestUser(USERS.classTeacher, school.id);
         await createTestUser(USERS.otherTeacher, school.id);
 
-        await createTestTeacher(USERS.classTeacher.id, ay.id, {
+        await createTestTeacher(USERS.classTeacher.id, {
             advisoryClass: "ม.2/5",
         });
-        await createTestTeacher(USERS.otherTeacher.id, ay.id, {
+        await createTestTeacher(USERS.otherTeacher.id, {
             advisoryClass: "ม.2/6",
         });
 

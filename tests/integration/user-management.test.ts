@@ -33,14 +33,12 @@ const {
 
 describe("Integration: User Management", () => {
     let schoolId: string;
-    let academicYearId: string;
 
     beforeAll(async () => {
         const school = await createTestSchool();
         schoolId = school.id;
 
-        const ay = await createTestAcademicYear({ year: 2598, semester: 1 });
-        academicYearId = ay.id;
+        await createTestAcademicYear({ year: 2598, semester: 1 });
 
         // Create school class for advisory class tests
         await prisma.schoolClass.create({
@@ -68,13 +66,13 @@ describe("Integration: User Management", () => {
         await createTestUser(USERS.otherTeacher, schoolId);
 
         // Create teacher profiles
-        await createTestTeacher(USERS.schoolAdmin.id, academicYearId, {
+        await createTestTeacher(USERS.schoolAdmin.id, {
             advisoryClass: "ทุกห้อง",
         });
-        await createTestTeacher(USERS.classTeacher.id, academicYearId, {
+        await createTestTeacher(USERS.classTeacher.id, {
             advisoryClass: "ม.1/1",
         });
-        await createTestTeacher(USERS.otherTeacher.id, academicYearId, {
+        await createTestTeacher(USERS.otherTeacher.id, {
             advisoryClass: "ม.1/2",
         });
     });
@@ -199,7 +197,6 @@ describe("Integration: User Management", () => {
                     lastName: "RoleTest",
                     age: 30,
                     advisoryClass: "ทุกห้อง",
-                    academicYearId,
                     schoolRole: "ครูนางฟ้า",
                     projectRole: "care",
                 },
@@ -262,7 +259,6 @@ describe("Integration: User Management", () => {
                         lastName: "Test",
                         age: 40,
                         advisoryClass: "ทุกห้อง",
-                        academicYearId,
                         schoolRole: "ผู้ดูแลระบบ",
                         projectRole: "care",
                     },

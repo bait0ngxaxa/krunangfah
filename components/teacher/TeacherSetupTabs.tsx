@@ -9,13 +9,11 @@ import { TeacherInviteList } from "@/components/teacher/forms/AddTeacherForm/com
 import { buttonVariants } from "@/components/ui/Button";
 import type { SchoolClassItem } from "@/types/school-setup.types";
 import type { TeacherRosterItem } from "@/types/school-setup.types";
-import type { AcademicYear } from "@/components/teacher/forms/AddTeacherForm/types";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
 
 interface TeacherSetupTabsProps {
     classes: SchoolClassItem[];
     roster: TeacherRosterItem[];
-    academicYears: AcademicYear[];
     invites: TeacherInviteWithAcademicYear[];
     isPrimary: boolean;
 }
@@ -85,7 +83,6 @@ function SectionCard({
 export function TeacherSetupTabs({
     classes,
     roster,
-    academicYears,
     invites,
     isPrimary,
 }: TeacherSetupTabsProps) {
@@ -148,7 +145,6 @@ export function TeacherSetupTabs({
                         </span>
                     </p>
                     <AddTeacherForm
-                        academicYears={academicYears}
                         roster={roster}
                         invites={invites}
                     />
@@ -246,7 +242,6 @@ export function TeacherSetupTabs({
                     </span>
                 </p>
                 <AddTeacherForm
-                    academicYears={academicYears}
                     roster={roster}
                     invites={invites}
                 />

@@ -30,12 +30,10 @@ export interface TeacherProfile {
     lastName: string;
     age: number;
     advisoryClass: string;
-    academicYearId: string;
     schoolRole: string;
     projectRole: string; // Changed from ProjectRole to string to match Prisma
     createdAt: Date;
     updatedAt: Date;
-    academicYear?: AcademicYear;
     school?: School;
 }
 
@@ -44,7 +42,6 @@ export interface CreateTeacherInput {
     lastName: string;
     age: number;
     advisoryClass: string;
-    academicYearId: string;
     schoolRole: string;
     projectRole: ProjectRole;
 }

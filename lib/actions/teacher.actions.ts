@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
-import { getAcademicYears as getAcademicYearsAction } from "./academic-year.actions";
 import { teacherProfileSchema } from "@/lib/validations/teacher.validation";
 import { logError } from "@/lib/utils/logging";
 import { revalidateDashboardCache } from "./dashboard/cache";
@@ -12,7 +11,6 @@ import type {
     CreateTeacherInput,
     TeacherResponse,
     TeacherProfile,
-    AcademicYear,
 } from "@/types/teacher.types";
 
 export async function getTeacherProfile(
@@ -31,22 +29,12 @@ export async function getTeacherProfile(
 
         const teacher = await prisma.teacher.findUnique({
             where: { userId },
-            include: {
-                academicYear: true,
-            },
         });
         return teacher;
     } catch (error) {
         logError("Get teacher profile error:", error);
         return null;
     }
-}
-
-/**
- * ดึงรายการปีการศึกษา พร้อม auto-create ถ้าปีปัจจุบันยังไม่มี
- */
-export async function getAcademicYears(): Promise<AcademicYear[]> {
-    return getAcademicYearsAction();
 }
 
 /**
@@ -126,12 +114,10 @@ export async function createTeacherProfile(
                     lastName: validated.lastName,
                     age: validated.age,
                     advisoryClass: normalizeClassName(validated.advisoryClass),
-                    academicYearId: validated.academicYearId,
                     schoolRole: validated.schoolRole,
                     projectRole: validated.projectRole,
                 },
                 include: {
-                    academicYear: true,
                     user: {
                         include: { school: true },
                     },

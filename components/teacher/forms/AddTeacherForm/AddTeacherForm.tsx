@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useAddTeacherForm } from "./useAddTeacherForm";
-import type { AcademicYear, TeacherRosterItem } from "./types";
+import type { TeacherRosterItem } from "./types";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
 import { USER_ROLE_LABELS, PROJECT_ROLE_LABELS } from "@/lib/constants/roles";
 import { ErrorMessage, InviteLinkSection } from "./components";
@@ -16,22 +16,19 @@ import {
     Clock,
     Building2,
     FolderKanban,
-    CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 interface AddTeacherFormProps {
-    academicYears: AcademicYear[];
     roster: TeacherRosterItem[];
     invites: TeacherInviteWithAcademicYear[];
 }
 
 /**
  * AddTeacherForm - Roster-based invite flow
- * Select a teacher from roster → auto-fill all fields → only pick academic year → submit
+ * Select a teacher from roster → auto-fill all fields → submit
  */
 export function AddTeacherForm({
-    academicYears,
     roster,
     invites,
 }: AddTeacherFormProps): React.ReactNode {
@@ -46,7 +43,7 @@ export function AddTeacherForm({
         onSubmit,
         copyToClipboard,
         handleCancel,
-    } = useAddTeacherForm(academicYears);
+    } = useAddTeacherForm();
 
     const {
         register,
@@ -247,36 +244,6 @@ export function AddTeacherForm({
                             <Mail className="w-3.5 h-3.5 text-emerald-400" />
                             <span>{selectedTeacher.email}</span>
                         </div>
-                    )}
-                </div>
-            )}
-
-            {/* Academic Year — only show when teacher is selected */}
-            {selectedTeacher && (
-                <div>
-                    <p className="text-sm font-semibold text-emerald-800 mb-2">
-                        ขั้นที่ 3: เลือกปีการศึกษาและสร้างลิงก์
-                    </p>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                        <CalendarDays className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-emerald-500" />
-                        ปีการศึกษา <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        {...register("academicYearId")}
-                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-base hover:border-emerald-300 text-black"
-                    >
-                        <option value="">เลือกปีการศึกษา</option>
-                        {academicYears.map((year) => (
-                            <option key={year.id} value={year.id}>
-                                {year.year}/{year.semester}
-                                {year.isCurrent ? " (ปัจจุบัน)" : ""}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.academicYearId && (
-                        <p className="mt-1 text-sm text-red-500 font-medium">
-                            {errors.academicYearId.message}
-                        </p>
                     )}
                 </div>
             )}
