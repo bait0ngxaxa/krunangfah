@@ -90,9 +90,7 @@ export function useAddTeacherForm(): UseAddTeacherFormReturn {
                 shouldValidate: true,
             },
         );
-        if (teacher.email) {
-            form.setValue("email", teacher.email, { shouldValidate: true });
-        }
+        form.setValue("email", teacher.email ?? "", { shouldValidate: true });
     };
 
     const onSubmit = async (data: TeacherInviteFormData): Promise<void> => {

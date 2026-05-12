@@ -5,7 +5,12 @@ export const PROJECT_ROLE_VALUES = ["lead", "care", "coordinate"] as const;
 export const USER_ROLE_VALUES = ["school_admin", "class_teacher"] as const;
 
 export const teacherInviteSchema = z.object({
-    email: z.string().email("อีเมลไม่ถูกต้อง"),
+    email: z
+        .string()
+        .trim()
+        .min(1, "กรุณากรอกอีเมล")
+        .email("อีเมลไม่ถูกต้อง")
+        .transform((email) => email.toLowerCase()),
     firstName: z
         .string()
         .min(1, "กรุณากรอกชื่อ")

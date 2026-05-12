@@ -168,21 +168,19 @@ export async function addTeacherToRoster(
         }
 
         const { email, ...rest } = parsed.data;
-        const cleanEmail = email?.trim() || null;
+        const cleanEmail = email.trim();
 
         // Check duplicate email within same school
-        if (cleanEmail) {
-            const existing = await prisma.schoolTeacherRoster.findUnique({
-                where: {
-                    schoolId_email: { schoolId, email: cleanEmail },
-                },
-            });
-            if (existing) {
-                return {
-                    success: false,
-                    message: `อีเมล "${cleanEmail}" มีอยู่ใน roster แล้ว`,
-                };
-            }
+        const existing = await prisma.schoolTeacherRoster.findUnique({
+            where: {
+                schoolId_email: { schoolId, email: cleanEmail },
+            },
+        });
+        if (existing) {
+            return {
+                success: false,
+                message: `อีเมล "${cleanEmail}" มีอยู่ใน roster แล้ว`,
+            };
         }
 
         const entry = await prisma.schoolTeacherRoster.create({
@@ -349,23 +347,21 @@ export async function updateRosterEntry(
         }
 
         const { email, ...rest } = parsed.data;
-        const cleanEmail = email?.trim() || null;
+        const cleanEmail = email.trim();
 
         // Check duplicate email (exclude current entry)
-        if (cleanEmail) {
-            const dup = await prisma.schoolTeacherRoster.findFirst({
-                where: {
-                    schoolId,
-                    email: cleanEmail,
-                    id: { not: id },
-                },
-            });
-            if (dup) {
-                return {
-                    success: false,
-                    message: `อีเมล "${cleanEmail}" มีอยู่ใน roster แล้ว`,
-                };
-            }
+        const dup = await prisma.schoolTeacherRoster.findFirst({
+            where: {
+                schoolId,
+                email: cleanEmail,
+                id: { not: id },
+            },
+        });
+        if (dup) {
+            return {
+                success: false,
+                message: `อีเมล "${cleanEmail}" มีอยู่ใน roster แล้ว`,
+            };
         }
 
         const updated = await prisma.schoolTeacherRoster.update({

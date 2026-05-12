@@ -25,6 +25,7 @@ setupAuthMocks();
 const USERS = createMockUsers("um");
 
 const {
+    getUsers,
     deleteUser,
     changeUserRole,
     updateTeacherProfile,
@@ -122,7 +123,7 @@ describe("Integration: User Management", () => {
             expect(result.message).toContain("ไม่พบ");
         });
 
-        it("successfully deletes a user", async () => {
+        it("soft deletes a teacher user and hides them from active lists", async () => {
             // Create a disposable user
             const disposable = await prisma.user.create({
                 data: {
@@ -133,15 +134,159 @@ describe("Integration: User Management", () => {
                     password: "$2a$10$fakehash",
                 },
             });
+            await prisma.teacher.create({
+                data: {
+                    userId: disposable.id,
+                    firstName: "Disposable",
+                    lastName: "Teacher",
+                    age: 30,
+                    advisoryClass: "ม.1/1",
+                    schoolRole: "ครูประจำชั้น",
+                    projectRole: "care",
+                },
+            });
 
             mockSession(USERS.systemAdmin);
             const result = await deleteUser(disposable.id);
             expect(result.success).toBe(true);
 
-            const deleted = await prisma.user.findUnique({
+            const deletedUser = await prisma.user.findUnique({
                 where: { id: disposable.id },
+                include: { teacher: true },
             });
-            expect(deleted).toBeNull();
+            expect(deletedUser).not.toBeNull();
+            expect(deletedUser!.deletedAt).toBeInstanceOf(Date);
+            expect(deletedUser!.password).toBeNull();
+            expect(deletedUser!.teacher).not.toBeNull();
+
+            const userList = await getUsers({ pageSize: 100 });
+            expect(userList.users.some((user) => user.id === disposable.id)).toBe(false);
+
+            const schoolTeachers = await getSchoolTeachers(schoolId);
+            expect(schoolTeachers.some((user) => user.id === disposable.id)).toBe(false);
+
+            await prisma.user.delete({ where: { id: disposable.id } });
+        });
+
+        it("returns error when user is already soft deleted", async () => {
+            const disposable = await prisma.user.create({
+                data: {
+                    email: `deleted-${Date.now()}@test.local`,
+                    name: "Deleted",
+                    role: "class_teacher",
+                    schoolId,
+                    password: null,
+                    deletedAt: new Date(),
+                },
+            });
+
+            mockSession(USERS.systemAdmin);
+            const result = await deleteUser(disposable.id);
+            expect(result.success).toBe(false);
+            expect(result.message).toContain("ถูกลบแล้ว");
+
+            await prisma.user.delete({ where: { id: disposable.id } });
+        });
+
+        it("primary school_admin can soft delete a teacher in own school", async () => {
+            const disposable = await prisma.user.create({
+                data: {
+                    email: `primary-delete-${Date.now()}@test.local`,
+                    name: "Primary Delete",
+                    role: "class_teacher",
+                    schoolId,
+                    password: "$2a$10$fakehash",
+                },
+            });
+            await prisma.teacher.create({
+                data: {
+                    userId: disposable.id,
+                    firstName: "Primary",
+                    lastName: "Delete",
+                    age: 30,
+                    advisoryClass: "ม.1/1",
+                    schoolRole: "ครูประจำชั้น",
+                    projectRole: "care",
+                },
+            });
+
+            mockSession(USERS.schoolAdmin);
+            const result = await deleteUser(disposable.id);
+            expect(result.success).toBe(true);
+
+            const deletedUser = await prisma.user.findUnique({
+                where: { id: disposable.id },
+                select: { deletedAt: true, password: true },
+            });
+            expect(deletedUser!.deletedAt).toBeInstanceOf(Date);
+            expect(deletedUser!.password).toBeNull();
+
+            await prisma.user.delete({ where: { id: disposable.id } });
+        });
+
+        it("primary school_admin cannot delete teacher in another school", async () => {
+            const otherSchool = await prisma.school.create({
+                data: { name: `โรงเรียนอื่น ${Date.now()}` },
+            });
+            const otherTeacher = await prisma.user.create({
+                data: {
+                    email: `other-school-delete-${Date.now()}@test.local`,
+                    name: "Other School",
+                    role: "class_teacher",
+                    schoolId: otherSchool.id,
+                    password: "$2a$10$fakehash",
+                },
+            });
+            await prisma.teacher.create({
+                data: {
+                    userId: otherTeacher.id,
+                    firstName: "Other",
+                    lastName: "School",
+                    age: 30,
+                    advisoryClass: "ม.1/1",
+                    schoolRole: "ครูประจำชั้น",
+                    projectRole: "care",
+                },
+            });
+
+            mockSession(USERS.schoolAdmin);
+            const result = await deleteUser(otherTeacher.id);
+            expect(result.success).toBe(false);
+            expect(result.message).toContain("ต่างโรงเรียน");
+
+            await prisma.user.delete({ where: { id: otherTeacher.id } });
+            await prisma.school.delete({ where: { id: otherSchool.id } });
+        });
+
+        it("primary school_admin cannot delete another Primary Admin", async () => {
+            const primaryAdmin = await prisma.user.create({
+                data: {
+                    email: `other-primary-${Date.now()}@test.local`,
+                    name: "Other Primary",
+                    role: "school_admin",
+                    isPrimary: true,
+                    schoolId,
+                    password: "$2a$10$fakehash",
+                },
+            });
+            await prisma.teacher.create({
+                data: {
+                    userId: primaryAdmin.id,
+                    firstName: "Other",
+                    lastName: "Primary",
+                    age: 30,
+                    advisoryClass: "ทุกห้อง",
+                    schoolRole: "ครูนางฟ้า",
+                    projectRole: "lead",
+                },
+            });
+
+            mockSession(USERS.schoolAdmin);
+            const result = await deleteUser(primaryAdmin.id);
+            expect(result.success).toBe(false);
+            expect(result.message).toContain("Primary Admin");
+
+            await prisma.user.delete({ where: { id: primaryAdmin.id } });
         });
     });
 

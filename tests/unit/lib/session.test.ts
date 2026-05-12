@@ -61,7 +61,12 @@ describe("lib/session", () => {
 
         expect(prisma.user.findUnique).toHaveBeenCalledWith({
             where: { id: "user-1" },
-            select: { role: true, isPrimary: true, schoolId: true },
+            select: {
+                role: true,
+                isPrimary: true,
+                schoolId: true,
+                deletedAt: true,
+            },
         });
         expect(session.user.role).toBe("school_admin");
         expect(session.user.isPrimary).toBe(true);
@@ -73,6 +78,18 @@ describe("lib/session", () => {
         vi.mocked(prisma.user.findUnique).mockResolvedValue(null as never);
 
         // redirect() in Next.js throws a NEXT_REDIRECT error internally
+        await expect(requireAuth()).rejects.toThrow("NEXT_REDIRECT");
+    });
+
+    it("requireAuth redirects to /signin when user is soft deleted", async () => {
+        mockAuth.mockResolvedValue(createSession());
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+            role: "class_teacher",
+            isPrimary: false,
+            schoolId: "school-a",
+            deletedAt: new Date(),
+        } as never);
+
         await expect(requireAuth()).rejects.toThrow("NEXT_REDIRECT");
     });
 

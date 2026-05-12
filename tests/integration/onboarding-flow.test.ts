@@ -378,6 +378,7 @@ describe("Integration: Onboarding Flow", () => {
             const result = await addTeacherToRoster({
                 firstName: "สมศรี",
                 lastName: "ใจดี",
+                email: `somsri-ob-${Date.now()}@test.local`,
                 age: 28,
                 userRole: "class_teacher",
                 advisoryClass: "ม.1/1",
@@ -451,6 +452,7 @@ describe("Integration: Onboarding Flow", () => {
             const result = await addTeacherToRoster({
                 firstName: "ลอง",
                 lastName: "เพิ่ม",
+                email: `try-add-ob-${Date.now()}@test.local`,
                 age: 25,
                 userRole: "class_teacher",
                 advisoryClass: "ม.1/1",
@@ -467,6 +469,7 @@ describe("Integration: Onboarding Flow", () => {
             const result = await addTeacherToRoster({
                 firstName: "ลอง",
                 lastName: "เพิ่ม",
+                email: `unauth-add-ob-${Date.now()}@test.local`,
                 age: 25,
                 userRole: "class_teacher",
                 advisoryClass: "ม.1/1",

@@ -45,11 +45,7 @@ export function AddTeacherForm({
         handleCancel,
     } = useAddTeacherForm();
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = form;
+    const { register, handleSubmit } = form;
 
     // Filter out teachers who have an active (pending) invite or already accepted
     // Only allow re-inviting if invite is expired AND not accepted
@@ -64,16 +60,35 @@ export function AddTeacherForm({
         );
     }, [invites]);
 
-    const availableRoster = roster.filter((t) => {
-        const isBlocked = blockedInvites.some(
-            (inv) =>
-                (t.email && inv.email === t.email) ||
-                (inv.firstName === t.firstName && inv.lastName === t.lastName),
-        );
-        return !isBlocked;
-    });
+    const blockedEmailSet = useMemo(
+        () => new Set(blockedInvites.map((inv) => inv.email.toLowerCase())),
+        [blockedInvites],
+    );
+    const blockedNameSet = useMemo(
+        () =>
+            new Set(
+                blockedInvites.map((inv) => `${inv.firstName} ${inv.lastName}`),
+            ),
+        [blockedInvites],
+    );
+    const availableRoster = useMemo(
+        () =>
+            roster.filter((t) => {
+                if (!t.email) return false;
+
+                const emailKey = t.email.toLowerCase();
+                const nameKey = `${t.firstName} ${t.lastName}`;
+
+                return (
+                    !blockedEmailSet.has(emailKey) &&
+                    !blockedNameSet.has(nameKey)
+                );
+            }),
+        [blockedEmailSet, blockedNameSet, roster],
+    );
     const selectedTeacher = roster.find((t) => t.id === selectedRosterId);
     const blockedCount = blockedInvites.length;
+    const missingEmailCount = roster.filter((t) => !t.email).length;
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -90,6 +105,9 @@ export function AddTeacherForm({
                 ขั้นที่ 1: เลือกครูจากรายการที่พร้อมเชิญ
                 {blockedCount > 0
                     ? ` (ซ่อนครู ${blockedCount} คนที่มีคำเชิญค้างหรือเปิดใช้งานแล้ว)`
+                    : ""}
+                {missingEmailCount > 0
+                    ? ` กรุณาแก้ไขอีเมลในรายชื่อครู ${missingEmailCount} คนก่อนเชิญ`
                     : ""}
             </div>
             {availableRoster.length > 0 ? (
@@ -218,33 +236,10 @@ export function AddTeacherForm({
                         </div>
                     </div>
 
-                    {/* Email — required, show if missing from roster */}
-                    {!selectedTeacher.email && (
-                        <div className="pt-2 border-t border-emerald-50">
-                            <label className="flex items-center gap-1.5 text-sm font-bold text-gray-700 mb-2">
-                                <Mail className="w-3.5 h-3.5 text-emerald-500" />
-                                อีเมล <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                {...register("email")}
-                                type="email"
-                                className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-base text-black placeholder:text-gray-400 hover:border-emerald-300"
-                                placeholder="กรอกอีเมลสำหรับส่งคำเชิญ"
-                            />
-                            {errors.email && (
-                                <p className="mt-1 text-sm text-red-500 font-medium">
-                                    {errors.email.message}
-                                </p>
-                            )}
-                        </div>
-                    )}
-
-                    {selectedTeacher.email && (
-                        <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                            <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>{selectedTeacher.email}</span>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                        <Mail className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>{selectedTeacher.email}</span>
+                    </div>
                 </div>
             )}
 
@@ -256,9 +251,7 @@ export function AddTeacherForm({
             <input type="hidden" {...register("advisoryClass")} />
             <input type="hidden" {...register("schoolRole")} />
             <input type="hidden" {...register("projectRole")} />
-            {selectedTeacher?.email && (
-                <input type="hidden" {...register("email")} />
-            )}
+            <input type="hidden" {...register("email")} />
 
             {/* Submit / Cancel */}
             {selectedTeacher && (

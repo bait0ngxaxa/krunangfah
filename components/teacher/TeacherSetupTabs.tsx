@@ -87,6 +87,11 @@ export function TeacherSetupTabs({
     isPrimary,
 }: TeacherSetupTabsProps) {
     const [activeSection, setActiveSection] = useState<FlowSectionId>("classes");
+    const [rosterItems, setRosterItems] = useState<TeacherRosterItem[]>(roster);
+
+    useEffect(() => {
+        setRosterItems(roster);
+    }, [roster]);
 
     useEffect(() => {
         if (!isPrimary) return;
@@ -145,7 +150,7 @@ export function TeacherSetupTabs({
                         </span>
                     </p>
                     <AddTeacherForm
-                        roster={roster}
+                        roster={rosterItems}
                         invites={invites}
                     />
                 </SectionCard>
@@ -197,7 +202,7 @@ export function TeacherSetupTabs({
                     <StepBadge
                         step={2}
                         title="เตรียมรายชื่อครู"
-                        countLabel={`${roster.length} คน`}
+                        countLabel={`${rosterItems.length} คน`}
                     />
                     <StepBadge
                         step={3}
@@ -223,8 +228,9 @@ export function TeacherSetupTabs({
                 subtitle="บันทึกข้อมูลครูล่วงหน้าเพื่อใช้ตอนสร้างคำเชิญ"
             >
                 <TeacherRosterEditor
-                    initialRoster={roster}
+                    initialRoster={rosterItems}
                     schoolClasses={classes}
+                    onUpdate={setRosterItems}
                     readOnly={false}
                 />
             </SectionCard>
@@ -242,7 +248,7 @@ export function TeacherSetupTabs({
                     </span>
                 </p>
                 <AddTeacherForm
-                    roster={roster}
+                    roster={rosterItems}
                     invites={invites}
                 />
             </SectionCard>

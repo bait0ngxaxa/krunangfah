@@ -90,6 +90,7 @@ model User {
   role          UserRole  @default(school_admin) // effective role used by access control
   isPrimary     Boolean   @default(false) // true = primary school_admin for school-level management
   schoolId      String?   // FK to School
+  deletedAt     DateTime? // soft delete timestamp; deleted users cannot sign in
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -107,6 +108,7 @@ model User {
 
   @@map("users")
   @@index([email])
+  @@index([deletedAt])
 }
 
 // Academic Year - ปีการศึกษาและเทอม

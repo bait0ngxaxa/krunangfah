@@ -100,7 +100,7 @@ export function RosterForm({
                     <input
                         {...register("email")}
                         type="email"
-                        placeholder="อีเมล (ไม่บังคับ)"
+                        placeholder="อีเมล *"
                         className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[var(--brand-primary)] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                     />
                     {errors.email && (

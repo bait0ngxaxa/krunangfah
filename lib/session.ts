@@ -16,10 +16,15 @@ async function getFreshAccessClaims(
 ): Promise<FreshAccessClaims | null> {
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { role: true, isPrimary: true, schoolId: true },
+        select: {
+            role: true,
+            isPrimary: true,
+            schoolId: true,
+            deletedAt: true,
+        },
     });
 
-    if (!user) return null;
+    if (!user || user.deletedAt) return null;
 
     return {
         role: user.role as UserRole,

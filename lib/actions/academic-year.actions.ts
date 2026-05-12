@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import {
     getCurrentAcademicYear,
-    generateAcademicYearData,
+    type AcademicYearInfo,
 } from "@/lib/utils/academic-year";
 import type { AcademicYear } from "@/types/teacher.types";
 import { logError } from "@/lib/utils/logging";
@@ -16,28 +16,10 @@ export async function getAcademicYears(): Promise<AcademicYear[]> {
     try {
         await requireAuth();
 
-        // 1. คำนวณปีการศึกษาปัจจุบัน
         const current = getCurrentAcademicYear();
 
-        // 2. ตรวจสอบว่าปีปัจจุบันมีใน DB หรือยัง
-        const exists = await prisma.academicYear.findUnique({
-            where: {
-                year_semester: {
-                    year: current.year,
-                    semester: current.semester,
-                },
-            },
-        });
+        await activateCurrentAcademicYear(current);
 
-        // 3. ถ้าไม่มี → สร้างใหม่ (ทั้ง 2 เทอมของปีนั้น)
-        if (!exists) {
-            await ensureAcademicYearExists(current.year, current.semester);
-        }
-
-        // 4. อัพเดต isCurrent flag
-        await updateCurrentFlag(current.year, current.semester);
-
-        // 5. Return ทั้งหมด (เรียงจากใหม่ → เก่า)
         const academicYears = await prisma.academicYear.findMany({
             orderBy: [{ year: "desc" }, { semester: "desc" }],
         });
@@ -57,26 +39,7 @@ export async function getCurrentAcademicYearRecord(): Promise<AcademicYear | nul
         await requireAuth();
 
         const current = getCurrentAcademicYear();
-
-        // ใช้ upsert เพื่อให้แน่ใจว่ามีอยู่
-        const record = await prisma.academicYear.upsert({
-            where: {
-                year_semester: {
-                    year: current.year,
-                    semester: current.semester,
-                },
-            },
-            update: {
-                isCurrent: true,
-            },
-            create: {
-                year: current.year,
-                semester: current.semester,
-                startDate: current.startDate,
-                endDate: current.endDate,
-                isCurrent: true,
-            },
-        });
+        const record = await activateCurrentAcademicYear(current);
 
         return record;
     } catch (error) {
@@ -86,76 +49,39 @@ export async function getCurrentAcademicYearRecord(): Promise<AcademicYear | nul
 }
 
 /**
- * สร้างปีการศึกษาใหม่ (ทั้ง 2 เทอม)
+ * เปิดใช้ปีการศึกษา/เทอมปัจจุบันเท่านั้น ไม่สร้างเทอมล่วงหน้า
  */
-async function ensureAcademicYearExists(
-    year: number,
-    currentSemester: number,
-): Promise<void> {
-    const yearData = generateAcademicYearData(year);
-
-    for (const data of yearData) {
-        await prisma.academicYear.upsert({
+async function activateCurrentAcademicYear(
+    current: AcademicYearInfo,
+): Promise<AcademicYear> {
+    const [_, record] = await prisma.$transaction([
+        prisma.academicYear.updateMany({
             where: {
-                year_semester: {
-                    year: data.year,
-                    semester: data.semester,
+                isCurrent: true,
+                NOT: {
+                    year: current.year,
+                    semester: current.semester,
                 },
             },
-            update: {},
-            create: {
-                year: data.year,
-                semester: data.semester,
-                startDate: data.startDate,
-                endDate: data.endDate,
-                isCurrent:
-                    data.year === year && data.semester === currentSemester,
-            },
-        });
-    }
-
-    console.warn(`✅ Auto-created academic year ${year}`);
-}
-
-/**
- * อัพเดต isCurrent flag (ใช้ transaction ป้องกัน race condition)
- */
-async function updateCurrentFlag(
-    currentYear: number,
-    currentSemester: number,
-): Promise<void> {
-    // เช็คก่อนว่า flag ถูกต้องอยู่แล้วหรือไม่
-    const currentRecord = await prisma.academicYear.findUnique({
-        where: {
-            year_semester: {
-                year: currentYear,
-                semester: currentSemester,
-            },
-        },
-        select: { isCurrent: true },
-    });
-
-    // ถ้า isCurrent = true อยู่แล้ว ไม่ต้องทำอะไร
-    if (currentRecord?.isCurrent) {
-        return;
-    }
-
-    // ใช้ transaction ป้องกัน race condition
-    await prisma.$transaction([
-        // Reset all to false
-        prisma.academicYear.updateMany({
-            where: { isCurrent: true },
             data: { isCurrent: false },
         }),
-        // Set current one to true
-        prisma.academicYear.update({
+        prisma.academicYear.upsert({
             where: {
                 year_semester: {
-                    year: currentYear,
-                    semester: currentSemester,
+                    year: current.year,
+                    semester: current.semester,
                 },
             },
-            data: { isCurrent: true },
+            update: { isCurrent: true },
+            create: {
+                year: current.year,
+                semester: current.semester,
+                startDate: current.startDate,
+                endDate: current.endDate,
+                isCurrent: true,
+            },
         }),
     ]);
+
+    return record;
 }

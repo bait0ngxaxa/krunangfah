@@ -12,7 +12,7 @@ function validClassTeacher(overrides: Record<string, unknown> = {}) {
     return {
         firstName: "สมชาย",
         lastName: "ใจดี",
-        email: "",
+        email: "teacher@school.ac.th",
         age: 30,
         userRole: "class_teacher",
         advisoryClass: "ม.1/1",
@@ -29,7 +29,7 @@ function validSchoolAdmin(overrides: Record<string, unknown> = {}) {
     return {
         firstName: "สมหญิง",
         lastName: "เก่งมาก",
-        email: "",
+        email: "admin@school.ac.th",
         age: 35,
         userRole: "school_admin",
         advisoryClass: "",
@@ -59,11 +59,11 @@ describe("teacherRosterSchema", () => {
             expect(result.success).toBe(true);
         });
 
-        it("should accept optional email as empty string", () => {
+        it("should reject empty email", () => {
             const result = teacherRosterSchema.safeParse(
                 validClassTeacher({ email: "" }),
             );
-            expect(result.success).toBe(true);
+            expect(result.success).toBe(false);
         });
 
         it("should accept valid email when provided", () => {
@@ -71,6 +71,16 @@ describe("teacherRosterSchema", () => {
                 validClassTeacher({ email: "teacher@school.ac.th" }),
             );
             expect(result.success).toBe(true);
+        });
+
+        it("should normalize email before saving", () => {
+            const result = teacherRosterSchema.safeParse(
+                validClassTeacher({ email: " Teacher@School.ac.th " }),
+            );
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.email).toBe("teacher@school.ac.th");
+            }
         });
 
         it("should accept all project roles", () => {
@@ -212,14 +222,11 @@ describe("teacherRosterSchema", () => {
             expect(result.success).toBe(false);
         });
 
-        it("should accept missing email (undefined treated as empty)", () => {
+        it("should reject missing email", () => {
             const data = validClassTeacher();
             delete (data as Record<string, unknown>).email;
-            // email is optional, the schema may fail on missing field
             const result = teacherRosterSchema.safeParse(data);
-            // email is z.string().email().optional().or(z.literal(""))
-            // undefined should either pass or fail — test documents behavior
-            expect(typeof result.success).toBe("boolean");
+            expect(result.success).toBe(false);
         });
     });
 

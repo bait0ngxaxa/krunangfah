@@ -62,7 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         where: { email },
                     });
 
-                    if (!user || !user.password) {
+                    if (!user || user.deletedAt || !user.password) {
                         return null;
                     }
 
@@ -140,10 +140,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (trigger === "update" && token.id) {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.id as string },
-                    select: { role: true, isPrimary: true, schoolId: true },
+                    select: {
+                        role: true,
+                        isPrimary: true,
+                        schoolId: true,
+                        deletedAt: true,
+                    },
                 });
 
-                if (!dbUser) return null;
+                if (!dbUser || dbUser.deletedAt) return null;
 
                 token.role = dbUser.role as UserRole;
                 token.isPrimary = dbUser.isPrimary;
@@ -160,10 +165,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (token.id && Date.now() - lastDbCheck > DB_CHECK_INTERVAL) {
                 const exists = await prisma.user.findUnique({
                     where: { id: token.id as string },
-                    select: { id: true },
+                    select: { id: true, deletedAt: true },
                 });
 
-                if (!exists) return null;
+                if (!exists || exists.deletedAt) return null;
 
                 token.lastDbCheck = Date.now();
             }

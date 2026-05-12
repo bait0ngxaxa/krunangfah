@@ -247,7 +247,7 @@ function UserCard({
             <ConfirmDialog
                 isOpen={showDeleteDialog}
                 title="ลบผู้ใช้ออกจากระบบ"
-                message={`ต้องการลบ "${user.teacherName ?? user.email}" ออกจากระบบใช่หรือไม่? ข้อมูลทั้งหมดของผู้ใช้จะถูกลบอย่างถาวร`}
+                message={`ต้องการลบ "${user.teacherName ?? user.email}" ออกจากระบบใช่หรือไม่? บัญชีนี้จะถูกปิดใช้งานและไม่สามารถเข้าสู่ระบบได้อีก`}
                 confirmLabel="ยืนยันลบ"
                 isLoading={isDeleting}
                 onConfirm={handleConfirmDelete}

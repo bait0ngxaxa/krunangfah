@@ -26,7 +26,7 @@ export async function getUsers(
         pageSize = DEFAULT_PAGE_SIZE,
     } = options;
 
-    const where: Prisma.UserWhereInput = {};
+    const where: Prisma.UserWhereInput = { deletedAt: null };
 
     // Filter by school
     if (schoolId && schoolId !== "all") {
@@ -106,7 +106,13 @@ export async function changeUserRole(
 
     const target = await prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, role: true, isPrimary: true, teacher: { select: { id: true, advisoryClass: true } } },
+        select: {
+            id: true,
+            role: true,
+            isPrimary: true,
+            deletedAt: true,
+            teacher: { select: { id: true, advisoryClass: true } },
+        },
     });
 
     if (!target) {
@@ -115,6 +121,10 @@ export async function changeUserRole(
 
     if (target.role === "system_admin") {
         return { success: false, message: "ไม่สามารถเปลี่ยนบทบาทของ System Admin" };
+    }
+
+    if (target.deletedAt) {
+        return { success: false, message: "ผู้ใช้นี้ถูกลบแล้ว" };
     }
 
     if (target.isPrimary) {
@@ -156,11 +166,19 @@ export async function changeUserRole(
 }
 
 /**
- * Delete user and all related data
- * Cannot delete yourself or other system_admins
+ * Soft delete user and keep related historical data
+ * System admin can delete non-system users.
+ * Primary school admin can delete teachers in their own school.
  */
 export async function deleteUser(userId: string): Promise<MutationResponse> {
-    const session = await requireAdmin();
+    const session = await requireAuth();
+    const isSystemAdmin = session.user.role === "system_admin";
+    const isPrimaryAdmin =
+        session.user.role === "school_admin" && session.user.isPrimary;
+
+    if (!isSystemAdmin && !isPrimaryAdmin) {
+        return { success: false, message: "ไม่มีสิทธิ์ลบผู้ใช้งาน" };
+    }
 
     if (userId === session.user.id) {
         return { success: false, message: "ไม่สามารถลบบัญชีตัวเอง" };
@@ -168,7 +186,15 @@ export async function deleteUser(userId: string): Promise<MutationResponse> {
 
     const target = await prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, role: true, email: true },
+        select: {
+            id: true,
+            role: true,
+            email: true,
+            isPrimary: true,
+            schoolId: true,
+            deletedAt: true,
+            teacher: { select: { id: true } },
+        },
     });
 
     if (!target) {
@@ -179,26 +205,31 @@ export async function deleteUser(userId: string): Promise<MutationResponse> {
         return { success: false, message: "ไม่สามารถลบ System Admin" };
     }
 
-    // Transaction: clean up all FK references, then delete user
-    await prisma.$transaction([
-        // Nullify optional FK references
-        prisma.activityProgress.updateMany({
-            where: { teacherId: userId },
-            data: { teacherId: null },
-        }),
-        // Delete records that reference this user (non-nullable FK)
-        prisma.homeVisit.deleteMany({ where: { createdById: userId } }),
-        prisma.studentReferral.deleteMany({
-            where: { OR: [{ fromTeacherUserId: userId }, { toTeacherUserId: userId }] },
-        }),
-        prisma.counselingSession.deleteMany({ where: { createdById: userId } }),
-        prisma.worksheetUpload.deleteMany({ where: { uploadedById: userId } }),
-        prisma.phqResult.deleteMany({ where: { importedById: userId } }),
-        prisma.teacherInvite.deleteMany({ where: { invitedById: userId } }),
-        prisma.schoolAdminInvite.deleteMany({ where: { createdBy: userId } }),
-        // Delete user (cascades to Teacher)
-        prisma.user.delete({ where: { id: userId } }),
-    ]);
+    if (target.isPrimary) {
+        return { success: false, message: "ไม่สามารถลบ Primary Admin" };
+    }
+
+    if (target.deletedAt) {
+        return { success: false, message: "ผู้ใช้นี้ถูกลบแล้ว" };
+    }
+
+    if (isPrimaryAdmin) {
+        if (target.schoolId !== session.user.schoolId) {
+            return { success: false, message: "ไม่สามารถลบครูต่างโรงเรียน" };
+        }
+
+        if (!target.teacher) {
+            return { success: false, message: "ไม่พบโปรไฟล์ครู" };
+        }
+    }
+
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            deletedAt: new Date(),
+            password: null,
+        },
+    });
 
     revalidateDashboardCache();
     return { success: true, message: `ลบผู้ใช้ ${target.email} สำเร็จ` };
@@ -253,6 +284,7 @@ export async function updateTeacherProfile(
                     role: true,
                     isPrimary: true,
                     schoolId: true,
+                    deletedAt: true,
                 },
             },
         },
@@ -268,6 +300,10 @@ export async function updateTeacherProfile(
 
     if (teacher.user.role === "system_admin") {
         return { success: false, message: "ไม่สามารถแก้ไข System Admin" };
+    }
+
+    if (teacher.user.deletedAt) {
+        return { success: false, message: "ผู้ใช้นี้ถูกลบแล้ว" };
     }
 
     // primary school_admin can only edit teachers in their own school
@@ -335,6 +371,7 @@ export async function getSchoolTeachers(
     const users = await prisma.user.findMany({
         where: {
             schoolId: targetSchoolId,
+            deletedAt: null,
             teacher: { isNot: null },
         },
         include: {
