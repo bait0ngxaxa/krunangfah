@@ -182,6 +182,70 @@ describe("Integration: Activity Flow", () => {
         });
     });
 
+    describe("referred student - class_teacher manage lock", () => {
+        it("blocks class_teacher from submitting assessment after referral", async () => {
+            await prisma.studentReferral.create({
+                data: {
+                    studentId,
+                    fromTeacherUserId: USERS.classTeacher.id,
+                    toTeacherUserId: USERS.schoolAdmin.id,
+                },
+            });
+
+            mockSession(USERS.classTeacher);
+            const result = await submitTeacherAssessment(activityProgressId, {
+                internalProblems: "ปัญหาภายใน",
+                externalProblems: "ปัญหาภายนอก",
+                problemType: "internal",
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe(
+                "นักเรียนคนนี้ถูกส่งต่อแล้ว ครูประจำชั้นไม่สามารถทำกิจกรรมต่อได้",
+            );
+
+            await prisma.studentReferral.delete({
+                where: { studentId },
+            });
+        });
+
+        it("blocks class_teacher from confirming activity after referral", async () => {
+            const current = await createTestActivityProgress(
+                studentId,
+                phqResultId,
+                7,
+                { status: "in_progress" },
+            );
+
+            await prisma.studentReferral.create({
+                data: {
+                    studentId,
+                    fromTeacherUserId: USERS.classTeacher.id,
+                    toTeacherUserId: USERS.schoolAdmin.id,
+                },
+            });
+
+            mockSession(USERS.classTeacher);
+            const result = await confirmActivityComplete(current.id);
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe(
+                "นักเรียนคนนี้ถูกส่งต่อแล้ว ครูประจำชั้นไม่สามารถทำกิจกรรมต่อได้",
+            );
+
+            const unchanged = await prisma.activityProgress.findUnique({
+                where: { id: current.id },
+                select: { status: true, completedAt: true },
+            });
+            expect(unchanged?.status).toBe("in_progress");
+            expect(unchanged?.completedAt).toBeNull();
+
+            await prisma.studentReferral.delete({
+                where: { studentId },
+            });
+        });
+    });
+
     describe("confirmActivityComplete - Atomic Completion + Unlock", () => {
         it("marks current activity complete and unlocks the next activity in the same flow", async () => {
             const current = await createTestActivityProgress(

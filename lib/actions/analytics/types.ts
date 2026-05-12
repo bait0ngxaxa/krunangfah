@@ -34,6 +34,11 @@ export interface ActivityProgressByRisk {
     activity5: number; // กิจกรรม 5
 }
 
+export interface ActivityCompletionSummary {
+    completedStudents: number;
+    incompleteStudents: number;
+}
+
 export interface GradeRiskData {
     grade: string; // "ม.5", "ม.6", etc.
     red: number;
@@ -62,6 +67,7 @@ export interface AnalyticsData {
     currentSemester?: number;
     trendData: TrendDataPoint[];
     activityProgressByRisk: ActivityProgressByRisk[];
+    activityCompletionSummary: ActivityCompletionSummary;
     gradeRiskData: GradeRiskData[];
     hospitalReferralsByGrade: HospitalReferralByGrade[];
     totalReferrals: number;

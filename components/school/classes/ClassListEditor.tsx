@@ -14,14 +14,19 @@ export function ClassListEditor({
     const {
         classes,
         inputValue,
+        studentCountValue,
         errorMsg,
         bulkGrade,
         bulkCount,
+        bulkStudentCount,
         setInputValue,
+        setStudentCountValue,
         setBulkGrade,
         setBulkCount,
+        setBulkStudentCount,
         handleAdd,
         handleRemove,
+        handleUpdateStudentCount,
         handleBulkAdd,
     } = useClassList({ initialClasses, onUpdate });
 
@@ -44,7 +49,9 @@ export function ClassListEditor({
             {!readOnly && (
                 <SingleClassAdder
                     inputValue={inputValue}
+                    studentCountValue={studentCountValue}
                     onInputChange={setInputValue}
+                    onStudentCountChange={setStudentCountValue}
                     onAdd={handleAdd}
                 />
             )}
@@ -53,8 +60,10 @@ export function ClassListEditor({
                 <BulkClassAdder
                     bulkGrade={bulkGrade}
                     bulkCount={bulkCount}
+                    bulkStudentCount={bulkStudentCount}
                     onGradeChange={setBulkGrade}
                     onCountChange={setBulkCount}
+                    onStudentCountChange={setBulkStudentCount}
                     onBulkAdd={handleBulkAdd}
                 />
             )}
@@ -67,6 +76,7 @@ export function ClassListEditor({
                 classes={classes}
                 readOnly={readOnly}
                 onRemove={(id, name) => setPendingDelete({ id, name })}
+                onStudentCountChange={handleUpdateStudentCount}
             />
 
             <ConfirmDialog

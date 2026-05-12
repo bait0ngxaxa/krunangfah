@@ -70,6 +70,7 @@ model SchoolClass {
   id        String   @id @default(cuid())
   schoolId  String
   name      String   // free-form: "ม.1/1", "ป.6/2", อะไรก็ได้
+  expectedStudentCount Int @default(0) // จำนวนนักเรียนจริงที่คาดไว้ ใช้คำนวณ coverage การคัดกรอง
   createdAt DateTime @default(now())
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)

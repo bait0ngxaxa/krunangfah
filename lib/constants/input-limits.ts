@@ -3,6 +3,7 @@ export const INPUT_LIMITS = {
         name: 200,
         province: 100,
         className: 50,
+        classStudentCount: 200,
     },
     teacher: {
         firstName: 100,

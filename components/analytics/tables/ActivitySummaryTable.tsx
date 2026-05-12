@@ -1,4 +1,5 @@
 import { ClipboardList } from "lucide-react";
+import { REQUIRED_ACTIVITY_NUMBERS_BY_RISK } from "@/lib/actions/analytics/constants";
 import type { ActivityProgressByRisk } from "@/lib/actions/analytics/types";
 
 interface ActivityProgressTableProps {
@@ -89,19 +90,10 @@ export function ActivitySummaryTable({
                                 item.activity5,
                             ];
 
-                            // Determine which activities are required for this risk level
-                            const REQUIRED_ACTIVITIES: Record<
-                                string,
-                                number[]
-                            > = {
-                                orange: [1, 2, 3, 4, 5],
-                                yellow: [1, 2, 3, 5],
-                                green: [1, 2, 5],
-                                red: [],
-                                blue: [],
-                            };
                             const requiredForLevel =
-                                REQUIRED_ACTIVITIES[item.riskLevel] || [];
+                                REQUIRED_ACTIVITY_NUMBERS_BY_RISK[
+                                    item.riskLevel as keyof typeof REQUIRED_ACTIVITY_NUMBERS_BY_RISK
+                                ] || [];
                             const hasActivities = requiredForLevel.length > 0;
 
                             return (

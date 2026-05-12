@@ -8,8 +8,10 @@ import type { BulkClassAdderProps } from "../types";
 export function BulkClassAdder({
     bulkGrade,
     bulkCount,
+    bulkStudentCount,
     onGradeChange,
     onCountChange,
+    onStudentCountChange,
     onBulkAdd,
 }: BulkClassAdderProps) {
     return (
@@ -45,6 +47,15 @@ export function BulkClassAdder({
                     max={20}
                     placeholder="จำนวนทับ"
                     className="w-28 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[var(--brand-primary)] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
+                />
+                <input
+                    type="number"
+                    value={bulkStudentCount}
+                    onChange={(e) => onStudentCountChange(e.target.value)}
+                    min={0}
+                    max={INPUT_LIMITS.school.classStudentCount}
+                    placeholder="นร./ห้อง"
+                    className="w-32 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-[var(--brand-primary)] bg-white shadow-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                 />
                 <button
                     type="button"

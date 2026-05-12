@@ -118,5 +118,50 @@ describe("Integration: Worksheet Access Control", () => {
         const result = await deleteWorksheetUpload(upload.id);
         expect(result.success).toBe(true);
     });
+
+    it("class_teacher cannot delete worksheet for referred student in own advisory class", async () => {
+        const ownStudent = await createTestStudent(USERS.classTeacher.schoolId!, {
+            class: "ม.2/5",
+        });
+        const ay = await createTestAcademicYear({ year: 2601, semester: 1 });
+        const phq = await createTestPhqResult(
+            ownStudent.id,
+            ay.id,
+            USERS.classTeacher.id,
+        );
+        const ownProgress = await createTestActivityProgress(
+            ownStudent.id,
+            phq.id,
+            1,
+            { status: "in_progress" },
+        );
+
+        await prisma.studentReferral.create({
+            data: {
+                studentId: ownStudent.id,
+                fromTeacherUserId: USERS.classTeacher.id,
+                toTeacherUserId: USERS.schoolAdmin.id,
+            },
+        });
+
+        const upload = await prisma.worksheetUpload.create({
+            data: {
+                activityProgressId: ownProgress.id,
+                worksheetNumber: 1,
+                fileName: "worksheet-referral.png",
+                fileUrl: "/api/uploads/worksheets/fake-referral.png",
+                fileType: "image/png",
+                fileSize: 100,
+                uploadedById: USERS.schoolAdmin.id,
+            },
+        });
+
+        mockSession(USERS.classTeacher);
+        const result = await deleteWorksheetUpload(upload.id);
+        expect(result.success).toBe(false);
+        expect(result.message).toBe(
+            "นักเรียนคนนี้ถูกส่งต่อแล้ว ครูประจำชั้นไม่สามารถทำกิจกรรมต่อได้",
+        );
+    });
 });
 

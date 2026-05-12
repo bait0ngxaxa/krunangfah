@@ -102,7 +102,7 @@ export function AddTeacherForm({
 
             {/* Roster Picker */}
             <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-sm text-emerald-800">
-                ขั้นที่ 1: เลือกครูจากรายการที่พร้อมเชิญ
+                เลือกครูจากรายการที่พร้อมเชิญ
                 {blockedCount > 0
                     ? ` (ซ่อนครู ${blockedCount} คนที่มีคำเชิญค้างหรือเปิดใช้งานแล้ว)`
                     : ""}
@@ -150,7 +150,7 @@ export function AddTeacherForm({
             {selectedTeacher && (
                 <div className="p-4 bg-white border border-emerald-100 rounded-xl space-y-3">
                     <p className="text-sm font-semibold text-emerald-800">
-                        ขั้นที่ 2: ตรวจสอบข้อมูลครูก่อนสร้างคำเชิญ
+                        ตรวจสอบข้อมูลครูก่อนสร้างคำเชิญ
                     </p>
                     <div className="flex items-center gap-2 mb-2">
                         <UserCheck className="w-4 h-4 text-green-500" />

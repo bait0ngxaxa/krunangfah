@@ -17,3 +17,11 @@ export const RISK_LEVEL_CONFIG = Object.fromEntries(
 >;
 
 export type RiskLevel = keyof typeof RISK_LEVEL_CONFIG;
+
+export const REQUIRED_ACTIVITY_NUMBERS_BY_RISK: Record<RiskLevel, number[]> = {
+    blue: [],
+    green: [1, 2, 5],
+    yellow: [1, 2, 3, 5],
+    orange: [1, 2, 3, 4, 5],
+    red: [],
+};

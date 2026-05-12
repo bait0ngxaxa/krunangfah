@@ -65,6 +65,9 @@ export default async function TeacherAssessmentPage({
         studentId,
         latestResult.id,
     );
+    if (!progressResult.success) {
+        redirect(studentHelpRoute(studentId));
+    }
     const activityProgress = progressResult.success
         ? progressResult.data || []
         : [];

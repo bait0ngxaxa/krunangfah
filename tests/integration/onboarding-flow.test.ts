@@ -31,6 +31,7 @@ const { createTeacherProfile } = await import("@/lib/actions/teacher.actions");
 const {
     createSchoolAndLink,
     addSchoolClass,
+    updateSchoolClassStudentCount,
     removeSchoolClass,
     getSchoolClasses,
 } = await import("@/lib/actions/school-setup.actions");
@@ -299,11 +300,28 @@ describe("Integration: Onboarding Flow", () => {
         it("เพิ่มห้องเรียนได้ทันทีหลังสร้างโรงเรียน", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const result = await addSchoolClass("ม.1/1");
+            const result = await addSchoolClass("ม.1/1", 32);
 
             expect(result.success).toBe(true);
             expect(result.data?.name).toBe("ม.1/1");
+            expect(result.data?.expectedStudentCount).toBe(32);
             expect(result.data?.id).toBeDefined();
+        });
+
+        it("อัปเดตจำนวนนักเรียนในห้องได้", async () => {
+            mockSession(USERS.schoolAdmin);
+
+            const classes = await getSchoolClasses();
+            const target = classes.find((c) => c.name === "ม.1/1");
+            expect(target).toBeDefined();
+
+            const result = await updateSchoolClassStudentCount(
+                target!.id,
+                35,
+            );
+
+            expect(result.success).toBe(true);
+            expect(result.data?.expectedStudentCount).toBe(35);
         });
 
         it("เพิ่มห้องเรียนหลายห้องได้", async () => {

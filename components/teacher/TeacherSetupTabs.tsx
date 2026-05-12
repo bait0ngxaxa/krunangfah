@@ -18,7 +18,7 @@ interface TeacherSetupTabsProps {
     isPrimary: boolean;
 }
 
-type FlowSectionId = "classes" | "roster" | "invite";
+type FlowSectionId = "classes" | "roster";
 
 const FLOW_SECTIONS: Array<{
     id: FlowSectionId;
@@ -26,8 +26,7 @@ const FLOW_SECTIONS: Array<{
     mobileLabel: string;
 }> = [
     { id: "classes", shortLabel: "1 ห้องเรียน", mobileLabel: "1" },
-    { id: "roster", shortLabel: "2 รายชื่อครู", mobileLabel: "2" },
-    { id: "invite", shortLabel: "3 สร้างคำเชิญ", mobileLabel: "3" },
+    { id: "roster", shortLabel: "2 รายชื่อครู / คำเชิญ", mobileLabel: "2" },
 ];
 
 function StepBadge({
@@ -41,7 +40,9 @@ function StepBadge({
 }): React.ReactNode {
     return (
         <div className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
-            <p className="text-xs font-semibold text-emerald-700">ขั้นตอน {step}</p>
+            <p className="text-xs font-semibold text-emerald-700">
+                ขั้นตอน {step}
+            </p>
             <p className="mt-1 text-sm font-bold text-gray-800">{title}</p>
             <p className="mt-1 text-xs text-gray-500">{countLabel}</p>
         </div>
@@ -66,12 +67,14 @@ function SectionCard({
             id={id}
             className="scroll-mt-32 bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-gray-100"
         >
-                <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-xl bg-[var(--brand-primary)] flex items-center justify-center shadow-sm text-white">
                     {icon}
                 </div>
                 <div>
-                    <h2 className="text-base font-bold text-gray-800">{title}</h2>
+                    <h2 className="text-base font-bold text-gray-800">
+                        {title}
+                    </h2>
                     <p className="text-xs text-gray-400">{subtitle}</p>
                 </div>
             </div>
@@ -86,7 +89,8 @@ export function TeacherSetupTabs({
     invites,
     isPrimary,
 }: TeacherSetupTabsProps) {
-    const [activeSection, setActiveSection] = useState<FlowSectionId>("classes");
+    const [activeSection, setActiveSection] =
+        useState<FlowSectionId>("classes");
     const [rosterItems, setRosterItems] = useState<TeacherRosterItem[]>(roster);
 
     useEffect(() => {
@@ -145,14 +149,12 @@ export function TeacherSetupTabs({
                     <p className="text-gray-600 mb-6 sm:mb-8 bg-emerald-50/50 p-4 rounded-xl border border-gray-100 flex items-start gap-2 text-sm sm:text-base">
                         <Info className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
                         <span>
-                            บัญชีของคุณมีสิทธิ์เฉพาะการเชิญครู หากต้องแก้ข้อมูลห้องเรียนหรือรายชื่อครู
+                            บัญชีของคุณมีสิทธิ์เฉพาะการเชิญครู
+                            หากต้องแก้ข้อมูลห้องเรียนหรือรายชื่อครู
                             ให้ติดต่อผู้ดูแลหลักของโรงเรียน
                         </span>
                     </p>
-                    <AddTeacherForm
-                        roster={rosterItems}
-                        invites={invites}
-                    />
+                    <AddTeacherForm roster={rosterItems} invites={invites} />
                 </SectionCard>
                 <TeacherInviteList invites={invites} />
             </div>
@@ -178,7 +180,9 @@ export function TeacherSetupTabs({
                                         "shrink-0 px-3 shadow-none hover:shadow-sm",
                                 })}
                             >
-                                <span className="sm:hidden">{section.mobileLabel}</span>
+                                <span className="sm:hidden">
+                                    {section.mobileLabel}
+                                </span>
                                 <span className="hidden sm:inline">
                                     {section.shortLabel}
                                 </span>
@@ -191,9 +195,11 @@ export function TeacherSetupTabs({
             <div className="rounded-3xl border border-gray-100 bg-emerald-50/60 p-4 sm:p-5">
                 <div className="flex items-center gap-2 text-emerald-700">
                     <CheckCircle2 className="w-4 h-4" />
-                    <p className="text-sm font-semibold">ลำดับการทำงานที่แนะนำ</p>
+                    <p className="text-sm font-semibold">
+                        ลำดับการทำงานที่แนะนำ
+                    </p>
                 </div>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <StepBadge
                         step={1}
                         title="เตรียมห้องเรียน"
@@ -201,13 +207,8 @@ export function TeacherSetupTabs({
                     />
                     <StepBadge
                         step={2}
-                        title="เตรียมรายชื่อครู"
+                        title="รายชื่อครู / คำเชิญ"
                         countLabel={`${rosterItems.length} คน`}
-                    />
-                    <StepBadge
-                        step={3}
-                        title="สร้างคำเชิญ"
-                        countLabel={`${invites.length} รายการ`}
                     />
                 </div>
             </div>
@@ -224,8 +225,8 @@ export function TeacherSetupTabs({
             <SectionCard
                 id="roster"
                 icon={<Users className="w-4 h-4" />}
-                title="ขั้นตอน 2: เพิ่ม-ลบ ครู"
-                subtitle="บันทึกข้อมูลครูล่วงหน้าเพื่อใช้ตอนสร้างคำเชิญ"
+                title="ขั้นตอน 2: เพิ่ม-ลบ ครู และส่งคำเชิญ"
+                subtitle="บันทึกข้อมูลครู แล้วเลือกครูจากรายการเพื่อสร้างลิงก์เชิญ"
             >
                 <TeacherRosterEditor
                     initialRoster={rosterItems}
@@ -233,24 +234,22 @@ export function TeacherSetupTabs({
                     onUpdate={setRosterItems}
                     readOnly={false}
                 />
-            </SectionCard>
-
-            <SectionCard
-                id="invite"
-                icon={<UserPlus className="w-4 h-4" />}
-                title="ขั้นตอน 3: สร้างลิงก์เชิญครู"
-                subtitle="เลือกครูจากรายการ แล้วส่งลิงก์ให้ครูตั้งรหัสผ่าน"
-            >
-                <p className="text-gray-600 mb-6 sm:mb-8 bg-emerald-50/50 p-4 rounded-xl border border-gray-100 flex items-start gap-2 text-sm sm:text-base">
-                    <Info className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                    <span>
-                        เมื่อสร้างคำเชิญแล้ว ระบบจะแสดงรายการสถานะด้านล่างและคัดลอกลิงก์ได้ทันที
-                    </span>
-                </p>
-                <AddTeacherForm
-                    roster={rosterItems}
-                    invites={invites}
-                />
+                <div className="mt-6 border-t border-gray-100 pt-6">
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600">
+                            <UserPlus className="h-4 w-4" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-800">
+                                ส่งคำเชิญจากรายชื่อครู
+                            </h3>
+                            <p className="text-xs text-gray-400">
+                                เลือกครูจากรายการด้านบนเพื่อสร้างลิงก์เชิญ
+                            </p>
+                        </div>
+                    </div>
+                    <AddTeacherForm roster={rosterItems} invites={invites} />
+                </div>
             </SectionCard>
 
             <TeacherInviteList invites={invites} />
