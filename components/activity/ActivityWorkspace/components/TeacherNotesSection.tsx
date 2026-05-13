@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { Loader2, FileText, Save, Pencil, X } from "lucide-react";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
+import {
+    getAssessmentColors,
+    getUploadColors,
+    type WorksheetRiskLevel,
+} from "../constants";
 
 interface TeacherNotesSectionProps {
     notes: string;
@@ -10,6 +15,7 @@ interface TeacherNotesSectionProps {
     onSave: () => void;
     isSaving: boolean;
     savedNotes?: string | null;
+    riskLevel: WorksheetRiskLevel;
 }
 
 /**
@@ -23,9 +29,12 @@ export function TeacherNotesSection({
     onSave,
     isSaving,
     savedNotes,
+    riskLevel,
 }: TeacherNotesSectionProps) {
     const [isEditing, setIsEditing] = useState(!savedNotes);
     const [prevSavedNotes, setPrevSavedNotes] = useState(savedNotes);
+    const colors = getUploadColors(riskLevel);
+    const assessmentColors = getAssessmentColors(riskLevel);
 
     // Switch to view mode when savedNotes update (after save + refresh)
     if (savedNotes !== prevSavedNotes) {
@@ -68,7 +77,7 @@ export function TeacherNotesSection({
                         maxLength={INPUT_LIMITS.activity.teacherNotes}
                         onChange={(e) => onNotesChange(e.target.value)}
                         placeholder="พิมพ์บันทึกของคุณที่นี่..."
-                        className="w-full flex-1 resize-none rounded-xl border border-gray-200 bg-white p-4 transition-base placeholder:text-gray-300 focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                        className={`w-full flex-1 resize-none rounded-xl border bg-white p-4 transition-base placeholder:text-gray-300 focus:outline-none focus:ring-4 ${assessmentColors.border} ${assessmentColors.borderFocus} ${assessmentColors.ringFocus}`}
                         rows={5}
                         autoFocus
                     />
@@ -76,7 +85,7 @@ export function TeacherNotesSection({
                         <button
                             onClick={handleSave}
                             disabled={isSaving || !notes.trim()}
-                            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 font-bold text-white shadow-sm transition-base hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                            className={`flex flex-1 items-center justify-center gap-2 rounded-xl ${colors.button} px-6 py-3 font-bold text-white shadow-sm transition-base hover:-translate-y-0.5 ${colors.buttonHover} hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50`}
                         >
                             {isSaving ? (
                                 <>
@@ -112,7 +121,7 @@ export function TeacherNotesSection({
                     </div>
                     <button
                         onClick={handleEdit}
-                        className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 font-bold text-gray-700 shadow-sm transition-base hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50"
+                        className={`mt-4 flex items-center justify-center gap-2 rounded-xl border bg-white px-6 py-3 font-bold ${colors.completeText} shadow-sm transition-base hover:-translate-y-0.5 hover:shadow-md ${colors.border} ${colors.bgLight}`}
                     >
                         <Pencil className="w-5 h-5" />
                         แก้ไขบันทึก

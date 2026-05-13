@@ -14,9 +14,15 @@ import type { ActivityCompletionSummary } from "@/lib/actions/analytics/types";
 interface AnalyticsSummaryCardsProps {
     totalStudents: number;
     studentsWithAssessment: number;
-    activityCompletionSummary: ActivityCompletionSummary;
+    activityCompletionSummary?: ActivityCompletionSummary;
     currentClass?: string;
 }
+
+const EMPTY_ACTIVITY_COMPLETION_SUMMARY: ActivityCompletionSummary = {
+    notStartedStudents: 0,
+    inProgressStudents: 0,
+    completedStudents: 0,
+};
 
 function MainStudentCard({
     totalStudents,
@@ -184,10 +190,12 @@ export function AnalyticsSummaryCards({
     activityCompletionSummary,
     currentClass,
 }: AnalyticsSummaryCardsProps) {
+    const safeActivityCompletionSummary =
+        activityCompletionSummary ?? EMPTY_ACTIVITY_COMPLETION_SUMMARY;
     const studentsRequiringActivity =
-        activityCompletionSummary.notStartedStudents +
-        activityCompletionSummary.inProgressStudents +
-        activityCompletionSummary.completedStudents;
+        safeActivityCompletionSummary.notStartedStudents +
+        safeActivityCompletionSummary.inProgressStudents +
+        safeActivityCompletionSummary.completedStudents;
     const studentsNotRequiringActivity = Math.max(
         0,
         studentsWithAssessment - studentsRequiringActivity,
@@ -229,21 +237,23 @@ export function AnalyticsSummaryCards({
                     <MetricRow
                         icon={CircleDashed}
                         label="ยังไม่เริ่มทำกิจกรรม"
-                        value={activityCompletionSummary.notStartedStudents}
+                        value={
+                            safeActivityCompletionSummary.notStartedStudents
+                        }
                         unit="คน"
                         accentColor="text-slate-500"
                     />
                     <MetricRow
                         icon={Clock3}
                         label="เริ่มแล้วแต่ยังไม่เสร็จครบ"
-                        value={activityCompletionSummary.inProgressStudents}
+                        value={safeActivityCompletionSummary.inProgressStudents}
                         unit="คน"
                         accentColor="text-amber-600"
                     />
                     <MetricRow
                         icon={ListChecks}
                         label="ทำกิจกรรมเสร็จครบแล้ว"
-                        value={activityCompletionSummary.completedStudents}
+                        value={safeActivityCompletionSummary.completedStudents}
                         unit="คน"
                         accentColor="text-teal-600"
                     />

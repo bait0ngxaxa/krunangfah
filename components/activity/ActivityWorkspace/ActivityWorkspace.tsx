@@ -110,7 +110,7 @@ export function ActivityWorkspace({
                             <ScheduleDateSection
                                 activityProgressId={currentProgress.id}
                                 currentDate={currentProgress.scheduledDate}
-                                isLocked={currentProgress.status === "locked"}
+                                status={currentProgress.status}
                             />
                         )}
 
@@ -118,35 +118,47 @@ export function ActivityWorkspace({
                         {currentProgress ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Upload Section — preview, delete, confirm all in one */}
-                                <UploadSection
-                                    currentProgress={currentProgress}
-                                    currentActivityNumber={
-                                        currentActivityNumber
-                                    }
-                                    riskLevel={riskLevel}
-                                    uploading={uploading}
-                                    onFileSelect={handleFileSelect}
-                                    onRemove={handleDeleteUpload}
-                                    onConfirmComplete={handleConfirmComplete}
-                                    onPreview={setPreviewFile}
-                                />
+                                <div className="order-2 md:order-1">
+                                    <UploadSection
+                                        currentProgress={currentProgress}
+                                        currentActivityNumber={
+                                            currentActivityNumber
+                                        }
+                                        riskLevel={riskLevel}
+                                        uploading={uploading}
+                                        onFileSelect={handleFileSelect}
+                                        onRemove={handleDeleteUpload}
+                                        onConfirmComplete={
+                                            handleConfirmComplete
+                                        }
+                                        onPreview={setPreviewFile}
+                                    />
+                                </div>
 
                                 {/* Teacher Notes */}
-                                <TeacherNotesSection
-                                    notes={teacherNotes}
-                                    onNotesChange={setTeacherNotes}
-                                    onSave={handleSaveNotes}
-                                    isSaving={savingNotes}
-                                    savedNotes={currentProgress?.teacherNotes}
-                                />
+                                <div className="order-1 md:order-2">
+                                    <TeacherNotesSection
+                                        notes={teacherNotes}
+                                        onNotesChange={setTeacherNotes}
+                                        onSave={handleSaveNotes}
+                                        isSaving={savingNotes}
+                                        savedNotes={
+                                            currentProgress?.teacherNotes
+                                        }
+                                        riskLevel={riskLevel}
+                                    />
+                                </div>
                             </div>
                         ) : null}
 
                         {/* Conversation Button */}
                         <div className="mt-8 border-t border-slate-200/80 pt-6">
                             <Link
-                                href={studentHelpConversationRoute(studentId)}
-                                className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-4 text-center text-lg font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-lg"
+                                href={studentHelpConversationRoute(
+                                    studentId,
+                                    phqResultId,
+                                )}
+                                className={`group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r py-4 text-center text-lg font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg ${config.gradient}`}
                             >
                                 <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
                                 หลักการพูดคุย

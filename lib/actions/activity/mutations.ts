@@ -293,9 +293,15 @@ export async function confirmActivityComplete(
                 select: {
                     id: true,
                     status: true,
+                    scheduledDate: true,
                     studentId: true,
                     phqResultId: true,
                     activityNumber: true,
+                    worksheetUploads: {
+                        orderBy: { uploadedAt: "desc" },
+                        take: 1,
+                        select: { uploadedAt: true },
+                    },
                 },
             });
 
@@ -315,6 +321,9 @@ export async function confirmActivityComplete(
                 data: {
                     status: ActivityStatus.completed,
                     completedAt: new Date(),
+                    scheduledDate:
+                        currentActivity.scheduledDate ??
+                        currentActivity.worksheetUploads[0]?.uploadedAt,
                 },
             });
 
@@ -449,6 +458,13 @@ export async function updateScheduledDate(
             };
         }
 
+        if (activityProgress.status === "completed") {
+            return {
+                success: false,
+                error: "ไม่สามารถแก้ไขวันนัดหมายของกิจกรรมที่จบแล้ว",
+            };
+        }
+
         const { allowed, error } = await verifyStudentActivityAccess(
             activityProgress.studentId,
             session.user.id,
@@ -472,7 +488,6 @@ export async function updateScheduledDate(
             where: { id: validated.activityProgressId },
             data: {
                 scheduledDate: new Date(validated.scheduledDate),
-                teacherId: session.user.id,
             },
         });
 

@@ -128,7 +128,7 @@ export function ActivityRow({ progress, index, readOnly = false }: ActivityRowPr
                             activityProgressId={progress.id}
                             currentDate={progress.scheduledDate}
                             isLocked={isLocked}
-                            readOnly={readOnly}
+                            readOnly={readOnly || isCompleted}
                         />
                     </div>
                 </td>

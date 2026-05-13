@@ -15,16 +15,27 @@ import { getColorConfig } from "@/lib/config/help-page-config";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { HelpPageHeader } from "@/components/student/help/HelpPageHeader";
 import { requireAuth } from "@/lib/session";
-import { studentHelpRoute, studentRoute } from "@/lib/constants/student-routes";
+import {
+    studentHelpRoute,
+    studentHelpStartRoute,
+    studentRoute,
+} from "@/lib/constants/student-routes";
+import {
+    getLatestPhqResult,
+    getRequestedOrLatestPhqResult,
+} from "@/lib/utils/phq-result-selection";
 
 interface PageProps {
     params: Promise<{ id: string }>;
+    searchParams: Promise<{ phqResultId?: string }>;
 }
 
 export default async function ConversationGuidelinesPage({
     params,
+    searchParams,
 }: PageProps) {
     const { id: studentId } = await params;
+    const { phqResultId } = await searchParams;
 
     // Conversation help flow is teacher-facing; system_admin is read-only.
     const session = await requireAuth();
@@ -42,6 +53,19 @@ export default async function ConversationGuidelinesPage({
         redirect(studentRoute(studentId));
     }
 
+    const activePhqResult = getLatestPhqResult(student.phqResults);
+    const selectedPhqResult = getRequestedOrLatestPhqResult(
+        student.phqResults,
+        phqResultId,
+    );
+    const backHref =
+        phqResultId &&
+        activePhqResult?.id !== undefined &&
+        selectedPhqResult?.id !== undefined &&
+        activePhqResult.id === selectedPhqResult.id
+            ? studentHelpStartRoute(studentId, phqResultId)
+            : studentHelpRoute(studentId);
+
     const riskLevel = latestResult.riskLevel as RiskLevel;
     const config = getColorConfig(riskLevel);
     const studentName = `${student.firstName} ${student.lastName}`;
@@ -56,7 +80,7 @@ export default async function ConversationGuidelinesPage({
 
             <div className="max-w-4xl mx-auto relative z-10">
                 <BackButton
-                    href={studentHelpRoute(studentId)}
+                    href={backHref}
                     label="กลับหน้าขั้นตอนการช่วยเหลือ"
                 />
 
@@ -111,7 +135,7 @@ export default async function ConversationGuidelinesPage({
                     </div>
 
                     <Link
-                        href={studentHelpRoute(studentId)}
+                        href={backHref}
                         className={`group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r py-4 text-center text-lg font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg ${config.gradient}`}
                     >
                         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />

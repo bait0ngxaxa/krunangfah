@@ -80,20 +80,26 @@ export function HeroCard({
             `}
         >
             {imageSrc && (
-                <div className="w-[80px] sm:w-[100px] shrink-0 relative">
+                <div
+                    className={`relative shrink-0 sm:w-[100px] ${
+                        isEmerald ? "w-[96px]" : "w-[118px]"
+                    }`}
+                >
                     <Image
                         src={imageSrc}
                         alt=""
                         width={160}
                         height={180}
-                        className="absolute -bottom-2 -left-2 sm:-left-4 w-[120px] sm:w-[150px] max-w-none object-contain origin-bottom z-10 drop-shadow-md
-                            motion-safe:group-hover:scale-105 motion-safe:transition-transform motion-safe:duration-300"
+                        className={`absolute -bottom-1 left-0 z-0 max-w-none origin-bottom object-contain drop-shadow-md sm:-bottom-2 sm:-left-4 sm:w-[150px]
+                            motion-safe:group-hover:scale-105 motion-safe:transition-transform motion-safe:duration-300 ${
+                                isEmerald ? "w-[88px]" : "w-[112px]"
+                            }`}
                     />
                 </div>
             )}
 
             <div
-                className={`flex-1 flex flex-col sm:flex-row sm:items-center justify-between relative z-0 ${!imageSrc ? "pl-1 sm:pl-2" : "pl-7 sm:pl-10"} pr-12 sm:pr-24`}
+                className={`relative z-10 flex flex-1 flex-col justify-between sm:flex-row sm:items-center ${!imageSrc ? "pl-1 sm:pl-2" : "pl-2 sm:pl-10"} pr-12 sm:pr-24`}
             >
                 <div className="flex flex-col justify-center">
                     {!isEmerald && (
