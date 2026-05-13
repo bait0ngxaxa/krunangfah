@@ -33,13 +33,13 @@ describe("Integration: Counseling Sessions", () => {
 
     beforeAll(async () => {
         const school = await createTestSchool();
-        const ay = await createTestAcademicYear({ year: 2598, semester: 2 });
+        await createTestAcademicYear({ year: 2598, semester: 2 });
 
         USERS.classTeacher.schoolId = school.id;
 
         await createTestUser(USERS.classTeacher, school.id);
 
-        await createTestTeacher(USERS.classTeacher.id, ay.id, {
+        await createTestTeacher(USERS.classTeacher.id, {
             advisoryClass: "ม.2/5",
         });
 

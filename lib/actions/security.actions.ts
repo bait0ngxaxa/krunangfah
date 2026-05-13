@@ -11,7 +11,11 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { hashPassword } from "@/lib/user";
 import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
-import { RATE_LIMIT_PASSWORD_CHANGE } from "@/lib/constants/rate-limit";
+import {
+    RATE_LIMIT_PASSWORD_CHANGE,
+    RATE_LIMIT_PASSWORD_CHANGE_FLOOD,
+} from "@/lib/constants/rate-limit";
+import { createUserRateLimitKey } from "@/lib/rate-limit-keys";
 import { passwordChangeSchema } from "@/lib/validations/profile.validation";
 import { logError } from "@/lib/utils/logging";
 import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
@@ -20,7 +24,10 @@ import type {
     PasswordChangeResponse,
 } from "@/types/profile.types";
 
-// Rate limiter singleton: 3 attempts per hour per IP
+// Broad IP/user-agent guard before authenticated per-user limiting.
+const passwordChangeFloodLimiter = createRateLimiter(
+    RATE_LIMIT_PASSWORD_CHANGE_FLOOD,
+);
 const passwordChangeLimiter = createRateLimiter(RATE_LIMIT_PASSWORD_CHANGE);
 
 /**
@@ -45,9 +52,10 @@ export async function changePassword(
             headerStore.get(name),
         );
 
-        const rateLimitResult = passwordChangeLimiter.check(rateLimitKey);
-        if (!rateLimitResult.allowed) {
-            const rateLimitError = createRateLimitErrorPayload(rateLimitResult);
+        const floodLimitResult =
+            await passwordChangeFloodLimiter.check(rateLimitKey);
+        if (!floodLimitResult.allowed) {
+            const rateLimitError = createRateLimitErrorPayload(floodLimitResult);
 
             return {
                 success: false,
@@ -62,6 +70,19 @@ export async function changePassword(
         // Require authentication
         const session = await requireAuth();
         const userId = session.user.id;
+        const userRateLimitResult = await passwordChangeLimiter.check(
+            createUserRateLimitKey(userId),
+        );
+        if (!userRateLimitResult.allowed) {
+            const rateLimitError =
+                createRateLimitErrorPayload(userRateLimitResult);
+
+            return {
+                success: false,
+                message: rateLimitError.message,
+                error: rateLimitError,
+            };
+        }
 
         // Get user with password
         const user = await prisma.user.findUnique({

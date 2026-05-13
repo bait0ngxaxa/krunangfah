@@ -7,6 +7,7 @@ import {
     getCombinedAnalytics,
     getTrendData,
     getActivityProgressByRisk,
+    getActivityCompletionSummary,
 } from "./queries";
 import {
     transformRiskLevelCounts,
@@ -61,33 +62,26 @@ async function fetchAnalyticsData(
         }
     }
 
-    const studentWhere: { schoolId?: string; class?: string } = {
-        ...(schoolId ? { schoolId } : {}),
-    };
-    if (classFilter) {
-        studentWhere.class = classFilter;
-    }
-
     const showClassFilter = role === "school_admin" || role === "system_admin";
 
     const [
-        totalStudents,
+        expectedStudentCount,
         availableClasses,
         availableAcademicTermsRaw,
         combinedData,
         trendDataRaw,
         activityProgressRaw,
+        activityCompletionRaw,
     ] = await Promise.all([
-        prisma.student.count({ where: studentWhere }),
+        getExpectedStudentCount(schoolId, classFilter),
         showClassFilter
-            ? prisma.student
+            ? prisma.schoolClass
                   .findMany({
                       where: { ...(schoolId ? { schoolId } : {}) },
-                      select: { class: true },
-                      distinct: ["class"],
-                      orderBy: { class: "asc" },
+                      select: { name: true },
+                      orderBy: { name: "asc" },
                   })
-                  .then((classes) => classes.map((c) => c.class))
+                  .then((classes) => classes.map((c) => c.name))
             : Promise.resolve([]),
         prisma.academicYear.findMany({
             where: {
@@ -110,6 +104,12 @@ async function fetchAnalyticsData(
         getCombinedAnalytics(schoolId, classFilter, academicYear, semester),
         getTrendData(schoolId, classFilter, academicYear, semester),
         getActivityProgressByRisk(schoolId, classFilter, academicYear, semester),
+        getActivityCompletionSummary(
+            schoolId,
+            classFilter,
+            academicYear,
+            semester,
+        ),
     ]);
 
     const availableAcademicYears = Array.from(
@@ -131,7 +131,7 @@ async function fetchAnalyticsData(
     );
     const studentsWithoutAssessment = Math.max(
         0,
-        totalStudents - studentsWithAssessment,
+        expectedStudentCount - studentsWithAssessment,
     );
     const totalReferrals = riskLevelCountsRaw.reduce(
         (sum, r) => sum + Number(r.referral_count),
@@ -145,11 +145,16 @@ async function fetchAnalyticsData(
     const trendData = transformTrendData(trendDataRaw);
     const gradeRiskData = transformGradeRiskData(gradeRiskDataRaw);
     const activityProgressByRisk = transformActivityProgress(activityProgressRaw);
+    const activityCompletionSummary = {
+        notStartedStudents: Number(activityCompletionRaw.not_started_students),
+        inProgressStudents: Number(activityCompletionRaw.in_progress_students),
+        completedStudents: Number(activityCompletionRaw.completed_students),
+    };
     const hospitalReferralsByGrade =
         transformHospitalReferrals(hospitalReferralsRaw);
 
     return {
-        totalStudents,
+        totalStudents: expectedStudentCount,
         riskLevelSummary,
         studentsWithAssessment,
         studentsWithoutAssessment,
@@ -161,10 +166,26 @@ async function fetchAnalyticsData(
         currentSemester: semester,
         trendData,
         activityProgressByRisk,
+        activityCompletionSummary,
         gradeRiskData,
         hospitalReferralsByGrade,
         totalReferrals,
     };
+}
+
+async function getExpectedStudentCount(
+    schoolId: string | undefined,
+    classFilter?: string,
+): Promise<number> {
+    const result = await prisma.schoolClass.aggregate({
+        where: {
+            ...(schoolId ? { schoolId } : {}),
+            ...(classFilter ? { name: classFilter } : {}),
+        },
+        _sum: { expectedStudentCount: true },
+    });
+
+    return result._sum.expectedStudentCount ?? 0;
 }
 
 async function getCachedAnalyticsData(
@@ -246,7 +267,7 @@ export async function getAnalyticsSummary(
 async function fetchSystemAnalyticsOverview(): Promise<SystemAnalyticsOverview> {
     const [totalSchools, totalStudents, currentAcademicYear] = await Promise.all([
         prisma.school.count(),
-        prisma.student.count(),
+        getExpectedStudentCount(undefined),
         prisma.academicYear.findFirst({
             where: { isCurrent: true },
             orderBy: [{ year: "desc" }, { semester: "desc" }],
@@ -281,7 +302,10 @@ async function fetchSystemAnalyticsOverview(): Promise<SystemAnalyticsOverview> 
     );
     const screeningCoveragePercent =
         totalStudents > 0
-            ? Math.round((studentsWithAssessment / totalStudents) * 100)
+            ? Math.min(
+                  100,
+                  Math.round((studentsWithAssessment / totalStudents) * 100),
+              )
             : 0;
 
     return {

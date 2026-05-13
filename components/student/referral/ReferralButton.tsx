@@ -66,7 +66,7 @@ export function ReferralButton({
                     className="active:scale-95"
                 >
                     <UserCheck className="w-4 h-4" />
-                    ส่งต่อต่อ
+                    ส่งต่อ
                 </Button>
 
                 {showModal && (

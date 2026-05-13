@@ -18,6 +18,8 @@ import {
 export function createRateLimiter(config: RateLimitConfig): RateLimiter {
     const store = new Map<string, RateLimitEntry>();
     const maxEntries = config.maxEntries ?? RATE_LIMIT_MAX_ENTRIES;
+    let redisLimiterPromise: Promise<RateLimiter> | null = null;
+    let hasLoggedRedisFallback = false;
 
     function ensureCapacity(nextKey: string): void {
         if (store.has(nextKey) || store.size < maxEntries) {
@@ -61,7 +63,7 @@ export function createRateLimiter(config: RateLimitConfig): RateLimiter {
     /**
      * Check if a request from the given key is allowed
      */
-    function check(key: string): RateLimitResult {
+    async function checkMemory(key: string): Promise<RateLimitResult> {
         const now = Date.now();
         const windowStart = now - config.windowMs;
 
@@ -109,11 +111,58 @@ export function createRateLimiter(config: RateLimitConfig): RateLimiter {
     /**
      * Stop the automatic cleanup interval
      */
-    function destroy(): void {
+    async function destroyMemory(): Promise<void> {
         clearInterval(cleanupInterval);
     }
 
-    return { check, cleanup, destroy };
+    async function getRedisLimiter(): Promise<RateLimiter> {
+        if (redisLimiterPromise) {
+            return redisLimiterPromise;
+        }
+
+        redisLimiterPromise = import("@/lib/rate-limit-redis").then(
+            ({ createRedisRateLimiter }) => createRedisRateLimiter(config),
+        );
+
+        return redisLimiterPromise;
+    }
+
+    async function check(key: string): Promise<RateLimitResult> {
+        if (process.env.RATE_LIMIT_DRIVER !== "redis") {
+            return checkMemory(key);
+        }
+
+        try {
+            const redisLimiter = await getRedisLimiter();
+            return await redisLimiter.check(key);
+        } catch (error) {
+            if (!hasLoggedRedisFallback) {
+                hasLoggedRedisFallback = true;
+                console.error(
+                    "Redis rate limiter unavailable; using memory fallback:",
+                    error instanceof Error ? error.message : "Unknown error",
+                );
+            }
+
+            return checkMemory(key);
+        }
+    }
+
+    async function cleanupAsync(): Promise<void> {
+        cleanup();
+    }
+
+    async function destroy(): Promise<void> {
+        await destroyMemory();
+        if (!redisLimiterPromise) {
+            return;
+        }
+
+        const redisLimiter = await redisLimiterPromise;
+        await redisLimiter.destroy();
+    }
+
+    return { check, cleanup: cleanupAsync, destroy };
 }
 
 /**

@@ -66,7 +66,7 @@ export function SystemOverviewCards({
                 />
                 <OverviewCard
                     icon={Users}
-                    label="นักเรียนทั้งหมด"
+                    label="นักเรียนตามข้อมูลห้อง"
                     value={overview.totalStudents}
                     unit="คน"
                     accentColor="text-emerald-600"

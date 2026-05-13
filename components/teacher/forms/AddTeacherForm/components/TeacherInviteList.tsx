@@ -92,10 +92,6 @@ function InviteCard({
                                         {invite.advisoryClass}
                                     </span>
                                 )}
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-50 text-gray-500 border border-gray-100">
-                                {invite.academicYear.year}/
-                                {invite.academicYear.semester}
-                            </span>
                         </div>
                     </div>
                 </div>

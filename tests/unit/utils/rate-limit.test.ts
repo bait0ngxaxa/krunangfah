@@ -8,8 +8,8 @@ import {
 describe("createRateLimiter", () => {
     let limiter: ReturnType<typeof createRateLimiter>;
 
-    afterEach(() => {
-        limiter?.destroy();
+    afterEach(async () => {
+        await limiter?.destroy();
     });
 
     describe("basic rate limiting", () => {
@@ -21,49 +21,49 @@ describe("createRateLimiter", () => {
             });
         });
 
-        it("should allow requests within limit", () => {
-            const result = limiter.check("user-1");
+        it("should allow requests within limit", async () => {
+            const result = await limiter.check("user-1");
             expect(result.allowed).toBe(true);
             expect(result.limit).toBe(3);
             expect(result.remaining).toBe(2);
             expect(result.retryAfterSeconds).toBe(0);
         });
 
-        it("should track remaining requests correctly", () => {
-            limiter.check("user-1"); // remaining = 2
-            const result2 = limiter.check("user-1"); // remaining = 1
+        it("should track remaining requests correctly", async () => {
+            await limiter.check("user-1"); // remaining = 2
+            const result2 = await limiter.check("user-1"); // remaining = 1
             expect(result2.allowed).toBe(true);
             expect(result2.remaining).toBe(1);
 
-            const result3 = limiter.check("user-1"); // remaining = 0
+            const result3 = await limiter.check("user-1"); // remaining = 0
             expect(result3.allowed).toBe(true);
             expect(result3.remaining).toBe(0);
         });
 
-        it("should deny requests exceeding limit", () => {
-            limiter.check("user-1"); // 1
-            limiter.check("user-1"); // 2
-            limiter.check("user-1"); // 3
+        it("should deny requests exceeding limit", async () => {
+            await limiter.check("user-1"); // 1
+            await limiter.check("user-1"); // 2
+            await limiter.check("user-1"); // 3
 
-            const result = limiter.check("user-1"); // 4 → denied
+            const result = await limiter.check("user-1"); // 4 → denied
             expect(result.allowed).toBe(false);
             expect(result.remaining).toBe(0);
             expect(result.retryAfterSeconds).toBeGreaterThan(0);
         });
 
-        it("should track each key independently", () => {
-            limiter.check("user-1");
-            limiter.check("user-1");
-            limiter.check("user-1");
+        it("should track each key independently", async () => {
+            await limiter.check("user-1");
+            await limiter.check("user-1");
+            await limiter.check("user-1");
 
             // user-2 should still be allowed
-            const result = limiter.check("user-2");
+            const result = await limiter.check("user-2");
             expect(result.allowed).toBe(true);
             expect(result.remaining).toBe(2);
         });
 
-        it("should return resetAt as Unix timestamp in seconds", () => {
-            const result = limiter.check("user-1");
+        it("should return resetAt as Unix timestamp in seconds", async () => {
+            const result = await limiter.check("user-1");
             expect(result.resetAt).toBeGreaterThan(0);
             // resetAt should be roughly now + windowMs in seconds
             const nowSec = Math.ceil(Date.now() / 1000);
@@ -73,7 +73,7 @@ describe("createRateLimiter", () => {
     });
 
     describe("sliding window behavior", () => {
-        it("should allow requests after window expires", () => {
+        it("should allow requests after window expires", async () => {
             vi.useFakeTimers();
 
             limiter = createRateLimiter({
@@ -82,16 +82,16 @@ describe("createRateLimiter", () => {
                 name: "test-window",
             });
 
-            limiter.check("user-1");
-            limiter.check("user-1");
+            await limiter.check("user-1");
+            await limiter.check("user-1");
 
-            const blocked = limiter.check("user-1");
+            const blocked = await limiter.check("user-1");
             expect(blocked.allowed).toBe(false);
 
             // Advance time past the window
             vi.advanceTimersByTime(1001);
 
-            const allowed = limiter.check("user-1");
+            const allowed = await limiter.check("user-1");
             expect(allowed.allowed).toBe(true);
             expect(allowed.remaining).toBe(1);
 
@@ -100,7 +100,7 @@ describe("createRateLimiter", () => {
     });
 
     describe("cleanup", () => {
-        it("should remove expired entries on cleanup", () => {
+        it("should remove expired entries on cleanup", async () => {
             vi.useFakeTimers();
 
             limiter = createRateLimiter({
@@ -109,16 +109,16 @@ describe("createRateLimiter", () => {
                 name: "test-cleanup",
             });
 
-            limiter.check("user-1");
-            limiter.check("user-2");
+            await limiter.check("user-1");
+            await limiter.check("user-2");
 
             // Advance time past the window
             vi.advanceTimersByTime(1500);
 
-            limiter.cleanup();
+            await limiter.cleanup();
 
             // After cleanup, expired entries are removed, so user-1 can request again
-            const result = limiter.check("user-1");
+            const result = await limiter.check("user-1");
             expect(result.allowed).toBe(true);
             expect(result.remaining).toBe(4);
 
@@ -127,24 +127,24 @@ describe("createRateLimiter", () => {
     });
 
     describe("config with 1 max request", () => {
-        it("should only allow 1 request", () => {
+        it("should only allow 1 request", async () => {
             limiter = createRateLimiter({
                 maxRequests: 1,
                 windowMs: 60_000,
                 name: "strict-limiter",
             });
 
-            const first = limiter.check("ip-1");
+            const first = await limiter.check("ip-1");
             expect(first.allowed).toBe(true);
             expect(first.remaining).toBe(0);
 
-            const second = limiter.check("ip-1");
+            const second = await limiter.check("ip-1");
             expect(second.allowed).toBe(false);
         });
     });
 
     describe("memory guard", () => {
-        it("evicts the oldest key when maxEntries is exceeded", () => {
+        it("evicts the oldest key when maxEntries is exceeded", async () => {
             limiter = createRateLimiter({
                 maxRequests: 1,
                 windowMs: 60_000,
@@ -152,11 +152,11 @@ describe("createRateLimiter", () => {
                 maxEntries: 2,
             });
 
-            limiter.check("ip-1");
-            limiter.check("ip-2");
-            limiter.check("ip-3");
+            await limiter.check("ip-1");
+            await limiter.check("ip-2");
+            await limiter.check("ip-3");
 
-            const result = limiter.check("ip-1");
+            const result = await limiter.check("ip-1");
             expect(result.allowed).toBe(true);
             expect(result.remaining).toBe(0);
         });

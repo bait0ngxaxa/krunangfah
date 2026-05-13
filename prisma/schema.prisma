@@ -70,6 +70,7 @@ model SchoolClass {
   id        String   @id @default(cuid())
   schoolId  String
   name      String   // free-form: "ม.1/1", "ป.6/2", อะไรก็ได้
+  expectedStudentCount Int @default(0) // จำนวนนักเรียนจริงที่คาดไว้ ใช้คำนวณ coverage การคัดกรอง
   createdAt DateTime @default(now())
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -90,6 +91,7 @@ model User {
   role          UserRole  @default(school_admin) // effective role used by access control
   isPrimary     Boolean   @default(false) // true = primary school_admin for school-level management
   schoolId      String?   // FK to School
+  deletedAt     DateTime? // soft delete timestamp; deleted users cannot sign in
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -107,6 +109,7 @@ model User {
 
   @@map("users")
   @@index([email])
+  @@index([deletedAt])
 }
 
 // Academic Year - ปีการศึกษาและเทอม
@@ -120,8 +123,6 @@ model AcademicYear {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  teachers       Teacher[]
-  teacherInvites TeacherInvite[]
   phqResults     PhqResult[]
 
   @@unique([year, semester]) // ห้ามซ้ำ ปี+เทอม
@@ -136,14 +137,12 @@ model Teacher {
   lastName        String        // สกุล
   age             Int           // อายุ
   advisoryClass   String        // ชั้นที่ปรึกษา เช่น "ม.1/1"
-  academicYearId  String        // FK to AcademicYear
   schoolRole      String        // บทบาทหน้าที่ในโรงเรียน
   projectRole     ProjectRole        // บทบาทในโครงการครูนางฟ้า: lead, care, coordinate
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  academicYear    AcademicYear  @relation(fields: [academicYearId], references: [id])
 
   @@map("teachers")
 }
@@ -158,7 +157,6 @@ model TeacherInvite {
   age             Int
   userRole        UserRole  // target account role after accept invite
   advisoryClass   String
-  academicYearId  String
   schoolId        String
   schoolRole      String
   projectRole     ProjectRole    // target project role after accept invite
@@ -167,7 +165,6 @@ model TeacherInvite {
   acceptedAt      DateTime?
   createdAt       DateTime  @default(now())
 
-  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
   school          School       @relation(fields: [schoolId], references: [id])
   invitedBy       User         @relation(fields: [invitedById], references: [id])
 

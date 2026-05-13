@@ -57,10 +57,10 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         await createTestUser(USERS.classTeacher, schoolId);
         await createTestUser(USERS.otherTeacher, schoolId);
 
-        await createTestTeacher(USERS.classTeacher.id, academicYearId, {
+        await createTestTeacher(USERS.classTeacher.id, {
             advisoryClass: "class-1",
         });
-        await createTestTeacher(USERS.otherTeacher.id, academicYearId, {
+        await createTestTeacher(USERS.otherTeacher.id, {
             advisoryClass: "class-2",
         });
 

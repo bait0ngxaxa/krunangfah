@@ -27,7 +27,6 @@ export const profileUpdateSchema = z.object({
         .string()
         .min(1, "กรุณากรอกชั้นที่ปรึกษา")
         .max(INPUT_LIMITS.teacher.advisoryClass, "ชั้นที่ปรึกษายาวเกินไป"),
-    academicYearId: z.string().min(1, "กรุณาเลือกปีการศึกษา"),
     schoolRole: z
         .string()
         .min(1, "กรุณากรอกบทบาทหน้าที่ในโรงเรียน")

@@ -10,6 +10,7 @@ import {
     getLatestPhqResult,
     getRequestedOrLatestPhqResult,
 } from "@/lib/utils/phq-result-selection";
+import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -47,6 +48,10 @@ export default async function StudentHelpPage({
     const canManageActivities =
         activePhqResult?.id !== undefined &&
         selectedResult.id === activePhqResult.id;
+    const isReferralLockedForClassTeacher =
+        session.user.role === "class_teacher" && Boolean(student.referral);
+    const canStartActivities =
+        canManageActivities && !isReferralLockedForClassTeacher;
     const riskLevel = selectedResult.riskLevel as RiskLevel;
     const config = getColorConfig(riskLevel);
     const studentName = `${student.firstName} ${student.lastName}`;
@@ -78,11 +83,13 @@ export default async function StudentHelpPage({
             config={config}
             activities={activities}
             phqResultId={selectedResult.id}
-            canStartActivities={canManageActivities}
+            canStartActivities={canStartActivities}
             actionLockedMessage={
-                canManageActivities
-                    ? undefined
-                    : "กำลังดูข้อมูลย้อนหลัง จึงเริ่มทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน"
+                isReferralLockedForClassTeacher
+                    ? ERROR_MESSAGES.activity.classTeacherReferredLocked
+                    : canManageActivities
+                      ? undefined
+                      : "กำลังดูข้อมูลย้อนหลัง จึงเริ่มทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน"
             }
         />
     );

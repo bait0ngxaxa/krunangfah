@@ -38,6 +38,10 @@ export function SetupSummary({
     roster,
 }: SetupSummaryProps) {
     const groupedClasses = groupClassesByGrade(classes);
+    const totalExpectedStudents = classes.reduce(
+        (sum, c) => sum + c.expectedStudentCount,
+        0,
+    );
 
     return (
         <div className="space-y-5">
@@ -81,7 +85,7 @@ export function SetupSummary({
                 </div>
                 <div className="flex-1">
                     <p className="text-xs text-slate-400 font-semibold mb-0.5">
-                        ห้องเรียน ({classes.length} ห้อง)
+                        ห้องเรียน ({classes.length} ห้อง / {totalExpectedStudents} คน)
                     </p>
                     {classes.length === 0 ? (
                         <p className="text-sm text-slate-400 italic">
@@ -100,7 +104,7 @@ export function SetupSummary({
                                                 key={c.id}
                                                 className="px-2.5 py-1 bg-gray-50 border-2 border-gray-100 text-gray-700 rounded-lg text-xs font-bold"
                                             >
-                                                {c.name}
+                                                {c.name} ({c.expectedStudentCount} คน)
                                             </span>
                                         ))}
                                     </div>

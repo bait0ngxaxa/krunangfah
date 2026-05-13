@@ -99,7 +99,7 @@ export async function getUserById(
             where: { id: userId },
         });
 
-        if (!user) {
+        if (!user || user.deletedAt) {
             return null;
         }
 

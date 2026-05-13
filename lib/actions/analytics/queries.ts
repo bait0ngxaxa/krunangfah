@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { REQUIRED_ACTIVITY_NUMBERS_BY_RISK } from "./constants";
 
 // ========================================
 // Type Definitions
@@ -33,6 +34,12 @@ interface ActivityProgressResult {
     activity3: bigint;
     activity4: bigint;
     activity5: bigint;
+}
+
+interface ActivityCompletionSummaryResult {
+    not_started_students: bigint;
+    in_progress_students: bigint;
+    completed_students: bigint;
 }
 
 interface HospitalReferralResult {
@@ -329,4 +336,108 @@ export async function getActivityProgressByRisk(
         LEFT JOIN activity_counts ac ON ac.risk_level = lp.risk_level
         GROUP BY lp.risk_level
     `;
+}
+
+export async function getActivityCompletionSummary(
+    schoolId: string | undefined,
+    classFilter?: string,
+    academicYear?: number,
+    semester?: number,
+): Promise<ActivityCompletionSummaryResult> {
+    const schoolCondition = schoolId
+        ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
+        : Prisma.sql`WHERE 1=1`;
+
+    const classCondition = classFilter
+        ? Prisma.sql`AND s.class = ${classFilter}`
+        : Prisma.empty;
+
+    const shouldJoinAcademicYear = academicYear !== undefined || semester !== undefined;
+
+    const yearJoin = shouldJoinAcademicYear
+        ? Prisma.sql`JOIN academic_years ay ON pr."academicYearId" = ay.id`
+        : Prisma.empty;
+
+    const yearCondition = academicYear !== undefined
+        ? Prisma.sql`AND ay.year = ${academicYear}`
+        : Prisma.empty;
+
+    const semesterCondition = semester !== undefined
+        ? Prisma.sql`AND ay.semester = ${semester}`
+        : Prisma.empty;
+    const requiredActivityRows = Object.entries(
+        REQUIRED_ACTIVITY_NUMBERS_BY_RISK,
+    ).flatMap(([riskLevel, activityNumbers]) =>
+        activityNumbers.map((activityNumber) =>
+            Prisma.sql`(${riskLevel}::text, ${activityNumber}::int)`,
+        ),
+    );
+
+    const rows = await prisma.$queryRaw<ActivityCompletionSummaryResult[]>`
+        WITH required_activity(risk_level, activity_number) AS (
+            VALUES ${Prisma.join(requiredActivityRows)}
+        ),
+        ranked_phq AS (
+            SELECT
+                pr.id as phq_id,
+                pr."studentId",
+                pr."riskLevel"::text as risk_level,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pr."studentId"
+                    ORDER BY pr."createdAt" DESC
+                ) as rn
+            FROM phq_results pr
+            JOIN students s ON pr."studentId" = s.id
+            ${yearJoin}
+            ${schoolCondition}
+              ${classCondition}
+              ${yearCondition}
+              ${semesterCondition}
+        ),
+        required_students AS (
+            SELECT
+                rp.phq_id,
+                rp."studentId",
+                rp.risk_level,
+                COUNT(ra.activity_number)::int as required_count
+            FROM ranked_phq rp
+            JOIN required_activity ra ON ra.risk_level = rp.risk_level
+            WHERE rp.rn = 1
+            GROUP BY rp.phq_id, rp."studentId", rp.risk_level
+        ),
+        completion AS (
+            SELECT
+                rs."studentId",
+                rs.required_count,
+                COUNT(DISTINCT ap."activityNumber") FILTER (
+                    WHERE ap."teacherId" IS NOT NULL
+                       OR ap.status IN ('pending_assessment', 'completed')
+                       OR wu.id IS NOT NULL
+                ) as started_count,
+                COUNT(DISTINCT ap."activityNumber") FILTER (
+                    WHERE ap.status = 'completed'
+                ) as completed_count
+            FROM required_students rs
+            JOIN required_activity ra ON ra.risk_level = rs.risk_level
+            LEFT JOIN activity_progress ap
+              ON ap."phqResultId" = rs.phq_id
+             AND ap."activityNumber" = ra.activity_number
+            LEFT JOIN worksheet_uploads wu
+              ON wu."activityProgressId" = ap.id
+            GROUP BY rs."studentId", rs.required_count
+        )
+        SELECT
+            COUNT(*) FILTER (WHERE started_count = 0)::bigint as not_started_students,
+            COUNT(*) FILTER (
+                WHERE started_count > 0 AND completed_count < required_count
+            )::bigint as in_progress_students,
+            COUNT(*) FILTER (WHERE completed_count >= required_count)::bigint as completed_students
+        FROM completion
+    `;
+
+    return rows[0] ?? {
+        not_started_students: BigInt(0),
+        in_progress_students: BigInt(0),
+        completed_students: BigInt(0),
+    };
 }

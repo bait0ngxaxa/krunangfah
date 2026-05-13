@@ -11,7 +11,6 @@ import {
     MAX_FILE_SIZE,
 } from "./constants";
 import { validateFileSignature } from "@/lib/utils/file-signature";
-import { canAccessStudentByRole } from "@/lib/security/student-access";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import type { UploadWorksheetResult } from "./types";
 import { logError } from "@/lib/utils/logging";
@@ -27,6 +26,7 @@ import {
     compressWorksheetImageBuffer,
     isSupportedWorksheetImageExtension,
 } from "@/lib/utils/server-image-compression";
+import { verifyStudentActivityAccess } from "./access";
 
 const MAX_WORKSHEET_NUMBER_RETRIES = 3;
 
@@ -180,39 +180,17 @@ export async function uploadWorksheet(
             };
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: {
-                schoolId: true,
-                role: true,
-                teacher: { select: { advisoryClass: true } },
-            },
-        });
-
-        if (!user) {
-            return {
-                success: false,
-                message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
-                error: "UPLOAD_ACCESS_DENIED",
-            };
-        }
-
-        const canAccess = canAccessStudentByRole(
-            {
-                role: user.role,
-                schoolId: user.schoolId,
-                advisoryClass: user.teacher?.advisoryClass,
-            },
-            {
-                schoolId: activityProgress.student.schoolId,
-                className: activityProgress.student.class,
-            },
+        const { allowed, error } = await verifyStudentActivityAccess(
+            activityProgress.student.id,
+            session.user.id,
+            session.user.role,
+            "manage",
         );
 
-        if (!canAccess) {
+        if (!allowed) {
             return {
                 success: false,
-                message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+                message: error || "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
                 error: "UPLOAD_ACCESS_DENIED",
             };
         }
@@ -393,7 +371,13 @@ export async function deleteWorksheetUpload(
             include: {
                 activityProgress: {
                     include: {
-                        student: { select: { schoolId: true, class: true } },
+                        student: {
+                            select: {
+                                id: true,
+                                schoolId: true,
+                                class: true,
+                            },
+                        },
                         worksheetUploads: { select: { id: true } },
                     },
                 },
@@ -404,33 +388,18 @@ export async function deleteWorksheetUpload(
             return { success: false, message: "ไม่พบไฟล์ที่ต้องการลบ" };
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: {
-                schoolId: true,
-                role: true,
-                teacher: { select: { advisoryClass: true } },
-            },
-        });
-
-        if (!user) {
-            return { success: false, message: "ไม่มีสิทธิ์ลบไฟล์นี้" };
-        }
-
-        const canAccess = canAccessStudentByRole(
-            {
-                role: user.role,
-                schoolId: user.schoolId,
-                advisoryClass: user.teacher?.advisoryClass,
-            },
-            {
-                schoolId: upload.activityProgress.student.schoolId,
-                className: upload.activityProgress.student.class,
-            },
+        const { allowed, error } = await verifyStudentActivityAccess(
+            upload.activityProgress.student.id,
+            session.user.id,
+            session.user.role,
+            "manage",
         );
 
-        if (!canAccess) {
-            return { success: false, message: "ไม่มีสิทธิ์ลบไฟล์นี้" };
+        if (!allowed) {
+            return {
+                success: false,
+                message: error || "ไม่มีสิทธิ์ลบไฟล์นี้",
+            };
         }
 
         // Delete file from disk

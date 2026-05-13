@@ -23,7 +23,6 @@ async function getCachedDashboardData(userId: string, role: string) {
             const teacher = await prisma.teacher.findUnique({
                 where: { userId },
                 include: {
-                    academicYear: true,
                     user: {
                         include: { school: true },
                     },

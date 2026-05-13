@@ -1,6 +1,7 @@
 "use client";
 
 import { X, LayoutGrid } from "lucide-react";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import type { ClassGroupListProps } from "../types";
 import type { SchoolClassItem } from "../types";
 
@@ -8,7 +9,13 @@ export function ClassGroupList({
     classes,
     readOnly,
     onRemove,
+    onStudentCountChange,
 }: ClassGroupListProps) {
+    const totalExpectedStudents = classes.reduce(
+        (sum, c) => sum + c.expectedStudentCount,
+        0,
+    );
+
     // Group classes by prefix (before "/")
     const groups = Array.from(
         classes.reduce<Map<string, SchoolClassItem[]>>((acc, c) => {
@@ -34,7 +41,7 @@ export function ClassGroupList({
                     </h3>
                 </div>
                 <span className="text-xs text-gray-400 font-medium bg-white px-2.5 py-1 rounded-full border border-gray-100">
-                    {classes.length} ห้อง
+                    {classes.length} ห้อง / {totalExpectedStudents} คน
                 </span>
             </div>
 
@@ -59,6 +66,42 @@ export function ClassGroupList({
                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 border-gray-100 text-gray-700 rounded-full text-sm font-bold"
                                     >
                                         {c.name}
+                                        <span className="text-gray-300">|</span>
+                                        {readOnly ? (
+                                            <span className="text-xs text-gray-500">
+                                                {c.expectedStudentCount} คน
+                                            </span>
+                                        ) : (
+                                            <input
+                                                key={`${c.id}-${c.expectedStudentCount}`}
+                                                type="number"
+                                                min={0}
+                                                max={
+                                                    INPUT_LIMITS.school
+                                                        .classStudentCount
+                                                }
+                                                defaultValue={
+                                                    c.expectedStudentCount
+                                                }
+                                                aria-label={`จำนวนนักเรียน ${c.name}`}
+                                                onBlur={(event) =>
+                                                    saveStudentCount(
+                                                        c,
+                                                        event.currentTarget
+                                                            .value,
+                                                        onStudentCountChange,
+                                                    )
+                                                }
+                                                onKeyDown={(event) => {
+                                                    if (event.key !== "Enter") {
+                                                        return;
+                                                    }
+                                                    event.preventDefault();
+                                                    event.currentTarget.blur();
+                                                }}
+                                                className="w-14 rounded-lg border border-gray-200 bg-gray-50 px-2 py-0.5 text-center text-xs font-semibold text-gray-700 outline-none focus:border-[var(--brand-primary)]"
+                                            />
+                                        )}
                                         {!readOnly && (
                                             <button
                                                 type="button"
@@ -80,4 +123,21 @@ export function ClassGroupList({
             )}
         </div>
     );
+}
+
+async function saveStudentCount(
+    schoolClass: SchoolClassItem,
+    inputValue: string,
+    onStudentCountChange: ClassGroupListProps["onStudentCountChange"],
+): Promise<void> {
+    const parsed = Number(inputValue.trim());
+    if (
+        !Number.isInteger(parsed) ||
+        parsed < 0 ||
+        parsed === schoolClass.expectedStudentCount
+    ) {
+        return;
+    }
+
+    await onStudentCountChange(schoolClass.id, schoolClass.name, parsed);
 }

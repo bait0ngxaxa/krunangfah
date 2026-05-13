@@ -57,10 +57,10 @@ describe("Integration: Upload Route Access Control", () => {
         await createTestUser(USERS.classTeacher, school.id);
         await createTestUser(SAME_SCHOOL_OTHER_CLASS_TEACHER, school.id);
 
-        await createTestTeacher(USERS.classTeacher.id, ay.id, {
+        await createTestTeacher(USERS.classTeacher.id, {
             advisoryClass: "ม.2/5",
         });
-        await createTestTeacher(SAME_SCHOOL_OTHER_CLASS_TEACHER.id, ay.id, {
+        await createTestTeacher(SAME_SCHOOL_OTHER_CLASS_TEACHER.id, {
             advisoryClass: "ม.2/6",
         });
 

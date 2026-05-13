@@ -12,8 +12,8 @@ import {
 } from "@/lib/actions/student/main";
 import { importStudents } from "@/lib/actions/student/mutations";
 import type { ImportResult } from "@/lib/actions/student/types";
+import { getAcademicYears } from "@/lib/actions/academic-year.actions";
 import {
-    getAcademicYears,
     getCurrentTeacherProfile,
 } from "@/lib/actions/teacher.actions";
 import type {

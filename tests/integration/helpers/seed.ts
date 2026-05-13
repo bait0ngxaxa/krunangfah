@@ -104,7 +104,6 @@ export async function createTestUser(mockUser: MockUser, schoolId: string = "") 
  */
 export async function createTestTeacher(
     userId: string,
-    academicYearId: string,
     overrides: { advisoryClass?: string } = {},
 ) {
     const existing = await prisma.teacher.findUnique({
@@ -119,7 +118,6 @@ export async function createTestTeacher(
             lastName: "นามสกุลทดสอบ",
             age: 30,
             advisoryClass: overrides.advisoryClass ?? "ม.2/5",
-            academicYearId,
             schoolRole: "ครูประจำชั้น",
             projectRole: "care",
         },

@@ -51,10 +51,36 @@ services:
                 max-size: "10m"
                 max-file: "3"
 
+    redis:
+        container_name: krunangfah-redis
+        image: redis:7-alpine
+        command: ["redis-server", "--appendonly", "yes"]
+        volumes:
+            - redis_krunangfah_data:/data
+        ports:
+            - "127.0.0.1:6379:6379"
+        networks:
+            - backend
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+        security_opt:
+            - no-new-privileges:true
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "3"
+
 networks:
     backend:
         driver: bridge
 
 volumes:
     postgres_krunangfah_data:
+        driver: local
+    redis_krunangfah_data:
         driver: local

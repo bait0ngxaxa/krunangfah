@@ -12,6 +12,10 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/user";
 import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
 import {
+    createEmailRateLimitKey,
+    createTokenRateLimitKey,
+} from "@/lib/rate-limit-keys";
+import {
     RATE_LIMIT_FORGOT_PASSWORD,
     RATE_LIMIT_PASSWORD_RESET_SUBMIT,
 } from "@/lib/constants/rate-limit";
@@ -54,7 +58,10 @@ export async function requestPasswordReset(input: {
     // --- Rate limit ---
     const headerStore = await headers();
     const rateLimitKey = extractRateLimitKey((name) => headerStore.get(name));
-    const rateLimitResult = forgotPasswordRequestLimiter.check(rateLimitKey);
+    const rawEmail = typeof input?.email === "string" ? input.email : "";
+    const emailRateLimitKey = createEmailRateLimitKey(rateLimitKey, rawEmail);
+    const rateLimitResult =
+        await forgotPasswordRequestLimiter.check(emailRateLimitKey);
 
     if (!rateLimitResult.allowed) {
         const rateLimitError = createRateLimitErrorPayload(rateLimitResult);
@@ -107,9 +114,10 @@ export async function resetPassword(input: {
     confirmPassword: string;
 }): Promise<ActionResult> {
     // --- Rate limit (ป้องกัน brute-force token) ---
-    const headerStore = await headers();
-    const rateLimitKey = extractRateLimitKey((name) => headerStore.get(name));
-    const rateLimitResult = passwordResetSubmitLimiter.check(rateLimitKey);
+    const rawToken = typeof input?.token === "string" ? input.token : "";
+    const rateLimitKey = createTokenRateLimitKey(rawToken);
+    const rateLimitResult =
+        await passwordResetSubmitLimiter.check(rateLimitKey);
     if (!rateLimitResult.allowed) {
         const rateLimitError = createRateLimitErrorPayload(rateLimitResult);
 

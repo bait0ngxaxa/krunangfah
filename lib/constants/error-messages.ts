@@ -8,6 +8,8 @@ export const ERROR_MESSAGES = {
     },
     activity: {
         latestOnly: "ทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+        classTeacherReferredLocked:
+            "นักเรียนคนนี้ถูกส่งต่อแล้ว ครูประจำชั้นไม่สามารถทำกิจกรรมต่อได้",
     },
 } as const;
 

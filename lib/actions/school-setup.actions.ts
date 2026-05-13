@@ -9,6 +9,7 @@ import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { normalizeSchoolName, sanitizeText } from "@/lib/utils/text-sanitizer";
 import { logError } from "@/lib/utils/logging";
 import { revalidateDashboardCache } from "./dashboard/cache";
+import { revalidateAnalyticsCache } from "./analytics/cache";
 import type {
     SchoolClassItem,
     SchoolSetupResponse,
@@ -50,6 +51,15 @@ const classNameSchema = z
     .string()
     .min(1, "กรุณากรอกชื่อห้องเรียน")
     .max(INPUT_LIMITS.school.className, "ชื่อห้องเรียนยาวเกินไป");
+
+const expectedStudentCountSchema = z
+    .number()
+    .int("จำนวนนักเรียนต้องเป็นจำนวนเต็ม")
+    .min(0, "จำนวนนักเรียนต้องไม่ติดลบ")
+    .max(
+        INPUT_LIMITS.school.classStudentCount,
+        `จำนวนนักเรียนต้องไม่เกิน ${INPUT_LIMITS.school.classStudentCount} คน`,
+    );
 
 /**
  * สร้างโรงเรียนและผูก schoolId เข้ากับ user ปัจจุบัน (school_admin only)
@@ -125,6 +135,7 @@ export async function createSchoolAndLink(input: {
  */
 export async function addSchoolClass(
     name: string,
+    expectedStudentCount = 0,
 ): Promise<ClassActionResponse> {
     try {
         const session = await requirePrimaryAdmin();
@@ -145,6 +156,15 @@ export async function addSchoolClass(
             };
         }
 
+        const parsedCount =
+            expectedStudentCountSchema.safeParse(expectedStudentCount);
+        if (!parsedCount.success) {
+            return {
+                success: false,
+                message: parsedCount.error.issues[0].message,
+            };
+        }
+
         // Normalize ชื่อห้องเรียนให้เป็นรูปแบบมาตรฐาน เช่น "ม1/2" → "ม.1/2"
         const normalizedName = normalizeClassName(parsedName.data);
 
@@ -160,19 +180,86 @@ export async function addSchoolClass(
         }
 
         const schoolClass = await prisma.schoolClass.create({
-            data: { schoolId, name: normalizedName },
+            data: {
+                schoolId,
+                name: normalizedName,
+                expectedStudentCount: parsedCount.data,
+            },
         });
 
         revalidatePath(CLASSES_PATH);
+        revalidateAnalyticsCache(schoolId);
 
         return {
             success: true,
             message: "เพิ่มห้องเรียนสำเร็จ",
-            data: { id: schoolClass.id, name: schoolClass.name },
+            data: {
+                id: schoolClass.id,
+                name: schoolClass.name,
+                expectedStudentCount: schoolClass.expectedStudentCount,
+            },
         };
     } catch (error) {
         logError("addSchoolClass error:", error);
         return { success: false, message: "เกิดข้อผิดพลาดในการเพิ่มห้องเรียน" };
+    }
+}
+
+/**
+ * อัปเดตจำนวนนักเรียนจริงของห้องเรียน ใช้เป็นตัวหารใน analytics coverage
+ */
+export async function updateSchoolClassStudentCount(
+    id: string,
+    expectedStudentCount: number,
+): Promise<ClassActionResponse> {
+    try {
+        const session = await requirePrimaryAdmin();
+        const schoolId = await resolveSchoolId(
+            session.user.id,
+            session.user.schoolId,
+        );
+
+        if (!schoolId) {
+            return { success: false, message: "ไม่พบโรงเรียนของคุณ" };
+        }
+
+        const parsedCount =
+            expectedStudentCountSchema.safeParse(expectedStudentCount);
+        if (!parsedCount.success) {
+            return {
+                success: false,
+                message: parsedCount.error.issues[0].message,
+            };
+        }
+
+        const schoolClass = await prisma.schoolClass.findFirst({
+            where: { id, schoolId },
+            select: { id: true },
+        });
+        if (!schoolClass) {
+            return { success: false, message: "ไม่พบห้องเรียนที่ต้องการแก้ไข" };
+        }
+
+        const updated = await prisma.schoolClass.update({
+            where: { id },
+            data: { expectedStudentCount: parsedCount.data },
+            select: { id: true, name: true, expectedStudentCount: true },
+        });
+
+        revalidatePath(CLASSES_PATH);
+        revalidateAnalyticsCache(schoolId);
+
+        return {
+            success: true,
+            message: "อัปเดตจำนวนนักเรียนสำเร็จ",
+            data: updated,
+        };
+    } catch (error) {
+        logError("updateSchoolClassStudentCount error:", error);
+        return {
+            success: false,
+            message: "เกิดข้อผิดพลาดในการอัปเดตจำนวนนักเรียน",
+        };
     }
 }
 
@@ -204,6 +291,7 @@ export async function removeSchoolClass(
         await prisma.schoolClass.delete({ where: { id } });
 
         revalidatePath(CLASSES_PATH);
+        revalidateAnalyticsCache(schoolId);
 
         return { success: true, message: "ลบห้องเรียนสำเร็จ" };
     } catch (error) {
@@ -227,7 +315,7 @@ export async function getSchoolClasses(): Promise<SchoolClassItem[]> {
     const classes = await prisma.schoolClass.findMany({
         where: { schoolId },
         orderBy: { name: "asc" },
-        select: { id: true, name: true },
+        select: { id: true, name: true, expectedStudentCount: true },
     });
 
     return classes;

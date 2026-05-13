@@ -18,20 +18,12 @@ export type { SchoolClassItem };
 
 export type { TeacherRosterItem };
 
-export interface AcademicYear {
-    id: string;
-    year: number;
-    semester: number;
-    isCurrent?: boolean;
-}
-
 export interface UseAddTeacherFormReturn {
     form: UseFormReturn<TeacherInviteFormData>;
     isLoading: boolean;
     error: string;
     success: string;
     inviteLink: string;
-    academicYears: AcademicYear[];
     userRoleValue: string;
     advisoryClassValue: string;
     selectedRosterId: string;

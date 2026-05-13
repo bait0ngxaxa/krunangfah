@@ -94,7 +94,6 @@ export async function createTeacherInvite(
                 age: Number(input.age),
                 userRole: input.userRole,
                 advisoryClass: normalizeClassName(input.advisoryClass),
-                academicYearId: input.academicYearId,
                 schoolId,
                 schoolRole: input.schoolRole,
                 projectRole: input.projectRole,
@@ -108,14 +107,12 @@ export async function createTeacherInvite(
                       data: inviteData,
                       include: {
                           school: true,
-                          academicYear: true,
                       },
                   })
                 : await tx.teacherInvite.create({
                       data: inviteData,
                       include: {
                           school: true,
-                          academicYear: true,
                       },
                   });
 
@@ -219,7 +216,6 @@ export async function acceptTeacherInvite(
                     lastName: invite.lastName,
                     age: invite.age,
                     advisoryClass: invite.advisoryClass,
-                    academicYearId: invite.academicYearId,
                     schoolRole: invite.schoolRole,
                     projectRole: invite.projectRole,
                 },

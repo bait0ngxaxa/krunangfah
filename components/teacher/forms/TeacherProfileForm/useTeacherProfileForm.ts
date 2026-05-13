@@ -10,11 +10,9 @@ import {
 } from "@/lib/validations/teacher.validation";
 import { createTeacherProfile } from "@/lib/actions/teacher.actions";
 import { DEFAULT_ADVISORY_CLASS } from "./constants";
-import type { AcademicYear, UseTeacherProfileFormReturn } from "./types";
+import type { UseTeacherProfileFormReturn } from "./types";
 
-export function useTeacherProfileForm(
-    academicYears: AcademicYear[],
-): UseTeacherProfileFormReturn {
+export function useTeacherProfileForm(): UseTeacherProfileFormReturn {
     const router = useRouter();
 
     // === State ===
@@ -56,7 +54,6 @@ export function useTeacherProfileForm(
         form,
         isLoading,
         error,
-        academicYears,
         onSubmit,
     };
 }

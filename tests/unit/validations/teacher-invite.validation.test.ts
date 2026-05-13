@@ -17,7 +17,6 @@ describe("teacherInviteSchema", () => {
         age: "35",
         userRole: "class_teacher",
         advisoryClass: "ม.2/5",
-        academicYearId: "clxyz123456789",
         schoolRole: "ครูประจำชั้น",
         projectRole: "care",
     };
@@ -188,19 +187,6 @@ describe("teacherInviteSchema", () => {
             if (!result.success) {
                 expect(result.error.issues[0].message).toBe(
                     "กรุณากรอกชั้นที่ปรึกษา",
-                );
-            }
-        });
-    });
-
-    describe("Invalid academicYearId", () => {
-        it("should reject empty academicYearId", () => {
-            const data = { ...validData, academicYearId: "" };
-            const result = teacherInviteSchema.safeParse(data);
-            expect(result.success).toBe(false);
-            if (!result.success) {
-                expect(result.error.issues[0].message).toBe(
-                    "กรุณาเลือกปีการศึกษา",
                 );
             }
         });

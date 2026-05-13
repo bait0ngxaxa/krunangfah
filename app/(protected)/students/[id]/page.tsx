@@ -38,6 +38,7 @@ import {
     resolveAcademicYearDateRange,
 } from "@/lib/utils/student-detail-filters";
 import { getLatestPhqResult } from "@/lib/utils/phq-result-selection";
+import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 
 const PHQ_HISTORY_PAGE_SIZE = 10;
 const COUNSELING_PAGE_SIZE = 10;
@@ -164,12 +165,17 @@ async function StudentDetailContent({
 
     const activePhqResult = getLatestPhqResult(student.phqResults);
     const latestResult = filteredPhqResults[0] || null;
+    const isReferralLockedForClassTeacher =
+        session.user.role === "class_teacher" && Boolean(student.referral);
     const canManageActivities =
         latestResult?.id !== undefined &&
         activePhqResult?.id !== undefined &&
-        latestResult.id === activePhqResult.id;
+        latestResult.id === activePhqResult.id &&
+        !isReferralLockedForClassTeacher;
     const activityActionLockedMessage =
-        !canManageActivities && latestResult
+        isReferralLockedForClassTeacher
+            ? ERROR_MESSAGES.activity.classTeacherReferredLocked
+            : !canManageActivities && latestResult
             ? "กำลังดูข้อมูลย้อนหลัง จึงทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน"
             : undefined;
     const phqPagination = buildOffsetPagination(

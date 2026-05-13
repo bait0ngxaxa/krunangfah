@@ -17,7 +17,6 @@ export interface UserProfileData {
         lastName: string;
         age: number;
         advisoryClass: string;
-        academicYearId: string;
         schoolRole: string;
         projectRole: ProjectRole;
     };
@@ -36,7 +35,6 @@ export interface ProfileUpdateInput {
     lastName: string;
     age: number;
     advisoryClass: string;
-    academicYearId: string;
     schoolRole: string;
     projectRole: ProjectRole;
 }

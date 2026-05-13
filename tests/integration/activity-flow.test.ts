@@ -64,13 +64,13 @@ describe("Integration: Activity Flow", () => {
         await createTestUser(USERS.otherTeacher, otherSchool.id);
         await createTestUser(SAME_SCHOOL_OTHER_CLASS_TEACHER, school.id);
 
-        await createTestTeacher(USERS.classTeacher.id, ay.id, {
+        await createTestTeacher(USERS.classTeacher.id, {
             advisoryClass: "ม.2/5",
         });
-        await createTestTeacher(USERS.otherTeacher.id, ay.id, {
+        await createTestTeacher(USERS.otherTeacher.id, {
             advisoryClass: "ม.3/1",
         });
-        await createTestTeacher(SAME_SCHOOL_OTHER_CLASS_TEACHER.id, ay.id, {
+        await createTestTeacher(SAME_SCHOOL_OTHER_CLASS_TEACHER.id, {
             advisoryClass: "ม.2/6",
         });
 
@@ -179,6 +179,70 @@ describe("Integration: Activity Flow", () => {
             });
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
+        });
+    });
+
+    describe("referred student - class_teacher manage lock", () => {
+        it("blocks class_teacher from submitting assessment after referral", async () => {
+            await prisma.studentReferral.create({
+                data: {
+                    studentId,
+                    fromTeacherUserId: USERS.classTeacher.id,
+                    toTeacherUserId: USERS.schoolAdmin.id,
+                },
+            });
+
+            mockSession(USERS.classTeacher);
+            const result = await submitTeacherAssessment(activityProgressId, {
+                internalProblems: "ปัญหาภายใน",
+                externalProblems: "ปัญหาภายนอก",
+                problemType: "internal",
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe(
+                "นักเรียนคนนี้ถูกส่งต่อแล้ว ครูประจำชั้นไม่สามารถทำกิจกรรมต่อได้",
+            );
+
+            await prisma.studentReferral.delete({
+                where: { studentId },
+            });
+        });
+
+        it("blocks class_teacher from confirming activity after referral", async () => {
+            const current = await createTestActivityProgress(
+                studentId,
+                phqResultId,
+                7,
+                { status: "in_progress" },
+            );
+
+            await prisma.studentReferral.create({
+                data: {
+                    studentId,
+                    fromTeacherUserId: USERS.classTeacher.id,
+                    toTeacherUserId: USERS.schoolAdmin.id,
+                },
+            });
+
+            mockSession(USERS.classTeacher);
+            const result = await confirmActivityComplete(current.id);
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe(
+                "นักเรียนคนนี้ถูกส่งต่อแล้ว ครูประจำชั้นไม่สามารถทำกิจกรรมต่อได้",
+            );
+
+            const unchanged = await prisma.activityProgress.findUnique({
+                where: { id: current.id },
+                select: { status: true, completedAt: true },
+            });
+            expect(unchanged?.status).toBe("in_progress");
+            expect(unchanged?.completedAt).toBeNull();
+
+            await prisma.studentReferral.delete({
+                where: { studentId },
+            });
         });
     });
 

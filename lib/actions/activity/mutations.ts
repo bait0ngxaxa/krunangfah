@@ -16,64 +16,7 @@ import {
 } from "@/lib/validations/activity.validation";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
-
-/**
- * Verify user has access to student's activity
- */
-async function verifyActivityAccess(
-    studentId: string,
-    userId: string,
-    userRole: string,
-): Promise<{ allowed: boolean; error?: string }> {
-    // system_admin reads all students, but write operations still gate separately.
-    if (userRole === "system_admin") {
-        const student = await prisma.student.findUnique({
-            where: { id: studentId },
-            select: { id: true },
-        });
-        if (!student) {
-            return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
-        }
-        return { allowed: true };
-    }
-
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-            schoolId: true,
-            teacher: { select: { advisoryClass: true } },
-        },
-    });
-
-    if (!user?.schoolId) {
-        return { allowed: false, error: "ไม่พบข้อมูลโรงเรียน" };
-    }
-
-    const student = await prisma.student.findUnique({
-        where: { id: studentId },
-        select: { schoolId: true, class: true },
-    });
-
-    if (!student) {
-        return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
-    }
-
-    if (student.schoolId !== user.schoolId) {
-        return { allowed: false, error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
-    }
-
-    if (userRole === "class_teacher") {
-        const advisoryClass = user.teacher?.advisoryClass;
-        if (!advisoryClass || student.class !== advisoryClass) {
-            return {
-                allowed: false,
-                error: "คุณสามารถเข้าถึงข้อมูลได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
-            };
-        }
-    }
-
-    return { allowed: true };
-}
+import { verifyStudentActivityAccess } from "./access";
 
 async function verifyLatestActivityPhqResult(
     studentId: string,
@@ -110,7 +53,24 @@ export async function initializeActivityProgress(
 ) {
     try {
         // Require authenticated server context even when function is imported client-side.
-        await requireAuth();
+        const session = await requireAuth();
+
+        if (session.user.role === "system_admin") {
+            return {
+                success: false,
+                error: ERROR_MESSAGES.role.systemAdminReadonlyActivity,
+            };
+        }
+
+        const { allowed, error } = await verifyStudentActivityAccess(
+            studentId,
+            session.user.id,
+            session.user.role,
+            "manage",
+        );
+        if (!allowed) {
+            return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
 
         const latestCheck = await verifyLatestActivityPhqResult(
             studentId,
@@ -201,10 +161,11 @@ export async function submitTeacherAssessment(
         }
 
         // Enforce school/class ownership before update.
-        const { allowed, error } = await verifyActivityAccess(
+        const { allowed, error } = await verifyStudentActivityAccess(
             activityProgress.studentId,
             session.user.id,
             session.user.role,
+            "manage",
         );
 
         if (!allowed) {
@@ -307,10 +268,11 @@ export async function confirmActivityComplete(
         }
 
         // Enforce school/class ownership before completion update.
-        const { allowed, error } = await verifyActivityAccess(
+        const { allowed, error } = await verifyStudentActivityAccess(
             activityProgress.studentId,
             session.user.id,
             session.user.role,
+            "manage",
         );
 
         if (!allowed) {
@@ -414,10 +376,11 @@ export async function updateTeacherNotes(
         }
 
         // Enforce school/class ownership before update.
-        const { allowed, error } = await verifyActivityAccess(
+        const { allowed, error } = await verifyStudentActivityAccess(
             activityProgress.studentId,
             session.user.id,
             session.user.role,
+            "manage",
         );
 
         if (!allowed) {
@@ -486,10 +449,11 @@ export async function updateScheduledDate(
             };
         }
 
-        const { allowed, error } = await verifyActivityAccess(
+        const { allowed, error } = await verifyStudentActivityAccess(
             activityProgress.studentId,
             session.user.id,
             session.user.role,
+            "manage",
         );
 
         if (!allowed) {

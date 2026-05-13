@@ -136,6 +136,7 @@ export function AnalyticsContent({
             <AnalyticsSummaryCards
                 totalStudents={data.totalStudents}
                 studentsWithAssessment={data.studentsWithAssessment}
+                activityCompletionSummary={data.activityCompletionSummary}
                 currentClass={data.currentClass}
             />
             <AnalyticsFilters

@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, GraduationCap, Pencil, Check, X } from "lucide-react";
+import { Users, GraduationCap, Pencil, Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { updateTeacherProfile } from "@/lib/actions/user-management.actions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import {
+    deleteUser,
+    updateTeacherProfile,
+} from "@/lib/actions/user-management.actions";
 import { RoleBadge } from "@/components/ui/badges";
 import type { UserListItem } from "@/types/user-management.types";
 import type { SchoolClassItem } from "@/types/school-setup.types";
@@ -87,15 +91,33 @@ function TeacherCard({
     classes,
     currentUserId,
     onUpdated,
+    onDeleted,
 }: {
     teacher: UserListItem;
     classes: SchoolClassItem[];
     currentUserId: string;
     onUpdated?: () => void;
+    onDeleted: () => void;
 }) {
     const [isEditing, setIsEditing] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const isSelf = teacher.id === currentUserId;
+    const canDelete = !isSelf && !teacher.isPrimary;
     const initials = teacher.teacherName?.charAt(0) ?? "?";
+
+    async function handleConfirmDelete() {
+        setIsDeleting(true);
+        const result = await deleteUser(teacher.id);
+        if (result.success) {
+            toast.success(result.message);
+            onDeleted();
+        } else {
+            toast.error(result.message);
+        }
+        setIsDeleting(false);
+        setShowDeleteDialog(false);
+    }
 
     return (
         <div className="p-4 bg-white rounded-xl border border-gray-100 transition-colors">
@@ -143,6 +165,17 @@ function TeacherCard({
                                 แก้ไข
                             </button>
                         )}
+                        {canDelete && (
+                            <button
+                                type="button"
+                                onClick={() => setShowDeleteDialog(true)}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors cursor-pointer"
+                                title="ลบครู"
+                            >
+                                <Trash2 className="w-3 h-3" />
+                                ลบ
+                            </button>
+                        )}
                     </div>
 
                     {isEditing && (
@@ -158,6 +191,15 @@ function TeacherCard({
                     )}
                 </div>
             </div>
+            <ConfirmDialog
+                isOpen={showDeleteDialog}
+                title="ลบครูออกจากระบบ"
+                message={`ต้องการลบ "${teacher.teacherName ?? teacher.email}" ออกจากระบบใช่หรือไม่? บัญชีนี้จะถูกปิดใช้งานและไม่สามารถเข้าสู่ระบบได้อีก`}
+                confirmLabel="ยืนยันลบ"
+                isLoading={isDeleting}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setShowDeleteDialog(false)}
+            />
         </div>
     );
 }
@@ -174,6 +216,13 @@ export function SchoolTeacherList({
     useEffect(() => {
         setTeachers(initialTeachers);
     }, [initialTeachers]);
+
+    function handleDeleted(teacherId: string) {
+        setTeachers((current) =>
+            current.filter((teacher) => teacher.id !== teacherId),
+        );
+        onUpdated?.();
+    }
 
     return (
         <div>
@@ -196,6 +245,7 @@ export function SchoolTeacherList({
                             classes={classes}
                             currentUserId={currentUserId}
                             onUpdated={onUpdated}
+                            onDeleted={() => handleDeleted(t.id)}
                         />
                     ))}
                 </div>

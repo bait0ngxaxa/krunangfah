@@ -8,16 +8,14 @@ import type {
     FieldErrors,
 } from "react-hook-form";
 import type { TeacherProfileFormData } from "@/lib/validations/teacher.validation";
-import type { AcademicYear } from "@/types/teacher.types";
 
 // Re-export for convenience
-export type { TeacherProfileFormData, AcademicYear };
+export type { TeacherProfileFormData };
 
 export interface UseTeacherProfileFormReturn {
     form: UseFormReturn<TeacherProfileFormData>;
     isLoading: boolean;
     error: string;
-    academicYears: AcademicYear[];
     onSubmit: (data: TeacherProfileFormData) => Promise<void>;
 }
 
@@ -38,7 +36,6 @@ export interface SchoolInfoFieldsProps {
 export interface ProjectFieldsProps {
     register: UseFormRegister<TeacherProfileFormData>;
     errors: FieldErrors<TeacherProfileFormData>;
-    academicYears: AcademicYear[];
 }
 
 export interface SubmitButtonProps {

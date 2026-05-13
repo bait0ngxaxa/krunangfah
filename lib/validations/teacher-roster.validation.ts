@@ -24,7 +24,12 @@ export const teacherRosterSchema = z
             .min(1, "กรุณากรอกนามสกุล")
             .max(INPUT_LIMITS.teacher.lastName, "นามสกุลยาวเกินไป")
             .transform(sanitizeName),
-        email: z.string().email("อีเมลไม่ถูกต้อง").optional().or(z.literal("")),
+        email: z
+            .string()
+            .trim()
+            .min(1, "กรุณากรอกอีเมล")
+            .email("อีเมลไม่ถูกต้อง")
+            .transform((email) => email.toLowerCase()),
         age: z
             .number({ error: "กรุณากรอกอายุเป็นตัวเลข" })
             .min(18, "อายุต้องมากกว่า 18 ปี")

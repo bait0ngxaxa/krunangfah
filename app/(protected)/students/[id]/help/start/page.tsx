@@ -73,6 +73,10 @@ export default async function ActivityStartPage({
             ? initialProgress
             : await getActivityProgress(studentId, latestResult.id);
 
+    if (!progressResult?.success) {
+        redirect(studentHelpRoute(studentId));
+    }
+
     // First access initializes sequence records for this PHQ result.
     if (!progressResult.success || !progressResult.data?.length) {
         await initializeActivityProgress(
@@ -81,6 +85,9 @@ export default async function ActivityStartPage({
             riskLevel as "orange" | "yellow" | "green",
         );
         progressResult = await getActivityProgress(studentId, latestResult.id);
+        if (!progressResult.success) {
+            redirect(studentHelpRoute(studentId));
+        }
     }
 
     const activityProgress = progressResult.success

@@ -13,14 +13,11 @@ import { createTeacherInvite } from "@/lib/actions/teacher-invite";
 import { markRosterInviteSent } from "@/lib/actions/teacher-roster.actions";
 import { ADMIN_ADVISORY_CLASS } from "./constants";
 import type {
-    AcademicYear,
     TeacherRosterItem,
     UseAddTeacherFormReturn,
 } from "./types";
 
-export function useAddTeacherForm(
-    academicYears: AcademicYear[],
-): UseAddTeacherFormReturn {
+export function useAddTeacherForm(): UseAddTeacherFormReturn {
     const router = useRouter();
 
     // === State ===
@@ -93,9 +90,7 @@ export function useAddTeacherForm(
                 shouldValidate: true,
             },
         );
-        if (teacher.email) {
-            form.setValue("email", teacher.email, { shouldValidate: true });
-        }
+        form.setValue("email", teacher.email ?? "", { shouldValidate: true });
     };
 
     const onSubmit = async (data: TeacherInviteFormData): Promise<void> => {
@@ -151,7 +146,6 @@ export function useAddTeacherForm(
         error,
         success,
         inviteLink,
-        academicYears,
         userRoleValue,
         advisoryClassValue,
         selectedRosterId,

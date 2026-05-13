@@ -14,7 +14,6 @@ describe("profileUpdateSchema", () => {
             lastName: "ใจดี",
             age: 30,
             advisoryClass: "ม.1/1",
-            academicYearId: "cuid_123456",
             schoolRole: "หัวหน้าระดับชั้น",
             projectRole: "lead",
             ...overrides,

@@ -2,7 +2,6 @@ import { UserPlus } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
 import { requireAuth } from "@/lib/session";
-import { getAcademicYears } from "@/lib/actions/teacher.actions";
 import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
 import { getSchoolRoster } from "@/lib/actions/teacher-roster.actions";
 import { getMyTeacherInvites } from "@/lib/actions/teacher-invite";
@@ -27,8 +26,7 @@ export default async function AddTeacherPage() {
 
     const isPrimary = session.user.isPrimary === true;
 
-    const [academicYears, classes, roster, inviteResult] = await Promise.all([
-        getAcademicYears(),
+    const [classes, roster, inviteResult] = await Promise.all([
         getSchoolClasses(),
         getSchoolRoster(),
         getMyTeacherInvites(),
@@ -55,7 +53,6 @@ export default async function AddTeacherPage() {
                 <TeacherSetupTabs
                     classes={classes}
                     roster={roster}
-                    academicYears={academicYears}
                     invites={inviteResult.invites}
                     isPrimary={isPrimary}
                 />
