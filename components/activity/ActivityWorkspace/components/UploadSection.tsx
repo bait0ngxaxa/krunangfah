@@ -182,7 +182,9 @@ export function UploadSection({
                 ) : (
                     /* All files uploaded — show confirm button */
                     <div className="flex flex-col items-center gap-4 mt-auto">
-                        <div className="flex items-center gap-2 text-cyan-700 font-bold">
+                        <div
+                            className={`flex items-center gap-2 ${uploadColors.completeText} font-bold`}
+                        >
                             <CheckCircle2 className="w-5 h-5" />
                             อัปโหลดใบงานครบแล้ว!
                         </div>
@@ -191,7 +193,7 @@ export function UploadSection({
                         </p>
                         <button
                             onClick={onConfirmComplete}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 text-lg font-bold text-white transition-base hover:-translate-y-0.5 hover:bg-cyan-600 hover:shadow-md"
+                            className={`flex w-full items-center justify-center gap-2 rounded-xl ${uploadColors.button} px-6 py-3 text-lg font-bold text-white transition-base hover:-translate-y-0.5 ${uploadColors.buttonHover} hover:shadow-md`}
                         >
                             ยืนยันจบกิจกรรม
                             <ArrowRight className="w-5 h-5" />

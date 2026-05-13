@@ -247,6 +247,107 @@ describe("Integration: Activity Flow", () => {
     });
 
     describe("confirmActivityComplete - Atomic Completion + Unlock", () => {
+        it("uses latest worksheet upload date as scheduledDate when none was selected", async () => {
+            const current = await createTestActivityProgress(
+                studentId,
+                phqResultId,
+                8,
+                { status: "in_progress", teacherId: USERS.classTeacher.id },
+            );
+            const firstUploadDate = new Date("2026-05-10T03:00:00.000Z");
+            const latestUploadDate = new Date("2026-05-11T04:30:00.000Z");
+
+            await prisma.worksheetUpload.createMany({
+                data: [
+                    {
+                        activityProgressId: current.id,
+                        worksheetNumber: 1,
+                        fileName: "worksheet-1.jpg",
+                        fileUrl: "/api/uploads/worksheet-1.jpg",
+                        fileType: "image/jpeg",
+                        fileSize: 1024,
+                        uploadedById: USERS.classTeacher.id,
+                        uploadedAt: firstUploadDate,
+                    },
+                    {
+                        activityProgressId: current.id,
+                        worksheetNumber: 2,
+                        fileName: "worksheet-2.jpg",
+                        fileUrl: "/api/uploads/worksheet-2.jpg",
+                        fileType: "image/jpeg",
+                        fileSize: 1024,
+                        uploadedById: USERS.classTeacher.id,
+                        uploadedAt: latestUploadDate,
+                    },
+                ],
+            });
+
+            mockSession(USERS.classTeacher);
+            const result = await confirmActivityComplete(current.id);
+
+            expect(result.success).toBe(true);
+
+            const updated = await prisma.activityProgress.findUnique({
+                where: { id: current.id },
+                select: {
+                    status: true,
+                    scheduledDate: true,
+                    teacherId: true,
+                },
+            });
+
+            expect(updated?.status).toBe("completed");
+            expect(updated?.scheduledDate?.toISOString()).toBe(
+                latestUploadDate.toISOString(),
+            );
+            expect(updated?.teacherId).toBe(USERS.classTeacher.id);
+        });
+
+        it("keeps the selected scheduledDate when completing activity", async () => {
+            const selectedDate = new Date("2026-05-09T00:00:00.000Z");
+            const uploadDate = new Date("2026-05-12T04:30:00.000Z");
+            const current = await createTestActivityProgress(
+                studentId,
+                phqResultId,
+                9,
+                { status: "in_progress", teacherId: USERS.classTeacher.id },
+            );
+
+            await Promise.all([
+                prisma.activityProgress.update({
+                    where: { id: current.id },
+                    data: { scheduledDate: selectedDate },
+                }),
+                prisma.worksheetUpload.create({
+                    data: {
+                        activityProgressId: current.id,
+                        worksheetNumber: 1,
+                        fileName: "worksheet-selected-date.jpg",
+                        fileUrl: "/api/uploads/worksheet-selected-date.jpg",
+                        fileType: "image/jpeg",
+                        fileSize: 1024,
+                        uploadedById: USERS.classTeacher.id,
+                        uploadedAt: uploadDate,
+                    },
+                }),
+            ]);
+
+            mockSession(USERS.classTeacher);
+            const result = await confirmActivityComplete(current.id);
+
+            expect(result.success).toBe(true);
+
+            const updated = await prisma.activityProgress.findUnique({
+                where: { id: current.id },
+                select: { scheduledDate: true, teacherId: true },
+            });
+
+            expect(updated?.scheduledDate?.toISOString()).toBe(
+                selectedDate.toISOString(),
+            );
+            expect(updated?.teacherId).toBe(USERS.classTeacher.id);
+        });
+
         it("marks current activity complete and unlocks the next activity in the same flow", async () => {
             const current = await createTestActivityProgress(
                 studentId,

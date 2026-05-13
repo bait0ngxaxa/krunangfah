@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BookOpen, Pin } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
-import { buttonVariants } from "@/components/ui/Button";
+import { HelpPageHeader } from "@/components/student/help/HelpPageHeader";
 import { getStudentDetail } from "@/lib/actions/student/main";
+import { getColorConfig } from "@/lib/config/help-page-config";
 import { requireAuth } from "@/lib/session";
 import {
     studentHelpRoute,
@@ -14,6 +15,7 @@ import {
     getLatestPhqResult,
     getRequestedOrLatestPhqResult,
 } from "@/lib/utils/phq-result-selection";
+import type { RiskLevel } from "@/lib/utils/phq-scoring";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -43,56 +45,55 @@ export default async function GuidelinesPage({
     const selectedPhqResult = student
         ? getRequestedOrLatestPhqResult(student.phqResults, phqResultId)
         : null;
+
+    if (!selectedPhqResult) {
+        redirect(studentHelpRoute(studentId));
+    }
+
     const canStartActivities =
         activePhqResult?.id !== undefined &&
-        selectedPhqResult?.id !== undefined &&
+        selectedPhqResult.id !== undefined &&
         activePhqResult.id === selectedPhqResult.id;
     const startHref = studentHelpStartRoute(studentId, phqResultId);
     const backHref = canStartActivities
         ? startHref
         : studentHelpRoute(studentId);
+    const riskLevel = selectedPhqResult.riskLevel as RiskLevel;
+    const config = getColorConfig(riskLevel);
+    const studentName = `${student.firstName} ${student.lastName}`;
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4">
+        <div className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-6">
             <div className="max-w-4xl mx-auto">
                 <BackButton href={backHref} label="กลับหน้าใบงาน" />
 
-                <div className="relative bg-white rounded-2xl shadow-sm p-6 md:p-8 border-2 border-gray-100 overflow-hidden">
-                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-linear-to-br from-emerald-200/45 to-teal-300/35 rounded-full blur-xl pointer-events-none" />
-                    <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-linear-to-br from-teal-200/20 to-emerald-300/15 rounded-full blur-xl pointer-events-none" />
+                <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-8">
+                    <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-linear-to-br from-emerald-200/45 to-teal-300/35 blur-xl" />
                     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
-                    <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-emerald-500 to-teal-500" />
 
-                    <div className="relative flex items-center gap-4 mb-8">
-                        <div className="relative w-16 h-16">
-                            <div className="absolute inset-0 rounded-full bg-emerald-200 blur-lg opacity-35" />
-                            <div className="relative w-full h-full rounded-full bg-white border border-emerald-200 flex items-center justify-center text-emerald-600 text-2xl shadow-sm ring-1 ring-emerald-100/70">
-                                <BookOpen className="w-8 h-8" />
-                            </div>
-                        </div>
-                        <div>
-                            <h1 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                                หลักการใช้ใบงาน
-                            </h1>
-                            <p className="text-gray-600">
-                                คำแนะนำในการทำกิจกรรม
-                            </p>
-                        </div>
-                    </div>
+                    <HelpPageHeader
+                        studentName={studentName}
+                        config={config}
+                        icon={<BookOpen className="w-10 h-10 text-white" />}
+                        title="หลักการใช้ใบงาน"
+                    />
 
-                    <div className="prose prose-lg max-w-none">
-                        <div className="bg-emerald-50 border-l-4 border-emerald-500 p-6 rounded-r-xl mb-6">
-                            <h3 className="text-emerald-800 font-bold mb-2">
-                                <span className="flex items-center gap-1.5">
-                                    <Pin className="w-4 h-4" /> หมายเหตุ
-                                </span>
+                    <div className="rounded-2xl border border-gray-200/80 bg-white/80 p-6 shadow-sm md:p-8">
+                        <div
+                            className={`mb-6 rounded-2xl border px-5 py-4 ${config.borderColor} ${config.lightBg}`}
+                        >
+                            <h3
+                                className={`mb-2 flex items-center gap-1.5 font-bold ${config.textColor}`}
+                            >
+                                <Pin className="w-4 h-4" />
+                                หมายเหตุ
                             </h3>
-                            <p className="text-emerald-700 mb-0">
+                            <p className={`text-sm font-medium ${config.textColor}`}>
                                 เนื้อหาหลักการใช้ใบงานจะถูกเพิ่มในภายหลัง
                             </p>
                         </div>
 
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800">
                             วิธีการใช้ใบงาน
                         </h2>
                         <ol className="space-y-3 text-gray-700">
@@ -103,15 +104,11 @@ export default async function GuidelinesPage({
                         </ol>
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-gray-200">
+                    <div className="mt-8 border-t border-gray-200 pt-6">
                         {canStartActivities ? (
                             <Link
                                 href={startHref}
-                                className={buttonVariants({
-                                    variant: "primary",
-                                    size: "lg",
-                                    fullWidth: true,
-                                })}
+                                className={`group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r py-4 text-center text-lg font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg ${config.gradient}`}
                             >
                                 กลับหน้าใบงาน
                             </Link>

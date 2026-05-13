@@ -24,8 +24,13 @@ export function studentHelpRoute(studentId: string): string {
     return `${studentRoute(studentId)}/help`;
 }
 
-export function studentHelpConversationRoute(studentId: string): string {
-    return `${studentHelpRoute(studentId)}/conversation`;
+export function studentHelpConversationRoute(
+    studentId: string,
+    phqResultId?: string,
+): string {
+    return buildRouteWithQuery(`${studentHelpRoute(studentId)}/conversation`, {
+        phqResultId,
+    });
 }
 
 export function studentHelpGuidelinesRoute(

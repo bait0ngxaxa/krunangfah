@@ -25,6 +25,13 @@ export interface RiskPieChartProps {
     showPercentageInLegend?: boolean;
 }
 
+interface PieChartBodyProps {
+    chartData: RiskPieChartDataItem[];
+    height: number;
+    outerRadius: number;
+    compactLabels: boolean;
+}
+
 // Constants outside component to avoid re-creation
 const RADIAN = Math.PI / 180;
 
@@ -40,6 +47,7 @@ const TOOLTIP_ITEM_STYLE = { color: "#4B5563", fontWeight: 500 };
 
 function renderOuterLabel(
     props: PieLabelRenderProps,
+    compact = false,
 ): React.ReactElement | null {
     const { cx, cy, midAngle, outerRadius, percent, name, fill } = props;
 
@@ -63,19 +71,24 @@ function renderOuterLabel(
     const edgeX = cx + outerRadius * cos;
     const edgeY = cy + outerRadius * sin;
 
-    // Elbow point (extends outward)
-    const elbowX = cx + (outerRadius + 14) * cos;
-    const elbowY = cy + (outerRadius + 14) * sin;
+    const radialGap = compact ? 10 : 14;
+    const horizontalGap = compact ? 14 : 20;
+    const textGap = compact ? 3 : 4;
+    const labelName =
+        typeof name === "string" || typeof name === "number" ? name : "";
 
-    // End of the horizontal line
+    const elbowX = cx + (outerRadius + radialGap) * cos;
+    const elbowY = cy + (outerRadius + radialGap) * sin;
+
     const isRight = cos >= 0;
-    const lineEndX = elbowX + (isRight ? 20 : -20);
+    const lineEndX = elbowX + (isRight ? horizontalGap : -horizontalGap);
 
     const percentText = `${(percent * 100).toFixed(0)}%`;
+    const labelText =
+        compact || labelName === "" ? percentText : `${labelName} ${percentText}`;
 
     return (
         <g>
-            {/* Leader line: edge → elbow → horizontal */}
             <polyline
                 points={`${edgeX},${edgeY} ${elbowX},${elbowY} ${lineEndX},${elbowY}`}
                 fill="none"
@@ -83,21 +96,61 @@ function renderOuterLabel(
                 strokeWidth={1.5}
                 strokeOpacity={0.6}
             />
-            {/* Dot at the edge */}
             <circle cx={edgeX} cy={edgeY} r={2.5} fill={fill} />
-            {/* Label text */}
             <text
-                x={lineEndX + (isRight ? 4 : -4)}
+                x={lineEndX + (isRight ? textGap : -textGap)}
                 y={elbowY}
                 fill="#374151"
                 textAnchor={isRight ? "start" : "end"}
                 dominantBaseline="central"
-                fontSize={13}
+                fontSize={compact ? 12 : 13}
                 fontWeight="600"
             >
-                {name} {percentText}
+                {labelText}
             </text>
         </g>
+    );
+}
+
+function PieChartBody({
+    chartData,
+    height,
+    outerRadius,
+    compactLabels,
+}: PieChartBodyProps): React.ReactElement {
+    return (
+        <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={height}>
+            <PieChart tabIndex={-1}>
+                <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(props) => renderOuterLabel(props, compactLabels)}
+                    outerRadius={outerRadius}
+                    fill="#8884d8"
+                    dataKey="value"
+                    animationBegin={0}
+                    animationDuration={800}
+                    animationEasing="ease-out"
+                    isAnimationActive={true}
+                >
+                    {chartData.map((entry) => (
+                        <Cell
+                            key={`cell-${entry.name}`}
+                            fill={entry.color}
+                            stroke="white"
+                            strokeWidth={2}
+                        />
+                    ))}
+                </Pie>
+                <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    itemStyle={TOOLTIP_ITEM_STYLE}
+                    formatter={formatTooltipValue}
+                />
+            </PieChart>
+        </ResponsiveContainer>
     );
 }
 
@@ -155,6 +208,8 @@ function RiskPieChartComponent({
         () => data.reduce((sum, item) => sum + item.value, 0),
         [data],
     );
+    const mobileHeight = Math.max(240, Math.min(height, 300));
+    const mobileOuterRadius = Math.min(outerRadius, 78);
 
     if (chartData.length === 0) {
         return (
@@ -190,38 +245,22 @@ function RiskPieChartComponent({
                     {title}
                 </h2>
             )}
-            <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={height}>
-                <PieChart tabIndex={-1}>
-                    <Pie
-                        data={chartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={renderOuterLabel}
-                        outerRadius={outerRadius}
-                        fill="#8884d8"
-                        dataKey="value"
-                        animationBegin={0}
-                        animationDuration={800}
-                        animationEasing="ease-out"
-                        isAnimationActive={true}
-                    >
-                        {chartData.map((entry) => (
-                            <Cell
-                                key={`cell-${entry.name}`}
-                                fill={entry.color}
-                                stroke="white"
-                                strokeWidth={2}
-                            />
-                        ))}
-                    </Pie>
-                    <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        itemStyle={TOOLTIP_ITEM_STYLE}
-                        formatter={formatTooltipValue}
-                    />
-                </PieChart>
-            </ResponsiveContainer>
+            <div className="sm:hidden">
+                <PieChartBody
+                    chartData={chartData}
+                    height={mobileHeight}
+                    outerRadius={mobileOuterRadius}
+                    compactLabels
+                />
+            </div>
+            <div className="hidden sm:block">
+                <PieChartBody
+                    chartData={chartData}
+                    height={height}
+                    outerRadius={outerRadius}
+                    compactLabels={false}
+                />
+            </div>
             <CustomLegend
                 data={chartData}
                 total={total}

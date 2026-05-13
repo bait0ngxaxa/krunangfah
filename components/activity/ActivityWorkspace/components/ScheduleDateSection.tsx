@@ -8,7 +8,7 @@ import { updateScheduledDate } from "@/lib/actions/activity/mutations";
 interface ScheduleDateSectionProps {
     activityProgressId: string;
     currentDate: Date | string | null;
-    isLocked: boolean;
+    status: string;
 }
 
 function formatDateThai(date: Date | string): string {
@@ -35,7 +35,7 @@ function toInputDateValue(date: Date | string): string {
 export function ScheduleDateSection({
     activityProgressId,
     currentDate,
-    isLocked,
+    status,
 }: ScheduleDateSectionProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [dateValue, setDateValue] = useState(
@@ -43,9 +43,12 @@ export function ScheduleDateSection({
     );
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
+    const isLocked = status === "locked";
+    const isCompleted = status === "completed";
+    const isDisabled = isLocked || isCompleted;
 
     const handleSave = (): void => {
-        if (!dateValue) return;
+        if (!dateValue || isDisabled) return;
         startTransition(async () => {
             const result = await updateScheduledDate(
                 activityProgressId,
@@ -78,6 +81,10 @@ export function ScheduleDateSection({
                             <p className="text-xs text-gray-500 mt-0.5">
                                 {isLocked
                                     ? "กิจกรรมยังล็อคอยู่"
+                                    : isCompleted
+                                      ? currentDate
+                                          ? formatDateThai(currentDate)
+                                          : "กิจกรรมนี้จบแล้ว"
                                     : currentDate
                                       ? formatDateThai(currentDate)
                                       : "ยังไม่ได้นัดหมาย"}
@@ -86,9 +93,11 @@ export function ScheduleDateSection({
                     </div>
                 </div>
 
-                {isLocked ? (
+                {isDisabled ? (
                     <span className="text-xs text-gray-400 italic">
-                        ไม่สามารถนัดหมายได้
+                        {isCompleted
+                            ? "กิจกรรมนี้จบแล้ว"
+                            : "ไม่สามารถนัดหมายได้"}
                     </span>
                 ) : isEditing ? (
                     <div className="flex items-center gap-2">

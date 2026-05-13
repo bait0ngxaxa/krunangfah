@@ -253,9 +253,9 @@ export function TeacherAssessmentForm({
                     <button
                         onClick={handleSubmit}
                         disabled={!canSubmit || submitting}
-                            className={`w-full py-5 rounded-2xl font-bold text-xl transition-base flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-[0.98] ${
+                        className={`w-full py-5 rounded-2xl font-bold text-xl transition-base flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-[0.98] ${
                             canSubmit
-                                ? "bg-cyan-500 text-white shadow-sm hover:bg-cyan-600"
+                                ? `${assessmentColors.button} text-white shadow-sm ${assessmentColors.buttonHover}`
                                 : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none border border-gray-200"
                         }`}
                     >

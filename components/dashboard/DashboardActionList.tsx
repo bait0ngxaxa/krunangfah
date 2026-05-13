@@ -109,7 +109,7 @@ export function DashboardActionList({
                         <QuickActionCard
                             href="/teachers/add"
                             icon={UserPlus}
-                            title="ส่งคำเชิญเข้าระบบ"
+                            title="ส่งคำเชิญเข้าระบบ / จัดการข้อมูลครู โรงเรียน"
                             description="ห้องเรียน / ข้อมูลครู / เชิญครู"
                         />
                     )}
@@ -118,7 +118,7 @@ export function DashboardActionList({
                         <QuickActionCard
                             href="/school/classes"
                             icon={UsersRound}
-                            title="จัดการครูในระบบ"
+                            title="จัดการสิทธิ์การใช้งานครูในระบบ"
                             description="แก้ไขห้อง / จัดการสิทธิ์"
                         />
                     )}
