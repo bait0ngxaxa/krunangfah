@@ -1,5 +1,5 @@
 /**
- * Type definitions for in-memory rate limiting
+ * Type definitions for rate limiting
  */
 
 /**
@@ -47,7 +47,7 @@ export interface RateLimitErrorPayload {
 }
 
 /**
- * Internal record of request timestamps for a single key (IP)
+ * Internal record of request timestamps for a single key
  */
 export interface RateLimitEntry {
     /** Array of request timestamps (epoch ms) within the sliding window */
@@ -59,9 +59,9 @@ export interface RateLimitEntry {
  */
 export interface RateLimiter {
     /** Check if a request from the given key is allowed */
-    check: (key: string) => RateLimitResult;
+    check: (key: string) => Promise<RateLimitResult>;
     /** Manually trigger cleanup of expired entries */
-    cleanup: () => void;
+    cleanup: () => Promise<void>;
     /** Stop the automatic cleanup interval */
-    destroy: () => void;
+    destroy: () => Promise<void>;
 }

@@ -4,6 +4,9 @@ import {
     Gauge,
     ListChecks,
     Clock3,
+    CircleDashed,
+    ClipboardList,
+    ClipboardX,
     type LucideIcon,
 } from "lucide-react";
 import type { ActivityCompletionSummary } from "@/lib/actions/analytics/types";
@@ -88,6 +91,62 @@ function MetricRow({
     );
 }
 
+function ScreeningMetricCard({
+    studentsWithAssessment,
+    studentsRequiringActivity,
+    studentsNotRequiringActivity,
+}: {
+    studentsWithAssessment: number;
+    studentsRequiringActivity: number;
+    studentsNotRequiringActivity: number;
+}) {
+    return (
+        <div className="rounded-2xl border border-slate-100 bg-white/80 px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-3">
+                    <div className="shrink-0 rounded-xl border border-white/80 bg-white p-2.5 shadow-sm ring-1 ring-slate-900/5">
+                        <CheckCircle className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-600">
+                        คัดกรองแล้ว
+                    </p>
+                </div>
+                <div className="flex shrink-0 items-baseline gap-1.5">
+                    <p className="text-2xl font-extrabold tracking-tight text-slate-900">
+                        {studentsWithAssessment}
+                    </p>
+                    <p className="text-sm font-bold text-emerald-600">คน</p>
+                </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
+                <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                        <ClipboardList className="h-3.5 w-3.5 shrink-0 text-sky-600" />
+                        <p className="truncate text-xs font-semibold text-slate-500">
+                            ต้องทำกิจกรรม
+                        </p>
+                    </div>
+                    <p className="shrink-0 text-xs font-extrabold text-slate-700">
+                        {studentsRequiringActivity} คน
+                    </p>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                        <ClipboardX className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                        <p className="truncate text-xs font-semibold text-slate-500">
+                            ไม่ต้องทำกิจกรรม
+                        </p>
+                    </div>
+                    <p className="shrink-0 text-xs font-extrabold text-slate-700">
+                        {studentsNotRequiringActivity} คน
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function MetricBlock({
     title,
     children,
@@ -125,6 +184,14 @@ export function AnalyticsSummaryCards({
     activityCompletionSummary,
     currentClass,
 }: AnalyticsSummaryCardsProps) {
+    const studentsRequiringActivity =
+        activityCompletionSummary.notStartedStudents +
+        activityCompletionSummary.inProgressStudents +
+        activityCompletionSummary.completedStudents;
+    const studentsNotRequiringActivity = Math.max(
+        0,
+        studentsWithAssessment - studentsRequiringActivity,
+    );
     const coveragePercent =
         totalStudents > 0
             ? Math.min(
@@ -141,12 +208,12 @@ export function AnalyticsSummaryCards({
             />
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <MetricBlock title="การครอบคลุม">
-                    <MetricRow
-                        icon={CheckCircle}
-                        label="คัดกรองแล้ว"
-                        value={studentsWithAssessment}
-                        unit="คน"
-                        accentColor="text-emerald-600"
+                    <ScreeningMetricCard
+                        studentsWithAssessment={studentsWithAssessment}
+                        studentsRequiringActivity={studentsRequiringActivity}
+                        studentsNotRequiringActivity={
+                            studentsNotRequiringActivity
+                        }
                     />
                     <MetricRow
                         icon={Gauge}
@@ -160,18 +227,25 @@ export function AnalyticsSummaryCards({
 
                 <MetricBlock title="ผลกิจกรรม">
                     <MetricRow
-                        icon={ListChecks}
-                        label="ทำกิจกรรมเสร็จแล้ว"
-                        value={activityCompletionSummary.completedStudents}
+                        icon={CircleDashed}
+                        label="ยังไม่เริ่มทำกิจกรรม"
+                        value={activityCompletionSummary.notStartedStudents}
                         unit="คน"
-                        accentColor="text-teal-600"
+                        accentColor="text-slate-500"
                     />
                     <MetricRow
                         icon={Clock3}
-                        label="ยังทำกิจกรรมไม่เสร็จ"
-                        value={activityCompletionSummary.incompleteStudents}
+                        label="เริ่มแล้วแต่ยังไม่เสร็จครบ"
+                        value={activityCompletionSummary.inProgressStudents}
                         unit="คน"
                         accentColor="text-amber-600"
+                    />
+                    <MetricRow
+                        icon={ListChecks}
+                        label="ทำกิจกรรมเสร็จครบแล้ว"
+                        value={activityCompletionSummary.completedStudents}
+                        unit="คน"
+                        accentColor="text-teal-600"
                     />
                 </MetricBlock>
             </div>

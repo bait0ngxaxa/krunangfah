@@ -16,6 +16,18 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Rate Limit Storage
+
+Development uses the in-memory rate limiter by default. For VPS deployments with
+PM2 and Docker-managed services, start Redis from `docker-compose.yml` and set:
+
+```env
+RATE_LIMIT_DRIVER=redis
+REDIS_URL=redis://127.0.0.1:6379
+```
+
+Keep Redis bound to `127.0.0.1`; do not expose port `6379` publicly.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

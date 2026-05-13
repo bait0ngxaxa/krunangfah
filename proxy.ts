@@ -27,7 +27,7 @@ const protectedRoutes = [
 // Routes สำหรับ guest เท่านั้น (ถ้า login แล้วจะ redirect ไป dashboard)
 const guestOnlyRoutes = ["/signin", "/forgot-password", "/reset-password"];
 
-export default auth((req) => {
+export default auth(async (req) => {
     const { nextUrl, auth: session } = req;
     const pathname = nextUrl.pathname;
 
@@ -45,7 +45,7 @@ export default auth((req) => {
         }
 
         // General limit for other auth POST requests
-        const result = generalAuthLimiter.check(rateLimitKey);
+        const result = await generalAuthLimiter.check(rateLimitKey);
         if (!result.allowed) {
             return createRateLimitApiResponse(result);
         }

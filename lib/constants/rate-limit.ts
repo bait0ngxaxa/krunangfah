@@ -25,6 +25,16 @@ export const RATE_LIMIT_AUTH_GENERAL: RateLimitConfig = {
 };
 
 /**
+ * Broad flood guard for signin traffic from one network
+ * 120 requests per minute per IP/user-agent key
+ */
+export const RATE_LIMIT_AUTH_FLOOD: RateLimitConfig = {
+    maxRequests: 120,
+    windowMs: 60 * 1000,
+    name: "auth-flood",
+};
+
+/**
  * Rate limit for forgot-password requests
  * 3 attempts per hour per IP
  */
@@ -52,6 +62,16 @@ export const RATE_LIMIT_PASSWORD_CHANGE: RateLimitConfig = {
     maxRequests: 3,
     windowMs: 60 * 60 * 1000,
     name: "password-change",
+};
+
+/**
+ * Broad flood guard before authenticated password-change rate limiting
+ * 60 requests per hour per IP/user-agent key
+ */
+export const RATE_LIMIT_PASSWORD_CHANGE_FLOOD: RateLimitConfig = {
+    maxRequests: 60,
+    windowMs: 60 * 60 * 1000,
+    name: "password-change-flood",
 };
 
 /** Interval for cleaning up expired rate limit entries (ms) */

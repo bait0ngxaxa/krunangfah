@@ -35,8 +35,9 @@ export interface ActivityProgressByRisk {
 }
 
 export interface ActivityCompletionSummary {
+    notStartedStudents: number;
+    inProgressStudents: number;
     completedStudents: number;
-    incompleteStudents: number;
 }
 
 export interface GradeRiskData {

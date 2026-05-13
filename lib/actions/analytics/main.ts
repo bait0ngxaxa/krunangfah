@@ -146,8 +146,9 @@ async function fetchAnalyticsData(
     const gradeRiskData = transformGradeRiskData(gradeRiskDataRaw);
     const activityProgressByRisk = transformActivityProgress(activityProgressRaw);
     const activityCompletionSummary = {
+        notStartedStudents: Number(activityCompletionRaw.not_started_students),
+        inProgressStudents: Number(activityCompletionRaw.in_progress_students),
         completedStudents: Number(activityCompletionRaw.completed_students),
-        incompleteStudents: Number(activityCompletionRaw.incomplete_students),
     };
     const hospitalReferralsByGrade =
         transformHospitalReferrals(hospitalReferralsRaw);

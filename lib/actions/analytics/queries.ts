@@ -37,8 +37,9 @@ interface ActivityProgressResult {
 }
 
 interface ActivityCompletionSummaryResult {
+    not_started_students: bigint;
+    in_progress_students: bigint;
     completed_students: bigint;
-    incomplete_students: bigint;
 }
 
 interface HospitalReferralResult {
@@ -408,23 +409,35 @@ export async function getActivityCompletionSummary(
             SELECT
                 rs."studentId",
                 rs.required_count,
-                COUNT(DISTINCT ap."activityNumber") as completed_count
+                COUNT(DISTINCT ap."activityNumber") FILTER (
+                    WHERE ap."teacherId" IS NOT NULL
+                       OR ap.status IN ('pending_assessment', 'completed')
+                       OR wu.id IS NOT NULL
+                ) as started_count,
+                COUNT(DISTINCT ap."activityNumber") FILTER (
+                    WHERE ap.status = 'completed'
+                ) as completed_count
             FROM required_students rs
             JOIN required_activity ra ON ra.risk_level = rs.risk_level
             LEFT JOIN activity_progress ap
               ON ap."phqResultId" = rs.phq_id
              AND ap."activityNumber" = ra.activity_number
-             AND ap.status = 'completed'
+            LEFT JOIN worksheet_uploads wu
+              ON wu."activityProgressId" = ap.id
             GROUP BY rs."studentId", rs.required_count
         )
         SELECT
-            COUNT(*) FILTER (WHERE completed_count >= required_count)::bigint as completed_students,
-            COUNT(*) FILTER (WHERE completed_count < required_count)::bigint as incomplete_students
+            COUNT(*) FILTER (WHERE started_count = 0)::bigint as not_started_students,
+            COUNT(*) FILTER (
+                WHERE started_count > 0 AND completed_count < required_count
+            )::bigint as in_progress_students,
+            COUNT(*) FILTER (WHERE completed_count >= required_count)::bigint as completed_students
         FROM completion
     `;
 
     return rows[0] ?? {
+        not_started_students: BigInt(0),
+        in_progress_students: BigInt(0),
         completed_students: BigInt(0),
-        incomplete_students: BigInt(0),
     };
 }

@@ -8,8 +8,9 @@ import { pickRateLimitResult } from "@/lib/rate-limit-errors";
 import { RateLimitCredentialsSignin } from "@/lib/rate-limit-response";
 import {
     RATE_LIMIT_AUTH_SIGNIN,
-    RATE_LIMIT_AUTH_GENERAL,
+    RATE_LIMIT_AUTH_FLOOD,
 } from "@/lib/constants/rate-limit";
+import { createEmailRateLimitKey } from "@/lib/rate-limit-keys";
 import type { ExtendedUser, UserRole } from "@/types/auth.types";
 import { logError } from "@/lib/utils/logging";
 
@@ -17,7 +18,7 @@ import { logError } from "@/lib/utils/logging";
 // 1) Per credential key (IP + email) reduces false positives on shared IP.
 // 2) Per IP guard limits broad flooding attempts.
 const signinAttemptLimiter = createRateLimiter(RATE_LIMIT_AUTH_SIGNIN);
-const signinFloodLimiter = createRateLimiter(RATE_LIMIT_AUTH_GENERAL);
+const signinFloodLimiter = createRateLimiter(RATE_LIMIT_AUTH_FLOOD);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     pages: {
@@ -48,9 +49,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     const rateLimitKey = extractRateLimitKey((name) =>
                         headerStore.get(name),
                     );
-                    const credentialKey = `${rateLimitKey}:${email.toLowerCase()}`;
-                    const credentialLimit = signinAttemptLimiter.check(credentialKey);
-                    const floodLimit = signinFloodLimiter.check(rateLimitKey);
+                    const credentialKey = createEmailRateLimitKey(
+                        rateLimitKey,
+                        email,
+                    );
+                    const [credentialLimit, floodLimit] = await Promise.all([
+                        signinAttemptLimiter.check(credentialKey),
+                        signinFloodLimiter.check(rateLimitKey),
+                    ]);
 
                     if (!credentialLimit.allowed || !floodLimit.allowed) {
                         throw new RateLimitCredentialsSignin(
