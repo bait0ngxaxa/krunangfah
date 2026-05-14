@@ -34,9 +34,10 @@ export function ImportPreview({
         previewData,
         filteredOutStudents,
         riskCounts,
-        handleScoreUpdate,
         handleSave,
+        handleRemoveStudent,
         incompleteWarning,
+        zeroScoreWarning,
     } = useImportPreview({ data, onSuccess });
 
     return (
@@ -72,7 +73,7 @@ export function ImportPreview({
             {/* Data Table */}
             <StudentPreviewTable
                 students={previewData}
-                onScoreUpdate={handleScoreUpdate}
+                onRemoveStudent={handleRemoveStudent}
             />
 
             {/* Error Display */}
@@ -93,6 +94,7 @@ export function ImportPreview({
                 })()}
                 assessmentRound={assessmentRound}
                 incompleteWarning={incompleteWarning}
+                zeroScoreWarning={zeroScoreWarning}
             />
         </div>
     );

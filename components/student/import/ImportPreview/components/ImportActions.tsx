@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 import { Button } from "@/components/ui/Button";
+import type { ZeroScoreWarningInfo } from "../types";
 
 interface ImportActionsProps {
     onCancel: () => void;
@@ -13,6 +14,7 @@ interface ImportActionsProps {
     academicYearLabel: string;
     assessmentRound: number;
     incompleteWarning: IncompleteActivityInfo | null;
+    zeroScoreWarning: ZeroScoreWarningInfo | null;
 }
 
 /**
@@ -27,6 +29,7 @@ export function ImportActions({
     academicYearLabel,
     assessmentRound,
     incompleteWarning,
+    zeroScoreWarning,
 }: ImportActionsProps) {
     const [showConfirm, setShowConfirm] = useState(false);
 
@@ -100,6 +103,49 @@ export function ImportActions({
                                         จะไม่สามารถย้อนกลับไปทำกิจกรรมเดิมได้
                                         กรุณาตรวจสอบให้แน่ใจก่อนยืนยัน
                                     </p>
+                                </div>
+                            )}
+
+                            {zeroScoreWarning && (
+                                <div className="bg-amber-100 border-2 border-amber-400 rounded-xl p-4 space-y-2">
+                                    <div className="flex items-start gap-2">
+                                        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                                        <div className="space-y-2">
+                                            <p className="font-bold text-amber-800 text-sm">
+                                                พบนักเรียน{" "}
+                                                {zeroScoreWarning.studentCount}{" "}
+                                                คนที่คะแนนข้อ 1-9 เป็น 0
+                                                ทั้งหมด
+                                                กรุณาตรวจสอบอีกครั้งว่าเด็กตั้งใจทำแบบประเมินแล้ว
+                                            </p>
+                                            <ul className="space-y-1 text-xs text-amber-800">
+                                                {zeroScoreWarning.examples.map(
+                                                    (student) => (
+                                                        <li
+                                                            key={`${student.studentId}-${student.class}`}
+                                                        >
+                                                            {student.studentId ||
+                                                                "-"}{" "}
+                                                            -{" "}
+                                                            {student.fullName}{" "}
+                                                            ({student.class})
+                                                        </li>
+                                                    ),
+                                                )}
+                                            </ul>
+                                            {zeroScoreWarning.studentCount >
+                                                zeroScoreWarning.examples
+                                                    .length && (
+                                                <p className="text-xs text-amber-700">
+                                                    และอีก{" "}
+                                                    {zeroScoreWarning.studentCount -
+                                                        zeroScoreWarning
+                                                            .examples.length}{" "}
+                                                    คน
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 

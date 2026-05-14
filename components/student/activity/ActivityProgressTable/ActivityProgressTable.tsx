@@ -63,7 +63,7 @@ export async function ActivityProgressTable({
                             <th className="px-6 py-4 text-left font-bold">
                                 ครูผู้ทำกิจกรรม
                             </th>
-                            <th className="px-6 py-4 text-center font-bold">
+                            <th className="px-6 py-4 text-left font-bold">
                                 สถานะ
                             </th>
                         </tr>

@@ -23,6 +23,7 @@ import type {
     RiskCounts,
     TeacherProfile,
     AcademicYear,
+    ZeroScoreWarningInfo,
 } from "./types";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 
@@ -32,6 +33,42 @@ function formatImportIssues(result: ImportResult): string {
     }
 
     return `${result.message}\n\n${result.errors.join("\n")}`;
+}
+
+function hasAllZeroQuestionScores(scores: PhqScores): boolean {
+    return (
+        scores.q1 === 0 &&
+        scores.q2 === 0 &&
+        scores.q3 === 0 &&
+        scores.q4 === 0 &&
+        scores.q5 === 0 &&
+        scores.q6 === 0 &&
+        scores.q7 === 0 &&
+        scores.q8 === 0 &&
+        scores.q9 === 0
+    );
+}
+
+function buildZeroScoreWarning(
+    students: PreviewStudent[],
+): ZeroScoreWarningInfo | null {
+    const examples: ZeroScoreWarningInfo["examples"] = [];
+    let studentCount = 0;
+
+    for (const student of students) {
+        if (!hasAllZeroQuestionScores(student.scores)) continue;
+
+        studentCount++;
+        if (examples.length < 5) {
+            examples.push({
+                studentId: student.studentId,
+                fullName: `${student.firstName} ${student.lastName}`,
+                class: student.class,
+            });
+        }
+    }
+
+    return studentCount > 0 ? { studentCount, examples } : null;
 }
 
 /**
@@ -101,6 +138,11 @@ export function useImportPreview({
             riskCounts: counts,
         };
     }, [allPreviewData, teacherProfile]);
+
+    const zeroScoreWarning = useMemo(
+        () => buildZeroScoreWarning(previewData),
+        [previewData],
+    );
 
     // Load initial data
     useEffect(() => {
@@ -180,32 +222,11 @@ export function useImportPreview({
         [selectedYearId, importedClasses],
     );
 
-    // Handler: update a student's score in preview (before import)
-    const handleScoreUpdate = useCallback(
-        (
-            studentIndex: number,
-            field: keyof PhqScores,
-            value: number | boolean,
-        ) => {
-            setEditableData((prev) => {
-                const student = prev.at(studentIndex);
-                if (!student) return prev;
-
-                const newScores: PhqScores = {
-                    ...student.scores,
-                    ...({ [field]: value } as Partial<PhqScores>),
-                };
-                const { totalScore, riskLevel } = calculateRiskLevel(newScores);
-
-                return prev.map((s, i) =>
-                    i === studentIndex
-                        ? { ...s, scores: newScores, totalScore, riskLevel }
-                        : s,
-                );
-            });
-        },
-        [],
-    );
+    const handleRemoveStudent = useCallback((studentIndex: number) => {
+        setEditableData((prev) =>
+            prev.filter((student) => student._originalIndex !== studentIndex),
+        );
+    }, []);
 
     // Handle save action — send only previewData (filtered by role) to match the confirmed count
     const handleSave = () => {
@@ -258,6 +279,7 @@ export function useImportPreview({
         teacherProfile,
         hasRound1: round1Exists,
         incompleteWarning,
+        zeroScoreWarning,
 
         // Computed values
         previewData,
@@ -267,7 +289,7 @@ export function useImportPreview({
         // Actions
         handleYearChange,
         setAssessmentRound: handleRoundChange,
-        handleScoreUpdate,
+        handleRemoveStudent,
         handleSave,
     };
 }

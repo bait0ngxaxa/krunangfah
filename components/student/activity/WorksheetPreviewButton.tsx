@@ -118,7 +118,7 @@ export function WorksheetPreviewButton({
                     document.body,
                 )}
 
-            <div className="flex items-center gap-3 flex-wrap justify-center">
+            <div className="flex items-center gap-3 flex-wrap justify-start">
                 <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200 shadow-sm">
                     <span className="w-4 h-4 rounded-full bg-green-500 text-white flex items-center justify-center">
                         <Check className="w-2.5 h-2.5" />

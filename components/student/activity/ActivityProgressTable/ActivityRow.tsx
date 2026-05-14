@@ -148,9 +148,9 @@ export function ActivityRow({ progress, index, readOnly = false }: ActivityRowPr
                 </td>
 
                 {/* Column 4: Status / Action */}
-                <td className="block md:table-cell md:px-6 md:py-5 md:text-center border-t border-gray-100 md:border-none pt-4 md:pt-0">
+                <td className="block md:table-cell md:px-6 md:py-5 md:text-left border-t border-gray-100 md:border-none pt-4 md:pt-0">
                     {/* Desktop: Show status badge or preview button */}
-                    <div className="hidden md:flex justify-center">
+                    <div className="hidden md:flex justify-start">
                         {isLocked ? (
                             <StatusBadge status={progress.status} />
                         ) : (

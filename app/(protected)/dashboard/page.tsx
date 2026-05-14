@@ -119,6 +119,7 @@ async function DashboardContent({ session }: { session: Session }) {
                     teacherName={session.user.name || "System Admin"}
                     schoolName="ผู้ดูแลระบบ (ทุกโรงเรียน)"
                     subtitle="ผู้ดูแลระบบ"
+                    variant="system_admin"
                     stats={buildAdminStats(studentCount, schoolCount)}
                 />
                 <DashboardActionList

@@ -57,7 +57,7 @@ export function ActivitySummaryTable({
                 <table className="w-full border-collapse">
                     <thead>
                         <tr className="bg-slate-50 text-slate-700">
-                            <th className="px-6 py-4 text-center text-sm font-semibold border-r border-slate-200 whitespace-nowrap">
+                            <th className="min-w-[120px] px-6 py-4 text-center text-sm font-semibold border-r border-slate-200 whitespace-nowrap">
                                 กลุ่มสี
                             </th>
                             <th className="px-6 py-4 text-center text-sm font-semibold border-r border-slate-200 whitespace-nowrap">
@@ -103,17 +103,17 @@ export function ActivitySummaryTable({
                                 >
                                     {/* Risk Level */}
                                     <td
-                                        className="px-4 py-3 text-center font-bold border-r border-slate-200 bg-white"
+                                        className="min-w-[120px] px-4 py-3 font-bold border-r border-slate-200 bg-white"
                                         style={{ color: item.color }}
                                     >
-                                        <div className="flex items-center justify-center gap-2">
+                                        <div className="mx-auto grid w-28 grid-cols-[12px_1fr] items-center gap-2 text-left text-sm whitespace-nowrap">
                                             <span
                                                 className="w-3 h-3 rounded-full shadow-sm"
                                                 style={{
                                                     backgroundColor: item.color,
                                                 }}
                                             />
-                                            {item.label.split(" ")[0]}
+                                            <span>{item.label.split(" ")[0]}</span>
                                         </div>
                                     </td>
 

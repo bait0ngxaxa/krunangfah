@@ -114,8 +114,8 @@ export function TeacherNotesSection({
             ) : (
                 /* ── View Mode ── */
                 <>
-                    <div className="flex-1 rounded-xl border border-gray-200 bg-white p-5">
-                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 md:max-h-64">
+                        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700 [overflow-wrap:anywhere]">
                             {savedNotes}
                         </p>
                     </div>

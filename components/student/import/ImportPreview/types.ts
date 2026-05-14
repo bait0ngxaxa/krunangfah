@@ -1,5 +1,5 @@
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
-import { type RiskLevel, type PhqScores } from "@/lib/utils/phq-scoring";
+import { type RiskLevel } from "@/lib/utils/phq-scoring";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 import type { ImportResult } from "@/lib/actions/student/types";
 
@@ -52,6 +52,18 @@ export interface RiskCounts {
 }
 
 /**
+ * Warning for students whose PHQ question scores are all zero.
+ */
+export interface ZeroScoreWarningInfo {
+    studentCount: number;
+    examples: Array<{
+        studentId: string;
+        fullName: string;
+        class: string;
+    }>;
+}
+
+/**
  * Return type for useImportPreview hook
  */
 export interface UseImportPreviewReturn {
@@ -64,6 +76,7 @@ export interface UseImportPreviewReturn {
     teacherProfile: TeacherProfile | null;
     hasRound1: boolean;
     incompleteWarning: IncompleteActivityInfo | null;
+    zeroScoreWarning: ZeroScoreWarningInfo | null;
 
     // Computed values
     previewData: PreviewStudent[];
@@ -73,10 +86,6 @@ export interface UseImportPreviewReturn {
     // Actions
     handleYearChange: (yearId: string) => void;
     setAssessmentRound: (round: number) => void;
-    handleScoreUpdate: (
-        studentIndex: number,
-        field: keyof PhqScores,
-        value: number | boolean,
-    ) => void;
+    handleRemoveStudent: (studentIndex: number) => void;
     handleSave: () => void;
 }

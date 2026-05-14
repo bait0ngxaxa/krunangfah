@@ -1,131 +1,22 @@
-import { useState, useCallback, useMemo } from "react";
-import { type PhqScores } from "@/lib/utils/phq-scoring";
+import { useMemo, useState } from "react";
 import { IMPORT_PREVIEW_PAGE_SIZE } from "@/lib/constants/import";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 import type { PreviewStudent } from "../types";
 
 interface StudentPreviewTableProps {
     students: PreviewStudent[];
-    onScoreUpdate: (
-        studentIndex: number,
-        field: keyof PhqScores,
-        value: number | boolean,
-    ) => void;
-}
-
-const SCORE_KEYS = [
-    "q1",
-    "q2",
-    "q3",
-    "q4",
-    "q5",
-    "q6",
-    "q7",
-    "q8",
-    "q9",
-] as const;
-
-function getScoreValue(
-    scores: PhqScores,
-    key: (typeof SCORE_KEYS)[number],
-): number {
-    switch (key) {
-        case "q1":
-            return scores.q1;
-        case "q2":
-            return scores.q2;
-        case "q3":
-            return scores.q3;
-        case "q4":
-            return scores.q4;
-        case "q5":
-            return scores.q5;
-        case "q6":
-            return scores.q6;
-        case "q7":
-            return scores.q7;
-        case "q8":
-            return scores.q8;
-        case "q9":
-            return scores.q9;
-    }
+    onRemoveStudent: (studentIndex: number) => void;
 }
 
 /**
- * Controlled score input with local editing state.
- * Allows natural typing/backspace, commits on blur or valid digit.
- */
-function ScoreInput({
-    value,
-    onChange,
-}: {
-    value: number;
-    onChange: (val: number) => void;
-}) {
-    const [localValue, setLocalValue] = useState(String(value));
-    const [isFocused, setIsFocused] = useState(false);
-
-    const handleFocus = useCallback(
-        (e: React.FocusEvent<HTMLInputElement>) => {
-            setLocalValue(String(value));
-            setIsFocused(true);
-            e.target.select();
-        },
-        [value],
-    );
-
-    const handleChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            const raw = e.target.value;
-
-            // Allow empty (user is deleting)
-            if (raw === "") {
-                setLocalValue("");
-                return;
-            }
-
-            // Only accept digits, clamp to 0-3
-            const lastChar = raw.slice(-1);
-            if (/^[0-9]$/.test(lastChar)) {
-                const num = Math.min(parseInt(lastChar, 10), 3);
-                setLocalValue(String(num));
-                onChange(num);
-            }
-        },
-        [onChange],
-    );
-
-    const handleBlur = useCallback(() => {
-        setIsFocused(false);
-        // If empty on blur, default to 0
-        if (localValue === "") {
-            setLocalValue("0");
-            onChange(0);
-        }
-    }, [localValue, onChange]);
-
-    return (
-        <input
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={isFocused ? localValue : String(value)}
-            onFocus={handleFocus}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="w-10 h-8 text-center text-sm font-mono border border-gray-200 rounded-lg bg-white/80 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition-base"
-        />
-    );
-}
-
-/**
- * Table displaying student preview data with editable PHQ scores
+ * Table displaying student preview data with risk summary.
  */
 export function StudentPreviewTable({
     students,
-    onScoreUpdate,
+    onRemoveStudent,
 }: StudentPreviewTableProps) {
     const [currentPage, setCurrentPage] = useState(1);
+    const [studentToRemove, setStudentToRemove] = useState<number | null>(null);
     const totalPages = Math.max(
         1,
         Math.ceil(students.length / IMPORT_PREVIEW_PAGE_SIZE),
@@ -137,6 +28,19 @@ export function StudentPreviewTable({
     }, [safeCurrentPage, students]);
 
     const pageStart = (safeCurrentPage - 1) * IMPORT_PREVIEW_PAGE_SIZE;
+    const studentPendingRemoval =
+        studentToRemove === null
+            ? null
+            : students.find(
+                  (student) => student._originalIndex === studentToRemove,
+              );
+
+    const handleConfirmRemove = () => {
+        if (studentToRemove === null) return;
+
+        onRemoveStudent(studentToRemove);
+        setStudentToRemove(null);
+    };
 
     return (
         <div className="bg-white rounded-4xl shadow-sm overflow-hidden border-2 border-gray-100 relative">
@@ -191,31 +95,19 @@ export function StudentPreviewTable({
                                     ชื่อ - นามสกุล
                                 </th>
                                 <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    รหัสนักเรียน
+                                </th>
+                                <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     เลขบัตรประชาชน
                                 </th>
                                 <th className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     ห้อง
                                 </th>
-                                {/* Individual PHQ Scores */}
-                                {SCORE_KEYS.map((key) => (
-                                    <th
-                                        key={key}
-                                        className="px-1 py-4 text-center text-xs font-bold text-indigo-500 uppercase tracking-wider"
-                                    >
-                                        {key}
-                                    </th>
-                                ))}
-                                <th className="px-1 py-4 text-center text-xs font-bold text-rose-500 uppercase tracking-wider">
-                                    opt1
-                                </th>
-                                <th className="px-1 py-4 text-center text-xs font-bold text-rose-500 uppercase tracking-wider">
-                                    opt2
-                                </th>
-                                <th className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                    รวม
-                                </th>
                                 <th className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     ระดับความเสี่ยง
+                                </th>
+                                <th className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    จัดการ
                                 </th>
                             </tr>
                         </thead>
@@ -232,70 +124,13 @@ export function StudentPreviewTable({
                                         {student.firstName} {student.lastName}
                                     </td>
                                     <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
+                                        {student.studentId || "-"}
+                                    </td>
+                                    <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
                                         {student.nationalId || "-"}
                                     </td>
                                     <td className="px-4 py-2 text-sm text-center text-gray-600">
                                         {student.class}
-                                    </td>
-                                    {SCORE_KEYS.map((key) => (
-                                        <td key={key} className="px-0.5 py-2">
-                                            <ScoreInput
-                                                value={getScoreValue(
-                                                    student.scores,
-                                                    key,
-                                                )}
-                                                onChange={(val) =>
-                                                    onScoreUpdate(
-                                                        student._originalIndex,
-                                                        key,
-                                                        val,
-                                                    )
-                                                }
-                                            />
-                                        </td>
-                                    ))}
-                                    {/* Clickable opt1 toggle */}
-                                    <td className="px-0.5 py-2 text-center">
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                onScoreUpdate(
-                                                    student._originalIndex,
-                                                    "q9a",
-                                                    !student.scores.q9a,
-                                                )
-                                            }
-                                            className={`w-8 h-8 rounded-lg border-2 text-sm font-bold transition-base ${
-                                                student.scores.q9a
-                                                    ? "bg-red-100 border-red-400 text-red-600"
-                                                    : "bg-gray-50 border-gray-200 text-gray-300 hover:border-gray-300"
-                                            }`}
-                                        >
-                                            {student.scores.q9a ? "✓" : "✗"}
-                                        </button>
-                                    </td>
-                                    {/* Clickable opt2 toggle */}
-                                    <td className="px-0.5 py-2 text-center">
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                onScoreUpdate(
-                                                    student._originalIndex,
-                                                    "q9b",
-                                                    !student.scores.q9b,
-                                                )
-                                            }
-                                            className={`w-8 h-8 rounded-lg border-2 text-sm font-bold transition-base ${
-                                                student.scores.q9b
-                                                    ? "bg-red-100 border-red-400 text-red-600"
-                                                    : "bg-gray-50 border-gray-200 text-gray-300 hover:border-gray-300"
-                                            }`}
-                                        >
-                                            {student.scores.q9b ? "✓" : "✗"}
-                                        </button>
-                                    </td>
-                                    <td className="px-4 py-2 text-sm text-center text-gray-800 font-bold bg-white/20">
-                                        {student.totalScore}
                                     </td>
                                     <td className="px-4 py-2 text-center">
                                         <span
@@ -308,12 +143,61 @@ export function StudentPreviewTable({
                                             }
                                         </span>
                                     </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setStudentToRemove(
+                                                    student._originalIndex,
+                                                )
+                                            }
+                                            className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 transition-base hover:bg-red-50 hover:border-red-300"
+                                        >
+                                            ลบ
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            {studentPendingRemoval && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/70 px-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl border-2 border-red-200 bg-white p-5 shadow-xl">
+                        <p className="text-lg font-bold text-gray-800">
+                            ลบนักเรียนออกจากรายการนำเข้า?
+                        </p>
+                        <p className="mt-2 text-sm text-gray-600">
+                            {studentPendingRemoval.studentId || "-"} -{" "}
+                            {studentPendingRemoval.firstName}{" "}
+                            {studentPendingRemoval.lastName} (
+                            {studentPendingRemoval.class})
+                        </p>
+                        <p className="mt-2 text-xs text-red-600">
+                            รายการนี้จะถูกลบเฉพาะในพรีวิวก่อนนำเข้า
+                            และจะไม่ถูกบันทึกเข้าระบบ
+                        </p>
+                        <div className="mt-5 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setStudentToRemove(null)}
+                                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 transition-base hover:bg-gray-50"
+                            >
+                                ยกเลิก
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmRemove}
+                                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white transition-base hover:bg-red-700"
+                            >
+                                ยืนยันลบ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

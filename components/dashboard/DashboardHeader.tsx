@@ -16,6 +16,7 @@ interface DashboardHeaderProps {
     subtitle?: string;
     extra?: ReactNode;
     stats?: StatItem[];
+    variant?: "teacher" | "system_admin";
 }
 
 interface ColorStyle {
@@ -68,7 +69,17 @@ export function DashboardHeader({
     subtitle,
     extra,
     stats,
+    variant = "teacher",
 }: DashboardHeaderProps) {
+    const isSystemAdmin = variant === "system_admin";
+    const titlePrefix = isSystemAdmin ? "สวัสดี " : "สวัสดี ";
+    const titleHighlight = isSystemAdmin
+        ? "ผู้ดูแลระบบครูนางฟ้า"
+        : "ชั้นเป็นครูนางฟ้า";
+    const displayName = isSystemAdmin
+        ? teacherName
+        : `ครู${teacherName.replace(/^ครู/, "")}`;
+
     return (
         <div className="relative bg-white rounded-[2.5rem] p-5 sm:p-7 mb-6 overflow-hidden border-[3px] border-[var(--brand-primary)] shadow-[0_8px_24px_-4px_rgba(11,208,217,0.15)] flex flex-col sm:flex-row gap-6 sm:gap-8 items-center sm:items-start group">
             {/* Left Avatar (Big image) */}
@@ -88,13 +99,13 @@ export function DashboardHeader({
                 {/* Titles */}
                 <div>
                     <h1 className="text-2xl sm:text-3xl lg:text-[28px] font-extrabold pb-1">
-                        <span className="text-gray-900">สวัสดี </span>
+                        <span className="text-gray-900">{titlePrefix}</span>
                         <span className="text-[var(--brand-primary)]">
-                            ชั้นเป็นครูนางฟ้า
+                            {titleHighlight}
                         </span>
                     </h1>
                     <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-0.5">
-                        ครู{teacherName.replace(/^ครู/, "")}
+                        {displayName}
                     </h2>
                     <p className="text-base sm:text-lg font-bold text-gray-800 flex flex-col sm:flex-row items-center sm:items-start sm:gap-4 mt-1">
                         <span>{schoolName}</span>
