@@ -5,7 +5,13 @@ import { SearchInput } from "./SearchInput";
 import { EmptyState } from "./EmptyState";
 import { SearchResultsList } from "./SearchResultsList";
 
-export function StudentSearch() {
+interface StudentSearchProps {
+    canSearchNationalId?: boolean;
+}
+
+export function StudentSearch({
+    canSearchNationalId = false,
+}: StudentSearchProps) {
     const { query, setQuery, results, isSearching, handleStudentClick } =
         useStudentSearch();
     const { scrollRef, isScrollable, showFade } = useScrollFade(results.length);
@@ -18,6 +24,7 @@ export function StudentSearch() {
                 query={query}
                 onQueryChange={setQuery}
                 isSearching={isSearching}
+                canSearchNationalId={canSearchNationalId}
             />
 
             <EmptyState

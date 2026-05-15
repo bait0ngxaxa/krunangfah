@@ -75,7 +75,7 @@ export function ClassGroupList({
                                             <input
                                                 key={`${c.id}-${c.expectedStudentCount}`}
                                                 type="number"
-                                                min={0}
+                                                min={1}
                                                 max={
                                                     INPUT_LIMITS.school
                                                         .classStudentCount
@@ -133,7 +133,7 @@ async function saveStudentCount(
     const parsed = Number(inputValue.trim());
     if (
         !Number.isInteger(parsed) ||
-        parsed < 0 ||
+        parsed < 1 ||
         parsed === schoolClass.expectedStudentCount
     ) {
         return;

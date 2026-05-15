@@ -6,6 +6,7 @@ import type { PreviewStudent } from "../types";
 interface StudentPreviewTableProps {
     students: PreviewStudent[];
     onRemoveStudent: (studentIndex: number) => void;
+    canViewNationalId: boolean;
 }
 
 /**
@@ -14,6 +15,7 @@ interface StudentPreviewTableProps {
 export function StudentPreviewTable({
     students,
     onRemoveStudent,
+    canViewNationalId,
 }: StudentPreviewTableProps) {
     const [currentPage, setCurrentPage] = useState(1);
     const [studentToRemove, setStudentToRemove] = useState<number | null>(null);
@@ -97,9 +99,11 @@ export function StudentPreviewTable({
                                 <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     รหัสนักเรียน
                                 </th>
-                                <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                    เลขบัตรประชาชน
-                                </th>
+                                {canViewNationalId && (
+                                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                        เลขบัตรประชาชน
+                                    </th>
+                                )}
                                 <th className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     ห้อง
                                 </th>
@@ -126,9 +130,11 @@ export function StudentPreviewTable({
                                     <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
                                         {student.studentId || "-"}
                                     </td>
-                                    <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
-                                        {student.nationalId || "-"}
-                                    </td>
+                                    {canViewNationalId && (
+                                        <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
+                                            {student.nationalId || "-"}
+                                        </td>
+                                    )}
                                     <td className="px-4 py-2 text-sm text-center text-gray-600">
                                         {student.class}
                                     </td>

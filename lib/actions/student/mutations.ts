@@ -72,6 +72,15 @@ export async function importStudents(
         const schoolId = user.schoolId;
         const advisoryClass = user.teacher?.advisoryClass;
         const isClassTeacher = userRole === "class_teacher";
+        const schoolClasses = await prisma.schoolClass.findMany({
+            where: { schoolId },
+            select: { name: true },
+        });
+        const validClassSet = new Set(
+            schoolClasses.map((schoolClass) =>
+                normalizeClassName(schoolClass.name),
+            ),
+        );
 
         if (isClassTeacher && !advisoryClass) {
             return {
@@ -107,8 +116,13 @@ export async function importStudents(
         const eligibleRows: ParsedStudent[] = [];
 
         for (const studentData of students) {
+            const studentClass = normalizeClassName(studentData.class);
+            if (!validClassSet.has(studentClass)) {
+                skippedCount++;
+                continue;
+            }
+
             if (isClassTeacher && advisoryClass) {
-                const studentClass = normalizeClassName(studentData.class);
                 if (studentClass !== advisoryClass) {
                     skippedCount++;
                     continue;
@@ -395,15 +409,21 @@ export async function importStudents(
         const failedCount = errors.length;
 
         let message = "";
-        if (failedCount === 0) {
+        const skippedReason = isClassTeacher
+            ? "ไม่ใช่ห้องที่คุณดูแล หรือยังไม่มีห้องเรียนดังกล่าวในระบบ"
+            : "ยังไม่มีห้องเรียนดังกล่าวถูกสร้างไว้ในระบบ";
+
+        if (importedCount === 0 && skippedCount > 0) {
+            message = `ไม่สามารถนำเข้าได้ เนื่องจากนักเรียน ${skippedCount} คน${skippedReason}`;
+        } else if (failedCount === 0) {
             message =
                 skippedCount > 0
-                    ? `นำเข้าสำเร็จ ${importedCount} คน (ข้าม ${skippedCount} คนที่ไม่ใช่ห้องที่คุณดูแล)`
+                    ? `นำเข้าสำเร็จ ${importedCount} คน (ข้าม ${skippedCount} คนที่${skippedReason})`
                     : `นำเข้าสำเร็จทั้งหมด ${importedCount} คน`;
         } else if (importedCount > 0) {
             const skippedMsg =
                 skippedCount > 0
-                    ? `, ข้าม ${skippedCount} คนที่ไม่ใช่ห้องที่คุณดูแล`
+                    ? `, ข้าม ${skippedCount} คนที่${skippedReason}`
                     : "";
             message = `นำเข้าสำเร็จ ${importedCount} คน, ไม่สามารถนำเข้าได้ ${failedCount} คน (ข้อมูลซ้ำหรือไม่ผ่านเงื่อนไข)${skippedMsg}`;
         } else {
@@ -413,7 +433,7 @@ export async function importStudents(
         return {
             success: importedCount > 0,
             status:
-                failedCount === 0
+                failedCount === 0 && skippedCount === 0
                     ? "success"
                     : importedCount > 0
                       ? "partial"

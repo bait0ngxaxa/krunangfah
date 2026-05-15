@@ -146,7 +146,7 @@ export function DashboardActionList({
                     </h3>
                 </div>
                 <div className="p-4 sm:p-5">
-                    <StudentSearch />
+                    <StudentSearch canSearchNationalId={isSystemAdmin} />
                 </div>
             </div>
         </div>

@@ -55,7 +55,7 @@ const classNameSchema = z
 const expectedStudentCountSchema = z
     .number()
     .int("จำนวนนักเรียนต้องเป็นจำนวนเต็ม")
-    .min(0, "จำนวนนักเรียนต้องไม่ติดลบ")
+    .min(1, "จำนวนนักเรียนต้องมากกว่า 0")
     .max(
         INPUT_LIMITS.school.classStudentCount,
         `จำนวนนักเรียนต้องไม่เกิน ${INPUT_LIMITS.school.classStudentCount} คน`,
@@ -135,7 +135,7 @@ export async function createSchoolAndLink(input: {
  */
 export async function addSchoolClass(
     name: string,
-    expectedStudentCount = 0,
+    expectedStudentCount: number,
 ): Promise<ClassActionResponse> {
     try {
         const session = await requirePrimaryAdmin();
@@ -288,6 +288,20 @@ export async function removeSchoolClass(
             return { success: false, message: "ไม่พบห้องเรียนที่ต้องการลบ" };
         }
 
+        const studentCount = await prisma.student.count({
+            where: {
+                schoolId,
+                class: schoolClass.name,
+            },
+        });
+
+        if (studentCount > 0) {
+            return {
+                success: false,
+                message: `ไม่สามารถลบห้อง "${schoolClass.name}" ได้ เพราะมีนักเรียนอยู่ ${studentCount} คน `,
+            };
+        }
+
         await prisma.schoolClass.delete({ where: { id } });
 
         revalidatePath(CLASSES_PATH);
@@ -320,4 +334,3 @@ export async function getSchoolClasses(): Promise<SchoolClassItem[]> {
 
     return classes;
 }
-

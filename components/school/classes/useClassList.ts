@@ -43,7 +43,7 @@ export function useClassList({
 
         const expectedStudentCount = parseOptionalCount(studentCountValue);
         if (expectedStudentCount === null) {
-            setErrorMsg("กรุณากรอกจำนวนนักเรียนเป็นตัวเลข 0 ขึ้นไป");
+            setErrorMsg("กรุณากรอกจำนวนนักเรียนเป็นตัวเลขมากกว่า 0");
             return;
         }
 
@@ -117,7 +117,7 @@ export function useClassList({
             return;
         }
         if (expectedStudentCount === null) {
-            setErrorMsg("กรุณากรอกจำนวนนักเรียนต่อห้องเป็นตัวเลข 0 ขึ้นไป");
+            setErrorMsg("กรุณากรอกจำนวนนักเรียนต่อห้องเป็นตัวเลขมากกว่า 0");
             return;
         }
         setErrorMsg(null);
@@ -178,9 +178,9 @@ export function useClassList({
 
 function parseOptionalCount(value: string): number | null {
     const trimmed = value.trim();
-    if (!trimmed) return 0;
+    if (!trimmed) return null;
 
     const parsed = Number(trimmed);
-    if (!Number.isInteger(parsed) || parsed < 0) return null;
+    if (!Number.isInteger(parsed) || parsed < 1) return null;
     return parsed;
 }

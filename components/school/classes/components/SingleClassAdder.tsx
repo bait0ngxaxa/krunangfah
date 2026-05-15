@@ -36,13 +36,13 @@ export function SingleClassAdder({
                 <input
                     type="number"
                     value={studentCountValue}
-                    min={0}
+                    min={1}
                     max={INPUT_LIMITS.school.classStudentCount}
                     onChange={(e) => onStudentCountChange(e.target.value)}
                     onKeyDown={(e) =>
                         e.key === "Enter" && (e.preventDefault(), onAdd())
                     }
-                    placeholder="จำนวนนักเรียน"
+                    placeholder="จำนวนนักเรียน *"
                     className="w-full sm:w-40 px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-[var(--brand-primary)] outline-none bg-white text-sm text-gray-900 placeholder:text-gray-400 transition-colors"
                 />
                 <button

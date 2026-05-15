@@ -20,6 +20,7 @@ export function ImportPreview({
     data,
     onCancel,
     onSuccess,
+    canViewNationalId,
 }: ImportPreviewProps) {
     const {
         isLoading,
@@ -31,6 +32,7 @@ export function ImportPreview({
         setAssessmentRound,
         hasRound1,
         teacherProfile,
+        schoolClassNames,
         previewData,
         filteredOutStudents,
         riskCounts,
@@ -67,6 +69,8 @@ export function ImportPreview({
                 <FilteredStudentsWarning
                     students={filteredOutStudents}
                     advisoryClass={teacherProfile?.advisoryClass ?? null}
+                    validClassNames={schoolClassNames}
+                    isClassScoped={teacherProfile?.role === "class_teacher"}
                 />
             </div>
 
@@ -74,6 +78,7 @@ export function ImportPreview({
             <StudentPreviewTable
                 students={previewData}
                 onRemoveStudent={handleRemoveStudent}
+                canViewNationalId={canViewNationalId}
             />
 
             {/* Error Display */}

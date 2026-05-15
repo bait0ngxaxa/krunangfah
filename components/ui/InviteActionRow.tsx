@@ -41,13 +41,13 @@ export function InviteActionRow({
 
     return (
         <>
-            <div className="flex items-center gap-1.5">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-1.5">
                 <Button
                     type="button"
                     onClick={onCopy}
                     variant="secondary"
                     size="sm"
-                    className="px-2.5 py-1.5 text-xs"
+                    className="justify-center px-2.5 py-1.5 text-xs"
                     title={copyTitle}
                 >
                     {copied ? (
@@ -63,7 +63,7 @@ export function InviteActionRow({
                     onClick={() => setShowRevokeDialog(true)}
                     variant="danger"
                     size="sm"
-                    className="px-2.5 py-1.5 text-xs"
+                    className="justify-center px-2.5 py-1.5 text-xs"
                     title="ยกเลิกคำเชิญ"
                 >
                     <Trash2 className="w-3.5 h-3.5" />

@@ -35,11 +35,13 @@ interface StudentProfileCardProps {
             semester: number;
         };
     } | null;
+    canViewNationalId?: boolean;
 }
 
 export function StudentProfileCard({
     student,
     latestResult,
+    canViewNationalId = false,
 }: StudentProfileCardProps) {
     const risk = latestResult
         ? getRiskLevelConfig(latestResult.riskLevel as RiskLevel)
@@ -97,7 +99,7 @@ export function StudentProfileCard({
                                     รหัส {student.studentId}
                                 </span>
                             )}
-                            {student.nationalId && (
+                            {canViewNationalId && student.nationalId && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-amber-200 bg-amber-50/70 text-amber-700 shadow-sm">
                                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-amber-200 bg-white">
                                         <CreditCard className="w-3 h-3" />

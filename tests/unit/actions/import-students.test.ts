@@ -379,6 +379,21 @@ describe("Import Students - Access Control Logic", () => {
         return false;
     };
 
+    const canImportForExistingClass = (
+        user: User,
+        targetClass: string,
+        existingClasses: string[],
+    ): boolean => {
+        const normalizedTarget = normalizeClassName(targetClass);
+        const existingClassSet = new Set(existingClasses.map(normalizeClassName));
+
+        if (!existingClassSet.has(normalizedTarget)) {
+            return false;
+        }
+
+        return canImportForClass(user, normalizedTarget);
+    };
+
     describe("school_admin role", () => {
         it("should allow import for any class", () => {
             const admin: User = {
@@ -388,6 +403,21 @@ describe("Import Students - Access Control Logic", () => {
             expect(canImportForClass(admin, "ม.1/1")).toBe(true);
             expect(canImportForClass(admin, "ม.2/5")).toBe(true);
             expect(canImportForClass(admin, "ม.6/10")).toBe(true);
+        });
+
+        it("should deny import for classes not created in the school", () => {
+            const admin: User = {
+                role: "school_admin",
+                schoolId: "school1",
+            };
+            const existingClasses = ["ม.2/1", "ม.2/2"];
+
+            expect(
+                canImportForExistingClass(admin, "ม.1/1", existingClasses),
+            ).toBe(false);
+            expect(
+                canImportForExistingClass(admin, "ม.2/1", existingClasses),
+            ).toBe(true);
         });
     });
 
@@ -409,6 +439,19 @@ describe("Import Students - Access Control Logic", () => {
             };
             expect(canImportForClass(teacher, "ม.1/1")).toBe(false);
             expect(canImportForClass(teacher, "ม.3/1")).toBe(false);
+        });
+
+        it("should deny import for advisory class if it was not created in the school", () => {
+            const teacher: User = {
+                role: "class_teacher",
+                advisoryClass: "ม.2/5",
+                schoolId: "school1",
+            };
+            const existingClasses = ["ม.1/1", "ม.3/1"];
+
+            expect(
+                canImportForExistingClass(teacher, "ม.2/5", existingClasses),
+            ).toBe(false);
         });
 
         it("should deny if no advisory class", () => {

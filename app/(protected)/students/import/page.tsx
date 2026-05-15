@@ -12,7 +12,8 @@ export const metadata: Metadata = {
 export default async function StudentImportPage() {
     // Server-side auth check — prevents unauthenticated access without
     // shipping the auth logic to the client bundle
-    await requireAuth();
+    const session = await requireAuth();
+    const isSystemAdmin = session.user.role === "system_admin";
 
     return (
         <div className="min-h-screen bg-slate-50 relative overflow-hidden">
@@ -34,7 +35,7 @@ export default async function StudentImportPage() {
             />
 
             <div className="max-w-6xl mx-auto relative z-10 px-4 py-8">
-                <ImportClient />
+                <ImportClient canViewNationalId={isSystemAdmin} />
             </div>
         </div>
     );

@@ -4,13 +4,19 @@ interface SearchInputProps {
     query: string;
     onQueryChange: (value: string) => void;
     isSearching: boolean;
+    canSearchNationalId?: boolean;
 }
 
 export function SearchInput({
     query,
     onQueryChange,
     isSearching,
+    canSearchNationalId = false,
 }: SearchInputProps) {
+    const placeholder = canSearchNationalId
+        ? "พิมพ์ชื่อ, นามสกุล, รหัสนักเรียน หรือเลขบัตรประชาชน..."
+        : "พิมพ์ชื่อ, นามสกุล หรือรหัสนักเรียน...";
+
     return (
         <div className="relative mb-5 group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -20,7 +26,7 @@ export function SearchInput({
                 type="text"
                 value={query}
                 onChange={(e) => onQueryChange(e.target.value)}
-                placeholder="พิมพ์ชื่อ, นามสกุล หรือรหัสนักเรียน..."
+                placeholder={placeholder}
                 className="w-full pl-12 pr-12 py-3.5 bg-white/60 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 outline-none transition-base text-sm text-gray-800 placeholder:text-gray-400 shadow-sm hover:shadow-md hover:border-emerald-200 backdrop-blur-sm"
             />
             {isSearching ? (

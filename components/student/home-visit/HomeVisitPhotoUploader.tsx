@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, Loader2, X, ImageIcon } from "lucide-react";
 import { compressImage } from "@/lib/utils/image-compression";
-import { MAX_IMAGE_UPLOAD_INPUT_SIZE } from "@/lib/constants/image-upload";
+import {
+    IMAGE_FILE_INPUT_ACCEPT,
+    MAX_IMAGE_UPLOAD_INPUT_SIZE,
+} from "@/lib/constants/image-upload";
 import {
     UPLOAD_ACTION_TIMEOUT_MS,
     withTimeout,
@@ -192,7 +195,7 @@ export function HomeVisitPhotoUploader({
             <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png"
+                accept={IMAGE_FILE_INPUT_ACCEPT}
                 onChange={handleFileSelect}
                 className="hidden"
             />

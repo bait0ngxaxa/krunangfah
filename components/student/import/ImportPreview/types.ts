@@ -10,6 +10,7 @@ export interface ImportPreviewProps {
     data: ParsedStudent[];
     onCancel: () => void;
     onSuccess: (result: ImportResult) => void;
+    canViewNationalId: boolean;
 }
 
 /**
@@ -74,6 +75,7 @@ export interface UseImportPreviewReturn {
     selectedYearId: string;
     assessmentRound: number;
     teacherProfile: TeacherProfile | null;
+    schoolClassNames: string[];
     hasRound1: boolean;
     incompleteWarning: IncompleteActivityInfo | null;
     zeroScoreWarning: ZeroScoreWarningInfo | null;

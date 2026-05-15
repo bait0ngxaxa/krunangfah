@@ -64,6 +64,21 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
             advisoryClass: "class-2",
         });
 
+        await prisma.schoolClass.createMany({
+            data: [
+                {
+                    schoolId,
+                    name: "class-1",
+                    expectedStudentCount: 1,
+                },
+                {
+                    schoolId,
+                    name: "class-2",
+                    expectedStudentCount: 1,
+                },
+            ],
+        });
+
         const rows: ParsedStudent[] = [
             {
                 studentId: `E2E-1-${Date.now()}`,

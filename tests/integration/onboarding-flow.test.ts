@@ -327,9 +327,9 @@ describe("Integration: Onboarding Flow", () => {
         it("เพิ่มห้องเรียนหลายห้องได้", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const r1 = await addSchoolClass("ม.1/2");
-            const r2 = await addSchoolClass("ม.2/1");
-            const r3 = await addSchoolClass("ม.2/2");
+            const r1 = await addSchoolClass("ม.1/2", 30);
+            const r2 = await addSchoolClass("ม.2/1", 30);
+            const r3 = await addSchoolClass("ม.2/2", 30);
 
             expect(r1.success).toBe(true);
             expect(r2.success).toBe(true);
@@ -339,10 +339,32 @@ describe("Integration: Onboarding Flow", () => {
         it("ชื่อห้องเรียนซ้ำเพิ่มไม่ได้", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const result = await addSchoolClass("ม.1/1");
+            const result = await addSchoolClass("ม.1/1", 32);
 
             expect(result.success).toBe(false);
             expect(result.message).toContain("มีอยู่แล้ว");
+        });
+
+        it("ต้องกรอกจำนวนนักเรียนมากกว่า 0 ตอนเพิ่มห้องเรียน", async () => {
+            mockSession(USERS.schoolAdmin);
+
+            const result = await addSchoolClass("ม.3/9", 0);
+
+            expect(result.success).toBe(false);
+            expect(result.message).toContain("มากกว่า 0");
+        });
+
+        it("ต้องกรอกจำนวนนักเรียนมากกว่า 0 ตอนแก้ไขจำนวนห้องเรียน", async () => {
+            mockSession(USERS.schoolAdmin);
+
+            const classes = await getSchoolClasses();
+            const target = classes.find((c) => c.name === "ม.1/1");
+            expect(target).toBeDefined();
+
+            const result = await updateSchoolClassStudentCount(target!.id, 0);
+
+            expect(result.success).toBe(false);
+            expect(result.message).toContain("มากกว่า 0");
         });
 
         it("ลบห้องเรียนได้", async () => {
@@ -354,6 +376,33 @@ describe("Integration: Onboarding Flow", () => {
 
             const result = await removeSchoolClass(toRemove!.id);
             expect(result.success).toBe(true);
+        });
+
+        it("ลบห้องเรียนไม่ได้ถ้ายังมีนักเรียนอยู่ในห้อง", async () => {
+            mockSession(USERS.schoolAdmin);
+
+            const added = await addSchoolClass("ม.4/1", 1);
+            expect(added.success).toBe(true);
+            expect(added.data).toBeDefined();
+            expect(createdSchoolId).toBeTruthy();
+
+            const student = await prisma.student.create({
+                data: {
+                    studentId: `OB-LOCK-${Date.now()}`,
+                    firstName: "นักเรียน",
+                    lastName: "ล็อคห้อง",
+                    class: "ม.4/1",
+                    schoolId: createdSchoolId!,
+                },
+            });
+
+            const result = await removeSchoolClass(added.data!.id);
+
+            expect(result.success).toBe(false);
+            expect(result.message).toContain("มีนักเรียนอยู่");
+
+            await prisma.student.delete({ where: { id: student.id } });
+            await removeSchoolClass(added.data!.id);
         });
 
         it("ลบห้องแล้วจำนวนห้องลดลง", async () => {
@@ -371,7 +420,7 @@ describe("Integration: Onboarding Flow", () => {
         it("class_teacher (ไม่ใช่ primary) เพิ่มห้องไม่ได้", async () => {
             mockSession(USERS.classTeacher);
 
-            const result = await addSchoolClass("ม.3/1");
+            const result = await addSchoolClass("ม.3/1", 30);
 
             expect(result.success).toBe(false);
         });
@@ -379,7 +428,7 @@ describe("Integration: Onboarding Flow", () => {
         it("unauthenticated เพิ่มห้องไม่ได้", async () => {
             mockUnauthenticated();
 
-            const result = await addSchoolClass("ม.3/1");
+            const result = await addSchoolClass("ม.3/1", 30);
 
             expect(result.success).toBe(false);
         });
@@ -514,7 +563,7 @@ describe("Integration: Onboarding Flow", () => {
             mockSession(staleUser);
 
             // addSchoolClass ใช้ resolveSchoolId ที่ fallback ไป DB
-            const result = await addSchoolClass("ม.3/1");
+            const result = await addSchoolClass("ม.3/1", 30);
 
             expect(result.success).toBe(true);
             expect(result.data?.name).toBe("ม.3/1");

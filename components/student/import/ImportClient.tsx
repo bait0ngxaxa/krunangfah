@@ -23,7 +23,11 @@ const ImportPreview = dynamic(
     },
 );
 
-export function ImportClient() {
+interface ImportClientProps {
+    canViewNationalId: boolean;
+}
+
+export function ImportClient({ canViewNationalId }: ImportClientProps) {
     const router = useRouter();
     const [parsedData, setParsedData] = useState<ParsedStudent[] | null>(null);
     const redirectTimerRef = useRef<number | null>(null);
@@ -72,6 +76,7 @@ export function ImportClient() {
                     data={parsedData}
                     onCancel={handleCancel}
                     onSuccess={handleSuccess}
+                    canViewNationalId={canViewNationalId}
                 />
             )}
         </div>

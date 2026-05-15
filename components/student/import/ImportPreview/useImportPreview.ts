@@ -13,9 +13,9 @@ import {
 import { importStudents } from "@/lib/actions/student/mutations";
 import type { ImportResult } from "@/lib/actions/student/types";
 import { getAcademicYears } from "@/lib/actions/academic-year.actions";
-import {
-    getCurrentTeacherProfile,
-} from "@/lib/actions/teacher.actions";
+import { getCurrentTeacherProfile } from "@/lib/actions/teacher.actions";
+import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
+import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type {
     ImportPreviewProps,
     UseImportPreviewReturn,
@@ -87,6 +87,7 @@ export function useImportPreview({
     const [teacherProfile, setTeacherProfile] = useState<TeacherProfile | null>(
         null,
     );
+    const [schoolClassNames, setSchoolClassNames] = useState<string[]>([]);
     const [round1Exists, setRound1Exists] = useState<boolean>(false);
     const [incompleteWarning, setIncompleteWarning] =
         useState<IncompleteActivityInfo | null>(null);
@@ -109,6 +110,9 @@ export function useImportPreview({
         const isClassTeacher =
             teacherProfile?.role === "class_teacher" &&
             !!teacherProfile.advisoryClass;
+        const validClassSet = new Set(
+            schoolClassNames.map((className) => normalizeClassName(className)),
+        );
 
         const matched: PreviewStudent[] = [];
         const excluded: PreviewStudent[] = [];
@@ -121,9 +125,14 @@ export function useImportPreview({
         };
 
         for (const student of allPreviewData) {
+            const studentClass = normalizeClassName(student.class);
+            const classExists =
+                validClassSet.size > 0 && validClassSet.has(studentClass);
+
             if (
+                !classExists ||
                 isClassTeacher &&
-                student.class !== teacherProfile?.advisoryClass
+                studentClass !== teacherProfile?.advisoryClass
             ) {
                 excluded.push(student);
             } else {
@@ -137,7 +146,7 @@ export function useImportPreview({
             filteredOutStudents: excluded,
             riskCounts: counts,
         };
-    }, [allPreviewData, teacherProfile]);
+    }, [allPreviewData, schoolClassNames, teacherProfile]);
 
     const zeroScoreWarning = useMemo(
         () => buildZeroScoreWarning(previewData),
@@ -148,15 +157,17 @@ export function useImportPreview({
     useEffect(() => {
         const loadData = async () => {
             // Load academic years, teacher profile, and check round 1 in parallel
-            const [years, profile] = await Promise.all([
+            const [years, profile, classes] = await Promise.all([
                 getAcademicYears(),
                 getCurrentTeacherProfile().catch((err) => {
                     console.error("Failed to load teacher profile:", err);
                     return null;
                 }),
+                getSchoolClasses(),
             ]);
 
             setAcademicYears(years);
+            setSchoolClassNames(classes.map((schoolClass) => schoolClass.name));
             const current = years.find((y) => y.isCurrent);
             const initialYearId = current?.id ?? years[0]?.id ?? "";
 
@@ -178,11 +189,11 @@ export function useImportPreview({
         loadData();
     }, []);
 
-    // Extract unique classes from imported data — used to scope the warning
+    // Extract unique classes from importable data — used to scope the warning
     const importedClasses = useMemo(() => {
-        const classSet = new Set(allPreviewData.map((s) => s.class));
+        const classSet = new Set(previewData.map((s) => s.class));
         return [...classSet];
-    }, [allPreviewData]);
+    }, [previewData]);
 
     // Handler: when user changes academic year, also check round 1
     // Round resets to 1 on year change — round 1 has no previous round,
@@ -277,6 +288,7 @@ export function useImportPreview({
         selectedYearId,
         assessmentRound,
         teacherProfile,
+        schoolClassNames,
         hasRound1: round1Exists,
         incompleteWarning,
         zeroScoreWarning,

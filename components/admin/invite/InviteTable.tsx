@@ -74,7 +74,7 @@ function InviteCard({
 
     return (
         <div className="p-4 bg-white rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                     <div className="shrink-0 w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
                         <Mail className="w-4 h-4 text-gray-600" />
@@ -88,7 +88,7 @@ function InviteCard({
                         </div>
                     </div>
                 </div>
-                <div className="shrink-0 flex flex-col items-end gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:shrink-0 sm:items-end">
                     <StatusBadge
                         tone={status}
                         label={
@@ -111,7 +111,7 @@ function InviteCard({
                     )}
                 </div>
             </div>
-            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-50 text-[11px] text-gray-400">
+            <div className="mt-3 flex flex-col gap-1.5 border-t border-gray-50 pt-3 text-[11px] text-gray-400 sm:flex-row sm:items-center sm:gap-4">
                 <span>
                     สร้างเมื่อ{" "}
                     {new Date(invite.createdAt).toLocaleDateString("th-TH", {
@@ -139,7 +139,9 @@ function InviteCard({
                         )}
                     </span>
                 </span>
-                {invite.creator?.name && <span>โดย {invite.creator.name}</span>}
+                {invite.creator?.name && (
+                    <span className="break-words">โดย {invite.creator.name}</span>
+                )}
             </div>
         </div>
     );
@@ -169,7 +171,7 @@ export function InviteTable({ invites, onRevoked }: InviteTableProps) {
                 />
             ) : (
                 <>
-                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                    <div className="max-h-[70vh] space-y-3 overflow-y-auto pr-0 sm:max-h-[400px] sm:pr-1">
                         {paginatedInvites.map((invite) => (
                             <InviteCard
                                 key={invite.id}
@@ -182,6 +184,8 @@ export function InviteTable({ invites, onRevoked }: InviteTableProps) {
                     {/* Pagination */}
                     {totalPages > 1 && (
                         <TableMetaRow
+                            className="flex-col items-stretch gap-3 sm:flex-row sm:items-center"
+                            controlsClassName="justify-between sm:justify-end"
                             summary={
                                 <>
                                     แสดง {start + 1}–

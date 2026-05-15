@@ -165,6 +165,9 @@ async function StudentDetailContent({
 
     const activePhqResult = getLatestPhqResult(student.phqResults);
     const latestResult = filteredPhqResults[0] || null;
+    const visibleStudent = isSystemAdmin
+        ? student
+        : { ...student, nationalId: null };
     const isReferralLockedForClassTeacher =
         session.user.role === "class_teacher" && Boolean(student.referral);
     const canManageActivities =
@@ -278,7 +281,11 @@ async function StudentDetailContent({
 
     return (
         <div className="space-y-7">
-            <StudentProfileCard student={student} latestResult={latestResult} />
+            <StudentProfileCard
+                student={visibleStudent}
+                latestResult={latestResult}
+                canViewNationalId={isSystemAdmin}
+            />
 
             {latestResult && !isSystemAdmin && (
                 <div className="flex justify-end">
