@@ -410,8 +410,7 @@ export async function getActivityCompletionSummary(
                 rs."studentId",
                 rs.required_count,
                 COUNT(DISTINCT ap."activityNumber") FILTER (
-                    WHERE ap."teacherId" IS NOT NULL
-                       OR ap.status IN ('pending_assessment', 'completed')
+                    WHERE ap.status IN ('pending_assessment', 'completed')
                        OR wu.id IS NOT NULL
                 ) as started_count,
                 COUNT(DISTINCT ap."activityNumber") FILTER (
