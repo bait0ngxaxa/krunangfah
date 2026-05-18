@@ -20,13 +20,8 @@ export default async function Home() {
 
     return (
         <div className="relative h-screen flex flex-col overflow-hidden bg-linear-to-b from-sky-300 via-sky-100 to-white">
-            {/* Background image — rainbow */}
-            <Image
-                src="/image/homepage/rainbow.webp"
-                alt=""
-                fill
-                className="object-cover object-bottom overflow-hidden"
-            />
+            {/* Background image — decorative, kept out of next/image preload pipeline */}
+            <div className="absolute inset-0 bg-[url('/image/homepage/rainbow.webp')] bg-cover bg-bottom" />
 
             {/* ─── Top Green Navbar ─── */}
             <NavbarGreenBar />
@@ -78,8 +73,7 @@ export default async function Home() {
                             height={750}
                             className="w-full h-auto object-contain drop-shadow-2xl"
                             sizes="(min-width: 1280px) 560px, (min-width: 1024px) 500px, (min-width: 768px) 440px, (min-width: 640px) 360px, 280px"
-                            loading="eager"
-                            fetchPriority="high"
+                            preload={false}
                         />
                     </div>
                 </div>

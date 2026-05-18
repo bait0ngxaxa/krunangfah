@@ -29,6 +29,8 @@ export function WorksheetGallery({
                                 alt={`${activityTitle} ใบงาน ${wIndex + 1}`}
                                 width={400}
                                 height={500}
+                                priority={wIndex === 0}
+                                loading={wIndex === 0 ? "eager" : "lazy"}
                                 className="w-full h-auto object-cover"
                             />
                         </div>

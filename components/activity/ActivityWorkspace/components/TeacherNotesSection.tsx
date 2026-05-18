@@ -79,7 +79,6 @@ export function TeacherNotesSection({
                         placeholder="พิมพ์บันทึกของคุณที่นี่..."
                         className={`w-full flex-1 resize-none rounded-xl border bg-white p-4 transition-base placeholder:text-gray-300 focus:outline-none focus:ring-4 ${assessmentColors.border} ${assessmentColors.borderFocus} ${assessmentColors.ringFocus}`}
                         rows={5}
-                        autoFocus
                     />
                     <div className="mt-4 flex gap-3">
                         <button

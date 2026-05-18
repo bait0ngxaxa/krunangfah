@@ -116,6 +116,162 @@ describe("Excel Parser - Number Cell Clamping Logic", () => {
     });
 });
 
+describe("Excel Parser - PHQA Answer Mapping", () => {
+    async function createWorkbookBuffer(): Promise<ArrayBuffer> {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
+
+        worksheet.addRow([
+            "รหัสนักเรียน",
+            "เลขบัตรประชาชน",
+            "ชื่อ",
+            "นามสกุล",
+            "ห้อง",
+            "ข้อ1",
+            "ข้อ2",
+            "ข้อ3",
+            "ข้อ4",
+            "ข้อ5",
+            "ข้อ6",
+            "ข้อ7",
+            "ข้อ8",
+            "ข้อ9",
+            "opt1",
+            "opt2",
+        ]);
+
+        worksheet.addRow([
+            "66001",
+            "1103700000011",
+            "สมชาย",
+            "ใจดี",
+            "ม.1/1",
+            "ไม่มีเลย",
+            "มีบางวัน",
+            "มีมากกว่า 7 วัน",
+            "มีแทบทุกวัน",
+            0,
+            1,
+            2,
+            3,
+            "ไม่มเลย",
+            "ไม่ใช่",
+            "ไม่ใช่",
+        ]);
+
+        const output = Buffer.from(await workbook.xlsx.writeBuffer());
+        return output.buffer.slice(
+            output.byteOffset,
+            output.byteOffset + output.byteLength,
+        );
+    }
+
+    it("maps real PHQA answer labels to scores during import", async () => {
+        const buffer = await createWorkbookBuffer();
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(true);
+        expect(result.data[0]?.scores).toMatchObject({
+            q1: 0,
+            q2: 1,
+            q3: 2,
+            q4: 3,
+            q5: 0,
+            q6: 1,
+            q7: 2,
+            q8: 3,
+            q9: 0,
+        });
+    });
+});
+
+describe("Excel Parser - Real Template Header Mapping", () => {
+    async function createRealTemplateBuffer(): Promise<ArrayBuffer> {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Form Responses 1");
+        const richHeader = (text: string) => ({ richText: [{ text }] });
+
+        worksheet.addRow([
+            "Timestamp",
+            "รหัสนักเรียน",
+            "เลขบัตรประชาชน",
+            "ชื่อ",
+            "นามสกุล",
+            "เพศกำเนิด",
+            "อายุ (ปี)",
+            "ห้องเรียน",
+            richHeader("ในช่วง 2 สัปดาห์ที่ผ่านมา รู้สึกซึม เศร้า หงุดหงิด หรือสิ้นหวัง"),
+            richHeader("ในช่วง 2 สัปดาห์ที่ผ่านมา เบื่อ ไม่ค่อยสนใจหรือเพลิดเพลินเวลาทำสิ่งต่างๆ"),
+            richHeader("ในช่วง 2 สัปดาห์ที่ผ่านมา นอนหลับยาก รู้สึกง่วงทั้งวันหรือนอนมากเกินไป"),
+            richHeader("ในช่วง 2 สัปดาห์ที่ผ่านมา ไม่อยากอาหาร น้ำหนักลด หรือกินมากกว่าปกติ"),
+            richHeader("ในช่วง 2 สัปดาห์ที่ผ่านมา รู้สึกเหนื่อยล้าหรือไม่ค่อยมีพลัง"),
+            richHeader("ในช่วง 2 สัปดาห์ที่ผ่านมา รู้สึกแย่กับตัวเอง หรือรู้สึกว่าตัวเองล้มเหลว"),
+            richHeader("ในช่วง 2 สัปดาห์ที่ผ่านมา จดจ่อกับสิ่งต่างๆได้ยาก เช่น ทำการบ้าน"),
+            richHeader("ในช่วง 2 สัปดาห์ที่ผ่านมา พูดหรือทำอะไรช้าลงมาก จนคนอื่นสังเกตุเห็นได้"),
+            richHeader("ในช่วง 2 สัปดาห์ที่ผ่านมา คิดว่าถ้าตายไปเสียจะดีกว่า"),
+            richHeader("ใน 1 เดือนที่ผ่านมา มีช่วงไหนที่คุณคิดอยากตาย หรือไม่คิดอยากมีชีวิตอยู่อย่างจริงจังหรือไม่"),
+            richHeader("ตลอดชีวิตที่ผ่านมา คุณเคยพยายามที่ทำให้ตัวเองตายหรือลงมือฆ่าตัวตายหรือไม่"),
+        ]);
+
+        worksheet.addRow([
+            "2026-05-18 10:00:00",
+            "66001",
+            "1103700000011",
+            "สมชาย",
+            "ใจดี",
+            "ชาย",
+            13,
+            "ม.1/1",
+            "ไม่มเลย",
+            "มีบางวัน",
+            "มีมากกว่า 7 วัน",
+            "มีแทบทุกวัน",
+            "ไม่มีเลย",
+            "มีบางวัน",
+            "มีมากกว่า 7 วัน",
+            "มีแทบทุกวัน",
+            "ไม่มีเลย",
+            "ใช่",
+            "ไม่ใช่",
+        ]);
+
+        const output = Buffer.from(await workbook.xlsx.writeBuffer());
+        return output.buffer.slice(
+            output.byteOffset,
+            output.byteOffset + output.byteLength,
+        );
+    }
+
+    it("parses the Google Form export header format", async () => {
+        const buffer = await createRealTemplateBuffer();
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(true);
+        expect(result.data[0]).toMatchObject({
+            studentId: "66001",
+            nationalId: "1103700000011",
+            firstName: "สมชาย",
+            lastName: "ใจดี",
+            gender: "MALE",
+            age: 13,
+            class: "ม.1/1",
+            scores: {
+                q1: 0,
+                q2: 1,
+                q3: 2,
+                q4: 3,
+                q5: 0,
+                q6: 1,
+                q7: 2,
+                q8: 3,
+                q9: 0,
+                q9a: true,
+                q9b: false,
+            },
+        });
+    });
+});
+
 describe("Excel Parser - Boolean Cell Logic", () => {
     /**
      * Test the boolean parsing logic for q9a/q9b

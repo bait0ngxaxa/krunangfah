@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { IMPORT_PREVIEW_PAGE_SIZE } from "@/lib/constants/import";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
+import type { ParsedGender } from "@/lib/utils/excel-parser";
 import type { PreviewStudent } from "../types";
 
 interface StudentPreviewTableProps {
@@ -9,9 +10,18 @@ interface StudentPreviewTableProps {
     canViewNationalId: boolean;
 }
 
-/**
- * Table displaying student preview data with risk summary.
- */
+function formatGender(gender: ParsedGender | undefined): string {
+    if (gender === "MALE") {
+        return "ชาย";
+    }
+
+    if (gender === "FEMALE") {
+        return "หญิง";
+    }
+
+    return "-";
+}
+
 export function StudentPreviewTable({
     students,
     onRemoveStudent,
@@ -94,16 +104,25 @@ export function StudentPreviewTable({
                                     ลำดับ
                                 </th>
                                 <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                    ชื่อ - นามสกุล
+                                    รหัสนักเรียน
                                 </th>
                                 <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                    รหัสนักเรียน
+                                    ชื่อ
+                                </th>
+                                <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    นามสกุล
                                 </th>
                                 {canViewNationalId && (
                                     <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                         เลขบัตรประชาชน
                                     </th>
                                 )}
+                                <th className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    เพศ
+                                </th>
+                                <th className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    อายุ
+                                </th>
                                 <th className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     ห้อง
                                 </th>
@@ -124,11 +143,14 @@ export function StudentPreviewTable({
                                     <td className="px-4 py-2 text-sm text-gray-500 font-medium">
                                         {pageStart + index + 1}
                                     </td>
-                                    <td className="px-4 py-2 text-sm font-bold text-gray-800 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
-                                        {student.firstName} {student.lastName}
-                                    </td>
                                     <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
                                         {student.studentId || "-"}
+                                    </td>
+                                    <td className="px-4 py-2 text-sm font-bold text-gray-800 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
+                                        {student.firstName || "-"}
+                                    </td>
+                                    <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
+                                        {student.lastName || "-"}
                                     </td>
                                     {canViewNationalId && (
                                         <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
@@ -136,7 +158,13 @@ export function StudentPreviewTable({
                                         </td>
                                     )}
                                     <td className="px-4 py-2 text-sm text-center text-gray-600">
-                                        {student.class}
+                                        {formatGender(student.gender)}
+                                    </td>
+                                    <td className="px-4 py-2 text-sm text-center text-gray-600">
+                                        {student.age ?? "-"}
+                                    </td>
+                                    <td className="px-4 py-2 text-sm text-center text-gray-600">
+                                        {student.class || "-"}
                                     </td>
                                     <td className="px-4 py-2 text-center">
                                         <span

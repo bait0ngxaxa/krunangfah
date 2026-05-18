@@ -246,6 +246,11 @@ export function useImportPreview({
             return;
         }
 
+        if (previewData.length === 0) {
+            setError("ไม่มีนักเรียนให้นำเข้า กรุณาอัปโหลดไฟล์ใหม่");
+            return;
+        }
+
         setError(null);
 
         startTransition(async () => {

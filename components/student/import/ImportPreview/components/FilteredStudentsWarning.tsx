@@ -2,6 +2,8 @@ import { AlertTriangle } from "lucide-react";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type { PreviewStudent } from "../types";
 
+const VISIBLE_CLASS_LIMIT = 6;
+
 interface FilteredStudentsWarningProps {
     students: PreviewStudent[];
     advisoryClass: string | null;
@@ -25,6 +27,66 @@ function StudentList({ students }: { students: PreviewStudent[] }) {
     );
 }
 
+function ExistingClassSummary({
+    validClassNames,
+}: {
+    validClassNames: string[];
+}) {
+    if (validClassNames.length === 0) {
+        return null;
+    }
+
+    const visibleClassNames = validClassNames.slice(0, VISIBLE_CLASS_LIMIT);
+    const hiddenClassCount = Math.max(
+        validClassNames.length - visibleClassNames.length,
+        0,
+    );
+
+    return (
+        <div className="mb-3 rounded-md border border-amber-200 bg-white/70 p-3">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-amber-800">
+                    ห้องที่มีอยู่ในระบบ {validClassNames.length} ห้อง
+                </span>
+                {hiddenClassCount > 0 && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                        +{hiddenClassCount} ห้อง
+                    </span>
+                )}
+            </div>
+
+            <div className="flex flex-wrap gap-1.5">
+                {visibleClassNames.map((className) => (
+                    <span
+                        key={className}
+                        className="rounded-md border border-amber-200 bg-white px-2 py-1 text-xs font-medium text-amber-800"
+                    >
+                        {className}
+                    </span>
+                ))}
+            </div>
+
+            {hiddenClassCount > 0 && (
+                <details className="mt-2 text-xs text-amber-800">
+                    <summary className="cursor-pointer font-semibold hover:text-amber-900">
+                        ดูห้องทั้งหมด
+                    </summary>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                        {validClassNames.map((className) => (
+                            <span
+                                key={className}
+                                className="rounded-md border border-amber-200 bg-white px-2 py-1 text-xs font-medium text-amber-800"
+                            >
+                                {className}
+                            </span>
+                        ))}
+                    </div>
+                </details>
+            )}
+        </div>
+    );
+}
+
 function MissingClassSection({
     students,
     validClassNames,
@@ -41,14 +103,7 @@ function MissingClassSection({
             <p className="mb-2 text-sm text-amber-700">
                 ห้องเรียนของนักเรียนต่อไปนี้ยังไม่ถูกสร้างในระบบ กรุณาไปสร้างห้องเรียนก่อนนำเข้า
             </p>
-            {validClassNames.length > 0 && (
-                <p className="mb-2 text-xs text-amber-700">
-                    ห้องที่มีอยู่ตอนนี้:{" "}
-                    <span className="font-bold">
-                        {validClassNames.join(", ")}
-                    </span>
-                </p>
-            )}
+            <ExistingClassSummary validClassNames={validClassNames} />
             <StudentList students={students} />
         </div>
     );

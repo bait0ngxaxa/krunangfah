@@ -41,7 +41,7 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                             alt={`${activity.title} ใบงาน ${wIndex + 1}`}
                             fill
                             className="object-cover"
-                            quality={65}
+                            quality={70}
                             sizes="(max-width: 768px) 100vw, 33vw"
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center">

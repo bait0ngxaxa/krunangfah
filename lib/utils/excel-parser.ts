@@ -8,6 +8,29 @@ import { logError } from "@/lib/utils/logging";
 
 export type ParsedGender = "MALE" | "FEMALE";
 const NATIONAL_ID_HEADER = "เลขบัตรประชาชน";
+const PHQA_SCORE_LABELS = new Map<string, number>([
+    ["ไม่มเลย", 0],
+    ["ไม่มีเลย", 0],
+    ["มีบางวัน", 1],
+    ["มีมากกว่า 7 วัน", 2],
+    ["มีแทบทุกวัน", 3],
+]);
+const FIELD_HEADER_ALIASES = {
+    gender: ["เพศ", "เพศกำเนิด"],
+    age: ["อายุ", "อายุ (ปี)"],
+    class: ["ห้อง", "ห้องเรียน"],
+    q1: ["ข้อ1", "รู้สึกซึม เศร้า หงุดหงิด หรือสิ้นหวัง"],
+    q2: ["ข้อ2", "เบื่อ ไม่ค่อยสนใจหรือเพลิดเพลิน"],
+    q3: ["ข้อ3", "นอนหลับยาก รู้สึกง่วงทั้งวันหรือนอนมากเกินไป"],
+    q4: ["ข้อ4", "ไม่อยากอาหาร น้ำหนักลด หรือกินมากกว่าปกติ"],
+    q5: ["ข้อ5", "รู้สึกเหนื่อยล้าหรือไม่ค่อยมีพลัง"],
+    q6: ["ข้อ6", "รู้สึกแย่กับตัวเอง"],
+    q7: ["ข้อ7", "จดจ่อกับสิ่งต่างๆได้ยาก"],
+    q8: ["ข้อ8", "พูดหรือทำอะไรช้าลงมาก"],
+    q9: ["ข้อ9", "คิดว่าถ้าตายไปเสียจะดีกว่า"],
+    q9a: ["opt1", "ข้อ9a", "คิดอยากตาย หรือไม่คิดอยากมีชีวิตอยู่"],
+    q9b: ["opt2", "ข้อ9b", "เคยพยายามที่ทำให้ตัวเองตาย"],
+} as const;
 
 export interface ParsedStudent {
     studentId: string;
@@ -38,6 +61,74 @@ function normalizeNationalId(value: string): string | undefined {
     }
 
     return normalizedValue;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null;
+}
+
+function stringifyCellValue(value: unknown): string {
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    if (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+    ) {
+        return String(value);
+    }
+
+    if (
+        isRecord(value) &&
+        Array.isArray(value.richText)
+    ) {
+        return value.richText
+            .map((part) =>
+                isRecord(part) && typeof part.text === "string"
+                    ? part.text
+                    : "",
+            )
+            .join("");
+    }
+
+    if (isRecord(value) && typeof value.text === "string") {
+        return value.text;
+    }
+
+    return String(value);
+}
+
+function normalizeHeader(value: string): string {
+    return value.trim().replace(/\s+/g, " ");
+}
+
+function findHeaderColumn(
+    headers: Map<string, number>,
+    aliases: readonly string[],
+): number | undefined {
+    const normalizedAliases = aliases.map(normalizeHeader);
+
+    for (const alias of normalizedAliases) {
+        const exactColumn = headers.get(alias);
+        if (exactColumn !== undefined) {
+            return exactColumn;
+        }
+    }
+
+    for (const [header, column] of headers) {
+        if (normalizedAliases.some((alias) => header.includes(alias))) {
+            return column;
+        }
+    }
+
+    return undefined;
+}
+
+function parsePhqaScoreLabel(value: string): number | undefined {
+    const normalizedValue = normalizeHeader(value).toLowerCase();
+    return PHQA_SCORE_LABELS.get(normalizedValue);
 }
 
 /**
@@ -79,7 +170,7 @@ export async function parseExcelBuffer(
         // Map from header name → column number (reverse index for safe lookup)
         const headers = new Map<string, number>();
         worksheet.getRow(1).eachCell((cell, colNumber) => {
-            headers.set(String(cell.value || "").trim(), colNumber);
+            headers.set(normalizeHeader(stringifyCellValue(cell.value)), colNumber);
         });
 
         // Validate required headers
@@ -88,12 +179,14 @@ export async function parseExcelBuffer(
             NATIONAL_ID_HEADER,
             "ชื่อ",
             "นามสกุล",
-            "ห้อง",
         ];
         for (const header of requiredHeaders) {
-            if (!headers.has(header)) {
+            if (findHeaderColumn(headers, [header]) === undefined) {
                 errors.push(`ไม่พบคอลัมน์ "${header}" ในไฟล์`);
             }
+        }
+        if (findHeaderColumn(headers, FIELD_HEADER_ALIASES.class) === undefined) {
+            errors.push(`ไม่พบคอลัมน์ "ห้อง" ในไฟล์`);
         }
 
         if (errors.length > 0) {
@@ -117,17 +210,34 @@ export async function parseExcelBuffer(
 
             try {
                 const getCell = (headerName: string): string => {
-                    const colIndex = headers.get(headerName) ?? -1;
+                    const colIndex = findHeaderColumn(headers, [headerName]) ?? -1;
                     if (colIndex === -1) return "";
                     const cellValue = row.getCell(colIndex).value;
-                    return String(cellValue ?? "").trim();
+                    return stringifyCellValue(cellValue).trim();
                 };
 
-                const getNumberCell = (headerName: string): number => {
-                    const value = getCell(headerName).trim();
+                const getCellByAliases = (
+                    aliases: readonly string[],
+                ): string => {
+                    const colIndex = findHeaderColumn(headers, aliases) ?? -1;
+                    if (colIndex === -1) return "";
+                    const cellValue = row.getCell(colIndex).value;
+                    return stringifyCellValue(cellValue).trim();
+                };
+
+                const getNumberCell = (
+                    headerName: string,
+                    aliases: readonly string[] = [headerName],
+                ): number => {
+                    const value = getCellByAliases(aliases).trim();
 
                     // ถ้าว่างเปล่า → ให้เป็น 0
                     if (!value) return 0;
+
+                    const mappedScore = parsePhqaScoreLabel(value);
+                    if (mappedScore !== undefined) {
+                        return mappedScore;
+                    }
 
                     const num = parseInt(value, 10);
 
@@ -150,8 +260,11 @@ export async function parseExcelBuffer(
                     return num;
                 };
 
-                const getBooleanCell = (headerName: string): boolean => {
-                    const value = getCell(headerName).trim().toLowerCase();
+                const getBooleanCell = (
+                    headerName: string,
+                    aliases: readonly string[] = [headerName],
+                ): boolean => {
+                    const value = getCellByAliases(aliases).trim().toLowerCase();
 
                     // ถ้าว่างเปล่า → ให้เป็น false
                     if (!value) return false;
@@ -206,15 +319,15 @@ export async function parseExcelBuffer(
 
                 const firstName = getCell("ชื่อ");
                 const lastName = getCell("นามสกุล");
-                const genderRaw = getCell("เพศ");
+                const genderRaw = getCellByAliases(FIELD_HEADER_ALIASES.gender);
                 const gender = parseGender(genderRaw);
-                const ageRaw = getCell("อายุ");
+                const ageRaw = getCellByAliases(FIELD_HEADER_ALIASES.age);
                 const ageParsed = parseInt(ageRaw, 10);
                 const age =
                     !isNaN(ageParsed) && ageParsed > 0 && ageParsed <= 100
                         ? ageParsed
                         : undefined;
-                const studentClass = getCell("ห้อง");
+                const studentClass = getCellByAliases(FIELD_HEADER_ALIASES.class);
                 const studentId = getCell("รหัสนักเรียน");
                 const nationalIdRaw = getCell(NATIONAL_ID_HEADER);
                 const nationalId = normalizeNationalId(nationalIdRaw);
@@ -259,21 +372,23 @@ export async function parseExcelBuffer(
                     age,
                     class: normalizeClassName(studentClass),
                     scores: {
-                        q1: getNumberCell("ข้อ1"),
-                        q2: getNumberCell("ข้อ2"),
-                        q3: getNumberCell("ข้อ3"),
-                        q4: getNumberCell("ข้อ4"),
-                        q5: getNumberCell("ข้อ5"),
-                        q6: getNumberCell("ข้อ6"),
-                        q7: getNumberCell("ข้อ7"),
-                        q8: getNumberCell("ข้อ8"),
-                        q9: getNumberCell("ข้อ9"),
-                        q9a:
-                            getBooleanCell("opt1") ||
-                            getBooleanCell("ข้อ9a"),
-                        q9b:
-                            getBooleanCell("opt2") ||
-                            getBooleanCell("ข้อ9b"),
+                        q1: getNumberCell("ข้อ1", FIELD_HEADER_ALIASES.q1),
+                        q2: getNumberCell("ข้อ2", FIELD_HEADER_ALIASES.q2),
+                        q3: getNumberCell("ข้อ3", FIELD_HEADER_ALIASES.q3),
+                        q4: getNumberCell("ข้อ4", FIELD_HEADER_ALIASES.q4),
+                        q5: getNumberCell("ข้อ5", FIELD_HEADER_ALIASES.q5),
+                        q6: getNumberCell("ข้อ6", FIELD_HEADER_ALIASES.q6),
+                        q7: getNumberCell("ข้อ7", FIELD_HEADER_ALIASES.q7),
+                        q8: getNumberCell("ข้อ8", FIELD_HEADER_ALIASES.q8),
+                        q9: getNumberCell("ข้อ9", FIELD_HEADER_ALIASES.q9),
+                        q9a: getBooleanCell(
+                            "opt1",
+                            FIELD_HEADER_ALIASES.q9a,
+                        ),
+                        q9b: getBooleanCell(
+                            "opt2",
+                            FIELD_HEADER_ALIASES.q9b,
+                        ),
                     },
                 };
 

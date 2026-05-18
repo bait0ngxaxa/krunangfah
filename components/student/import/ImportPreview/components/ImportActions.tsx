@@ -34,10 +34,19 @@ export function ImportActions({
     const [showConfirm, setShowConfirm] = useState(false);
 
     const handleSaveClick = () => {
+        if (!canSave) {
+            return;
+        }
+
         setShowConfirm(true);
     };
 
     const handleConfirm = () => {
+        if (!canSave) {
+            setShowConfirm(false);
+            return;
+        }
+
         setShowConfirm(false);
         onSave();
     };
@@ -166,6 +175,7 @@ export function ImportActions({
                                 <Button
                                     type="button"
                                     onClick={handleConfirm}
+                                    disabled={!canSave || isLoading}
                                     variant="primary"
                                     size="sm"
                                     className="px-5 py-2"

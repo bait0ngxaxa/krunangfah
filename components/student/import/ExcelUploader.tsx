@@ -2,7 +2,18 @@
 import { useState, useRef } from "react";
 import { parseExcelBuffer, type ParsedStudent } from "@/lib/utils/excel-parser";
 import { MAX_IMPORT_FILE_SIZE_BYTES } from "@/lib/constants/import";
-import { Upload, Download, Info } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, Upload } from "lucide-react";
+
+const REQUIRED_COLUMNS = [
+    "รหัสนักเรียน",
+    "เลขบัตรประชาชน",
+    "ชื่อ",
+    "นามสกุล",
+    "เพศกำเนิด",
+    "อายุ (ปี)",
+    "ห้องเรียน",
+    "คำตอบ PHQ-A",
+] as const;
 
 interface ExcelUploaderProps {
     onDataParsed: (data: ParsedStudent[]) => void;
@@ -84,6 +95,48 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
 
     return (
         <div className="space-y-4">
+            <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="flex gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                            <FileSpreadsheet className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-bold text-gray-800">
+                                ใช้ไฟล์คำตอบจาก Google Form
+                            </h3>
+                            <ol className="mt-2 space-y-1 text-sm leading-6 text-gray-600">
+                                <li>1. เปิดชีตคำตอบของ Google Form</li>
+                                <li>
+                                    2. เลือก File (ไฟล์) → Download (ดาวน์โหลด)
+                                    → Microsoft Excel (.xlsx)
+                                </li>
+                                <li>3. อัปโหลดไฟล์ที่ดาวน์โหลดมาในหน้านี้</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-3 lg:w-[24rem]">
+                        <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+                            <div className="mb-2 flex items-center gap-2 text-sm font-bold text-gray-800">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                คอลัมน์ที่จำเป็นต้องมีในไฟล์
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {REQUIRED_COLUMNS.map((column) => (
+                                    <span
+                                        key={column}
+                                        className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600"
+                                    >
+                                        {column}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -125,10 +178,10 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                         </div>
                         <div>
                             <p className="text-xl font-bold text-gray-700 mb-2">
-                                ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์
+                                อัปโหลดไฟล์คำตอบจาก Google Form / ไฟล์excel
                             </p>
                             <p className="text-sm text-gray-500 bg-white px-4 py-1 rounded-full border border-emerald-100 inline-block">
-                                รองรับไฟล์ .xlsx เท่านั้น
+                                ลากไฟล์ .xlsx มาวาง หรือคลิกเพื่อเลือกไฟล์
                             </p>
                         </div>
                     </div>
@@ -142,35 +195,6 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                     </p>
                 </div>
             )}
-
-            {/* Template download info */}
-            <div className="p-6 bg-blue-50 rounded-2xl border-2 border-blue-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
-                <div>
-                    <h4 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
-                        <Info className="w-5 h-5 text-blue-500 shrink-0" />{" "}
-                        รูปแบบไฟล์ที่รองรับ
-                    </h4>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                        คอลัมน์:{" "}
-                        <span className="font-medium text-gray-800">
-                            รหัสนักเรียน, เลขบัตรประชาชน, ชื่อ, นามสกุล,
-                            เพศ,อายุ,ห้อง,
-                            ข้อ1-ข้อ9, opt1, opt2
-                        </span>
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2 bg-white inline-block px-2 py-1 rounded-md border border-blue-100">
-                        * เลขบัตรประชาชน: ต้องเป็นตัวเลข 13 หลักและห้ามซ้ำ | ข้อ1-ข้อ9: ค่า 0-3 | opt1, opt2: ใช่/ไม่ใช่
-                    </p>
-                </div>
-                <a
-                    href="/api/template"
-                    download="phq-a-template.xlsx"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 border border-blue-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-base text-sm font-bold whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5"
-                >
-                    <Download className="w-5 h-5" />
-                    ดาวน์โหลดไฟล์ตัวอย่าง
-                </a>
-            </div>
         </div>
     );
 }

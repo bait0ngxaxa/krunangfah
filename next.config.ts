@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
         ],
         // 4. Router cache สำหรับ dynamic/static pages
         staleTimes: {
-            dynamic: 30, // cache dynamic pages 30 วินาที
+            dynamic: 0, // dynamic pages ต้องดึงข้อมูลใหม่ตอน navigate เพื่อกันข้อมูลค้าง
             static: 180, // cache static pages 3 นาที
         },
     },
