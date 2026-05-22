@@ -34,14 +34,12 @@ export function ReferralFormModal({
 }: ReferralFormModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [mounted, setMounted] = useState(false);
     const [selectedOption, setSelectedOption] = useState<ReferralOption>(
         initialStatus ? "refer" : "follow_up",
     );
     const [hospitalName, setHospitalName] = useState(initialHospitalName ?? "");
 
     useEffect(() => {
-        setMounted(true);
         document.body.style.overflow = "hidden";
 
         return () => {
@@ -98,10 +96,6 @@ export function ReferralFormModal({
             setIsSubmitting(false);
         }
     };
-
-    if (!mounted) {
-        return null;
-    }
 
     const modalContent = (
         <div

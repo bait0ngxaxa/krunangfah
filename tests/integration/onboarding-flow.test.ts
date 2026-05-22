@@ -43,6 +43,7 @@ describe("Integration: Onboarding Flow", () => {
     const UNIQUE_YEAR = 2650;
 
     let academicYearId: string;
+    let nextAcademicYearId: string;
     let createdSchoolId: string | null = null;
 
     beforeAll(async () => {
@@ -61,6 +62,20 @@ describe("Integration: Onboarding Flow", () => {
             },
         });
         academicYearId = ay.id;
+        const nextAy = await prisma.academicYear.upsert({
+            where: {
+                year_semester: { year: UNIQUE_YEAR, semester: 2 },
+            },
+            update: {},
+            create: {
+                year: UNIQUE_YEAR,
+                semester: 2,
+                startDate: new Date("2024-11-01"),
+                endDate: new Date("2025-03-31"),
+                isCurrent: false,
+            },
+        });
+        nextAcademicYearId = nextAy.id;
 
         // สร้าง user แบบ fresh onboarding (ไม่มี schoolId, ไม่มี teacher profile)
         await prisma.user.create({
@@ -147,6 +162,11 @@ describe("Integration: Onboarding Flow", () => {
         await prisma.academicYear
             .deleteMany({
                 where: { year: UNIQUE_YEAR, semester: 1 },
+            })
+            .catch(() => {});
+        await prisma.academicYear
+            .deleteMany({
+                where: { year: UNIQUE_YEAR, semester: 2 },
             })
             .catch(() => {});
     });
@@ -415,6 +435,43 @@ describe("Integration: Onboarding Flow", () => {
             expect(names).not.toContain("ม.1/2"); // ถูกลบแล้ว
             expect(names).toContain("ม.2/1");
             expect(names).toContain("ม.2/2");
+        });
+
+        it("สร้าง schoolClassTerm เทอมใหม่จากค่าของเทอมล่าสุด", async () => {
+            mockSession(USERS.schoolAdmin);
+
+            const added = await addSchoolClass(
+                "ม.5/1",
+                28,
+                academicYearId,
+            );
+            expect(added.success).toBe(true);
+            expect(added.data).toBeDefined();
+
+            const updated = await updateSchoolClassStudentCount(
+                added.data!.id,
+                31,
+                academicYearId,
+            );
+            expect(updated.success).toBe(true);
+
+            const nextTermClasses = await getSchoolClasses(nextAcademicYearId);
+            const nextTermClass = nextTermClasses.find(
+                (schoolClass) => schoolClass.id === added.data!.id,
+            );
+
+            expect(nextTermClass?.expectedStudentCount).toBe(31);
+
+            const nextTermRecord = await prisma.schoolClassTerm.findUnique({
+                where: {
+                    schoolClassId_academicYearId: {
+                        schoolClassId: added.data!.id,
+                        academicYearId: nextAcademicYearId,
+                    },
+                },
+            });
+
+            expect(nextTermRecord?.expectedStudentCount).toBe(31);
         });
 
         it("class_teacher (ไม่ใช่ primary) เพิ่มห้องไม่ได้", async () => {

@@ -11,6 +11,7 @@ import type { RosterFormProps } from "../types";
 export function RosterForm({
     editingId,
     isSubmitting,
+    isDirty,
     userRoleValue,
     advisoryClassValue,
     schoolClasses,
@@ -21,6 +22,8 @@ export function RosterForm({
     onSubmit,
     onCancel,
 }: RosterFormProps) {
+    const submitDisabled = isSubmitting || (editingId !== null && !isDirty);
+
     return (
         <form
             onSubmit={handleSubmit(onSubmit)}
@@ -137,6 +140,7 @@ export function RosterForm({
                             value={advisoryClassValue}
                             onChange={(e) =>
                                 setValue("advisoryClass", e.target.value, {
+                                    shouldDirty: true,
                                     shouldValidate: true,
                                 })
                             }
@@ -227,7 +231,7 @@ export function RosterForm({
 
             <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={submitDisabled}
                 className="w-full flex items-center justify-center gap-2 py-2.5 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
                 {editingId ? (

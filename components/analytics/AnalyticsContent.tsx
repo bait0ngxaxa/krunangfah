@@ -71,8 +71,8 @@ export function AnalyticsContent({
                 <AnalyticsFilters
                     schools={schools}
                     availableClasses={[]}
-                    availableYears={[]}
-                    availableSemesters={[]}
+                    availableYears={systemOverview?.availableAcademicYears ?? []}
+                    availableSemesters={systemOverview?.availableSemesters ?? []}
                     selectedSchoolId={selectedSchoolId}
                     selectedClass={selectedClass}
                     selectedAcademicYear={selectedAcademicYear}

@@ -13,9 +13,11 @@ import {
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
+import { StudentStatusControl } from "./StudentStatusControl";
 
 interface StudentProfileCardProps {
         student: {
+            id: string;
             firstName: string;
             lastName: string;
             studentId?: string | null;
@@ -23,6 +25,7 @@ interface StudentProfileCardProps {
             gender?: string | null;
             age?: number | null;
             class: string;
+            status?: string | null;
     };
     latestResult?: {
         totalScore: number;
@@ -36,12 +39,14 @@ interface StudentProfileCardProps {
         };
     } | null;
     canViewNationalId?: boolean;
+    canManageStatus?: boolean;
 }
 
 export function StudentProfileCard({
     student,
     latestResult,
     canViewNationalId = false,
+    canManageStatus = false,
 }: StudentProfileCardProps) {
     const risk = latestResult
         ? getRiskLevelConfig(latestResult.riskLevel as RiskLevel)
@@ -112,8 +117,9 @@ export function StudentProfileCard({
                 </div>
 
                 {/* Risk Badge */}
-                {risk && latestResult && (
-                    <div className="flex w-full md:w-auto flex-col items-stretch md:items-end gap-3">
+                <div className="flex w-full md:w-auto flex-col items-stretch md:items-end gap-3">
+                    {risk && latestResult && (
+                        <>
                         <div
                             className={`${risk.headerGradient} ${risk.headerTextColor} pl-4 pr-5 py-2.5 rounded-2xl font-bold text-base shadow-md flex items-center gap-2.5`}
                         >
@@ -166,8 +172,14 @@ export function StudentProfileCard({
                                 })}
                             </div>
                         </div>
-                    </div>
-                )}
+                        </>
+                    )}
+                    <StudentStatusControl
+                        studentId={student.id}
+                        currentStatus={student.status ?? "ACTIVE"}
+                        canEdit={canManageStatus}
+                    />
+                </div>
             </div>
 
             {!latestResult && (

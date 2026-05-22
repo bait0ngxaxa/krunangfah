@@ -142,6 +142,49 @@ async function hasPendingInviteForEntry(
     return !!byName;
 }
 
+async function validateRosterEmailAvailable(
+    schoolId: string,
+    email: string,
+    excludeRosterId?: string,
+): Promise<string | null> {
+    const existingUser = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true },
+    });
+
+    if (existingUser) {
+        return "อีเมลนี้มีผู้ใช้งานแล้ว";
+    }
+
+    const existingInvite = await prisma.teacherInvite.findFirst({
+        where: {
+            email,
+            acceptedAt: null,
+            expiresAt: { gt: new Date() },
+        },
+        select: { id: true },
+    });
+
+    if (existingInvite) {
+        return "มีคำเชิญที่รอดำเนินการสำหรับอีเมลนี้แล้ว";
+    }
+
+    const existingRoster = await prisma.schoolTeacherRoster.findFirst({
+        where: {
+            schoolId,
+            email,
+            ...(excludeRosterId ? { id: { not: excludeRosterId } } : {}),
+        },
+        select: { id: true },
+    });
+
+    if (existingRoster) {
+        return `อีเมล "${email}" มีอยู่ใน roster แล้ว`;
+    }
+
+    return null;
+}
+
 /**
  * เพิ่มครูเข้า roster (school_admin only)
  */
@@ -170,16 +213,14 @@ export async function addTeacherToRoster(
         const { email, ...rest } = parsed.data;
         const cleanEmail = email.trim();
 
-        // Check duplicate email within same school
-        const existing = await prisma.schoolTeacherRoster.findUnique({
-            where: {
-                schoolId_email: { schoolId, email: cleanEmail },
-            },
-        });
-        if (existing) {
+        const emailConflict = await validateRosterEmailAvailable(
+            schoolId,
+            cleanEmail,
+        );
+        if (emailConflict) {
             return {
                 success: false,
-                message: `อีเมล "${cleanEmail}" มีอยู่ใน roster แล้ว`,
+                message: emailConflict,
             };
         }
 
@@ -349,18 +390,15 @@ export async function updateRosterEntry(
         const { email, ...rest } = parsed.data;
         const cleanEmail = email.trim();
 
-        // Check duplicate email (exclude current entry)
-        const dup = await prisma.schoolTeacherRoster.findFirst({
-            where: {
-                schoolId,
-                email: cleanEmail,
-                id: { not: id },
-            },
-        });
-        if (dup) {
+        const emailConflict = await validateRosterEmailAvailable(
+            schoolId,
+            cleanEmail,
+            id,
+        );
+        if (emailConflict) {
             return {
                 success: false,
-                message: `อีเมล "${cleanEmail}" มีอยู่ใน roster แล้ว`,
+                message: emailConflict,
             };
         }
 

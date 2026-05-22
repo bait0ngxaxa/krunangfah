@@ -18,6 +18,7 @@ export function TeacherRosterEditor({
         showForm,
         editingId,
         isSubmitting,
+        isDirty,
         userRoleValue,
         advisoryClassValue,
         register,
@@ -52,6 +53,7 @@ export function TeacherRosterEditor({
                     <RosterForm
                         editingId={editingId}
                         isSubmitting={isSubmitting}
+                        isDirty={isDirty}
                         userRoleValue={userRoleValue}
                         advisoryClassValue={advisoryClassValue}
                         schoolClasses={schoolClasses}

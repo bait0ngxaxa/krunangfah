@@ -22,6 +22,17 @@ describe("counselingSessionSchema", () => {
             expect(result.success).toBe(true);
         });
 
+        it("should accept optional academicYearId", () => {
+            const result = counselingSessionSchema.safeParse({
+                studentId: "clxyz123456789abcdef",
+                academicYearId: "clxyz123456789abcdeg",
+                sessionDate: "2024-05-15",
+                counselorName: "ครูสมชาย",
+                summary: "บันทึกการให้คำปรึกษา",
+            });
+            expect(result.success).toBe(true);
+        });
+
         it("should coerce string date to Date object", () => {
             const data = {
                 studentId: "clxyz123456789abcdef",
@@ -63,6 +74,24 @@ describe("counselingSessionSchema", () => {
             };
             const result = counselingSessionSchema.safeParse(data);
             expect(result.success).toBe(false);
+        });
+    });
+
+    describe("Invalid academicYearId", () => {
+        it("should reject invalid CUID format", () => {
+            const result = counselingSessionSchema.safeParse({
+                studentId: "clxyz123456789abcdef",
+                academicYearId: "invalid-academic-year-id",
+                sessionDate: new Date(),
+                counselorName: "ครูสมชาย",
+                summary: "บันทึก",
+            });
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues[0].message).toBe(
+                    "Invalid academic year ID",
+                );
+            }
         });
     });
 

@@ -30,10 +30,15 @@ const { createCounselingSession, getCounselingSessions } =
 
 describe("Integration: Counseling Sessions", () => {
     let studentId: string;
+    let academicYearId: string;
 
     beforeAll(async () => {
         const school = await createTestSchool();
-        await createTestAcademicYear({ year: 2598, semester: 2 });
+        const academicYear = await createTestAcademicYear({
+            year: 2598,
+            semester: 2,
+        });
+        academicYearId = academicYear.id;
 
         USERS.classTeacher.schoolId = school.id;
 
@@ -59,6 +64,7 @@ describe("Integration: Counseling Sessions", () => {
             mockSession(USERS.classTeacher);
             const result = await createCounselingSession({
                 studentId,
+                academicYearId,
                 sessionDate: new Date(),
                 counselorName: "ครูทดสอบ",
                 summary: "Session 1 notes",
@@ -71,6 +77,7 @@ describe("Integration: Counseling Sessions", () => {
             mockSession(USERS.classTeacher);
             const result = await createCounselingSession({
                 studentId,
+                academicYearId,
                 sessionDate: new Date(),
                 counselorName: "ครูทดสอบ",
                 summary: "Session 2 notes",
@@ -83,6 +90,7 @@ describe("Integration: Counseling Sessions", () => {
             mockSession(USERS.classTeacher);
             const result = await createCounselingSession({
                 studentId,
+                academicYearId,
                 sessionDate: new Date(),
                 counselorName: "ครูทดสอบ",
                 summary: "Session 3 notes",
@@ -99,6 +107,35 @@ describe("Integration: Counseling Sessions", () => {
             expect(Array.isArray(result.sessions)).toBe(true);
             expect(result.sessions.length).toBeGreaterThanOrEqual(3);
             expect(result.pagination.total).toBeGreaterThanOrEqual(3);
+        });
+
+        it("should include legacy sessions without academicYearId via date-range fallback", async () => {
+            mockSession(USERS.classTeacher);
+
+            await prisma.counselingSession.create({
+                data: {
+                    studentId,
+                    sessionNumber: 999,
+                    sessionDate: new Date("2026-06-15"),
+                    counselorName: "ครู legacy",
+                    summary: "legacy session without academic year",
+                    createdById: USERS.classTeacher.id,
+                },
+            });
+
+            const result = await getCounselingSessions(studentId, {
+                academicYearId,
+                dateRange: {
+                    startDate: new Date("2026-06-01"),
+                    endDate: new Date("2026-06-30"),
+                },
+            });
+
+            expect(
+                result.sessions.some(
+                    (session) => session.sessionNumber === 999,
+                ),
+            ).toBe(true);
         });
     });
 });

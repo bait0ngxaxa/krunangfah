@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/Button";
 
 interface AddHomeVisitModalProps {
     studentId: string;
+    academicYearId?: string;
     onClose: () => void;
     onSuccess: () => void;
 }
@@ -28,6 +29,7 @@ type ModalStep = "form" | "photos";
 
 export function AddHomeVisitModal({
     studentId,
+    academicYearId,
     onClose,
     onSuccess,
 }: AddHomeVisitModalProps) {
@@ -35,7 +37,6 @@ export function AddHomeVisitModal({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [mounted, setMounted] = useState(false);
     const [createdVisitId, setCreatedVisitId] = useState<string | null>(null);
     const [photos, setPhotos] = useState<HomeVisitPhotoData[]>([]);
 
@@ -46,7 +47,6 @@ export function AddHomeVisitModal({
     });
 
     useEffect(() => {
-        setMounted(true);
         document.body.style.overflow = "hidden";
 
         return () => {
@@ -62,6 +62,7 @@ export function AddHomeVisitModal({
         try {
             const result = await createHomeVisit({
                 studentId,
+                academicYearId,
                 visitDate: new Date(formData.visitDate),
                 description: formData.description,
                 nextScheduledDate: formData.nextScheduledDate
@@ -101,8 +102,6 @@ export function AddHomeVisitModal({
         }
         onClose();
     };
-
-    if (!mounted) return null;
 
     const modalContent = (
         <div

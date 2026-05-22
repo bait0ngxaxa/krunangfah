@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
@@ -33,8 +33,10 @@ export function useAddTeacherForm(): UseAddTeacherFormReturn {
     });
 
     // === Computed Values ===
-    const userRoleValue = form.watch("userRole") || "";
-    const advisoryClassValue = form.watch("advisoryClass") || "";
+    const userRoleValue =
+        useWatch({ control: form.control, name: "userRole" }) || "";
+    const advisoryClassValue =
+        useWatch({ control: form.control, name: "advisoryClass" }) || "";
 
     useEffect(() => {
         if (userRoleValue === "school_admin") {

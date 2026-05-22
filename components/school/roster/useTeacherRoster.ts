@@ -38,7 +38,7 @@ export function useTeacherRoster({
         reset,
         setValue,
         control,
-        formState: { errors, isSubmitting },
+        formState: { errors, isDirty, isSubmitting },
     } = useForm<TeacherRosterFormData>({
         resolver: zodResolver(teacherRosterSchema),
         defaultValues: {
@@ -218,6 +218,7 @@ export function useTeacherRoster({
         showForm,
         editingId,
         isSubmitting,
+        isDirty,
         userRoleValue,
         advisoryClassValue,
         register,

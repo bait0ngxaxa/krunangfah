@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { ActivityStatus, Prisma } from "@prisma/client";
+import { ActivityStatus, Prisma, StudentStatus } from "@prisma/client";
 import { requireAuth } from "@/lib/session";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { calculateRiskLevel, type RiskLevel } from "@/lib/utils/phq-scoring";
@@ -11,14 +11,45 @@ import { revalidatePath } from "next/cache";
 import type { ImportResult } from "./types";
 import { logError } from "@/lib/utils/logging";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
+import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
+const COUNT_EXCLUDED_STUDENT_STATUSES = new Set<StudentStatus>([
+    StudentStatus.RESIGNED,
+    StudentStatus.TRANSFERRED,
+]);
+
+interface UpdateStudentStatusResult {
+    success: boolean;
+    message: string;
+}
 
 function getActivityNumbersByRiskLevel(riskLevel: RiskLevel): number[] {
     if (!Object.hasOwn(ACTIVITY_INDICES, riskLevel)) {
         return [];
     }
     return ACTIVITY_INDICES[riskLevel as keyof typeof ACTIVITY_INDICES];
+}
+
+function isInactiveStudentStatus(status: StudentStatus): boolean {
+    return COUNT_EXCLUDED_STUDENT_STATUSES.has(status);
+}
+
+async function getCurrentAcademicYearId(): Promise<string | null> {
+    const currentAcademicYear = await prisma.academicYear.findFirst({
+        where: { isCurrent: true },
+        orderBy: [{ year: "desc" }, { semester: "desc" }],
+        select: { id: true },
+    });
+
+    if (currentAcademicYear) return currentAcademicYear.id;
+
+    const latestAcademicYear = await prisma.academicYear.findFirst({
+        orderBy: [{ year: "desc" }, { semester: "desc" }],
+        select: { id: true },
+    });
+
+    return latestAcademicYear?.id ?? null;
 }
 
 /**
@@ -72,6 +103,20 @@ export async function importStudents(
         const schoolId = user.schoolId;
         const advisoryClass = user.teacher?.advisoryClass;
         const isClassTeacher = userRole === "class_teacher";
+        const resolvedAcademicYearId =
+            await ensureSchoolClassTermsForAcademicYear(
+                schoolId,
+                academicYearId,
+            );
+
+        if (!resolvedAcademicYearId) {
+            return {
+                success: false,
+                status: "error",
+                message: "ไม่พบปีการศึกษาที่ต้องการนำเข้า",
+            };
+        }
+
         const schoolClasses = await prisma.schoolClass.findMany({
             where: { schoolId },
             select: { name: true },
@@ -93,7 +138,7 @@ export async function importStudents(
         if (assessmentRound === 2) {
             const schoolRound1Count = await prisma.phqResult.count({
                 where: {
-                    academicYearId,
+                    academicYearId: resolvedAcademicYearId,
                     assessmentRound: 1,
                     student: { schoolId },
                 },
@@ -164,6 +209,7 @@ export async function importStudents(
                 },
                 select: {
                     id: true,
+                    schoolId: true,
                     studentId: true,
                     nationalId: true,
                     firstName: true,
@@ -186,10 +232,11 @@ export async function importStudents(
                 const existingStudent = studentByNationalId.get(row.nationalId);
                 if (
                     existingStudent &&
-                    existingStudent.studentId !== row.studentId
+                    (existingStudent.schoolId !== schoolId ||
+                        existingStudent.studentId !== row.studentId)
                 ) {
                     errors.push(
-                        `${row.firstName} ${row.lastName} (${row.studentId}): เลขบัตรประชาชนซ้ำกับ ${existingStudent.firstName} ${existingStudent.lastName} (${existingStudent.studentId})`,
+                        `${row.firstName} ${row.lastName} (${row.studentId}): เลขบัตรประชาชนซ้ำกับข้อมูลที่มีในระบบ`,
                     );
                     return false;
                 }
@@ -268,7 +315,7 @@ export async function importStudents(
             const existingPhqResults = await tx.phqResult.findMany({
                 where: {
                     studentId: { in: scopedStudents.map((student) => student.id) },
-                    academicYearId,
+                    academicYearId: resolvedAcademicYearId,
                     assessmentRound,
                 },
                 select: { studentId: true },
@@ -288,7 +335,7 @@ export async function importStudents(
                                               (student) => student.id,
                                           ),
                                       },
-                                      academicYearId,
+                                      academicYearId: resolvedAcademicYearId,
                                       assessmentRound: 1,
                                   },
                                   select: { studentId: true },
@@ -324,7 +371,7 @@ export async function importStudents(
                 const { totalScore, riskLevel } = calculateRiskLevel(row.scores);
                 phqResultsToCreate.push({
                     studentId: student.id,
-                    academicYearId,
+                    academicYearId: resolvedAcademicYearId,
                     importedById: userId,
                     assessmentRound,
                     q1: row.scores.q1,
@@ -351,7 +398,7 @@ export async function importStudents(
                 const createdPhqResults = await tx.phqResult.findMany({
                     where: {
                         studentId: { in: phqResultsToCreate.map((record) => record.studentId) },
-                        academicYearId,
+                        academicYearId: resolvedAcademicYearId,
                         assessmentRound,
                     },
                     select: {
@@ -453,6 +500,148 @@ export async function importStudents(
             success: false,
             status: "error",
             message: "เกิดข้อผิดพลาดในการนำเข้าข้อมูล",
+        };
+    }
+}
+
+export async function updateStudentStatus(
+    studentId: string,
+    status: string,
+): Promise<UpdateStudentStatusResult> {
+    try {
+        const session = await requireAuth();
+        const userRole = session.user.role;
+
+        if (userRole !== "school_admin" && userRole !== "class_teacher") {
+            return {
+                success: false,
+                message: "คุณไม่มีสิทธิ์เปลี่ยนสถานะนักเรียน",
+            };
+        }
+
+        const parsedStatus = Object.values(StudentStatus).find(
+            (value) => value === status,
+        );
+        if (!parsedStatus) {
+            return { success: false, message: "สถานะนักเรียนไม่ถูกต้อง" };
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                schoolId: true,
+                teacher: { select: { advisoryClass: true } },
+            },
+        });
+
+        if (!user?.schoolId) {
+            return { success: false, message: "ไม่พบโรงเรียนของคุณ" };
+        }
+
+        const student = await prisma.student.findFirst({
+            where: {
+                id: studentId,
+                schoolId: user.schoolId,
+                ...(userRole === "class_teacher"
+                    ? { class: user.teacher?.advisoryClass ?? "" }
+                    : {}),
+            },
+            select: {
+                id: true,
+                class: true,
+                status: true,
+                schoolId: true,
+            },
+        });
+
+        if (!student) {
+            return { success: false, message: "ไม่พบนักเรียนที่ต้องการแก้ไข" };
+        }
+
+        if (student.status === parsedStatus) {
+            return { success: true, message: "สถานะนักเรียนเป็นค่านี้อยู่แล้ว" };
+        }
+
+        const academicYearId = await getCurrentAcademicYearId();
+        const oldStatusInactive = isInactiveStudentStatus(student.status);
+        const newStatusInactive = isInactiveStudentStatus(parsedStatus);
+        const expectedCountDelta =
+            oldStatusInactive === newStatusInactive
+                ? 0
+                : newStatusInactive
+                  ? -1
+                  : 1;
+
+        await prisma.$transaction(async (tx) => {
+            await tx.student.update({
+                where: { id: student.id },
+                data: {
+                    status: parsedStatus,
+                    statusChangedAt: new Date(),
+                    leftAt: newStatusInactive ? new Date() : null,
+                },
+            });
+
+            if (!academicYearId || expectedCountDelta === 0) return;
+
+            const schoolClass = await tx.schoolClass.findUnique({
+                where: {
+                    schoolId_name: {
+                        schoolId: student.schoolId,
+                        name: student.class,
+                    },
+                },
+                select: {
+                    id: true,
+                    expectedStudentCount: true,
+                    terms: {
+                        where: { academicYearId },
+                        select: { expectedStudentCount: true },
+                        take: 1,
+                    },
+                },
+            });
+
+            if (!schoolClass) return;
+
+            const baseCount =
+                schoolClass.terms[0]?.expectedStudentCount ??
+                schoolClass.expectedStudentCount;
+            const nextCount = Math.max(1, baseCount + expectedCountDelta);
+
+            await tx.schoolClass.update({
+                where: { id: schoolClass.id },
+                data: { expectedStudentCount: nextCount },
+            });
+            await tx.schoolClassTerm.upsert({
+                where: {
+                    schoolClassId_academicYearId: {
+                        schoolClassId: schoolClass.id,
+                        academicYearId,
+                    },
+                },
+                create: {
+                    schoolClassId: schoolClass.id,
+                    academicYearId,
+                    expectedStudentCount: nextCount,
+                },
+                update: { expectedStudentCount: nextCount },
+            });
+        });
+
+        revalidatePath("/dashboard");
+        revalidatePath("/students");
+        revalidatePath(`/students/${student.id}`);
+        revalidatePath("/analytics");
+        revalidatePath("/school/classes");
+        revalidateAnalyticsCache(student.schoolId);
+
+        return { success: true, message: "อัปเดตสถานะนักเรียนสำเร็จ" };
+    } catch (error) {
+        logError("Update student status error:", error);
+        return {
+            success: false,
+            message: "เกิดข้อผิดพลาดในการอัปเดตสถานะนักเรียน",
         };
     }
 }

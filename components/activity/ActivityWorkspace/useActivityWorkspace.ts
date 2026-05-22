@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, type SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -55,7 +55,13 @@ export function useActivityWorkspace({
     // State
     const [uploading, setUploading] = useState<string | null>(null);
     const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
-    const [teacherNotes, setTeacherNotes] = useState<string>("");
+    const [teacherNotesDraft, setTeacherNotesDraft] = useState<{
+        progressId: string | null;
+        value: string;
+    }>({
+        progressId: null,
+        value: "",
+    });
     const [savingNotes, setSavingNotes] = useState(false);
 
     // Computed values
@@ -74,12 +80,20 @@ export function useActivityWorkspace({
         (a) => a.number === currentActivityNumber,
     );
 
-    // Initialize teacher notes from current progress
-    useEffect(() => {
-        if (currentProgress?.teacherNotes) {
-            setTeacherNotes(currentProgress.teacherNotes);
-        }
-    }, [currentProgress]);
+    const currentProgressId = currentProgress?.id ?? null;
+    const currentTeacherNotes = currentProgress?.teacherNotes ?? "";
+    const teacherNotes =
+        teacherNotesDraft.progressId === currentProgressId
+            ? teacherNotesDraft.value
+            : currentTeacherNotes;
+    const setTeacherNotes = (next: SetStateAction<string>): void => {
+        const resolvedValue =
+            typeof next === "function" ? next(teacherNotes) : next;
+        setTeacherNotesDraft({
+            progressId: currentProgressId,
+            value: resolvedValue,
+        });
+    };
 
     const handleUpload = async (progressId: string, file: File) => {
         if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {

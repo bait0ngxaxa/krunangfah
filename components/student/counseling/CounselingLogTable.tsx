@@ -13,6 +13,7 @@ interface CounselingLogTableProps {
     sessions: CounselingSession[];
     pagination: OffsetPagination;
     studentId: string;
+    academicYearId?: string;
     readOnly?: boolean;
     isFilteredByAcademicYear?: boolean;
 }
@@ -21,6 +22,7 @@ export function CounselingLogTable({
     sessions,
     pagination,
     studentId,
+    academicYearId,
     readOnly = false,
     isFilteredByAcademicYear = false,
 }: CounselingLogTableProps) {
@@ -140,6 +142,7 @@ export function CounselingLogTable({
             {!readOnly && showAddModal && (
                 <AddCounselingModal
                     studentId={studentId}
+                    academicYearId={academicYearId}
                     onClose={() => setShowAddModal(false)}
                     onSuccess={handleSuccess}
                 />

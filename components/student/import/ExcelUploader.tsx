@@ -21,6 +21,11 @@ const REQUIRED_COLUMNS = [
     "ห้องเรียน",
 ] as const;
 
+const REQUIRED_COLUMNS_UI = [
+    ...REQUIRED_COLUMNS,
+    "ผลการคัดกรอง",
+] as const;
+
 const TEMPLATE_COLUMNS = [
     ...REQUIRED_COLUMNS,
     "ในช่วง 2 สัปดาห์ที่ผ่านมา รู้สึกซึม เศร้า หงุดหงิด หรือสิ้นหวัง",
@@ -230,7 +235,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                                 คอลัมน์ที่จำเป็นต้องมีในไฟล์
                             </div>
                             <div className="flex flex-wrap gap-1.5">
-                                {REQUIRED_COLUMNS.map((column) => (
+                                {REQUIRED_COLUMNS_UI.map((column) => (
                                     <span
                                         key={column}
                                         className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600"

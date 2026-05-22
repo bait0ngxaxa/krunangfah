@@ -3,6 +3,7 @@ import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 
 export const createHomeVisitSchema = z.object({
     studentId: z.string().cuid("Invalid student ID"),
+    academicYearId: z.string().cuid("Invalid academic year ID").optional(),
     visitDate: z.coerce.date(),
     description: z
         .string()

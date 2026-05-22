@@ -53,7 +53,7 @@ export function SystemOverviewCards({
     return (
         <div className="space-y-3">
             <p className="text-sm font-semibold text-slate-600">
-                ภาพรวมระบบ ({overview.academicYearLabel})
+                ภาพรวมการคัดกรองระบบ ({overview.academicYearLabel})
             </p>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <OverviewCard
@@ -66,7 +66,7 @@ export function SystemOverviewCards({
                 />
                 <OverviewCard
                     icon={Users}
-                    label="นักเรียนตามข้อมูลห้อง"
+                    label="นักเรียนทั้งหมด"
                     value={overview.totalStudents}
                     unit="คน"
                     accentColor="text-emerald-600"

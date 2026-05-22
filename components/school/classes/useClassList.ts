@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
     addSchoolClass,
@@ -13,14 +13,19 @@ import type { UseClassListReturn } from "./types";
 
 interface UseClassListParams {
     initialClasses: SchoolClassItem[];
+    academicYearId?: string;
     onUpdate?: (classes: SchoolClassItem[]) => void;
 }
 
 export function useClassList({
     initialClasses,
+    academicYearId,
     onUpdate,
 }: UseClassListParams): UseClassListReturn {
-    const [classes, setClasses] = useState<SchoolClassItem[]>(initialClasses);
+    const [classes, setClasses] = useOptimistic(
+        initialClasses,
+        (_, nextClasses: SchoolClassItem[]) => nextClasses,
+    );
     const [inputValue, setInputValue] = useState("");
     const [studentCountValue, setStudentCountValue] = useState("");
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -32,8 +37,10 @@ export function useClassList({
     const [bulkStudentCount, setBulkStudentCount] = useState("");
 
     function syncUpdate(updated: SchoolClassItem[]): void {
-        setClasses(updated);
-        onUpdate?.(updated);
+        startTransition(() => {
+            setClasses(updated);
+            onUpdate?.(updated);
+        });
     }
 
     async function handleAdd(): Promise<void> {
@@ -47,7 +54,11 @@ export function useClassList({
             return;
         }
 
-        const result = await addSchoolClass(name, expectedStudentCount);
+        const result = await addSchoolClass(
+            name,
+            expectedStudentCount,
+            academicYearId,
+        );
         if (!result.success) {
             setErrorMsg(result.message);
             toast.error(result.message || "เพิ่มห้องเรียนไม่สำเร็จ");
@@ -72,9 +83,7 @@ export function useClassList({
             toast.error(result.message || "ลบห้องเรียนไม่สำเร็จ");
             return;
         }
-        startTransition(() => {
-            syncUpdate(classes.filter((c) => c.id !== id));
-        });
+        syncUpdate(classes.filter((c) => c.id !== id));
         toast.success(`ลบห้อง "${name}" สำเร็จ`);
     }
 
@@ -87,6 +96,7 @@ export function useClassList({
         const result = await updateSchoolClassStudentCount(
             id,
             expectedStudentCount,
+            academicYearId,
         );
         if (!result.success || !result.data) {
             setErrorMsg(result.message);
@@ -135,7 +145,9 @@ export function useClassList({
         }
 
         const results = await Promise.all(
-            toAdd.map((n) => addSchoolClass(n, expectedStudentCount)),
+            toAdd.map((n) =>
+                addSchoolClass(n, expectedStudentCount, academicYearId),
+            ),
         );
         const added = results
             .filter((r) => r.success && r.data)

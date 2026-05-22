@@ -80,4 +80,8 @@ export interface SystemAnalyticsOverview {
     studentsWithAssessment: number;
     screeningCoveragePercent: number;
     academicYearLabel: string;
+    availableAcademicYears: number[];
+    availableSemesters: number[];
+    currentAcademicYear?: number;
+    currentSemester?: number;
 }

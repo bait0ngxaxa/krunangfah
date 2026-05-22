@@ -12,6 +12,7 @@ import type { SchoolSetupWizardProps } from "./types";
 
 export function SchoolSetupWizard({
     initialHasSchool = false,
+    currentAcademicYear,
 }: SchoolSetupWizardProps) {
     const {
         step,
@@ -46,6 +47,7 @@ export function SchoolSetupWizard({
             {step === 1 && (
                 <ClassStep
                     classes={classes}
+                    currentAcademicYear={currentAcademicYear}
                     onUpdate={setClasses}
                     onNext={() => setStep(2)}
                 />

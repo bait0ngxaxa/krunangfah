@@ -25,6 +25,7 @@ export interface UseTeacherRosterReturn {
     showForm: boolean;
     editingId: string | null;
     isSubmitting: boolean;
+    isDirty: boolean;
     userRoleValue: string;
     advisoryClassValue: string;
     register: UseFormRegister<TeacherRosterFormData>;
@@ -33,7 +34,7 @@ export interface UseTeacherRosterReturn {
     setValue: (
         name: keyof TeacherRosterFormData,
         value: string | number,
-        options?: { shouldValidate?: boolean },
+        options?: { shouldDirty?: boolean; shouldValidate?: boolean },
     ) => void;
     openAddForm: () => void;
     startEdit: (teacher: TeacherRosterItem) => void;
@@ -58,8 +59,9 @@ export interface RosterFormProps {
     setValue: (
         name: keyof TeacherRosterFormData,
         value: string | number,
-        options?: { shouldValidate?: boolean },
+        options?: { shouldDirty?: boolean; shouldValidate?: boolean },
     ) => void;
+    isDirty: boolean;
     onSubmit: (data: TeacherRosterFormData) => Promise<void>;
     onCancel: () => void;
 }

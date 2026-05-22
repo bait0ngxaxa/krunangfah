@@ -3,6 +3,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
 import { requireAuth } from "@/lib/session";
 import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
+import { getAcademicYears } from "@/lib/actions/academic-year.actions";
 import { getSchoolRoster } from "@/lib/actions/teacher-roster.actions";
 import { getMyTeacherInvites } from "@/lib/actions/teacher-invite";
 import { TeacherSetupTabs } from "@/components/teacher/TeacherSetupTabs";
@@ -26,8 +27,9 @@ export default async function AddTeacherPage() {
 
     const isPrimary = session.user.isPrimary === true;
 
-    const [classes, roster, inviteResult] = await Promise.all([
+    const [classes, academicYears, roster, inviteResult] = await Promise.all([
         getSchoolClasses(),
+        getAcademicYears(),
         getSchoolRoster(),
         getMyTeacherInvites(),
     ]);
@@ -52,6 +54,7 @@ export default async function AddTeacherPage() {
                 {/* Tabbed Content */}
                 <TeacherSetupTabs
                     classes={classes}
+                    academicYears={academicYears}
                     roster={roster}
                     invites={inviteResult.invites}
                     isPrimary={isPrimary}

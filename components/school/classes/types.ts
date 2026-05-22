@@ -5,8 +5,17 @@ export type { SchoolClassItem };
 
 export interface ClassListEditorProps {
     initialClasses: SchoolClassItem[];
+    academicYears?: AcademicYearOption[];
+    lockAcademicYearSelection?: boolean;
     onUpdate?: (classes: SchoolClassItem[]) => void;
     readOnly?: boolean;
+}
+
+export interface AcademicYearOption {
+    id: string;
+    year: number;
+    semester: number;
+    isCurrent: boolean;
 }
 
 export interface UseClassListReturn {

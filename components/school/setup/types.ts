@@ -3,6 +3,7 @@ import type {
     SchoolClassItem,
     TeacherRosterItem,
 } from "@/types/school-setup.types";
+import type { AcademicYearOption } from "@/components/school/classes";
 import type { SchoolInfoData } from "./constants";
 
 // Re-export for convenience
@@ -12,6 +13,7 @@ export type StepIndex = 0 | 1 | 2 | 3;
 
 export interface SchoolSetupWizardProps {
     initialHasSchool?: boolean;
+    currentAcademicYear: AcademicYearOption | null;
 }
 
 export interface UseSchoolSetupWizardReturn {
@@ -47,6 +49,7 @@ export interface SchoolInfoStepProps {
 
 export interface ClassStepProps {
     classes: SchoolClassItem[];
+    currentAcademicYear: AcademicYearOption | null;
     onUpdate: (classes: SchoolClassItem[]) => void;
     onNext: () => void;
 }

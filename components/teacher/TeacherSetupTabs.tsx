@@ -7,12 +7,14 @@ import { TeacherRosterEditor } from "@/components/school/roster";
 import { AddTeacherForm } from "@/components/teacher/forms/AddTeacherForm/AddTeacherForm";
 import { TeacherInviteList } from "@/components/teacher/forms/AddTeacherForm/components";
 import { buttonVariants } from "@/components/ui/Button";
+import type { AcademicYearOption } from "@/components/school/classes";
 import type { SchoolClassItem } from "@/types/school-setup.types";
 import type { TeacherRosterItem } from "@/types/school-setup.types";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
 
 interface TeacherSetupTabsProps {
     classes: SchoolClassItem[];
+    academicYears: AcademicYearOption[];
     roster: TeacherRosterItem[];
     invites: TeacherInviteWithAcademicYear[];
     isPrimary: boolean;
@@ -85,17 +87,23 @@ function SectionCard({
 
 export function TeacherSetupTabs({
     classes,
+    academicYears,
     roster,
     invites,
     isPrimary,
 }: TeacherSetupTabsProps) {
     const [activeSection, setActiveSection] =
         useState<FlowSectionId>("classes");
-    const [rosterItems, setRosterItems] = useState<TeacherRosterItem[]>(roster);
+    const [rosterDraft, setRosterDraft] = useState<{
+        source: TeacherRosterItem[];
+        value: TeacherRosterItem[];
+    }>({ source: roster, value: roster });
 
-    useEffect(() => {
-        setRosterItems(roster);
-    }, [roster]);
+    const handleRosterUpdate = (nextRoster: TeacherRosterItem[]): void => {
+        setRosterDraft({ source: roster, value: nextRoster });
+    };
+    const rosterItems =
+        rosterDraft.source === roster ? rosterDraft.value : roster;
 
     useEffect(() => {
         if (!isPrimary) return;
@@ -219,7 +227,11 @@ export function TeacherSetupTabs({
                 title="ขั้นตอน 1: เพิ่ม-ลบ ห้องเรียน"
                 subtitle="ใช้เป็นตัวเลือกเมื่อกำหนดห้องที่ปรึกษาของครู"
             >
-                <ClassListEditor initialClasses={classes} readOnly={false} />
+                <ClassListEditor
+                    initialClasses={classes}
+                    academicYears={academicYears}
+                    readOnly={false}
+                />
             </SectionCard>
 
             <SectionCard
@@ -231,7 +243,7 @@ export function TeacherSetupTabs({
                 <TeacherRosterEditor
                     initialRoster={rosterItems}
                     schoolClasses={classes}
-                    onUpdate={setRosterItems}
+                    onUpdate={handleRosterUpdate}
                     readOnly={false}
                 />
                 <div className="mt-6 border-t border-gray-100 pt-6">

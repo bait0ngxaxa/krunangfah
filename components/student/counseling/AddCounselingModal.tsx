@@ -20,18 +20,19 @@ import { Button } from "@/components/ui/Button";
 
 interface AddCounselingModalProps {
     studentId: string;
+    academicYearId?: string;
     onClose: () => void;
     onSuccess: () => void;
 }
 
 export function AddCounselingModal({
     studentId,
+    academicYearId,
     onClose,
     onSuccess,
 }: AddCounselingModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [mounted, setMounted] = useState(false);
 
     const [formData, setFormData] = useState({
         sessionDate: new Date().toISOString().split("T")[0], // Today's date in YYYY-MM-DD
@@ -41,7 +42,6 @@ export function AddCounselingModal({
 
     // Body scroll lock keeps focus/context inside modal while it is open.
     useEffect(() => {
-        setMounted(true);
         document.body.style.overflow = "hidden";
 
         return () => {
@@ -57,6 +57,7 @@ export function AddCounselingModal({
         try {
             const result = await createCounselingSession({
                 studentId,
+                academicYearId,
                 sessionDate: new Date(formData.sessionDate),
                 counselorName: formData.counselorName,
                 summary: formData.summary,
@@ -75,11 +76,6 @@ export function AddCounselingModal({
             setIsSubmitting(false);
         }
     };
-
-    // Portal target (document.body) is available only on client.
-    if (!mounted) {
-        return null;
-    }
 
     const modalContent = (
         <div

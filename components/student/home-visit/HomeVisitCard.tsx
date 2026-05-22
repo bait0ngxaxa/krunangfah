@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import {
     Calendar,
     User,
@@ -37,14 +37,14 @@ export function HomeVisitCard({
     onDeleted,
 }: HomeVisitCardProps) {
     const [deleting, setDeleting] = useState(false);
-    const [photos, setPhotos] = useState<HomeVisitPhotoData[]>(visit.photos);
+    const [photos, setPhotos] = useOptimistic(
+        visit.photos,
+        (_, nextPhotos: HomeVisitPhotoData[]) => nextPhotos,
+    );
+    const [, startTransition] = useTransition();
     const [viewerIndex, setViewerIndex] = useState<number | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isPhotoEditorOpen, setIsPhotoEditorOpen] = useState(false);
-
-    useEffect(() => {
-        setPhotos(visit.photos);
-    }, [visit.photos]);
 
     const handleDeleteConfirm = async () => {
         setDeleting(true);
@@ -60,6 +60,11 @@ export function HomeVisitCard({
         } finally {
             setDeleting(false);
         }
+    };
+    const handlePhotosChange = (nextPhotos: HomeVisitPhotoData[]): void => {
+        startTransition(() => {
+            setPhotos(nextPhotos);
+        });
     };
 
     return (
@@ -158,7 +163,7 @@ export function HomeVisitCard({
                         <HomeVisitPhotoUploader
                             homeVisitId={visit.id}
                             photos={photos}
-                            onPhotosChange={setPhotos}
+                            onPhotosChange={handlePhotosChange}
                         />
                     </div>
                 )}

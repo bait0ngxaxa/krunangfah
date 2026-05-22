@@ -37,6 +37,13 @@ describe("createHomeVisitSchema", () => {
         }
     });
 
+    it("should accept optional academicYearId", () => {
+        const result = createHomeVisitSchema.safeParse(
+            validInput({ academicYearId: "cmlxdhmsq003dm6to89zm40sp" }),
+        );
+        expect(result.success).toBe(true);
+    });
+
     it("should accept missing nextScheduledDate (optional)", () => {
         const data = validInput();
         const result = createHomeVisitSchema.safeParse(data);
@@ -58,6 +65,13 @@ describe("createHomeVisitSchema", () => {
     it("should reject empty studentId", () => {
         const result = createHomeVisitSchema.safeParse(
             validInput({ studentId: "" }),
+        );
+        expect(result.success).toBe(false);
+    });
+
+    it("should reject invalid academicYearId (not CUID)", () => {
+        const result = createHomeVisitSchema.safeParse(
+            validInput({ academicYearId: "not-a-cuid" }),
         );
         expect(result.success).toBe(false);
     });

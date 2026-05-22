@@ -132,6 +132,9 @@ async function StudentDetailContent({
     ]);
     const currentUserId = session.user.id;
     const isSystemAdmin = session.user.role === "system_admin";
+    const canManageStudentStatus =
+        session.user.role === "school_admin" ||
+        session.user.role === "class_teacher";
 
     if (!student) {
         notFound();
@@ -150,21 +153,24 @@ async function StudentDetailContent({
         student.phqResults,
         selectedYearId,
     );
+    const latestResult = filteredPhqResults[0] || null;
+    const recordAcademicYearId = latestResult?.academicYear?.id;
     const [counselingSessionData, homeVisitData] = await Promise.all([
         getCounselingSessions(studentId, {
             page: counselingPage,
             pageSize: COUNSELING_PAGE_SIZE,
+            academicYearId: recordAcademicYearId,
             dateRange: selectedDateRange ?? undefined,
         }),
         getHomeVisits(studentId, {
             page: homeVisitPage,
             pageSize: HOME_VISITS_PAGE_SIZE,
+            academicYearId: recordAcademicYearId,
             dateRange: selectedDateRange ?? undefined,
         }),
     ]);
 
     const activePhqResult = getLatestPhqResult(student.phqResults);
-    const latestResult = filteredPhqResults[0] || null;
     const visibleStudent = isSystemAdmin
         ? student
         : { ...student, nationalId: null };
@@ -224,6 +230,7 @@ async function StudentDetailContent({
                 sessions={counselingSessionData.sessions}
                 pagination={counselingSessionData.pagination}
                 studentId={studentId}
+                academicYearId={recordAcademicYearId}
                 readOnly={isSystemAdmin}
                 isFilteredByAcademicYear={Boolean(selectedYearId)}
             />
@@ -235,6 +242,7 @@ async function StudentDetailContent({
             visits={homeVisitData.visits}
             pagination={homeVisitData.pagination}
             studentId={studentId}
+            academicYearId={recordAcademicYearId}
             readOnly={isSystemAdmin}
             isFilteredByAcademicYear={Boolean(selectedYearId)}
         />
@@ -285,6 +293,7 @@ async function StudentDetailContent({
                 student={visibleStudent}
                 latestResult={latestResult}
                 canViewNationalId={isSystemAdmin}
+                canManageStatus={canManageStudentStatus}
             />
 
             {latestResult && !isSystemAdmin && (

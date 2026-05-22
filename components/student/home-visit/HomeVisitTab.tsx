@@ -14,6 +14,7 @@ interface HomeVisitTabProps {
     visits: HomeVisitData[];
     pagination: OffsetPagination;
     studentId: string;
+    academicYearId?: string;
     readOnly?: boolean;
     isFilteredByAcademicYear?: boolean;
 }
@@ -22,6 +23,7 @@ export function HomeVisitTab({
     visits,
     pagination,
     studentId,
+    academicYearId,
     readOnly = false,
     isFilteredByAcademicYear = false,
 }: HomeVisitTabProps) {
@@ -103,6 +105,7 @@ export function HomeVisitTab({
             {!readOnly && showAddModal && (
                 <AddHomeVisitModal
                     studentId={studentId}
+                    academicYearId={academicYearId}
                     onClose={() => setShowAddModal(false)}
                     onSuccess={handleSuccess}
                 />

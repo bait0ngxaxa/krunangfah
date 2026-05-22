@@ -74,10 +74,28 @@ model SchoolClass {
   createdAt DateTime @default(now())
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  terms  SchoolClassTerm[]
 
   @@unique([schoolId, name])
   @@index([schoolId])
   @@map("school_classes")
+}
+
+// School Class Term - จำนวนนักเรียนที่คาดไว้ของแต่ละห้อง แยกตามปีการศึกษา/เทอม
+model SchoolClassTerm {
+  id                   String   @id @default(cuid())
+  schoolClassId        String
+  academicYearId       String
+  expectedStudentCount Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  schoolClass  SchoolClass  @relation(fields: [schoolClassId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolClassId, academicYearId])
+  @@index([academicYearId])
+  @@map("school_class_terms")
 }
 
 // User Model for JWT-based Authentication
@@ -124,6 +142,9 @@ model AcademicYear {
   updatedAt   DateTime  @updatedAt
 
   phqResults     PhqResult[]
+  schoolClassTerms SchoolClassTerm[]
+  counselingSessions CounselingSession[]
+  homeVisits     HomeVisit[]
 
   @@unique([year, semester]) // ห้ามซ้ำ ปี+เทอม
   @@map("academic_years")
@@ -178,6 +199,13 @@ enum Gender {
   @@map("gender")
 }
 
+enum StudentStatus {
+  ACTIVE
+  RESIGNED
+  TRANSFERRED
+  GRADUATED
+}
+
 // Student - นักเรียน
 model Student {
   id            String   @id @default(cuid())
@@ -189,6 +217,9 @@ model Student {
   age           Int?     // อายุ (optional เพื่อรองรับข้อมูลเก่า)
   class         String   // ห้อง เช่น "ม.1/1"
   schoolId      String   // FK to School
+  status        StudentStatus @default(ACTIVE)
+  statusChangedAt DateTime?
+  leftAt        DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -312,6 +343,7 @@ model WorksheetUpload {
 model CounselingSession {
   id              String    @id @default(cuid())
   studentId       String    // FK to Student
+  academicYearId  String?   // ปี/เทอมที่ผูกกับบันทึก
   sessionNumber   Int       // ครั้งที่
   sessionDate     DateTime  // วันที่
   counselorName   String    // ครูที่ปรึกษา
@@ -321,9 +353,11 @@ model CounselingSession {
   updatedAt       DateTime  @updatedAt
 
   student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear    AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
   createdBy       User      @relation("CounselingSessions", fields: [createdById], references: [id])
 
   @@unique([studentId, sessionNumber])
+  @@index([academicYearId])
   @@map("counseling_sessions")
 }
 
@@ -410,6 +444,7 @@ model StudentReferral {
 model HomeVisit {
   id                String    @id @default(cuid())
   studentId         String
+  academicYearId    String?   // ปี/เทอมที่ผูกกับบันทึก
   visitNumber       Int       // ครั้งที่ (auto-increment per student)
   visitDate         DateTime
   description       String    @db.Text
@@ -421,10 +456,12 @@ model HomeVisit {
   updatedAt         DateTime  @updatedAt
 
   student   Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
   createdBy User            @relation("HomeVisits", fields: [createdById], references: [id])
   photos    HomeVisitPhoto[]
 
   @@unique([studentId, visitNumber])
+  @@index([academicYearId])
   @@map("home_visits")
 }
 

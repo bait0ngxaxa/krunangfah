@@ -62,6 +62,59 @@ function normalizePaginationParams(
     return { page: safePage, pageSize: safePageSize };
 }
 
+async function resolveAcademicYearId(
+    academicYearId?: string,
+): Promise<string | null> {
+    if (academicYearId) {
+        const selectedYear = await prisma.academicYear.findUnique({
+            where: { id: academicYearId },
+            select: { id: true },
+        });
+        return selectedYear?.id ?? null;
+    }
+
+    const currentYear = await prisma.academicYear.findFirst({
+        where: { isCurrent: true },
+        select: { id: true },
+    });
+    return currentYear?.id ?? null;
+}
+
+function buildAcademicYearRecordFilter(
+    academicYearId?: string,
+    dateRange?: AcademicYearDateRange,
+): Prisma.CounselingSessionWhereInput {
+    if (academicYearId && dateRange) {
+        return {
+            OR: [
+                { academicYearId },
+                {
+                    academicYearId: null,
+                    sessionDate: {
+                        gte: dateRange.startDate,
+                        lte: dateRange.endDate,
+                    },
+                },
+            ],
+        };
+    }
+
+    if (academicYearId) {
+        return { academicYearId };
+    }
+
+    if (dateRange) {
+        return {
+            sessionDate: {
+                gte: dateRange.startDate,
+                lte: dateRange.endDate,
+            },
+        };
+    }
+
+    return {};
+}
+
 export interface CounselingSessionListResponse {
     sessions: CounselingSession[];
     pagination: OffsetPagination;
@@ -137,6 +190,7 @@ export async function getCounselingSessions(
     options?: {
         page?: number;
         pageSize?: number;
+        academicYearId?: string;
         dateRange?: AcademicYearDateRange;
     },
 ): Promise<CounselingSessionListResponse> {
@@ -163,14 +217,10 @@ export async function getCounselingSessions(
 
         const whereClause: Prisma.CounselingSessionWhereInput = {
             studentId,
-            ...(options?.dateRange
-                ? {
-                      sessionDate: {
-                          gte: options.dateRange.startDate,
-                          lte: options.dateRange.endDate,
-                      },
-                  }
-                : {}),
+            ...buildAcademicYearRecordFilter(
+                options?.academicYearId,
+                options?.dateRange,
+            ),
         };
         const total = await prisma.counselingSession.count({
             where: whereClause,
@@ -221,6 +271,7 @@ export async function getCounselingSessions(
  */
 export async function createCounselingSession(data: {
     studentId: string;
+    academicYearId?: string;
     sessionDate: Date;
     counselorName: string;
     summary: string;
@@ -252,10 +303,18 @@ export async function createCounselingSession(data: {
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
+        const academicYearId = await resolveAcademicYearId(
+            validated.academicYearId,
+        );
+        if (!academicYearId) {
+            return { success: false, message: "ไม่พบปี/เทอมสำหรับบันทึกนี้" };
+        }
+
         let counselingSession:
             | {
                   id: string;
                   studentId: string;
+                  academicYearId: string | null;
                   sessionNumber: number;
                   sessionDate: Date;
                   counselorName: string;
@@ -281,6 +340,7 @@ export async function createCounselingSession(data: {
                         return tx.counselingSession.create({
                             data: {
                                 studentId: validated.studentId,
+                                academicYearId,
                                 sessionNumber,
                                 sessionDate: validated.sessionDate,
                                 counselorName: validated.counselorName,

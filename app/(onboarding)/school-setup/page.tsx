@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { SchoolSetupWizard } from "@/components/school/setup/SchoolSetupWizard";
 import { School } from "lucide-react";
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
+import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -39,6 +40,7 @@ export default async function SchoolSetupPage() {
 
     // Keep user in wizard flow; client handles post-submit navigation.
     const hasSchool = !!dbUser?.schoolId;
+    const currentAcademicYear = await getCurrentAcademicYearRecord();
 
     return (
         <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4 relative overflow-hidden">
@@ -54,7 +56,19 @@ export default async function SchoolSetupPage() {
                 />
 
                 <div className="max-w-2xl mx-auto">
-                    <SchoolSetupWizard initialHasSchool={hasSchool} />
+                    <SchoolSetupWizard
+                        initialHasSchool={hasSchool}
+                        currentAcademicYear={
+                            currentAcademicYear
+                                ? {
+                                      id: currentAcademicYear.id,
+                                      year: currentAcademicYear.year,
+                                      semester: currentAcademicYear.semester,
+                                      isCurrent: currentAcademicYear.isCurrent,
+                                  }
+                                : null
+                        }
+                    />
                 </div>
             </div>
         </div>

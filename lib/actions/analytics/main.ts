@@ -20,6 +20,8 @@ import {
     ANALYTICS_OVERVIEW_TAG,
     getAnalyticsCacheTags,
 } from "./cache";
+import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
+import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
 
 import type { AnalyticsData, SystemAnalyticsOverview } from "./types";
 import { logError } from "@/lib/utils/logging";
@@ -73,7 +75,7 @@ async function fetchAnalyticsData(
         activityProgressRaw,
         activityCompletionRaw,
     ] = await Promise.all([
-        getExpectedStudentCount(schoolId, classFilter),
+        getExpectedStudentCount(schoolId, classFilter, academicYear, semester),
         showClassFilter
             ? prisma.schoolClass
                   .findMany({
@@ -176,7 +178,41 @@ async function fetchAnalyticsData(
 async function getExpectedStudentCount(
     schoolId: string | undefined,
     classFilter?: string,
+    academicYear?: number,
+    semester?: number,
 ): Promise<number> {
+    const academicYearRecord = academicYear
+        ? await prisma.academicYear.findFirst({
+              where: {
+                  year: academicYear,
+                  ...(semester !== undefined ? { semester } : {}),
+              },
+              orderBy: [{ semester: "desc" }],
+              select: { id: true },
+          })
+        : await prisma.academicYear.findFirst({
+              where: { isCurrent: true },
+              orderBy: [{ year: "desc" }, { semester: "desc" }],
+              select: { id: true },
+          });
+
+    if (academicYearRecord) {
+        const termResult = await prisma.schoolClassTerm.aggregate({
+            where: {
+                academicYearId: academicYearRecord.id,
+                schoolClass: {
+                    ...(schoolId ? { schoolId } : {}),
+                    ...(classFilter ? { name: classFilter } : {}),
+                },
+            },
+            _sum: { expectedStudentCount: true },
+        });
+
+        if (termResult._sum.expectedStudentCount !== null) {
+            return termResult._sum.expectedStudentCount;
+        }
+    }
+
     const result = await prisma.schoolClass.aggregate({
         where: {
             ...(schoolId ? { schoolId } : {}),
@@ -186,6 +222,26 @@ async function getExpectedStudentCount(
     });
 
     return result._sum.expectedStudentCount ?? 0;
+}
+
+async function getOverviewAcademicYearOptions(): Promise<{
+    availableAcademicYears: number[];
+    availableSemesters: number[];
+}> {
+    const terms = await prisma.academicYear.findMany({
+        select: { year: true, semester: true },
+        distinct: ["year", "semester"],
+        orderBy: [{ year: "desc" }, { semester: "asc" }],
+    });
+
+    return {
+        availableAcademicYears: Array.from(
+            new Set(terms.map((term) => term.year)),
+        ),
+        availableSemesters: Array.from(
+            new Set(terms.map((term) => term.semester)),
+        ).sort((left, right) => left - right),
+    };
 }
 
 async function getCachedAnalyticsData(
@@ -264,33 +320,61 @@ export async function getAnalyticsSummary(
     }
 }
 
-async function fetchSystemAnalyticsOverview(): Promise<SystemAnalyticsOverview> {
-    const [totalSchools, totalStudents, currentAcademicYear] = await Promise.all([
+async function fetchSystemAnalyticsOverview(
+    academicYear?: number,
+    semester?: number,
+): Promise<SystemAnalyticsOverview> {
+    const [totalSchools, currentAcademicYear, overviewOptions] = await Promise.all([
         prisma.school.count(),
-        getExpectedStudentCount(undefined),
-        prisma.academicYear.findFirst({
-            where: { isCurrent: true },
-            orderBy: [{ year: "desc" }, { semester: "desc" }],
-            select: { id: true, year: true, semester: true },
-        }),
+        getCurrentAcademicYearRecord(),
+        getOverviewAcademicYearOptions(),
     ]);
 
     const resolvedAcademicYear =
-        currentAcademicYear ??
-        (await prisma.academicYear.findFirst({
-            orderBy: [{ year: "desc" }, { semester: "desc" }],
-            select: { id: true, year: true, semester: true },
-        }));
+        academicYear
+            ? await prisma.academicYear.findFirst({
+                  where: {
+                      year: academicYear,
+                      ...(semester !== undefined ? { semester } : {}),
+                  },
+                  orderBy: [{ semester: "desc" }],
+                  select: { id: true, year: true, semester: true },
+              })
+            : currentAcademicYear ??
+              (await prisma.academicYear.findFirst({
+                  orderBy: [{ year: "desc" }, { semester: "desc" }],
+                  select: { id: true, year: true, semester: true },
+              }));
 
     if (!resolvedAcademicYear) {
         return {
             totalSchools,
-            totalStudents,
+            totalStudents: 0,
             studentsWithAssessment: 0,
             screeningCoveragePercent: 0,
             academicYearLabel: "ยังไม่มีข้อมูลปีการศึกษา",
+            ...overviewOptions,
         };
     }
+
+    const schools = await prisma.school.findMany({
+        select: { id: true },
+    });
+    await Promise.all(
+        schools.map((school) =>
+            ensureSchoolClassTermsForAcademicYear(
+                school.id,
+                resolvedAcademicYear.id,
+            ),
+        ),
+    );
+
+    const totalStudents = await getExpectedStudentCount(
+        undefined,
+        undefined,
+        resolvedAcademicYear.year,
+        resolvedAcademicYear.semester,
+    );
 
     const assessedStudentsRaw = await prisma.$queryRaw<Array<{ count: bigint }>>`
         SELECT COUNT(DISTINCT pr."studentId")::bigint as count
@@ -314,10 +398,17 @@ async function fetchSystemAnalyticsOverview(): Promise<SystemAnalyticsOverview> 
         studentsWithAssessment,
         screeningCoveragePercent,
         academicYearLabel: `ปีการศึกษา ${resolvedAcademicYear.year} เทอม ${resolvedAcademicYear.semester}`,
+        availableAcademicYears: overviewOptions.availableAcademicYears,
+        availableSemesters: overviewOptions.availableSemesters,
+        currentAcademicYear: resolvedAcademicYear.year,
+        currentSemester: resolvedAcademicYear.semester,
     };
 }
 
-export async function getSystemAnalyticsOverview(): Promise<SystemAnalyticsOverview | null> {
+export async function getSystemAnalyticsOverview(
+    academicYear?: number,
+    semester?: number,
+): Promise<SystemAnalyticsOverview | null> {
     try {
         const viewer = await getViewerContext();
         if (viewer.role !== "system_admin") {
@@ -325,8 +416,12 @@ export async function getSystemAnalyticsOverview(): Promise<SystemAnalyticsOverv
         }
 
         const cachedOverviewFetcher = unstable_cache(
-            async () => fetchSystemAnalyticsOverview(),
-            ["analytics-system-overview"],
+            async () => fetchSystemAnalyticsOverview(academicYear, semester),
+            [
+                "analytics-system-overview",
+                `year:${academicYear ?? "current"}`,
+                `semester:${semester ?? "current"}`,
+            ],
             { revalidate: 300, tags: [ANALYTICS_OVERVIEW_TAG] },
         );
 

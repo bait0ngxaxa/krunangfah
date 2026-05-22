@@ -3,6 +3,7 @@ import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 
 export const counselingSessionSchema = z.object({
     studentId: z.string().cuid("Invalid student ID"),
+    academicYearId: z.string().cuid("Invalid academic year ID").optional(),
     sessionDate: z.coerce.date(),
     counselorName: z
         .string()

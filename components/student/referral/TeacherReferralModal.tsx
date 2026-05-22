@@ -34,14 +34,12 @@ export function TeacherReferralModal({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [mounted, setMounted] = useState(false);
     const [teachers, setTeachers] = useState<TeacherPickerOption[]>([]);
     const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(
         null,
     );
 
     useEffect(() => {
-        setMounted(true);
         document.body.style.overflow = "hidden";
 
         return () => {
@@ -102,10 +100,6 @@ export function TeacherReferralModal({
             setIsSubmitting(false);
         }
     };
-
-    if (!mounted) {
-        return null;
-    }
 
     const modalContent = (
         <div

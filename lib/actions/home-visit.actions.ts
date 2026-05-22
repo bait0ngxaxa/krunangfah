@@ -82,6 +82,59 @@ function normalizePaginationParams(
     return { page: safePage, pageSize: safePageSize };
 }
 
+async function resolveAcademicYearId(
+    academicYearId?: string,
+): Promise<string | null> {
+    if (academicYearId) {
+        const selectedYear = await prisma.academicYear.findUnique({
+            where: { id: academicYearId },
+            select: { id: true },
+        });
+        return selectedYear?.id ?? null;
+    }
+
+    const currentYear = await prisma.academicYear.findFirst({
+        where: { isCurrent: true },
+        select: { id: true },
+    });
+    return currentYear?.id ?? null;
+}
+
+function buildAcademicYearRecordFilter(
+    academicYearId?: string,
+    dateRange?: AcademicYearDateRange,
+): Prisma.HomeVisitWhereInput {
+    if (academicYearId && dateRange) {
+        return {
+            OR: [
+                { academicYearId },
+                {
+                    academicYearId: null,
+                    visitDate: {
+                        gte: dateRange.startDate,
+                        lte: dateRange.endDate,
+                    },
+                },
+            ],
+        };
+    }
+
+    if (academicYearId) {
+        return { academicYearId };
+    }
+
+    if (dateRange) {
+        return {
+            visitDate: {
+                gte: dateRange.startDate,
+                lte: dateRange.endDate,
+            },
+        };
+    }
+
+    return {};
+}
+
 /**
  * Verify user has access to student (same pattern as counseling.actions.ts)
  */
@@ -148,6 +201,7 @@ export async function getHomeVisits(
     options?: {
         page?: number;
         pageSize?: number;
+        academicYearId?: string;
         dateRange?: AcademicYearDateRange;
     },
 ): Promise<HomeVisitListResponse> {
@@ -174,14 +228,10 @@ export async function getHomeVisits(
 
         const whereClause: Prisma.HomeVisitWhereInput = {
             studentId,
-            ...(options?.dateRange
-                ? {
-                      visitDate: {
-                          gte: options.dateRange.startDate,
-                          lte: options.dateRange.endDate,
-                      },
-                  }
-                : {}),
+            ...buildAcademicYearRecordFilter(
+                options?.academicYearId,
+                options?.dateRange,
+            ),
         };
         const total = await prisma.homeVisit.count({
             where: whereClause,
@@ -244,6 +294,7 @@ export async function getHomeVisits(
  */
 export async function createHomeVisit(data: {
     studentId: string;
+    academicYearId?: string;
     visitDate: Date;
     description: string;
     nextScheduledDate?: Date;
@@ -269,6 +320,13 @@ export async function createHomeVisit(data: {
 
         if (!allowed) {
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        const academicYearId = await resolveAcademicYearId(
+            validated.academicYearId,
+        );
+        if (!academicYearId) {
+            return { success: false, message: "ไม่พบปี/เทอมสำหรับบันทึกนี้" };
         }
 
         // Get teacher info for snapshot
@@ -314,6 +372,7 @@ export async function createHomeVisit(data: {
                         return tx.homeVisit.create({
                             data: {
                                 studentId: validated.studentId,
+                                academicYearId,
                                 visitNumber,
                                 visitDate: validated.visitDate,
                                 description: validated.description,

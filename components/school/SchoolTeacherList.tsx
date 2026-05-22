@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { Users, GraduationCap, Pencil, Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -210,18 +210,19 @@ export function SchoolTeacherList({
     currentUserId,
     onUpdated,
 }: SchoolTeacherListProps) {
-    const [teachers, setTeachers] = useState(initialTeachers);
-
-    // Sync when parent re-renders with new data
-    useEffect(() => {
-        setTeachers(initialTeachers);
-    }, [initialTeachers]);
+    const [teachers, setTeachers] = useOptimistic(
+        initialTeachers,
+        (_, nextTeachers: UserListItem[]) => nextTeachers,
+    );
+    const [, startTransition] = useTransition();
 
     function handleDeleted(teacherId: string) {
-        setTeachers((current) =>
-            current.filter((teacher) => teacher.id !== teacherId),
-        );
-        onUpdated?.();
+        startTransition(() => {
+            setTeachers(
+                teachers.filter((teacher) => teacher.id !== teacherId),
+            );
+            onUpdated?.();
+        });
     }
 
     return (

@@ -5,4 +5,5 @@ export type {
     SingleClassAdderProps,
     BulkClassAdderProps,
     ClassGroupListProps,
+    AcademicYearOption,
 } from "./types";
