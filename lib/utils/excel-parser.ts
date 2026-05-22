@@ -32,6 +32,32 @@ const FIELD_HEADER_ALIASES = {
     q9b: ["opt2", "ข้อ9b", "เคยพยายามที่ทำให้ตัวเองตาย"],
 } as const;
 
+interface RequiredImportField {
+    label: string;
+    aliases: readonly string[];
+}
+
+const REQUIRED_IMPORT_FIELDS: readonly RequiredImportField[] = [
+    { label: "รหัสนักเรียน", aliases: ["รหัสนักเรียน"] },
+    { label: NATIONAL_ID_HEADER, aliases: [NATIONAL_ID_HEADER] },
+    { label: "ชื่อ", aliases: ["ชื่อ"] },
+    { label: "นามสกุล", aliases: ["นามสกุล"] },
+    { label: "เพศกำเนิด", aliases: FIELD_HEADER_ALIASES.gender },
+    { label: "อายุ (ปี)", aliases: FIELD_HEADER_ALIASES.age },
+    { label: "ห้องเรียน", aliases: FIELD_HEADER_ALIASES.class },
+    { label: "ข้อ1", aliases: FIELD_HEADER_ALIASES.q1 },
+    { label: "ข้อ2", aliases: FIELD_HEADER_ALIASES.q2 },
+    { label: "ข้อ3", aliases: FIELD_HEADER_ALIASES.q3 },
+    { label: "ข้อ4", aliases: FIELD_HEADER_ALIASES.q4 },
+    { label: "ข้อ5", aliases: FIELD_HEADER_ALIASES.q5 },
+    { label: "ข้อ6", aliases: FIELD_HEADER_ALIASES.q6 },
+    { label: "ข้อ7", aliases: FIELD_HEADER_ALIASES.q7 },
+    { label: "ข้อ8", aliases: FIELD_HEADER_ALIASES.q8 },
+    { label: "ข้อ9", aliases: FIELD_HEADER_ALIASES.q9 },
+    { label: "ข้อ9a", aliases: FIELD_HEADER_ALIASES.q9a },
+    { label: "ข้อ9b", aliases: FIELD_HEADER_ALIASES.q9b },
+];
+
 export interface ParsedStudent {
     studentId: string;
     nationalId: string;
@@ -174,19 +200,10 @@ export async function parseExcelBuffer(
         });
 
         // Validate required headers
-        const requiredHeaders = [
-            "รหัสนักเรียน",
-            NATIONAL_ID_HEADER,
-            "ชื่อ",
-            "นามสกุล",
-        ];
-        for (const header of requiredHeaders) {
-            if (findHeaderColumn(headers, [header]) === undefined) {
-                errors.push(`ไม่พบคอลัมน์ "${header}" ในไฟล์`);
+        for (const field of REQUIRED_IMPORT_FIELDS) {
+            if (findHeaderColumn(headers, field.aliases) === undefined) {
+                errors.push(`ไม่พบคอลัมน์ "${field.label}" ในไฟล์`);
             }
-        }
-        if (findHeaderColumn(headers, FIELD_HEADER_ALIASES.class) === undefined) {
-            errors.push(`ไม่พบคอลัมน์ "ห้อง" ในไฟล์`);
         }
 
         if (errors.length > 0) {
@@ -225,14 +242,35 @@ export async function parseExcelBuffer(
                     return stringifyCellValue(cellValue).trim();
                 };
 
+                const requiredValues = REQUIRED_IMPORT_FIELDS.map((field) => ({
+                    label: field.label,
+                    value: getCellByAliases(field.aliases),
+                }));
+                const hasAnyRequiredValue = requiredValues.some(
+                    (field) => field.value.length > 0,
+                );
+                if (!hasAnyRequiredValue) return;
+
+                const missingFields = requiredValues
+                    .filter((field) => field.value.length === 0)
+                    .map((field) => field.label);
+                if (missingFields.length > 0) {
+                    errors.push(
+                        `แถว ${rowNumber}: ขาดข้อมูลในฟิลด์: ${missingFields.join(", ")}`,
+                    );
+                    return;
+                }
+
                 const getNumberCell = (
                     headerName: string,
                     aliases: readonly string[] = [headerName],
                 ): number => {
                     const value = getCellByAliases(aliases).trim();
 
-                    // ถ้าว่างเปล่า → ให้เป็น 0
-                    if (!value) return 0;
+                    if (!value) {
+                        errors.push(`แถว ${rowNumber}: ไม่มีข้อมูล${headerName}`);
+                        return 0;
+                    }
 
                     const mappedScore = parsePhqaScoreLabel(value);
                     if (mappedScore !== undefined) {
@@ -266,8 +304,10 @@ export async function parseExcelBuffer(
                 ): boolean => {
                     const value = getCellByAliases(aliases).trim().toLowerCase();
 
-                    // ถ้าว่างเปล่า → ให้เป็น false
-                    if (!value) return false;
+                    if (!value) {
+                        errors.push(`แถว ${rowNumber}: ไม่มีข้อมูล${headerName}`);
+                        return false;
+                    }
 
                     // ค่าที่ยอมรับได้สำหรับ true
                     if (
@@ -334,6 +374,19 @@ export async function parseExcelBuffer(
 
                 // Skip empty rows
                 if (!firstName && !lastName) return;
+
+                if (!gender) {
+                    errors.push(
+                        `แถว ${rowNumber}: เพศกำเนิดต้องเป็น "ชาย" หรือ "หญิง"`,
+                    );
+                    return;
+                }
+                if (age === undefined) {
+                    errors.push(
+                        `แถว ${rowNumber}: อายุ (ปี) ต้องเป็นตัวเลข 1-100`,
+                    );
+                    return;
+                }
 
                 // Validate required fields
                 if (!firstName) {

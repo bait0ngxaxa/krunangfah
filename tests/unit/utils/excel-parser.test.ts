@@ -126,6 +126,8 @@ describe("Excel Parser - PHQA Answer Mapping", () => {
             "เลขบัตรประชาชน",
             "ชื่อ",
             "นามสกุล",
+            "เพศกำเนิด",
+            "อายุ (ปี)",
             "ห้อง",
             "ข้อ1",
             "ข้อ2",
@@ -145,6 +147,8 @@ describe("Excel Parser - PHQA Answer Mapping", () => {
             "1103700000011",
             "สมชาย",
             "ใจดี",
+            "ชาย",
+            13,
             "ม.1/1",
             "ไม่มีเลย",
             "มีบางวัน",
@@ -581,6 +585,8 @@ describe("Excel Parser - Resource Guards", () => {
             "เลขบัตรประชาชน",
             "ชื่อ",
             "นามสกุล",
+            "เพศกำเนิด",
+            "อายุ (ปี)",
             "ห้อง",
             "ข้อ1",
             "ข้อ2",
@@ -601,6 +607,8 @@ describe("Excel Parser - Resource Guards", () => {
                 `1103700000${String(index + 1).padStart(3, "0")}`,
                 "สมชาย",
                 "ใจดี",
+                "ชาย",
+                13,
                 "ม.1/1",
                 0,
                 0,
@@ -658,6 +666,8 @@ describe("Excel Parser - National ID Parsing", () => {
             "เลขบัตรประชาชน",
             "ชื่อ",
             "นามสกุล",
+            "เพศกำเนิด",
+            "อายุ (ปี)",
             "ห้อง",
             "ข้อ1",
             "ข้อ2",
@@ -677,6 +687,8 @@ describe("Excel Parser - National ID Parsing", () => {
             nationalIdValue,
             "สมชาย",
             "ใจดี",
+            "ชาย",
+            13,
             "ม.1/1",
             0,
             0,
@@ -730,7 +742,9 @@ describe("Excel Parser - National ID Parsing", () => {
         const result = await parseExcelBuffer(buffer);
 
         expect(result.success).toBe(false);
-        expect(result.errors).toContain("แถว 2: ไม่มีเลขบัตรประชาชน");
+        expect(result.errors).toContain(
+            "แถว 2: ขาดข้อมูลในฟิลด์: เลขบัตรประชาชน",
+        );
         expect(result.data).toHaveLength(0);
     });
 });
