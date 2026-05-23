@@ -243,6 +243,41 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         expect(result).toEqual([]);
     });
 
+    it("duplicate screening is reported separately from national ID conflict", async () => {
+        mockSession(USERS.schoolAdmin);
+
+        const result = await importStudents(
+            [
+                {
+                    studentId: `${class1StudentCode}-ALT`,
+                    nationalId: class1NationalId,
+                    firstName: "Smoke",
+                    lastName: "Class1",
+                    class: "class-1",
+                    scores: {
+                        q1: 1,
+                        q2: 1,
+                        q3: 1,
+                        q4: 1,
+                        q5: 1,
+                        q6: 0,
+                        q7: 0,
+                        q8: 0,
+                        q9: 0,
+                        q9a: false,
+                        q9b: false,
+                    },
+                },
+            ],
+            academicYearId,
+            1,
+        );
+
+        expect(result.imported).toBe(0);
+        expect(result.errors?.[0]).toContain("มีข้อมูลการประเมินครั้งที่ 1 อยู่แล้ว");
+        expect(result.errors?.[0]).not.toContain("เลขบัตรประชาชนซ้ำ");
+    });
+
     it("role action scope: owner can delete worksheet, non-owner cannot", async () => {
         const upload = await prisma.worksheetUpload.create({
             data: {

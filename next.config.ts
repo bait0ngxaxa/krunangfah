@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
 
     experimental: {
         serverActions: {
-            bodySizeLimit: "8mb", // จำกัด payload เพื่อลด peak memory ของ multipart uploads
+            bodySizeLimit: "15mb", // จำกัด payload เพื่อลด peak memory ของ multipart uploads
         },
         // 3. Tree shaking สำหรับ libraries ขนาดใหญ่
         optimizePackageImports: [

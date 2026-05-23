@@ -22,7 +22,9 @@ import { logError } from "@/lib/utils/logging";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import {
     MAX_IMAGE_UPLOAD_INPUT_SIZE,
+    MAX_IMAGE_UPLOAD_INPUT_SIZE_MB,
     MAX_IMAGE_UPLOAD_SIZE,
+    MAX_IMAGE_UPLOAD_SIZE_MB,
 } from "@/lib/constants/image-upload";
 import {
     compressWorksheetImageBuffer,
@@ -32,7 +34,7 @@ import {
 /** Allowed image extensions for home visit photos */
 const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
 
-/** Maximum file size after compression: 5MB */
+/** Maximum file size after compression */
 const MAX_FILE_SIZE = MAX_IMAGE_UPLOAD_SIZE;
 
 /** Maximum photos per home visit */
@@ -79,7 +81,7 @@ export async function uploadHomeVisitPhoto(
         if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {
             return {
                 success: false,
-                message: "ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด 8MB)",
+                message: `ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด ${MAX_IMAGE_UPLOAD_INPUT_SIZE_MB}MB)`,
             };
         }
 
@@ -130,7 +132,7 @@ export async function uploadHomeVisitPhoto(
         if (buffer.length > MAX_FILE_SIZE) {
             return {
                 success: false,
-                message: "ไฟล์ใหญ่เกินไปหลังบีบอัด (สูงสุด 5MB)",
+                message: `ไฟล์ใหญ่เกินไปหลังบีบอัด (สูงสุด ${MAX_IMAGE_UPLOAD_SIZE_MB}MB)`,
             };
         }
 

@@ -15,7 +15,11 @@ import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import type { UploadWorksheetResult } from "./types";
 import { logError } from "@/lib/utils/logging";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
-import { MAX_IMAGE_UPLOAD_INPUT_SIZE } from "@/lib/constants/image-upload";
+import {
+    MAX_IMAGE_UPLOAD_INPUT_SIZE,
+    MAX_IMAGE_UPLOAD_INPUT_SIZE_MB,
+    MAX_IMAGE_UPLOAD_SIZE_MB,
+} from "@/lib/constants/image-upload";
 import {
     UPLOAD_WORKSHEETS_DIR,
     buildWorksheetFilePath,
@@ -92,7 +96,7 @@ export async function uploadWorksheet(
         if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {
             return {
                 success: false,
-                message: "ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด 8MB)",
+                message: `ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด ${MAX_IMAGE_UPLOAD_INPUT_SIZE_MB}MB)`,
                 error: "UPLOAD_FILE_TOO_LARGE",
             };
         }
@@ -150,7 +154,7 @@ export async function uploadWorksheet(
         if (buffer.length > MAX_FILE_SIZE) {
             return {
                 success: false,
-                message: "ไฟล์ใหญ่เกินไปหลังบีบอัด (สูงสุด 5MB)",
+                message: `ไฟล์ใหญ่เกินไปหลังบีบอัด (สูงสุด ${MAX_IMAGE_UPLOAD_SIZE_MB}MB)`,
                 error: "UPLOAD_FILE_TOO_LARGE",
             };
         }

@@ -1,4 +1,8 @@
-export const MAX_IMAGE_UPLOAD_SIZE = 5 * 1024 * 1024; // 5MB hard cap
+export const MAX_IMAGE_UPLOAD_SIZE_MB = 15;
+export const MAX_IMAGE_UPLOAD_INPUT_SIZE_MB = 15;
+
+export const MAX_IMAGE_UPLOAD_SIZE = MAX_IMAGE_UPLOAD_SIZE_MB * 1024 * 1024; // 15MB hard cap
 export const TARGET_COMPRESSED_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB target
-export const MAX_IMAGE_UPLOAD_INPUT_SIZE = 8 * 1024 * 1024; // 8MB raw input cap
+export const MAX_IMAGE_UPLOAD_INPUT_SIZE =
+    MAX_IMAGE_UPLOAD_INPUT_SIZE_MB * 1024 * 1024; // 15MB raw input cap
 export const IMAGE_FILE_INPUT_ACCEPT = "image/*";

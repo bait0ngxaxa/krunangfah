@@ -51,8 +51,16 @@ export function ImportClient({ canViewNationalId }: ImportClientProps) {
     const handleSuccess = (result: ImportResult) => {
         setParsedData(null);
         if (result.status === "partial") {
-            toast.warning("นำเข้าข้อมูลสำเร็จบางส่วน", {
-                description: result.message,
+            const errorPreview = result.errors?.slice(0, 3).join("\n");
+            const remainingErrorCount =
+                result.errors && result.errors.length > 3
+                    ? `\nและอีก ${result.errors.length - 3} รายการ`
+                    : "";
+
+            toast.warning(`นำเข้าสำเร็จ ${result.imported ?? 0} คน`, {
+                description: errorPreview
+                    ? `${result.message}\n\n${errorPreview}${remainingErrorCount}`
+                    : result.message,
             });
         } else {
             toast.success("บันทึกข้อมูลสำเร็จ!", {

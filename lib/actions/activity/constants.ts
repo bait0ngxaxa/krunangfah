@@ -19,5 +19,5 @@ export const REQUIRED_WORKSHEETS: Record<number, number> = {
 // Allowed file extensions for worksheet uploads (images only)
 export const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
 
-// Maximum file size after server-side compression (5MB)
+// Maximum file size after server-side compression
 export const MAX_FILE_SIZE = MAX_IMAGE_UPLOAD_SIZE;

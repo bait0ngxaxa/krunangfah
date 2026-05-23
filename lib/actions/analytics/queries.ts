@@ -410,10 +410,6 @@ export async function getActivityCompletionSummary(
                 rs."studentId",
                 rs.required_count,
                 COUNT(DISTINCT ap."activityNumber") FILTER (
-                    WHERE ap.status IN ('pending_assessment', 'completed')
-                       OR wu.id IS NOT NULL
-                ) as started_count,
-                COUNT(DISTINCT ap."activityNumber") FILTER (
                     WHERE ap.status = 'completed'
                 ) as completed_count
             FROM required_students rs
@@ -421,14 +417,12 @@ export async function getActivityCompletionSummary(
             LEFT JOIN activity_progress ap
               ON ap."phqResultId" = rs.phq_id
              AND ap."activityNumber" = ra.activity_number
-            LEFT JOIN worksheet_uploads wu
-              ON wu."activityProgressId" = ap.id
             GROUP BY rs."studentId", rs.required_count
         )
         SELECT
-            COUNT(*) FILTER (WHERE started_count = 0)::bigint as not_started_students,
+            COUNT(*) FILTER (WHERE completed_count = 0)::bigint as not_started_students,
             COUNT(*) FILTER (
-                WHERE started_count > 0 AND completed_count < required_count
+                WHERE completed_count > 0 AND completed_count < required_count
             )::bigint as in_progress_students,
             COUNT(*) FILTER (WHERE completed_count >= required_count)::bigint as completed_students
         FROM completion

@@ -272,9 +272,20 @@ export function useImportPreview({
                     selectedYearId,
                     assessmentRound,
                 );
+                const hasImportedRows =
+                    typeof result.imported === "number" && result.imported > 0;
 
-                if (result.status === "success" || result.status === "partial") {
-                    onSuccess(result);
+                if (
+                    result.status === "success" ||
+                    result.status === "partial" ||
+                    hasImportedRows
+                ) {
+                    onSuccess({
+                        ...result,
+                        success: true,
+                        status:
+                            result.status === "success" ? "success" : "partial",
+                    });
                 } else {
                     setError(formatImportIssues(result));
                 }

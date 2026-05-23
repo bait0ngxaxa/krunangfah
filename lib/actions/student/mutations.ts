@@ -227,16 +227,45 @@ export async function importStudents(
                     )
                     .map((student) => [student.nationalId, student]),
             );
+            const existingStudentsByStudentId = await tx.student.findMany({
+                where: {
+                    schoolId,
+                    studentId: { in: importedStudentIds },
+                },
+                select: {
+                    id: true,
+                    schoolId: true,
+                    studentId: true,
+                    nationalId: true,
+                },
+            });
+            const existingStudentByStudentId = new Map(
+                existingStudentsByStudentId.map((student) => [
+                    student.studentId,
+                    student,
+                ]),
+            );
 
             const rowsSafeToImport = eligibleRows.filter((row) => {
-                const existingStudent = studentByNationalId.get(row.nationalId);
-                if (
-                    existingStudent &&
-                    (existingStudent.schoolId !== schoolId ||
-                        existingStudent.studentId !== row.studentId)
-                ) {
+                const nationalIdOwner = studentByNationalId.get(row.nationalId);
+                const studentIdOwner = existingStudentByStudentId.get(
+                    row.studentId,
+                );
+
+                if (nationalIdOwner && nationalIdOwner.schoolId !== schoolId) {
                     errors.push(
                         `${row.firstName} ${row.lastName} (${row.studentId}): เลขบัตรประชาชนซ้ำกับข้อมูลที่มีในระบบ`,
+                    );
+                    return false;
+                }
+
+                if (
+                    nationalIdOwner &&
+                    studentIdOwner &&
+                    nationalIdOwner.id !== studentIdOwner.id
+                ) {
+                    errors.push(
+                        `${row.firstName} ${row.lastName} (${row.studentId}): เลขบัตรประชาชนซ้ำกับนักเรียนคนอื่นในระบบ`,
                     );
                     return false;
                 }
@@ -268,17 +297,40 @@ export async function importStudents(
             const scopedStudents = await tx.student.findMany({
                 where: {
                     schoolId,
-                    studentId: { in: rowsSafeToImport.map((row) => row.studentId) },
+                    OR: [
+                        {
+                            studentId: {
+                                in: rowsSafeToImport.map((row) => row.studentId),
+                            },
+                        },
+                        {
+                            nationalId: {
+                                in: rowsSafeToImport.map((row) => row.nationalId),
+                            },
+                        },
+                    ],
                 },
             });
 
             const studentByStudentId = new Map(
                 scopedStudents.map((student) => [student.studentId, student]),
             );
+            const scopedStudentByNationalId = new Map(
+                scopedStudents
+                    .filter(
+                        (
+                            student,
+                        ): student is typeof student & { nationalId: string } =>
+                            typeof student.nationalId === "string",
+                    )
+                    .map((student) => [student.nationalId, student]),
+            );
 
             const studentUpdates: Promise<unknown>[] = [];
             for (const row of rowsSafeToImport) {
-                const student = studentByStudentId.get(row.studentId);
+                const student =
+                    studentByStudentId.get(row.studentId) ??
+                    scopedStudentByNationalId.get(row.nationalId);
                 if (!student) {
                     continue;
                 }
@@ -347,7 +399,9 @@ export async function importStudents(
             const phqResultsToCreate: Prisma.PhqResultCreateManyInput[] = [];
 
             for (const row of rowsSafeToImport) {
-                const student = studentByStudentId.get(row.studentId);
+                const student =
+                    studentByStudentId.get(row.studentId) ??
+                    scopedStudentByNationalId.get(row.nationalId);
                 if (!student) {
                     continue;
                 }

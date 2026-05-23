@@ -6,6 +6,7 @@ import { compressImage } from "@/lib/utils/image-compression";
 import {
     IMAGE_FILE_INPUT_ACCEPT,
     MAX_IMAGE_UPLOAD_INPUT_SIZE,
+    MAX_IMAGE_UPLOAD_INPUT_SIZE_MB,
 } from "@/lib/constants/image-upload";
 import {
     UPLOAD_ACTION_TIMEOUT_MS,
@@ -66,7 +67,9 @@ export function HomeVisitPhotoUploader({
             fileInputRef.current.value = "";
         }
         if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {
-            toast.error("ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด 8MB)");
+            toast.error(
+                `ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด ${MAX_IMAGE_UPLOAD_INPUT_SIZE_MB}MB)`,
+            );
             return;
         }
 

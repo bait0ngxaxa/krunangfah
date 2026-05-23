@@ -1,6 +1,6 @@
 /**
  * Client-side image compression using Canvas API.
- * Reduces upload size ~60-80% for phone camera photos (3-8MB → <1MB).
+ * Reduces upload size ~60-80% for phone camera photos (3-15MB → <1MB).
  */
 
 const MAX_DIMENSION = 1920;
