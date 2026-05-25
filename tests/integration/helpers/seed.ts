@@ -53,7 +53,6 @@ export async function createTestAcademicYear(
         where: { year_semester: { year, semester } },
     });
     if (existing) {
-        createdIds.academicYears.push(existing.id);
         return existing;
     }
 

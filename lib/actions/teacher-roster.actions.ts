@@ -3,7 +3,7 @@
 import type { UserRole, ProjectRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
-import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "./error-handler";
 import {
     teacherRosterSchema,
     type TeacherRosterFormData,
@@ -247,8 +247,14 @@ export async function addTeacherToRoster(
             data: toRosterItem(entry, "draft"),
         };
     } catch (error) {
-        logError("addTeacherToRoster error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการเพิ่มครู" };
+        return handleActionError({
+            context: "addTeacherToRoster error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการเพิ่มครู",
+            },
+        });
     }
 }
 
@@ -291,8 +297,14 @@ export async function removeFromRoster(
 
         return { success: true, message: "ลบออกจาก roster สำเร็จ" };
     } catch (error) {
-        logError("removeFromRoster error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการลบครู" };
+        return handleActionError({
+            context: "removeFromRoster error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการลบครู",
+            },
+        });
     }
 }
 
@@ -425,8 +437,14 @@ export async function updateRosterEntry(
             data: toRosterItem(updated, "draft"),
         };
     } catch (error) {
-        logError("updateRosterEntry error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการแก้ไข" };
+        return handleActionError({
+            context: "updateRosterEntry error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการแก้ไข",
+            },
+        });
     }
 }
 
@@ -462,7 +480,10 @@ export async function markRosterInviteSent(
 
         return { success: true, message: "อัปเดตสถานะสำเร็จ" };
     } catch (error) {
-        logError("markRosterInviteSent error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาด" };
+        return handleActionError({
+            context: "markRosterInviteSent error:",
+            error,
+            fallback: { success: false, message: "เกิดข้อผิดพลาด" },
+        });
     }
 }

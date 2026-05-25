@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
-import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "../error-handler";
 import { verifyStudentActivityAccess } from "./access";
 
 /**
@@ -53,10 +53,13 @@ export async function getActivityProgress(
 
         return { success: true, data: progress };
     } catch (error) {
-        logError("Error getting activity progress:", error);
-        return {
-            success: false,
-            error: "เกิดข้อผิดพลาดในการดึงข้อมูลความคืบหน้ากิจกรรม",
-        };
+        return handleActionError({
+            context: "Error getting activity progress:",
+            error,
+            fallback: {
+                success: false,
+                error: "เกิดข้อผิดพลาดในการดึงข้อมูลความคืบหน้ากิจกรรม",
+            },
+        });
     }
 }

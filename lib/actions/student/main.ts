@@ -18,7 +18,7 @@ import {
     getStudentDetailQuery,
 } from "./queries";
 import { transformRiskCounts } from "./transforms";
-import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "@/lib/actions/error-handler";
 import type {
     StudentListResponse,
     RiskCountsResponse,
@@ -69,8 +69,11 @@ export async function getStudentRiskCounts(
 
         return transformRiskCounts(rawCounts, classes);
     } catch (error) {
-        logError("Get student risk counts error:", error);
-        return null;
+        return handleActionError({
+            context: "Get student risk counts error:",
+            error,
+            fallback: null,
+        });
     }
 }
 
@@ -174,11 +177,14 @@ export async function getStudents(
             },
         };
     } catch (error) {
-        logError("Get students error:", error);
-        return {
-            students: [],
-            pagination: { total: 0, page: 1, limit: 100, totalPages: 0 },
-        };
+        return handleActionError({
+            context: "Get students error:",
+            error,
+            fallback: {
+                students: [],
+                pagination: { total: 0, page: 1, limit: 100, totalPages: 0 },
+            },
+        });
     }
 }
 
@@ -241,8 +247,11 @@ export async function getStudentsForDashboard(
 
         return result.students;
     } catch (error) {
-        logError("Get students for dashboard error:", error);
-        return [];
+        return handleActionError({
+            context: "Get students for dashboard error:",
+            error,
+            fallback: [],
+        });
     }
 }
 
@@ -269,8 +278,11 @@ export async function searchStudents(query: string) {
             isSystemAdmin(viewer.role),
         );
     } catch (error) {
-        logError("Search students error:", error);
-        return [];
+        return handleActionError({
+            context: "Search students error:",
+            error,
+            fallback: [],
+        });
     }
 }
 
@@ -326,8 +338,11 @@ export async function getStudentDetail(studentId: string) {
             studentId,
         );
     } catch (error) {
-        logError("Get student detail error:", error);
-        return null;
+        return handleActionError({
+            context: "Get student detail error:",
+            error,
+            fallback: null,
+        });
     }
 }
 
@@ -351,8 +366,11 @@ export async function hasRound1Data(academicYearId: string): Promise<boolean> {
 
         return count > 0;
     } catch (error) {
-        logError("hasRound1Data error:", error);
-        return false;
+        return handleActionError({
+            context: "hasRound1Data error:",
+            error,
+            fallback: false,
+        });
     }
 }
 
@@ -411,8 +429,11 @@ export async function getIncompleteActivityWarning(
             previousRound,
         };
     } catch (error) {
-        logError("getIncompleteActivityWarning error:", error);
-        return noWarning;
+        return handleActionError({
+            context: "getIncompleteActivityWarning error:",
+            error,
+            fallback: noWarning,
+        });
     }
 }
 

@@ -17,8 +17,8 @@ import {
 } from "@/lib/constants/rate-limit";
 import { createUserRateLimitKey } from "@/lib/rate-limit-keys";
 import { passwordChangeSchema } from "@/lib/validations/profile.validation";
-import { logError } from "@/lib/utils/logging";
 import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
+import { handleActionError } from "./error-handler";
 import type {
     PasswordChangeInput,
     PasswordChangeResponse,
@@ -124,13 +124,13 @@ export async function changePassword(
             message: "เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่",
         };
     } catch (error) {
-        logError(
-            "Change password error:",
-            error instanceof Error ? error.message : "Unknown error",
-        );
-        return {
-            success: false,
-            message: "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
-        };
+        return handleActionError({
+            context: "Change password error:",
+            error: error instanceof Error ? error.message : "Unknown error",
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+            },
+        });
     }
 }

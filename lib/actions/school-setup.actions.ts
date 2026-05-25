@@ -7,9 +7,9 @@ import { revalidatePath } from "next/cache";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { normalizeSchoolName, sanitizeText } from "@/lib/utils/text-sanitizer";
-import { logError } from "@/lib/utils/logging";
 import { revalidateDashboardCache } from "./dashboard/cache";
 import { revalidateAnalyticsCache } from "./analytics/cache";
+import { handleActionError } from "./error-handler";
 import type {
     SchoolClassItem,
     SchoolSetupResponse,
@@ -262,8 +262,14 @@ export async function createSchoolAndLink(input: {
             data: { schoolId: school.id },
         };
     } catch (error) {
-        logError("createSchoolAndLink error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการสร้างโรงเรียน" };
+        return handleActionError({
+            context: "createSchoolAndLink error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการสร้างโรงเรียน",
+            },
+        });
     }
 }
 
@@ -343,8 +349,14 @@ export async function addSchoolClass(
             },
         };
     } catch (error) {
-        logError("addSchoolClass error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการเพิ่มห้องเรียน" };
+        return handleActionError({
+            context: "addSchoolClass error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการเพิ่มห้องเรียน",
+            },
+        });
     }
 }
 
@@ -400,11 +412,14 @@ export async function updateSchoolClassStudentCount(
             data: updated,
         };
     } catch (error) {
-        logError("updateSchoolClassStudentCount error:", error);
-        return {
-            success: false,
-            message: "เกิดข้อผิดพลาดในการอัปเดตจำนวนนักเรียน",
-        };
+        return handleActionError({
+            context: "updateSchoolClassStudentCount error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการอัปเดตจำนวนนักเรียน",
+            },
+        });
     }
 }
 
@@ -454,8 +469,14 @@ export async function removeSchoolClass(
 
         return { success: true, message: "ลบห้องเรียนสำเร็จ" };
     } catch (error) {
-        logError("removeSchoolClass error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการลบห้องเรียน" };
+        return handleActionError({
+            context: "removeSchoolClass error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการลบห้องเรียน",
+            },
+        });
     }
 }
 

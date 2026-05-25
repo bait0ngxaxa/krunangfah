@@ -1,10 +1,12 @@
 import { FileText, Rocket, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { getRiskLevelLabel } from "./utils";
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import type { AssessmentPeriod } from "./types";
 import { buttonVariants } from "@/components/ui/Button";
-import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
+import {
+    getRiskLevelConfig,
+    type RiskLevel,
+} from "@/lib/constants/risk-levels";
 import { studentHelpStartRoute } from "@/lib/constants/student-routes";
 
 interface ActivityProgressHeaderProps {

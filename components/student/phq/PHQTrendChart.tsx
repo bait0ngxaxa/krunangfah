@@ -12,8 +12,10 @@ import {
     ReferenceArea,
 } from "recharts";
 import { TrendingUp, Activity, Clock3 } from "lucide-react";
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
-import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
+import {
+    getRiskLevelConfig,
+    type RiskLevel,
+} from "@/lib/constants/risk-levels";
 
 interface PHQResult {
     totalScore: number;

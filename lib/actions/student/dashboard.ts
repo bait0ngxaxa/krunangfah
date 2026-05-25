@@ -2,7 +2,8 @@
 
 import { getViewerContext } from "@/lib/auth/viewer-context";
 import { isSystemAdmin } from "@/lib/session";
-import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "@/lib/actions/error-handler";
+import { isRiskLevel } from "@/lib/constants/risk-levels";
 import {
     getClassCountsQuery,
     getReferredStudentCountQuery,
@@ -16,13 +17,6 @@ import type {
 } from "./types";
 
 const DASHBOARD_PAGE_SIZE = 50;
-const VALID_RISK_FILTERS = new Set([
-    "red",
-    "orange",
-    "yellow",
-    "green",
-    "blue",
-]);
 
 function createEmptyDashboardData(): StudentDashboardDataResponse {
     return {
@@ -57,7 +51,7 @@ function normalizeRiskFilter(riskFilter?: string): string | undefined {
         return undefined;
     }
 
-    return VALID_RISK_FILTERS.has(riskFilter) ? riskFilter : undefined;
+    return isRiskLevel(riskFilter) ? riskFilter : undefined;
 }
 
 function normalizePage(page?: number): number {
@@ -178,7 +172,10 @@ export async function getStudentDashboardData(
             },
         };
     } catch (error) {
-        logError("Get student dashboard data error:", error);
-        return createEmptyDashboardData();
+        return handleActionError({
+            context: "Get student dashboard data error:",
+            error,
+            fallback: createEmptyDashboardData(),
+        });
     }
 }

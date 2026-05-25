@@ -3,9 +3,12 @@
  * คำนวณระดับความเสี่ยงจากคะแนน PHQ-A
  */
 
-import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
+import {
+    getRiskLevelConfig,
+    type RiskLevel,
+} from "@/lib/constants/risk-levels";
 
-export type RiskLevel = "blue" | "green" | "yellow" | "orange" | "red";
+export type { RiskLevel };
 
 export interface PhqScores {
     q1: number;
@@ -26,14 +29,6 @@ export interface ScoringResult {
     riskLevel: RiskLevel;
     riskLabel: string;
     riskColor: string;
-}
-
-export function getRiskBgClass(level: RiskLevel): string {
-    return getRiskLevelConfig(level).bgSolid;
-}
-
-export function getRiskLabel(level: RiskLevel): string {
-    return getRiskLevelConfig(level).label;
 }
 
 function getRiskData(level: RiskLevel): {

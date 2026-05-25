@@ -30,8 +30,8 @@ vi.mock("next/cache", () => ({
     revalidateTag: vi.fn(),
 }));
 
-vi.mock("@/lib/utils/logging", () => ({
-    logError: vi.fn(),
+vi.mock("@/lib/actions/error-handler", () => ({
+    handleActionError: vi.fn(({ fallback }) => fallback),
 }));
 
 import { prisma } from "@/lib/prisma";

@@ -1,4 +1,4 @@
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import type { RiskLevel } from "@/lib/constants/risk-levels";
 
 export type Activity = {
     id: string;

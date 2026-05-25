@@ -102,7 +102,10 @@ export function getEncouragementMessages(
 /**
  * Theme colors by risk level — derived from shared config
  */
-import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
+import {
+    getRiskChartLabel,
+    getRiskLevelConfig,
+} from "@/lib/constants/risk-levels";
 
 export type WorksheetRiskLevel = "orange" | "yellow" | "green";
 
@@ -112,12 +115,7 @@ export function getWorkspaceColorConfig(level: WorksheetRiskLevel) {
         gradient: c.gradient,
         bg: c.bgSolid,
         bgLight: c.bgLight,
-        text:
-            level === "orange"
-                ? "สีส้ม"
-                : level === "yellow"
-                  ? "สีเหลือง"
-                  : "สีเขียว",
+        text: getRiskChartLabel(level),
         textColor: c.textColor,
         borderColor: c.borderLight,
         glowBg: c.glowBg,

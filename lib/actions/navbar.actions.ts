@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "./error-handler";
 
 /**
  * Check if the current user has any students
@@ -49,7 +49,10 @@ export async function hasStudents(): Promise<boolean> {
         const studentCount = await prisma.student.count({ where });
         return studentCount > 0;
     } catch (error) {
-        logError("Error checking students:", error);
-        return false;
+        return handleActionError({
+            context: "Error checking students:",
+            error,
+            fallback: false,
+        });
     }
 }

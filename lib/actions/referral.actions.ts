@@ -12,7 +12,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isSystemAdmin } from "@/lib/session";
-import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "./error-handler";
 import { revalidateStudentsCache } from "./student/cache";
 import {
     createReferralSchema,
@@ -163,8 +163,14 @@ export async function createStudentReferral(input: {
             },
         };
     } catch (error) {
-        logError("Error creating student referral:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการส่งต่อนักเรียน" };
+        return handleActionError({
+            context: "Error creating student referral:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการส่งต่อนักเรียน",
+            },
+        });
     }
 }
 
@@ -227,8 +233,14 @@ export async function revokeStudentReferral(input: {
 
         return { success: true, message: "เรียกคืนการส่งต่อเรียบร้อยแล้ว" };
     } catch (error) {
-        logError("Error revoking student referral:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการเรียกคืน" };
+        return handleActionError({
+            context: "Error revoking student referral:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการเรียกคืน",
+            },
+        });
     }
 }
 
@@ -276,8 +288,11 @@ export async function getReferredOutStudents(): Promise<ReferredOutStudent[]> {
             referredAt: r.createdAt,
         }));
     } catch (error) {
-        logError("Error getting referred out students:", error);
-        return [];
+        return handleActionError({
+            context: "Error getting referred out students:",
+            error,
+            fallback: [],
+        });
     }
 }
 
@@ -327,7 +342,10 @@ export async function getTeachersForReferral(): Promise<TeacherPickerOption[]> {
             advisoryClass: t.advisoryClass,
         }));
     } catch (error) {
-        logError("Error getting teachers for referral:", error);
-        return [];
+        return handleActionError({
+            context: "Error getting teachers for referral:",
+            error,
+            fallback: [],
+        });
     }
 }

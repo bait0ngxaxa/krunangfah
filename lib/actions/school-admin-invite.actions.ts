@@ -20,8 +20,8 @@ import type {
     InviteRole,
 } from "@/types/school-admin-invite.types";
 import type { AuthResponse } from "@/types/auth.types";
-import { logError } from "@/lib/utils/logging";
 import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
+import { handleActionError } from "./error-handler";
 
 const INVITES_PATH = "/admin/invites";
 
@@ -112,8 +112,14 @@ export async function createSchoolAdminInvite(
             data: { inviteUrl },
         };
     } catch (error) {
-        logError("createSchoolAdminInvite error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการสร้างคำเชิญ" };
+        return handleActionError({
+            context: "createSchoolAdminInvite error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการสร้างคำเชิญ",
+            },
+        });
     }
 }
 
@@ -172,8 +178,14 @@ export async function revokeSchoolAdminInvite(
 
         return { success: true, message: "ยกเลิกคำเชิญสำเร็จ" };
     } catch (error) {
-        logError("revokeSchoolAdminInvite error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการยกเลิกคำเชิญ" };
+        return handleActionError({
+            context: "revokeSchoolAdminInvite error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการยกเลิกคำเชิญ",
+            },
+        });
     }
 }
 
@@ -289,7 +301,13 @@ export async function acceptSchoolAdminInvite(
             redirectTo,
         };
     } catch (error) {
-        logError("acceptSchoolAdminInvite error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการสร้างบัญชี" };
+        return handleActionError({
+            context: "acceptSchoolAdminInvite error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการสร้างบัญชี",
+            },
+        });
     }
 }

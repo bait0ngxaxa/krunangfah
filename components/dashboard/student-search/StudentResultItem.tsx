@@ -1,5 +1,5 @@
 import { ChevronRight } from "lucide-react";
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import type { RiskLevel } from "@/lib/constants/risk-levels";
 import { RISK_CONFIG } from "./constants";
 import type { Student } from "./types";
 

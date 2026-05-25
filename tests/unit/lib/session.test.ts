@@ -49,6 +49,15 @@ describe("lib/session", () => {
         await expect(requireAuth()).rejects.toThrow("NEXT_REDIRECT");
     });
 
+    it("requireAuth redirects to /signin when session user is missing", async () => {
+        mockAuth.mockResolvedValue({
+            expires: "2099-01-01T00:00:00.000Z",
+        } as unknown as Session);
+
+        await expect(requireAuth()).rejects.toThrow("NEXT_REDIRECT");
+        expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    });
+
     it("requireAuth refreshes role/isPrimary/schoolId from DB", async () => {
         mockAuth.mockResolvedValue(createSession());
         vi.mocked(prisma.user.findUnique).mockResolvedValue({
@@ -120,6 +129,34 @@ describe("lib/session", () => {
 
         await expect(requireAdmin()).rejects.toThrow(
             "Forbidden: Admin access required",
+        );
+    });
+
+    it("requirePrimaryAdmin blocks non-primary school admin", async () => {
+        mockAuth.mockResolvedValue(
+            createSession({ role: "school_admin", isPrimary: false }),
+        );
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+            role: "school_admin",
+            isPrimary: false,
+            schoolId: "school-a",
+        } as never);
+
+        await expect(requirePrimaryAdmin()).rejects.toThrow(
+            "Forbidden: Primary school admin access required",
+        );
+    });
+
+    it("requirePrimaryAdmin blocks system admin", async () => {
+        mockAuth.mockResolvedValue(createSession({ role: "system_admin" }));
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+            role: "system_admin",
+            isPrimary: false,
+            schoolId: null,
+        } as never);
+
+        await expect(requirePrimaryAdmin()).rejects.toThrow(
+            "Forbidden: Primary school admin access required",
         );
     });
 

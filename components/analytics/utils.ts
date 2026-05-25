@@ -1,23 +1,14 @@
 import type { RiskLevelSummary } from "@/lib/actions/analytics/types";
 import type { RiskPieChartDataItem } from "@/components/ui/RiskPieChart";
-
-const RISK_LEVEL_ORDER: Record<string, number> = {
-    blue: 0,
-    green: 1,
-    yellow: 2,
-    orange: 3,
-    red: 4,
-};
+import { RISK_CHART_LEVELS } from "@/lib/constants/risk-levels";
 
 export function toChartData(
     summary: RiskLevelSummary[],
 ): RiskPieChartDataItem[] {
-    return [...summary]
-        .sort(
-            (a, b) =>
-                (RISK_LEVEL_ORDER[a.riskLevel] ?? 5) -
-                (RISK_LEVEL_ORDER[b.riskLevel] ?? 5),
-        )
+    return RISK_CHART_LEVELS.map((level) =>
+        summary.find((item) => item.riskLevel === level),
+    )
+        .filter((item): item is RiskLevelSummary => item !== undefined)
         .map((item) => ({
             name: item.label,
             value: item.count,

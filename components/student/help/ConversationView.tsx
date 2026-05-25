@@ -10,7 +10,7 @@ import {
     ChevronRight,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import type { RiskLevel } from "@/lib/constants/risk-levels";
 import type { ColorTheme } from "@/lib/config/help-page-config";
 import { HelpPageHeader } from "./HelpPageHeader";
 import { AddCounselingModal } from "../counseling/AddCounselingModal";

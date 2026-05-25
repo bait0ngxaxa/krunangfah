@@ -1,4 +1,4 @@
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import type { RiskLevel } from "@/lib/constants/risk-levels";
 import type { ReferredOutStudent } from "@/types/referral.types";
 
 export interface Student {

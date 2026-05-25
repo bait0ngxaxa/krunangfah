@@ -1,8 +1,10 @@
 "use client";
 
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import type { OffsetPagination } from "@/types/pagination.types";
-import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
+import {
+    getRiskLevelConfig,
+    type RiskLevel,
+} from "@/lib/constants/risk-levels";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
 import { AlertTriangle, ClipboardList } from "lucide-react";
 import { QueryPagination } from "@/components/ui/QueryPagination";

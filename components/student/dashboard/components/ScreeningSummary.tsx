@@ -27,7 +27,7 @@ interface ScreeningSummaryProps {
     groupedStudents: GroupedStudents;
     selectedClass: string;
     classes: string[];
-    riskLevels: RiskLevel[];
+    riskLevels: readonly RiskLevel[];
     filters?: {
         schoolId?: string;
         className?: string;

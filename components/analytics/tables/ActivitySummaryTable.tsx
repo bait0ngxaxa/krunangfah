@@ -1,5 +1,6 @@
 import { ClipboardList } from "lucide-react";
 import { REQUIRED_ACTIVITY_NUMBERS_BY_RISK } from "@/lib/actions/analytics/constants";
+import { RISK_LEVELS } from "@/lib/constants/risk-levels";
 import type { ActivityProgressByRisk } from "@/lib/actions/analytics/types";
 
 interface ActivityProgressTableProps {
@@ -17,9 +18,7 @@ const ACTIVITY_LABELS = [
 export function ActivitySummaryTable({
     activityProgressByRisk,
 }: ActivityProgressTableProps) {
-    // Order: red, orange, yellow, green, blue
-    const orderedLevels = ["red", "orange", "yellow", "green", "blue"];
-    const orderedData = orderedLevels
+    const orderedData = RISK_LEVELS
         .map((level) =>
             activityProgressByRisk.find((item) => item.riskLevel === level),
         )

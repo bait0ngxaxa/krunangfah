@@ -21,80 +21,79 @@ interface MockSession {
     expires: string;
 }
 
-let currentSession: MockSession | null = null;
+const authMockState = vi.hoisted(
+    (): { currentSession: MockSession | null } => ({
+        currentSession: null,
+    }),
+);
+
+function getMockSession(): MockSession | null {
+    return authMockState.currentSession;
+}
+
+vi.mock("@/auth", () => ({
+    auth: vi.fn(() => Promise.resolve(getMockSession())),
+}));
+
+vi.mock("@/lib/session", () => ({
+    getServerSession: vi.fn(() => Promise.resolve(getMockSession())),
+    requireAuth: vi.fn(async () => {
+        const session = getMockSession();
+        if (!session || !session.user) {
+            throw new Error("Unauthorized");
+        }
+        return session;
+    }),
+    requireAdmin: vi.fn(async () => {
+        const session = getMockSession();
+        if (!session || !session.user) {
+            throw new Error("Unauthorized");
+        }
+        if (session.user.role !== "system_admin") {
+            throw new Error("Forbidden: Admin access required");
+        }
+        return session;
+    }),
+    requirePrimaryAdmin: vi.fn(async () => {
+        const session = getMockSession();
+        if (!session || !session.user) {
+            throw new Error("Unauthorized");
+        }
+        if (session.user.role !== "school_admin" || !session.user.isPrimary) {
+            throw new Error("Forbidden: Primary school admin access required");
+        }
+        return session;
+    }),
+    isSystemAdmin: vi.fn((role: string) => role === "system_admin"),
+}));
+
+vi.mock("next/cache", () => ({
+    revalidatePath: vi.fn(),
+    revalidateTag: vi.fn(),
+    unstable_cache: vi.fn(
+        (fn: (...args: unknown[]) => unknown) =>
+            (...args: unknown[]) =>
+                fn(...args),
+    ),
+}));
+
+vi.mock("next/headers", () => ({
+    headers: vi.fn(() => new Map()),
+    cookies: vi.fn(() => ({ get: vi.fn(), set: vi.fn() })),
+}));
 
 export function mockSession(user: MockUser) {
-    currentSession = {
+    authMockState.currentSession = {
         user,
         expires: new Date(Date.now() + 86400000).toISOString(),
     };
 }
 
 export function mockUnauthenticated() {
-    currentSession = null;
+    authMockState.currentSession = null;
 }
 
-function getMockSession() {
-    return currentSession;
-}
-
-export function setupAuthMocks() {
-    vi.mock("@/auth", () => ({
-        auth: vi.fn(() => Promise.resolve(getMockSession())),
-    }));
-
-    vi.mock("@/lib/session", () => ({
-        getServerSession: vi.fn(() => Promise.resolve(getMockSession())),
-        requireAuth: vi.fn(async () => {
-            const session = getMockSession();
-            if (!session || !session.user) {
-                throw new Error("Unauthorized");
-            }
-            return session;
-        }),
-        requireAdmin: vi.fn(async () => {
-            const session = getMockSession();
-            if (!session || !session.user) {
-                throw new Error("Unauthorized");
-            }
-            if (session.user.role !== "system_admin") {
-                throw new Error("Forbidden: Admin access required");
-            }
-            return session;
-        }),
-        requirePrimaryAdmin: vi.fn(async () => {
-            const session = getMockSession();
-            if (!session || !session.user) {
-                throw new Error("Unauthorized");
-            }
-            if (
-                session.user.role !== "school_admin" ||
-                !session.user.isPrimary
-            ) {
-                throw new Error(
-                    "Forbidden: Primary school admin access required",
-                );
-            }
-            return session;
-        }),
-        isSystemAdmin: vi.fn((role: string) => role === "system_admin"),
-    }));
-
-    vi.mock("next/cache", () => ({
-        revalidatePath: vi.fn(),
-        revalidateTag: vi.fn(),
-        unstable_cache: vi.fn(
-            (fn: (...args: unknown[]) => unknown) =>
-                (...args: unknown[]) =>
-                    fn(...args),
-        ),
-    }));
-
-    vi.mock("next/headers", () => ({
-        headers: vi.fn(() => new Map()),
-        cookies: vi.fn(() => ({ get: vi.fn(), set: vi.fn() })),
-    }));
-}
+export function setupAuthMocks(): void {}
 
 /**
  * Create a unique set of mock users for a test suite.

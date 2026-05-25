@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
-import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
+import {
+    getRiskLevelConfig,
+    type RiskLevel,
+} from "@/lib/constants/risk-levels";
 
 const MAX_VISIBLE_ROWS = 6;
 const ROW_HEIGHT_PX = 56;

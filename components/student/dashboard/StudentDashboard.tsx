@@ -1,5 +1,9 @@
 import { School, Users } from "lucide-react";
-import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
+import {
+    RISK_CHART_CONFIG,
+    RISK_LEVELS,
+    isRiskLevel,
+} from "@/lib/constants/risk-levels";
 
 import { ReferredOutSection } from "../referral/ReferredOutSection";
 import { EmptyPrompt } from "./components/EmptyPrompt";
@@ -13,18 +17,6 @@ import type {
     Student,
     StudentDashboardProps,
 } from "./types";
-
-const DASHBOARD_RISK_LEVELS: RiskLevel[] = [
-    "red",
-    "orange",
-    "yellow",
-    "green",
-    "blue",
-];
-
-function isRiskLevel(value: string | undefined): value is RiskLevel {
-    return DASHBOARD_RISK_LEVELS.includes(value as RiskLevel);
-}
 
 function createEmptyGroups(): GroupedStudents {
     return {
@@ -66,20 +58,18 @@ function getSelectedClass(
 
 function getDisplayedRiskLevels(
     selectedRiskFilter: RiskLevel | "all",
-): RiskLevel[] {
+): readonly RiskLevel[] {
     return selectedRiskFilter === "all"
-        ? DASHBOARD_RISK_LEVELS
+        ? RISK_LEVELS
         : [selectedRiskFilter];
 }
 
 function getPieChartData(riskCounts: StudentDashboardProps["riskCounts"]): PieChartDataItem[] {
-    return [
-        { name: "สีฟ้า", value: riskCounts.blue, color: RISK_LEVEL_CONFIG.blue.hexColor },
-        { name: "สีเขียว", value: riskCounts.green, color: RISK_LEVEL_CONFIG.green.hexColor },
-        { name: "สีเหลือง", value: riskCounts.yellow, color: RISK_LEVEL_CONFIG.yellow.hexColor },
-        { name: "สีส้ม", value: riskCounts.orange, color: RISK_LEVEL_CONFIG.orange.hexColor },
-        { name: "สีแดง", value: riskCounts.red, color: RISK_LEVEL_CONFIG.red.hexColor },
-    ];
+    return RISK_CHART_CONFIG.map((level) => ({
+        name: level.label,
+        value: riskCounts[level.key],
+        color: level.color,
+    }));
 }
 
 function groupStudentsByRisk(students: Student[]): GroupedStudents {
@@ -146,7 +136,7 @@ export function StudentDashboard(props: StudentDashboardProps) {
                         isSystemAdmin={isSystemAdmin}
                         referredCount={props.referredCount}
                         riskCounts={props.riskCounts}
-                        riskLevels={DASHBOARD_RISK_LEVELS}
+                        riskLevels={RISK_LEVELS}
                         schools={props.schools ?? []}
                         selectedClass={selectedClass}
                         selectedRiskFilter={selectedRiskFilter}
@@ -169,7 +159,7 @@ export function StudentDashboard(props: StudentDashboardProps) {
                         isSystemAdmin={isSystemAdmin}
                         referredCount={props.referredCount}
                         riskCounts={props.riskCounts}
-                        riskLevels={DASHBOARD_RISK_LEVELS}
+                        riskLevels={RISK_LEVELS}
                         schools={props.schools ?? []}
                         selectedClass={selectedClass}
                         selectedRiskFilter={selectedRiskFilter}

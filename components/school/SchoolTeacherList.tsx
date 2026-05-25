@@ -1,13 +1,11 @@
 "use client";
 
 import { useOptimistic, useState, useTransition } from "react";
-import { Users, GraduationCap, Pencil, Check, X, Trash2 } from "lucide-react";
+import { Users, GraduationCap, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import {
-    deleteUser,
-    updateTeacherProfile,
-} from "@/lib/actions/user-management.actions";
+import { TeacherAdvisoryClassForm } from "@/components/teacher/forms/TeacherAdvisoryClassForm";
+import { deleteUser } from "@/lib/actions/user-management.actions";
 import { RoleBadge } from "@/components/ui/badges";
 import type { UserListItem } from "@/types/user-management.types";
 import type { SchoolClassItem } from "@/types/school-setup.types";
@@ -17,73 +15,6 @@ interface SchoolTeacherListProps {
     classes: SchoolClassItem[];
     currentUserId: string;
     onUpdated?: () => void;
-}
-
-function EditClassForm({
-    teacher,
-    classes,
-    onSaved,
-    onCancel,
-}: {
-    teacher: UserListItem;
-    classes: SchoolClassItem[];
-    onSaved: () => void;
-    onCancel: () => void;
-}) {
-    const [selectedClass, setSelectedClass] = useState(
-        teacher.advisoryClass ?? "",
-    );
-    const [isSaving, setIsSaving] = useState(false);
-
-    async function handleSave() {
-        if (!selectedClass) return;
-        setIsSaving(true);
-        const result = await updateTeacherProfile(teacher.id, {
-            advisoryClass: selectedClass,
-        });
-        if (result.success) {
-            toast.success(result.message);
-            onSaved();
-        } else {
-            toast.error(result.message);
-        }
-        setIsSaving(false);
-    }
-
-    return (
-        <div className="mt-2 pt-2 border-t border-emerald-100 flex items-center gap-2">
-            <GraduationCap className="w-4 h-4 text-emerald-500 shrink-0" />
-            <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="flex-1 min-w-0 px-3 py-1.5 border border-emerald-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 outline-none bg-white"
-            >
-                <option value="">เลือกห้อง</option>
-                <option value="ทุกห้อง">ทุกห้อง (ครูนางฟ้า)</option>
-                {classes.map((c) => (
-                    <option key={c.id} value={c.name}>
-                        {c.name}
-                    </option>
-                ))}
-            </select>
-            <button
-                type="button"
-                onClick={handleSave}
-                disabled={isSaving || !selectedClass}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
-            >
-                <Check className="w-3 h-3" />
-                {isSaving ? "บันทึก..." : "บันทึก"}
-            </button>
-            <button
-                type="button"
-                onClick={onCancel}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer"
-            >
-                <X className="w-3 h-3" />
-            </button>
-        </div>
-    );
 }
 
 function TeacherCard({
@@ -179,9 +110,11 @@ function TeacherCard({
                     </div>
 
                     {isEditing && (
-                        <EditClassForm
-                            teacher={teacher}
+                        <TeacherAdvisoryClassForm
+                            teacherId={teacher.id}
+                            initialAdvisoryClass={teacher.advisoryClass}
                             classes={classes}
+                            allClassesLabel="ทุกห้อง (ครูนางฟ้า)"
                             onSaved={() => {
                                 setIsEditing(false);
                                 onUpdated?.();

@@ -1,6 +1,8 @@
 import type { RiskConfigMap } from "./types";
-import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import {
+    RISK_LEVEL_CONFIG,
+    type RiskLevel,
+} from "@/lib/constants/risk-levels";
 
 export const MAX_VISIBLE_RESULTS = 6;
 const RESULT_ROW_HEIGHT = 72;

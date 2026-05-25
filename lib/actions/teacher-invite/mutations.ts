@@ -9,8 +9,8 @@ import { randomBytes } from "crypto";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
 import type { InviteResponse } from "./types";
-import { logError } from "@/lib/utils/logging";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
+import { handleActionError } from "../error-handler";
 
 /**
  * สร้าง invite สำหรับครูผู้ดูแล
@@ -141,11 +141,14 @@ export async function createTeacherInvite(
             };
         }
 
-        logError("Create teacher invite error:", error);
-        return {
-            success: false,
-            message: "เกิดข้อผิดพลาดในการสร้างคำเชิญ",
-        };
+        return handleActionError({
+            context: "Create teacher invite error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการสร้างคำเชิญ",
+            },
+        });
     }
 }
 
@@ -237,11 +240,14 @@ export async function acceptTeacherInvite(
             };
         }
 
-        logError("Accept teacher invite error:", error);
-        return {
-            success: false,
-            message: "เกิดข้อผิดพลาดในการลงทะเบียน",
-        };
+        return handleActionError({
+            context: "Accept teacher invite error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการลงทะเบียน",
+            },
+        });
     }
 }
 
@@ -321,10 +327,13 @@ export async function revokeTeacherInvite(
             message: `ยกเลิกคำเชิญสำหรับ "${invite.email}" สำเร็จ`,
         };
     } catch (error) {
-        logError("Revoke teacher invite error:", error);
-        return {
-            success: false,
-            message: "เกิดข้อผิดพลาดในการยกเลิกคำเชิญ",
-        };
+        return handleActionError({
+            context: "Revoke teacher invite error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการยกเลิกคำเชิญ",
+            },
+        });
     }
 }

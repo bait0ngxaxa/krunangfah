@@ -1,5 +1,5 @@
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
-import { type RiskLevel } from "@/lib/utils/phq-scoring";
+import type { RiskLevel } from "@/lib/constants/risk-levels";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 import type { ImportResult } from "@/lib/actions/student/types";
 

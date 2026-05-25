@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import type { InviteResponse, InviteListResponse } from "./types";
-import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "../error-handler";
 
 /**
  * ดึงข้อมูล invite จาก token
@@ -31,8 +31,11 @@ export async function getTeacherInvite(token: string): Promise<InviteResponse> {
 
         return { success: true, message: "พบคำเชิญ", invite };
     } catch (error) {
-        logError("Get teacher invite error:", error);
-        return { success: false, message: "เกิดข้อผิดพลาด" };
+        return handleActionError({
+            context: "Get teacher invite error:",
+            error,
+            fallback: { success: false, message: "เกิดข้อผิดพลาด" },
+        });
     }
 }
 
@@ -64,7 +67,10 @@ export async function getMyTeacherInvites(): Promise<InviteListResponse> {
 
         return { success: true, invites };
     } catch (error) {
-        logError("Get school teacher invites error:", error);
-        return { success: false, invites: [] };
+        return handleActionError({
+            context: "Get school teacher invites error:",
+            error,
+            fallback: { success: false, invites: [] },
+        });
     }
 }

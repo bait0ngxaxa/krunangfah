@@ -5,8 +5,8 @@ import { requireAuth } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { teacherProfileSchema } from "@/lib/validations/teacher.validation";
-import { logError } from "@/lib/utils/logging";
 import { revalidateDashboardCache } from "./dashboard/cache";
+import { handleActionError } from "./error-handler";
 import type {
     CreateTeacherInput,
     TeacherResponse,
@@ -32,8 +32,11 @@ export async function getTeacherProfile(
         });
         return teacher;
     } catch (error) {
-        logError("Get teacher profile error:", error);
-        return null;
+        return handleActionError({
+            context: "Get teacher profile error:",
+            error,
+            fallback: null,
+        });
     }
 }
 
@@ -69,8 +72,11 @@ export async function getCurrentTeacherProfile() {
             },
         };
     } catch (error) {
-        logError("Get current teacher profile error:", error);
-        return null;
+        return handleActionError({
+            context: "Get current teacher profile error:",
+            error,
+            fallback: null,
+        });
     }
 }
 
@@ -139,10 +145,13 @@ export async function createTeacherProfile(
             newRole: session.user.role,
         };
     } catch (error) {
-        logError("Create teacher profile error:", error);
-        return {
-            success: false,
-            message: "เกิดข้อผิดพลาดในการสร้างโปรไฟล์ครู",
-        };
+        return handleActionError({
+            context: "Create teacher profile error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการสร้างโปรไฟล์ครู",
+            },
+        });
     }
 }

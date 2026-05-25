@@ -1,13 +1,12 @@
 import type { RiskLevelSummary } from "@/lib/actions/analytics/types";
+import { RISK_LEVELS } from "@/lib/constants/risk-levels";
 
 interface PhqSummaryTableProps {
     riskLevelSummary: RiskLevelSummary[];
 }
 
 export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
-    // Order: red, orange, yellow, green, blue
-    const orderedLevels = ["red", "orange", "yellow", "green", "blue"];
-    const orderedSummary = orderedLevels
+    const orderedSummary = RISK_LEVELS
         .map((level) =>
             riskLevelSummary.find((item) => item.riskLevel === level),
         )

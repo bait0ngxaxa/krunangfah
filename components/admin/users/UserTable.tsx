@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
     Users,
     UserCircle,
@@ -8,22 +8,17 @@ import {
     GraduationCap,
     Trash2,
     Pencil,
-    Check,
-    X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SectionCard, SectionCardHeader } from "@/components/ui/SectionCard";
+import { TeacherAdvisoryClassForm } from "@/components/teacher/forms/TeacherAdvisoryClassForm";
 import { RoleBadge, ProfileBadge } from "@/components/ui/badges";
 import { TableMetaRow } from "@/components/ui/TableMetaRow";
 import type { UserListItem } from "@/types/user-management.types";
-import {
-    deleteUser,
-    getClassesBySchool,
-    updateTeacherProfile,
-} from "@/lib/actions/user-management.actions";
+import { deleteUser } from "@/lib/actions/user-management.actions";
 
 interface UserTableProps {
     users: UserListItem[];
@@ -32,83 +27,6 @@ interface UserTableProps {
     pageSize: number;
     onPageChange: (page: number) => void;
     onMutated: () => void;
-}
-
-function EditClassForm({
-    user,
-    onSaved,
-    onCancel,
-}: {
-    user: UserListItem;
-    onSaved: () => void;
-    onCancel: () => void;
-}) {
-    const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
-    const [selectedClass, setSelectedClass] = useState(
-        user.advisoryClass ?? "",
-    );
-    const [isLoading, setIsLoading] = useState(!!user.schoolId);
-    const [isSaving, setIsSaving] = useState(false);
-
-    // Load school classes on mount
-    useEffect(() => {
-        if (!user.schoolId) return;
-        getClassesBySchool(user.schoolId).then((result) => {
-            setClasses(result);
-            setIsLoading(false);
-        });
-    }, [user.schoolId]);
-
-    async function handleSave() {
-        if (!selectedClass) return;
-        setIsSaving(true);
-        const result = await updateTeacherProfile(user.id, {
-            advisoryClass: selectedClass,
-        });
-        if (result.success) {
-            toast.success(result.message);
-            onSaved();
-        } else {
-            toast.error(result.message);
-        }
-        setIsSaving(false);
-    }
-
-    return (
-        <div className="mt-2.5 pt-2.5 border-t border-emerald-100 flex items-center gap-2">
-            <GraduationCap className="w-4 h-4 text-emerald-500 shrink-0" />
-            <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                disabled={isLoading}
-                className="flex-1 min-w-0 px-3 py-1.5 border border-emerald-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 outline-none bg-white"
-            >
-                <option value="">เลือกห้อง</option>
-                <option value="ทุกห้อง">ทุกห้อง (Admin)</option>
-                {classes.map((c) => (
-                    <option key={c.id} value={c.name}>
-                        {c.name}
-                    </option>
-                ))}
-            </select>
-            <button
-                type="button"
-                onClick={handleSave}
-                disabled={isSaving || !selectedClass}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
-            >
-                <Check className="w-3 h-3" />
-                {isSaving ? "บันทึก..." : "บันทึก"}
-            </button>
-            <button
-                type="button"
-                onClick={onCancel}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer"
-            >
-                <X className="w-3 h-3" />
-            </button>
-        </div>
-    );
 }
 
 function UserCard({
@@ -196,8 +114,12 @@ function UserCard({
 
                     {/* Edit Form */}
                     {isEditing && (
-                        <EditClassForm
-                            user={user}
+                        <TeacherAdvisoryClassForm
+                            teacherId={user.id}
+                            initialAdvisoryClass={user.advisoryClass}
+                            schoolId={user.schoolId}
+                            allClassesLabel="ทุกห้อง (Admin)"
+                            className="mt-2.5 pt-2.5"
                             onSaved={() => {
                                 setIsEditing(false);
                                 onMutated();

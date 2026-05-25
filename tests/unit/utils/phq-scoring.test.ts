@@ -2,12 +2,14 @@ import { describe, it, expect } from "vitest";
 import {
     calculateRiskLevel,
     calculateTotalScore,
+    type PhqScores,
+} from "@/lib/utils/phq-scoring";
+import {
+    RISK_LEVEL_CONFIG,
     getRiskBgClass,
     getRiskLabel,
-    type PhqScores,
     type RiskLevel,
-} from "@/lib/utils/phq-scoring";
-import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
+} from "@/lib/constants/risk-levels";
 
 /**
  * Helper function to create PHQ scores for testing

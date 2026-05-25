@@ -19,7 +19,7 @@ interface StudentDashboardFiltersProps {
     isSystemAdmin: boolean;
     referredCount: number;
     riskCounts: StudentGroupCounts;
-    riskLevels: RiskLevel[];
+    riskLevels: readonly RiskLevel[];
     schools: SchoolOption[];
     selectedClass: string;
     selectedRiskFilter: DashboardRiskFilter;

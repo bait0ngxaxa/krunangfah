@@ -1,21 +1,40 @@
-import { getRiskBgClass, getRiskLabel } from "@/lib/utils/phq-scoring";
+import {
+    RISK_CHART_LEVELS,
+    getRiskBgClass,
+    getRiskLabel,
+    type RiskLevel,
+} from "@/lib/constants/risk-levels";
 import type { RiskCounts } from "../types";
 
 interface RiskSummaryCardsProps {
     riskCounts: RiskCounts;
 }
 
+function getRiskCount(riskCounts: RiskCounts, level: RiskLevel): number {
+    switch (level) {
+        case "blue":
+            return riskCounts.blue;
+        case "green":
+            return riskCounts.green;
+        case "yellow":
+            return riskCounts.yellow;
+        case "orange":
+            return riskCounts.orange;
+        case "red":
+            return riskCounts.red;
+    }
+}
+
 /**
  * Display risk level summary cards
  */
 export function RiskSummaryCards({ riskCounts }: RiskSummaryCardsProps) {
-    const cardData = [
-        { level: "blue"   as const, bgClass: getRiskBgClass("blue"),   label: getRiskLabel("blue"),   count: riskCounts.blue },
-        { level: "green"  as const, bgClass: getRiskBgClass("green"),  label: getRiskLabel("green"),  count: riskCounts.green },
-        { level: "yellow" as const, bgClass: getRiskBgClass("yellow"), label: getRiskLabel("yellow"), count: riskCounts.yellow },
-        { level: "orange" as const, bgClass: getRiskBgClass("orange"), label: getRiskLabel("orange"), count: riskCounts.orange },
-        { level: "red"    as const, bgClass: getRiskBgClass("red"),    label: getRiskLabel("red"),    count: riskCounts.red },
-    ];
+    const cardData = RISK_CHART_LEVELS.map((level) => ({
+        level,
+        bgClass: getRiskBgClass(level),
+        label: getRiskLabel(level),
+        count: getRiskCount(riskCounts, level),
+    }));
 
     return (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">

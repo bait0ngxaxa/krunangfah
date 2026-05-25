@@ -14,8 +14,8 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/session";
 import { updateHospitalReferralSchema } from "@/lib/validations/hospital-referral.validation";
-import { logError } from "@/lib/utils/logging";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
+import { handleActionError } from "./error-handler";
 
 interface UpdateHospitalReferralParams {
     phqResultId: string;
@@ -106,7 +106,13 @@ export async function updateHospitalReferral(
             referredToHospital: validated.referredToHospital,
         };
     } catch (error) {
-        logError("Error updating hospital referral:", error);
-        return { success: false, error: "เกิดข้อผิดพลาดในการอัปเดตสถานะ" };
+        return handleActionError({
+            context: "Error updating hospital referral:",
+            error,
+            fallback: {
+                success: false,
+                error: "เกิดข้อผิดพลาดในการอัปเดตสถานะ",
+            },
+        });
     }
 }

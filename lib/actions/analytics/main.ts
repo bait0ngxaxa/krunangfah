@@ -24,7 +24,7 @@ import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setu
 import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
 
 import type { AnalyticsData, SystemAnalyticsOverview } from "./types";
-import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "@/lib/actions/error-handler";
 
 function buildAnalyticsCacheKey(input: {
     role: string;
@@ -315,8 +315,11 @@ export async function getAnalyticsSummary(
             semester?.toString() ?? "",
         );
     } catch (error) {
-        logError("Get analytics summary error:", error);
-        return null;
+        return handleActionError({
+            context: "Get analytics summary error:",
+            error,
+            fallback: null,
+        });
     }
 }
 
@@ -427,7 +430,10 @@ export async function getSystemAnalyticsOverview(
 
         return cachedOverviewFetcher();
     } catch (error) {
-        logError("Get system analytics overview error:", error);
-        return null;
+        return handleActionError({
+            context: "Get system analytics overview error:",
+            error,
+            fallback: null,
+        });
     }
 }

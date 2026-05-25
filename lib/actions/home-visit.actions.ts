@@ -21,7 +21,9 @@ import {
 import { existsSync } from "fs";
 import { join } from "path";
 import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "./error-handler";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
+import { verifyStudentAccessForUser } from "@/lib/security/student-access";
 import type { OffsetPagination } from "@/types/pagination.types";
 import type { AcademicYearDateRange } from "@/lib/utils/student-detail-filters";
 
@@ -136,64 +138,6 @@ function buildAcademicYearRecordFilter(
 }
 
 /**
- * Verify user has access to student (same pattern as counseling.actions.ts)
- */
-async function verifyStudentAccess(
-    studentId: string,
-    userId: string,
-    userRole: string,
-): Promise<{ allowed: boolean; error?: string }> {
-    if (userRole === "system_admin") {
-        const student = await prisma.student.findUnique({
-            where: { id: studentId },
-            select: { id: true },
-        });
-        if (!student) {
-            return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
-        }
-        return { allowed: true };
-    }
-
-    const [user, student] = await Promise.all([
-        prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                schoolId: true,
-                teacher: { select: { advisoryClass: true } },
-            },
-        }),
-        prisma.student.findUnique({
-            where: { id: studentId },
-            select: { schoolId: true, class: true },
-        }),
-    ]);
-
-    if (!user?.schoolId) {
-        return { allowed: false, error: "ไม่พบข้อมูลโรงเรียน" };
-    }
-
-    if (!student) {
-        return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
-    }
-
-    if (student.schoolId !== user.schoolId) {
-        return { allowed: false, error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้" };
-    }
-
-    if (userRole === "class_teacher") {
-        const advisoryClass = user.teacher?.advisoryClass;
-        if (!advisoryClass || student.class !== advisoryClass) {
-            return {
-                allowed: false,
-                error: "คุณสามารถเข้าถึงข้อมูลได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
-            };
-        }
-    }
-
-    return { allowed: true };
-}
-
-/**
  * Get all home visits for a student
  */
 export async function getHomeVisits(
@@ -212,11 +156,11 @@ export async function getHomeVisits(
 
     try {
         const session = await requireAuth();
-        const { allowed, error } = await verifyStudentAccess(
+        const { allowed, error } = await verifyStudentAccessForUser({
             studentId,
-            session.user.id,
-            session.user.role,
-        );
+            userId: session.user.id,
+            userRole: session.user.role,
+        });
 
         if (!allowed) {
             logError("Access denied:", error);
@@ -281,11 +225,14 @@ export async function getHomeVisits(
             },
         };
     } catch (error) {
-        logError("Error fetching home visits:", error);
-        return {
-            visits: [],
-            pagination: buildEmptyPagination(pageSize),
-        };
+        return handleActionError({
+            context: "Error fetching home visits:",
+            error,
+            fallback: {
+                visits: [],
+                pagination: buildEmptyPagination(pageSize),
+            },
+        });
     }
 }
 
@@ -312,11 +259,11 @@ export async function createHomeVisit(data: {
 
         const userId = session.user.id;
 
-        const { allowed, error } = await verifyStudentAccess(
-            validated.studentId,
+        const { allowed, error } = await verifyStudentAccessForUser({
+            studentId: validated.studentId,
             userId,
-            session.user.role,
-        );
+            userRole: session.user.role,
+        });
 
         if (!allowed) {
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
@@ -409,8 +356,14 @@ export async function createHomeVisit(data: {
 
         return { success: true, visitId: visit.id };
     } catch (error) {
-        logError("Error creating home visit:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" };
+        return handleActionError({
+            context: "Error creating home visit:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล",
+            },
+        });
     }
 }
 
@@ -443,11 +396,11 @@ export async function deleteHomeVisit(
             return { success: false, message: "ไม่พบข้อมูลที่ต้องการลบ" };
         }
 
-        const { allowed, error } = await verifyStudentAccess(
-            visit.studentId,
-            session.user.id,
-            session.user.role,
-        );
+        const { allowed, error } = await verifyStudentAccessForUser({
+            studentId: visit.studentId,
+            userId: session.user.id,
+            userRole: session.user.role,
+        });
 
         if (!allowed) {
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
@@ -479,7 +432,13 @@ export async function deleteHomeVisit(
 
         return { success: true };
     } catch (error) {
-        logError("Error deleting home visit:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการลบข้อมูล" };
+        return handleActionError({
+            context: "Error deleting home visit:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการลบข้อมูล",
+            },
+        });
     }
 }

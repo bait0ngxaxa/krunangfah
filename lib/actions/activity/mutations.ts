@@ -6,7 +6,7 @@ import { ActivityStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 import { ACTIVITY_INDICES } from "./constants";
 import type { SubmitAssessmentData } from "./types";
-import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "@/lib/actions/error-handler";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import {
@@ -108,11 +108,14 @@ export async function initializeActivityProgress(
 
         return { success: true, count: records.length };
     } catch (error) {
-        logError("Error initializing activity progress:", error);
-        return {
-            success: false,
-            error: "เกิดข้อผิดพลาดในการสร้างกิจกรรมเริ่มต้น",
-        };
+        return handleActionError({
+            context: "Error initializing activity progress:",
+            error,
+            fallback: {
+                success: false,
+                error: "เกิดข้อผิดพลาดในการสร้างกิจกรรมเริ่มต้น",
+            },
+        });
     }
 }
 
@@ -193,8 +196,14 @@ export async function submitTeacherAssessment(
 
         return { success: true };
     } catch (error) {
-        logError("Error submitting assessment:", error);
-        return { success: false, error: "เกิดข้อผิดพลาดในการบันทึก" };
+        return handleActionError({
+            context: "Error submitting assessment:",
+            error,
+            fallback: {
+                success: false,
+                error: "เกิดข้อผิดพลาดในการบันทึก",
+            },
+        });
     }
 }
 
@@ -346,8 +355,11 @@ export async function confirmActivityComplete(
 
         return result;
     } catch (error) {
-        logError("Error confirming activity completion:", error);
-        return { success: false, error: "เกิดข้อผิดพลาด" };
+        return handleActionError({
+            context: "Error confirming activity completion:",
+            error,
+            fallback: { success: false, error: "เกิดข้อผิดพลาด" },
+        });
     }
 }
 
@@ -414,8 +426,14 @@ export async function updateTeacherNotes(
 
         return { success: true, data: updated };
     } catch (error) {
-        logError("Error updating teacher notes:", error);
-        return { success: false, error: "เกิดข้อผิดพลาดในการแก้ไข" };
+        return handleActionError({
+            context: "Error updating teacher notes:",
+            error,
+            fallback: {
+                success: false,
+                error: "เกิดข้อผิดพลาดในการแก้ไข",
+            },
+        });
     }
 }
 
@@ -495,7 +513,13 @@ export async function updateScheduledDate(
 
         return { success: true };
     } catch (error) {
-        logError("Error updating scheduled date:", error);
-        return { success: false, error: "เกิดข้อผิดพลาดในการบันทึกวันนัดหมาย" };
+        return handleActionError({
+            context: "Error updating scheduled date:",
+            error,
+            fallback: {
+                success: false,
+                error: "เกิดข้อผิดพลาดในการบันทึกวันนัดหมาย",
+            },
+        });
     }
 }

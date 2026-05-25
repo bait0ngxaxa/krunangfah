@@ -1,6 +1,6 @@
 // components/student/activity/ActivityProgressTable/types.ts
 
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import type { RiskLevel } from "@/lib/constants/risk-levels";
 
 /**
  * TypeScript interfaces for ActivityProgressTable components

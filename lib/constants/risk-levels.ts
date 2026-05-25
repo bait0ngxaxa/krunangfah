@@ -1,4 +1,43 @@
-import type { RiskLevel } from "@/lib/utils/phq-scoring";
+export const RISK_LEVELS = [
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "blue",
+] as const;
+
+export type RiskLevel = (typeof RISK_LEVELS)[number];
+
+export const RISK_CHART_LEVELS = [
+    "blue",
+    "green",
+    "yellow",
+    "orange",
+    "red",
+] as const satisfies readonly RiskLevel[];
+
+export const RISK_CHART_LABELS: Record<RiskLevel, string> = {
+    blue: "สีฟ้า",
+    green: "สีเขียว",
+    yellow: "สีเหลือง",
+    orange: "สีส้ม",
+    red: "สีแดง",
+};
+
+export function getRiskChartLabel(level: RiskLevel): string {
+    switch (level) {
+        case "red":
+            return RISK_CHART_LABELS.red;
+        case "orange":
+            return RISK_CHART_LABELS.orange;
+        case "yellow":
+            return RISK_CHART_LABELS.yellow;
+        case "green":
+            return RISK_CHART_LABELS.green;
+        case "blue":
+            return RISK_CHART_LABELS.blue;
+    }
+}
 
 export interface RiskLevelStyle {
     // ── Labels ──
@@ -348,39 +387,43 @@ export function getRiskLevelConfig(level: RiskLevel): RiskLevelStyle {
     }
 }
 
-/** Derived config for Recharts chart components (legend, bars, lines) */
-const CHART_LABEL_MAP: Record<string, string> = {
-    blue: "สีฟ้า",
-    green: "สีเขียว",
-    yellow: "สีเหลือง",
-    orange: "สีส้ม",
-    red: "สีแดง",
-};
+export function getRiskBgClass(level: RiskLevel): string {
+    return getRiskLevelConfig(level).bgSolid;
+}
 
+export function getRiskLabel(level: RiskLevel): string {
+    return getRiskLevelConfig(level).label;
+}
+
+export function isRiskLevel(value: string | undefined): value is RiskLevel {
+    return RISK_LEVELS.includes(value as RiskLevel);
+}
+
+/** Derived config for Recharts chart components (legend, bars, lines) */
 export const RISK_CHART_CONFIG = [
     {
         key: "blue" as const,
-        label: CHART_LABEL_MAP.blue,
+        label: getRiskChartLabel("blue"),
         color: RISK_LEVEL_CONFIG.blue.chartColor,
     },
     {
         key: "green" as const,
-        label: CHART_LABEL_MAP.green,
+        label: getRiskChartLabel("green"),
         color: RISK_LEVEL_CONFIG.green.chartColor,
     },
     {
         key: "yellow" as const,
-        label: CHART_LABEL_MAP.yellow,
+        label: getRiskChartLabel("yellow"),
         color: RISK_LEVEL_CONFIG.yellow.chartColor,
     },
     {
         key: "orange" as const,
-        label: CHART_LABEL_MAP.orange,
+        label: getRiskChartLabel("orange"),
         color: RISK_LEVEL_CONFIG.orange.chartColor,
     },
     {
         key: "red" as const,
-        label: CHART_LABEL_MAP.red,
+        label: getRiskChartLabel("red"),
         color: RISK_LEVEL_CONFIG.red.chartColor,
     },
 ];

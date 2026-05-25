@@ -7,7 +7,7 @@ import {
     type AcademicYearInfo,
 } from "@/lib/utils/academic-year";
 import type { AcademicYear } from "@/types/teacher.types";
-import { logError } from "@/lib/utils/logging";
+import { handleActionError } from "./error-handler";
 
 /**
  * ดึงรายการปีการศึกษาทั้งหมด พร้อม auto-create ถ้าปีปัจจุบันยังไม่มี
@@ -26,8 +26,11 @@ export async function getAcademicYears(): Promise<AcademicYear[]> {
 
         return academicYears;
     } catch (error) {
-        logError("Get academic years error:", error);
-        return [];
+        return handleActionError({
+            context: "Get academic years error:",
+            error,
+            fallback: [],
+        });
     }
 }
 
@@ -43,8 +46,11 @@ export async function getCurrentAcademicYearRecord(): Promise<AcademicYear | nul
 
         return record;
     } catch (error) {
-        logError("Get current academic year error:", error);
-        return null;
+        return handleActionError({
+            context: "Get current academic year error:",
+            error,
+            fallback: null,
+        });
     }
 }
 

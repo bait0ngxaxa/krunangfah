@@ -11,7 +11,7 @@ interface StudentFilterBarProps {
     showReferredOnly: boolean;
     referredCount: number;
     groupedStudentCounts: StudentGroupCounts;
-    riskLevels: RiskLevel[];
+    riskLevels: readonly RiskLevel[];
     onRiskFilterChange: (level: DashboardRiskFilter) => void;
     onReferredToggle: () => void;
 }
