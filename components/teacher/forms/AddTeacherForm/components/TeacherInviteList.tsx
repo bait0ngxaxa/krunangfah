@@ -12,28 +12,21 @@ import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SectionCard, SectionCardHeader } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableMetaRow } from "@/components/ui/TableMetaRow";
+import {
+    buildInviteUrl,
+    formatInviteDate,
+    getInviteStatus,
+    getInviteStatusLabel,
+} from "@/components/ui/invite-utils";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
 import { revokeTeacherInvite } from "@/lib/actions/teacher-invite";
 import { RoleBadge } from "@/components/ui/badges";
 
 const PAGE_SIZE = 5;
 
-type InviteStatus = "pending" | "accepted" | "expired";
-
 interface TeacherInviteListProps {
     invites: TeacherInviteWithAcademicYear[];
     onRevoked?: () => void;
-}
-
-function getInviteStatus(invite: TeacherInviteWithAcademicYear): InviteStatus {
-    if (invite.acceptedAt !== null) return "accepted";
-    if (new Date(invite.expiresAt) < new Date()) return "expired";
-    return "pending";
-}
-
-function getInviteUrl(token: string): string {
-    const base = typeof window !== "undefined" ? window.location.origin : "";
-    return `${base}/invite/${token}`;
 }
 
 function InviteCard({
@@ -45,11 +38,17 @@ function InviteCard({
 }) {
     const [copied, setCopied] = useState(false);
     const [isRevoking, setIsRevoking] = useState(false);
-    const status = getInviteStatus(invite);
+    const status = getInviteStatus({
+        completedAt: invite.acceptedAt,
+        expiresAt: invite.expiresAt,
+        completedStatus: "accepted",
+    });
 
     async function handleCopy() {
         try {
-            await navigator.clipboard.writeText(getInviteUrl(invite.token));
+            await navigator.clipboard.writeText(
+                buildInviteUrl(`/invite/${invite.token}`),
+            );
             setCopied(true);
             toast.success("คัดลอกลิงก์คำเชิญเรียบร้อย");
             setTimeout(() => setCopied(false), 2000);
@@ -98,13 +97,7 @@ function InviteCard({
                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:shrink-0 sm:items-end">
                     <StatusBadge
                         tone={status}
-                        label={
-                            status === "pending"
-                                ? "รอดำเนินการ"
-                                : status === "accepted"
-                                  ? "ใช้งานแล้ว"
-                                  : "หมดอายุ"
-                        }
+                        label={getInviteStatusLabel(status)}
                     />
                     {status === "pending" && (
                         <InviteActionRow
@@ -121,11 +114,7 @@ function InviteCard({
             <div className="mt-3 flex flex-col gap-1.5 border-t border-emerald-50 pt-3 text-[11px] text-gray-400 sm:flex-row sm:items-center sm:gap-4">
                 <span>
                     สร้างเมื่อ{" "}
-                    {new Date(invite.createdAt).toLocaleDateString("th-TH", {
-                        day: "numeric",
-                        month: "short",
-                        year: "2-digit",
-                    })}
+                    {formatInviteDate(invite.createdAt)}
                 </span>
                 <span>
                     หมดอายุ{" "}
@@ -136,14 +125,7 @@ function InviteCard({
                                 : ""
                         }
                     >
-                        {new Date(invite.expiresAt).toLocaleDateString(
-                            "th-TH",
-                            {
-                                day: "numeric",
-                                month: "short",
-                                year: "2-digit",
-                            },
-                        )}
+                        {formatInviteDate(invite.expiresAt)}
                     </span>
                 </span>
             </div>

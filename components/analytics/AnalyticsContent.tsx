@@ -1,5 +1,6 @@
 import { Tabs } from "@/components/ui/Tabs";
 import { AlertTriangle } from "lucide-react";
+import type { ComponentProps } from "react";
 import { toChartData, getPieChartTitle } from "./utils";
 import { AnalyticsFilters } from "./AnalyticsFilters";
 import { AnalyticsSummaryCards } from "./AnalyticsSummaryCards";
@@ -29,6 +30,16 @@ interface AnalyticsContentProps {
     systemOverview?: SystemAnalyticsOverview | null;
 }
 
+type AnalyticsFiltersProps = ComponentProps<typeof AnalyticsFilters>;
+
+function StickyAnalyticsFilters(props: AnalyticsFiltersProps) {
+    return (
+        <div className="sticky top-3 z-30 -mx-2 rounded-[2rem] bg-white/85 px-2 py-2 backdrop-blur-md sm:top-4 sm:px-3">
+            <AnalyticsFilters {...props} />
+        </div>
+    );
+}
+
 export function AnalyticsContent({
     data,
     schools,
@@ -55,6 +66,19 @@ export function AnalyticsContent({
     if (needsSchoolSelection) {
         return (
             <>
+                <StickyAnalyticsFilters
+                    schools={schools}
+                    availableClasses={[]}
+                    availableYears={systemOverview?.availableAcademicYears ?? []}
+                    availableSemesters={systemOverview?.availableSemesters ?? []}
+                    selectedSchoolId={selectedSchoolId}
+                    selectedClass={selectedClass}
+                    selectedAcademicYear={selectedAcademicYear}
+                    selectedSemester={selectedSemester}
+                    isSystemAdmin={isSystemAdmin}
+                    showClassFilter={false}
+                    requireSchoolSelection={true}
+                />
                 {filterWarnings.length > 0 ? (
                     <div className="relative overflow-hidden rounded-3xl border border-amber-200/70 bg-linear-to-br from-white via-amber-50/60 to-orange-50/50 px-5 py-4 text-amber-900 shadow-[0_14px_30px_-24px_rgba(180,83,9,0.55)]">
                         <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-amber-200/45 blur-3xl" />
@@ -68,19 +92,6 @@ export function AnalyticsContent({
                         </div>
                     </div>
                 ) : null}
-                <AnalyticsFilters
-                    schools={schools}
-                    availableClasses={[]}
-                    availableYears={systemOverview?.availableAcademicYears ?? []}
-                    availableSemesters={systemOverview?.availableSemesters ?? []}
-                    selectedSchoolId={selectedSchoolId}
-                    selectedClass={selectedClass}
-                    selectedAcademicYear={selectedAcademicYear}
-                    selectedSemester={selectedSemester}
-                    isSystemAdmin={isSystemAdmin}
-                    showClassFilter={false}
-                    requireSchoolSelection={true}
-                />
                 {systemOverview ? (
                     <SystemOverviewCards overview={systemOverview} />
                 ) : null}
@@ -120,6 +131,18 @@ export function AnalyticsContent({
 
     return (
         <>
+            <StickyAnalyticsFilters
+                schools={schools}
+                availableClasses={data.availableClasses}
+                availableYears={data.availableAcademicYears}
+                availableSemesters={data.availableSemesters}
+                selectedSchoolId={selectedSchoolId}
+                selectedClass={selectedClass}
+                selectedAcademicYear={selectedAcademicYear}
+                selectedSemester={selectedSemester}
+                isSystemAdmin={isSystemAdmin}
+                showClassFilter={showClassFilter}
+            />
             {filterWarnings.length > 0 ? (
                 <div className="relative overflow-hidden rounded-3xl border border-amber-200/70 bg-linear-to-br from-white via-amber-50/60 to-orange-50/50 px-5 py-4 text-amber-900 shadow-[0_14px_30px_-24px_rgba(180,83,9,0.55)]">
                     <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-amber-200/45 blur-3xl" />
@@ -138,18 +161,6 @@ export function AnalyticsContent({
                 studentsWithAssessment={data.studentsWithAssessment}
                 activityCompletionSummary={data.activityCompletionSummary}
                 currentClass={data.currentClass}
-            />
-            <AnalyticsFilters
-                schools={schools}
-                availableClasses={data.availableClasses}
-                availableYears={data.availableAcademicYears}
-                availableSemesters={data.availableSemesters}
-                selectedSchoolId={selectedSchoolId}
-                selectedClass={selectedClass}
-                selectedAcademicYear={selectedAcademicYear}
-                selectedSemester={selectedSemester}
-                isSystemAdmin={isSystemAdmin}
-                showClassFilter={showClassFilter}
             />
             <Tabs tabs={tabs} defaultTab="summary" />
         </>

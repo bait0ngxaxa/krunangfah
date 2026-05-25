@@ -13,28 +13,20 @@ import { SectionCard, SectionCardHeader } from "@/components/ui/SectionCard";
 import { RoleBadge } from "@/components/ui/badges";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableMetaRow } from "@/components/ui/TableMetaRow";
+import {
+    buildInviteUrl,
+    formatInviteDate,
+    getInviteStatus,
+    getInviteStatusLabel,
+} from "@/components/ui/invite-utils";
 import { revokeSchoolAdminInvite } from "@/lib/actions/school-admin-invite.actions";
-import type {
-    SchoolAdminInvite,
-    InviteStatus,
-} from "@/types/school-admin-invite.types";
+import type { SchoolAdminInvite } from "@/types/school-admin-invite.types";
 
 const PAGE_SIZE = 10;
 
 interface InviteTableProps {
     invites: SchoolAdminInvite[];
     onRevoked: () => void;
-}
-
-function getInviteStatus(invite: SchoolAdminInvite): InviteStatus {
-    if (invite.usedAt !== null) return "used";
-    if (new Date(invite.expiresAt) < new Date()) return "expired";
-    return "pending";
-}
-
-function getInviteUrl(token: string): string {
-    const base = typeof window !== "undefined" ? window.location.origin : "";
-    return `${base}/invite/admin/${token}`;
 }
 
 function InviteCard({
@@ -47,11 +39,17 @@ function InviteCard({
     const [copied, setCopied] = useState(false);
     const [isRevoking, setIsRevoking] = useState(false);
 
-    const status = getInviteStatus(invite);
+    const status = getInviteStatus({
+        completedAt: invite.usedAt,
+        expiresAt: invite.expiresAt,
+        completedStatus: "used",
+    });
 
     async function handleCopy() {
         try {
-            await navigator.clipboard.writeText(getInviteUrl(invite.token));
+            await navigator.clipboard.writeText(
+                buildInviteUrl(`/invite/admin/${invite.token}`),
+            );
             setCopied(true);
             toast.success("คัดลอกลิงก์คำเชิญเรียบร้อย");
             setTimeout(() => setCopied(false), 2000);
@@ -91,13 +89,7 @@ function InviteCard({
                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:shrink-0 sm:items-end">
                     <StatusBadge
                         tone={status}
-                        label={
-                            status === "pending"
-                                ? "รอดำเนินการ"
-                                : status === "used"
-                                  ? "ใช้งานแล้ว"
-                                  : "หมดอายุ"
-                        }
+                        label={getInviteStatusLabel(status)}
                     />
                     {status === "pending" && (
                         <InviteActionRow
@@ -114,11 +106,7 @@ function InviteCard({
             <div className="mt-3 flex flex-col gap-1.5 border-t border-gray-50 pt-3 text-[11px] text-gray-400 sm:flex-row sm:items-center sm:gap-4">
                 <span>
                     สร้างเมื่อ{" "}
-                    {new Date(invite.createdAt).toLocaleDateString("th-TH", {
-                        day: "numeric",
-                        month: "short",
-                        year: "2-digit",
-                    })}
+                    {formatInviteDate(invite.createdAt)}
                 </span>
                 <span>
                     หมดอายุ{" "}
@@ -129,14 +117,7 @@ function InviteCard({
                                 : ""
                         }
                     >
-                        {new Date(invite.expiresAt).toLocaleDateString(
-                            "th-TH",
-                            {
-                                day: "numeric",
-                                month: "short",
-                                year: "2-digit",
-                            },
-                        )}
+                        {formatInviteDate(invite.expiresAt)}
                     </span>
                 </span>
                 {invite.creator?.name && (

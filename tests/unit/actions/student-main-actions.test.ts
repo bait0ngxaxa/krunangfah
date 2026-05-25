@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Gender, StudentStatus } from "@prisma/client";
 
 vi.mock("@/lib/prisma", () => ({
     prisma: {},
@@ -35,12 +36,37 @@ import {
     getDistinctClassesQuery,
     getRiskLevelCountsQuery,
     getStudentsForDashboardQuery,
+    searchStudentsQuery,
 } from "@/lib/actions/student/queries";
 import {
     getStudentRiskCounts,
     getStudentsForDashboard,
+    searchStudents,
 } from "@/lib/actions/student/main";
 import type { ViewerContext } from "@/lib/auth/viewer-context";
+
+function createSearchResult(nationalId: string) {
+    const now = new Date("2026-05-25T00:00:00.000Z");
+
+    return {
+        id: "student-1",
+        firstName: "สมชาย",
+        lastName: "ทดสอบ",
+        studentId: "001",
+        nationalId,
+        class: "ม.1/1",
+        schoolId: "school-1",
+        createdAt: now,
+        updatedAt: now,
+        age: 13,
+        gender: Gender.MALE,
+        status: StudentStatus.ACTIVE,
+        statusChangedAt: null,
+        leftAt: null,
+        phqResults: [],
+        referral: null,
+    };
+}
 
 describe("student main actions compatibility", () => {
     beforeEach(() => {
@@ -123,5 +149,48 @@ describe("student main actions compatibility", () => {
             total: 5,
             classes: ["ม.1/1"],
         });
+    });
+
+    it("hides nationalId from non-system admin search results", async () => {
+        vi.mocked(searchStudentsQuery).mockResolvedValue([
+            createSearchResult("1103700000011"),
+        ]);
+
+        const result = await searchStudents("สมชาย");
+
+        expect(searchStudentsQuery).toHaveBeenCalledWith(
+            "school-1",
+            "ม.1/1",
+            "school_admin",
+            "user-1",
+            "สมชาย",
+            false,
+        );
+        expect(result[0]?.nationalId).toBeNull();
+    });
+
+    it("allows system admin to receive nationalId in search results", async () => {
+        vi.mocked(getViewerContext).mockResolvedValue({
+            advisoryClass: undefined,
+            isPrimary: false,
+            role: "system_admin",
+            schoolId: undefined,
+            userId: "user-1",
+        } satisfies ViewerContext);
+        vi.mocked(searchStudentsQuery).mockResolvedValue([
+            createSearchResult("1103700000011"),
+        ]);
+
+        const result = await searchStudents("1103700000011");
+
+        expect(searchStudentsQuery).toHaveBeenCalledWith(
+            undefined,
+            undefined,
+            "system_admin",
+            "user-1",
+            "1103700000011",
+            true,
+        );
+        expect(result[0]?.nationalId).toBe("1103700000011");
     });
 });

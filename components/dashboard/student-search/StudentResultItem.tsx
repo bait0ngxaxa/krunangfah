@@ -6,11 +6,13 @@ import type { Student } from "./types";
 interface StudentResultItemProps {
     student: Student;
     onClick: (id: string) => void;
+    canViewNationalId?: boolean;
 }
 
 export function StudentResultItem({
     student,
     onClick,
+    canViewNationalId = false,
 }: StudentResultItemProps) {
     const latestResult = student.phqResults[0];
     const risk = latestResult
@@ -43,6 +45,11 @@ export function StudentResultItem({
                         {student.studentId && (
                             <span className="text-xs text-gray-400">
                                 #{student.studentId}
+                            </span>
+                        )}
+                        {canViewNationalId && student.nationalId && (
+                            <span className="text-xs font-medium text-slate-500">
+                                เลขบัตร {student.nationalId}
                             </span>
                         )}
                     </div>

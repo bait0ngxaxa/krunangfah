@@ -37,7 +37,7 @@ function buildAdminStats(
     const stats: StatItem[] = [
         {
             icon: Users,
-            label: "นักเรียนทั้งหมด",
+            label: "นักเรียนคัดกรองทั้งหมด",
             value: studentCount.toLocaleString(),
             unit: "คน",
             color: "pink",
@@ -66,7 +66,7 @@ function buildTeacherStats(
     const stats: StatItem[] = [
         {
             icon: Users,
-            label: "นักเรียน",
+            label: "จำนวนนักเรียนคัดกรอง",
             value: studentCount.toLocaleString(),
             unit: "คน",
             color: "pink",

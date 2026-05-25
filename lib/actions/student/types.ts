@@ -9,6 +9,7 @@ export interface StudentWithLatestPhq {
     firstName: string;
     lastName: string;
     studentId: string | null;
+    nationalId?: string | null;
     class: string;
     schoolId: string;
     phqResults: {

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { CalendarDays } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getCurrentAcademicYear } from "@/lib/utils/academic-year";
 
 interface AcademicYear {
@@ -23,8 +23,15 @@ export function AcademicYearFilter({
     currentYearId,
 }: AcademicYearFilterProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
     const [showAllYears, setShowAllYears] = useState(false);
+    const [, startTransition] = useTransition();
+    const selectedYearValue = currentYearId || "all";
+    const [optimisticYearId, setOptimisticYearId] = useOptimistic(
+        selectedYearValue,
+        (_currentValue: string, nextValue: string) => nextValue,
+    );
 
     if (academicYears.length === 0) {
         return null;
@@ -47,7 +54,7 @@ export function AcademicYearFilter({
         displayedYears.includes(y.year),
     );
 
-    const handleYearChange = (value: string) => {
+    const handleYearChange = (value: string): void => {
         if (value === "__show_all__") {
             setShowAllYears(true);
             return;
@@ -61,7 +68,13 @@ export function AcademicYearFilter({
             params.set("year", value);
         }
 
-        router.push(`?${params.toString()}`);
+        const queryString = params.toString();
+        startTransition(() => {
+            setOptimisticYearId(value);
+            router.push(queryString ? `${pathname}?${queryString}` : pathname, {
+                scroll: false,
+            });
+        });
     };
 
     const isCurrentSemester = (year: AcademicYear) =>
@@ -83,7 +96,7 @@ export function AcademicYearFilter({
                 </label>
                 <select
                     id="year-filter"
-                    value={currentYearId || "all"}
+                    value={optimisticYearId}
                     onChange={(e) => handleYearChange(e.target.value)}
                     className="w-full min-w-0 truncate rounded-xl border border-emerald-200 bg-white px-4 py-2.5 shadow-sm outline-none transition-base hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:flex-1"
                 >

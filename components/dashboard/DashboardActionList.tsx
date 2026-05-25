@@ -71,7 +71,7 @@ export function DashboardActionList({
             <HeroCard
                 href="/students"
                 icon={Users}
-                title="นักเรียนทั้งหมด"
+                title="นักเรียนคัดกรองทั้งหมด"
                 badge={
                     studentCount > 0
                         ? `${studentCount.toLocaleString()} คน`

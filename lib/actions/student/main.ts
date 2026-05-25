@@ -268,15 +268,25 @@ export async function searchStudents(query: string) {
         const viewer = await getViewerContext();
 
         if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return [];
+        const canViewNationalId = isSystemAdmin(viewer.role);
 
-        return searchStudentsQuery(
+        const students = await searchStudentsQuery(
             viewer.schoolId,
             viewer.advisoryClass,
             viewer.role,
             viewer.userId,
             sanitizedQuery,
-            isSystemAdmin(viewer.role),
+            canViewNationalId,
         );
+
+        if (canViewNationalId) {
+            return students;
+        }
+
+        return students.map((student) => ({
+            ...student,
+            nationalId: null,
+        }));
     } catch (error) {
         return handleActionError({
             context: "Search students error:",

@@ -11,6 +11,7 @@ import {
     ImportError,
 } from "./components";
 import type { ImportPreviewProps } from "./types";
+import { getAcademicYearLabel } from "./utils";
 
 /**
  * ImportPreview component - displays parsed student data before import
@@ -91,12 +92,10 @@ export function ImportPreview({
                 isLoading={isLoading}
                 canSave={!!selectedYearId && previewData.length > 0}
                 studentCount={previewData.length}
-                academicYearLabel={(() => {
-                    const y = academicYears.find(
-                        (yr) => yr.id === selectedYearId,
-                    );
-                    return y ? `${y.year} เทอม ${y.semester}` : "";
-                })()}
+                academicYearLabel={getAcademicYearLabel(
+                    academicYears,
+                    selectedYearId,
+                )}
                 assessmentRound={assessmentRound}
                 incompleteWarning={incompleteWarning}
                 zeroScoreWarning={zeroScoreWarning}

@@ -5,71 +5,29 @@ import {
     useTransition,
     useCallback,
 } from "react";
-import { calculateRiskLevel, type PhqScores } from "@/lib/utils/phq-scoring";
 import {
     hasRound1Data,
     getIncompleteActivityWarning,
 } from "@/lib/actions/student/main";
 import { importStudents } from "@/lib/actions/student/mutations";
-import type { ImportResult } from "@/lib/actions/student/types";
 import { getAcademicYears } from "@/lib/actions/academic-year.actions";
 import { getCurrentTeacherProfile } from "@/lib/actions/teacher.actions";
 import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
-import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type {
     ImportPreviewProps,
     UseImportPreviewReturn,
-    PreviewStudent,
-    RiskCounts,
     TeacherProfile,
     AcademicYear,
-    ZeroScoreWarningInfo,
 } from "./types";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
-
-function formatImportIssues(result: ImportResult): string {
-    if (!result.errors || result.errors.length === 0) {
-        return result.message;
-    }
-
-    return `${result.message}\n\n${result.errors.join("\n")}`;
-}
-
-function hasAllZeroQuestionScores(scores: PhqScores): boolean {
-    return (
-        scores.q1 === 0 &&
-        scores.q2 === 0 &&
-        scores.q3 === 0 &&
-        scores.q4 === 0 &&
-        scores.q5 === 0 &&
-        scores.q6 === 0 &&
-        scores.q7 === 0 &&
-        scores.q8 === 0 &&
-        scores.q9 === 0
-    );
-}
-
-function buildZeroScoreWarning(
-    students: PreviewStudent[],
-): ZeroScoreWarningInfo | null {
-    const examples: ZeroScoreWarningInfo["examples"] = [];
-    let studentCount = 0;
-
-    for (const student of students) {
-        if (!hasAllZeroQuestionScores(student.scores)) continue;
-
-        studentCount++;
-        if (examples.length < 5) {
-            examples.push({
-                studentId: student.studentId,
-                fullName: `${student.firstName} ${student.lastName}`,
-                class: student.class,
-            });
-        }
-    }
-
-    return studentCount > 0 ? { studentCount, examples } : null;
-}
+import {
+    buildImportStudentsPayload,
+    buildZeroScoreWarning,
+    createPreviewStudents,
+    filterPreviewStudents,
+    formatImportIssues,
+    getImportedClasses,
+} from "./utils";
 
 /**
  * Custom hook for managing ImportPreview state and logic
@@ -94,12 +52,7 @@ export function useImportPreview({
 
     // Editable student data — initialized from parsed Excel, can be modified in preview
     const [editableData, setEditableData] = useState(() =>
-        data.map((student, idx) => {
-            const { totalScore, riskLevel } = calculateRiskLevel(
-                student.scores,
-            );
-            return { ...student, totalScore, riskLevel, _originalIndex: idx };
-        }),
+        createPreviewStudents(data),
     );
 
     // Use editableData for all downstream computations
@@ -107,45 +60,11 @@ export function useImportPreview({
 
     // Filter data + count risk levels in a single pass (combined iterations)
     const { previewData, filteredOutStudents, riskCounts } = useMemo(() => {
-        const isClassTeacher =
-            teacherProfile?.role === "class_teacher" &&
-            !!teacherProfile.advisoryClass;
-        const validClassSet = new Set(
-            schoolClassNames.map((className) => normalizeClassName(className)),
-        );
-
-        const matched: PreviewStudent[] = [];
-        const excluded: PreviewStudent[] = [];
-        const counts: RiskCounts = {
-            blue: 0,
-            green: 0,
-            yellow: 0,
-            orange: 0,
-            red: 0,
-        };
-
-        for (const student of allPreviewData) {
-            const studentClass = normalizeClassName(student.class);
-            const classExists =
-                validClassSet.size > 0 && validClassSet.has(studentClass);
-
-            if (
-                !classExists ||
-                isClassTeacher &&
-                studentClass !== teacherProfile?.advisoryClass
-            ) {
-                excluded.push(student);
-            } else {
-                matched.push(student);
-                counts[student.riskLevel]++;
-            }
-        }
-
-        return {
-            previewData: matched,
-            filteredOutStudents: excluded,
-            riskCounts: counts,
-        };
+        return filterPreviewStudents({
+            students: allPreviewData,
+            schoolClassNames,
+            teacherProfile,
+        });
     }, [allPreviewData, schoolClassNames, teacherProfile]);
 
     const zeroScoreWarning = useMemo(
@@ -191,8 +110,7 @@ export function useImportPreview({
 
     // Extract unique classes from importable data — used to scope the warning
     const importedClasses = useMemo(() => {
-        const classSet = new Set(previewData.map((s) => s.class));
-        return [...classSet];
+        return getImportedClasses(previewData);
     }, [previewData]);
 
     // Handler: when user changes academic year, also check round 1
@@ -257,16 +175,7 @@ export function useImportPreview({
             try {
                 // Send only filtered students (previewData) — not all editableData
                 // This matches the count shown in the confirm dialog
-                const studentsToImport = previewData.map((s) => ({
-                    studentId: s.studentId,
-                    nationalId: s.nationalId,
-                    firstName: s.firstName,
-                    lastName: s.lastName,
-                    gender: s.gender,
-                    age: s.age,
-                    class: s.class,
-                    scores: s.scores,
-                }));
+                const studentsToImport = buildImportStudentsPayload(previewData);
                 const result = await importStudents(
                     studentsToImport,
                     selectedYearId,

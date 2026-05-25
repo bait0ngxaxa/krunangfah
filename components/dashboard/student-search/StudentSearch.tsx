@@ -39,6 +39,7 @@ export function StudentSearch({
                 isScrollable={isScrollable}
                 showFade={showFade}
                 onStudentClick={handleStudentClick}
+                canViewNationalId={canSearchNationalId}
             />
         </div>
     );

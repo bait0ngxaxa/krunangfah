@@ -5,6 +5,7 @@ export type Student = {
     firstName: string;
     lastName: string;
     studentId: string | null;
+    nationalId?: string | null;
     class: string;
     phqResults: Array<{
         totalScore: number;

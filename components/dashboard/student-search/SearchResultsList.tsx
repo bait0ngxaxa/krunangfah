@@ -10,6 +10,7 @@ interface SearchResultsListProps {
     isScrollable: boolean;
     showFade: boolean;
     onStudentClick: (id: string) => void;
+    canViewNationalId?: boolean;
 }
 
 export function SearchResultsList({
@@ -18,6 +19,7 @@ export function SearchResultsList({
     isScrollable,
     showFade,
     onStudentClick,
+    canViewNationalId = false,
 }: SearchResultsListProps) {
     if (results.length === 0) return null;
 
@@ -66,6 +68,7 @@ export function SearchResultsList({
                                     key={student.id}
                                     student={student}
                                     onClick={onStudentClick}
+                                    canViewNationalId={canViewNationalId}
                                 />
                             ))}
                         </div>
