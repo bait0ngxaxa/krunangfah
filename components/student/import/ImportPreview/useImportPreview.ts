@@ -25,6 +25,7 @@ import {
     buildZeroScoreWarning,
     createPreviewStudents,
     filterPreviewStudents,
+    formatParseImportErrors,
     formatImportIssues,
     getImportedClasses,
 } from "./utils";
@@ -34,11 +35,27 @@ import {
  */
 export function useImportPreview({
     data,
+    parseErrors = [],
     onSuccess,
-}: Pick<ImportPreviewProps, "data" | "onSuccess">): UseImportPreviewReturn {
+}: Pick<
+    ImportPreviewProps,
+    "data" | "parseErrors" | "onSuccess"
+>): UseImportPreviewReturn {
     // State
     const [isPending, startTransition] = useTransition();
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(() =>
+        formatParseImportErrors(parseErrors),
+    );
+    const [errorTitle, setErrorTitle] = useState<string>(() =>
+        parseErrors.length > 0
+            ? "ไฟล์มีบางแถวที่ไม่พร้อมนำเข้า"
+            : "นำเข้าข้อมูลไม่สำเร็จ",
+    );
+    const [errorDescription, setErrorDescription] = useState<string>(() =>
+        parseErrors.length > 0
+            ? "ระบบจะแสดงพรีวิวเฉพาะแถวที่ข้อมูลครบ กรุณาตรวจสอบแถวที่ไม่ผ่านด้านล่าง"
+            : "กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง",
+    );
     const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
     const [selectedYearId, setSelectedYearId] = useState<string>("");
     const [assessmentRound, setAssessmentRound] = useState<number>(1);
@@ -157,14 +174,22 @@ export function useImportPreview({
         );
     }, []);
 
+    const handleDismissError = useCallback(() => {
+        setError(null);
+    }, []);
+
     // Handle save action — send only previewData (filtered by role) to match the confirmed count
     const handleSave = () => {
         if (!selectedYearId) {
+            setErrorTitle("นำเข้าข้อมูลไม่สำเร็จ");
+            setErrorDescription("กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง");
             setError("กรุณาเลือกปีการศึกษา");
             return;
         }
 
         if (previewData.length === 0) {
+            setErrorTitle("นำเข้าข้อมูลไม่สำเร็จ");
+            setErrorDescription("กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง");
             setError("ไม่มีนักเรียนให้นำเข้า กรุณาอัปโหลดไฟล์ใหม่");
             return;
         }
@@ -196,10 +221,16 @@ export function useImportPreview({
                             result.status === "success" ? "success" : "partial",
                     });
                 } else {
+                    setErrorTitle("นำเข้าข้อมูลไม่สำเร็จ");
+                    setErrorDescription(
+                        "กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง",
+                    );
                     setError(formatImportIssues(result));
                 }
             } catch (err) {
                 console.error("Import error:", err);
+                setErrorTitle("นำเข้าข้อมูลไม่สำเร็จ");
+                setErrorDescription("กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง");
                 setError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
             }
         });
@@ -209,6 +240,8 @@ export function useImportPreview({
         // State
         isLoading: isPending,
         error,
+        errorTitle,
+        errorDescription,
         academicYears,
         selectedYearId,
         assessmentRound,
@@ -227,6 +260,7 @@ export function useImportPreview({
         handleYearChange,
         setAssessmentRound: handleRoundChange,
         handleRemoveStudent,
+        handleDismissError,
         handleSave,
     };
 }

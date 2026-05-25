@@ -8,6 +8,7 @@ import type { ImportResult } from "@/lib/actions/student/types";
  */
 export interface ImportPreviewProps {
     data: ParsedStudent[];
+    parseErrors?: string[];
     onCancel: () => void;
     onSuccess: (result: ImportResult) => void;
     canViewNationalId: boolean;
@@ -71,6 +72,8 @@ export interface UseImportPreviewReturn {
     // State
     isLoading: boolean;
     error: string | null;
+    errorTitle: string;
+    errorDescription: string;
     academicYears: AcademicYear[];
     selectedYearId: string;
     assessmentRound: number;
@@ -89,5 +92,6 @@ export interface UseImportPreviewReturn {
     handleYearChange: (yearId: string) => void;
     setAssessmentRound: (round: number) => void;
     handleRemoveStudent: (studentIndex: number) => void;
+    handleDismissError: () => void;
     handleSave: () => void;
 }

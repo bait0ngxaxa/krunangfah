@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ExcelUploader } from "@/components/student/import/ExcelUploader";
+import { ImportResultDialog } from "@/components/student/import/ImportResultDialog";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import type { ImportResult } from "@/lib/actions/student/types";
 import { toast } from "sonner";
@@ -30,6 +31,8 @@ interface ImportClientProps {
 export function ImportClient({ canViewNationalId }: ImportClientProps) {
     const router = useRouter();
     const [parsedData, setParsedData] = useState<ParsedStudent[] | null>(null);
+    const [parseErrors, setParseErrors] = useState<string[]>([]);
+    const [partialResult, setPartialResult] = useState<ImportResult | null>(null);
     const redirectTimerRef = useRef<number | null>(null);
 
     useEffect(() => {
@@ -40,39 +43,43 @@ export function ImportClient({ canViewNationalId }: ImportClientProps) {
         };
     }, []);
 
-    const handleDataParsed = (data: ParsedStudent[]) => {
+    const handleDataParsed = (data: ParsedStudent[], errors: string[] = []) => {
+        setParseErrors(errors);
         setParsedData(data);
     };
 
     const handleCancel = () => {
+        setParseErrors([]);
         setParsedData(null);
     };
 
-    const handleSuccess = (result: ImportResult) => {
-        setParsedData(null);
-        if (result.status === "partial") {
-            const errorPreview = result.errors?.slice(0, 3).join("\n");
-            const remainingErrorCount =
-                result.errors && result.errors.length > 3
-                    ? `\nและอีก ${result.errors.length - 3} รายการ`
-                    : "";
-
-            toast.warning(`นำเข้าสำเร็จ ${result.imported ?? 0} คน`, {
-                description: errorPreview
-                    ? `${result.message}\n\n${errorPreview}${remainingErrorCount}`
-                    : result.message,
-            });
-        } else {
-            toast.success("บันทึกข้อมูลสำเร็จ!", {
-                description: result.message,
-            });
-        }
+    const scheduleRedirect = () => {
         if (redirectTimerRef.current) {
             window.clearTimeout(redirectTimerRef.current);
         }
         redirectTimerRef.current = window.setTimeout(() => {
             router.push("/dashboard");
         }, 2000);
+    };
+
+    const handleSuccess = (result: ImportResult) => {
+        setParsedData(null);
+        if (result.status === "partial") {
+            setParseErrors([]);
+            setPartialResult(result);
+            return;
+        }
+
+        setParseErrors([]);
+        toast.success("บันทึกข้อมูลสำเร็จ!", {
+            description: result.message,
+        });
+        scheduleRedirect();
+    };
+
+    const handleClosePartialResult = () => {
+        setPartialResult(null);
+        router.push("/dashboard");
     };
 
     return (
@@ -82,11 +89,16 @@ export function ImportClient({ canViewNationalId }: ImportClientProps) {
             ) : (
                 <ImportPreview
                     data={parsedData}
+                    parseErrors={parseErrors}
                     onCancel={handleCancel}
                     onSuccess={handleSuccess}
                     canViewNationalId={canViewNationalId}
                 />
             )}
+            <ImportResultDialog
+                result={partialResult}
+                onClose={handleClosePartialResult}
+            />
         </div>
     );
 }

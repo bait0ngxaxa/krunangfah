@@ -90,6 +90,13 @@ export interface StudentDashboardDataResponse {
 }
 
 // Import result type
+export interface ImportStudentSummary {
+    studentId: string;
+    fullName: string;
+    class: string;
+    reason?: string;
+}
+
 export interface ImportResult {
     success: boolean;
     status: "success" | "partial" | "error";
@@ -97,6 +104,8 @@ export interface ImportResult {
     imported?: number;
     skipped?: number;
     errors?: string[];
+    importedStudents?: ImportStudentSummary[];
+    failedStudents?: ImportStudentSummary[];
 }
 
 // Incomplete activity warning for import confirmation

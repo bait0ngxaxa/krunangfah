@@ -91,7 +91,7 @@ async function downloadStudentImportTemplate(): Promise<void> {
 }
 
 interface ExcelUploaderProps {
-    onDataParsed: (data: ParsedStudent[]) => void;
+    onDataParsed: (data: ParsedStudent[], errors?: string[]) => void;
 }
 
 export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
@@ -130,7 +130,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
             }
 
             if (result.data.length > 0) {
-                onDataParsed(result.data);
+                onDataParsed(result.data, result.errors);
             } else if (result.errors.length === 0) {
                 setError("ไม่พบข้อมูลนักเรียนในไฟล์");
             }

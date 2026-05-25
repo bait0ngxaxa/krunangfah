@@ -9,7 +9,7 @@ import type { RiskLevel } from "@/lib/constants/risk-levels";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { ACTIVITY_INDICES } from "@/lib/actions/activity/constants";
 import { revalidatePath } from "next/cache";
-import type { ImportResult } from "./types";
+import type { ImportResult, ImportStudentSummary } from "./types";
 import { logError } from "@/lib/utils/logging";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
@@ -23,6 +23,22 @@ const COUNT_EXCLUDED_STUDENT_STATUSES = new Set<StudentStatus>([
 interface UpdateStudentStatusResult {
     success: boolean;
     message: string;
+}
+
+function createImportStudentSummary(
+    student: ParsedStudent,
+    reason?: string,
+): ImportStudentSummary {
+    return {
+        studentId: student.studentId,
+        fullName: `${student.firstName} ${student.lastName}`,
+        class: student.class,
+        reason,
+    };
+}
+
+function formatImportStudentError(student: ParsedStudent, reason: string): string {
+    return `${student.firstName} ${student.lastName} (${student.studentId}): ${reason}`;
 }
 
 function getActivityNumbersByRiskLevel(riskLevel: RiskLevel): number[] {
@@ -156,6 +172,7 @@ export async function importStudents(
         }
 
         const errors: string[] = [];
+        const failedStudents: ImportStudentSummary[] = [];
         let skippedCount = 0;
         const seenStudentIds = new Set<string>();
         const seenNationalIds = new Set<string>();
@@ -164,27 +181,39 @@ export async function importStudents(
         for (const studentData of students) {
             const studentClass = normalizeClassName(studentData.class);
             if (!validClassSet.has(studentClass)) {
+                failedStudents.push(
+                    createImportStudentSummary(
+                        studentData,
+                        "ยังไม่มีห้องเรียนดังกล่าวในระบบ",
+                    ),
+                );
                 skippedCount++;
                 continue;
             }
 
             if (isClassTeacher && advisoryClass) {
                 if (studentClass !== advisoryClass) {
+                    failedStudents.push(
+                        createImportStudentSummary(
+                            studentData,
+                            "ไม่ใช่ห้องที่คุณดูแล",
+                        ),
+                    );
                     skippedCount++;
                     continue;
                 }
             }
 
             if (seenStudentIds.has(studentData.studentId)) {
-                errors.push(
-                    `${studentData.firstName} ${studentData.lastName} (${studentData.studentId}): พบรหัสนักเรียนซ้ำในไฟล์นำเข้า`,
-                );
+                const reason = "พบรหัสนักเรียนซ้ำในไฟล์นำเข้า";
+                errors.push(formatImportStudentError(studentData, reason));
+                failedStudents.push(createImportStudentSummary(studentData, reason));
                 continue;
             }
             if (seenNationalIds.has(studentData.nationalId)) {
-                errors.push(
-                    `${studentData.firstName} ${studentData.lastName} (${studentData.studentId}): พบเลขบัตรประชาชนซ้ำในไฟล์นำเข้า`,
-                );
+                const reason = "พบเลขบัตรประชาชนซ้ำในไฟล์นำเข้า";
+                errors.push(formatImportStudentError(studentData, reason));
+                failedStudents.push(createImportStudentSummary(studentData, reason));
                 continue;
             }
 
@@ -201,6 +230,8 @@ export async function importStudents(
                 return {
                     importedCount: 0,
                     duplicateRoundErrors: [] as string[],
+                    duplicateRoundFailures: [] as ImportStudentSummary[],
+                    importedStudents: [] as ImportStudentSummary[],
                 };
             }
 
@@ -254,9 +285,9 @@ export async function importStudents(
                 );
 
                 if (nationalIdOwner && nationalIdOwner.schoolId !== schoolId) {
-                    errors.push(
-                        `${row.firstName} ${row.lastName} (${row.studentId}): เลขบัตรประชาชนซ้ำกับข้อมูลที่มีในระบบ`,
-                    );
+                    const reason = "เลขบัตรประชาชนซ้ำกับข้อมูลที่มีในระบบ";
+                    errors.push(formatImportStudentError(row, reason));
+                    failedStudents.push(createImportStudentSummary(row, reason));
                     return false;
                 }
 
@@ -265,9 +296,9 @@ export async function importStudents(
                     studentIdOwner &&
                     nationalIdOwner.id !== studentIdOwner.id
                 ) {
-                    errors.push(
-                        `${row.firstName} ${row.lastName} (${row.studentId}): เลขบัตรประชาชนซ้ำกับนักเรียนคนอื่นในระบบ`,
-                    );
+                    const reason = "เลขบัตรประชาชนซ้ำกับนักเรียนคนอื่นในระบบ";
+                    errors.push(formatImportStudentError(row, reason));
+                    failedStudents.push(createImportStudentSummary(row, reason));
                     return false;
                 }
 
@@ -278,6 +309,8 @@ export async function importStudents(
                 return {
                     importedCount: 0,
                     duplicateRoundErrors: [] as string[],
+                    duplicateRoundFailures: [] as ImportStudentSummary[],
+                    importedStudents: [] as ImportStudentSummary[],
                 };
             }
 
@@ -397,6 +430,8 @@ export async function importStudents(
                       )
                     : null;
             const duplicateRoundErrors: string[] = [];
+            const duplicateRoundFailures: ImportStudentSummary[] = [];
+            const importedStudents: ImportStudentSummary[] = [];
             const phqResultsToCreate: Prisma.PhqResultCreateManyInput[] = [];
 
             for (const row of rowsSafeToImport) {
@@ -411,14 +446,19 @@ export async function importStudents(
                     round1StudentSet &&
                     !round1StudentSet.has(student.id)
                 ) {
-                    duplicateRoundErrors.push(
-                        `${row.firstName} ${row.lastName} (${row.studentId}): ยังไม่มีข้อมูลการประเมินครั้งที่ 1 สำหรับปีการศึกษานี้`,
+                    const reason =
+                        "ยังไม่มีข้อมูลการประเมินครั้งที่ 1 สำหรับปีการศึกษานี้";
+                    duplicateRoundErrors.push(formatImportStudentError(row, reason));
+                    duplicateRoundFailures.push(
+                        createImportStudentSummary(row, reason),
                     );
                     continue;
                 }
                 if (hasExistingResultSet.has(student.id)) {
-                    duplicateRoundErrors.push(
-                        `${row.firstName} ${row.lastName} (${row.studentId}): มีข้อมูลการประเมินครั้งที่ ${assessmentRound} อยู่แล้ว`,
+                    const reason = `มีข้อมูลการประเมินครั้งที่ ${assessmentRound} อยู่แล้ว`;
+                    duplicateRoundErrors.push(formatImportStudentError(row, reason));
+                    duplicateRoundFailures.push(
+                        createImportStudentSummary(row, reason),
                     );
                     continue;
                 }
@@ -443,6 +483,7 @@ export async function importStudents(
                     totalScore,
                     riskLevel,
                 });
+                importedStudents.push(createImportStudentSummary(row));
             }
 
             if (phqResultsToCreate.length > 0) {
@@ -497,10 +538,13 @@ export async function importStudents(
             return {
                 importedCount: phqResultsToCreate.length,
                 duplicateRoundErrors,
+                duplicateRoundFailures,
+                importedStudents,
             };
         });
 
         errors.push(...txResult.duplicateRoundErrors);
+        failedStudents.push(...txResult.duplicateRoundFailures);
 
         revalidatePath("/dashboard");
         revalidatePath("/students");
@@ -544,6 +588,9 @@ export async function importStudents(
             imported: importedCount,
             skipped: skippedCount,
             errors: failedCount > 0 ? errors : undefined,
+            importedStudents: txResult.importedStudents,
+            failedStudents:
+                failedStudents.length > 0 ? failedStudents : undefined,
         };
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {

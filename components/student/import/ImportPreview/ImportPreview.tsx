@@ -19,6 +19,7 @@ import { getAcademicYearLabel } from "./utils";
  */
 export function ImportPreview({
     data,
+    parseErrors,
     onCancel,
     onSuccess,
     canViewNationalId,
@@ -26,6 +27,8 @@ export function ImportPreview({
     const {
         isLoading,
         error,
+        errorTitle,
+        errorDescription,
         academicYears,
         selectedYearId,
         handleYearChange,
@@ -39,9 +42,10 @@ export function ImportPreview({
         riskCounts,
         handleSave,
         handleRemoveStudent,
+        handleDismissError,
         incompleteWarning,
         zeroScoreWarning,
-    } = useImportPreview({ data, onSuccess });
+    } = useImportPreview({ data, parseErrors, onSuccess });
 
     return (
         <div className="space-y-6">
@@ -82,8 +86,13 @@ export function ImportPreview({
                 canViewNationalId={canViewNationalId}
             />
 
-            {/* Error Display */}
-            <ImportError error={error} />
+            {/* Error Modal */}
+            <ImportError
+                error={error}
+                title={errorTitle}
+                description={errorDescription}
+                onClose={handleDismissError}
+            />
 
             {/* Action Buttons */}
             <ImportActions

@@ -18,6 +18,14 @@ export function formatImportIssues(result: ImportResult): string {
     return `${result.message}\n\n${result.errors.join("\n")}`;
 }
 
+export function formatParseImportErrors(errors: string[]): string | null {
+    if (errors.length === 0) {
+        return null;
+    }
+
+    return `มีบางแถวที่ยังไม่พร้อมนำเข้า\n\n${errors.join("\n")}`;
+}
+
 export function createPreviewStudents(
     data: ParsedStudent[],
 ): PreviewStudent[] {

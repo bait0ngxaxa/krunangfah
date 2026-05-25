@@ -6,6 +6,7 @@ import {
     filterPreviewStudents,
     getAcademicYearLabel,
     getImportedClasses,
+    formatParseImportErrors,
 } from "@/components/student/import/ImportPreview/utils";
 import type { ParsedStudent } from "@/lib/utils/excel-parser";
 
@@ -125,5 +126,17 @@ describe("ImportPreview utils", () => {
                 "year-1",
             ),
         ).toBe("2569 เทอม 1");
+    });
+
+    it("formats parse errors so partial Excel rows can be shown in preview", () => {
+        const message = formatParseImportErrors([
+            "แถว 3: ขาดข้อมูลในฟิลด์: นามสกุล",
+            "แถว 5: อายุ (ปี) ต้องเป็นตัวเลข 1-100",
+        ]);
+
+        expect(message).toContain("มีบางแถวที่ยังไม่พร้อมนำเข้า");
+        expect(message).toContain("แถว 3: ขาดข้อมูลในฟิลด์: นามสกุล");
+        expect(message).toContain("แถว 5: อายุ (ปี) ต้องเป็นตัวเลข 1-100");
+        expect(formatParseImportErrors([])).toBeNull();
     });
 });

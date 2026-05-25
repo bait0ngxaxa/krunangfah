@@ -748,3 +748,112 @@ describe("Excel Parser - National ID Parsing", () => {
         expect(result.data).toHaveLength(0);
     });
 });
+
+describe("Excel Parser - Mixed Valid And Invalid Rows", () => {
+    async function createMixedRowsWorkbookBuffer(): Promise<ArrayBuffer> {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
+
+        worksheet.addRow([
+            "รหัสนักเรียน",
+            "เลขบัตรประชาชน",
+            "ชื่อ",
+            "นามสกุล",
+            "เพศกำเนิด",
+            "อายุ (ปี)",
+            "ห้อง",
+            "ข้อ1",
+            "ข้อ2",
+            "ข้อ3",
+            "ข้อ4",
+            "ข้อ5",
+            "ข้อ6",
+            "ข้อ7",
+            "ข้อ8",
+            "ข้อ9",
+            "opt1",
+            "opt2",
+        ]);
+
+        worksheet.addRow([
+            "66001",
+            "1103700000011",
+            "สมชาย",
+            "ใจดี",
+            "ชาย",
+            13,
+            "ม.1/1",
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "ไม่ใช่",
+            "ไม่ใช่",
+        ]);
+        worksheet.addRow([
+            "66002",
+            "1103700000012",
+            "สมหญิง",
+            "",
+            "หญิง",
+            13,
+            "ม.1/1",
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "ไม่ใช่",
+            "ไม่ใช่",
+        ]);
+        worksheet.addRow([
+            "66003",
+            "1103700000013",
+            "สมศักดิ์",
+            "รักเรียน",
+            "ชาย",
+            14,
+            "ม.1/2",
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            "ไม่ใช่",
+            "ไม่ใช่",
+        ]);
+
+        const output = Buffer.from(await workbook.xlsx.writeBuffer());
+        return output.buffer.slice(
+            output.byteOffset,
+            output.byteOffset + output.byteLength,
+        );
+    }
+
+    it("keeps complete rows for preview and reports incomplete rows", async () => {
+        const buffer = await createMixedRowsWorkbookBuffer();
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(false);
+        expect(result.data.map((student) => student.studentId)).toEqual([
+            "66001",
+            "66003",
+        ]);
+        expect(result.errors).toContain(
+            "แถว 3: ขาดข้อมูลในฟิลด์: นามสกุล",
+        );
+    });
+});
