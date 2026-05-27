@@ -57,34 +57,59 @@ export function ImportActions({
 
     return (
         <div className="space-y-4 pt-4">
-            {/* Confirmation Panel */}
+            {/* Confirmation Modal */}
             {showConfirm && (
-                <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
-                        <div className="space-y-3 flex-1">
-                            <p className="font-bold text-gray-800">
-                                ยืนยันการนำเข้าข้อมูล
-                            </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                                <div className="bg-white/80 rounded-xl px-3 py-2 border border-amber-200">
-                                    <span className="text-gray-500 block text-xs">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+                    style={{ overscrollBehavior: "contain" }}
+                    onClick={handleCancelConfirm}
+                >
+                    <div
+                        className="w-full max-w-3xl animate-in fade-in zoom-in-95 duration-200 overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-[0_24px_60px_-20px_rgba(15,23,42,0.65)]"
+                        role="alertdialog"
+                        aria-modal="true"
+                        aria-labelledby="import-confirm-title"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <div className="border-b border-amber-100 bg-amber-50 px-6 py-5">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                                    <AlertTriangle className="h-5 w-5 text-amber-600" />
+                                </div>
+                                <div>
+                                    <h3
+                                        id="import-confirm-title"
+                                        className="text-base font-bold text-amber-800"
+                                    >
+                                        ยืนยันการนำเข้าข้อมูล
+                                    </h3>
+                                    <p className="mt-1 text-sm text-amber-700">
+                                        กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนกดยืนยัน
+                                        เมื่อนำเข้าแล้วจะไม่สามารถยกเลิกได้
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-4 px-6 py-5">
+                            <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+                                <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2">
+                                    <span className="block text-xs text-gray-500">
                                         ปีการศึกษา
                                     </span>
                                     <span className="font-bold text-gray-800">
                                         {academicYearLabel || "ยังไม่ได้เลือก"}
                                     </span>
                                 </div>
-                                <div className="bg-white/80 rounded-xl px-3 py-2 border border-amber-200">
-                                    <span className="text-gray-500 block text-xs">
+                                <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2">
+                                    <span className="block text-xs text-gray-500">
                                         รอบการประเมิน
                                     </span>
                                     <span className="font-bold text-gray-800">
                                         ครั้งที่ {assessmentRound}
                                     </span>
                                 </div>
-                                <div className="bg-white/80 rounded-xl px-3 py-2 border border-amber-200">
-                                    <span className="text-gray-500 block text-xs">
+                                <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2">
+                                    <span className="block text-xs text-gray-500">
                                         จำนวนนักเรียน
                                     </span>
                                     <span className="font-bold text-gray-800">
@@ -93,12 +118,11 @@ export function ImportActions({
                                 </div>
                             </div>
 
-                            {/* Incomplete Activity Warning */}
                             {incompleteWarning?.hasIncomplete && (
-                                <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4 space-y-2">
+                                <div className="space-y-2 rounded-xl border-2 border-red-300 bg-red-50 p-4">
                                     <div className="flex items-center gap-2">
-                                        <ShieldAlert className="w-5 h-5 text-red-500 shrink-0" />
-                                        <p className="font-bold text-red-700 text-sm">
+                                        <ShieldAlert className="h-5 w-5 shrink-0 text-red-500" />
+                                        <p className="text-sm font-bold text-red-700">
                                             ⚠️ พบนักเรียน{" "}
                                             {incompleteWarning.studentCount} คน
                                             ที่ยังทำกิจกรรมไม่ครบ (
@@ -107,7 +131,7 @@ export function ImportActions({
                                             {incompleteWarning.previousRound}
                                         </p>
                                     </div>
-                                    <p className="text-xs text-red-600 ml-7">
+                                    <p className="ml-7 text-xs text-red-600">
                                         เมื่อนำเข้าข้อมูลใหม่แล้ว
                                         จะไม่สามารถย้อนกลับไปทำกิจกรรมเดิมได้
                                         กรุณาตรวจสอบให้แน่ใจก่อนยืนยัน
@@ -116,11 +140,11 @@ export function ImportActions({
                             )}
 
                             {zeroScoreWarning && (
-                                <div className="bg-amber-100 border-2 border-amber-400 rounded-xl p-4 space-y-2">
+                                <div className="space-y-2 rounded-xl border-2 border-amber-400 bg-amber-100 p-4">
                                     <div className="flex items-start gap-2">
-                                        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
                                         <div className="space-y-2">
-                                            <p className="font-bold text-amber-800 text-sm">
+                                            <p className="text-sm font-bold text-amber-800">
                                                 พบนักเรียน{" "}
                                                 {zeroScoreWarning.studentCount}{" "}
                                                 คนที่คะแนนข้อ 1-9 เป็น 0
@@ -158,11 +182,7 @@ export function ImportActions({
                                 </div>
                             )}
 
-                            <p className="text-xs text-amber-700">
-                                กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนกดยืนยัน
-                                เมื่อนำเข้าแล้วจะไม่สามารถยกเลิกได้
-                            </p>
-                            <div className="flex gap-3 justify-end">
+                            <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
                                 <Button
                                     type="button"
                                     onClick={handleCancelConfirm}

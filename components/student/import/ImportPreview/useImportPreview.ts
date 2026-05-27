@@ -63,6 +63,8 @@ export function useImportPreview({
         null,
     );
     const [schoolClassNames, setSchoolClassNames] = useState<string[]>([]);
+    const [isImportContextLoaded, setIsImportContextLoaded] =
+        useState<boolean>(false);
     const [round1Exists, setRound1Exists] = useState<boolean>(false);
     const [incompleteWarning, setIncompleteWarning] =
         useState<IncompleteActivityInfo | null>(null);
@@ -81,8 +83,14 @@ export function useImportPreview({
             students: allPreviewData,
             schoolClassNames,
             teacherProfile,
+            isImportContextLoaded,
         });
-    }, [allPreviewData, schoolClassNames, teacherProfile]);
+    }, [
+        allPreviewData,
+        isImportContextLoaded,
+        schoolClassNames,
+        teacherProfile,
+    ]);
 
     const zeroScoreWarning = useMemo(
         () => buildZeroScoreWarning(previewData),
@@ -121,6 +129,8 @@ export function useImportPreview({
                     advisoryClass: profile.advisoryClass,
                 });
             }
+
+            setIsImportContextLoaded(true);
         };
         loadData();
     }, []);

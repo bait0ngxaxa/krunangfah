@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { Eye, X, Check, FileText, ImageIcon } from "lucide-react";
+import { Eye, X, Check, ImageIcon } from "lucide-react";
 import { getWorksheetNames } from "@/components/activity/ActivityWorkspace/constants";
 import { Button } from "@/components/ui/Button";
 
@@ -66,13 +66,7 @@ export function WorksheetPreviewButton({
                             <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-4 sm:px-8 sm:py-5">
                                 <h3 className="font-bold text-gray-800 truncate flex items-center gap-3 text-lg">
                                     <span className="p-2 rounded-lg bg-white border border-emerald-200 text-emerald-600 shadow-sm">
-                                        {previewFile.name
-                                            .toLowerCase()
-                                            .endsWith(".pdf") ? (
-                                            <FileText className="w-5 h-5" />
-                                        ) : (
-                                            <ImageIcon className="w-5 h-5" />
-                                        )}
+                                        <ImageIcon className="w-5 h-5" />
                                     </span>
                                     {previewFile.name}
                                 </h3>
@@ -85,33 +79,23 @@ export function WorksheetPreviewButton({
                                 </button>
                             </div>
                             <div className="min-h-0 flex-1 overflow-auto bg-gray-50/50 p-6">
-                                {previewFile.url
-                                    .toLowerCase()
-                                    .endsWith(".pdf") ? (
-                                    <iframe
+                                <div className="flex justify-center">
+                                    <Image
                                         src={previewFile.url}
-                                        className="w-full h-[70vh] rounded-xl border border-gray-200 shadow-inner"
-                                        title="PDF Preview"
+                                        alt={previewFile.name}
+                                        width={1200}
+                                        height={900}
+                                        className="w-auto h-auto max-h-[70vh] rounded-xl shadow-lg"
+                                        style={{ objectFit: "contain" }}
+                                        unoptimized
+                                        onError={(_e) => {
+                                            console.error(
+                                                "Image failed to load:",
+                                                previewFile.url,
+                                            );
+                                        }}
                                     />
-                                ) : (
-                                    <div className="flex justify-center">
-                                        <Image
-                                            src={previewFile.url}
-                                            alt={previewFile.name}
-                                            width={1200}
-                                            height={900}
-                                            className="w-auto h-auto max-h-[70vh] rounded-xl shadow-lg"
-                                            style={{ objectFit: "contain" }}
-                                            unoptimized
-                                            onError={(_e) => {
-                                                console.error(
-                                                    "Image failed to load:",
-                                                    previewFile.url,
-                                                );
-                                            }}
-                                        />
-                                    </div>
-                                )}
+                                </div>
                             </div>
                         </div>
                     </div>,

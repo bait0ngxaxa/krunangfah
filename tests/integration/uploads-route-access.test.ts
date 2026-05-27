@@ -141,6 +141,24 @@ describe("Integration: Upload Route Access Control", () => {
         expect(response.status).toBe(200);
     });
 
+    it("rejects pdf files even when authenticated", async () => {
+        mockSession(USERS.schoolAdmin);
+
+        const response = await GET(
+            new NextRequest(
+                "http://localhost/api/uploads/worksheets/not-allowed.pdf",
+                { method: "GET" },
+            ),
+            {
+                params: Promise.resolve({
+                    path: ["worksheets", "not-allowed.pdf"],
+                }),
+            },
+        );
+
+        expect(response.status).toBe(403);
+    });
+
     it("unauthenticated request gets 401", async () => {
         mockUnauthenticated();
 

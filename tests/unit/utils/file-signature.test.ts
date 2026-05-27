@@ -56,9 +56,9 @@ describe("validateFileSignature", () => {
             expect(validateFileSignature(buf, "png")).toBe(true);
         });
 
-        it("should accept valid PDF", () => {
+        it("should reject valid PDF because uploads accept images only", () => {
             const buf = hexBuf(...PDF_MAGIC, 0x2d, 0x31); // %PDF-1
-            expect(validateFileSignature(buf, "pdf")).toBe(true);
+            expect(validateFileSignature(buf, "pdf")).toBe(false);
         });
 
         it("should accept valid XLSX", () => {

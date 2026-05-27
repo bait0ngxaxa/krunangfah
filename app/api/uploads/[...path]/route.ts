@@ -9,7 +9,7 @@ import { canAccessStudentByRole } from "@/lib/security/student-access";
 import { logError } from "@/lib/utils/logging";
 
 /** Allowed file extensions for serving (must match upload whitelist) */
-const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "pdf"]);
+const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
 
 function getContentType(ext: string): string {
     switch (ext) {
@@ -18,8 +18,6 @@ function getContentType(ext: string): string {
             return "image/jpeg";
         case "png":
             return "image/png";
-        case "pdf":
-            return "application/pdf";
         default:
             return "application/octet-stream";
     }

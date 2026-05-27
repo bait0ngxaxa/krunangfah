@@ -71,6 +71,27 @@ describe("ImportPreview utils", () => {
         expect(result.riskCounts.blue).toBe(1);
     });
 
+    it("does not filter or warn before import context finishes loading", () => {
+        const students = createPreviewStudents([
+            createStudent({ studentId: "S001", class: "ม.1/1" }),
+            createStudent({ studentId: "S002", class: "ม.9/9" }),
+        ]);
+
+        const result = filterPreviewStudents({
+            students,
+            schoolClassNames: [],
+            teacherProfile: null,
+            isImportContextLoaded: false,
+        });
+
+        expect(result.previewData.map((student) => student.studentId)).toEqual([
+            "S001",
+            "S002",
+        ]);
+        expect(result.filteredOutStudents).toEqual([]);
+        expect(result.riskCounts.blue).toBe(2);
+    });
+
     it("limits class_teacher imports to advisory class", () => {
         const students = createPreviewStudents([
             createStudent({ studentId: "S001", class: "ม.1/1" }),

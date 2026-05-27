@@ -39,15 +39,25 @@ export function filterPreviewStudents({
     students,
     schoolClassNames,
     teacherProfile,
+    isImportContextLoaded = true,
 }: {
     students: PreviewStudent[];
     schoolClassNames: string[];
     teacherProfile: TeacherProfile | null;
+    isImportContextLoaded?: boolean;
 }): {
     previewData: PreviewStudent[];
     filteredOutStudents: PreviewStudent[];
     riskCounts: RiskCounts;
 } {
+    if (!isImportContextLoaded) {
+        return {
+            previewData: students,
+            filteredOutStudents: [],
+            riskCounts: createRiskCounts(students),
+        };
+    }
+
     const isClassTeacher =
         teacherProfile?.role === "class_teacher" &&
         !!teacherProfile.advisoryClass;
@@ -78,6 +88,18 @@ export function filterPreviewStudents({
     }
 
     return { previewData, filteredOutStudents, riskCounts };
+}
+
+function createRiskCounts(
+    students: Array<{ riskLevel: keyof RiskCounts }>,
+): RiskCounts {
+    const riskCounts = createEmptyRiskCounts();
+
+    for (const student of students) {
+        riskCounts[student.riskLevel]++;
+    }
+
+    return riskCounts;
 }
 
 export function buildZeroScoreWarning(

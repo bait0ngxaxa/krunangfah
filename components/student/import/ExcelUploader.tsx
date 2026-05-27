@@ -3,6 +3,7 @@ import { useState, useRef } from "react";
 import { parseExcelBuffer, type ParsedStudent } from "@/lib/utils/excel-parser";
 import { MAX_IMPORT_FILE_SIZE_BYTES } from "@/lib/constants/import";
 import { Button } from "@/components/ui/Button";
+import { ImportErrorModal } from "@/components/student/import/ImportErrorModal";
 import {
     CheckCircle2,
     Download,
@@ -61,6 +62,10 @@ const TEMPLATE_EXAMPLE_ROW = [
     "ไม่ใช่",
     "ไม่ใช่",
 ] as const;
+
+const UPLOAD_ERROR_TITLE = "อัปโหลดไฟล์ไม่สำเร็จ";
+const UPLOAD_ERROR_DESCRIPTION =
+    "กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง";
 
 async function downloadStudentImportTemplate(): Promise<void> {
     const ExcelJS = await import("exceljs");
@@ -174,6 +179,10 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
         } catch {
             setError("ไม่สามารถดาวน์โหลด template ได้ กรุณาลองใหม่อีกครั้ง");
         }
+    };
+
+    const handleDismissError = () => {
+        setError(null);
     };
 
     return (
@@ -300,13 +309,12 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                 )}
             </div>
 
-            {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl animate-fade-in-up">
-                    <p className="text-sm text-red-600 whitespace-pre-line font-medium text-center">
-                        {error}
-                    </p>
-                </div>
-            )}
+            <ImportErrorModal
+                error={error}
+                title={UPLOAD_ERROR_TITLE}
+                description={UPLOAD_ERROR_DESCRIPTION}
+                onClose={handleDismissError}
+            />
         </div>
     );
 }

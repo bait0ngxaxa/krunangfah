@@ -1,4 +1,6 @@
+import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type { PreviewStudent } from "../types";
 
@@ -140,11 +142,22 @@ export function FilteredStudentsWarning({
     validClassNames,
     isClassScoped,
 }: FilteredStudentsWarningProps) {
-    if (students.length === 0) {
-        return null;
-    }
+    const [dismissedWarningKey, setDismissedWarningKey] = useState<
+        string | null
+    >(null);
+    const warningKey = useMemo(
+        () =>
+            students
+                .map((student) => `${student._originalIndex}:${student.class}`)
+                .join("|"),
+        [students],
+    );
+    const isOpen = students.length > 0 && dismissedWarningKey !== warningKey;
 
-    const validClassSet = new Set(validClassNames.map(normalizeClassName));
+    const validClassSet = useMemo(
+        () => new Set(validClassNames.map(normalizeClassName)),
+        [validClassNames],
+    );
     const missingClassStudents = students.filter(
         (student) => !validClassSet.has(normalizeClassName(student.class)),
     );
@@ -158,15 +171,44 @@ export function FilteredStudentsWarning({
             ? `พบห้องเรียนที่ยังไม่ได้สร้างในระบบ (${missingClassStudents.length} คน)`
             : `พบนักเรียนที่ไม่ตรงกับห้องที่คุณดูแล (${outOfScopeStudents.length} คน)`;
 
+    if (students.length === 0 || !isOpen) {
+        return null;
+    }
+
     return (
-        <div className="mt-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-lg">
-            <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
-                <div className="flex-1">
-                    <p className="font-semibold text-amber-800 mb-2">
-                        {title}
-                    </p>
-                    <div className="max-h-40 space-y-3 overflow-y-auto rounded bg-amber-100/50 p-3">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+            style={{ overscrollBehavior: "contain" }}
+            onClick={() => setDismissedWarningKey(warningKey)}
+        >
+            <div
+                className="w-full max-w-3xl animate-in fade-in zoom-in-95 duration-200 overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-[0_24px_60px_-20px_rgba(15,23,42,0.65)]"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="filtered-students-warning-title"
+                onClick={(event) => event.stopPropagation()}
+            >
+                <div className="border-b border-amber-100 bg-amber-50 px-6 py-5">
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                            <AlertTriangle className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                            <h3
+                                id="filtered-students-warning-title"
+                                className="text-base font-bold text-amber-800"
+                            >
+                                {title}
+                            </h3>
+                            <p className="mt-1 text-sm text-amber-700">
+                                รายการเหล่านี้จะไม่ถูกนำเข้า
+                                กรุณาตรวจสอบก่อนดำเนินการต่อ
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div className="space-y-5 px-6 py-5">
+                    <div className="max-h-[50vh] space-y-4 overflow-y-auto rounded-xl border border-amber-100 bg-amber-50/70 p-4">
                         <MissingClassSection
                             students={missingClassStudents}
                             validClassNames={validClassNames}
@@ -175,6 +217,17 @@ export function FilteredStudentsWarning({
                             students={outOfScopeStudents}
                             advisoryClass={advisoryClass}
                         />
+                    </div>
+                    <div className="flex justify-end">
+                        <Button
+                            type="button"
+                            onClick={() => setDismissedWarningKey(warningKey)}
+                            variant="primary"
+                            size="md"
+                            className="min-w-28"
+                        >
+                            รับทราบ
+                        </Button>
                     </div>
                 </div>
             </div>

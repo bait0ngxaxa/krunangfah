@@ -1,4 +1,4 @@
-import { X, FileText, ImageIcon } from "lucide-react";
+import { X, ImageIcon } from "lucide-react";
 import type { PreviewFile } from "../types";
 
 interface PreviewModalProps {
@@ -24,11 +24,7 @@ export function PreviewModal({ file, onClose }: PreviewModalProps) {
                 <div className="flex items-center justify-between border-b border-gray-200 bg-white px-8 py-5">
                     <h3 className="font-bold text-gray-800 truncate flex items-center gap-3 text-lg">
                         <span className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
-                            {file.name.toLowerCase().endsWith(".pdf") ? (
-                                <FileText className="w-5 h-5" />
-                            ) : (
-                                <ImageIcon className="w-5 h-5" />
-                            )}
+                            <ImageIcon className="w-5 h-5" />
                         </span>
                         {file.name}
                     </h3>
@@ -40,23 +36,15 @@ export function PreviewModal({ file, onClose }: PreviewModalProps) {
                     </button>
                 </div>
                 <div className="min-h-0 flex-1 overflow-auto bg-gray-50/50 p-6">
-                    {file.url.toLowerCase().endsWith(".pdf") ? (
-                        <iframe
+                    <div className="flex justify-center">
+                        {/* ใช้ <img> เพราะไฟล์ serve ผ่าน API route ที่ต้อง auth — next/image optimization ไม่มี session */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                             src={file.url}
-                            className="w-full h-[70vh] rounded-xl border border-gray-200 shadow-inner"
-                            title="PDF Preview"
+                            alt={file.name}
+                            className="w-auto h-auto max-h-[70vh] rounded-xl shadow-lg object-contain"
                         />
-                    ) : (
-                        <div className="flex justify-center">
-                            {/* ใช้ <img> เพราะไฟล์ serve ผ่าน API route ที่ต้อง auth — next/image optimization ไม่มี session */}
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                                src={file.url}
-                                alt={file.name}
-                                className="w-auto h-auto max-h-[70vh] rounded-xl shadow-lg object-contain"
-                            />
-                        </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>
