@@ -1,17 +1,6 @@
-import { CredentialsSignin } from "next-auth";
 import { NextResponse } from "next/server";
 import type { RateLimitResult } from "@/types/rate-limit.types";
-import {
-    createRateLimitErrorPayload,
-    encodeNextAuthRateLimitCode,
-} from "@/lib/rate-limit-errors";
-
-export class RateLimitCredentialsSignin extends CredentialsSignin {
-    constructor(result: RateLimitResult) {
-        super();
-        this.code = encodeNextAuthRateLimitCode(result.retryAfterSeconds);
-    }
-}
+import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
 
 export function createRateLimitApiResponse(result: RateLimitResult): NextResponse {
     const error = createRateLimitErrorPayload(result);

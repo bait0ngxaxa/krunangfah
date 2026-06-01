@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import type { NextRequest } from "next/server";
 import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
 import { RATE_LIMIT_AUTH_GENERAL } from "@/lib/constants/rate-limit";
 import {
     attachRateLimitHeaders,
     createRateLimitApiResponse,
 } from "@/lib/rate-limit-response";
+import { SESSION_COOKIE_NAME } from "@/lib/auth/session-store";
 
 // Rate limiter singletons (persist across requests)
-// Note: signin rate limiting is handled in auth.ts authorize() function
+// Note: signin rate limiting is handled in the stateful signin route.
 const generalAuthLimiter = createRateLimiter(RATE_LIMIT_AUTH_GENERAL);
 
 // Routes ที่ต้อง login
@@ -27,20 +28,19 @@ const protectedRoutes = [
 // Routes สำหรับ guest เท่านั้น (ถ้า login แล้วจะ redirect ไป dashboard)
 const guestOnlyRoutes = ["/signin", "/forgot-password", "/reset-password"];
 
-export default auth(async (req) => {
-    const { nextUrl, auth: session } = req;
+export default async function proxy(req: NextRequest) {
+    const { nextUrl } = req;
     const pathname = nextUrl.pathname;
 
     // ─── Rate Limiting: Auth API routes (POST only) ───
-    // Note: signin rate limiting is handled in auth.ts authorize() function
-    // to properly return error messages through NextAuth
+    // Note: signin rate limiting is handled by /api/auth/signin.
     if (pathname.startsWith("/api/auth/") && req.method === "POST") {
         const rateLimitKey = extractRateLimitKey((name) =>
             req.headers.get(name),
         );
 
-        // Skip rate limiting for signin endpoint (handled in auth.ts)
-        if (pathname === "/api/auth/callback/credentials") {
+        // Skip stricter endpoints that have their own limiter.
+        if (pathname === "/api/auth/signin") {
             return NextResponse.next();
         }
 
@@ -54,7 +54,7 @@ export default auth(async (req) => {
 
     // ─── Route Protection ───
 
-    const isLoggedIn = !!session;
+    const isLoggedIn = req.cookies.has(SESSION_COOKIE_NAME);
     // ถ้าเป็น public routes ให้ผ่าน
     if (pathname === "/" || pathname.startsWith("/invite/")) {
         return NextResponse.next();
@@ -78,14 +78,14 @@ export default auth(async (req) => {
 
     // ─── Onboarding redirects ───
     // Both teacher profile and schoolId checks are in (protected)/layout.tsx via DB query
-    // No JWT-based onboarding check here — avoids stale JWT loop
+    // No cookie-claim onboarding check here — avoids stale session loops.
 
     // NOTE: Role-based checks must happen in server components/actions
     // using DB-refreshed claims (see requireAuth in lib/session.ts).
-    // Avoid role gating in proxy because it reads JWT claims that can be stale.
+    // Avoid role gating in proxy because the cookie only proves session presence.
 
     return NextResponse.next();
-});
+}
 
 export const config = {
     matcher: [

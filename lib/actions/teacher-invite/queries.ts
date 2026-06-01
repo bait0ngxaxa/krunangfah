@@ -46,7 +46,7 @@ export async function getMyTeacherInvites(): Promise<InviteListResponse> {
     try {
         const session = await requireAuth();
 
-        // Fallback to DB when JWT is stale (e.g. right after onboarding)
+        // Fallback to DB when schoolId was just created in onboarding.
         const schoolId =
             session.user.schoolId ??
             (

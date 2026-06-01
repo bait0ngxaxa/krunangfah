@@ -3,7 +3,7 @@ import { createReadStream } from "fs";
 import { join, resolve, normalize } from "path";
 import { existsSync } from "fs";
 import { Readable } from "stream";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
 import { canAccessStudentByRole } from "@/lib/security/student-access";
 import { logError } from "@/lib/utils/logging";

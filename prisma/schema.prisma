@@ -1,4 +1,4 @@
-// Prisma Schema for NextAuth.js
+// Prisma Schema
 // Compatible with Prisma 6
 
 generator client {
@@ -98,7 +98,7 @@ model SchoolClassTerm {
   @@map("school_class_terms")
 }
 
-// User Model for JWT-based Authentication
+// User Model for Authentication
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -114,6 +114,7 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   school                School?             @relation(fields: [schoolId], references: [id])
+  sessions              UserSession[]
   teacher               Teacher?
   teacherInvites        TeacherInvite[]
   phqResults            PhqResult[]
@@ -128,6 +129,29 @@ model User {
   @@map("users")
   @@index([email])
   @@index([deletedAt])
+}
+
+// Stateful session - เก็บ session จริงไว้ฝั่ง server
+model UserSession {
+  id              String    @id @default(cuid())
+  sessionTokenHash String    @unique
+  userId          String
+  expiresAt       DateTime
+  lastActivityAt  DateTime
+  tokenRotatedAt  DateTime  @default(now())
+  userAgentLabel  String?
+  userAgentHash   String?
+  lastIpPrefix    String?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("user_sessions")
 }
 
 // Academic Year - ปีการศึกษาและเทอม

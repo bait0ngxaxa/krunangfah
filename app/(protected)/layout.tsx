@@ -25,7 +25,7 @@ export default async function ProtectedLayout({
 }) {
     const session = await requireAuth();
 
-    // Onboarding guard: check DB directly (JWT may be stale)
+    // Onboarding guard: check DB directly so claims stay current.
     if (session.user.role !== "system_admin") {
         const dbUser = await prisma.user.findUnique({
             where: { id: session.user.id },

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { signOut } from "next-auth/react";
 import { changePassword } from "@/lib/actions/security.actions";
 import {
     passwordChangeSchema,
@@ -37,7 +36,8 @@ export function useSecuritySettingsForm() {
 
             // Success: sign out and redirect to signin
             toast.success(result.message);
-            await signOut({ redirect: true, callbackUrl: "/signin" });
+            await fetch("/api/auth/signout", { method: "POST" });
+            window.location.href = "/signin";
         } catch (error) {
             console.error("Password change error:", error);
             toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");

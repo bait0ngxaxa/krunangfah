@@ -19,7 +19,7 @@ import type {
 const CLASSES_PATH = "/school/classes";
 
 /**
- * Re-reads schoolId from DB when JWT is stale (e.g. right after createSchoolAndLink).
+ * Re-reads schoolId from DB right after createSchoolAndLink.
  * Falls back to the value in session if present.
  */
 async function resolveSchoolId(

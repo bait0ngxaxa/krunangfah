@@ -117,7 +117,9 @@ describe("Excel Parser - Number Cell Clamping Logic", () => {
 });
 
 describe("Excel Parser - PHQA Answer Mapping", () => {
-    async function createWorkbookBuffer(): Promise<ArrayBuffer> {
+    async function createWorkbookBuffer(
+        q1Answer: string | number = "ไม่มีเลย",
+    ): Promise<ArrayBuffer> {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
 
@@ -150,7 +152,7 @@ describe("Excel Parser - PHQA Answer Mapping", () => {
             "ชาย",
             13,
             "ม.1/1",
-            "ไม่มีเลย",
+            q1Answer,
             "มีบางวัน",
             "มีมากกว่า 7 วัน",
             "มีแทบทุกวัน",
@@ -186,6 +188,17 @@ describe("Excel Parser - PHQA Answer Mapping", () => {
             q8: 3,
             q9: 0,
         });
+    });
+
+    it("reports unsupported PHQA answers without saying answers must be numeric", async () => {
+        const buffer = await createWorkbookBuffer("คำตอบอื่น");
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(false);
+        expect(result.errors).toContain(
+            'แถว 2: ข้อ1 ต้องเป็นคำตอบที่รองรับ (พบ: "คำตอบอื่น")',
+        );
+        expect(result.errors.join("\n")).not.toContain("ข้อ1 ต้องเป็นตัวเลข");
     });
 });
 

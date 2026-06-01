@@ -282,7 +282,7 @@ export async function parseExcelBuffer(
                     // ตรวจสอบว่าเป็นตัวเลขที่ valid
                     if (isNaN(num)) {
                         errors.push(
-                            `แถว ${rowNumber}: ${headerName} ต้องเป็นตัวเลข (พบ: "${value}")`,
+                            `แถว ${rowNumber}: ${headerName} ต้องเป็นคำตอบที่รองรับ (พบ: "${value}")`,
                         );
                         return 0;
                     }

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "next-auth";
 
-vi.mock("@/auth", () => ({
+vi.mock("@/lib/auth/auth", () => ({
     auth: vi.fn(),
 }));
 
@@ -13,7 +13,7 @@ vi.mock("@/lib/prisma", () => ({
     },
 }));
 
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireAuth, requirePrimaryAdmin } from "@/lib/session";
 

@@ -1,11 +1,15 @@
 "use client";
 
-import { SessionProvider } from "next-auth/react";
+import { useEffect } from "react";
 
 interface ProvidersProps {
     children: React.ReactNode;
 }
 
 export function Providers({ children }: ProvidersProps) {
-    return <SessionProvider>{children}</SessionProvider>;
+    useEffect(() => {
+        void fetch("/api/auth/rotate", { method: "POST" });
+    }, []);
+
+    return <>{children}</>;
 }

@@ -65,3 +65,19 @@ export interface PasswordChangeResponse {
     message: string;
     error?: RateLimitErrorPayload;
 }
+
+export interface ManagedSession {
+    id: string;
+    createdAt: Date;
+    expiresAt: Date;
+    lastActivityAt: Date;
+    userAgentLabel: string;
+    lastIpPrefix: string | null;
+    isCurrent: boolean;
+}
+
+export interface SessionManagementResponse {
+    success: boolean;
+    message: string;
+    sessions: ManagedSession[];
+}

@@ -37,7 +37,7 @@ const passwordChangeLimiter = createRateLimiter(RATE_LIMIT_PASSWORD_CHANGE);
  * - Rate limiting (3 attempts/hour) applied BEFORE password verification
  * - Verifies current password before allowing change
  * - Prevents reusing current password as new password
- * - Requires re-login after successful change (handled by client)
+ * - Revokes active sessions after successful change
  *
  * @param input - Password change data (current, new, confirm)
  * @returns Response with success status and message
@@ -113,11 +113,16 @@ export async function changePassword(
         // Hash new password
         const hashedPassword = await hashPassword(validated.newPassword);
 
-        // Update password in database
-        await prisma.user.update({
-            where: { id: userId },
-            data: { password: hashedPassword },
-        });
+        await prisma.$transaction([
+            prisma.user.update({
+                where: { id: userId },
+                data: { password: hashedPassword },
+            }),
+            prisma.userSession.updateMany({
+                where: { userId, revokedAt: null },
+                data: { revokedAt: new Date() },
+            }),
+        ]);
 
         return {
             success: true,

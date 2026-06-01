@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -50,13 +49,17 @@ export function InviteRegisterForm({
 
         toast.success("สร้างบัญชีสำเร็จ กำลังเข้าสู่ระบบ…");
 
-        const signInResult = await signIn("credentials", {
-            email,
-            password: data.password,
-            redirect: false,
+        const signInResponse = await fetch("/api/auth/signin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password: data.password }),
         });
+        const signInResult = (await signInResponse.json()) as {
+            success?: boolean;
+            code?: string;
+        };
 
-        if (signInResult?.error) {
+        if (!signInResponse.ok || !signInResult.success) {
             const rateLimitMessage = getRateLimitMessageFromNextAuthCode(
                 signInResult.code,
             );

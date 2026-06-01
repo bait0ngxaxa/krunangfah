@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -18,7 +17,7 @@ interface SignInFormProps {
     callbackUrl?: string;
 }
 
-export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
+export function SignInForm({ callbackUrl = "/dashboard" }: SignInFormProps) {
     const router = useRouter();
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -36,13 +35,19 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
         setError("");
 
         try {
-            const result = await signIn("credentials", {
-                email: data.email,
-                password: data.password,
-                redirect: false,
+            const response = await fetch("/api/auth/signin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
             });
+            const result = (await response.json()) as {
+                success?: boolean;
+                message?: string;
+                code?: string;
+                redirectTo?: string;
+            };
 
-            if (result?.error) {
+            if (!response.ok || !result.success) {
                 const rateLimitMessage = getRateLimitMessageFromNextAuthCode(
                     result.code,
                 );
@@ -56,7 +61,7 @@ export function SignInForm({ callbackUrl = "/" }: SignInFormProps) {
             }
 
             toast.success("เข้าสู่ระบบสำเร็จ");
-            router.push(callbackUrl);
+            router.push(callbackUrl || result.redirectTo || "/dashboard");
             router.refresh();
         } catch (err) {
             console.error("Sign in error:", err);

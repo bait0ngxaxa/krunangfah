@@ -1,0 +1,4 @@
+ALTER TABLE "user_sessions"
+ADD COLUMN IF NOT EXISTS "userAgentLabel" TEXT,
+ADD COLUMN IF NOT EXISTS "userAgentHash" TEXT,
+ADD COLUMN IF NOT EXISTS "lastIpPrefix" TEXT;

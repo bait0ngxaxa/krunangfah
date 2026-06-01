@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSession } from "next-auth/react";
 import { createSchoolAndLink } from "@/lib/actions/school-setup.actions";
 import type {
     SchoolClassItem,
@@ -19,7 +18,6 @@ interface UseSchoolSetupWizardParams {
 export function useSchoolSetupWizard({
     initialHasSchool,
 }: UseSchoolSetupWizardParams): UseSchoolSetupWizardReturn {
-    const { update: updateSession } = useSession();
     const [step, setStep] = useState<StepIndex>(0);
     const [classes, setClasses] = useState<SchoolClassItem[]>([]);
     const [roster, setRoster] = useState<TeacherRosterItem[]>([]);
@@ -70,13 +68,11 @@ export function useSchoolSetupWizard({
         // Save school info for summary
         setSchoolInfo({ name: data.name, province: data.province });
 
-        // Refresh session so schoolId is up-to-date in token
-        await updateSession();
         setStep(1);
     }
 
     function handleFinish(): void {
-        // Hard redirect — layout เช็ค schoolId จาก DB โดยตรง ไม่พึ่ง JWT
+        // Hard redirect — layout เช็ค schoolId จาก DB โดยตรง ไม่พึ่ง cookie claims
         window.location.href = "/dashboard";
     }
 

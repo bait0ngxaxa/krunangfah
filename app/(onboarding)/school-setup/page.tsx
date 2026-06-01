@@ -24,7 +24,7 @@ export default async function SchoolSetupPage() {
         redirect("/dashboard");
     }
 
-    // Read from DB to avoid stale JWT values after profile/setup mutations.
+    // Read from DB to avoid stale profile/setup values after mutations.
     const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: {

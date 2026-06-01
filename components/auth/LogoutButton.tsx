@@ -1,6 +1,5 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
 
 interface LogoutButtonProps {
@@ -9,7 +8,8 @@ interface LogoutButtonProps {
 
 export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
     const handleLogout = async () => {
-        await signOut({ callbackUrl: "/" });
+        await fetch("/api/auth/signout", { method: "POST" });
+        window.location.href = "/";
     };
 
     if (variant === "navbar") {

@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
 import type { UserRole } from "@/types/auth.types";
 import type { Session } from "next-auth";
@@ -47,7 +47,7 @@ export const getServerSession = cache(async () => {
 /**
  * Require authentication - redirects to signin if not authenticated.
  * Uses redirect() instead of throw to prevent error page loops
- * when JWT references a deleted user (e.g. after DB reset).
+ * when a stateful session references a deleted user (e.g. after DB reset).
  * @returns Session object (never returns if unauthenticated)
  */
 export async function requireAuth() {
