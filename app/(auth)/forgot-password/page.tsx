@@ -3,13 +3,21 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
+import { getServerSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
     title: "ลืมรหัสผ่าน | โครงการครูนางฟ้า",
     description: "กรอกอีเมลเพื่อรับลิงก์ตั้งรหัสผ่านใหม่",
 };
 
-export default function ForgotPasswordPage() {
+export default async function ForgotPasswordPage() {
+    const session = await getServerSession();
+
+    if (session?.user) {
+        redirect("/dashboard");
+    }
+
     return (
         <div className="relative min-h-dvh flex flex-col overflow-hidden">
             {/* Background image — grass/flowers */}

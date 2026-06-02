@@ -4,6 +4,8 @@ import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import type { Metadata } from "next";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
+import { getServerSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
     title: "ตั้งรหัสผ่านใหม่ | โครงการครูนางฟ้า",
@@ -16,6 +18,11 @@ export default async function ResetPasswordPage({
     searchParams: Promise<{ token?: string }>;
 }) {
     const { token } = await searchParams;
+    const session = await getServerSession();
+
+    if (session?.user) {
+        redirect("/dashboard");
+    }
 
     return (
         <div className="relative min-h-dvh flex flex-col overflow-hidden">

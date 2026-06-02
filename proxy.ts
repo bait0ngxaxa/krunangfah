@@ -25,9 +25,6 @@ const protectedRoutes = [
     "/settings",
 ];
 
-// Routes สำหรับ guest เท่านั้น (ถ้า login แล้วจะ redirect ไป dashboard)
-const guestOnlyRoutes = ["/signin", "/forgot-password", "/reset-password"];
-
 export default async function proxy(req: NextRequest) {
     const { nextUrl } = req;
     const pathname = nextUrl.pathname;
@@ -58,14 +55,6 @@ export default async function proxy(req: NextRequest) {
     // ถ้าเป็น public routes ให้ผ่าน
     if (pathname === "/" || pathname.startsWith("/invite/")) {
         return NextResponse.next();
-    }
-
-    // ถ้าเป็น guest-only routes และ login แล้ว redirect ไป dashboard
-    const isGuestOnlyRoute = guestOnlyRoutes.some((route) =>
-        pathname.startsWith(route),
-    );
-    if (isGuestOnlyRoute && isLoggedIn) {
-        return NextResponse.redirect(new URL("/dashboard", nextUrl));
     }
 
     // ถ้าเป็น protected routes แต่ยังไม่ได้ login redirect ไป signin

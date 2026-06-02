@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
+import { getServerSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
     title: "เข้าสู่ระบบ | โครงการครูนางฟ้า",
@@ -15,6 +17,11 @@ export default async function SignInPage({
     searchParams: Promise<{ callbackUrl?: string }>;
 }) {
     const { callbackUrl } = await searchParams;
+    const session = await getServerSession();
+
+    if (session?.user) {
+        redirect("/dashboard");
+    }
 
     return (
         <div className="relative min-h-dvh flex flex-col overflow-hidden">
