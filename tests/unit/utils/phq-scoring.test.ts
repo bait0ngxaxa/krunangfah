@@ -228,10 +228,10 @@ describe("calculateRiskLevel", () => {
             expect(result.totalScore).toBe(0);
         });
 
-        it("should ignore q9b and not force red level", () => {
+        it("should return red immediately if q9b is true (regardless of score)", () => {
             const scores = createScores({ q9b: true });
             const result = calculateRiskLevel(scores);
-            expect(result.riskLevel).toBe("blue");
+            expect(result.riskLevel).toBe("red");
             expect(result.totalScore).toBe(0);
         });
 
