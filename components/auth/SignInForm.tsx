@@ -17,6 +17,24 @@ interface SignInFormProps {
     callbackUrl?: string;
 }
 
+export function getSafeCallbackUrl(callbackUrl?: string): string {
+    if (!callbackUrl) return "/dashboard";
+
+    try {
+        const parsedUrl = new URL(callbackUrl, window.location.origin);
+        const isInternalPath =
+            callbackUrl.startsWith("/") &&
+            !callbackUrl.startsWith("//") &&
+            parsedUrl.origin === window.location.origin;
+
+        if (!isInternalPath) return "/dashboard";
+
+        return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+    } catch {
+        return "/dashboard";
+    }
+}
+
 export function SignInForm({ callbackUrl = "/dashboard" }: SignInFormProps) {
     const router = useRouter();
     const [error, setError] = useState("");
@@ -61,7 +79,7 @@ export function SignInForm({ callbackUrl = "/dashboard" }: SignInFormProps) {
             }
 
             toast.success("เข้าสู่ระบบสำเร็จ");
-            router.push(callbackUrl || result.redirectTo || "/dashboard");
+            router.push(getSafeCallbackUrl(callbackUrl || result.redirectTo));
             router.refresh();
         } catch (err) {
             console.error("Sign in error:", err);
