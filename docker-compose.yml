@@ -51,6 +51,48 @@ services:
                 max-size: "10m"
                 max-file: "3"
 
+    pgbouncer:
+        container_name: krunangfah-pgbouncer
+        image: edoburu/pgbouncer:v1.25.1-p0
+        environment:
+            DB_HOST: db
+            DB_PORT: 5432
+            DB_USER: ${POSTGRES_USER}
+            DB_PASSWORD: ${POSTGRES_PASSWORD}
+            DB_NAME: ${POSTGRES_DB}
+            AUTH_TYPE: scram-sha-256
+            POOL_MODE: transaction
+            MAX_CLIENT_CONN: 100
+            DEFAULT_POOL_SIZE: 20
+            RESERVE_POOL_SIZE: 5
+            MAX_PREPARED_STATEMENTS: 100
+            QUERY_WAIT_TIMEOUT: 30
+        ports:
+            - "127.0.0.1:6432:5432"
+        networks:
+            - backend
+        depends_on:
+            db:
+                condition: service_healthy
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -h 127.0.0.1 -p 5432 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-krunangfah}",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+        restart: unless-stopped
+        security_opt:
+            - no-new-privileges:true
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "3"
+
     redis:
         container_name: krunangfah-redis
         image: redis:7-alpine
