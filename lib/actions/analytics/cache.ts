@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { revalidateRedisAnalyticsCache } from "./redis-cache";
 
 const ANALYTICS_TAG = "analytics";
 export const ANALYTICS_OVERVIEW_TAG = "analytics-overview";
@@ -18,6 +19,7 @@ export function getAnalyticsCacheTags(schoolId?: string): string[] {
 export function revalidateAnalyticsCache(schoolId?: string): void {
     revalidateTag(ANALYTICS_TAG, "default");
     revalidateTag(ANALYTICS_OVERVIEW_TAG, "default");
+    void revalidateRedisAnalyticsCache(schoolId);
 
     if (schoolId) {
         revalidateTag(getAnalyticsSchoolTag(schoolId), "default");

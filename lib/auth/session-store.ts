@@ -21,6 +21,13 @@ import {
 import { createEmailRateLimitKey } from "@/lib/rate-limit-keys";
 import { signInSchema } from "@/lib/validations/auth.validation";
 import { logError } from "@/lib/utils/logging";
+import {
+    deleteCachedSession,
+    deleteUserSessionCaches,
+    getCachedSession,
+    setCachedSession,
+    type CachedSessionPayload,
+} from "@/lib/auth/session-cache";
 import type { ExtendedUser, UserRole } from "@/types/auth.types";
 
 export const SESSION_COOKIE_NAME = "krunangfah_session";
@@ -31,6 +38,7 @@ const IDLE_TIMEOUT_MS = 4 * 60 * 60 * 1000;
 const SESSION_ROTATE_AFTER_MS = 6 * 60 * 60 * 1000;
 const SESSION_TOKEN_BYTES = 32;
 const UNKNOWN_DEVICE_LABEL = "อุปกรณ์ไม่ทราบชนิด";
+const SESSION_ACTIVITY_FLUSH_INTERVAL_MS = 60 * 1000;
 
 const signinAttemptLimiter = createRateLimiter(RATE_LIMIT_AUTH_SIGNIN);
 const signinFloodLimiter = createRateLimiter(RATE_LIMIT_AUTH_FLOOD);
@@ -53,6 +61,26 @@ interface SessionMetadata {
     userAgentLabel: string;
     userAgentHash: string | null;
     lastIpPrefix: string | null;
+}
+
+interface DbSessionWithUser {
+    id: string;
+    expiresAt: Date;
+    revokedAt: Date | null;
+    lastActivityAt: Date;
+    user: {
+        id: string;
+        email: string | null;
+        name: string | null;
+        image: string | null;
+        role: string;
+        isPrimary: boolean;
+        schoolId: string | null;
+        emailVerified: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
+    };
 }
 
 function createSessionToken(): string {
@@ -153,6 +181,65 @@ function toExtendedUser(user: {
     };
 }
 
+function createSessionPayload(
+    session: DbSessionWithUser,
+    now: Date,
+): CachedSessionPayload {
+    return {
+        sessionId: session.id,
+        user: toExtendedUser({
+            ...session.user,
+            role: session.user.role as UserRole,
+        }),
+        expiresAt: session.expiresAt.toISOString(),
+        lastActivityAt: now.toISOString(),
+        activityPersistedAt: now.toISOString(),
+    };
+}
+
+function toSession(payload: CachedSessionPayload): Session {
+    return {
+        expires: payload.expiresAt,
+        user: payload.user,
+    };
+}
+
+function isCachedSessionValid(
+    payload: CachedSessionPayload,
+    now: Date,
+): boolean {
+    const expiresAt = new Date(payload.expiresAt);
+    const lastActivityAt = new Date(payload.lastActivityAt);
+
+    if (
+        Number.isNaN(expiresAt.getTime()) ||
+        Number.isNaN(lastActivityAt.getTime())
+    ) {
+        return false;
+    }
+
+    if (expiresAt <= now) {
+        return false;
+    }
+
+    return now.getTime() - lastActivityAt.getTime() <= IDLE_TIMEOUT_MS;
+}
+
+function shouldPersistActivity(
+    payload: CachedSessionPayload,
+    now: Date,
+): boolean {
+    const activityPersistedAt = new Date(payload.activityPersistedAt);
+    if (Number.isNaN(activityPersistedAt.getTime())) {
+        return true;
+    }
+
+    return (
+        now.getTime() - activityPersistedAt.getTime() >=
+        SESSION_ACTIVITY_FLUSH_INTERVAL_MS
+    );
+}
+
 async function syncSystemAdminRole(user: {
     id: string;
     email: string;
@@ -210,19 +297,23 @@ async function createUserSession(
     headerGetter: (name: string) => string | null,
 ): Promise<string> {
     const token = createSessionToken();
+    const tokenHash = hashSessionToken(token);
     const now = new Date();
     const metadata = getSessionMetadata(headerGetter);
 
-    await prisma.userSession.create({
+    const session = await prisma.userSession.create({
         data: {
-            sessionTokenHash: hashSessionToken(token),
+            sessionTokenHash: tokenHash,
             userId,
             expiresAt: getSessionExpiry(now),
             lastActivityAt: now,
             tokenRotatedAt: now,
             ...metadata,
         },
-    });
+        include: { user: true },
+    }) as DbSessionWithUser;
+
+    await setCachedSession(tokenHash, createSessionPayload(session, now));
 
     return token;
 }
@@ -296,10 +387,12 @@ export function clearSessionCookie(response: NextResponse): NextResponse {
 }
 
 export async function revokeSessionToken(token: string): Promise<void> {
+    const tokenHash = hashSessionToken(token);
     await prisma.userSession.updateMany({
-        where: { sessionTokenHash: hashSessionToken(token), revokedAt: null },
+        where: { sessionTokenHash: tokenHash, revokedAt: null },
         data: { revokedAt: new Date() },
     });
+    await deleteCachedSession(tokenHash);
 }
 
 export async function revokeUserSessions(userId: string): Promise<void> {
@@ -307,6 +400,7 @@ export async function revokeUserSessions(userId: string): Promise<void> {
         where: { userId, revokedAt: null },
         data: { revokedAt: new Date() },
     });
+    await deleteUserSessionCaches(userId);
 }
 
 export async function getCurrentSessionToken(): Promise<string | null> {
@@ -336,13 +430,15 @@ export async function updateCurrentSessionMetadata(
         return;
     }
 
+    const tokenHash = hashSessionToken(token);
     await prisma.userSession.updateMany({
         where: {
-            sessionTokenHash: hashSessionToken(token),
+            sessionTokenHash: tokenHash,
             revokedAt: null,
         },
         data: getSessionMetadata(headerGetter),
     });
+    await deleteCachedSession(tokenHash);
 }
 
 export async function getRequestSession(): Promise<Session | null> {
@@ -366,8 +462,9 @@ export async function rotateCurrentSessionToken(): Promise<RotatedSessionToken |
     }
 
     const now = new Date();
+    const tokenHash = hashSessionToken(token);
     const session = await prisma.userSession.findUnique({
-        where: { sessionTokenHash: hashSessionToken(token) },
+        where: { sessionTokenHash: tokenHash },
         select: {
             id: true,
             expiresAt: true,
@@ -394,14 +491,16 @@ export async function rotateCurrentSessionToken(): Promise<RotatedSessionToken |
     }
 
     const nextToken = createSessionToken();
+    const nextTokenHash = hashSessionToken(nextToken);
     await prisma.userSession.update({
         where: { id: session.id },
         data: {
-            sessionTokenHash: hashSessionToken(nextToken),
+            sessionTokenHash: nextTokenHash,
             tokenRotatedAt: now,
             lastActivityAt: now,
         },
     });
+    await deleteCachedSession(tokenHash);
 
     return {
         token: nextToken,
@@ -415,10 +514,51 @@ export function getSessionCookieMaxAge(expiresAt: Date): number {
 
 async function getSessionByToken(token: string): Promise<Session | null> {
     const now = new Date();
+    const tokenHash = hashSessionToken(token);
+    const cachedSession = await getCachedSession(tokenHash);
+
+    if (cachedSession) {
+        if (!isCachedSessionValid(cachedSession, now)) {
+            const lastActivityAt = new Date(cachedSession.lastActivityAt);
+            if (
+                !Number.isNaN(lastActivityAt.getTime()) &&
+                now.getTime() - lastActivityAt.getTime() > IDLE_TIMEOUT_MS
+            ) {
+                await revokeSessionToken(token);
+            } else {
+                await deleteCachedSession(tokenHash);
+            }
+            return null;
+        }
+
+        const shouldPersist = shouldPersistActivity(cachedSession, now);
+        const touchedSession: CachedSessionPayload = {
+            ...cachedSession,
+            lastActivityAt: now.toISOString(),
+            activityPersistedAt: shouldPersist
+                ? now.toISOString()
+                : cachedSession.activityPersistedAt,
+        };
+        await setCachedSession(tokenHash, touchedSession);
+
+        if (shouldPersist) {
+            try {
+                await prisma.userSession.update({
+                    where: { id: cachedSession.sessionId },
+                    data: { lastActivityAt: now },
+                });
+            } catch (error) {
+                logError("Session cached activity update error:", error);
+            }
+        }
+
+        return toSession(touchedSession);
+    }
+
     const session = await prisma.userSession.findUnique({
-        where: { sessionTokenHash: hashSessionToken(token) },
+        where: { sessionTokenHash: tokenHash },
         include: { user: true },
-    });
+    }) as DbSessionWithUser | null;
 
     if (!session || session.revokedAt || session.expiresAt <= now) {
         return null;
@@ -443,11 +583,8 @@ async function getSessionByToken(token: string): Promise<Session | null> {
         logError("Session activity update error:", error);
     }
 
-    return {
-        expires: session.expiresAt.toISOString(),
-        user: toExtendedUser({
-            ...session.user,
-            role: session.user.role as UserRole,
-        }),
-    };
+    const payload = createSessionPayload(session, now);
+    await setCachedSession(tokenHash, payload);
+
+    return toSession(payload);
 }

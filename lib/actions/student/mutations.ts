@@ -13,12 +13,22 @@ import type { ImportResult, ImportStudentSummary } from "./types";
 import { logError } from "@/lib/utils/logging";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
+import {
+    clearIdempotentOperation,
+    completeIdempotentOperation,
+    startIdempotentOperation,
+} from "@/lib/redis-idempotency";
+import {
+    createImportIdempotencyKey,
+    isImportResult,
+} from "./import-idempotency";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
 const COUNT_EXCLUDED_STUDENT_STATUSES = new Set<StudentStatus>([
     StudentStatus.RESIGNED,
     StudentStatus.TRANSFERRED,
 ]);
+const IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS = 30 * 60;
 
 interface UpdateStudentStatusResult {
     success: boolean;
@@ -81,6 +91,9 @@ export async function importStudents(
     academicYearId: string,
     assessmentRound: number = 1,
 ): Promise<ImportResult> {
+    let importIdempotencyKey: string | null = null;
+    let shouldClearImportIdempotency = false;
+
     try {
         const session = await requireAuth();
         const userId = session.user.id;
@@ -134,6 +147,50 @@ export async function importStudents(
             };
         }
 
+        importIdempotencyKey = createImportIdempotencyKey({
+            userId,
+            schoolId,
+            academicYearId: resolvedAcademicYearId,
+            assessmentRound,
+            students,
+        });
+        const idempotencyResult = await startIdempotentOperation(
+            importIdempotencyKey,
+            IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS,
+        );
+
+        if (idempotencyResult.status === "completed") {
+            if (isImportResult(idempotencyResult.result)) {
+                return idempotencyResult.result;
+            }
+            await clearIdempotentOperation(importIdempotencyKey);
+        }
+
+        if (idempotencyResult.status === "processing") {
+            return {
+                success: false,
+                status: "error",
+                message: "ไฟล์นี้กำลังนำเข้าอยู่ กรุณารอสักครู่แล้วลองใหม่",
+            };
+        }
+
+        shouldClearImportIdempotency = idempotencyResult.status === "started";
+        const completeImport = async (
+            result: ImportResult,
+        ): Promise<ImportResult> => {
+            if (!importIdempotencyKey || !shouldClearImportIdempotency) {
+                return result;
+            }
+
+            await completeIdempotentOperation(
+                importIdempotencyKey,
+                IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS,
+                result,
+            );
+            shouldClearImportIdempotency = false;
+            return result;
+        };
+
         const schoolClasses = await prisma.schoolClass.findMany({
             where: { schoolId },
             select: { name: true },
@@ -145,11 +202,11 @@ export async function importStudents(
         );
 
         if (isClassTeacher && !advisoryClass) {
-            return {
+            return completeImport({
                 success: false,
                 status: "error",
                 message: "ไม่พบข้อมูลห้องที่คุณดูแล กรุณาตั้งค่าโปรไฟล์ก่อน",
-            };
+            });
         }
 
         if (assessmentRound === 2) {
@@ -162,12 +219,12 @@ export async function importStudents(
             });
 
             if (schoolRound1Count === 0) {
-                return {
+                return completeImport({
                     success: false,
                     status: "error",
                     message:
                         "ปีการศึกษานี้ยังไม่มีข้อมูลการประเมินครั้งที่ 1 จึงยังนำเข้าครั้งที่ 2 ไม่ได้",
-                };
+                });
             }
         }
 
@@ -576,7 +633,7 @@ export async function importStudents(
             message = `ไม่สามารถนำเข้าได้ทั้งหมด ${failedCount} คน (ข้อมูลซ้ำหรือไม่ผ่านเงื่อนไข)`;
         }
 
-        return {
+        return completeImport({
             success: importedCount > 0,
             status:
                 failedCount === 0 && skippedCount === 0
@@ -591,8 +648,12 @@ export async function importStudents(
             importedStudents: txResult.importedStudents,
             failedStudents:
                 failedStudents.length > 0 ? failedStudents : undefined,
-        };
+        });
     } catch (error) {
+        if (importIdempotencyKey && shouldClearImportIdempotency) {
+            await clearIdempotentOperation(importIdempotencyKey);
+        }
+
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
             logError("Import students transaction error:", error);
         } else {

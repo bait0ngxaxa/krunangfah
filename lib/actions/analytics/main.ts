@@ -20,6 +20,14 @@ import {
     ANALYTICS_OVERVIEW_TAG,
     getAnalyticsCacheTags,
 } from "./cache";
+import {
+    createAnalyticsRedisKeyParts,
+    createSystemOverviewRedisKeyParts,
+    getRedisCachedAnalyticsData,
+    getRedisCachedSystemOverview,
+    setRedisCachedAnalyticsData,
+    setRedisCachedSystemOverview,
+} from "./redis-cache";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
 import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
 
@@ -33,14 +41,7 @@ function buildAnalyticsCacheKey(input: {
     academicYearStr: string;
     semesterStr: string;
 }): string[] {
-    return [
-        "analytics-data",
-        `role:${input.role}`,
-        `school:${input.schoolId ?? "none"}`,
-        `class:${input.targetClass || "all"}`,
-        `year:${input.academicYearStr || "all"}`,
-        `semester:${input.semesterStr || "all"}`,
-    ];
+    return createAnalyticsRedisKeyParts(input);
 }
 
 async function fetchAnalyticsData(
@@ -258,6 +259,10 @@ async function getCachedAnalyticsData(
         academicYearStr,
         semesterStr,
     });
+    const redisCached = await getRedisCachedAnalyticsData(cacheKey);
+    if (redisCached) {
+        return redisCached;
+    }
 
     const cachedFetcher = unstable_cache(
         async () =>
@@ -272,7 +277,9 @@ async function getCachedAnalyticsData(
         { revalidate: 300, tags: getAnalyticsCacheTags(schoolId) },
     );
 
-    return cachedFetcher();
+    const data = await cachedFetcher();
+    await setRedisCachedAnalyticsData(cacheKey, data, schoolId);
+    return data;
 }
 
 export async function getAnalyticsSummary(
@@ -418,17 +425,24 @@ export async function getSystemAnalyticsOverview(
             return null;
         }
 
+        const overviewCacheKey = createSystemOverviewRedisKeyParts({
+            academicYear,
+            semester,
+        });
+        const redisCached = await getRedisCachedSystemOverview(overviewCacheKey);
+        if (redisCached) {
+            return redisCached;
+        }
+
         const cachedOverviewFetcher = unstable_cache(
             async () => fetchSystemAnalyticsOverview(academicYear, semester),
-            [
-                "analytics-system-overview",
-                `year:${academicYear ?? "current"}`,
-                `semester:${semester ?? "current"}`,
-            ],
+            overviewCacheKey,
             { revalidate: 300, tags: [ANALYTICS_OVERVIEW_TAG] },
         );
 
-        return cachedOverviewFetcher();
+        const data = await cachedOverviewFetcher();
+        await setRedisCachedSystemOverview(overviewCacheKey, data);
+        return data;
     } catch (error) {
         return handleActionError({
             context: "Get system analytics overview error:",

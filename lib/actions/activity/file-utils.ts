@@ -31,8 +31,10 @@ import {
     isSupportedWorksheetImageExtension,
 } from "@/lib/utils/server-image-compression";
 import { verifyStudentActivityAccess } from "./access";
+import { acquireRedisLock, releaseRedisLock } from "@/lib/redis-lock";
 
 const MAX_WORKSHEET_NUMBER_RETRIES = 3;
+const WORKSHEET_UPLOAD_LOCK_TTL_SECONDS = 30;
 
 class UploadWorksheetError extends Error {
     constructor(
@@ -60,6 +62,34 @@ function getValidExtension(fileName: string): string | null {
 
     const ext = parts.pop()?.toLowerCase() ?? "";
     return ALLOWED_EXTENSIONS.has(ext) ? ext : null;
+}
+
+function createWorksheetUploadLockKey(activityProgressId: string): string {
+    return `lock:worksheet-upload:${activityProgressId}`;
+}
+
+async function withWorksheetUploadLock(
+    activityProgressId: string,
+    callback: () => Promise<UploadWorksheetResult>,
+): Promise<UploadWorksheetResult> {
+    const lock = await acquireRedisLock(
+        createWorksheetUploadLockKey(activityProgressId),
+        WORKSHEET_UPLOAD_LOCK_TTL_SECONDS,
+    );
+
+    if (!lock) {
+        return {
+            success: false,
+            message: "มีการอัปโหลดใบงานนี้อยู่ กรุณารอสักครู่แล้วลองใหม่",
+            error: "UPLOAD_IN_PROGRESS",
+        };
+    }
+
+    try {
+        return await callback();
+    } finally {
+        await releaseRedisLock(lock);
+    }
 }
 
 export async function uploadWorksheet(
@@ -199,6 +229,7 @@ export async function uploadWorksheet(
             };
         }
 
+        return withWorksheetUploadLock(activityProgressId, async () => {
         // Create upload directory if not exists
         // SECURITY: Store outside public/ to prevent unauthenticated access
         // Files are served exclusively through the /api/uploads/ route with auth checks
@@ -332,6 +363,7 @@ export async function uploadWorksheet(
             allUploaded,
             activityNumber: activityProgress.activityNumber,
         };
+        });
     } catch (error) {
         logError("Error uploading worksheet:", error);
         if (error instanceof UploadWorksheetError) {
