@@ -22,7 +22,7 @@ export type ColorTheme = {
 export const ACTIVITIES: Activity[] = [
     {
         id: "a1",
-        title: "กิจกรรมที่ 1: รู้จักตัวเอง",
+        title: "กิจกรรมที่ 1: ฉันชอบตัวเอง",
         description: "ใบงาน 2 ใบ",
         worksheets: ["/activity/a1/act1-1.webp", "/activity/a1/act1-2.webp"],
     },

@@ -13,7 +13,7 @@ export const ACTIVITIES: Activity[] = [
     {
         id: "a1",
         number: 1,
-        title: "กิจกรรมที่ 1: รู้จักตัวเอง",
+        title: "กิจกรรมที่ 1: ฉันชอบตัวเอง",
         worksheets: ["/activity/a1/act1-1.webp", "/activity/a1/act1-2.webp"],
     },
     {
@@ -55,7 +55,7 @@ const ACTIVITY_INDICES: Record<string, number[]> = {
  * Activity names by number (short version)
  */
 const ACTIVITY_NAMES: Record<number, string> = {
-    1: "รู้จักตัวเอง",
+    1: "ฉันชอบตัวเอง",
     2: "ค้นหาคุณค่าที่ฉันมี",
     3: "ปรับความคิด ชีวิตเปลี่ยน",
     4: "รู้จักตัวกระตุ้น",

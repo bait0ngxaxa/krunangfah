@@ -8,7 +8,7 @@ interface ActivityProgressTableProps {
 }
 
 const ACTIVITY_LABELS = [
-    "รู้จักตัวเอง",
+    "ฉันชอบตัวเอง",
     "ค้นหาคุณค่าที่ตัวฉันมี",
     "ปรับความคิดชีวิตเปลี่ยน",
     "รู้จักตัวกระตุ้น",

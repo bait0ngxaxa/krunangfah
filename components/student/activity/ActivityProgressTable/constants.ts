@@ -11,7 +11,7 @@ export interface Activity {
 }
 
 export const ACTIVITIES: Activity[] = [
-    { id: "a1", name: "รู้จักตัวเอง", number: 1 },
+    { id: "a1", name: "ฉันชอบตัวเอง", number: 1 },
     { id: "a2", name: "ค้นหาคุณค่าที่ฉันมี", number: 2 },
     { id: "a3", name: "ปรับความคิด ชีวิตเปลี่ยน", number: 3 },
     { id: "a4", name: "รู้จักตัวกระตุ้น", number: 4 },
