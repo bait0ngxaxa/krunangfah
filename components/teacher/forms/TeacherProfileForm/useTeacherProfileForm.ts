@@ -29,6 +29,10 @@ export function useTeacherProfileForm(): UseTeacherProfileFormReturn {
 
     // === Handlers ===
     const onSubmit = async (data: TeacherProfileFormData): Promise<void> => {
+        if (isLoading) {
+            return;
+        }
+
         setIsLoading(true);
         setError("");
 

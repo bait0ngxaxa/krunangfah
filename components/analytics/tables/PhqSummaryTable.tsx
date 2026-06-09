@@ -1,5 +1,6 @@
 import type { RiskLevelSummary } from "@/lib/actions/analytics/types";
 import { RISK_LEVELS } from "@/lib/constants/risk-levels";
+import { toSafeCount } from "../utils";
 
 interface PhqSummaryTableProps {
     riskLevelSummary: RiskLevelSummary[];
@@ -20,7 +21,7 @@ export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
                 ผลการคัดกรอง PHQ-A
             </h2>
             <div className="relative overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-sm">
-                <table className="w-full">
+                <table className="w-full" aria-label="ผลการคัดกรอง PHQ-A">
                     <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-200">
                             <th className="px-6 py-4 text-left text-sm font-bold text-slate-700">
@@ -38,13 +39,16 @@ export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {orderedSummary.map((item) => {
+                            const count = toSafeCount(item.count);
+                            const referralCount = toSafeCount(item.referralCount);
+
                             return (
                                 <tr
                                     key={item.riskLevel}
                                     className="hover:bg-cyan-50/50 transition-colors"
                                     style={{
                                         backgroundColor:
-                                            item.count > 0
+                                            count > 0
                                                 ? `${item.color}08`
                                                 : "transparent",
                                     }}
@@ -58,16 +62,17 @@ export function PhqSummaryTable({ riskLevelSummary }: PhqSummaryTableProps) {
                                             style={{
                                                 backgroundColor: item.color,
                                             }}
+                                            aria-hidden="true"
                                         />
                                         {item.label}
                                     </td>
                                     <td className="px-6 py-4 text-center text-xl font-bold text-gray-800">
-                                        {item.count}
+                                        {count}
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        {item.referralCount > 0 ? (
+                                        {referralCount > 0 ? (
                                             <span className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full bg-rose-100 px-3 text-sm font-bold text-rose-600 shadow-sm">
-                                                {item.referralCount}
+                                                {referralCount}
                                             </span>
                                         ) : (
                                             <span className="text-gray-400 font-medium">

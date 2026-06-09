@@ -6,6 +6,11 @@ import {
     MAX_IMPORT_ROW_COUNT,
 } from "@/lib/constants/import";
 
+const TEMPLATE_Q1_HEADER =
+    "ในช่วง 2 สัปดาห์ที่ผ่านมา รู้สึกซึม เศร้า หงุดหงิด หรือสิ้นหวัง";
+const TEMPLATE_Q9A_HEADER =
+    "ใน 1 เดือนที่ผ่านมา มีช่วงไหนที่คุณคิดอยากตาย หรือไม่คิดอยากมีชีวิตอยู่อย่างจริงจังหรือไม่";
+
 // Since parseExcelBuffer requires actual Excel parsing which is complex to mock,
 // we'll test the helper functions logic that can be extracted
 
@@ -196,9 +201,11 @@ describe("Excel Parser - PHQA Answer Mapping", () => {
 
         expect(result.success).toBe(false);
         expect(result.errors).toContain(
-            'แถว 2: ข้อ1 ต้องเป็นคำตอบที่รองรับ (พบ: "คำตอบอื่น")',
+            `แถว 2: ${TEMPLATE_Q1_HEADER} ต้องเป็นคำตอบที่รองรับ (พบ: "คำตอบอื่น")`,
         );
-        expect(result.errors.join("\n")).not.toContain("ข้อ1 ต้องเป็นตัวเลข");
+        expect(result.errors.join("\n")).not.toContain(
+            `${TEMPLATE_Q1_HEADER} ต้องเป็นตัวเลข`,
+        );
     });
 });
 
@@ -358,9 +365,8 @@ describe("Excel Parser - Boolean Cell Logic", () => {
 
     describe("q9a/q9b fallback column names", () => {
         /**
-         * The parser now supports both "opt1"/"opt2" and "ข้อ9a"/"ข้อ9b" column names
-         * using: getBooleanCell("opt1") || getBooleanCell("ข้อ9a")
-         * This tests the OR fallback logic
+         * The parser supports primary "ข้อ9a"/"ข้อ9b" columns with
+         * legacy "opt1"/"opt2" fallback column names.
          */
         it("should resolve true from primary column name", () => {
             const primary = getBooleanValue("ใช่");
@@ -385,6 +391,92 @@ describe("Excel Parser - Boolean Cell Logic", () => {
             const fallback = getBooleanValue("yes");
             expect(primary || fallback).toBe(true);
         });
+    });
+});
+
+describe("Excel Parser - Primary Q9 Follow-up Columns", () => {
+    async function createWorkbookBuffer(input: {
+        primaryQ9a: string;
+        fallbackOpt1?: string;
+    }): Promise<ArrayBuffer> {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
+
+        worksheet.addRow([
+            "รหัสนักเรียน",
+            "เลขบัตรประชาชน",
+            "ชื่อ",
+            "นามสกุล",
+            "เพศกำเนิด",
+            "อายุ (ปี)",
+            "ห้อง",
+            "ข้อ1",
+            "ข้อ2",
+            "ข้อ3",
+            "ข้อ4",
+            "ข้อ5",
+            "ข้อ6",
+            "ข้อ7",
+            "ข้อ8",
+            "ข้อ9",
+            "ข้อ9a",
+            "opt1",
+            "ข้อ9b",
+        ]);
+
+        worksheet.addRow([
+            "66001",
+            "1103700000011",
+            "สมชาย",
+            "ใจดี",
+            "ชาย",
+            13,
+            "ม.1/1",
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            input.primaryQ9a,
+            input.fallbackOpt1 ?? "",
+            "ไม่ใช่",
+        ]);
+
+        const output = Buffer.from(await workbook.xlsx.writeBuffer());
+        return output.buffer.slice(
+            output.byteOffset,
+            output.byteOffset + output.byteLength,
+        );
+    }
+
+    it("reports the primary q9a column name instead of the opt1 fallback", async () => {
+        const buffer = await createWorkbookBuffer({
+            primaryQ9a: "maybe",
+        });
+
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(false);
+        expect(result.errors).toContain(
+            `แถว 2: ${TEMPLATE_Q9A_HEADER} ต้องเป็น "ใช่" หรือ "ไม่ใช่" (พบ: "maybe")`,
+        );
+        expect(result.errors.join("\n")).not.toContain("opt1");
+    });
+
+    it("prefers the primary q9a column when the opt1 fallback is also present", async () => {
+        const buffer = await createWorkbookBuffer({
+            primaryQ9a: "ไม่ใช่",
+            fallbackOpt1: "ใช่",
+        });
+
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(true);
+        expect(result.data[0]?.scores.q9a).toBe(false);
     });
 });
 

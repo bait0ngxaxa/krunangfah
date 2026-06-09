@@ -6,6 +6,7 @@ import { useOptimistic, useTransition } from "react";
 import { ClassFilter } from "./components/ClassFilter";
 import { SchoolSelector } from "./components/SchoolSelector";
 import { StudentFilterBar } from "./components/StudentFilterBar";
+import { isRiskLevel } from "@/lib/constants/risk-levels";
 import type {
     ClassOption,
     DashboardRiskFilter,
@@ -61,6 +62,14 @@ function resolveOptionalFilter(value: string | null): string {
     return value;
 }
 
+function resolveRiskFilter(value: string | null): DashboardRiskFilter {
+    if (!value || value === "all") {
+        return "all";
+    }
+
+    return isRiskLevel(value) ? value : "all";
+}
+
 function applyDashboardFilterUpdates(
     current: DashboardFilterState,
     updates: DashboardFilterUpdates,
@@ -77,8 +86,7 @@ function applyDashboardFilterUpdates(
         riskFilter:
             updates.risk === undefined
                 ? current.riskFilter
-                : (resolveOptionalFilter(updates.risk) as DashboardRiskFilter) ||
-                  "all",
+                : resolveRiskFilter(updates.risk),
         referredOnly:
             updates.referred === undefined
                 ? current.referredOnly

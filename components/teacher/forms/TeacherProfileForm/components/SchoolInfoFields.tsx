@@ -19,11 +19,17 @@ export function SchoolInfoFields({
                     type="number"
                     id="age"
                     min="18"
+                    inputMode="numeric"
+                    aria-invalid={!!errors.age}
+                    aria-describedby={errors.age ? "age-error" : undefined}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="กรอกอายุ"
                 />
                 {errors.age && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
+                    <p
+                        id="age-error"
+                        className="mt-1 break-words text-sm font-medium text-red-500"
+                    >
                         {errors.age.message}
                     </p>
                 )}
@@ -39,13 +45,21 @@ export function SchoolInfoFields({
                 </label>
                 <input
                     {...register("schoolRole")}
+                    id="schoolRole"
                     type="text"
                     maxLength={INPUT_LIMITS.teacher.schoolRole}
+                    aria-invalid={!!errors.schoolRole}
+                    aria-describedby={
+                        errors.schoolRole ? "schoolRole-error" : undefined
+                    }
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="เช่น ครูประจำชั้น, หัวหน้ากลุ่มสาระ"
                 />
                 {errors.schoolRole && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
+                    <p
+                        id="schoolRole-error"
+                        className="mt-1 break-words text-sm font-medium text-red-500"
+                    >
                         {errors.schoolRole.message}
                     </p>
                 )}

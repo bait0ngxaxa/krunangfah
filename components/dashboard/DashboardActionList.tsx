@@ -21,7 +21,11 @@ const StudentSearch = dynamic(
         ),
     {
         loading: () => (
-            <div className="h-14 rounded-2xl bg-slate-100 animate-pulse" />
+            <div
+                className="h-14 animate-pulse rounded-2xl bg-slate-100"
+                role="status"
+                aria-label="กำลังโหลดช่องค้นหานักเรียน"
+            />
         ),
     },
 );
@@ -43,7 +47,7 @@ export function DashboardActionList({
     return (
         <div className="space-y-3">
             {!isSystemAdmin && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <QuickActionCard
                         href="/teachers/skill"
                         icon={GraduationCap}
@@ -59,9 +63,11 @@ export function DashboardActionList({
                         imageSrc="/image/dashboard/import.webp"
                         imageClassName="w-[85px] sm:w-[95px]"
                         actionButton={
-                            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand-primary)] text-white text-[11px] sm:text-xs font-bold rounded-xl shadow-sm hover:brightness-95 transition-base">
-                                <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
-                                <span>Import Excel</span>
+                            <div className="inline-flex max-w-full items-center gap-1.5 rounded-xl bg-[var(--brand-primary)] px-3.5 py-1.5 text-[11px] font-bold text-white shadow-sm transition-base hover:brightness-95 sm:text-xs">
+                                <Upload className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" />
+                                <span className="min-w-0 break-words">
+                                    Import Excel
+                                </span>
                             </div>
                         }
                     />
@@ -86,7 +92,7 @@ export function DashboardActionList({
             />
 
             {(isSystemAdmin || isSchoolAdmin) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {isSystemAdmin && (
                         <QuickActionCard
                             href="/admin/users"
@@ -134,14 +140,13 @@ export function DashboardActionList({
                 theme="teal"
             />
 
-            <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 overflow-hidden group">
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-linear-to-br from-green-200/40 to-emerald-300/30 rounded-full blur-xl pointer-events-none" />
-                <div className="bg-linear-to-r from-emerald-400 via-green-400 to-emerald-500 px-5 py-3 flex items-center gap-2.5 relative">
+            <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <div className="relative flex items-center gap-2.5 bg-linear-to-r from-emerald-400 via-green-400 to-emerald-500 px-5 py-3">
                     <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
-                    <div className="p-1.5 bg-white rounded-lg border border-emerald-200 shadow-inner ring-1 ring-white/20">
-                        <Search className="w-4 h-4 text-emerald-600" />
+                    <div className="rounded-lg border border-emerald-200 bg-white p-1.5 shadow-inner ring-1 ring-white/20">
+                        <Search className="h-4 w-4 text-emerald-600" />
                     </div>
-                    <h3 className="text-sm font-bold text-white tracking-wide">
+                    <h3 className="break-words text-sm font-bold tracking-wide text-white">
                         ค้นหานักเรียน
                     </h3>
                 </div>

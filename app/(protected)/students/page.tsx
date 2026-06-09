@@ -9,6 +9,7 @@ import { StudentDashboardSkeleton } from "@/components/student/dashboard/Student
 import { shouldShowStudentsImportEmptyState } from "@/components/student/dashboard/page-state";
 import { PageBanner } from "@/components/ui/PageBanner";
 import { buttonVariants } from "@/components/ui/Button";
+import { isRiskLevel } from "@/lib/constants/risk-levels";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -27,11 +28,61 @@ interface StudentsPageProps {
     }>;
 }
 
+interface NormalizedStudentFilters {
+    class?: string;
+    page: number;
+    pageParam?: string;
+    referred?: "true";
+    risk?: string;
+    school?: string;
+}
+
+function normalizeOptionalParam(value: string | undefined): string | undefined {
+    const trimmed = value?.trim();
+    if (!trimmed || trimmed.length > 100) {
+        return undefined;
+    }
+
+    return trimmed;
+}
+
+function normalizePageParam(value: string | undefined): {
+    page: number;
+    pageParam?: string;
+} {
+    const page = Number(value);
+    if (!Number.isSafeInteger(page) || page < 1) {
+        return { page: 1 };
+    }
+
+    return page > 1 ? { page, pageParam: String(page) } : { page: 1 };
+}
+
+function normalizeStudentsFilters(filters: {
+    class?: string;
+    page?: string;
+    referred?: string;
+    risk?: string;
+    school?: string;
+}): NormalizedStudentFilters {
+    const page = normalizePageParam(filters.page);
+    const risk = isRiskLevel(filters.risk) ? filters.risk : undefined;
+
+    return {
+        class: normalizeOptionalParam(filters.class),
+        page: page.page,
+        pageParam: page.pageParam,
+        referred: filters.referred === "true" ? "true" : undefined,
+        risk,
+        school: normalizeOptionalParam(filters.school),
+    };
+}
+
 export default async function MyStudentsPage({
     searchParams,
 }: StudentsPageProps) {
     const session = await requireAuth();
-    const params = await searchParams;
+    const params = normalizeStudentsFilters(await searchParams);
     const userRole = session.user.role;
     const isAdmin = userRole === "system_admin";
 
@@ -48,6 +99,7 @@ export default async function MyStudentsPage({
                 }
                 icon={Users}
                 imageSrc="/image/dashboard/students.webp"
+                imageAlt="รายชื่อนักเรียนและผลคัดกรอง"
                 actionNode={
                     !isAdmin ? (
                         <Link
@@ -55,10 +107,14 @@ export default async function MyStudentsPage({
                             className={buttonVariants({
                                 variant: "secondary",
                                 size: "md",
-                                className: "relative z-30 rounded-2xl",
+                                className:
+                                    "relative z-30 rounded-2xl break-words",
                             })}
                         >
-                            <FileUp className="w-4 h-4 stroke-3" /> นำเข้าข้อมูล
+                            <FileUp className="h-4 w-4 shrink-0 stroke-3" />{" "}
+                            <span className="min-w-0 break-words">
+                                นำเข้าข้อมูล
+                            </span>
                         </Link>
                     ) : null
                 }
@@ -84,8 +140,9 @@ async function StudentsContent({
 }: {
     filters: {
         class?: string;
-        page?: string;
-        referred?: string;
+        page: number;
+        pageParam?: string;
+        referred?: "true";
         risk?: string;
         school?: string;
     };
@@ -99,7 +156,7 @@ async function StudentsContent({
             ? getStudentDashboardData({
                   schoolId: filters.school,
                   classFilter: filters.class,
-                  page: filters.page ? Number(filters.page) : 1,
+                  page: filters.page,
                   riskFilter: filters.risk,
                   referredOnly: filters.referred === "true",
               })
@@ -134,7 +191,7 @@ async function StudentsContent({
         classFilter: filters.class,
         hasClassOptions: dashboardData.classOptions.length > 0,
         isAdmin,
-        page: filters.page,
+        page: filters.pageParam,
         referredFilter: filters.referred,
         riskFilter: filters.risk,
         totalStudents: dashboardData.totalStudents,
@@ -142,17 +199,17 @@ async function StudentsContent({
 
     if (shouldShowImportEmptyState) {
         return (
-            <div className="relative bg-white rounded-2xl shadow-sm p-6 md:p-12 border-2 border-gray-100 text-center overflow-hidden">
+            <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm md:p-12">
                 <div className="relative py-8">
-                    <div className="relative w-24 h-24 mx-auto mb-6">
-                        <div className="relative w-full h-full rounded-full bg-gray-100 shadow-sm flex items-center justify-center ring-1 ring-gray-200/70">
-                            <ClipboardList className="w-10 h-10 text-gray-400" />
+                    <div className="relative mx-auto mb-6 h-24 w-24">
+                        <div className="relative flex h-full w-full items-center justify-center rounded-full bg-gray-100 shadow-sm ring-1 ring-gray-200/70">
+                            <ClipboardList className="h-10 w-10 text-gray-400" />
                         </div>
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-800 mb-3 tracking-tight">
+                    <h2 className="mb-3 break-words text-2xl font-bold tracking-tight text-slate-800">
                         ยังไม่มีข้อมูลนักเรียน
                     </h2>
-                    <p className="text-slate-500 mb-8 max-w-md mx-auto">
+                    <p className="mx-auto mb-8 max-w-md break-words text-slate-500">
                         เริ่มต้นด้วยการนำเข้าข้อมูลนักเรียนจากไฟล์ Excel
                         เพื่อเริ่มติดตามและดูแลนักเรียนของคุณ
                     </p>
@@ -164,8 +221,10 @@ async function StudentsContent({
                             className: "rounded-full",
                         })}
                     >
-                        <FileUp className="w-5 h-5 stroke-[2.5]" />{" "}
-                        นำเข้าข้อมูลนักเรียน
+                        <FileUp className="h-5 w-5 shrink-0 stroke-[2.5]" />{" "}
+                        <span className="min-w-0 break-words">
+                            นำเข้าข้อมูลนักเรียน
+                        </span>
                     </Link>
                 </div>
             </div>
@@ -190,7 +249,7 @@ async function StudentsContent({
             filters={{
                 schoolId: filters.school,
                 className: filters.class,
-                page: filters.page,
+                page: filters.pageParam,
                 riskLevel: filters.risk,
                 referredOnly: filters.referred,
             }}

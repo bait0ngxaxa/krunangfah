@@ -43,10 +43,12 @@ import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 const PHQ_HISTORY_PAGE_SIZE = 10;
 const COUNSELING_PAGE_SIZE = 10;
 const HOME_VISITS_PAGE_SIZE = 5;
+const MAX_SAFE_PAGE_PARAM = 1_000_000;
 
 function parsePositiveInt(value: string | undefined): number {
     const parsed = Number.parseInt(value ?? "", 10);
-    return Number.isNaN(parsed) || parsed < 1 ? 1 : parsed;
+    if (!Number.isSafeInteger(parsed) || parsed < 1) return 1;
+    return Math.min(parsed, MAX_SAFE_PAGE_PARAM);
 }
 
 function buildOffsetPagination(
@@ -254,7 +256,7 @@ async function StudentDetailContent({
             label: (
                 <span className="flex items-center gap-2">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm">
-                        <BarChart3 className="w-3.5 h-3.5" />
+                        <BarChart3 className="w-3.5 h-3.5" aria-hidden="true" />
                     </span>
                     ผลการคัดกรอง
                 </span>
@@ -266,7 +268,7 @@ async function StudentDetailContent({
             label: (
                 <span className="flex items-center gap-2">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm">
-                        <Target className="w-3.5 h-3.5" />
+                        <Target className="w-3.5 h-3.5" aria-hidden="true" />
                     </span>
                     กิจกรรมและบันทึกการพูดคุย
                 </span>
@@ -278,7 +280,7 @@ async function StudentDetailContent({
             label: (
                 <span className="flex items-center gap-2">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm">
-                        <Home className="w-3.5 h-3.5" />
+                        <Home className="w-3.5 h-3.5" aria-hidden="true" />
                     </span>
                     เยี่ยมบ้าน
                 </span>

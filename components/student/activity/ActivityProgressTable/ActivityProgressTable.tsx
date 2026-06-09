@@ -51,7 +51,7 @@ export async function ActivityProgressTable({
             />
 
             <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
-                <table className="w-full">
+                <table className="w-full" aria-label="กิจกรรมช่วยเหลือนักเรียน">
                     <thead className="hidden md:table-header-group">
                         <tr className="border-b border-gray-200 bg-slate-50/90 text-gray-700">
                             <th className="px-6 py-4 text-left font-bold">

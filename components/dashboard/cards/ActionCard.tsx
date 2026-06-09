@@ -52,26 +52,26 @@ export function ActionCard({
     const styles = getVariantStyles(variant);
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-100 overflow-hidden group hover:shadow-md transition-base duration-300">
+        <div className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-base duration-300 hover:shadow-md">
             <div
-                className={`${styles.gradient} h-1 group-hover:h-1.5 transition-base duration-300`}
+                className={`${styles.gradient} h-1 origin-top motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-y-125`}
             />
 
             <div className="p-5 sm:p-6">
-                <div className="flex items-center gap-3 mb-4">
+                <div className="mb-4 flex min-w-0 items-center gap-3">
                     {icon && (
                         <div
-                            className={`p-2.5 rounded-xl ${styles.iconBg} shrink-0 shadow-sm`}
+                            className={`shrink-0 rounded-xl p-2.5 shadow-sm ${styles.iconBg}`}
                         >
                             {icon}
                         </div>
                     )}
                     <div className="min-w-0">
-                        <h3 className="text-base font-bold text-gray-800 group-hover:text-emerald-600 transition-colors truncate">
+                        <h3 className="break-words text-base font-bold text-gray-800 transition-colors group-hover:text-emerald-600">
                             {title}
                         </h3>
                         {description && (
-                            <p className="text-sm text-gray-500 mt-0.5">
+                            <p className="mt-0.5 break-words text-sm text-gray-500">
                                 {description}
                             </p>
                         )}
@@ -79,10 +79,13 @@ export function ActionCard({
                 </div>
                 <Link
                     href={href}
-                    className={`flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl font-bold text-sm text-center transition-base duration-300 transform hover:-translate-y-0.5 ${styles.btn}`}
+                    className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-center text-sm font-bold transition-base duration-300 motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 ${styles.btn}`}
                 >
-                    {buttonText}
-                    <ChevronRight className="w-4 h-4 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                    <span className="min-w-0 break-words">{buttonText}</span>
+                    <ChevronRight
+                        className="h-4 w-4 shrink-0 opacity-70 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5"
+                        aria-hidden="true"
+                    />
                 </Link>
             </div>
         </div>

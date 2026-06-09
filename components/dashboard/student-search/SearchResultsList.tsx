@@ -28,7 +28,10 @@ export function SearchResultsList({
             {/* Limit Indicator */}
             {results.length === 50 && (
                 <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3 backdrop-blur-sm">
-                    <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                    <AlertTriangle
+                        className="w-5 h-5 text-amber-500 mt-0.5 shrink-0"
+                        aria-hidden="true"
+                    />
                     <div className="flex-1">
                         <p className="text-sm font-bold text-amber-700">
                             แสดง 50 รายการแรก
@@ -41,7 +44,12 @@ export function SearchResultsList({
             )}
 
             {/* Results Header */}
-            <div className="flex items-center justify-between px-1">
+            <div
+                className="flex items-center justify-between px-1"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+            >
                 <span className="text-xs text-gray-500 font-medium">
                     ผลการค้นหา
                 </span>
@@ -62,14 +70,18 @@ export function SearchResultsList({
                                 : undefined
                         }
                     >
-                        <div className="divide-y divide-gray-100/80">
+                        <div
+                            className="divide-y divide-gray-100/80"
+                            role="list"
+                        >
                             {results.map((student) => (
-                                <StudentResultItem
-                                    key={student.id}
-                                    student={student}
-                                    onClick={onStudentClick}
-                                    canViewNationalId={canViewNationalId}
-                                />
+                                <div key={student.id} role="listitem">
+                                    <StudentResultItem
+                                        student={student}
+                                        onClick={onStudentClick}
+                                        canViewNationalId={canViewNationalId}
+                                    />
+                                </div>
                             ))}
                         </div>
                     </div>

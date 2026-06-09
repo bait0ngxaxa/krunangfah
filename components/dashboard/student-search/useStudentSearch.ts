@@ -18,7 +18,11 @@ export function useStudentSearch() {
     const [query, setQuery] = useState("");
 
     // SWR with deduping replaces manual debounce
-    const { data: swrResults = [], isValidating: isSearching } = useSWR(
+    const {
+        data: swrResults = [],
+        error,
+        isValidating: isSearching,
+    } = useSWR(
         query.trim() ? swrKeys.studentsSearch(query.trim()) : null,
         actionFetcher(() => searchStudents(query.trim())),
         {
@@ -34,7 +38,14 @@ export function useStudentSearch() {
         router.push(studentRoute(studentId));
     }, [router]);
 
-    return { query, setQuery, results, isSearching, handleStudentClick };
+    return {
+        query,
+        setQuery,
+        results,
+        isSearching,
+        hasSearchError: !!error,
+        handleStudentClick,
+    };
 }
 
 /**

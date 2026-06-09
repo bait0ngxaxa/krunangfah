@@ -75,7 +75,10 @@ function StepCard({
                     {href ? (
                         <Link href={href} className={buttonClasses}>
                             {buttonLabel}
-                            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                            <ChevronRight
+                                className="w-4 h-4 group-hover:translate-x-0.5 transition-transform"
+                                aria-hidden="true"
+                            />
                         </Link>
                     ) : (
                         <button
@@ -84,7 +87,10 @@ function StepCard({
                             className={buttonClasses}
                         >
                             {buttonLabel}
-                            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                            <ChevronRight
+                                className="w-4 h-4 group-hover:translate-x-0.5 transition-transform"
+                                aria-hidden="true"
+                            />
                         </button>
                     )}
                 </div>
@@ -120,7 +126,7 @@ export function ConversationView({
                         studentName={studentName}
                         config={config}
                         icon={
-                            <MessageCircle className="w-10 h-10 text-white" />
+                            <MessageCircle className="w-10 h-10 text-white" aria-hidden="true" />
                         }
                         title="ขั้นตอนการช่วยเหลือนักเรียน"
                     />
@@ -133,7 +139,7 @@ export function ConversationView({
                             title="พูดคุยเพื่อประเมินซ้ำ"
                             description="ดูหลักการและแนวทางในการพูดคุยกับนักเรียน"
                             icon={
-                                <MessageCircle className={`w-5 h-5 ${config.textColor}`} />
+                                <MessageCircle className={`w-5 h-5 ${config.textColor}`} aria-hidden="true" />
                             }
                             buttonLabel="หลักการพูดคุย"
                             href={studentHelpConversationRoute(studentId)}
@@ -148,7 +154,7 @@ export function ConversationView({
                                     title="สรุปประเด็นการพูดคุย"
                                     description="บันทึกสรุปประเด็นที่พูดคุยกับนักเรียน"
                                     icon={
-                                        <ClipboardEdit className={`w-5 h-5 ${config.textColor}`} />
+                                        <ClipboardEdit className={`w-5 h-5 ${config.textColor}`} aria-hidden="true" />
                                     }
                                     buttonLabel="กรอกข้อมูล"
                                     onClick={() => setShowCounselingModal(true)}
@@ -161,7 +167,7 @@ export function ConversationView({
                                     title="ส่งต่อโรงพยาบาล หรือ ติดตามต่อ"
                                     description="เลือกส่งต่อผู้เชี่ยวชาญ หรือติดตามดูแลต่อเนื่อง"
                                     icon={
-                                        <Hospital className={`w-5 h-5 ${config.textColor}`} />
+                                        <Hospital className={`w-5 h-5 ${config.textColor}`} aria-hidden="true" />
                                     }
                                     buttonLabel="กรอกข้อมูล"
                                     onClick={() => setShowReferralModal(true)}

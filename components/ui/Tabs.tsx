@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, type KeyboardEvent, type ReactNode } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 export interface Tab {
@@ -48,6 +48,41 @@ export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
         [syncWithUrl, searchParams, router, pathname],
     );
 
+    const handleTabKeyDown = useCallback(
+        (event: KeyboardEvent<HTMLButtonElement>, tabId: string): void => {
+            const currentIndex = tabs.findIndex((tab) => tab.id === tabId);
+            if (currentIndex < 0) return;
+
+            let nextIndex: number;
+            switch (event.key) {
+                case "ArrowRight":
+                    nextIndex = (currentIndex + 1) % tabs.length;
+                    break;
+                case "ArrowLeft":
+                    nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+                    break;
+                case "Home":
+                    nextIndex = 0;
+                    break;
+                case "End":
+                    nextIndex = tabs.length - 1;
+                    break;
+                default:
+                    return;
+            }
+
+            event.preventDefault();
+            const nextTabId = tabs.find((_, index) => index === nextIndex)?.id;
+            if (!nextTabId) return;
+
+            handleTabChange(nextTabId);
+            window.requestAnimationFrame(() => {
+                document.getElementById(`tab-${nextTabId}`)?.focus();
+            });
+        },
+        [handleTabChange, tabs],
+    );
+
     // In URL-sync mode, the query string is the source of truth (supports back/forward reliably).
     const resolvedActiveTab = syncWithUrl ? resolveUrlTab() : activeTab;
     const activeTabContent = tabs.find((tab) => tab.id === resolvedActiveTab)?.content;
@@ -60,17 +95,23 @@ export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
                 <div
                     className="flex gap-2 mb-6 p-1.5 bg-white rounded-2xl border-2 border-gray-100 shadow-sm overflow-x-auto scrollbar-hide"
                     role="tablist"
+                    aria-orientation="horizontal"
                 >
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
+                            type="button"
                             id={`tab-${tab.id}`}
                             role="tab"
                             aria-selected={resolvedActiveTab === tab.id}
                             aria-controls={tabPanelId}
+                            tabIndex={resolvedActiveTab === tab.id ? 0 : -1}
                             onClick={() => handleTabChange(tab.id)}
+                            onKeyDown={(event) =>
+                                handleTabKeyDown(event, tab.id)
+                            }
                             className={`
-                            flex-1 px-3 sm:px-5 py-3 font-bold text-sm sm:text-base rounded-xl transition-base duration-300 cursor-pointer border whitespace-nowrap min-w-fit relative
+                            flex-1 px-3 sm:px-5 py-3 font-bold text-sm sm:text-base rounded-xl transition-base duration-300 cursor-pointer border whitespace-nowrap min-w-fit relative focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:outline-none
                             ${
                                 resolvedActiveTab === tab.id
                                     ? "text-emerald-700 bg-white border-emerald-200 shadow-sm ring-1 ring-emerald-100"

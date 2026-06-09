@@ -48,6 +48,7 @@ export function PageBanner({
                     src={bgImage}
                     alt=""
                     fill
+                    sizes="100vw"
                     className="object-cover object-[center_75%]"
                     priority
                 />
@@ -57,7 +58,10 @@ export function PageBanner({
                 {/* Content Layer */}
                 <div className="text-gray-900 relative z-20">
                     {Icon && (
-                        <Icon className="w-10 h-10 sm:w-16 sm:h-16 mb-2 sm:mb-4 text-gray-900" />
+                        <Icon
+                            className="w-10 h-10 sm:w-16 sm:h-16 mb-2 sm:mb-4 text-gray-900"
+                            aria-hidden="true"
+                        />
                     )}
                     <h1 className="text-[28px] sm:text-[42px] font-extrabold mb-2 sm:mb-3 tracking-tight leading-none text-gray-900">
                         {title}
@@ -79,9 +83,12 @@ export function PageBanner({
                     <div className="w-full sm:w-auto flex justify-end sm:justify-start">
                         <Link
                             href={backUrl}
-                            className="inline-flex items-center gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2.5 bg-[#FFE1ED] border-2 border-[#FFB7D5] text-[#FF5A92] rounded-full font-bold text-xs sm:text-base hover:bg-[#FFD1E3] transition-colors shadow-sm relative z-30"
+                            className="inline-flex items-center gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2.5 bg-[#FFE1ED] border-2 border-[#FFB7D5] text-[#FF5A92] rounded-full font-bold text-xs sm:text-base hover:bg-[#FFD1E3] transition-colors shadow-sm relative z-30 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-300 focus-visible:outline-none"
                         >
-                            <ArrowLeft className="w-4 h-4 sm:w-[18px] sm:h-[18px] stroke-3" />
+                            <ArrowLeft
+                                className="w-4 h-4 sm:w-[18px] sm:h-[18px] stroke-3"
+                                aria-hidden="true"
+                            />
                             {backLabel}
                         </Link>
                     </div>
@@ -101,6 +108,7 @@ export function PageBanner({
                         alt={imageAlt}
                         width={600}
                         height={500}
+                        sizes="(min-width: 1024px) 680px, (min-width: 640px) 560px, 280px"
                         className="w-full h-auto object-contain object-bottom drop-shadow-lg -mb-2"
                         priority
                     />

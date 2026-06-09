@@ -1,18 +1,21 @@
 "use client";
 
 import { CalendarRange } from "lucide-react";
+import type { ReactElement } from "react";
 
 interface SemesterFilterProps {
     availableSemesters: number[];
     selectedSemester: string;
     onSemesterChange: (semesterValue: string) => void;
+    disabled?: boolean;
 }
 
 export function SemesterFilter({
     availableSemesters,
     selectedSemester,
     onSemesterChange,
-}: SemesterFilterProps) {
+    disabled = false,
+}: SemesterFilterProps): ReactElement | null {
     if (availableSemesters.length <= 1) {
         return null;
     }
@@ -24,7 +27,7 @@ export function SemesterFilter({
 
             <div className="relative z-10">
                 <div className="rounded-2xl border border-white/80 bg-white/85 p-2.5 text-emerald-600 shadow-md ring-1 ring-slate-900/5">
-                    <CalendarRange className="w-5 h-5" />
+                    <CalendarRange className="w-5 h-5" aria-hidden="true" />
                 </div>
             </div>
             <div className="relative z-10 flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -37,8 +40,9 @@ export function SemesterFilter({
                 <select
                     id="semester-filter-analytics"
                     value={selectedSemester}
+                    disabled={disabled}
                     onChange={(e) => onSemesterChange(e.target.value)}
-                    className="w-full min-w-0 cursor-pointer truncate rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 font-medium text-slate-600 outline-none transition-base hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 sm:flex-1"
+                    className="w-full min-w-0 cursor-pointer truncate rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 font-medium text-slate-600 outline-none transition-base hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 disabled:cursor-wait disabled:opacity-70 sm:flex-1"
                 >
                     <option value="all">ทุกเทอม</option>
                     {availableSemesters.map((semester) => (

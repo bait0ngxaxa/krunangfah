@@ -3,6 +3,7 @@ import { AcceptInviteForm } from "@/components/teacher/forms/AcceptInviteForm";
 import { XCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { AuthBackgroundImage } from "@/components/auth/AuthBackgroundImage";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
 import type { Metadata } from "next";
 
@@ -22,13 +23,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
     if (!result.success || !result.invite) {
         return (
             <div className="relative min-h-dvh flex flex-col overflow-hidden">
-                <Image
-                    src="/image/login_bg.webp"
-                    alt=""
-                    fill
-                    className="object-cover object-bottom"
-                    priority
-                />
+                <AuthBackgroundImage />
 
                 <NavbarGreenBar>
                     <div className="ml-auto pr-6 sm:pr-12 lg:pr-[131px] flex items-center">
@@ -65,13 +60,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
     return (
         <div className="relative min-h-dvh flex flex-col overflow-hidden">
             {/* Background image — grass/flowers */}
-            <Image
-                src="/image/login_bg.webp"
-                alt=""
-                fill
-                className="object-cover object-bottom"
-                priority
-            />
+            <AuthBackgroundImage />
 
             {/* ─── Green Navbar ─── */}
             <NavbarGreenBar>

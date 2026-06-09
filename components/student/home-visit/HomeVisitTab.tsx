@@ -40,7 +40,7 @@ export function HomeVisitTab({
             <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-100/45 blur-3xl" />
 
             <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-2">
-                <Home className="w-6 h-6 text-emerald-500" />
+                <Home className="w-6 h-6 text-emerald-500" aria-hidden="true" />
                 <span className="text-gray-800">
                     บันทึกการเยี่ยมบ้าน
                 </span>
@@ -55,7 +55,7 @@ export function HomeVisitTab({
             {visits.length === 0 ? (
                 <div className="p-6 sm:p-12 text-center bg-white/50 rounded-xl border border-gray-100">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                        <MapPin className="w-10 h-10 text-gray-400" />
+                        <MapPin className="w-10 h-10 text-gray-400" aria-hidden="true" />
                     </div>
                     <h3 className="text-lg font-bold text-gray-800 mb-2">
                         {isFilteredByAcademicYear
@@ -95,7 +95,7 @@ export function HomeVisitTab({
                         variant="primary"
                         size="lg"
                     >
-                        <Plus className="w-5 h-5" />
+                        <Plus className="w-5 h-5" aria-hidden="true" />
                         เพิ่มบันทึกการเยี่ยมบ้าน
                     </Button>
                 </div>

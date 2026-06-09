@@ -74,6 +74,7 @@ export interface UseImportPreviewReturn {
     error: string | null;
     errorTitle: string;
     errorDescription: string;
+    isImportContextLoaded: boolean;
     academicYears: AcademicYear[];
     selectedYearId: string;
     assessmentRound: number;

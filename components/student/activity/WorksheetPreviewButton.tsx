@@ -40,7 +40,7 @@ export function WorksheetPreviewButton({
             >
                 {isCompleted ? (
                     <>
-                        <Check className="w-3 h-3" />
+                        <Check className="w-3 h-3" aria-hidden="true" />
                         เสร็จแล้ว
                     </>
                 ) : (
@@ -58,6 +58,9 @@ export function WorksheetPreviewButton({
                     <div
                         className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-slate-950/55 p-4 backdrop-blur-sm animate-fade-in"
                         onClick={() => setPreviewFile(null)}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={previewFile.name}
                     >
                         <div
                             className="my-4 flex max-h-[92vh] w-full max-w-5xl animate-zoom-in flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
@@ -66,7 +69,7 @@ export function WorksheetPreviewButton({
                             <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-4 sm:px-8 sm:py-5">
                                 <h3 className="font-bold text-gray-800 truncate flex items-center gap-3 text-lg">
                                     <span className="p-2 rounded-lg bg-white border border-emerald-200 text-emerald-600 shadow-sm">
-                                        <ImageIcon className="w-5 h-5" />
+                                        <ImageIcon className="w-5 h-5" aria-hidden="true" />
                                     </span>
                                     {previewFile.name}
                                 </h3>
@@ -75,7 +78,7 @@ export function WorksheetPreviewButton({
                                     aria-label="ปิดหน้าต่างพรีวิวไฟล์"
                                     className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-base duration-300 hover:rotate-90 hover:bg-gray-100 hover:text-gray-700"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-5 h-5" aria-hidden="true" />
                                 </button>
                             </div>
                             <div className="min-h-0 flex-1 overflow-auto bg-gray-50/50 p-6">
@@ -88,12 +91,7 @@ export function WorksheetPreviewButton({
                                         className="w-auto h-auto max-h-[70vh] rounded-xl shadow-lg"
                                         style={{ objectFit: "contain" }}
                                         unoptimized
-                                        onError={(_e) => {
-                                            console.error(
-                                                "Image failed to load:",
-                                                previewFile.url,
-                                            );
-                                        }}
+                                        onError={() => setPreviewFile(null)}
                                     />
                                 </div>
                             </div>
@@ -105,7 +103,7 @@ export function WorksheetPreviewButton({
             <div className="flex items-center gap-3 flex-wrap justify-start">
                 <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200 shadow-sm">
                     <span className="w-4 h-4 rounded-full bg-green-500 text-white flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5" />
+                        <Check className="w-2.5 h-2.5" aria-hidden="true" />
                     </span>
                     เสร็จแล้ว
                 </span>
@@ -126,7 +124,10 @@ export function WorksheetPreviewButton({
                             size="sm"
                             className="rounded-full px-4 py-1.5 text-xs group"
                         >
-                            <Eye className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                            <Eye
+                                className="w-3.5 h-3.5 group-hover:scale-110 transition-transform"
+                                aria-hidden="true"
+                            />
                             <span>
                                 {worksheetName || `ใบงานที่ ${index + 1}`}
                             </span>

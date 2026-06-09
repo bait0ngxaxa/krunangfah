@@ -45,7 +45,8 @@ export function AddTeacherForm({
         handleCancel,
     } = useAddTeacherForm();
 
-    const { register, handleSubmit } = form;
+    const { register, handleSubmit, formState } = form;
+    const hasValidationErrors = Object.keys(formState.errors).length > 0;
 
     // Filter out teachers who have an active (pending) invite or already accepted
     // Only allow re-inviting if invite is expired AND not accepted
@@ -91,8 +92,24 @@ export function AddTeacherForm({
     const missingEmailCount = roster.filter((t) => !t.email).length;
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-6"
+            aria-busy={isLoading}
+        >
             <ErrorMessage error={error} />
+            {hasValidationErrors ? (
+                <div
+                    className="sr-only"
+                    role="alert"
+                    aria-live="assertive"
+                >
+                    {Object.values(formState.errors)
+                        .map((fieldError) => fieldError?.message)
+                        .filter(Boolean)
+                        .join(" ")}
+                </div>
+            ) : null}
 
             <InviteLinkSection
                 success={success}
@@ -112,14 +129,23 @@ export function AddTeacherForm({
             </div>
             {availableRoster.length > 0 ? (
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                        <Users className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-emerald-500" />
+                    <label
+                        htmlFor="teacher-roster-invite-select"
+                        className="block text-sm font-bold text-gray-700 mb-2"
+                    >
+                        <Users
+                            className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-emerald-500"
+                            aria-hidden="true"
+                        />
                         เลือกครูที่จะส่งคำเชิญ
                     </label>
                     <select
+                        id="teacher-roster-invite-select"
                         value={selectedRosterId}
+                        disabled={isLoading}
+                        aria-invalid={hasValidationErrors}
                         onChange={(e) => onSelectRoster(e.target.value, roster)}
-                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-base hover:border-emerald-300 text-black"
+                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-white transition-base hover:border-emerald-300 text-black disabled:cursor-wait disabled:opacity-70"
                     >
                         <option value="">— เลือกครู —</option>
                         {availableRoster.map((t) => (
@@ -135,7 +161,10 @@ export function AddTeacherForm({
                 </div>
             ) : (
                 <div className="text-center py-6 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                    <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <Users
+                        className="w-8 h-8 text-gray-300 mx-auto mb-2"
+                        aria-hidden="true"
+                    />
                     <p className="text-sm text-gray-500 font-medium">
                         ยังไม่มีครูและชั้นเรียน โปรดเพิ่มก่อน
                     </p>
@@ -153,7 +182,10 @@ export function AddTeacherForm({
                         ตรวจสอบข้อมูลครูก่อนสร้างคำเชิญ
                     </p>
                     <div className="flex items-center gap-2 mb-2">
-                        <UserCheck className="w-4 h-4 text-green-500" />
+                        <UserCheck
+                            className="w-4 h-4 text-green-500"
+                            aria-hidden="true"
+                        />
                         <span className="text-sm font-bold text-gray-700">
                             ข้อมูลครูที่เลือก
                         </span>
@@ -161,20 +193,26 @@ export function AddTeacherForm({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                         <div className="flex items-start gap-1.5">
-                            <User className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                            <div>
+                            <User
+                                className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <div className="min-w-0">
                                 <span className="text-xs text-gray-400">
                                     ชื่อ-นามสกุล
                                 </span>
-                                <p className="font-semibold text-gray-800">
+                                <p className="break-words font-semibold text-gray-800">
                                     {selectedTeacher.firstName}{" "}
                                     {selectedTeacher.lastName}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-start gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                            <div>
+                            <Clock
+                                className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <div className="min-w-0">
                                 <span className="text-xs text-gray-400">
                                     อายุ
                                 </span>
@@ -184,12 +222,15 @@ export function AddTeacherForm({
                             </div>
                         </div>
                         <div className="flex items-start gap-1.5">
-                            <Briefcase className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                            <div>
+                            <Briefcase
+                                className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <div className="min-w-0">
                                 <span className="text-xs text-gray-400">
                                     ประเภทครู
                                 </span>
-                                <p className="font-semibold text-gray-800">
+                                <p className="break-words font-semibold text-gray-800">
                                     {USER_ROLE_LABELS[
                                         selectedTeacher.userRole
                                     ] ?? selectedTeacher.userRole}
@@ -197,37 +238,46 @@ export function AddTeacherForm({
                             </div>
                         </div>
                         <div className="flex items-start gap-1.5">
-                            <GraduationCap className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                            <div>
+                            <GraduationCap
+                                className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <div className="min-w-0">
                                 <span className="text-xs text-gray-400">
                                     {selectedTeacher.userRole ===
                                     "class_teacher"
                                         ? "ห้องที่ปรึกษา"
                                         : "สิทธิ์"}
                                 </span>
-                                <p className="font-semibold text-gray-800">
+                                <p className="break-words font-semibold text-gray-800">
                                     {selectedTeacher.advisoryClass}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-start gap-1.5">
-                            <Building2 className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                            <div>
+                            <Building2
+                                className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <div className="min-w-0">
                                 <span className="text-xs text-gray-400">
                                     บทบาทในโรงเรียน
                                 </span>
-                                <p className="font-semibold text-gray-800">
+                                <p className="break-words font-semibold text-gray-800">
                                     {selectedTeacher.schoolRole}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-start gap-1.5">
-                            <FolderKanban className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                            <div>
+                            <FolderKanban
+                                className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <div className="min-w-0">
                                 <span className="text-xs text-gray-400">
                                     บทบาทในโครงการ
                                 </span>
-                                <p className="font-semibold text-gray-800">
+                                <p className="break-words font-semibold text-gray-800">
                                     {PROJECT_ROLE_LABELS[
                                         selectedTeacher.projectRole
                                     ] ?? selectedTeacher.projectRole}
@@ -236,9 +286,14 @@ export function AddTeacherForm({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                        <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>{selectedTeacher.email}</span>
+                    <div className="flex min-w-0 items-center gap-1.5 text-sm text-gray-500">
+                        <Mail
+                            className="w-3.5 h-3.5 shrink-0 text-emerald-400"
+                            aria-hidden="true"
+                        />
+                        <span className="min-w-0 break-all">
+                            {selectedTeacher.email}
+                        </span>
                     </div>
                 </div>
             )}
@@ -264,8 +319,11 @@ export function AddTeacherForm({
                         className="flex-1"
                     >
                         {isLoading ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                                <span className="flex items-center justify-center gap-2">
+                                <span
+                                    className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"
+                                    aria-hidden="true"
+                                />
                                 กำลังสร้างคำเชิญ…
                             </span>
                         ) : (
@@ -275,6 +333,7 @@ export function AddTeacherForm({
                     <Button
                         type="button"
                         onClick={handleCancel}
+                        disabled={isLoading}
                         variant="secondary"
                         size="lg"
                     >

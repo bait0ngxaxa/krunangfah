@@ -69,6 +69,7 @@ export function SchoolSetupWizard({
                     province={schoolInfo?.province}
                     classes={classes}
                     roster={roster}
+                    canFinish={!!schoolInfo?.name}
                     onBack={() => setStep(2)}
                     onFinish={handleFinish}
                 />

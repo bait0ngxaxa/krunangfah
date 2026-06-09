@@ -46,6 +46,21 @@ const COLOR_MAP = {
         shadow: "shadow-[0_4px_8px_rgba(147,197,253,0.3)]",
         border: "border-[#60A5FA]",
     },
+    pink: {
+        bg: "bg-linear-to-b from-[#FBCFE8] to-[#F9A8D4]",
+        shadow: "shadow-[0_4px_8px_rgba(249,168,212,0.3)]",
+        border: "border-[#F472B6]",
+    },
+    purple: {
+        bg: "bg-linear-to-b from-[#DDD6FE] to-[#C4B5FD]",
+        shadow: "shadow-[0_4px_8px_rgba(196,181,253,0.3)]",
+        border: "border-[#A78BFA]",
+    },
+    orange: {
+        bg: "bg-linear-to-b from-[#FED7AA] to-[#FDBA74]",
+        shadow: "shadow-[0_4px_8px_rgba(251,146,60,0.25)]",
+        border: "border-[#FB923C]",
+    },
 } as const;
 
 function getColorStyle(color: string): ColorStyle {
@@ -58,6 +73,12 @@ function getColorStyle(color: string): ColorStyle {
             return COLOR_MAP.green;
         case "blue":
             return COLOR_MAP.blue;
+        case "pink":
+            return COLOR_MAP.pink;
+        case "purple":
+            return COLOR_MAP.purple;
+        case "orange":
+            return COLOR_MAP.orange;
         default:
             return COLOR_MAP.emerald;
     }
@@ -81,36 +102,39 @@ export function DashboardHeader({
         : `ครู${teacherName.replace(/^ครู/, "")}`;
 
     return (
-        <div className="relative bg-white rounded-[2.5rem] p-5 sm:p-7 mb-6 overflow-hidden border-[3px] border-[var(--brand-primary)] shadow-[0_8px_24px_-4px_rgba(11,208,217,0.15)] flex flex-col sm:flex-row gap-6 sm:gap-8 items-center sm:items-start group">
+        <div className="relative mb-6 flex flex-col items-center gap-6 overflow-hidden rounded-3xl border-2 border-[var(--brand-primary)] bg-white p-5 shadow-[0_8px_24px_-4px_rgba(11,208,217,0.15)] sm:flex-row sm:items-start sm:gap-8 sm:p-7">
             {/* Left Avatar (Big image) */}
-            <div className="shrink-0 relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] rounded-4xl bg-[#FDE24F] flex items-center justify-center overflow-hidden shadow-inner flex-none">
+            <div className="relative flex h-[120px] w-[120px] shrink-0 flex-none items-center justify-center overflow-hidden rounded-3xl bg-[#FDE24F] shadow-inner sm:h-[160px] sm:w-[160px]">
                 <Image
                     src="/image/dashboard/teacherprofile.png"
-                    alt="Teacher Avatar"
+                    alt="รูปโปรไฟล์ครู"
                     width={160}
                     height={160}
-                    className="object-contain w-full h-full p-2 sm:p-3 drop-shadow-md"
+                    sizes="(min-width: 640px) 160px, 120px"
+                    className="h-full w-full object-contain p-2 drop-shadow-md sm:p-3"
                     priority
                 />
             </div>
 
             {/* Right Content */}
-            <div className="flex-1 flex flex-col w-full text-center sm:text-left pt-2">
+            <div className="flex w-full min-w-0 flex-1 flex-col pt-2 text-center sm:text-left">
                 {/* Titles */}
-                <div>
-                    <h1 className="text-2xl sm:text-3xl lg:text-[28px] font-extrabold pb-1">
+                <div className="min-w-0">
+                    <h1 className="break-words pb-1 text-2xl font-extrabold leading-tight sm:text-3xl lg:text-[28px]">
                         <span className="text-gray-900">{titlePrefix}</span>
                         <span className="text-[var(--brand-primary)]">
                             {titleHighlight}
                         </span>
                     </h1>
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-0.5">
+                    <h2 className="mb-0.5 break-words text-lg font-bold leading-tight text-gray-800 sm:text-xl lg:text-2xl">
                         {displayName}
                     </h2>
-                    <p className="text-base sm:text-lg font-bold text-gray-800 flex flex-col sm:flex-row items-center sm:items-start sm:gap-4 mt-1">
-                        <span>{schoolName}</span>
+                    <p className="mt-1 flex min-w-0 flex-col items-center text-base font-bold text-gray-800 sm:flex-row sm:items-start sm:gap-4 sm:text-lg">
+                        <span className="min-w-0 break-words">{schoolName}</span>
                         {subtitle && (
-                            <span className="text-[var(--brand-primary)]">{subtitle}</span>
+                            <span className="min-w-0 break-words text-[var(--brand-primary)]">
+                                {subtitle}
+                            </span>
                         )}
                     </p>
                 </div>
@@ -122,21 +146,11 @@ export function DashboardHeader({
 
                 {/* Badges / Stats */}
                 {stats && stats.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
+                    <div className="flex flex-wrap items-stretch justify-center gap-3 sm:justify-start">
                         {stats.map((stat) => {
-                            // Assign distinct colors based on label if generic colors are sent
-                            let assignedColor = "blue";
-                            if (
-                                stat.label === "บทบาท" ||
-                                stat.color === "green"
-                            )
-                                assignedColor = "yellow";
-                            if (
-                                stat.label === "จำนวนนักเรียน" ||
-                                stat.color === "emerald"
-                            )
-                                assignedColor = "emerald";
-                            if (stat.color === "blue") assignedColor = "blue";
+                            const assignedColor =
+                                stat.color ??
+                                (stat.label === "บทบาท" ? "orange" : "blue");
 
                             const style = getColorStyle(assignedColor);
                             const Icon = stat.icon;
@@ -144,15 +158,18 @@ export function DashboardHeader({
                             return (
                                 <div
                                     key={stat.label}
-                                    className={`flex flex-col items-center justify-center w-full sm:w-auto min-w-0 sm:min-w-[140px] px-4 py-2.5 rounded-2xl ${style.bg} ${style.border} border-b-[3px] border-r-2 ${style.shadow} transition-transform hover:scale-105 active:scale-95`}
+                                    className={`flex w-full min-w-0 flex-col items-center justify-center rounded-2xl border-b-[3px] border-r-2 px-4 py-2.5 sm:w-auto sm:min-w-[140px] ${style.bg} ${style.border} ${style.shadow}`}
                                 >
-                                    <div className="flex items-center gap-1.5 mb-0.5">
-                                        <Icon className="w-3.5 h-3.5 text-gray-900 stroke-[2.5]" />
-                                        <span className="text-[11px] font-bold text-gray-800 leading-none">
+                                    <div className="mb-0.5 flex min-w-0 items-center gap-1.5">
+                                        <Icon
+                                            className="h-3.5 w-3.5 shrink-0 text-gray-900 stroke-[2.5]"
+                                            aria-hidden="true"
+                                        />
+                                        <span className="min-w-0 break-words text-center text-[11px] font-bold leading-tight text-gray-800">
                                             {stat.label}
                                         </span>
                                     </div>
-                                    <span className="text-sm font-extrabold text-gray-900 tracking-tight leading-tight">
+                                    <span className="min-w-0 break-words text-center text-sm font-extrabold leading-tight tracking-tight text-gray-900">
                                         {stat.value}
                                         {stat.unit && ` ${stat.unit}`}
                                     </span>

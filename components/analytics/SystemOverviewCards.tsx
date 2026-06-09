@@ -26,10 +26,14 @@ function OverviewCard({
         <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-cyan-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
             <div
                 className={`pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full blur-3xl ${glowColor}`}
+                aria-hidden="true"
             />
             <div className="relative z-10 flex items-center gap-4">
                 <div className="rounded-2xl border border-white/80 bg-white/85 p-3 shadow-md ring-1 ring-slate-900/5">
-                    <Icon className={`h-6 w-6 ${accentColor}`} />
+                    <Icon
+                        className={`h-6 w-6 ${accentColor}`}
+                        aria-hidden="true"
+                    />
                 </div>
                 <div>
                     <p className="text-sm font-bold tracking-wide uppercase text-slate-500">

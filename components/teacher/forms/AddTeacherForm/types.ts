@@ -29,7 +29,7 @@ export interface UseAddTeacherFormReturn {
     selectedRosterId: string;
     onSelectRoster: (id: string, roster: TeacherRosterItem[]) => void;
     onSubmit: (data: TeacherInviteFormData) => Promise<void>;
-    copyToClipboard: () => void;
+    copyToClipboard: () => Promise<void>;
     handleCancel: () => void;
 }
 

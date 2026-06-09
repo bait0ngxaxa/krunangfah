@@ -2,6 +2,7 @@ import { ClipboardList } from "lucide-react";
 import { REQUIRED_ACTIVITY_NUMBERS_BY_RISK } from "@/lib/actions/analytics/constants";
 import { RISK_LEVELS } from "@/lib/constants/risk-levels";
 import type { ActivityProgressByRisk } from "@/lib/actions/analytics/types";
+import { toSafeCount } from "../utils";
 
 interface ActivityProgressTableProps {
     activityProgressByRisk: ActivityProgressByRisk[];
@@ -36,7 +37,10 @@ export function ActivitySummaryTable({
                     <div className="relative w-16 h-16">
                         <div className="absolute inset-0 rounded-full bg-emerald-300/35 blur-lg" />
                         <div className="relative flex h-full w-full items-center justify-center rounded-full bg-white/85 ring-1 ring-gray-200/70">
-                            <ClipboardList className="w-8 h-8 text-gray-400" />
+                            <ClipboardList
+                                className="w-8 h-8 text-gray-400"
+                                aria-hidden="true"
+                            />
                         </div>
                     </div>
                     <span>ยังไม่มีข้อมูลกระบวนการช่วยเหลือ</span>
@@ -53,7 +57,10 @@ export function ActivitySummaryTable({
                 กระบวนการช่วยเหลือ (ห้องที่ปรึกษา)
             </h2>
             <div className="relative overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-sm">
-                <table className="w-full border-collapse">
+                <table
+                    className="w-full border-collapse"
+                    aria-label="กระบวนการช่วยเหลือ (ห้องที่ปรึกษา)"
+                >
                     <thead>
                         <tr className="bg-slate-50 text-slate-700">
                             <th className="min-w-[120px] px-6 py-4 text-center text-sm font-semibold border-r border-slate-200 whitespace-nowrap">
@@ -82,12 +89,14 @@ export function ActivitySummaryTable({
                     <tbody className="divide-y divide-slate-100">
                         {orderedData.map((item) => {
                             const activities = [
-                                item.activity1,
-                                item.activity2,
-                                item.activity3,
-                                item.activity4,
-                                item.activity5,
+                                toSafeCount(item.activity1),
+                                toSafeCount(item.activity2),
+                                toSafeCount(item.activity3),
+                                toSafeCount(item.activity4),
+                                toSafeCount(item.activity5),
                             ];
+                            const totalStudents = toSafeCount(item.totalStudents);
+                            const noActivity = toSafeCount(item.noActivity);
 
                             const requiredForLevel =
                                 REQUIRED_ACTIVITY_NUMBERS_BY_RISK[
@@ -111,6 +120,7 @@ export function ActivitySummaryTable({
                                                 style={{
                                                     backgroundColor: item.color,
                                                 }}
+                                                aria-hidden="true"
                                             />
                                             <span>{item.label.split(" ")[0]}</span>
                                         </div>
@@ -118,7 +128,7 @@ export function ActivitySummaryTable({
 
                                     {/* Total Students */}
                                     <td className="px-4 py-3 text-center font-bold text-slate-800 border-r border-slate-200 text-lg bg-white">
-                                        {item.totalStudents}
+                                        {totalStudents}
                                     </td>
 
                                     {/* No Activity Column */}
@@ -126,15 +136,15 @@ export function ActivitySummaryTable({
                                         className={`px-4 py-3 text-center border-r border-slate-300 ${
                                             !hasActivities
                                                 ? "bg-slate-200" // Not required: darker background
-                                                : item.noActivity > 0
+                                            : noActivity > 0
                                                   ? "bg-red-50/70" // Required & has value
                                                   : "bg-white" // Required & empty state
                                         }`}
                                     >
                                         {hasActivities &&
-                                        item.noActivity > 0 ? (
+                                        noActivity > 0 ? (
                                             <span className="font-bold text-red-500">
-                                                {item.noActivity}
+                                                {noActivity}
                                             </span>
                                         ) : null}
                                     </td>

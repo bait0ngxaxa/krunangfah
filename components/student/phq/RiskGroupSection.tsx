@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import {
     getRiskLevelConfig,
     type RiskLevel,
@@ -78,23 +79,23 @@ export function RiskGroupSection({
 
     return (
         <div
-            className={`rounded-2xl overflow-hidden shadow-lg ${config.cardBorder} border ring-1 ${config.cardRing}`}
+            className={`overflow-hidden rounded-2xl border shadow-lg ring-1 ${config.cardBorder} ${config.cardRing}`}
         >
             <div
-                className={`${config.headerGradient} ${config.headerTextColor} px-5 py-3.5 flex items-center justify-between`}
+                className={`flex flex-col gap-2 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between ${config.headerGradient} ${config.headerTextColor}`}
             >
-                <div className="flex items-center gap-2.5">
+                <div className="flex min-w-0 items-center gap-2.5">
                     <span className="text-lg leading-none" aria-hidden="true">
                         {config.emoji}
                     </span>
-                    <h3 className="font-bold text-[15px] tracking-wide">
+                    <h3 className="min-w-0 break-words text-[15px] font-bold tracking-wide">
                         {config.label}
                     </h3>
                 </div>
                 <span
-                    className={`${config.countBg} ${config.countText} text-xs font-bold px-3 py-1 rounded-full`}
+                    className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${config.countBg} ${config.countText}`}
                 >
-                    {students.length} คน
+                    {students.length.toLocaleString("th-TH")} คน
                 </span>
             </div>
 
@@ -108,28 +109,30 @@ export function RiskGroupSection({
                             : undefined
                     }
                 >
-                    <div className="divide-y divide-gray-100/80">
+                    <div className="divide-y divide-gray-100/80" role="list">
                         {students.map((student, index) => (
                             <div
                                 key={student.id}
-                                className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3 ${config.hoverBg} transition-base duration-200 group`}
+                                className={`group flex flex-col gap-3 px-4 py-3 transition-base duration-200 sm:flex-row sm:items-center sm:justify-between sm:px-5 ${config.hoverBg}`}
+                                role="listitem"
                             >
                                 <Link
                                     href={`/students/${student.id}`}
-                                    className="flex min-w-0 flex-1 items-center gap-3"
+                                    className="flex min-w-0 flex-1 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
                                 >
                                     <span
-                                        className={`${config.badgeBg} ${config.badgeText} text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0 tabular-nums`}
+                                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums ${config.badgeBg} ${config.badgeText}`}
                                     >
                                         {index + 1}
                                     </span>
                                     <span
-                                        className={`text-sm font-medium text-gray-700 ${config.hoverText} transition-colors truncate`}
+                                        className={`min-w-0 break-words text-sm font-medium text-gray-700 transition-colors ${config.hoverText}`}
                                     >
-                                        {student.firstName} {student.lastName}
+                                        {`${student.firstName} ${student.lastName}`.trim() ||
+                                            "ไม่ระบุชื่อ"}
                                     </span>
                                     {student.referral ? (
-                                        <span className="bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">
+                                        <span className="shrink-0 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700">
                                             ส่งต่อ
                                         </span>
                                     ) : null}
@@ -138,23 +141,15 @@ export function RiskGroupSection({
                                 {!readOnly ? (
                                     <Link
                                         href={`/students/${student.id}/help`}
-                                        className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm ${config.btnBase} ${config.btnHover} hover:shadow-md hover:-translate-y-px active:translate-y-0 transition-base duration-200 whitespace-nowrap`}
+                                        className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-sm transition-base duration-200 motion-safe:hover:-translate-y-px active:translate-y-0 sm:whitespace-nowrap ${config.btnBase} ${config.btnHover} hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300`}
                                     >
-                                        {actionLabel}
-                                        <svg
-                                            className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-base"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                            strokeWidth={2.5}
+                                        <span className="min-w-0 break-words">
+                                            {actionLabel}
+                                        </span>
+                                        <ChevronRight
+                                            className="h-3.5 w-3.5 shrink-0 opacity-60 transition-base group-hover:opacity-100 motion-safe:group-hover:translate-x-0.5"
                                             aria-hidden="true"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                                            />
-                                        </svg>
+                                        />
                                     </Link>
                                 ) : null}
                             </div>

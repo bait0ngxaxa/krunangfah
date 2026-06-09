@@ -10,10 +10,14 @@ export function InviteLinkSection({
     if (!success) return null;
 
     return (
-        <div className="p-4 text-sm text-green-700 bg-green-50 border-2 border-green-100 rounded-xl shadow-sm animate-fade-in-down">
+        <div
+            className="p-4 text-sm text-green-700 bg-green-50 border-2 border-green-100 rounded-xl shadow-sm animate-fade-in-down"
+            role="status"
+            aria-live="polite"
+        >
             <div className="flex items-center gap-2 mb-2">
                 <span className="bg-green-100 p-1 rounded-full text-green-600">
-                    <Check className="w-4 h-4" />
+                    <Check className="w-4 h-4" aria-hidden="true" />
                 </span>
                 <span className="font-bold">{success}</span>
             </div>
@@ -27,11 +31,12 @@ export function InviteLinkSection({
                             type="text"
                             readOnly
                             value={inviteLink}
+                            aria-label="Link สำหรับครูผู้ดูแล"
                             className="flex-1 px-3 py-2 text-sm border-2 border-green-100 rounded-lg bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-200 min-w-0"
                         />
                         <Button
                             type="button"
-                            onClick={onCopy}
+                            onClick={() => void onCopy()}
                             variant="primary"
                             size="sm"
                             className="shrink-0"

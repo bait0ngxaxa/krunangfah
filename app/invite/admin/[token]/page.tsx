@@ -1,6 +1,7 @@
 import { XCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { AuthBackgroundImage } from "@/components/auth/AuthBackgroundImage";
 import { validateInviteToken } from "@/lib/actions/school-admin-invite.actions";
 import { InviteRegisterForm } from "@/components/auth/InviteRegisterForm";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
@@ -49,13 +50,7 @@ export default async function AdminInvitePage({
     if (errorMessage) {
         return (
             <div className="relative min-h-dvh flex flex-col overflow-hidden">
-                <Image
-                    src="/image/login_bg.webp"
-                    alt=""
-                    fill
-                    className="object-cover object-bottom"
-                    priority
-                />
+                <AuthBackgroundImage />
 
                 <NavbarGreenBar>
                     <div className="ml-auto pr-6 sm:pr-12 lg:pr-[131px] flex items-center">
@@ -92,13 +87,7 @@ export default async function AdminInvitePage({
     return (
         <div className="relative min-h-dvh flex flex-col overflow-hidden">
             {/* Background image — grass/flowers */}
-            <Image
-                src="/image/login_bg.webp"
-                alt=""
-                fill
-                className="object-cover object-bottom"
-                priority
-            />
+            <AuthBackgroundImage />
 
             {/* ─── Green Navbar ─── */}
             <NavbarGreenBar>

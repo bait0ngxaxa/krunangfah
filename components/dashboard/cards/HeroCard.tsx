@@ -34,17 +34,20 @@ export function HeroCard({
 
     if (isEmpty) {
         return (
-            <div className="relative flex items-center gap-4 bg-white/90 backdrop-blur-md rounded-4xl shadow-sm border border-gray-200 p-5 overflow-hidden">
+            <div className="relative flex items-center gap-4 overflow-hidden rounded-3xl border border-gray-200 bg-white/90 p-5 shadow-sm backdrop-blur-md">
                 <div className="relative shrink-0">
-                    <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-gray-200 shadow-inner">
-                        <Inbox className="w-7 h-7 text-gray-400" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200 bg-linear-to-br from-gray-100 to-gray-200 shadow-inner">
+                        <Inbox
+                            className="h-7 w-7 text-gray-400"
+                            aria-hidden="true"
+                        />
                     </div>
                 </div>
-                <div className="relative flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-500">
+                <div className="relative min-w-0 flex-1">
+                    <h3 className="break-words font-bold text-gray-600">
                         {emptyTitle ?? title}
                     </h3>
-                    <p className="text-sm text-gray-400 mt-0.5 truncate">
+                    <p className="mt-0.5 break-words text-sm leading-5 text-gray-500">
                         {emptyDescription ??
                             "ยังไม่มีข้อมูล กรุณานำเข้าข้อมูลนักเรียน"}
                     </p>
@@ -73,8 +76,8 @@ export function HeroCard({
     return (
         <Link
             href={href}
-            className={`relative bg-white rounded-4xl border-2 ${colors.border} shadow-md p-5 sm:p-6 flex items-stretch min-h-[140px] sm:min-h-[160px] group w-full
-                hover:-translate-y-1
+            className={`group relative flex min-h-[140px] w-full items-stretch rounded-3xl border-2 bg-white p-5 shadow-md sm:min-h-[160px] sm:p-6 ${colors.border}
+                motion-safe:hover:-translate-y-1
                 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-400 focus-visible:outline-none
                 motion-safe:transition-transform motion-safe:duration-300
             `}
@@ -90,6 +93,7 @@ export function HeroCard({
                         alt=""
                         width={160}
                         height={180}
+                        sizes="(min-width: 640px) 150px, 112px"
                         className={`absolute -bottom-1 left-0 z-0 max-w-none origin-bottom object-contain drop-shadow-md sm:-bottom-2 sm:-left-4 sm:w-[150px]
                             motion-safe:group-hover:scale-105 motion-safe:transition-transform motion-safe:duration-300 ${
                                 isEmerald ? "w-[88px]" : "w-[112px]"
@@ -99,32 +103,36 @@ export function HeroCard({
             )}
 
             <div
-                className={`relative z-10 flex flex-1 flex-col justify-between sm:flex-row sm:items-center ${!imageSrc ? "pl-1 sm:pl-2" : "pl-2 sm:pl-10"} pr-12 sm:pr-24`}
+                className={`relative z-10 flex min-w-0 flex-1 flex-col justify-between sm:flex-row sm:items-center ${!imageSrc ? "pl-1 sm:pl-2" : "pl-2 sm:pl-10"} pr-10 sm:pr-24`}
             >
-                <div className="flex flex-col justify-center">
+                <div className="flex min-w-0 flex-col justify-center">
                     {!isEmerald && (
                         <div className="mb-2">
                             <div
-                                className={`inline-flex p-2.5 rounded-xl ${colors.iconBg} ${colors.iconColor} shadow-md`}
+                                className={`inline-flex rounded-xl p-2.5 ${colors.iconBg} ${colors.iconColor} shadow-md`}
                             >
-                                <Icon className="w-6 h-6 stroke-[2.5]" />
+                                <Icon
+                                    className="h-6 w-6 stroke-[2.5]"
+                                    aria-hidden="true"
+                                />
                             </div>
                         </div>
                     )}
 
-                    <h3 className="font-extrabold text-gray-900 text-[18px] sm:text-[22px] leading-tight mb-2">
+                    <h3 className="mb-2 break-words text-[18px] font-extrabold leading-tight text-gray-900 sm:text-[22px]">
                         {title}
                     </h3>
 
                     {badge && (
                         <div
-                            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl ${colors.badgeBg} ${colors.badgeBorder} border shadow-sm w-fit mb-2`}
+                            className={`mb-2 inline-flex max-w-full items-center gap-2 rounded-xl border px-4 py-1.5 shadow-sm ${colors.badgeBg} ${colors.badgeBorder}`}
                         >
                             <Icon
-                                className={`w-4 h-4 ${colors.badgeIcon} stroke-[2.5]`}
+                                className={`h-4 w-4 shrink-0 ${colors.badgeIcon} stroke-[2.5]`}
+                                aria-hidden="true"
                             />
                             <span
-                                className={`text-sm font-extrabold ${colors.badgeText}`}
+                                className={`min-w-0 break-words text-sm font-extrabold ${colors.badgeText}`}
                             >
                                 {badge}
                             </span>
@@ -132,15 +140,15 @@ export function HeroCard({
                     )}
 
                     {!isEmerald && description && (
-                        <p className="text-[14px] sm:text-[15px] text-gray-400 font-bold leading-tight">
+                        <p className="break-words text-[14px] font-bold leading-snug text-gray-500 sm:text-[15px]">
                             {description}
                         </p>
                     )}
                 </div>
 
                 {isEmerald && description && (
-                    <div className="hidden sm:flex items-center justify-end text-right">
-                        <p className="text-[13px] text-gray-400 font-bold max-w-[120px] leading-snug mr-2">
+                    <div className="hidden min-w-0 items-center justify-end text-right sm:flex">
+                        <p className="mr-2 max-w-[140px] break-words text-[13px] font-bold leading-snug text-gray-500">
                             {description}
                         </p>
                     </div>
@@ -148,10 +156,13 @@ export function HeroCard({
             </div>
 
             <div
-                className={`absolute ${isEmerald ? "top-1/2 -translate-y-1/2 right-5" : "bottom-5 right-5"} w-7 h-7 sm:w-9 sm:h-9 rounded-full ${colors.iconBg} ${colors.iconColor} flex items-center justify-center shadow-lg
+                className={`absolute ${isEmerald ? "right-4 top-1/2 -translate-y-1/2 sm:right-5" : "bottom-5 right-5"} flex h-8 w-8 items-center justify-center rounded-full sm:h-9 sm:w-9 ${colors.iconBg} ${colors.iconColor} shadow-lg
                     motion-safe:group-hover:brightness-95 motion-safe:transition-transform motion-safe:duration-200`}
             >
-                <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+                <ChevronDown
+                    className="h-4 w-4 stroke-3 sm:h-5 sm:w-5"
+                    aria-hidden="true"
+                />
             </div>
         </Link>
     );

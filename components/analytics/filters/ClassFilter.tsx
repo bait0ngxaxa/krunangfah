@@ -1,18 +1,21 @@
 "use client";
 
 import { Filter } from "lucide-react";
+import type { ReactElement } from "react";
 
 interface ClassFilterProps {
     availableClasses: string[];
     currentClass?: string;
     onClassChange: (classValue: string) => void;
+    disabled?: boolean;
 }
 
 export function ClassFilter({
     availableClasses,
     currentClass,
     onClassChange,
-}: ClassFilterProps) {
+    disabled = false,
+}: ClassFilterProps): ReactElement | null {
     if (availableClasses.length === 0) {
         return null;
     }
@@ -24,7 +27,7 @@ export function ClassFilter({
 
             <div className="relative z-10">
                 <div className="rounded-2xl border border-white/80 bg-white/85 p-2.5 text-emerald-600 shadow-md ring-1 ring-slate-900/5">
-                    <Filter className="w-5 h-5" />
+                    <Filter className="w-5 h-5" aria-hidden="true" />
                 </div>
             </div>
             <div className="relative z-10 flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -37,8 +40,9 @@ export function ClassFilter({
                 <select
                     id="class-filter"
                     value={currentClass || "all"}
+                    disabled={disabled}
                     onChange={(e) => onClassChange(e.target.value)}
-                    className="w-full min-w-0 cursor-pointer truncate rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 font-medium text-slate-600 outline-none transition-base hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 sm:flex-1"
+                    className="w-full min-w-0 cursor-pointer truncate rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 font-medium text-slate-600 outline-none transition-base hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 disabled:cursor-wait disabled:opacity-70 sm:flex-1"
                 >
                     <option value="all">แสดงทั้งหมด</option>
                     {availableClasses.map((className) => (

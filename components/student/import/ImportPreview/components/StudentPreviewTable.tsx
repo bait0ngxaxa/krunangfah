@@ -1,3 +1,4 @@
+import { Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { IMPORT_PREVIEW_PAGE_SIZE } from "@/lib/constants/import";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
@@ -55,10 +56,10 @@ export function StudentPreviewTable({
     };
 
     return (
-        <div className="bg-white rounded-4xl shadow-sm overflow-hidden border-2 border-gray-100 relative">
+        <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
             {students.length > 0 && (
                 <div className="flex flex-col gap-3 border-b border-gray-100 bg-white px-4 py-3 text-sm text-gray-600 md:flex-row md:items-center md:justify-between">
-                    <p>
+                    <p className="break-words">
                         แสดงข้อมูล {pageStart + 1}-
                         {Math.min(
                             pageStart + IMPORT_PREVIEW_PAGE_SIZE,
@@ -73,7 +74,7 @@ export function StudentPreviewTable({
                                 setCurrentPage((page) => Math.max(1, page - 1))
                             }
                             disabled={safeCurrentPage === 1}
-                            className="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 transition-base hover:border-emerald-300 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 transition-base hover:border-emerald-300 hover:text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             ก่อนหน้า
                         </button>
@@ -88,14 +89,25 @@ export function StudentPreviewTable({
                                 )
                             }
                             disabled={safeCurrentPage === totalPages}
-                            className="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 transition-base hover:border-emerald-300 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 transition-base hover:border-emerald-300 hover:text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             ถัดไป
                         </button>
                     </div>
                 </div>
             )}
-            <div className="max-h-[600px] overflow-y-auto">
+            {students.length === 0 ? (
+                <div className="px-4 py-12 text-center">
+                    <p className="text-base font-bold text-gray-800">
+                        ไม่มีนักเรียนที่พร้อมนำเข้า
+                    </p>
+                    <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-gray-600">
+                        รายการทั้งหมดอาจถูกลบออก หรือไม่ผ่านเงื่อนไขห้องเรียน
+                        กรุณาตรวจสอบไฟล์หรืออัปโหลดใหม่
+                    </p>
+                </div>
+            ) : (
+                <div className="max-h-[600px] overflow-y-auto">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-emerald-100">
                         <thead className="bg-white/80 sticky top-0 z-10 backdrop-blur-md shadow-sm">
@@ -134,7 +146,7 @@ export function StudentPreviewTable({
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white/30 divide-y divide-emerald-50">
+                        <tbody className="divide-y divide-emerald-50 bg-white/30">
                             {pageStudents.map((student, index) => (
                                 <tr
                                     key={student._originalIndex}
@@ -146,10 +158,10 @@ export function StudentPreviewTable({
                                     <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
                                         {student.studentId || "-"}
                                     </td>
-                                    <td className="px-4 py-2 text-sm font-bold text-gray-800 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
+                                    <td className="max-w-[14rem] break-words px-4 py-2 text-sm font-bold text-gray-800 transition-colors group-hover:text-emerald-600">
                                         {student.firstName || "-"}
                                     </td>
-                                    <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
+                                    <td className="max-w-[14rem] break-words px-4 py-2 text-sm text-gray-700">
                                         {student.lastName || "-"}
                                     </td>
                                     {canViewNationalId && (
@@ -163,12 +175,12 @@ export function StudentPreviewTable({
                                     <td className="px-4 py-2 text-sm text-center text-gray-600">
                                         {student.age ?? "-"}
                                     </td>
-                                    <td className="px-4 py-2 text-sm text-center text-gray-600">
+                                    <td className="px-4 py-2 text-center text-sm text-gray-600">
                                         {student.class || "-"}
                                     </td>
                                     <td className="px-4 py-2 text-center">
                                         <span
-                                            className={`inline-flex px-3 py-1 rounded-full text-xs font-bold text-white shadow-md ${getRiskLevelConfig(student.riskLevel).bgSolid}`}
+                                            className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold text-white ${getRiskLevelConfig(student.riskLevel).bgSolid}`}
                                         >
                                             {
                                                 getRiskLevelConfig(
@@ -185,9 +197,10 @@ export function StudentPreviewTable({
                                                     student._originalIndex,
                                                 )
                                             }
-                                            className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 transition-base hover:bg-red-50 hover:border-red-300"
+                                            aria-label={`ลบ ${student.firstName || "นักเรียน"} ${student.lastName || ""} ออกจากรายการนำเข้า`}
+                                            className="inline-flex items-center justify-center rounded-lg border border-red-200 p-2 text-red-600 transition-base hover:border-red-300 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
                                         >
-                                            ลบ
+                                            <Trash2 className="h-4 w-4" />
                                         </button>
                                     </td>
                                 </tr>
@@ -196,14 +209,15 @@ export function StudentPreviewTable({
                     </table>
                 </div>
             </div>
+            )}
 
             {studentPendingRemoval && (
                 <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/70 px-4 backdrop-blur-sm">
-                    <div className="w-full max-w-md rounded-2xl border-2 border-red-200 bg-white p-5 shadow-xl">
+                    <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-5 shadow-xl">
                         <p className="text-lg font-bold text-gray-800">
                             ลบนักเรียนออกจากรายการนำเข้า?
                         </p>
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 break-words text-sm text-gray-600">
                             {studentPendingRemoval.studentId || "-"} -{" "}
                             {studentPendingRemoval.firstName}{" "}
                             {studentPendingRemoval.lastName} (

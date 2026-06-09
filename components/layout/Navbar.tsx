@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Menu,
     X,
@@ -15,14 +15,6 @@ import {
 } from "lucide-react";
 import { NavbarGreenBar } from "./NavbarGreenBar";
 
-// Add these animation styles to your global CSS or tailwind config
-// @keyframes slideDown {
-//   from { opacity: 0; transform: translateY(-10px) scaleY(0.95); }
-//   to { opacity: 1; transform: translateY(0) scaleY(1); }
-// }
-// .animate-slideDown { animation: slideDown 0.25s ease-out forwards; }
-// .animate-slideUp { animation: slideDown 0.2s ease-in reverse forwards; }
-
 interface NavbarProps {
     hasStudents: boolean;
 }
@@ -32,6 +24,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const isActive = (path: string) => pathname?.startsWith(path);
+    const mobileMenuId = "primary-mobile-navigation";
 
     const allNavLinks = [
         { href: "/dashboard", label: "หน้าหลัก", icon: LayoutDashboard },
@@ -54,56 +47,79 @@ export function Navbar({ hasStudents }: NavbarProps) {
         (link) => !link.requiresStudents || hasStudents,
     );
 
+    useEffect(() => {
+        if (!isMobileMenuOpen) {
+            return;
+        }
+
+        const handleEscape = (event: KeyboardEvent): void => {
+            if (event.key === "Escape") {
+                setIsMobileMenuOpen(false);
+            }
+        };
+
+        document.addEventListener("keydown", handleEscape);
+        return () => document.removeEventListener("keydown", handleEscape);
+    }, [isMobileMenuOpen]);
+
     return (
         <>
             <NavbarGreenBar logoHref="/dashboard" fixed>
                 {/* Desktop Nav Links - moved to left next to logo */}
-                <div className="hidden md:flex flex-1 items-center ml-4 lg:ml-8 gap-1">
+                <div className="ml-4 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:ml-8 md:flex [scrollbar-width:none]">
                     {navLinks.map((link) => (
                         <Link
                             key={link.href}
                             href={link.href}
-                            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold transition-base duration-300 ${
+                            aria-current={isActive(link.href) ? "page" : undefined}
+                            className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${
                                 isActive(link.href)
                                     ? "bg-white/25 text-white shadow-sm"
                                     : "text-white/80 hover:text-white hover:bg-white/15"
                             }`}
                         >
-                            <link.icon className="w-4 h-4" />
-                            {link.label}
+                            <link.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                            <span className="whitespace-nowrap">{link.label}</span>
                         </Link>
                     ))}
                 </div>
 
                 {/* Right side - User Menu & Mobile Menu */}
-                <div className="flex items-center gap-3 ml-auto pr-6 sm:pr-10 lg:pr-16 shrink-0 border-l border-transparent">
-                    <div className="hidden md:flex items-center gap-3 xl:gap-4">
+                <div className="ml-auto flex shrink-0 items-center gap-3 border-l border-transparent pr-4 sm:pr-10 lg:pr-16">
+                    <div className="hidden items-center gap-3 md:flex xl:gap-4">
                         {/* Non-clickable avatar block */}
-                        <div className="relative w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-[#FFE14D] shrink-0 overflow-hidden shadow-sm border border-yellow-200 flex items-center justify-center p-1 lg:p-1.5">
-                            <div className="relative w-full h-full">
+                        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-yellow-200 bg-[#FFE14D] p-1 shadow-sm lg:h-10 lg:w-10 lg:p-1.5">
+                            <div className="relative h-full w-full">
                                 <Image
                                     src="/image/logout.png"
-                                    alt="User Profile"
+                                    alt=""
                                     fill
                                     sizes="(max-width: 1024px) 36px, 40px"
                                     className="object-contain object-bottom"
                                 />
                             </div>
                         </div>
-                        <div className="h-8 w-px bg-white/30 hidden lg:block mx-1" />
+                        <div className="mx-1 hidden h-8 w-px bg-white/30 lg:block" />
                         <LogoutButton variant="navbar" />
                     </div>
 
                     {/* Mobile menu button */}
                     <button
+                        type="button"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/15 focus:outline-hidden transition-colors cursor-pointer"
+                        aria-controls={mobileMenuId}
+                        aria-expanded={isMobileMenuOpen}
+                        className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg p-2 text-white/85 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:hidden"
                     >
-                        <span className="sr-only">Open main menu</span>
+                        <span className="sr-only">
+                            {isMobileMenuOpen
+                                ? "ปิดเมนูหลัก"
+                                : "เปิดเมนูหลัก"}
+                        </span>
                         {!isMobileMenuOpen ? (
-                            <Menu className="block h-6 w-6" />
+                            <Menu className="block h-6 w-6" aria-hidden="true" />
                         ) : (
-                            <X className="block h-6 w-6" />
+                            <X className="block h-6 w-6" aria-hidden="true" />
                         )}
                     </button>
                 </div>
@@ -111,43 +127,40 @@ export function Navbar({ hasStudents }: NavbarProps) {
 
             {/* Mobile Menu - Smooth slide animation */}
             <div
-                className={`md:hidden fixed top-[80px] left-0 right-0 z-60 transition-base duration-300 ease-out transform origin-top ${
+                id={mobileMenuId}
+                className={`fixed left-0 right-0 top-[80px] z-[60] origin-top md:hidden ${
                     isMobileMenuOpen
                         ? "opacity-100 translate-y-0 scale-y-100 pointer-events-auto"
                         : "opacity-0 -translate-y-2 scale-y-95 pointer-events-none"
-                }`}
+                } motion-safe:transition-[opacity,transform] motion-safe:duration-300 motion-safe:ease-out`}
+                aria-hidden={!isMobileMenuOpen}
             >
-                <div className="bg-[#00DB87] shadow-lg rounded-b-2xl overflow-hidden">
-                    <div className="px-3 pt-2 pb-3 space-y-1">
-                        {navLinks.map((link, index) => (
+                <div className="overflow-hidden rounded-b-2xl bg-[#00DB87] shadow-lg">
+                    <div className="space-y-1 px-3 pb-3 pt-2">
+                        {navLinks.map((link) => (
                             <Link
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-base font-semibold transition-base duration-200 hover:translate-x-1 ${
+                                aria-current={isActive(link.href) ? "page" : undefined}
+                                tabIndex={isMobileMenuOpen ? undefined : -1}
+                                className={`flex min-h-11 items-center gap-2 rounded-lg px-4 py-2.5 text-base font-semibold transition-colors duration-200 motion-safe:transition-transform motion-safe:hover:translate-x-1 ${
                                     isActive(link.href)
                                         ? "bg-white/25 text-white"
                                         : "text-white/80 hover:text-white hover:bg-white/15"
                                 }`}
-                                style={{
-                                    transitionDelay: isMobileMenuOpen
-                                        ? `${index * 50}ms`
-                                        : "0ms",
-                                }}
                             >
-                                <link.icon className="w-5 h-5" />
-                                {link.label}
+                                <link.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                                <span className="min-w-0 break-words">
+                                    {link.label}
+                                </span>
                             </Link>
                         ))}
-                        <div
-                            className="pt-2 mt-2 border-t border-white/20 transition-base duration-200"
-                            style={{
-                                transitionDelay: isMobileMenuOpen
-                                    ? `${navLinks.length * 50}ms`
-                                    : "0ms",
-                            }}
-                        >
-                            <LogoutButton variant="navbar" />
+                        <div className="mt-2 border-t border-white/20 pt-2">
+                            <LogoutButton
+                                variant="navbar"
+                                tabIndex={isMobileMenuOpen ? undefined : -1}
+                            />
                         </div>
                     </div>
                 </div>

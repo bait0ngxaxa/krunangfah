@@ -64,6 +64,7 @@ export function useActivityWorkspace({
         value: "",
     });
     const [savingNotes, setSavingNotes] = useState(false);
+    const [confirmingComplete, setConfirmingComplete] = useState(false);
 
     // Computed values
     const config = getWorkspaceColorConfig(riskLevel);
@@ -96,7 +97,9 @@ export function useActivityWorkspace({
         });
     };
 
-    const handleUpload = async (progressId: string, file: File) => {
+    const handleUpload = async (progressId: string, file: File): Promise<void> => {
+        if (uploading) return;
+
         if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {
             toast.error(
                 `ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด ${MAX_IMAGE_UPLOAD_INPUT_SIZE_MB}MB)`,
@@ -124,16 +127,16 @@ export function useActivityWorkspace({
                 toast.error(result.message || "เกิดข้อผิดพลาดในการอัปโหลด");
             }
         } catch (error) {
-            console.error("Upload error:", error);
             toast.error(getErrorMessage(error));
         } finally {
             setUploading(null);
         }
     };
 
-    const handleConfirmComplete = async () => {
-        if (!currentProgress) return;
+    const handleConfirmComplete = async (): Promise<void> => {
+        if (!currentProgress || confirmingComplete) return;
 
+        setConfirmingComplete(true);
         try {
             const result = await confirmActivityComplete(currentProgress.id);
             if (result.success && result.activityNumber) {
@@ -157,13 +160,16 @@ export function useActivityWorkspace({
             } else {
                 toast.error(result.error || "เกิดข้อผิดพลาด");
             }
-        } catch (error) {
-            console.error("Confirm complete error:", error);
+        } catch {
             toast.error("เกิดข้อผิดพลาด");
+        } finally {
+            setConfirmingComplete(false);
         }
     };
 
-    const handleFileSelect = (progressId: string) => {
+    const handleFileSelect = (progressId: string): void => {
+        if (uploading) return;
+
         const input = document.createElement("input");
         input.type = "file";
         input.accept = IMAGE_FILE_INPUT_ACCEPT;
@@ -176,7 +182,7 @@ export function useActivityWorkspace({
         input.click();
     };
 
-    const handleDeleteUpload = async (uploadId: string) => {
+    const handleDeleteUpload = async (uploadId: string): Promise<void> => {
         try {
             const result = await deleteWorksheetUpload(uploadId);
             if (result.success) {
@@ -185,14 +191,13 @@ export function useActivityWorkspace({
             } else {
                 toast.error(result.message);
             }
-        } catch (error) {
-            console.error("Delete upload error:", error);
+        } catch {
             toast.error("เกิดข้อผิดพลาดในการลบไฟล์");
         }
     };
 
-    const handleSaveNotes = async () => {
-        if (!currentProgress) return;
+    const handleSaveNotes = async (): Promise<void> => {
+        if (!currentProgress || savingNotes) return;
 
         setSavingNotes(true);
         try {
@@ -207,8 +212,7 @@ export function useActivityWorkspace({
             } else {
                 toast.error(result.error || "เกิดข้อผิดพลาดในการบันทึก");
             }
-        } catch (error) {
-            console.error("Save notes error:", error);
+        } catch {
             toast.error("เกิดข้อผิดพลาดในการบันทึก");
         } finally {
             setSavingNotes(false);

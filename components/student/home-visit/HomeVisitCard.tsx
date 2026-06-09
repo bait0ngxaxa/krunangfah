@@ -57,6 +57,8 @@ export function HomeVisitCard({
                 return;
             }
             toast.error(result.message || "เกิดข้อผิดพลาด");
+        } catch {
+            toast.error("เกิดข้อผิดพลาด");
         } finally {
             setDeleting(false);
         }
@@ -77,7 +79,7 @@ export function HomeVisitCard({
                     </span>
                     <span className="text-sm text-gray-600 font-medium flex items-center gap-2">
                         <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-500 shadow-sm">
-                            <Calendar className="w-3.5 h-3.5" />
+                            <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
                         </span>
                         {formatDate(visit.visitDate)}
                     </span>
@@ -94,7 +96,7 @@ export function HomeVisitCard({
                             className="h-8 px-3"
                             title="เพิ่ม/จัดการรูปภาพ"
                         >
-                            <Camera className="h-4 w-4 shrink-0" />
+                            <Camera className="h-4 w-4 shrink-0" aria-hidden="true" />
                             {isPhotoEditorOpen ? "ปิดรูปภาพ" : "เพิ่มรูปภาพ"}
                         </Button>
                         <Button
@@ -105,7 +107,7 @@ export function HomeVisitCard({
                             className="h-8 w-8 !p-0 rounded-lg bg-white"
                             title="ลบบันทึก"
                         >
-                            <Trash2 className="h-4 w-4 shrink-0" />
+                            <Trash2 className="h-4 w-4 shrink-0" aria-hidden="true" />
                         </Button>
                     </div>
                 )}
@@ -116,7 +118,7 @@ export function HomeVisitCard({
                 {/* Teacher info */}
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                     <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-500 shadow-sm">
-                        <User className="w-3.5 h-3.5" />
+                        <User className="w-3.5 h-3.5" aria-hidden="true" />
                     </span>
                     <span className="font-medium">{visit.teacherName}</span>
                     <span className="text-gray-400">({visit.teacherRole})</span>
@@ -136,7 +138,19 @@ export function HomeVisitCard({
                             <div
                                 key={photo.id}
                                 className="relative aspect-square rounded-xl overflow-hidden border border-emerald-100 cursor-pointer hover:ring-2 hover:ring-emerald-300 transition-base"
+                                role="button"
+                                tabIndex={0}
+                                aria-label={photo.fileName}
                                 onClick={() => setViewerIndex(index)}
+                                onKeyDown={(event) => {
+                                    if (
+                                        event.key === "Enter" ||
+                                        event.key === " "
+                                    ) {
+                                        event.preventDefault();
+                                        setViewerIndex(index);
+                                    }
+                                }}
                             >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
@@ -152,7 +166,7 @@ export function HomeVisitCard({
                 {photos.length === 0 && (
                     <div className="flex items-center gap-2 text-sm text-gray-400">
                         <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm">
-                            <ImageIcon className="w-3.5 h-3.5" />
+                            <ImageIcon className="w-3.5 h-3.5" aria-hidden="true" />
                         </span>
                         ไม่มีรูปภาพ
                     </div>
@@ -172,7 +186,7 @@ export function HomeVisitCard({
                 {visit.nextScheduledDate && (
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
                         <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-amber-200 bg-white text-amber-600 shadow-sm">
-                            <CalendarClock className="w-3.5 h-3.5" />
+                            <CalendarClock className="w-3.5 h-3.5" aria-hidden="true" />
                         </span>
                         <span className="text-sm font-medium text-amber-700">
                             นัดครั้งถัดไป: {formatDate(visit.nextScheduledDate)}

@@ -17,8 +17,14 @@ const ImportPreview = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="flex items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
+            <div
+                className="flex flex-col items-center justify-center gap-3 py-16"
+                role="status"
+            >
+                <div className="h-10 w-10 animate-spin rounded-full border-2 border-emerald-100 border-b-emerald-500" />
+                <p className="text-sm font-medium text-gray-600">
+                    กำลังเตรียมพรีวิวข้อมูล…
+                </p>
             </div>
         ),
     },
@@ -83,7 +89,7 @@ export function ImportClient({ canViewNationalId }: ImportClientProps) {
     };
 
     return (
-        <div className="relative bg-white rounded-3xl shadow-sm p-6 md:p-8 border-2 border-gray-100 overflow-hidden">
+        <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6 md:p-8">
             {!parsedData ? (
                 <ExcelUploader onDataParsed={handleDataParsed} />
             ) : (

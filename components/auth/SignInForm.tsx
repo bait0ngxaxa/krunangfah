@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactElement } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -35,7 +36,9 @@ export function getSafeCallbackUrl(callbackUrl?: string): string {
     }
 }
 
-export function SignInForm({ callbackUrl = "/dashboard" }: SignInFormProps) {
+export function SignInForm({
+    callbackUrl = "/dashboard",
+}: SignInFormProps): ReactElement {
     const router = useRouter();
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +51,7 @@ export function SignInForm({ callbackUrl = "/dashboard" }: SignInFormProps) {
         resolver: zodResolver(signInSchema),
     });
 
-    const onSubmit = async (data: SignInFormData) => {
+    const onSubmit = async (data: SignInFormData): Promise<void> => {
         setIsLoading(true);
         setError("");
 
@@ -81,8 +84,7 @@ export function SignInForm({ callbackUrl = "/dashboard" }: SignInFormProps) {
             toast.success("เข้าสู่ระบบสำเร็จ");
             router.push(getSafeCallbackUrl(callbackUrl || result.redirectTo));
             router.refresh();
-        } catch (err) {
-            console.error("Sign in error:", err);
+        } catch {
             toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
         } finally {
             setIsLoading(false);
@@ -105,11 +107,17 @@ export function SignInForm({ callbackUrl = "/dashboard" }: SignInFormProps) {
                     autoComplete="email"
                     spellCheck={false}
                     disabled={isLoading}
+                    aria-invalid={errors.email ? "true" : "false"}
+                    aria-describedby={errors.email ? "email-error" : undefined}
                     className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
                     placeholder="your@email.com"
                 />
                 {errors.email && (
-                    <p className="mt-1.5 text-sm text-red-500 font-medium">
+                    <p
+                        id="email-error"
+                        role="alert"
+                        className="mt-1.5 text-sm text-red-500 font-medium"
+                    >
                         {errors.email.message}
                     </p>
                 )}
@@ -128,11 +136,19 @@ export function SignInForm({ callbackUrl = "/dashboard" }: SignInFormProps) {
                     id="password"
                     autoComplete="current-password"
                     disabled={isLoading}
+                    aria-invalid={errors.password ? "true" : "false"}
+                    aria-describedby={
+                        errors.password ? "password-error" : undefined
+                    }
                     className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
                     placeholder="••••••••"
                 />
                 {errors.password && (
-                    <p className="mt-1.5 text-sm text-red-500 font-medium">
+                    <p
+                        id="password-error"
+                        role="alert"
+                        className="mt-1.5 text-sm text-red-500 font-medium"
+                    >
                         {errors.password.message}
                     </p>
                 )}
@@ -156,9 +172,15 @@ export function SignInForm({ callbackUrl = "/dashboard" }: SignInFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
+                    aria-busy={isLoading}
                     className="inline-flex items-center justify-center gap-2 bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-base duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
                 >
-                    {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+                    {isLoading && (
+                        <Loader2
+                            className="h-5 w-5 animate-spin"
+                            aria-hidden="true"
+                        />
+                    )}
                     <span>{isLoading ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบ"}</span>
                 </button>
             </div>

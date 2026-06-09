@@ -78,14 +78,14 @@ export function StudentProfileCard({
                         <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-gray-500 font-medium">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-emerald-200 bg-emerald-50/70 text-emerald-700 shadow-sm">
                                 <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-emerald-200 bg-white">
-                                    <School className="w-3 h-3" />
+                                        <School className="w-3 h-3" aria-hidden="true" />
                                 </span>
                                 ห้อง {student.class}
                             </span>
                             {student.gender && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-purple-200 bg-purple-50/70 text-purple-700 shadow-sm">
                                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-purple-200 bg-white">
-                                        <User className="w-3 h-3" />
+                                        <User className="w-3 h-3" aria-hidden="true" />
                                     </span>
                                     {student.gender === "MALE" ? "ชาย" : "หญิง"}
                                 </span>
@@ -93,7 +93,7 @@ export function StudentProfileCard({
                             {student.age && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-blue-200 bg-blue-50/70 text-blue-700 shadow-sm">
                                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-blue-200 bg-white">
-                                        <Cake className="w-3 h-3" />
+                                        <Cake className="w-3 h-3" aria-hidden="true" />
                                     </span>
                                     อายุ {student.age} ปี
                                 </span>
@@ -101,7 +101,7 @@ export function StudentProfileCard({
                             {student.studentId && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-gray-200 bg-white/90 text-gray-700 shadow-sm">
                                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-gray-200 bg-white">
-                                        <Hash className="w-3 h-3" />
+                                        <Hash className="w-3 h-3" aria-hidden="true" />
                                     </span>
                                     รหัส {student.studentId}
                                 </span>
@@ -109,7 +109,7 @@ export function StudentProfileCard({
                             {canViewNationalId && student.nationalId && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-amber-200 bg-amber-50/70 text-amber-700 shadow-sm">
                                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-amber-200 bg-white">
-                                        <CreditCard className="w-3 h-3" />
+                                        <CreditCard className="w-3 h-3" aria-hidden="true" />
                                     </span>
                                     เลขบัตร {student.nationalId}
                                 </span>
@@ -140,14 +140,14 @@ export function StudentProfileCard({
                             >
                                 {latestResult.referredToHospital ? (
                                     <>
-                                        <Hospital className="w-4 h-4" />
+                                        <Hospital className="w-4 h-4" aria-hidden="true" />
                                         ส่งต่อ:{" "}
                                         {latestResult.hospitalName ||
                                             "โรงพยาบาล"}
                                     </>
                                 ) : (
                                     <>
-                                        <ClipboardCheck className="w-4 h-4" />
+                                        <ClipboardCheck className="w-4 h-4" aria-hidden="true" />
                                         ติดตามต่อ
                                     </>
                                 )}
@@ -187,7 +187,7 @@ export function StudentProfileCard({
             {!latestResult && (
                 <div className="mt-8 p-6 bg-emerald-50/50 rounded-2xl border-2 border-dashed border-emerald-200 text-center text-gray-500 flex flex-col items-center gap-2">
                     <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-300 bg-white text-gray-500 shadow-sm">
-                        <FileText className="w-6 h-6" />
+                        <FileText className="w-6 h-6" aria-hidden="true" />
                     </span>
                     <p className="font-medium">ยังไม่มีผลการคัดกรอง PHQ-A</p>
                 </div>

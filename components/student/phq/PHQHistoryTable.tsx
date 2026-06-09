@@ -43,7 +43,7 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
             <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-100/45 blur-3xl" />
             <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-3">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200 bg-white text-[var(--brand-primary)] shadow-sm">
-                    <ClipboardList className="w-5 h-5" />
+                    <ClipboardList className="w-5 h-5" aria-hidden="true" />
                 </span>
                 <span className="text-gray-800">
                     ประวัติการคัดกรองสุขภาพจิต
@@ -52,7 +52,10 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
 
             {/* Desktop Table */}
             <div className="hidden overflow-x-auto rounded-2xl border border-gray-200 md:block">
-                <table className="w-full">
+                <table
+                    className="w-full"
+                    aria-label="ประวัติการคัดกรองสุขภาพจิต"
+                >
                     <thead>
                         <tr className="border-b border-gray-200 bg-slate-50/90">
                             <th className="text-left py-4 px-6 font-bold text-gray-700">
@@ -123,7 +126,7 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
                                             <div className="space-y-1">
                                                 {result.q9a && (
                                                     <div className="flex items-center gap-1.5 text-orange-600 text-sm font-medium">
-                                                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                                                        <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
                                                         <span>
                                                             มีความคิดฆ่าตัวตาย
                                                         </span>
@@ -131,7 +134,7 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
                                                 )}
                                                 {result.q9b && (
                                                     <div className="flex items-center gap-1.5 text-red-700 text-sm font-medium">
-                                                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                                                        <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
                                                         <span>
                                                             เคยลงมือฆ่าตัวตาย
                                                         </span>
@@ -183,13 +186,13 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
                                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 space-y-1">
                                     {result.q9a && (
                                         <div className="flex items-center gap-1.5 text-orange-600 text-sm font-medium">
-                                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                                            <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
                                             <span>มีความคิดฆ่าตัวตาย</span>
                                         </div>
                                     )}
                                     {result.q9b && (
                                         <div className="flex items-center gap-1.5 text-red-700 text-sm font-medium">
-                                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                                            <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
                                             <span>เคยลงมือฆ่าตัวตาย</span>
                                         </div>
                                     )}
@@ -197,7 +200,10 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
                             )}
                             <div className="space-y-3">
                                 <div className="text-sm text-gray-600 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+                                    <span
+                                        className="w-1.5 h-1.5 rounded-full bg-emerald-300"
+                                        aria-hidden="true"
+                                    />
                                     {formatAcademicYear(
                                         result.academicYear.year,
                                         result.academicYear.semester,

@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { TeacherAssessmentForm } from "@/components/activity/TeacherAssessmentForm";
 import { requireAuth } from "@/lib/session";
 import { ACTIVITIES } from "@/lib/config/help-page-config";
+import { getWorksheetActivityIndices } from "@/components/activity/ActivityWorkspace/constants";
 import {
     studentHelpEncouragementRoute,
     studentHelpRoute,
@@ -18,6 +19,12 @@ import {
 interface PageProps {
     params: Promise<{ id: string }>;
     searchParams: Promise<{ activity?: string; phqResultId?: string }>;
+}
+
+function parseActivityNumber(activityValue?: string): number | null {
+    if (!activityValue) return null;
+    const parsed = Number.parseInt(activityValue, 10);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 export default async function TeacherAssessmentPage({
@@ -52,6 +59,9 @@ export default async function TeacherAssessmentPage({
     if (activePhqResult?.id !== latestResult.id) {
         redirect(studentHelpRoute(studentId));
     }
+    if (session.user.role === "class_teacher" && Boolean(student.referral)) {
+        redirect(studentHelpRoute(studentId));
+    }
 
     const riskLevel = latestResult.riskLevel;
 
@@ -73,7 +83,13 @@ export default async function TeacherAssessmentPage({
         : [];
 
     // Prefer explicit activity param; fallback to the next assessable activity.
-    const activityNumber = activityParam ? parseInt(activityParam) : null;
+    const activityNumber = parseActivityNumber(activityParam);
+    const allowedActivities = getWorksheetActivityIndices(
+        riskLevel as "orange" | "yellow" | "green",
+    );
+    if (activityNumber && !allowedActivities.includes(activityNumber)) {
+        redirect(studentHelpStartRoute(studentId, phqResultId));
+    }
     const currentProgress = activityNumber
         ? activityProgress.find((p) => p.activityNumber === activityNumber)
         : activityProgress.find(

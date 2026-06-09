@@ -67,6 +67,7 @@ export interface SummaryStepProps {
     province?: string;
     classes: SchoolClassItem[];
     roster: TeacherRosterItem[];
+    canFinish: boolean;
     onBack: () => void;
     onFinish: () => void;
 }

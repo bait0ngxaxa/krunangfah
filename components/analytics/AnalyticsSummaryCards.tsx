@@ -10,6 +10,7 @@ import {
     type LucideIcon,
 } from "lucide-react";
 import type { ActivityCompletionSummary } from "@/lib/actions/analytics/types";
+import { toSafeCount } from "./utils";
 
 interface AnalyticsSummaryCardsProps {
     totalStudents: number;
@@ -41,7 +42,10 @@ function MainStudentCard({
             <div className="relative z-10 flex min-h-36 flex-col justify-center gap-4">
                 <div className="flex items-start gap-3">
                     <div className="rounded-2xl border border-white/80 bg-white/85 p-3.5 shadow-md ring-1 ring-slate-900/5">
-                        <Users className="h-7 w-7 text-cyan-600" />
+                        <Users
+                            className="h-7 w-7 text-cyan-600"
+                            aria-hidden="true"
+                        />
                     </div>
                     <div className="min-w-0">
                         <p className="text-base font-extrabold leading-snug text-slate-700">
@@ -79,7 +83,10 @@ function MetricRow({
         <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white/80 px-4 py-3">
             <div className="flex min-w-0 items-center gap-3">
                 <div className="shrink-0 rounded-xl border border-white/80 bg-white p-2.5 shadow-sm ring-1 ring-slate-900/5">
-                    <Icon className={`h-5 w-5 ${accentColor}`} />
+                    <Icon
+                        className={`h-5 w-5 ${accentColor}`}
+                        aria-hidden="true"
+                    />
                 </div>
                 <div>
                     <p className="text-sm font-bold text-slate-600">
@@ -111,7 +118,10 @@ function ScreeningMetricCard({
             <div className="flex items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-3">
                     <div className="shrink-0 rounded-xl border border-white/80 bg-white p-2.5 shadow-sm ring-1 ring-slate-900/5">
-                        <CheckCircle className="h-5 w-5 text-emerald-600" />
+                        <CheckCircle
+                            className="h-5 w-5 text-emerald-600"
+                            aria-hidden="true"
+                        />
                     </div>
                     <p className="text-sm font-bold text-slate-600">
                         คัดกรองแล้ว
@@ -128,7 +138,10 @@ function ScreeningMetricCard({
             <div className="mt-3 grid grid-cols-1 gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-1.5">
-                        <ClipboardList className="h-3.5 w-3.5 shrink-0 text-sky-600" />
+                        <ClipboardList
+                            className="h-3.5 w-3.5 shrink-0 text-sky-600"
+                            aria-hidden="true"
+                        />
                         <p className="truncate text-xs font-semibold text-slate-500">
                             ต้องทำกิจกรรม
                         </p>
@@ -139,7 +152,10 @@ function ScreeningMetricCard({
                 </div>
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-1.5">
-                        <ClipboardX className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                        <ClipboardX
+                            className="h-3.5 w-3.5 shrink-0 text-slate-500"
+                            aria-hidden="true"
+                        />
                         <p className="truncate text-xs font-semibold text-slate-500">
                             ไม่ต้องทำกิจกรรม
                         </p>
@@ -179,6 +195,11 @@ function PercentageBar({ value }: { value: number }) {
             <div
                 className="h-full rounded-full bg-violet-500"
                 style={{ width: `${value}%` }}
+                role="progressbar"
+                aria-label="ความครอบคลุมการคัดกรอง"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={value}
             />
         </div>
     );
@@ -192,32 +213,44 @@ export function AnalyticsSummaryCards({
 }: AnalyticsSummaryCardsProps) {
     const safeActivityCompletionSummary =
         activityCompletionSummary ?? EMPTY_ACTIVITY_COMPLETION_SUMMARY;
+    const safeTotalStudents = toSafeCount(totalStudents);
+    const safeStudentsWithAssessment = Math.min(
+        toSafeCount(studentsWithAssessment),
+        safeTotalStudents,
+    );
+    const safeNotStartedStudents = toSafeCount(
+        safeActivityCompletionSummary.notStartedStudents,
+    );
+    const safeInProgressStudents = toSafeCount(
+        safeActivityCompletionSummary.inProgressStudents,
+    );
+    const safeCompletedStudents = toSafeCount(
+        safeActivityCompletionSummary.completedStudents,
+    );
     const studentsRequiringActivity =
-        safeActivityCompletionSummary.notStartedStudents +
-        safeActivityCompletionSummary.inProgressStudents +
-        safeActivityCompletionSummary.completedStudents;
+        safeNotStartedStudents + safeInProgressStudents + safeCompletedStudents;
     const studentsNotRequiringActivity = Math.max(
         0,
-        studentsWithAssessment - studentsRequiringActivity,
+        safeStudentsWithAssessment - studentsRequiringActivity,
     );
     const coveragePercent =
-        totalStudents > 0
+        safeTotalStudents > 0
             ? Math.min(
                   100,
-                  Math.round((studentsWithAssessment / totalStudents) * 100),
+                  Math.round((safeStudentsWithAssessment / safeTotalStudents) * 100),
               )
             : 0;
 
     return (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.6fr)]">
             <MainStudentCard
-                totalStudents={totalStudents}
+                totalStudents={safeTotalStudents}
                 currentClass={currentClass}
             />
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <MetricBlock title="การครอบคลุม">
                     <ScreeningMetricCard
-                        studentsWithAssessment={studentsWithAssessment}
+                        studentsWithAssessment={safeStudentsWithAssessment}
                         studentsRequiringActivity={studentsRequiringActivity}
                         studentsNotRequiringActivity={
                             studentsNotRequiringActivity
@@ -237,23 +270,21 @@ export function AnalyticsSummaryCards({
                     <MetricRow
                         icon={CircleDashed}
                         label="ยังไม่เริ่มทำกิจกรรม"
-                        value={
-                            safeActivityCompletionSummary.notStartedStudents
-                        }
+                        value={safeNotStartedStudents}
                         unit="คน"
                         accentColor="text-slate-500"
                     />
                     <MetricRow
                         icon={Clock3}
                         label="เริ่มแล้วแต่ยังไม่เสร็จครบ"
-                        value={safeActivityCompletionSummary.inProgressStudents}
+                        value={safeInProgressStudents}
                         unit="คน"
                         accentColor="text-amber-600"
                     />
                     <MetricRow
                         icon={ListChecks}
                         label="ทำกิจกรรมเสร็จครบแล้ว"
-                        value={safeActivityCompletionSummary.completedStudents}
+                        value={safeCompletedStudents}
                         unit="คน"
                         accentColor="text-teal-600"
                     />

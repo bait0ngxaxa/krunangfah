@@ -12,8 +12,14 @@ interface StudentSearchProps {
 export function StudentSearch({
     canSearchNationalId = false,
 }: StudentSearchProps) {
-    const { query, setQuery, results, isSearching, handleStudentClick } =
-        useStudentSearch();
+    const {
+        query,
+        setQuery,
+        results,
+        isSearching,
+        hasSearchError,
+        handleStudentClick,
+    } = useStudentSearch();
     const { scrollRef, isScrollable, showFade } = useScrollFade(results.length);
 
     const hasQuery = query.trim().length > 0;
@@ -30,6 +36,7 @@ export function StudentSearch({
             <EmptyState
                 hasQuery={hasQuery}
                 isSearching={isSearching}
+                hasError={hasSearchError}
                 resultCount={results.length}
             />
 

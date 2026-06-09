@@ -24,17 +24,18 @@ export function QuickActionCard({
     return (
         <Link
             href={href}
-            className="relative bg-white rounded-4xl border-2 border-[var(--brand-primary)] shadow-[0_4px_12px_rgba(11,208,217,0.1)] p-4 sm:p-5 flex items-stretch min-h-[140px] group hover:-translate-y-1 transition-base duration-300"
+            className="group relative flex min-h-[140px] items-stretch rounded-3xl border-2 border-[var(--brand-primary)] bg-white p-4 shadow-[0_4px_12px_rgba(11,208,217,0.1)] motion-safe:transition-transform motion-safe:duration-300 motion-safe:hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 sm:p-5"
         >
             {/* Left Image Spacer */}
             {imageSrc && (
-                <div className="w-[70px] sm:w-[80px] shrink-0 relative">
+                <div className="relative w-[70px] shrink-0 sm:w-[80px]">
                     <Image
                         src={imageSrc}
                         alt=""
                         width={140}
                         height={160}
-                        className={`absolute -bottom-1 -left-1 sm:-left-3 max-w-none object-contain origin-bottom z-10 drop-shadow-md group-hover:scale-105 transition-transform duration-300 ${
+                        sizes="(min-width: 640px) 110px, 100px"
+                        className={`absolute -bottom-1 -left-1 z-10 max-w-none origin-bottom object-contain drop-shadow-md motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105 sm:-left-3 ${
                             imageClassName || "w-[100px] sm:w-[110px]"
                         }`}
                     />
@@ -43,29 +44,39 @@ export function QuickActionCard({
 
             {/* Right Content */}
             <div
-                className={`flex-1 flex flex-col justify-center relative z-0 ${!imageSrc ? "pl-1" : "pl-6 sm:pl-8"} pr-4 sm:pr-8`}
+                className={`relative z-0 flex min-w-0 flex-1 flex-col justify-center ${!imageSrc ? "pl-1" : "pl-6 sm:pl-8"} pr-9 sm:pr-10`}
             >
                 <div className="mb-2">
-                    <div className="inline-flex p-2.5 rounded-xl bg-white border-2 border-[var(--brand-primary)] text-[var(--brand-primary)] shadow-md">
-                        <Icon className="w-6 h-6 stroke-[2.5]" />
+                    <div className="inline-flex rounded-xl border-2 border-[var(--brand-primary)] bg-white p-2.5 text-[var(--brand-primary)] shadow-md">
+                        <Icon
+                            className="h-6 w-6 stroke-[2.5]"
+                            aria-hidden="true"
+                        />
                     </div>
                 </div>
 
-                <h3 className="font-extrabold text-gray-900 text-base sm:text-[17px] leading-tight mb-1">
+                <h3 className="mb-1 break-words text-base font-extrabold leading-tight text-gray-900 sm:text-[17px]">
                     {title}
                 </h3>
-                <p className="text-[13px] sm:text-sm text-gray-400 font-bold leading-tight">
-                    {description}
-                </p>
+                {description && (
+                    <p className="break-words text-[13px] font-bold leading-snug text-gray-500 sm:text-sm">
+                        {description}
+                    </p>
+                )}
 
                 {actionButton && (
-                    <div className="mt-2.5 relative z-20">{actionButton}</div>
+                    <div className="relative z-20 mt-2.5 flex min-w-0 flex-wrap">
+                        {actionButton}
+                    </div>
                 )}
             </div>
 
             {/* Bottom Right Circle */}
-            <div className="absolute bottom-4 right-4 sm:bottom-5 sm:right-5 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white border-2 border-[var(--brand-primary)] text-[var(--brand-primary)] flex items-center justify-center shadow-lg group-hover:border-[var(--brand-primary-hover)] group-hover:text-[var(--brand-primary-hover)] transition-colors">
-                <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+            <div className="absolute bottom-4 right-4 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[var(--brand-primary)] bg-white text-[var(--brand-primary)] shadow-lg transition-colors group-hover:border-[var(--brand-primary-hover)] group-hover:text-[var(--brand-primary-hover)] motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:brightness-95 sm:bottom-5 sm:right-5">
+                <ChevronDown
+                    className="h-4 w-4 stroke-3 sm:h-5 sm:w-5"
+                    aria-hidden="true"
+                />
             </div>
         </Link>
     );

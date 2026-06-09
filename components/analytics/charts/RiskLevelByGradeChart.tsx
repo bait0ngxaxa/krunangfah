@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import type { GradeRiskData } from "@/lib/actions/analytics/types";
 import { RISK_CHART_CONFIG } from "@/lib/constants/risk-levels";
+import { usePrefersReducedMotion } from "../usePrefersReducedMotion";
 
 interface RiskLevelByGradeChartProps {
     gradeRiskData: GradeRiskData[];
@@ -29,6 +30,7 @@ function CustomLegend() {
                     <div
                         className="w-3 h-3 rounded-sm"
                         style={{ backgroundColor: level.color }}
+                        aria-hidden="true"
                     />
                     <span className="text-gray-700">{level.label}</span>
                 </div>
@@ -40,6 +42,8 @@ function CustomLegend() {
 export function RiskLevelByGradeChart({
     gradeRiskData,
 }: RiskLevelByGradeChartProps) {
+    const reduceMotion = usePrefersReducedMotion();
+
     if (gradeRiskData.length === 0) {
         return (
             <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-8 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
@@ -53,7 +57,10 @@ export function RiskLevelByGradeChart({
                     <div className="relative w-16 h-16">
                         <div className="absolute inset-0 rounded-full bg-emerald-300/35 blur-lg" />
                         <div className="relative flex h-full w-full items-center justify-center rounded-full bg-white/85 ring-1 ring-gray-200/70">
-                            <BarChart3 className="w-8 h-8 text-gray-400" />
+                            <BarChart3
+                                className="w-8 h-8 text-gray-400"
+                                aria-hidden="true"
+                            />
                         </div>
                     </div>
                     <span>ยังไม่มีข้อมูลการคัดกรอง</span>
@@ -71,7 +78,8 @@ export function RiskLevelByGradeChart({
                 ข้อมูลนักเรียนแยกตามระดับชั้น
             </h2>
             <CustomLegend />
-            <ResponsiveContainer width="100%" height={350} minWidth={0} minHeight={350}>
+            <div role="img" aria-label="ข้อมูลนักเรียนแยกตามระดับชั้น">
+                <ResponsiveContainer width="100%" height={350} minWidth={0} minHeight={350}>
                 <BarChart
                     data={gradeRiskData}
                     margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
@@ -127,33 +135,39 @@ export function RiskLevelByGradeChart({
                         stackId="a"
                         fill={RISK_CHART_CONFIG[0].color}
                         radius={[0, 0, 0, 0]}
+                        isAnimationActive={!reduceMotion}
                     />
                     <Bar
                         dataKey="green"
                         stackId="a"
                         fill={RISK_CHART_CONFIG[1].color}
                         radius={[0, 0, 0, 0]}
+                        isAnimationActive={!reduceMotion}
                     />
                     <Bar
                         dataKey="yellow"
                         stackId="a"
                         fill={RISK_CHART_CONFIG[2].color}
                         radius={[0, 0, 0, 0]}
+                        isAnimationActive={!reduceMotion}
                     />
                     <Bar
                         dataKey="orange"
                         stackId="a"
                         fill={RISK_CHART_CONFIG[3].color}
                         radius={[0, 0, 0, 0]}
+                        isAnimationActive={!reduceMotion}
                     />
                     <Bar
                         dataKey="red"
                         stackId="a"
                         fill={RISK_CHART_CONFIG[4].color}
                         radius={[4, 4, 0, 0]}
+                        isAnimationActive={!reduceMotion}
                     />
                 </BarChart>
-            </ResponsiveContainer>
+                </ResponsiveContainer>
+            </div>
         </div>
     );
 }

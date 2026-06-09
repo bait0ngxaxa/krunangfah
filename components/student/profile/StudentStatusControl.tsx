@@ -78,18 +78,22 @@ export function StudentStatusControl({
         if (!hasChanged || isPending) return;
 
         startTransition(async () => {
-            const result = await updateStudentStatus(
-                studentId,
-                selectedStatus,
-            );
-            if (!result.success) {
-                toast.error(result.message);
-                return;
-            }
+            try {
+                const result = await updateStudentStatus(
+                    studentId,
+                    selectedStatus,
+                );
+                if (!result.success) {
+                    toast.error(result.message);
+                    return;
+                }
 
-            toast.success(result.message);
-            setIsEditing(false);
-            router.refresh();
+                toast.success(result.message);
+                setIsEditing(false);
+                router.refresh();
+            } catch {
+                toast.error("ไม่สามารถอัปเดตสถานะนักเรียนได้");
+            }
         });
     }
 
@@ -107,6 +111,7 @@ export function StudentStatusControl({
                 >
                     <span
                         className={`inline-block h-2 w-2 rounded-full ${style.dot}`}
+                        aria-hidden="true"
                     />
                     {getStatusLabel(currentStatus)}
                 </span>
@@ -114,10 +119,10 @@ export function StudentStatusControl({
                     <button
                         type="button"
                         onClick={() => setIsEditing(true)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition-all hover:border-emerald-300 hover:text-emerald-600 hover:shadow-md"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition-all hover:border-emerald-300 hover:text-emerald-600 hover:shadow-md focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:outline-none"
                         aria-label="แก้ไขสถานะ"
                     >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                 )}
             </div>
@@ -126,7 +131,10 @@ export function StudentStatusControl({
 
     // Edit view
     return (
-        <div className="rounded-2xl border border-emerald-200 bg-white/90 p-3 shadow-sm">
+        <div
+            className="rounded-2xl border border-emerald-200 bg-white/90 p-3 shadow-sm"
+            aria-busy={isPending}
+        >
             <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-bold text-gray-500">
                     เปลี่ยนสถานะนักเรียน
@@ -135,16 +143,17 @@ export function StudentStatusControl({
                     type="button"
                     onClick={handleCancel}
                     disabled={isPending}
-                    className="inline-flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:outline-none"
                     aria-label="ยกเลิก"
                 >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
                 <select
                     id="student-status"
                     value={selectedStatus}
+                    aria-label="เปลี่ยนสถานะนักเรียน"
                     onChange={(event) =>
                         setSelectedStatus(event.target.value)
                     }

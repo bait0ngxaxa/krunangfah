@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 import { Button } from "@/components/ui/Button";
@@ -33,16 +33,31 @@ export function ImportActions({
 }: ImportActionsProps) {
     const [showConfirm, setShowConfirm] = useState(false);
 
-    const handleSaveClick = () => {
-        if (!canSave) {
+    useEffect(() => {
+        if (!showConfirm) {
+            return;
+        }
+
+        const handleEscape = (event: KeyboardEvent): void => {
+            if (event.key === "Escape") {
+                setShowConfirm(false);
+            }
+        };
+
+        document.addEventListener("keydown", handleEscape);
+        return () => document.removeEventListener("keydown", handleEscape);
+    }, [showConfirm]);
+
+    const handleSaveClick = (): void => {
+        if (!canSave || isLoading) {
             return;
         }
 
         setShowConfirm(true);
     };
 
-    const handleConfirm = () => {
-        if (!canSave) {
+    const handleConfirm = (): void => {
+        if (!canSave || isLoading) {
             setShowConfirm(false);
             return;
         }
@@ -51,7 +66,7 @@ export function ImportActions({
         onSave();
     };
 
-    const handleCancelConfirm = () => {
+    const handleCancelConfirm = (): void => {
         setShowConfirm(false);
     };
 
@@ -71,32 +86,32 @@ export function ImportActions({
                         aria-labelledby="import-confirm-title"
                         onClick={(event) => event.stopPropagation()}
                     >
-                        <div className="border-b border-amber-100 bg-amber-50 px-6 py-5">
+                        <div className="border-b border-amber-100 bg-amber-50 px-5 py-5 sm:px-6">
                             <div className="flex items-start gap-3">
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
                                     <AlertTriangle className="h-5 w-5 text-amber-600" />
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                     <h3
                                         id="import-confirm-title"
                                         className="text-base font-bold text-amber-800"
                                     >
                                         ยืนยันการนำเข้าข้อมูล
                                     </h3>
-                                    <p className="mt-1 text-sm text-amber-700">
+                                    <p className="mt-1 break-words text-sm text-amber-700">
                                         กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนกดยืนยัน
                                         เมื่อนำเข้าแล้วจะไม่สามารถยกเลิกได้
                                     </p>
                                 </div>
                             </div>
                         </div>
-                        <div className="space-y-4 px-6 py-5">
+                        <div className="space-y-4 px-5 py-5 sm:px-6">
                             <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
                                 <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2">
                                     <span className="block text-xs text-gray-500">
                                         ปีการศึกษา
                                     </span>
-                                    <span className="font-bold text-gray-800">
+                                    <span className="block break-words font-bold text-gray-800">
                                         {academicYearLabel || "ยังไม่ได้เลือก"}
                                     </span>
                                 </div>
@@ -122,8 +137,8 @@ export function ImportActions({
                                 <div className="space-y-2 rounded-xl border-2 border-red-300 bg-red-50 p-4">
                                     <div className="flex items-center gap-2">
                                         <ShieldAlert className="h-5 w-5 shrink-0 text-red-500" />
-                                        <p className="text-sm font-bold text-red-700">
-                                            ⚠️ พบนักเรียน{" "}
+                                        <p className="break-words text-sm font-bold text-red-700">
+                                            พบนักเรียน{" "}
                                             {incompleteWarning.studentCount} คน
                                             ที่ยังทำกิจกรรมไม่ครบ (
                                             {incompleteWarning.activityCount}{" "}
@@ -131,7 +146,7 @@ export function ImportActions({
                                             {incompleteWarning.previousRound}
                                         </p>
                                     </div>
-                                    <p className="ml-7 text-xs text-red-600">
+                                    <p className="ml-7 break-words text-xs text-red-600">
                                         เมื่อนำเข้าข้อมูลใหม่แล้ว
                                         จะไม่สามารถย้อนกลับไปทำกิจกรรมเดิมได้
                                         กรุณาตรวจสอบให้แน่ใจก่อนยืนยัน
@@ -144,7 +159,7 @@ export function ImportActions({
                                     <div className="flex items-start gap-2">
                                         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
                                         <div className="space-y-2">
-                                            <p className="text-sm font-bold text-amber-800">
+                                            <p className="break-words text-sm font-bold text-amber-800">
                                                 พบนักเรียน{" "}
                                                 {zeroScoreWarning.studentCount}{" "}
                                                 คนที่คะแนนข้อ 1-9 เป็น 0
@@ -156,6 +171,7 @@ export function ImportActions({
                                                     (student) => (
                                                         <li
                                                             key={`${student.studentId}-${student.class}`}
+                                                            className="break-words"
                                                         >
                                                             {student.studentId ||
                                                                 "-"}{" "}
@@ -182,7 +198,7 @@ export function ImportActions({
                                 </div>
                             )}
 
-                            <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
+                            <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
                                 <Button
                                     type="button"
                                     onClick={handleCancelConfirm}
@@ -209,14 +225,14 @@ export function ImportActions({
             )}
 
             {/* Main Action Buttons */}
-            <div className="flex justify-end gap-4">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <Button
                     type="button"
                     onClick={onCancel}
                     disabled={isLoading}
                     variant="secondary"
                     size="lg"
-                    className="rounded-2xl px-8"
+                    className="px-8"
                 >
                     ยกเลิก
                 </Button>
@@ -226,7 +242,7 @@ export function ImportActions({
                     disabled={!canSave || isLoading || showConfirm}
                     variant="primary"
                     size="lg"
-                    className="rounded-2xl px-8 active:scale-[0.98]"
+                    className="px-8 active:scale-[0.98]"
                 >
                     {isLoading ? (
                         <>
@@ -235,7 +251,7 @@ export function ImportActions({
                         </>
                     ) : (
                         <>
-                            <span>ตรวจสอบและนำเข้า →</span>
+                            <span>ตรวจสอบและนำเข้า</span>
                             <span className="bg-black/10 px-2 py-0.5 rounded-lg text-sm">
                                 {studentCount} คน
                             </span>

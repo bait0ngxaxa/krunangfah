@@ -41,8 +41,11 @@ export function QueryPagination({
     };
 
     return (
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
-            <div className="text-sm font-medium text-gray-600">
+        <nav
+            className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3"
+            aria-label="การแบ่งหน้า"
+        >
+            <div className="text-sm font-medium text-gray-600" aria-live="polite">
                 หน้า {page} จาก {totalPages}
             </div>
             <div className="flex items-center gap-2">
@@ -65,6 +68,6 @@ export function QueryPagination({
                     ถัดไป
                 </Button>
             </div>
-        </div>
+        </nav>
     );
 }

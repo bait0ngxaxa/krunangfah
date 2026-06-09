@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { CalendarDays } from "lucide-react";
+import type { ReactElement } from "react";
 import { getCurrentAcademicYear } from "@/lib/utils/academic-year";
 
 interface AcademicYearFilterProps {
     availableYears: number[];
     selectedYear: string;
     onYearChange: (yearValue: string) => void;
+    disabled?: boolean;
 }
 
 const MAX_RECENT_YEARS = 3;
@@ -16,7 +18,8 @@ export function AcademicYearFilter({
     availableYears,
     selectedYear,
     onYearChange,
-}: AcademicYearFilterProps) {
+    disabled = false,
+}: AcademicYearFilterProps): ReactElement | null {
     const [showAllYears, setShowAllYears] = useState(false);
 
     if (availableYears.length <= 1) {
@@ -39,7 +42,7 @@ export function AcademicYearFilter({
 
             <div className="relative z-10">
                 <div className="rounded-2xl border border-white/80 bg-white/85 p-2.5 text-emerald-600 shadow-md ring-1 ring-slate-900/5">
-                    <CalendarDays className="w-5 h-5" />
+                    <CalendarDays className="w-5 h-5" aria-hidden="true" />
                 </div>
             </div>
             <div className="relative z-10 flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -52,6 +55,7 @@ export function AcademicYearFilter({
                 <select
                     id="year-filter-analytics"
                     value={selectedYear}
+                    disabled={disabled}
                     onChange={(e) => {
                         const value = e.target.value;
                         if (value === "__show_all__") {
@@ -60,7 +64,7 @@ export function AcademicYearFilter({
                         }
                         onYearChange(value);
                     }}
-                    className="w-full min-w-0 cursor-pointer truncate rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 font-medium text-slate-600 outline-none transition-base hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 sm:flex-1"
+                    className="w-full min-w-0 cursor-pointer truncate rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 font-medium text-slate-600 outline-none transition-base hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 disabled:cursor-wait disabled:opacity-70 sm:flex-1"
                 >
                     <option value="all">ทุกปีการศึกษา</option>
                     {displayedYears.map((year) => (

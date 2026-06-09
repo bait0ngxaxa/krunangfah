@@ -1,6 +1,7 @@
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
-import Image from "next/image";
+import { AuthBackgroundImage } from "@/components/auth/AuthBackgroundImage";
 import Link from "next/link";
+import Image from "next/image";
 import { AlertTriangle } from "lucide-react";
 import type { Metadata } from "next";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
@@ -27,13 +28,7 @@ export default async function ResetPasswordPage({
     return (
         <div className="relative min-h-dvh flex flex-col overflow-hidden">
             {/* Background image — grass/flowers */}
-            <Image
-                src="/image/login_bg.webp"
-                alt=""
-                fill
-                className="object-cover object-bottom"
-                priority
-            />
+            <AuthBackgroundImage />
 
             {/* ─── Green Navbar ─── */}
             <NavbarGreenBar>

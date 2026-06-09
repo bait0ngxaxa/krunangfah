@@ -53,6 +53,34 @@ describe("student import modals", () => {
         expect(html).toContain("กรุณาอัพโหลดไฟล์ Excel (.xlsx) เท่านั้น");
     });
 
+    it("summarizes long import error lists so they stay readable", () => {
+        const errors = Array.from(
+            { length: 18 },
+            (_, index) => `แถวที่ ${index + 1}: กรุณาตรวจสอบข้อมูลนักเรียน`,
+        );
+        const html = renderToStaticMarkup(
+            <ImportErrorModal
+                error={`นำเข้านักเรียนไม่สำเร็จ\n\n${errors.join("\n")}`}
+                title="นำเข้านักเรียนไม่สำเร็จ"
+                description="กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง"
+                onClose={() => undefined}
+            />,
+        );
+
+        expect(html).toContain("นำเข้านักเรียนไม่สำเร็จ");
+        expect(html).toContain("พบรายละเอียดที่ต้องแก้ไข");
+        expect(html).toContain("18 รายการ");
+        expect(html).toContain("แสดง");
+        expect(html).toContain("12");
+        expect(html).toContain("รายการแรก");
+        expect(html).toContain("แถวที่ 12: กรุณาตรวจสอบข้อมูลนักเรียน");
+        expect(html).not.toContain(
+            "แถวที่ 13: กรุณาตรวจสอบข้อมูลนักเรียน",
+        );
+        expect(html).toContain("ยังมีอีก");
+        expect(html).toContain("6");
+    });
+
     it("renders missing class warnings as an alertdialog modal", () => {
         const html = renderToStaticMarkup(
             <FilteredStudentsWarning

@@ -160,7 +160,10 @@ export function ActivityWorkspace({
                                 )}
                                 className={`group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r py-4 text-center text-lg font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg ${config.gradient}`}
                             >
-                                <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                <MessageCircle
+                                    className="w-6 h-6 group-hover:scale-110 transition-transform"
+                                    aria-hidden="true"
+                                />
                                 หลักการพูดคุย
                             </Link>
                         </div>

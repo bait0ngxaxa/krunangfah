@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import type { TrendDataPoint } from "@/lib/actions/analytics/types";
 import { RISK_CHART_CONFIG } from "@/lib/constants/risk-levels";
+import { usePrefersReducedMotion } from "../usePrefersReducedMotion";
 
 interface RiskLevelTrendChartProps {
     trendData: TrendDataPoint[];
@@ -29,6 +30,7 @@ function CustomLegend() {
                     <div
                         className="w-3 h-3 rounded-sm"
                         style={{ backgroundColor: level.color }}
+                        aria-hidden="true"
                     />
                     <span className="text-gray-700">{level.label}</span>
                 </div>
@@ -38,6 +40,8 @@ function CustomLegend() {
 }
 
 export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
+    const reduceMotion = usePrefersReducedMotion();
+
     if (trendData.length === 0) {
         return (
             <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-8 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
@@ -51,7 +55,10 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                     <div className="relative w-16 h-16">
                         <div className="absolute inset-0 rounded-full bg-emerald-300/35 blur-lg" />
                         <div className="relative flex h-full w-full items-center justify-center rounded-full bg-white/85 ring-1 ring-gray-200/70">
-                            <TrendingUp className="w-8 h-8 text-gray-400" />
+                            <TrendingUp
+                                className="w-8 h-8 text-gray-400"
+                                aria-hidden="true"
+                            />
                         </div>
                     </div>
                     <span>ยังไม่มีข้อมูลการคัดกรอง</span>
@@ -69,7 +76,8 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                 กราฟแนวโน้มระดับความเสี่ยง
             </h2>
             <CustomLegend />
-            <ResponsiveContainer width="100%" height={350} minWidth={0} minHeight={350}>
+            <div role="img" aria-label="กราฟแนวโน้มระดับความเสี่ยง">
+                <ResponsiveContainer width="100%" height={350} minWidth={0} minHeight={350}>
                 <LineChart
                     data={trendData}
                     margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
@@ -137,10 +145,12 @@ export function RiskLevelTrendChart({ trendData }: RiskLevelTrendChartProps) {
                                 stroke: cfg.color,
                                 strokeWidth: 0,
                             }}
+                            isAnimationActive={!reduceMotion}
                         />
                     ))}
                 </LineChart>
-            </ResponsiveContainer>
+                </ResponsiveContainer>
+            </div>
         </div>
     );
 }

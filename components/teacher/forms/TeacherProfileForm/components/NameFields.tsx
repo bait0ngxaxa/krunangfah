@@ -16,13 +16,22 @@ export function NameFields({
                 </label>
                 <input
                     {...register("firstName")}
+                    id="firstName"
                     type="text"
                     maxLength={INPUT_LIMITS.teacher.firstName}
+                    aria-invalid={!!errors.firstName}
+                    aria-describedby={
+                        errors.firstName ? "firstName-error" : undefined
+                    }
+                    autoComplete="given-name"
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="กรอกชื่อ"
                 />
                 {errors.firstName && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
+                    <p
+                        id="firstName-error"
+                        className="mt-1 break-words text-sm font-medium text-red-500"
+                    >
                         {errors.firstName.message}
                     </p>
                 )}
@@ -37,13 +46,22 @@ export function NameFields({
                 </label>
                 <input
                     {...register("lastName")}
+                    id="lastName"
                     type="text"
                     maxLength={INPUT_LIMITS.teacher.lastName}
+                    aria-invalid={!!errors.lastName}
+                    aria-describedby={
+                        errors.lastName ? "lastName-error" : undefined
+                    }
+                    autoComplete="family-name"
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                     placeholder="กรอกนามสกุล"
                 />
                 {errors.lastName && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
+                    <p
+                        id="lastName-error"
+                        className="mt-1 break-words text-sm font-medium text-red-500"
+                    >
                         {errors.lastName.message}
                     </p>
                 )}

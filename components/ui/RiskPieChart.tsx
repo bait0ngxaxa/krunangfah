@@ -10,6 +10,7 @@ import {
     Tooltip,
     type PieLabelRenderProps,
 } from "recharts";
+import { usePrefersReducedMotion } from "@/components/analytics/usePrefersReducedMotion";
 
 export interface RiskPieChartDataItem {
     name: string;
@@ -30,6 +31,8 @@ interface PieChartBodyProps {
     height: number;
     outerRadius: number;
     compactLabels: boolean;
+    chartLabel: string;
+    reduceMotion: boolean;
 }
 
 // Constants outside component to avoid re-creation
@@ -95,8 +98,9 @@ function renderOuterLabel(
                 stroke={fill}
                 strokeWidth={1.5}
                 strokeOpacity={0.6}
+                aria-hidden="true"
             />
-            <circle cx={edgeX} cy={edgeY} r={2.5} fill={fill} />
+            <circle cx={edgeX} cy={edgeY} r={2.5} fill={fill} aria-hidden="true" />
             <text
                 x={lineEndX + (isRight ? textGap : -textGap)}
                 y={elbowY}
@@ -117,10 +121,12 @@ function PieChartBody({
     height,
     outerRadius,
     compactLabels,
+    chartLabel,
+    reduceMotion,
 }: PieChartBodyProps): React.ReactElement {
     return (
         <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={height}>
-            <PieChart tabIndex={-1}>
+            <PieChart tabIndex={-1} role="img" aria-label={chartLabel}>
                 <Pie
                     data={chartData}
                     cx="50%"
@@ -133,7 +139,7 @@ function PieChartBody({
                     animationBegin={0}
                     animationDuration={800}
                     animationEasing="ease-out"
-                    isAnimationActive={true}
+                    isAnimationActive={!reduceMotion}
                 >
                     {chartData.map((entry) => (
                         <Cell
@@ -174,6 +180,7 @@ const CustomLegend = memo(function CustomLegend({
                     <div
                         className="w-3 h-3 rounded-sm shrink-0"
                         style={{ backgroundColor: item.color }}
+                        aria-hidden="true"
                     />
                     <span className="text-gray-700">
                         {item.name}: {item.value} คน
@@ -199,6 +206,7 @@ function RiskPieChartComponent({
     outerRadius = 100,
     showPercentageInLegend = false,
 }: RiskPieChartProps): React.ReactElement {
+    const reduceMotion = usePrefersReducedMotion();
     const chartData = useMemo(
         () => data.filter((item) => item.value > 0),
         [data],
@@ -225,7 +233,10 @@ function RiskPieChartComponent({
                     <div className="relative w-16 h-16">
                         <div className="absolute inset-0 rounded-full bg-emerald-300/35 blur-lg" />
                         <div className="relative flex h-full w-full items-center justify-center rounded-full bg-white/85 ring-1 ring-gray-200/70">
-                            <Inbox className="w-8 h-8 text-gray-400" />
+                            <Inbox
+                                className="w-8 h-8 text-gray-400"
+                                aria-hidden="true"
+                            />
                         </div>
                     </div>
                     <span>ยังไม่มีข้อมูลการคัดกรอง</span>
@@ -251,6 +262,8 @@ function RiskPieChartComponent({
                     height={mobileHeight}
                     outerRadius={mobileOuterRadius}
                     compactLabels
+                    chartLabel={title ?? "แผนภูมิวงกลมระดับความเสี่ยง"}
+                    reduceMotion={reduceMotion}
                 />
             </div>
             <div className="hidden sm:block">
@@ -259,6 +272,8 @@ function RiskPieChartComponent({
                     height={height}
                     outerRadius={outerRadius}
                     compactLabels={false}
+                    chartLabel={title ?? "แผนภูมิวงกลมระดับความเสี่ยง"}
+                    reduceMotion={reduceMotion}
                 />
             </div>
             <CustomLegend

@@ -37,14 +37,18 @@ export function RiskSummaryCards({ riskCounts }: RiskSummaryCardsProps) {
     }));
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
             {cardData.map(({ level, bgClass, label, count }) => (
                 <div
                     key={level}
-                    className={`${bgClass} rounded-2xl p-4 text-white text-center shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl`}
+                    className={`${bgClass} rounded-xl p-4 text-center text-white`}
                 >
-                    <p className="text-3xl font-bold mb-1">{count}</p>
-                    <p className="text-sm font-medium opacity-90">{label}</p>
+                    <p className="mb-1 text-2xl font-bold tabular-nums">
+                        {count}
+                    </p>
+                    <p className="break-words text-sm font-medium opacity-95">
+                        {label}
+                    </p>
                 </div>
             ))}
         </div>

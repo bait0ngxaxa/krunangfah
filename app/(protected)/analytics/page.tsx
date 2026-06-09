@@ -25,19 +25,37 @@ interface AnalyticsPageProps {
     }>;
 }
 
+const MAX_SAFE_ACADEMIC_YEAR = 9999;
+const MAX_WARNING_VALUE_LENGTH = 80;
+
+function formatWarningValue(value: string): string {
+    if (value.length <= MAX_WARNING_VALUE_LENGTH) {
+        return value;
+    }
+    return `${value.slice(0, MAX_WARNING_VALUE_LENGTH)}...`;
+}
+
 function parseYearFilter(yearValue?: string): number | undefined {
     if (!yearValue) return undefined;
 
+    if (!/^\d{4}$/.test(yearValue)) {
+        return undefined;
+    }
+
     const parsedYear = Number.parseInt(yearValue, 10);
-    return Number.isNaN(parsedYear) ? undefined : parsedYear;
+    if (!Number.isSafeInteger(parsedYear)) return undefined;
+    if (parsedYear > MAX_SAFE_ACADEMIC_YEAR) return undefined;
+    return parsedYear;
 }
 
 function parseSemesterFilter(semesterValue?: string): number | undefined {
     if (!semesterValue) return undefined;
 
+    if (!/^[12]$/.test(semesterValue)) {
+        return undefined;
+    }
+
     const parsedSemester = Number.parseInt(semesterValue, 10);
-    if (Number.isNaN(parsedSemester)) return undefined;
-    if (parsedSemester !== 1 && parsedSemester !== 2) return undefined;
     return parsedSemester;
 }
 
@@ -55,11 +73,11 @@ export default async function AnalyticsPage({
     const parsedSemester = parseSemesterFilter(params.semester);
 
     if (params.year && parsedYear === undefined) {
-        warnings.push(`ค่า year ไม่ถูกต้อง ("${params.year}") ระบบจึงใช้ "ทุกปีการศึกษา"`);
+        warnings.push(`ค่า year ไม่ถูกต้อง ("${formatWarningValue(params.year)}") ระบบจึงใช้ "ทุกปีการศึกษา"`);
     }
     if (params.semester && parsedSemester === undefined) {
         warnings.push(
-            `ค่า semester ไม่ถูกต้อง ("${params.semester}") ระบบจึงใช้ "ทุกเทอม"`,
+            `ค่า semester ไม่ถูกต้อง ("${formatWarningValue(params.semester)}") ระบบจึงใช้ "ทุกเทอม"`,
         );
     }
     if (userRole === "class_teacher" && params.class && params.class !== "all") {
@@ -71,8 +89,8 @@ export default async function AnalyticsPage({
 
     let selectedSchoolId = isSystemAdmin ? (params.school ?? "") : "all";
     let selectedClass = userRole === "class_teacher" ? "all" : (params.class ?? "all");
-    let selectedAcademicYear = params.year ?? "all";
-    let selectedSemester = params.semester ?? "all";
+    let selectedAcademicYear = parsedYear === undefined ? "all" : params.year ?? "all";
+    let selectedSemester = parsedSemester === undefined ? "all" : params.semester ?? "all";
 
     // ── Phase 2: Validate schoolId against DB before main fetch ──
     // Fetch schools first (lightweight) to validate schoolId before the heavy analytics query
@@ -82,7 +100,7 @@ export default async function AnalyticsPage({
         const schoolExists = schools?.some((school) => school.id === selectedSchoolId) ?? false;
         if (!schoolExists) {
             warnings.push(
-                `ไม่พบโรงเรียนที่ระบุไว้ ("${selectedSchoolId}") กรุณาเลือกโรงเรียนใหม่`,
+                `ไม่พบโรงเรียนที่ระบุไว้ ("${formatWarningValue(selectedSchoolId)}") กรุณาเลือกโรงเรียนใหม่`,
             );
             selectedSchoolId = "";
         }

@@ -40,6 +40,32 @@ function StickyAnalyticsFilters(props: AnalyticsFiltersProps) {
     );
 }
 
+function FilterWarnings({ warnings }: { warnings: string[] }) {
+    if (warnings.length === 0) {
+        return null;
+    }
+
+    return (
+        <div
+            className="relative overflow-hidden rounded-3xl border border-amber-200/70 bg-linear-to-br from-white via-amber-50/60 to-orange-50/50 px-5 py-4 text-amber-900 shadow-[0_14px_30px_-24px_rgba(180,83,9,0.55)]"
+            role="alert"
+        >
+            <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-amber-200/45 blur-3xl" />
+            <div className="relative z-10 flex items-start gap-2.5">
+                <AlertTriangle
+                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+                    aria-hidden="true"
+                />
+                <div className="space-y-1 text-sm">
+                    {warnings.map((warning, index) => (
+                        <p key={`${warning}-${index}`}>{warning}</p>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function AnalyticsContent({
     data,
     schools,
@@ -79,19 +105,7 @@ export function AnalyticsContent({
                     showClassFilter={false}
                     requireSchoolSelection={true}
                 />
-                {filterWarnings.length > 0 ? (
-                    <div className="relative overflow-hidden rounded-3xl border border-amber-200/70 bg-linear-to-br from-white via-amber-50/60 to-orange-50/50 px-5 py-4 text-amber-900 shadow-[0_14px_30px_-24px_rgba(180,83,9,0.55)]">
-                        <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-amber-200/45 blur-3xl" />
-                        <div className="relative z-10 flex items-start gap-2.5">
-                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                            <div className="space-y-1 text-sm">
-                                {filterWarnings.map((warning, index) => (
-                                    <p key={`${warning}-${index}`}>{warning}</p>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                ) : null}
+                <FilterWarnings warnings={filterWarnings} />
                 {systemOverview ? (
                     <SystemOverviewCards overview={systemOverview} />
                 ) : null}
@@ -143,19 +157,7 @@ export function AnalyticsContent({
                 isSystemAdmin={isSystemAdmin}
                 showClassFilter={showClassFilter}
             />
-            {filterWarnings.length > 0 ? (
-                <div className="relative overflow-hidden rounded-3xl border border-amber-200/70 bg-linear-to-br from-white via-amber-50/60 to-orange-50/50 px-5 py-4 text-amber-900 shadow-[0_14px_30px_-24px_rgba(180,83,9,0.55)]">
-                    <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-amber-200/45 blur-3xl" />
-                    <div className="relative z-10 flex items-start gap-2.5">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                        <div className="space-y-1 text-sm">
-                            {filterWarnings.map((warning, index) => (
-                                <p key={`${warning}-${index}`}>{warning}</p>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            ) : null}
+            <FilterWarnings warnings={filterWarnings} />
             <AnalyticsSummaryCards
                 totalStudents={data.totalStudents}
                 studentsWithAssessment={data.studentsWithAssessment}

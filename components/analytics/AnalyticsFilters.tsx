@@ -115,6 +115,14 @@ function setFilterParams(params: URLSearchParams, filters: FilterState): void {
     setFilterParam(params, "semester", filters.semester);
 }
 
+function uniqueStrings(values: string[]): string[] {
+    return Array.from(new Set(values));
+}
+
+function uniqueNumbers(values: number[]): number[] {
+    return Array.from(new Set(values));
+}
+
 export function AnalyticsFilters({
     schools,
     availableClasses,
@@ -150,8 +158,15 @@ export function AnalyticsFilters({
         optimisticFilters.class !== "all" ||
         optimisticFilters.year !== "all" ||
         optimisticFilters.semester !== "all";
+    const safeAvailableClasses = uniqueStrings(availableClasses);
+    const safeAvailableYears = uniqueNumbers(availableYears);
+    const safeAvailableSemesters = uniqueNumbers(availableSemesters);
 
     const updateParams = (updates: FilterUpdates): void => {
+        if (isPending) {
+            return;
+        }
+
         const nextFilters = applyFilterUpdates(
             optimisticFilters,
             updates,
@@ -179,12 +194,14 @@ export function AnalyticsFilters({
                     : "space-y-4"
             }
             aria-busy={isPending}
+            aria-live="polite"
         >
             {isSystemAdmin && schools ? (
                 <SchoolFilter
                     schools={schools}
                     selectedSchoolId={optimisticFilters.school}
                     requireExplicitSelection={requireSchoolSelection}
+                    disabled={isPending}
                     onSchoolChange={(schoolId) =>
                         updateParams({
                             school: schoolId,
@@ -197,37 +214,40 @@ export function AnalyticsFilters({
             ) : null}
 
             {showClassFilter &&
-            availableClasses.length > 0 &&
+            safeAvailableClasses.length > 0 &&
             (!requireSchoolSelection || hasSelectedSchool) ? (
                 <ClassFilter
-                    availableClasses={availableClasses}
+                    availableClasses={safeAvailableClasses}
                     currentClass={
                         optimisticFilters.class === "all"
                             ? undefined
                             : optimisticFilters.class
                     }
+                    disabled={isPending}
                     onClassChange={(classValue) =>
                         updateParams({ class: classValue, semester: null })
                     }
                 />
             ) : null}
 
-            {availableYears.length > 1 &&
+            {safeAvailableYears.length > 1 &&
             (!requireSchoolSelection || hasSelectedSchool) ? (
                 <AcademicYearFilter
-                    availableYears={availableYears}
+                    availableYears={safeAvailableYears}
                     selectedYear={optimisticFilters.year}
+                    disabled={isPending}
                     onYearChange={(yearValue) =>
                         updateParams({ year: yearValue, semester: null })
                     }
                 />
             ) : null}
 
-            {availableSemesters.length > 1 &&
+            {safeAvailableSemesters.length > 1 &&
             (!requireSchoolSelection || hasSelectedSchool) ? (
                 <SemesterFilter
-                    availableSemesters={availableSemesters}
+                    availableSemesters={safeAvailableSemesters}
                     selectedSemester={optimisticFilters.semester}
+                    disabled={isPending}
                     onSemesterChange={(semesterValue) =>
                         updateParams({ semester: semesterValue })
                     }
@@ -240,6 +260,7 @@ export function AnalyticsFilters({
                         type="button"
                         variant="secondary"
                         size="sm"
+                        disabled={isPending}
                         onClick={() =>
                             updateParams({
                                 school: null,
@@ -249,7 +270,7 @@ export function AnalyticsFilters({
                             })
                         }
                     >
-                        <RotateCcw className="h-4 w-4" />
+                        <RotateCcw className="h-4 w-4" aria-hidden="true" />
                         รีเซ็ตตัวกรอง
                     </Button>
                 </div>

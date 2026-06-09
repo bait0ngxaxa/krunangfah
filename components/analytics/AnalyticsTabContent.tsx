@@ -4,6 +4,10 @@ import { RiskPieChart } from "@/components/ui/RiskPieChart";
 import type { RiskPieChartDataItem } from "@/components/ui/RiskPieChart";
 import type { Tab } from "@/components/ui/Tabs";
 import type { AnalyticsData } from "@/lib/actions/analytics/types";
+import {
+    normalizeGradeRiskData,
+    normalizeTrendData,
+} from "./utils";
 import { RiskLevelByGradeChart } from "./charts/RiskLevelByGradeChart";
 import { RiskLevelTrendChart } from "./charts/RiskLevelTrendChart";
 import { ActivitySummaryTable } from "./tables/ActivitySummaryTable";
@@ -26,13 +30,15 @@ export function buildAnalyticsTabs({
     userRole,
 }: AnalyticsTabContentProps): Tab[] {
     const isClassTeacher = userRole === "class_teacher";
+    const safeTrendData = normalizeTrendData(data.trendData);
+    const safeGradeRiskData = normalizeGradeRiskData(data.gradeRiskData);
 
     return [
         {
             id: "summary",
             label: (
                 <span className="flex items-center gap-1.5">
-                    <BarChart3 className="w-4 h-4" /> ภาพรวม
+                    <BarChart3 className="w-4 h-4" aria-hidden="true" /> ภาพรวม
                 </span>
             ),
             content: (
@@ -63,15 +69,15 @@ export function buildAnalyticsTabs({
             id: "trend",
             label: (
                 <span className="flex items-center gap-1.5">
-                    <TrendingUp className="w-4 h-4" /> กราฟแนวโน้ม
+                    <TrendingUp className="w-4 h-4" aria-hidden="true" /> กราฟแนวโน้ม
                 </span>
             ),
             content: (
                 <div className="space-y-6">
-                    <RiskLevelTrendChart trendData={data.trendData} />
+                    <RiskLevelTrendChart trendData={safeTrendData} />
                     {!isClassTeacher ? (
                         <RiskLevelByGradeChart
-                            gradeRiskData={data.gradeRiskData}
+                            gradeRiskData={safeGradeRiskData}
                         />
                     ) : null}
                 </div>
@@ -81,7 +87,7 @@ export function buildAnalyticsTabs({
             id: "progress",
             label: (
                 <span className="flex items-center gap-1.5">
-                    <Target className="w-4 h-4" /> การทำกิจกรรม
+                    <Target className="w-4 h-4" aria-hidden="true" /> การทำกิจกรรม
                 </span>
             ),
             content: (

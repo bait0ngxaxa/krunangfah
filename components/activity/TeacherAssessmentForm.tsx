@@ -82,8 +82,7 @@ export function TeacherAssessmentForm({
             } else {
                 toast.error(result.error || "เกิดข้อผิดพลาด");
             }
-        } catch (error) {
-            console.error("Submit error:", error);
+        } catch {
             toast.error("เกิดข้อผิดพลาดในการบันทึก");
         } finally {
             setSubmitting(false);
@@ -108,7 +107,7 @@ export function TeacherAssessmentForm({
                             <div
                                 className={`w-24 h-24 ${config.bg} rounded-3xl rotate-3 flex items-center justify-center text-white text-4xl shadow-xl relative z-10 transition-transform hover:rotate-6 hover:scale-110`}
                             >
-                                <ClipboardCheck className="w-12 h-12" />
+                                <ClipboardCheck className="w-12 h-12" aria-hidden="true" />
                             </div>
                         </div>
                         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
@@ -143,6 +142,7 @@ export function TeacherAssessmentForm({
                                     <div className="flex items-center gap-2 mb-2">
                                         <div
                                             className={`w-3 h-3 rounded-full ${assessmentColors.button}`}
+                                            aria-hidden="true"
                                         />
                                         <span
                                             className={`${assessmentColors.textDark} font-bold text-lg`}
@@ -166,6 +166,7 @@ export function TeacherAssessmentForm({
                                     onChange={(e) =>
                                         setInternalProblems(e.target.value)
                                     }
+                                    aria-label="ปัญหาภายใน"
                                     placeholder="ระบุปัญหาภายในที่พบ..."
                                     className={`w-full h-40 p-5 border-2 ${assessmentColors.border} bg-white rounded-2xl ${assessmentColors.borderFocus} focus:ring-4 ${assessmentColors.ringFocus} focus:ring-opacity-20 focus:outline-none resize-none transition-base shadow-sm`}
                                 />
@@ -177,6 +178,7 @@ export function TeacherAssessmentForm({
                                     <div className="flex items-center gap-2 mb-2">
                                         <div
                                             className={`w-3 h-3 rounded-full ${assessmentColors.button}`}
+                                            aria-hidden="true"
                                         />
                                         <span
                                             className={`${assessmentColors.textDark} font-bold text-lg`}
@@ -199,6 +201,7 @@ export function TeacherAssessmentForm({
                                     onChange={(e) =>
                                         setExternalProblems(e.target.value)
                                     }
+                                    aria-label="ปัญหาภายนอก"
                                     placeholder="ระบุปัญหาภายนอกที่พบ..."
                                     className={`w-full h-40 p-5 border-2 ${assessmentColors.border} bg-white rounded-2xl ${assessmentColors.borderFocus} focus:ring-4 ${assessmentColors.ringFocus} focus:ring-opacity-20 focus:outline-none resize-none transition-base shadow-sm`}
                                 />
@@ -220,7 +223,9 @@ export function TeacherAssessmentForm({
 
                         <div className="flex flex-col sm:flex-row gap-6 justify-center max-w-2xl mx-auto">
                             <button
+                                type="button"
                                 onClick={() => setProblemType("internal")}
+                                aria-pressed={problemType === "internal"}
                                 className={`flex-1 py-6 px-8 rounded-2xl font-bold text-lg transition-base transform hover:-translate-y-1 duration-300 relative group overflow-hidden ${
                                     problemType === "internal"
                                         ? `${assessmentColors.button} text-white shadow-xl scale-105 ring-4 ring-offset-2 ring-transparent`
@@ -228,13 +233,15 @@ export function TeacherAssessmentForm({
                                 }`}
                             >
                                 <div className="relative z-10 flex flex-col items-center gap-2">
-                                    <Brain className="w-8 h-8" />
+                                    <Brain className="w-8 h-8" aria-hidden="true" />
                                     <span>ปัญหาภายใน</span>
                                 </div>
                             </button>
 
                             <button
+                                type="button"
                                 onClick={() => setProblemType("external")}
+                                aria-pressed={problemType === "external"}
                                 className={`flex-1 py-6 px-8 rounded-2xl font-bold text-lg transition-base transform hover:-translate-y-1 duration-300 relative group overflow-hidden ${
                                     problemType === "external"
                                         ? `${assessmentColors.button} text-white shadow-xl scale-105 ring-4 ring-offset-2 ring-transparent`
@@ -242,7 +249,7 @@ export function TeacherAssessmentForm({
                                 }`}
                             >
                                 <div className="relative z-10 flex flex-col items-center gap-2">
-                                    <Globe className="w-8 h-8" />
+                                    <Globe className="w-8 h-8" aria-hidden="true" />
                                     <span>ปัญหาภายนอก</span>
                                 </div>
                             </button>
@@ -251,6 +258,7 @@ export function TeacherAssessmentForm({
 
                     {/* Submit Button */}
                     <button
+                        type="button"
                         onClick={handleSubmit}
                         disabled={!canSubmit || submitting}
                         className={`w-full py-5 rounded-2xl font-bold text-xl transition-base flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-[0.98] ${
@@ -261,13 +269,13 @@ export function TeacherAssessmentForm({
                     >
                         {submitting ? (
                             <>
-                                <Loader2 className="w-6 h-6 animate-spin" />
+                                <Loader2 className="w-6 h-6 animate-spin" aria-hidden="true" />
                                 กำลังบันทึกข้อมูล…
                             </>
                         ) : (
                             <>
                                 <span>บันทึกผลการประเมิน</span>
-                                <ArrowRight className="w-6 h-6" />
+                                <ArrowRight className="w-6 h-6" aria-hidden="true" />
                             </>
                         )}
                     </button>

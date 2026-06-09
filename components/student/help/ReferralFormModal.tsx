@@ -41,11 +41,18 @@ export function ReferralFormModal({
 
     useEffect(() => {
         document.body.style.overflow = "hidden";
+        const handleKeyDown = (event: KeyboardEvent): void => {
+            if (event.key === "Escape" && !isSubmitting) {
+                onClose();
+            }
+        };
 
+        window.addEventListener("keydown", handleKeyDown);
         return () => {
             document.body.style.overflow = "";
+            window.removeEventListener("keydown", handleKeyDown);
         };
-    }, []);
+    }, [isSubmitting, onClose]);
 
     const handleSubmit = async (e: React.FormEvent): Promise<void> => {
         e.preventDefault();
@@ -108,6 +115,7 @@ export function ReferralFormModal({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="referralform-modal-title"
+                aria-describedby="referralform-modal-description"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="border-b border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6">
@@ -117,10 +125,16 @@ export function ReferralFormModal({
                                 id="referralform-modal-title"
                                 className="flex items-center gap-3 text-2xl font-bold text-gray-900"
                             >
-                                <Hospital className="w-6 h-6 text-emerald-600" />
+                                <Hospital
+                                    className="w-6 h-6 text-emerald-600"
+                                    aria-hidden="true"
+                                />
                                 ส่งต่อหรือติดตาม
                             </h3>
-                            <p className="mt-1 text-sm text-gray-500">
+                            <p
+                                id="referralform-modal-description"
+                                className="mt-1 text-sm text-gray-500"
+                            >
                                 เลือกแนวทางดูแลต่อและบันทึกผลการตัดสินใจ
                             </p>
                         </div>
@@ -131,7 +145,7 @@ export function ReferralFormModal({
                             className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
                             aria-label="ปิดหน้าต่าง"
                         >
-                            <X className="h-4 w-4" />
+                            <X className="h-4 w-4" aria-hidden="true" />
                         </button>
                     </div>
                 </div>
@@ -141,8 +155,14 @@ export function ReferralFormModal({
                     className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-8"
                 >
                     {error && (
-                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-2 text-orange-700">
-                            <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />
+                        <div
+                            className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-2 text-orange-700"
+                            role="alert"
+                        >
+                            <AlertTriangle
+                                className="w-5 h-5 text-orange-600 shrink-0"
+                                aria-hidden="true"
+                            />
                             <p className="text-sm font-medium">{error}</p>
                         </div>
                     )}
@@ -174,6 +194,7 @@ export function ReferralFormModal({
                                             ? "text-emerald-500"
                                             : "text-gray-400"
                                     }`}
+                                    aria-hidden="true"
                                 />
                                 <div>
                                     <p className="font-bold text-gray-800">
@@ -209,6 +230,7 @@ export function ReferralFormModal({
                                         INPUT_LIMITS.hospitalReferral
                                             .hospitalName
                                     }
+                                    aria-invalid={Boolean(error)}
                                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-base text-gray-800 placeholder:text-gray-400"
                                 />
                             </div>
@@ -236,6 +258,7 @@ export function ReferralFormModal({
                                             ? "text-blue-500"
                                             : "text-gray-400"
                                     }`}
+                                    aria-hidden="true"
                                 />
                                 <div>
                                     <p className="font-bold text-gray-800">
@@ -265,15 +288,16 @@ export function ReferralFormModal({
                             variant="primary"
                             size="lg"
                             className="flex-1"
+                            disabled={isSubmitting}
                         >
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
                                     กำลังบันทึก…
                                 </>
                             ) : (
                                 <>
-                                    <Save className="w-5 h-5" />
+                                    <Save className="w-5 h-5" aria-hidden="true" />
                                     บันทึก
                                 </>
                             )}

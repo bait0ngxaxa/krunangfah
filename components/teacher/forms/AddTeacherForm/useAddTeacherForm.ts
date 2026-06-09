@@ -57,6 +57,10 @@ export function useAddTeacherForm(): UseAddTeacherFormReturn {
      * Select a teacher from the roster and pre-fill form fields
      */
     const onSelectRoster = (id: string, roster: TeacherRosterItem[]): void => {
+        if (isLoading) {
+            return;
+        }
+
         setSelectedRosterId(id);
 
         if (!id) {
@@ -96,6 +100,10 @@ export function useAddTeacherForm(): UseAddTeacherFormReturn {
     };
 
     const onSubmit = async (data: TeacherInviteFormData): Promise<void> => {
+        if (isLoading) {
+            return;
+        }
+
         setIsLoading(true);
         setError("");
         setSuccess("");
@@ -105,6 +113,7 @@ export function useAddTeacherForm(): UseAddTeacherFormReturn {
             const result = await createTeacherInvite(data);
 
             if (!result.success) {
+                setError(result.message);
                 toast.error(result.message);
                 return;
             }
@@ -125,17 +134,26 @@ export function useAddTeacherForm(): UseAddTeacherFormReturn {
 
             // Re-fetch server data so invite list and roster dropdown update
             router.refresh();
-        } catch (err) {
-            console.error("Create invite error:", err);
+        } catch {
+            setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
             toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
         } finally {
             setIsLoading(false);
         }
     };
 
-    const copyToClipboard = (): void => {
-        navigator.clipboard.writeText(inviteLink);
-        toast.success("คัดลอก Link แล้ว!");
+    const copyToClipboard = async (): Promise<void> => {
+        if (!inviteLink) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(inviteLink);
+            toast.success("คัดลอก Link แล้ว!");
+        } catch {
+            setError("ไม่สามารถคัดลอก Link ได้ กรุณาคัดลอกจากช่องข้อความ");
+            toast.error("ไม่สามารถคัดลอก Link ได้ กรุณาคัดลอกจากช่องข้อความ");
+        }
     };
 
     const handleCancel = (): void => {

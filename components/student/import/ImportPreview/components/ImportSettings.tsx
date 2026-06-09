@@ -7,6 +7,7 @@ interface ImportSettingsProps {
     assessmentRound: number;
     onRoundChange: (round: number) => void;
     hasRound1: boolean;
+    isLoading: boolean;
 }
 
 /**
@@ -19,22 +20,29 @@ export function ImportSettings({
     assessmentRound,
     onRoundChange,
     hasRound1,
+    isLoading,
 }: ImportSettingsProps) {
+    const hasAcademicYears = academicYears.length > 0;
+
     return (
         <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-6 bg-white/40 p-6 rounded-2xl border border-white/50 shadow-inner">
-                {/* Academic Year Selector */}
+            <div className="grid gap-5 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4 md:grid-cols-2 md:p-5">
                 <div className="space-y-2">
-                    <label className="text-gray-700 font-bold block ml-1 text-sm">
+                    <label className="ml-1 block text-sm font-bold text-gray-700">
                         ปีการศึกษา
                     </label>
                     <div className="relative">
                         <select
                             value={selectedYearId}
                             onChange={(e) => onYearChange(e.target.value)}
-                            className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-base shadow-sm appearance-none text-gray-700 font-medium"
+                            disabled={isLoading || !hasAcademicYears}
+                            className="w-full appearance-none rounded-xl border border-emerald-100 bg-white px-4 py-3 font-medium text-gray-700 outline-none transition-base focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
                         >
-                            <option value="">เลือกปีการศึกษา</option>
+                            <option value="">
+                                {isLoading
+                                    ? "กำลังโหลดปีการศึกษา…"
+                                    : "เลือกปีการศึกษา"}
+                            </option>
                             {academicYears.map((year) => (
                                 <option key={year.id} value={year.id}>
                                     {year.year} เทอม {year.semester}
@@ -42,15 +50,14 @@ export function ImportSettings({
                                 </option>
                             ))}
                         </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-400">
+                        <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
                             ▼
                         </div>
                     </div>
                 </div>
 
-                {/* Assessment Round Selector */}
                 <div className="space-y-2">
-                    <label className="text-gray-700 font-bold block ml-1 text-sm">
+                    <label className="ml-1 block text-sm font-bold text-gray-700">
                         รอบการประเมิน
                     </label>
                     <div className="relative">
@@ -59,7 +66,8 @@ export function ImportSettings({
                             onChange={(e) =>
                                 onRoundChange(Number(e.target.value))
                             }
-                            className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-base shadow-sm appearance-none text-gray-700 font-medium"
+                            disabled={isLoading || !selectedYearId}
+                            className="w-full appearance-none rounded-xl border border-emerald-100 bg-white px-4 py-3 font-medium text-gray-700 outline-none transition-base focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
                         >
                             <option value={1}>ครั้งที่ 1</option>
                             <option value={2} disabled={!hasRound1}>
@@ -69,17 +77,22 @@ export function ImportSettings({
                                     : ""}
                             </option>
                         </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-400">
+                        <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
                             ▼
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Warning: round 2 blocked */}
+            {!isLoading && !hasAcademicYears && (
+                <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700">
+                    ยังไม่มีปีการศึกษาในระบบ กรุณาสร้างปีการศึกษาก่อนนำเข้า
+                </p>
+            )}
+
             {selectedYearId && !hasRound1 && (
-                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
-                    💡 ปีการศึกษานี้ยังไม่มีข้อมูลครั้งที่ 1 —
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-700">
+                    ปีการศึกษานี้ยังไม่มีข้อมูลครั้งที่ 1
                     กรุณานำเข้าครั้งที่ 1 ก่อน จึงจะสามารถเลือกครั้งที่ 2 ได้
                 </p>
             )}

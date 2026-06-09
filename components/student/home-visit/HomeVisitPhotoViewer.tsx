@@ -58,13 +58,16 @@ export function HomeVisitPhotoViewer({
         <div
             className="fixed inset-0 z-9999 flex items-center justify-center overscroll-contain bg-black/90 backdrop-blur-sm"
             onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-label={currentPhoto.fileName}
         >
             <button
                 onClick={onClose}
                 aria-label="ปิดตัวแสดงรูปภาพ"
                 className="absolute top-4 right-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/45 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
             >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
             </button>
 
             <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-white/10 rounded-full text-white text-sm font-medium">
@@ -80,7 +83,7 @@ export function HomeVisitPhotoViewer({
                     aria-label="รูปก่อนหน้า"
                     className="absolute left-4 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/45 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
                 >
-                    <ChevronLeft className="w-7 h-7" />
+                    <ChevronLeft className="w-7 h-7" aria-hidden="true" />
                 </button>
             )}
 
@@ -93,7 +96,7 @@ export function HomeVisitPhotoViewer({
                     aria-label="รูปถัดไป"
                     className="absolute right-4 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/45 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
                 >
-                    <ChevronRight className="w-7 h-7" />
+                    <ChevronRight className="w-7 h-7" aria-hidden="true" />
                 </button>
             )}
 

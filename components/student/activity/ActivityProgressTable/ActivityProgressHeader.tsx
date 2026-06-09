@@ -37,7 +37,7 @@ export function ActivityProgressHeader({
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-4">
                 <div className="p-2.5 rounded-xl bg-white border border-emerald-200 shadow-sm flex items-center justify-center">
-                    <FileText className="w-7 h-7 text-emerald-600" />
+                    <FileText className="w-7 h-7 text-emerald-600" aria-hidden="true" />
                 </div>
                 <div>
                     <h2 className="text-xl md:text-2xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
@@ -47,7 +47,7 @@ export function ActivityProgressHeader({
                         </span>
                     </h2>
                     <div className="flex items-center gap-1.5 mt-1">
-                        <CalendarDays className="w-3.5 h-3.5 text-emerald-400" />
+                        <CalendarDays className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
                         <span className="text-sm font-medium text-emerald-600">
                             ปีการศึกษา {assessmentPeriod.academicYear} เทอม{" "}
                             {assessmentPeriod.semester} ครั้งที่{" "}
@@ -62,6 +62,11 @@ export function ActivityProgressHeader({
                             <div
                                 className="h-full bg-linear-to-r from-emerald-400 to-teal-500"
                                 style={{ width: `${progressPercent}%` }}
+                                role="progressbar"
+                                aria-label="ความคืบหน้ากิจกรรม"
+                                aria-valuemin={0}
+                                aria-valuemax={totalCount}
+                                aria-valuenow={completedCount}
                             />
                         </div>
                         <span className="text-xs text-gray-500 font-bold">
@@ -83,7 +88,7 @@ export function ActivityProgressHeader({
                         size: "lg",
                     })}
                 >
-                    <Rocket className="w-5 h-5" />
+                    <Rocket className="w-5 h-5" aria-hidden="true" />
                     ทำกิจกรรม
                 </Link>
             )}

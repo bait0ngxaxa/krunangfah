@@ -30,6 +30,25 @@ export const metadata: Metadata = {
     description: "หน้าหลักสำหรับครู",
 };
 
+function formatCount(value: number | null | undefined): string {
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+        return "0";
+    }
+
+    return value.toLocaleString("th-TH");
+}
+
+function cleanDisplayText(value: string | null | undefined): string {
+    const text = value?.trim();
+    return text && text.length > 0 ? text : "ไม่ระบุ";
+}
+
+function getSchoolCount(
+    dashboardData: Awaited<ReturnType<typeof getDashboardData>>,
+): number | undefined {
+    return "schoolCount" in dashboardData ? dashboardData.schoolCount : undefined;
+}
+
 function buildAdminStats(
     studentCount: number,
     schoolCount?: number,
@@ -38,7 +57,7 @@ function buildAdminStats(
         {
             icon: Users,
             label: "นักเรียนคัดกรองทั้งหมด",
-            value: studentCount.toLocaleString(),
+            value: formatCount(studentCount),
             unit: "คน",
             color: "pink",
         },
@@ -47,7 +66,7 @@ function buildAdminStats(
         stats.push({
             icon: School,
             label: "โรงเรียน",
-            value: schoolCount.toLocaleString(),
+            value: formatCount(schoolCount),
             unit: "โรงเรียน",
             color: "purple",
         });
@@ -67,7 +86,7 @@ function buildTeacherStats(
         {
             icon: Users,
             label: "จำนวนนักเรียนคัดกรอง",
-            value: studentCount.toLocaleString(),
+            value: formatCount(studentCount),
             unit: "คน",
             color: "pink",
         },
@@ -76,14 +95,14 @@ function buildTeacherStats(
         stats.push({
             icon: DoorOpen,
             label: "ห้องที่ดูแล",
-            value: advisoryClass,
+            value: cleanDisplayText(advisoryClass),
             color: "blue",
         });
     }
     stats.push({
         icon: Briefcase,
         label: "บทบาท",
-        value: roleLabel,
+        value: cleanDisplayText(roleLabel),
         color: "orange",
     });
     return stats;
@@ -107,16 +126,15 @@ async function DashboardContent({ session }: { session: Session }) {
     const { teacher, studentCount } = dashboardData;
     const userRole = session.user.role;
     const isSystemAdmin = userRole === "system_admin";
-    const schoolCount =
-        "schoolCount" in dashboardData
-            ? (dashboardData as { schoolCount?: number }).schoolCount
-            : undefined;
+    const schoolCount = getSchoolCount(dashboardData);
 
     if (isSystemAdmin) {
         return (
             <div className="max-w-4xl mx-auto relative z-10 px-4 sm:px-6 lg:px-8 py-6 space-y-4">
                 <DashboardHeader
-                    teacherName={session.user.name || "System Admin"}
+                    teacherName={cleanDisplayText(
+                        session.user.name || "System Admin",
+                    )}
                     schoolName="ผู้ดูแลระบบ (ทุกโรงเรียน)"
                     subtitle="ผู้ดูแลระบบ"
                     variant="system_admin"
@@ -158,8 +176,10 @@ async function DashboardContent({ session }: { session: Session }) {
 
     const isClassTeacher = userRole === "class_teacher";
     const currentAcademicYear = await getCurrentAcademicYearRecord();
-    const teacherName = `${teacher.firstName} ${teacher.lastName}`;
-    const schoolName = (teacher as { user?: { school?: { name: string } | null } }).user?.school?.name || "ไม่ระบุ";
+    const teacherName = cleanDisplayText(
+        `${teacher.firstName ?? ""} ${teacher.lastName ?? ""}`,
+    );
+    const schoolName = cleanDisplayText(teacher.user?.school?.name);
     const academicYearText = currentAcademicYear
         ? `${currentAcademicYear.year} เทอม ${currentAcademicYear.semester}`
         : "ไม่ระบุ";
@@ -176,13 +196,15 @@ async function DashboardContent({ session }: { session: Session }) {
                     </>
                 }
                 imageSrc="/image/dashboard/main.webp"
-                imageAlt="Dashboard Banner"
+                imageAlt="หน้าหลักระบบดูแลช่วยเหลือนักเรียน"
                 imageContainerClassName="absolute bottom-0 left-1/2 -translate-x-1/2 w-[280px] sm:w-[560px] lg:w-[680px] pointer-events-none z-10 flex items-end"
                 showBackButton={false}
                 actionNode={
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-400 rounded-full text-sm font-bold text-white shadow-md border border-emerald-300">
-                        <CalendarDays className="w-5 h-5" />
-                        <span>ปี {academicYearText}</span>
+                    <div className="inline-flex min-w-0 items-center gap-2 rounded-full border border-emerald-300 bg-emerald-400 px-4 py-2 text-sm font-bold text-white shadow-md">
+                        <CalendarDays className="h-5 w-5 shrink-0" />
+                        <span className="min-w-0 break-words">
+                            ปี {academicYearText}
+                        </span>
                     </div>
                 }
             />

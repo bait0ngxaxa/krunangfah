@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
+import { teacherInviteSchema } from "@/lib/validations/teacher-invite.validation";
 import type { InviteResponse } from "./types";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 import { handleActionError } from "../error-handler";
@@ -46,6 +47,15 @@ export async function createTeacherInvite(
             };
         }
 
+        const parsed = teacherInviteSchema.safeParse(input);
+        if (!parsed.success) {
+            return {
+                success: false,
+                message: parsed.error.issues[0]?.message ?? "ข้อมูลคำเชิญไม่ถูกต้อง",
+            };
+        }
+
+        const data = parsed.data;
         const schoolId = user.schoolId;
 
         // Token is single-use and must be unguessable.
@@ -54,7 +64,7 @@ export async function createTeacherInvite(
         // Invite expires in 7 days.
         const invite = await runSerializableTransaction(async (tx) => {
             const existingUser = await tx.user.findUnique({
-                where: { email: input.email },
+                where: { email: data.email },
                 select: { id: true },
             });
 
@@ -67,7 +77,7 @@ export async function createTeacherInvite(
 
             const existingInvite = await tx.teacherInvite.findFirst({
                 where: {
-                    email: input.email,
+                    email: data.email,
                     acceptedAt: null,
                 },
                 select: {
@@ -88,15 +98,15 @@ export async function createTeacherInvite(
 
             const inviteData = {
                 token,
-                email: input.email,
-                firstName: input.firstName,
-                lastName: input.lastName,
-                age: Number(input.age),
-                userRole: input.userRole,
-                advisoryClass: normalizeClassName(input.advisoryClass),
+                email: data.email,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                age: Number(data.age),
+                userRole: data.userRole,
+                advisoryClass: normalizeClassName(data.advisoryClass),
                 schoolId,
-                schoolRole: input.schoolRole,
-                projectRole: input.projectRole,
+                schoolRole: data.schoolRole,
+                projectRole: data.projectRole,
                 invitedById: userId,
                 expiresAt,
             };
@@ -120,7 +130,9 @@ export async function createTeacherInvite(
                 success: true,
                 message: "สร้างคำเชิญสำเร็จ",
                 invite: persistedInvite,
-                inviteLink: `${process.env.NEXTAUTH_URL}/invite/${token}`,
+                inviteLink: process.env.NEXTAUTH_URL
+                    ? `${process.env.NEXTAUTH_URL}/invite/${token}`
+                    : `/invite/${token}`,
             } satisfies InviteResponse;
         });
 

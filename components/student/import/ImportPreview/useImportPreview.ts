@@ -4,6 +4,7 @@ import {
     useMemo,
     useTransition,
     useCallback,
+    useRef,
 } from "react";
 import {
     hasRound1Data,
@@ -68,6 +69,8 @@ export function useImportPreview({
     const [round1Exists, setRound1Exists] = useState<boolean>(false);
     const [incompleteWarning, setIncompleteWarning] =
         useState<IncompleteActivityInfo | null>(null);
+    const roundCheckRequestRef = useRef(0);
+    const isSavingRef = useRef(false);
 
     // Editable student data — initialized from parsed Excel, can be modified in preview
     const [editableData, setEditableData] = useState(() =>
@@ -99,40 +102,72 @@ export function useImportPreview({
 
     // Load initial data
     useEffect(() => {
-        const loadData = async () => {
-            // Load academic years, teacher profile, and check round 1 in parallel
-            const [years, profile, classes] = await Promise.all([
-                getAcademicYears(),
-                getCurrentTeacherProfile().catch((err) => {
-                    console.error("Failed to load teacher profile:", err);
-                    return null;
-                }),
-                getSchoolClasses(),
-            ]);
+        let isActive = true;
 
-            setAcademicYears(years);
-            setSchoolClassNames(classes.map((schoolClass) => schoolClass.name));
-            const current = years.find((y) => y.isCurrent);
-            const initialYearId = current?.id ?? years[0]?.id ?? "";
+        const loadData = async (): Promise<void> => {
+            try {
+                const [years, profile, classes] = await Promise.all([
+                    getAcademicYears(),
+                    getCurrentTeacherProfile().catch((err) => {
+                        console.error("Failed to load teacher profile:", err);
+                        return null;
+                    }),
+                    getSchoolClasses(),
+                ]);
 
-            if (initialYearId) {
-                setSelectedYearId(initialYearId);
-                // Check round 1 for the initial academic year (parallel with state updates)
-                hasRound1Data(initialYearId).then((exists) => {
-                    setRound1Exists(exists);
-                });
+                if (!isActive) {
+                    return;
+                }
+
+                setAcademicYears(years);
+                setSchoolClassNames(classes.map((schoolClass) => schoolClass.name));
+                const current = years.find((year) => year.isCurrent);
+                const initialYearId = current?.id ?? years[0]?.id ?? "";
+
+                if (initialYearId) {
+                    setSelectedYearId(initialYearId);
+                    const requestId = roundCheckRequestRef.current + 1;
+                    roundCheckRequestRef.current = requestId;
+                    hasRound1Data(initialYearId)
+                        .then((exists) => {
+                            if (isActive && roundCheckRequestRef.current === requestId) {
+                                setRound1Exists(exists);
+                            }
+                        })
+                        .catch(() => {
+                            if (isActive && roundCheckRequestRef.current === requestId) {
+                                setRound1Exists(false);
+                            }
+                        });
+                }
+
+                if (profile) {
+                    setTeacherProfile({
+                        role: profile.user.role,
+                        advisoryClass: profile.advisoryClass,
+                    });
+                }
+
+                setIsImportContextLoaded(true);
+            } catch (err) {
+                console.error("Failed to load import context:", err);
+                if (!isActive) {
+                    return;
+                }
+                setErrorTitle("โหลดข้อมูลประกอบไม่สำเร็จ");
+                setErrorDescription("กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง");
+                setError(
+                    "ไม่สามารถโหลดปีการศึกษาและข้อมูลห้องเรียนได้ กรุณารีเฟรชหน้าแล้วลองใหม่",
+                );
+                setIsImportContextLoaded(true);
             }
-
-            if (profile) {
-                setTeacherProfile({
-                    role: profile.user.role,
-                    advisoryClass: profile.advisoryClass,
-                });
-            }
-
-            setIsImportContextLoaded(true);
         };
+
         loadData();
+
+        return () => {
+            isActive = false;
+        };
     }, []);
 
     // Extract unique classes from importable data — used to scope the warning
@@ -148,14 +183,24 @@ export function useImportPreview({
             setSelectedYearId(yearId);
             setAssessmentRound(1);
             setIncompleteWarning(null);
+            const requestId = roundCheckRequestRef.current + 1;
+            roundCheckRequestRef.current = requestId;
 
             if (!yearId) {
                 setRound1Exists(false);
                 return;
             }
 
-            const exists = await hasRound1Data(yearId);
-            setRound1Exists(exists);
+            try {
+                const exists = await hasRound1Data(yearId);
+                if (roundCheckRequestRef.current === requestId) {
+                    setRound1Exists(exists);
+                }
+            } catch {
+                if (roundCheckRequestRef.current === requestId) {
+                    setRound1Exists(false);
+                }
+            }
         },
         [],
     );
@@ -168,12 +213,16 @@ export function useImportPreview({
                 setIncompleteWarning(null);
                 return;
             }
-            const warning = await getIncompleteActivityWarning(
-                selectedYearId,
-                round,
-                importedClasses,
-            );
-            setIncompleteWarning(warning);
+            try {
+                const warning = await getIncompleteActivityWarning(
+                    selectedYearId,
+                    round,
+                    importedClasses,
+                );
+                setIncompleteWarning(warning);
+            } catch {
+                setIncompleteWarning(null);
+            }
         },
         [selectedYearId, importedClasses],
     );
@@ -190,6 +239,10 @@ export function useImportPreview({
 
     // Handle save action — send only previewData (filtered by role) to match the confirmed count
     const handleSave = () => {
+        if (isSavingRef.current) {
+            return;
+        }
+
         if (!selectedYearId) {
             setErrorTitle("นำเข้าข้อมูลไม่สำเร็จ");
             setErrorDescription("กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง");
@@ -205,6 +258,7 @@ export function useImportPreview({
         }
 
         setError(null);
+        isSavingRef.current = true;
 
         startTransition(async () => {
             try {
@@ -242,6 +296,8 @@ export function useImportPreview({
                 setErrorTitle("นำเข้าข้อมูลไม่สำเร็จ");
                 setErrorDescription("กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง");
                 setError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+            } finally {
+                isSavingRef.current = false;
             }
         });
     };
@@ -252,6 +308,7 @@ export function useImportPreview({
         error,
         errorTitle,
         errorDescription,
+        isImportContextLoaded,
         academicYears,
         selectedYearId,
         assessmentRound,

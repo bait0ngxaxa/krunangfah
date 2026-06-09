@@ -26,7 +26,7 @@ export function AcademicYearFilter({
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [showAllYears, setShowAllYears] = useState(false);
-    const [, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition();
     const selectedYearValue = currentYearId || "all";
     const [optimisticYearId, setOptimisticYearId] = useOptimistic(
         selectedYearValue,
@@ -82,7 +82,10 @@ export function AcademicYearFilter({
         year.semester === currentAcademicYear.semester;
 
     return (
-        <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm">
+        <div
+            className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm"
+            aria-busy={isPending}
+        >
             <div className="pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-emerald-100/50 blur-2xl" />
             <div className="relative flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                 <label
@@ -90,7 +93,7 @@ export function AcademicYearFilter({
                     className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-gray-700"
                 >
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-600 shadow-sm">
-                        <CalendarDays className="h-3.5 w-3.5" />
+                        <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                     ปีการศึกษา:
                 </label>
@@ -98,6 +101,7 @@ export function AcademicYearFilter({
                     id="year-filter"
                     value={optimisticYearId}
                     onChange={(e) => handleYearChange(e.target.value)}
+                    disabled={isPending}
                     className="w-full min-w-0 truncate rounded-xl border border-emerald-200 bg-white px-4 py-2.5 shadow-sm outline-none transition-base hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:flex-1"
                 >
                     <option value="all">ทุกปีการศึกษา</option>

@@ -11,7 +11,7 @@ interface HelpPageHeaderProps {
 export function HelpPageHeader({
     studentName,
     config,
-    icon = <ClipboardList className="w-10 h-10 text-white" />,
+    icon = <ClipboardList className="w-10 h-10 text-white" aria-hidden="true" />,
     title = "ระบบใบงานช่วยเหลือนักเรียน",
 }: HelpPageHeaderProps) {
     return (
@@ -35,7 +35,7 @@ export function HelpPageHeader({
                     <span className="font-bold text-gray-700">
                         {studentName}
                     </span>
-                    <span className={config.separatorColor}>•</span>
+                    <span className={config.separatorColor} aria-hidden="true">•</span>
                     <span className={`${config.textColor} font-medium`}>
                         {config.text}
                     </span>

@@ -7,6 +7,7 @@ import {
     getLatestPhqResult,
     getRequestedOrLatestPhqResult,
 } from "@/lib/utils/phq-result-selection";
+import { getWorksheetActivityIndices } from "@/components/activity/ActivityWorkspace/constants";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -15,6 +16,11 @@ interface PageProps {
         activity?: string;
         phqResultId?: string;
     }>;
+}
+
+function parseActivityNumber(activityValue?: string): number {
+    const parsed = Number.parseInt(activityValue ?? "", 10);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
 export default async function EncouragementRoute({
@@ -53,6 +59,9 @@ export default async function EncouragementRoute({
     if (activePhqResult?.id !== latestResult.id) {
         redirect(studentHelpRoute(studentId));
     }
+    if (session.user.role === "class_teacher" && Boolean(student.referral)) {
+        redirect(studentHelpRoute(studentId));
+    }
 
     const riskLevel = latestResult.riskLevel;
 
@@ -66,7 +75,13 @@ export default async function EncouragementRoute({
         problemType === "external" ? "external" : "internal";
 
     // Default activity number to 1 when query is missing.
-    const activityNumber = activityParam ? parseInt(activityParam) : 1;
+    const activityNumber = parseActivityNumber(activityParam);
+    const allowedActivities = getWorksheetActivityIndices(
+        riskLevel as "orange" | "yellow" | "green",
+    );
+    if (!allowedActivities.includes(activityNumber)) {
+        redirect(studentHelpRoute(studentId));
+    }
 
     // Include period label for completion summary card.
     const academicYear = latestResult.academicYear;

@@ -59,6 +59,9 @@ export default async function ActivityStartPage({
     if (activePhqResult?.id !== latestResult.id) {
         redirect(studentHelpRoute(studentId));
     }
+    if (session.user.role === "class_teacher" && Boolean(student.referral)) {
+        redirect(studentHelpRoute(studentId));
+    }
 
     const riskLevel = latestResult.riskLevel;
 

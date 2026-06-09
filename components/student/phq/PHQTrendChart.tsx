@@ -126,7 +126,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                 <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                     <h2 className="flex items-center gap-3 text-2xl font-bold text-gray-800">
                         <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200 bg-white text-[var(--brand-primary)] shadow-sm">
-                            <TrendingUp className="h-5 w-5" />
+                            <TrendingUp className="h-5 w-5" aria-hidden="true" />
                         </span>
                         กราฟแนวโน้มคะแนน PHQ-A
                     </h2>
@@ -175,6 +175,11 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                 <div className="rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm">
                     <div ref={chartContainerRef} className="h-96 min-h-[320px] w-full">
                         {isChartReady ? (
+                            <div
+                                role="img"
+                                aria-label="กราฟแนวโน้มคะแนน PHQ-A"
+                                className="h-full w-full"
+                            >
                             <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={320}>
                                 <LineChart
                                     data={chartData}
@@ -251,6 +256,7 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
                                     />
                                 </LineChart>
                             </ResponsiveContainer>
+                            </div>
                         ) : null}
                     </div>
                 </div>
@@ -259,12 +265,12 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
             <div className="relative z-10 mt-4 rounded-2xl border border-gray-200 bg-white/75 p-4">
                 <p className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
                     <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-cyan-200 bg-white text-[var(--brand-primary)] shadow-sm">
-                        <Activity className="h-3.5 w-3.5" />
+                        <Activity className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                     คะแนนรวม 0-27 คะแนน
                     <span className="text-gray-300">|</span>
                     <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-cyan-200 bg-white text-[var(--brand-primary)] shadow-sm">
-                        <Clock3 className="h-3.5 w-3.5" />
+                        <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                     แสดงแนวโน้มจากเก่าสุด → ใหม่สุด
                 </p>

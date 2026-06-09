@@ -9,24 +9,34 @@ export function SummaryStep({
     province,
     classes,
     roster,
+    canFinish,
     onBack,
     onFinish,
 }: SummaryStepProps) {
     return (
-        <div className="relative bg-white rounded-3xl border-2 border-gray-100 shadow-sm p-6 sm:p-8 overflow-hidden">
-            <div className="flex items-center gap-3 mb-6 relative z-10">
-                <div className="w-10 h-10 rounded-2xl bg-[#34D399] flex items-center justify-center shadow-md">
-                    <ClipboardCheck className="w-5 h-5 text-white stroke-[2.5]" />
+        <div className="relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+            <div className="relative z-10 mb-6 flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#34D399] shadow-md">
+                    <ClipboardCheck className="h-5 w-5 text-white stroke-[2.5]" />
                 </div>
-                <div>
-                    <h2 className="text-lg font-bold text-gray-800">
+                <div className="min-w-0">
+                    <h2 className="break-words text-lg font-bold text-gray-800">
                         สรุปข้อมูล
                     </h2>
-                    <p className="text-sm text-gray-500">
+                    <p className="break-words text-sm text-gray-500">
                         ตรวจสอบข้อมูลทั้งหมดก่อนเสร็จสิ้น
                     </p>
                 </div>
             </div>
+
+            {!canFinish && (
+                <p
+                    role="alert"
+                    className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600"
+                >
+                    ยังไม่มีข้อมูลโรงเรียน กรุณาย้อนกลับไปกรอกข้อมูลให้ครบก่อนเสร็จสิ้น
+                </p>
+            )}
 
             <SetupSummary
                 schoolName={schoolName}
@@ -39,18 +49,21 @@ export function SummaryStep({
                 <button
                     type="button"
                     onClick={onBack}
-                    className="flex items-center justify-center gap-2 px-5 py-3 border-2 border-gray-200 text-gray-600 rounded-xl font-bold transition-colors hover:border-gray-300 hover:bg-gray-50 cursor-pointer"
+                    className="flex min-w-0 items-center justify-center gap-2 rounded-xl border-2 border-gray-200 px-4 py-3 font-bold text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50"
                 >
-                    <ArrowLeft className="w-4 h-4" />
-                    ย้อนกลับ
+                    <ArrowLeft className="h-4 w-4 shrink-0" />
+                    <span className="min-w-0 break-words">ย้อนกลับ</span>
                 </button>
                 <button
                     type="button"
                     onClick={onFinish}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#34D399] hover:bg-[#10B981] text-white rounded-xl font-bold transition-colors shadow-sm cursor-pointer"
+                    disabled={!canFinish}
+                    className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-[#34D399] px-4 py-3 font-bold text-white shadow-sm transition-colors hover:bg-[#10B981] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    <Check className="w-4 h-4" />
-                    เสร็จสิ้น — เข้าสู่ระบบ
+                    <Check className="h-4 w-4 shrink-0" />
+                    <span className="min-w-0 break-words">
+                        เสร็จสิ้นและเข้าสู่ระบบ
+                    </span>
                 </button>
             </div>
         </div>

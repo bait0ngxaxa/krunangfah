@@ -102,23 +102,31 @@ interface ExcelUploaderProps {
 export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isTemplateLoading, setIsTemplateLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFile = async (file: File) => {
-        // Validate file type before starting loading state
-        const validTypes = [
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.ms-excel",
-        ];
-        if (!validTypes.includes(file.type) && !file.name.endsWith(".xlsx")) {
-            setError("กรุณาอัพโหลดไฟล์ Excel (.xlsx) เท่านั้น");
+    const handleFile = async (file: File): Promise<void> => {
+        if (isLoading) {
             return;
         }
+
+        const isXlsxFile =
+            file.type ===
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+            file.name.toLowerCase().endsWith(".xlsx");
+
+        if (!isXlsxFile) {
+            setError("กรุณาอัพโหลดไฟล์ Excel (.xlsx) เท่านั้น");
+            resetFileInput();
+            return;
+        }
+
         if (file.size > MAX_IMPORT_FILE_SIZE_BYTES) {
             setError(
                 `ไฟล์มีขนาดใหญ่เกินไป (สูงสุด ${Math.floor(MAX_IMPORT_FILE_SIZE_BYTES / (1024 * 1024))}MB)`,
             );
+            resetFileInput();
             return;
         }
 
@@ -144,12 +152,21 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
             setError("เกิดข้อผิดพลาดในการอ่านไฟล์");
         } finally {
             setIsLoading(false);
+            resetFileInput();
         }
     };
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleDrop = (e: React.DragEvent): void => {
         e.preventDefault();
         setIsDragging(false);
+        if (isLoading) {
+            return;
+        }
+
+        if (e.dataTransfer.files.length > 1) {
+            setError("กรุณาเลือกไฟล์ Excel เพียง 1 ไฟล์ต่อการนำเข้า");
+            return;
+        }
 
         const file = e.dataTransfer.files[0];
         if (file) {
@@ -157,32 +174,48 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
         }
     };
 
-    const handleDragOver = (e: React.DragEvent) => {
+    const handleDragOver = (e: React.DragEvent): void => {
         e.preventDefault();
+        if (isLoading) {
+            return;
+        }
         setIsDragging(true);
     };
 
-    const handleDragLeave = () => {
+    const handleDragLeave = (): void => {
         setIsDragging(false);
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const file = e.target.files?.[0];
         if (file) {
             handleFile(file);
         }
     };
 
-    const handleTemplateDownload = async () => {
+    const handleTemplateDownload = async (): Promise<void> => {
+        if (isTemplateLoading) {
+            return;
+        }
+
+        setIsTemplateLoading(true);
         try {
             await downloadStudentImportTemplate();
         } catch {
             setError("ไม่สามารถดาวน์โหลด template ได้ กรุณาลองใหม่อีกครั้ง");
+        } finally {
+            setIsTemplateLoading(false);
         }
     };
 
-    const handleDismissError = () => {
+    const handleDismissError = (): void => {
         setError(null);
+    };
+
+    const resetFileInput = (): void => {
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
 
     return (
@@ -233,10 +266,17 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                             type="button"
                             variant="primary"
                             onClick={handleTemplateDownload}
+                            disabled={isTemplateLoading}
                             fullWidth
                         >
-                            <Download className="h-4 w-4" />
-                            ดาวน์โหลด template Excel
+                            {isTemplateLoading ? (
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-b-white" />
+                            ) : (
+                                <Download className="h-4 w-4" />
+                            )}
+                            {isTemplateLoading
+                                ? "กำลังเตรียม template…"
+                                : "ดาวน์โหลด template Excel"}
                         </Button>
                         <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
                             <div className="mb-2 flex items-center gap-2 text-sm font-bold text-gray-800">
@@ -262,7 +302,24 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                    if (!isLoading) {
+                        fileInputRef.current?.click();
+                    }
+                }}
+                role="button"
+                tabIndex={isLoading ? -1 : 0}
+                aria-busy={isLoading}
+                aria-disabled={isLoading}
+                onKeyDown={(event) => {
+                    if (
+                        !isLoading &&
+                        (event.key === "Enter" || event.key === " ")
+                    ) {
+                        event.preventDefault();
+                        fileInputRef.current?.click();
+                    }
+                }}
                 className={`
                     border-2 border-dashed rounded-2xl p-6 sm:p-12 text-center cursor-pointer
                     transition-base duration-300 transform
@@ -271,14 +328,16 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                             ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg shadow-emerald-100"
                             : "border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-md"
                     }
+                    ${isLoading ? "cursor-wait opacity-80" : ""}
                 `}
             >
                 <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".xlsx,.xls"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     onChange={handleFileSelect}
                     className="hidden"
+                    disabled={isLoading}
                 />
 
                 {isLoading ? (

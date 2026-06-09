@@ -27,7 +27,9 @@ function StatusBadge({ status }: { status: string }) {
         <span
             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold ${badgeClass}`}
         >
-            {isCompleted && <CheckCircle2 className="w-3 h-3" />}
+            {isCompleted && (
+                <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+            )}
             {label}
         </span>
     );
@@ -68,9 +70,15 @@ export function ActivityRow({ progress, index, readOnly = false }: ActivityRowPr
                             className={`w-10 h-10 md:w-8 md:h-8 ${iconBgColor} rounded-xl flex items-center justify-center text-sm font-bold shrink-0 shadow-sm transition-transform hover:scale-110`}
                         >
                             {isLocked ? (
-                                <Lock className="w-5 h-5 md:w-4 md:h-4" />
+                                <Lock
+                                    className="w-5 h-5 md:w-4 md:h-4"
+                                    aria-hidden="true"
+                                />
                             ) : isCompleted ? (
-                                <CheckCircle2 className="w-5 h-5 md:w-4 md:h-4" />
+                                <CheckCircle2
+                                    className="w-5 h-5 md:w-4 md:h-4"
+                                    aria-hidden="true"
+                                />
                             ) : (
                                 index + 1
                             )}

@@ -17,7 +17,10 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                     <span className="relative z-10 transition-transform group-hover:scale-110">
                         {index + 1}
                     </span>
-                    <div className="absolute inset-0 bg-black/5 rounded-3xl transform scale-110 -z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div
+                        className="absolute inset-0 bg-black/5 rounded-3xl transform scale-110 -z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-hidden="true"
+                    />
                 </div>
                 <div className="min-w-0">
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">

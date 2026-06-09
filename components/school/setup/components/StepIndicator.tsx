@@ -4,13 +4,20 @@ import type { StepIndicatorProps } from "../types";
 
 export function StepIndicator({ currentStep }: StepIndicatorProps) {
     return (
-        <div className="mb-8 overflow-x-auto">
-            <div className="flex items-center justify-start sm:justify-center gap-0 min-w-max mx-auto px-2">
+        <nav
+            className="mb-8 overflow-x-auto"
+            aria-label="ขั้นตอนการตั้งค่าเริ่มต้น"
+        >
+            <ol className="mx-auto flex min-w-max items-center justify-start gap-0 px-2 sm:justify-center">
                 {STEPS.map(({ label, icon: Icon }, i) => (
-                    <div key={label} className="flex items-center">
+                    <li
+                        key={label}
+                        className="flex items-center"
+                        aria-current={i === currentStep ? "step" : undefined}
+                    >
                         <div className="flex flex-col items-center gap-1">
                             <div
-                                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-base ${
+                                className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-bold transition-base ${
                                     i < currentStep
                                         ? "bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white shadow-sm"
                                         : i === currentStep
@@ -25,19 +32,20 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
                                 )}
                             </div>
                             <span
-                                className={`text-[10px] sm:text-xs font-medium whitespace-nowrap ${i === currentStep ? "text-[var(--brand-primary-hover)]" : "text-gray-400"}`}
+                                className={`max-w-24 whitespace-normal text-center text-[10px] font-medium leading-4 sm:max-w-none sm:whitespace-nowrap sm:text-xs ${i === currentStep ? "text-[var(--brand-primary-hover)]" : "text-gray-400"}`}
                             >
                                 {label}
                             </span>
                         </div>
                         {i < STEPS.length - 1 && (
                             <div
-                                className={`w-8 sm:w-16 h-0.5 mb-4 mx-1 sm:mx-2 transition-base ${i < currentStep ? "bg-[var(--brand-primary)]" : "bg-gray-200"}`}
+                                aria-hidden="true"
+                                className={`mx-1 mb-4 h-0.5 w-8 transition-base sm:mx-2 sm:w-16 ${i < currentStep ? "bg-[var(--brand-primary)]" : "bg-gray-200"}`}
                             />
                         )}
-                    </div>
+                    </li>
                 ))}
-            </div>
-        </div>
+            </ol>
+        </nav>
     );
 }

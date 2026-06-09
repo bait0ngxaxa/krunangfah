@@ -46,7 +46,7 @@ export function ActivityView({
                         <div
                             className={`inline-flex items-center gap-3 rounded-2xl border border-gray-200/70 px-5 py-3 shadow-sm sm:px-8 sm:py-4 ${config.lightBg}`}
                         >
-                            <Target className={`w-6 h-6 ${config.textColor}`} />
+                            <Target className={`w-6 h-6 ${config.textColor}`} aria-hidden="true" />
                             <span className="text-lg font-bold text-gray-800">
                                 ต้องทำทั้งหมด {activityCount} กิจกรรม
                             </span>
@@ -72,7 +72,10 @@ export function ActivityView({
                                 href={studentHelpStartRoute(studentId, phqResultId)}
                                 className={`group flex items-center justify-center gap-3 rounded-2xl px-6 py-4 text-base font-bold text-white shadow-md transition-base hover:-translate-y-0.5 hover:shadow-lg sm:px-10 sm:text-xl ${config.bg}`}
                             >
-                                <Rocket className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                <Rocket
+                                    className="w-6 h-6 group-hover:scale-110 transition-transform"
+                                    aria-hidden="true"
+                                />
                                 เริ่มทำกิจกรรม
                             </Link>
                         ) : (

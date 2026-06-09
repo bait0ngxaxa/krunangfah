@@ -48,7 +48,7 @@ export function CounselingLogTable({
 
             <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-3">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200 bg-white text-emerald-600 shadow-sm">
-                    <MessageCircle className="w-5 h-5" />
+                    <MessageCircle className="w-5 h-5" aria-hidden="true" />
                 </span>
                 <span className="text-gray-800">
                     บันทึกการให้คำปรึกษารายบุคคล
@@ -60,7 +60,7 @@ export function CounselingLogTable({
                 {sessions.length === 0 ? (
                     <div className="p-6 sm:p-12 text-center bg-white/50">
                         <div className="mx-auto mb-4 inline-flex h-20 w-20 items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-sm">
-                            <FileText className="w-10 h-10 text-gray-400" />
+                            <FileText className="w-10 h-10 text-gray-400" aria-hidden="true" />
                         </div>
                         <h3 className="text-lg font-bold text-gray-800 mb-2">
                             {isFilteredByAcademicYear
@@ -74,7 +74,10 @@ export function CounselingLogTable({
                         </p>
                     </div>
                 ) : (
-                    <table className="min-w-full divide-y divide-gray-100">
+                    <table
+                        className="min-w-full divide-y divide-gray-100"
+                        aria-label="บันทึกการให้คำปรึกษารายบุคคล"
+                    >
                         <thead className="bg-slate-50/90">
                             <tr>
                                 <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
@@ -132,7 +135,7 @@ export function CounselingLogTable({
                         variant="primary"
                         size="lg"
                     >
-                        <Plus className="w-5 h-5" />
+                        <Plus className="w-5 h-5" aria-hidden="true" />
                         เพิ่มบันทึกการให้คำปรึกษา
                     </Button>
                 </div>

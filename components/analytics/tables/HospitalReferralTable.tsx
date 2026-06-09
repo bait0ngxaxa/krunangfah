@@ -1,5 +1,6 @@
 import { Hospital } from "lucide-react";
 import type { HospitalReferralByGrade } from "@/lib/actions/analytics/types";
+import { toSafeCount } from "../utils";
 
 interface HospitalReferralTableProps {
     hospitalReferralsByGrade: HospitalReferralByGrade[];
@@ -9,8 +10,9 @@ export function HospitalReferralTable({
     hospitalReferralsByGrade,
 }: HospitalReferralTableProps) {
     // Get all unique grades and sort them
-    const allGrades = hospitalReferralsByGrade
-        .map((item) => item.grade)
+    const allGrades = Array.from(
+        new Set(hospitalReferralsByGrade.map((item) => item.grade)),
+    )
         .sort((a, b) => {
             const gradeA = parseInt(a.match(/\d+/)?.[0] || "0");
             const gradeB = parseInt(b.match(/\d+/)?.[0] || "0");
@@ -18,12 +20,13 @@ export function HospitalReferralTable({
         });
 
     // Create a map for quick lookup
-    const referralMap = new Map(
-        hospitalReferralsByGrade.map((item) => [
+    const referralMap = new Map<string, number>();
+    hospitalReferralsByGrade.forEach((item) => {
+        referralMap.set(
             item.grade,
-            item.referralCount,
-        ]),
-    );
+            (referralMap.get(item.grade) ?? 0) + toSafeCount(item.referralCount),
+        );
+    });
 
     return (
         <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
@@ -33,7 +36,10 @@ export function HospitalReferralTable({
                 จำนวนนักเรียนที่ส่งต่อโรงพยาบาล
             </h2>
             <div className="relative overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-sm">
-                <table className="w-full border-collapse">
+                <table
+                    className="w-full border-collapse"
+                    aria-label="จำนวนนักเรียนที่ส่งต่อโรงพยาบาล"
+                >
                     <thead>
                         <tr>
                             <th className="bg-slate-50 border-b-2 border-r border-slate-200 px-6 py-4 text-center font-bold text-slate-700">
@@ -79,7 +85,10 @@ export function HospitalReferralTable({
             </div>
             {hospitalReferralsByGrade.length === 0 ? (
                 <div className="mt-8 flex flex-col items-center gap-2 border-t border-slate-200/70 py-8 text-center text-gray-400">
-                    <Hospital className="w-6 h-6 text-gray-400" />
+                    <Hospital
+                        className="w-6 h-6 text-gray-400"
+                        aria-hidden="true"
+                    />
                     <span>ยังไม่มีข้อมูลการส่งต่อโรงพยาบาล</span>
                 </div>
             ) : null}

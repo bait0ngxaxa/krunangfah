@@ -48,11 +48,11 @@ export function SetupSummary({
             {/* Success banner */}
             <div className="flex items-center gap-3 p-4 bg-[#34D399]/10 border-2 border-[#34D399]/30 rounded-2xl shadow-sm relative overflow-hidden">
                 <CheckCircle2 className="w-6 h-6 text-[#10B981] shrink-0 relative z-10" />
-                <div className="relative z-10">
-                    <p className="font-bold text-[#065F46] text-sm">
+                <div className="relative z-10 min-w-0">
+                    <p className="break-words text-sm font-bold text-[#065F46]">
                         ตั้งค่าเรียบร้อย!
                     </p>
-                    <p className="text-xs text-[#065F46]/80">
+                    <p className="break-words text-xs text-[#065F46]/80">
                         ตรวจสอบข้อมูลด้านล่าง แล้วกด &quot;เสร็จสิ้น&quot;
                     </p>
                 </div>
@@ -63,15 +63,15 @@ export function SetupSummary({
                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md border-2 border-[var(--brand-primary)] shrink-0">
                     <Building2 className="w-5 h-5 text-[var(--brand-primary)] stroke-[2.5]" />
                 </div>
-                <div>
+                <div className="min-w-0">
                     <p className="text-xs text-slate-400 font-semibold mb-0.5">
                         โรงเรียน
                     </p>
-                    <p className="font-extrabold text-slate-800 tracking-tight">
+                    <p className="break-words font-extrabold tracking-tight text-slate-800">
                         {schoolName}
                     </p>
                     {province && (
-                        <p className="text-sm text-slate-500 font-medium">
+                        <p className="break-words text-sm font-medium text-slate-500">
                             {province}
                         </p>
                     )}
@@ -83,7 +83,7 @@ export function SetupSummary({
                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md border-2 border-[var(--brand-primary)] shrink-0">
                     <LayoutGrid className="w-5 h-5 text-[var(--brand-primary)] stroke-[2.5]" />
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                     <p className="text-xs text-slate-400 font-semibold mb-0.5">
                         ห้องเรียน ({classes.length} ห้อง / {totalExpectedStudents} คน)
                     </p>
@@ -102,7 +102,7 @@ export function SetupSummary({
                                         {items.map((c) => (
                                             <span
                                                 key={c.id}
-                                                className="px-2.5 py-1 bg-gray-50 border-2 border-gray-100 text-gray-700 rounded-lg text-xs font-bold"
+                                                className="min-w-0 break-words rounded-lg border-2 border-gray-100 bg-gray-50 px-2.5 py-1 text-xs font-bold text-gray-700"
                                             >
                                                 {c.name} ({c.expectedStudentCount} คน)
                                             </span>
@@ -120,7 +120,7 @@ export function SetupSummary({
                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md border-2 border-[var(--brand-primary)] shrink-0">
                     <Users className="w-5 h-5 text-[var(--brand-primary)] stroke-[2.5]" />
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                     <p className="text-xs text-slate-400 font-semibold mb-0.5">
                         รายชื่อครู ({roster.length} คน)
                     </p>
@@ -133,9 +133,9 @@ export function SetupSummary({
                             {roster.map((t) => (
                                 <div
                                     key={t.id}
-                                    className="flex items-center gap-2 text-sm flex-wrap p-2 bg-slate-50/50 rounded-xl border border-slate-100"
+                                    className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/50 p-2 text-sm"
                                 >
-                                    <span className="text-slate-800 font-bold">
+                                    <span className="min-w-0 break-words font-bold text-slate-800">
                                         {t.firstName} {t.lastName}
                                     </span>
                                     <span className="text-[11px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md font-bold ring-1 ring-blue-100">

@@ -28,14 +28,15 @@ export function NavbarGreenBar({
 }: NavbarGreenBarProps) {
     return (
         <nav
-            className={`${fixed ? "fixed top-0 left-0 right-0 z-50" : "relative z-20"}`}
+            aria-label="เมนูหลัก"
+            className={`${fixed ? "fixed left-0 right-0 top-0 z-[50]" : "relative z-20"}`}
             style={{
                 marginTop: "-24px",
                 paddingTop: "24px",
             }}
         >
             <div
-                className="relative w-full flex items-center transition-base duration-300"
+                className="relative flex w-full min-w-0 items-center motion-safe:transition-shadow motion-safe:duration-300"
                 style={{
                     background:
                         "linear-gradient(180deg, #00DB87 0%, #00C67A 100%)",
@@ -56,17 +57,18 @@ export function NavbarGreenBar({
                     }}
                 />
                 {/* Logo — fills full navbar height */}
-                <div className="flex items-end h-full pl-0">
+                <div className="flex h-full shrink-0 items-end pl-0">
                     <Link
                         href={logoHref}
-                        className="flex items-end group h-full"
+                        className="group flex h-full items-end rounded-br-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-500"
+                        aria-label="ไปหน้าหลัก"
                     >
                         <Image
                             src="/image/homepage/icon 1.png"
-                            alt="Kru Nangfah"
+                            alt="ครูนางฟ้า"
                             width={160}
                             height={80}
-                            className="h-full w-auto object-contain"
+                            className="h-full w-auto object-contain motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.02]"
                             priority
                         />
                     </Link>

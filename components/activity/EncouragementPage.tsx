@@ -46,6 +46,22 @@ export function EncouragementPage({
     // Step 1 animations
     useEffect(() => {
         if (step !== 1) return;
+        const prefersReducedMotion = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
+        if (prefersReducedMotion) {
+            const timer = window.setTimeout(() => {
+                setVisibleLines([
+                    ...mainMessages.map((_, index) => index),
+                    ...tipMessages.map(
+                        (_, index) => mainMessages.length + index,
+                    ),
+                ]);
+                setShowTips(true);
+                setShowButton(true);
+            }, 0);
+            return () => window.clearTimeout(timer);
+        }
         const timers: number[] = [];
 
         // Animate main messages one by one
@@ -126,7 +142,7 @@ export function EncouragementPage({
                 <div
                     className={`mx-auto mb-10 flex h-28 w-28 items-center justify-center rounded-full ${config.bg} text-white shadow-sm`}
                 >
-                    <Heart className="w-14 h-14" />
+                    <Heart className="w-14 h-14" aria-hidden="true" />
                 </div>
 
                 {/* Main Messages */}
@@ -155,13 +171,13 @@ export function EncouragementPage({
                 >
                     <div className="flex items-center justify-center gap-3 mb-8">
                         <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                            <Sparkles className="w-5 h-5 text-amber-500" />
+                            <Sparkles className="w-5 h-5 text-amber-500" aria-hidden="true" />
                         </div>
                         <span className="text-xl font-bold text-amber-600">
                             คำแนะนำสำหรับคุณครู
                         </span>
                         <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                            <Sparkles className="w-5 h-5 text-amber-500" />
+                            <Sparkles className="w-5 h-5 text-amber-500" aria-hidden="true" />
                         </div>
                     </div>
                     <div className="space-y-6 text-left relative">
@@ -184,7 +200,10 @@ export function EncouragementPage({
                                         : "opacity-0 -translate-x-4"
                                 }`}
                             >
-                                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2.5 shrink-0" />
+                                <div
+                                    className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2.5 shrink-0"
+                                    aria-hidden="true"
+                                />
                                 <p className="text-gray-700 text-lg md:text-xl font-medium leading-relaxed">
                                     {message}
                                 </p>
@@ -195,7 +214,9 @@ export function EncouragementPage({
 
                 {/* Continue Button */}
                 <button
+                    type="button"
                     onClick={handleContinue}
+                    disabled={!showButton}
                     className={`group relative inline-flex items-center gap-3 overflow-hidden rounded-full px-10 py-5 text-xl font-bold text-white shadow-sm transition-base duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-md ${continueButtonClass} ${
                         showButton
                             ? "opacity-100 translate-y-0"
@@ -203,7 +224,10 @@ export function EncouragementPage({
                     }`}
                 >
                     <span className="relative">ถัดไป</span>
-                    <ArrowRight className="w-6 h-6 relative group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight
+                        className="w-6 h-6 relative group-hover:translate-x-1 transition-transform"
+                        aria-hidden="true"
+                    />
                 </button>
             </div>
         </div>

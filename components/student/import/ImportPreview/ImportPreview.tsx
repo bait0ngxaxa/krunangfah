@@ -29,6 +29,7 @@ export function ImportPreview({
         error,
         errorTitle,
         errorDescription,
+        isImportContextLoaded,
         academicYears,
         selectedYearId,
         handleYearChange,
@@ -49,11 +50,10 @@ export function ImportPreview({
 
     return (
         <div className="space-y-6">
-            {/* Summary Section */}
-            <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border-2 border-gray-100 relative overflow-hidden group">
-                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm md:p-6">
+                <h3 className="mb-5 flex min-w-0 items-center gap-2 text-lg font-bold text-gray-800">
                     <BarChart3 className="w-6 h-6 text-emerald-500" />
-                    <span className="bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                    <span className="min-w-0 break-words">
                         สรุปข้อมูลที่จะนำเข้า
                     </span>
                 </h3>
@@ -62,6 +62,15 @@ export function ImportPreview({
 
                 <div className="my-6 border-t border-emerald-100/50" />
 
+                {!isImportContextLoaded && (
+                    <div
+                        className="mb-4 rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800"
+                        role="status"
+                    >
+                        กำลังตรวจสอบปีการศึกษา ห้องเรียน และสิทธิ์การนำเข้า…
+                    </div>
+                )}
+
                 <ImportSettings
                     academicYears={academicYears}
                     selectedYearId={selectedYearId}
@@ -69,6 +78,7 @@ export function ImportPreview({
                     assessmentRound={assessmentRound}
                     onRoundChange={setAssessmentRound}
                     hasRound1={hasRound1}
+                    isLoading={!isImportContextLoaded}
                 />
 
                 <FilteredStudentsWarning
@@ -79,14 +89,12 @@ export function ImportPreview({
                 />
             </div>
 
-            {/* Data Table */}
             <StudentPreviewTable
                 students={previewData}
                 onRemoveStudent={handleRemoveStudent}
                 canViewNationalId={canViewNationalId}
             />
 
-            {/* Error Modal */}
             <ImportError
                 error={error}
                 title={errorTitle}
@@ -94,12 +102,15 @@ export function ImportPreview({
                 onClose={handleDismissError}
             />
 
-            {/* Action Buttons */}
             <ImportActions
                 onCancel={onCancel}
                 onSave={handleSave}
                 isLoading={isLoading}
-                canSave={!!selectedYearId && previewData.length > 0}
+                canSave={
+                    isImportContextLoaded &&
+                    !!selectedYearId &&
+                    previewData.length > 0
+                }
                 studentCount={previewData.length}
                 academicYearLabel={getAcademicYearLabel(
                     academicYears,

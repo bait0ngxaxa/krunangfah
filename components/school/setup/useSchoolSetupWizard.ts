@@ -72,6 +72,12 @@ export function useSchoolSetupWizard({
     }
 
     function handleFinish(): void {
+        if (!schoolInfo?.name) {
+            setStep(0);
+            setServerError("กรุณากรอกข้อมูลโรงเรียนให้ครบก่อนเสร็จสิ้น");
+            return;
+        }
+
         // Hard redirect — layout เช็ค schoolId จาก DB โดยตรง ไม่พึ่ง cookie claims
         window.location.href = "/dashboard";
     }

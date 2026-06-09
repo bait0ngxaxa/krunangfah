@@ -17,6 +17,11 @@ export function ProjectFields({
                 </label>
                 <select
                     {...register("projectRole")}
+                    id="projectRole"
+                    aria-invalid={!!errors.projectRole}
+                    aria-describedby={
+                        errors.projectRole ? "projectRole-error" : undefined
+                    }
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-[var(--brand-primary)] transition-colors outline-none bg-white shadow-sm text-gray-900"
                 >
                     <option value="">เลือกบทบาท</option>
@@ -27,7 +32,10 @@ export function ProjectFields({
                     ))}
                 </select>
                 {errors.projectRole && (
-                    <p className="mt-1 text-sm text-red-500 font-medium">
+                    <p
+                        id="projectRole-error"
+                        className="mt-1 break-words text-sm font-medium text-red-500"
+                    >
                         {errors.projectRole.message}
                     </p>
                 )}

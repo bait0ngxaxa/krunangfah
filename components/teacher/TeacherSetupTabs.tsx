@@ -107,6 +107,7 @@ export function TeacherSetupTabs({
 
     useEffect(() => {
         if (!isPrimary) return;
+        if (!("IntersectionObserver" in window)) return;
 
         const observers: IntersectionObserver[] = [];
 
@@ -141,8 +142,15 @@ export function TeacherSetupTabs({
         const element = document.getElementById(sectionId);
         if (!element) return;
 
+        const prefersReducedMotion = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
+
         setActiveSection(sectionId);
-        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        element.scrollIntoView({
+            behavior: prefersReducedMotion ? "auto" : "smooth",
+            block: "start",
+        });
     };
 
     if (!isPrimary) {
@@ -150,12 +158,15 @@ export function TeacherSetupTabs({
             <div className="space-y-6">
                 <SectionCard
                     id="invite"
-                    icon={<UserPlus className="w-4 h-4" />}
+                    icon={<UserPlus className="w-4 h-4" aria-hidden="true" />}
                     title="สร้างลิงก์เชิญครู"
                     subtitle="เลือกครูจากข้อมูลที่มี แล้วส่งลิงก์ให้ครูตั้งรหัสผ่าน"
                 >
                     <p className="text-gray-600 mb-6 sm:mb-8 bg-emerald-50/50 p-4 rounded-xl border border-gray-100 flex items-start gap-2 text-sm sm:text-base">
-                        <Info className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                        <Info
+                            className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0"
+                            aria-hidden="true"
+                        />
                         <span>
                             บัญชีของคุณมีสิทธิ์เฉพาะการเชิญครู
                             หากต้องแก้ข้อมูลห้องเรียนหรือรายชื่อครู
@@ -202,7 +213,7 @@ export function TeacherSetupTabs({
 
             <div className="rounded-3xl border border-gray-100 bg-emerald-50/60 p-4 sm:p-5">
                 <div className="flex items-center gap-2 text-emerald-700">
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                     <p className="text-sm font-semibold">
                         ลำดับการทำงานที่แนะนำ
                     </p>
@@ -223,7 +234,7 @@ export function TeacherSetupTabs({
 
             <SectionCard
                 id="classes"
-                icon={<LayoutGrid className="w-4 h-4" />}
+                icon={<LayoutGrid className="w-4 h-4" aria-hidden="true" />}
                 title="ขั้นตอน 1: เพิ่ม-ลบ ห้องเรียน"
                 subtitle="ใช้เป็นตัวเลือกเมื่อกำหนดห้องที่ปรึกษาของครู"
             >
@@ -236,7 +247,7 @@ export function TeacherSetupTabs({
 
             <SectionCard
                 id="roster"
-                icon={<Users className="w-4 h-4" />}
+                icon={<Users className="w-4 h-4" aria-hidden="true" />}
                 title="ขั้นตอน 2: เพิ่ม-ลบ ครู และส่งคำเชิญ"
                 subtitle="บันทึกข้อมูลครู แล้วเลือกครูจากรายการเพื่อสร้างลิงก์เชิญ"
             >
@@ -249,7 +260,7 @@ export function TeacherSetupTabs({
                 <div className="mt-6 border-t border-gray-100 pt-6">
                     <div className="mb-4 flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600">
-                            <UserPlus className="h-4 w-4" />
+                            <UserPlus className="h-4 w-4" aria-hidden="true" />
                         </div>
                         <div>
                             <h3 className="text-sm font-bold text-gray-800">

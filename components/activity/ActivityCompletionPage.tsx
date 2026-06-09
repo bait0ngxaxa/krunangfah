@@ -52,6 +52,18 @@ export function ActivityCompletionPage({
 
     // Animate elements
     useEffect(() => {
+        const prefersReducedMotion = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
+        if (prefersReducedMotion) {
+            const timer = window.setTimeout(() => {
+                setThankYouVisible(true);
+                setScheduleVisible(true);
+                setFinalButtonVisible(true);
+            }, 0);
+            return () => window.clearTimeout(timer);
+        }
+
         const thankYouTimer = window.setTimeout(
             () => setThankYouVisible(true),
             500,
@@ -93,7 +105,10 @@ export function ActivityCompletionPage({
                         <div
                             className={`w-32 h-32 ${config.bg} rounded-3xl rotate-6 flex items-center justify-center text-white mx-auto shadow-sm relative z-10 group-hover:rotate-12 group-hover:scale-110 transition-transform duration-500`}
                         >
-                            <PartyPopper className="w-16 h-16 animate-bounce-slow" />
+                            <PartyPopper
+                                className="w-16 h-16 animate-bounce-slow"
+                                aria-hidden="true"
+                            />
                         </div>
                     </div>
 
@@ -120,7 +135,7 @@ export function ActivityCompletionPage({
                     >
                         <div className="flex items-center justify-center gap-3 mb-6">
                             <div className={`w-12 h-12 rounded-2xl bg-white border ${config.borderColor} shadow-sm flex items-center justify-center ${config.textColor} rotate-3`}>
-                                <Calendar className="w-6 h-6" />
+                                <Calendar className="w-6 h-6" aria-hidden="true" />
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -154,7 +169,10 @@ export function ActivityCompletionPage({
                         }`}
                     >
                         <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${config.bgLight} animate-bounce`}>
-                            <PartyPopper className={`h-8 w-8 ${config.textColor}`} />
+                            <PartyPopper
+                                className={`h-8 w-8 ${config.textColor}`}
+                                aria-hidden="true"
+                            />
                         </div>
                         <p className="text-2xl text-gray-800 mb-2 font-bold">
                             <span className={config.textColor}>ยินดีด้วย!</span>
@@ -172,7 +190,9 @@ export function ActivityCompletionPage({
 
                 {/* Back to Dashboard Button */}
                 <button
+                    type="button"
                     onClick={handleBackToDashboard}
+                    disabled={!finalButtonVisible}
                     className={`pointer-events-auto mt-12 inline-flex items-center gap-3 px-10 py-5 text-white rounded-full font-bold text-xl shadow-sm hover:shadow-md hover:-translate-y-1 hover:scale-105 transition-base duration-500 group relative overflow-hidden ${completionButtonClass} ${
                         finalButtonVisible
                             ? "opacity-100 translate-y-0"
@@ -180,7 +200,10 @@ export function ActivityCompletionPage({
                     }`}
                 >
                     <span className="relative">กลับหน้าหลัก</span>
-                    <ArrowRight className="w-6 h-6 relative group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight
+                        className="w-6 h-6 relative group-hover:translate-x-1 transition-transform"
+                        aria-hidden="true"
+                    />
                 </button>
 
                 {/* Student name */}
