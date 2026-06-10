@@ -96,7 +96,23 @@ describe("getStudentDashboardData", () => {
             schoolId: "school-1",
         });
 
-        expect(getClassCountsQuery).toHaveBeenCalledOnce();
+        expect(getClassCountsQuery).toHaveBeenCalledTimes(2);
+        expect(getClassCountsQuery).toHaveBeenNthCalledWith(
+            1,
+            "school-1",
+            "ม.1/1",
+            "school_admin",
+            "user-1",
+            { referredOnly: false },
+        );
+        expect(getClassCountsQuery).toHaveBeenNthCalledWith(
+            2,
+            "school-1",
+            "ม.1/1",
+            "school_admin",
+            "user-1",
+            { referredOnly: false, riskFilter: undefined },
+        );
         expect(getStudentsForDashboardQuery).not.toHaveBeenCalled();
         expect(result.students).toEqual([]);
         expect(result.pagination.total).toBe(0);
@@ -122,7 +138,18 @@ describe("getStudentDashboardData", () => {
                 referredOnly: true,
             },
         );
-        expect(getClassCountsQuery).toHaveBeenCalledWith(
+        expect(getClassCountsQuery).toHaveBeenNthCalledWith(
+            1,
+            "school-1",
+            "ม.1/1",
+            "school_admin",
+            "user-1",
+            {
+                referredOnly: true,
+            },
+        );
+        expect(getClassCountsQuery).toHaveBeenNthCalledWith(
+            2,
             "school-1",
             "ม.1/1",
             "school_admin",
@@ -159,6 +186,55 @@ describe("getStudentDashboardData", () => {
         expect(result.pagination.page).toBe(1);
         expect(result.pagination.hasNextPage).toBe(false);
         expect(result.pagination.hasPreviousPage).toBe(false);
+    });
+
+    it("keeps class filters available when selected risk has zero matching students", async () => {
+        vi.mocked(getClassCountsQuery)
+            .mockResolvedValueOnce([
+                { class: "ม.1/1", _count: { class: 30 } },
+                { class: "ม.1/2", _count: { class: 28 } },
+            ])
+            .mockResolvedValueOnce([]);
+        vi.mocked(getRiskLevelCountsQuery).mockResolvedValue([
+            { risk_level: "blue", count: BigInt(30) },
+            { risk_level: "green", count: BigInt(28) },
+        ]);
+        vi.mocked(getStudentsForDashboardQuery).mockResolvedValue({
+            students: [],
+            pagination: {
+                total: 0,
+                page: 1,
+                limit: 50,
+                totalPages: 1,
+            },
+        });
+
+        const result = await getStudentDashboardData({
+            classFilter: "ม.1/1",
+            riskFilter: "red",
+            schoolId: "school-1",
+        });
+
+        expect(result.classes).toEqual(["ม.1/1", "ม.1/2"]);
+        expect(result.classOptions).toEqual([
+            { name: "ม.1/1", count: 0 },
+            { name: "ม.1/2", count: 0 },
+        ]);
+        expect(result.students).toEqual([]);
+        expect(result.filteredStudentCount).toBe(0);
+        expect(getStudentsForDashboardQuery).toHaveBeenCalledWith(
+            "school-1",
+            "ม.1/1",
+            "school_admin",
+            "user-1",
+            {
+                classFilter: "ม.1/1",
+                riskFilter: "red",
+                referredOnly: false,
+                page: 1,
+                limit: 50,
+            },
+        );
     });
 
     it("loads students without class filter when there is only one visible class", async () => {

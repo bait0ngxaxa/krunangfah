@@ -18,6 +18,13 @@ import type {
 
 const DASHBOARD_PAGE_SIZE = 50;
 
+interface ClassCount {
+    class: string;
+    _count: {
+        class: number;
+    };
+}
+
 function createEmptyDashboardData(): StudentDashboardDataResponse {
     return {
         students: [],
@@ -62,6 +69,20 @@ function normalizePage(page?: number): number {
     return Math.max(1, Math.floor(page));
 }
 
+function buildClassOptions(
+    baseClassCounts: ClassCount[],
+    filteredClassCounts: ClassCount[],
+): Array<{ name: string; count: number }> {
+    const filteredCountByClass = new Map(
+        filteredClassCounts.map((item) => [item.class, item._count.class]),
+    );
+
+    return baseClassCounts.map((item) => ({
+        name: item.class,
+        count: filteredCountByClass.get(item.class) ?? 0,
+    }));
+}
+
 export async function getStudentDashboardData(
     options?: StudentDashboardQueryOptions,
 ): Promise<StudentDashboardDataResponse> {
@@ -85,44 +106,47 @@ export async function getStudentDashboardData(
         const page = normalizePage(options?.page);
         const referredOnly = options?.referredOnly === true;
 
-        const [classCounts, rawRiskCounts, referredCount] = await Promise.all([
+        const [
+            baseClassCounts,
+            filteredClassCounts,
+            rawRiskCounts,
+            referredCount,
+        ] = await Promise.all([
             getClassCountsQuery(
                 scopeSchoolId,
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                {
-                    referredOnly,
-                    riskFilter,
-                },
+                { referredOnly },
+            ),
+            getClassCountsQuery(
+                scopeSchoolId,
+                viewer.advisoryClass,
+                viewer.role,
+                viewer.userId,
+                { referredOnly, riskFilter },
             ),
             getRiskLevelCountsQuery(
                 scopeSchoolId,
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                {
-                    classFilter,
-                    referredOnly,
-                },
+                { classFilter, referredOnly },
             ),
             getReferredStudentCountQuery(
                 scopeSchoolId,
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                {
-                    classFilter,
-                    riskFilter,
-                },
+                { classFilter, riskFilter },
             ),
         ]);
 
-        const classes = classCounts.map((item) => item.class);
-        const classOptions = classCounts.map((item) => ({
-            name: item.class,
-            count: item._count.class,
-        }));
+        const classes = baseClassCounts.map((item) => item.class);
+        const classOptions = buildClassOptions(
+            baseClassCounts,
+            filteredClassCounts,
+        );
         const riskCounts = transformRiskCounts(rawRiskCounts, classes);
         const shouldLoadStudents = Boolean(classFilter) || classes.length <= 1;
         const studentListResponse = shouldLoadStudents

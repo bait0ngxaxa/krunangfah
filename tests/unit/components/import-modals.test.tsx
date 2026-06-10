@@ -48,7 +48,12 @@ describe("student import modals", () => {
 
         expect(html).toContain('role="alertdialog"');
         expect(html).toContain('aria-modal="true"');
+        expect(html).toContain('tabindex="-1"');
         expect(html).toContain("fixed inset-0");
+        expect(html).toContain("z-50");
+        expect(html).not.toContain("z-[9999]");
+        expect(html).not.toContain("import-error-title");
+        expect(html).not.toContain("import-error-message");
         expect(html).toContain("อัปโหลดไฟล์ไม่สำเร็จ");
         expect(html).toContain("กรุณาอัพโหลดไฟล์ Excel (.xlsx) เท่านั้น");
     });
@@ -125,5 +130,34 @@ describe("student import modals", () => {
         expect(html).toContain("พบนักเรียนที่ไม่ตรงกับห้องที่คุณดูแล");
         expect(html).toContain("นักเรียนต่อไปนี้จะไม่ถูกนำเข้า");
         expect(html).toContain("ม.1/1");
+    });
+
+    it("combines missing class and out-of-scope warnings in one modal", () => {
+        const html = renderToStaticMarkup(
+            <FilteredStudentsWarning
+                students={[
+                    createPreviewStudent({
+                        class: "ม.9/9",
+                        _originalIndex: 1,
+                    }),
+                    createPreviewStudent({
+                        class: "ม.1/2",
+                        _originalIndex: 2,
+                    }),
+                ]}
+                advisoryClass="ม.1/1"
+                validClassNames={["ม.1/1", "ม.1/2"]}
+                isClassScoped
+            />,
+        );
+
+        expect(html).toContain('role="alertdialog"');
+        expect(html).toContain("พบนักเรียนที่ยังไม่พร้อมนำเข้า (2 คน)");
+        expect(html).toContain(
+            "ห้องเรียนของนักเรียนต่อไปนี้ยังไม่ถูกสร้างในระบบ",
+        );
+        expect(html).toContain("นักเรียนต่อไปนี้จะไม่ถูกนำเข้า");
+        expect(html).toContain("ม.9/9");
+        expect(html).toContain("ม.1/2");
     });
 });

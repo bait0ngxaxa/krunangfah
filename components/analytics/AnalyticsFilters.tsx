@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useOptimistic, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useOptimistic, useRef, useTransition } from "react";
 import { RotateCcw } from "lucide-react";
 
 import { AcademicYearFilter } from "./filters/AcademicYearFilter";
@@ -9,6 +9,13 @@ import { ClassFilter } from "./filters/ClassFilter";
 import { SemesterFilter } from "./filters/SemesterFilter";
 import { SchoolFilter } from "./filters/SchoolFilter";
 import { Button } from "@/components/ui/Button";
+import {
+    applyFilterUpdates,
+    buildFilterState,
+    buildFilterUrl,
+    type FilterState,
+    type FilterUpdates,
+} from "./filter-state";
 
 interface SchoolOption {
     id: string;
@@ -27,92 +34,6 @@ interface AnalyticsFiltersProps {
     isSystemAdmin: boolean;
     showClassFilter: boolean;
     requireSchoolSelection?: boolean;
-}
-
-type FilterKey = "school" | "class" | "year" | "semester";
-type FilterUpdates = Partial<Record<FilterKey, string | null>>;
-
-interface FilterState {
-    school: string;
-    class: string;
-    year: string;
-    semester: string;
-}
-
-function buildFilterState(input: {
-    selectedSchoolId: string;
-    selectedClass: string;
-    selectedAcademicYear: string;
-    selectedSemester: string;
-}): FilterState {
-    return {
-        school: input.selectedSchoolId,
-        class: input.selectedClass,
-        year: input.selectedAcademicYear,
-        semester: input.selectedSemester,
-    };
-}
-
-function getClearedFilterValue(key: FilterKey, isSystemAdmin: boolean): string {
-    if (key === "school" && isSystemAdmin) {
-        return "";
-    }
-    return "all";
-}
-
-function applyFilterUpdates(
-    current: FilterState,
-    updates: FilterUpdates,
-    isSystemAdmin: boolean,
-): FilterState {
-    return {
-        school:
-            updates.school === undefined
-                ? current.school
-                : resolveFilterValue("school", updates.school, isSystemAdmin),
-        class:
-            updates.class === undefined
-                ? current.class
-                : resolveFilterValue("class", updates.class, isSystemAdmin),
-        year:
-            updates.year === undefined
-                ? current.year
-                : resolveFilterValue("year", updates.year, isSystemAdmin),
-        semester:
-            updates.semester === undefined
-                ? current.semester
-                : resolveFilterValue("semester", updates.semester, isSystemAdmin),
-    };
-}
-
-function resolveFilterValue(
-    key: FilterKey,
-    value: string | null,
-    isSystemAdmin: boolean,
-): string {
-    if (!value || value === "all") {
-        return getClearedFilterValue(key, isSystemAdmin);
-    }
-    return value;
-}
-
-function setFilterParam(
-    params: URLSearchParams,
-    key: FilterKey,
-    value: string,
-): void {
-    if (!value || value === "all") {
-        params.delete(key);
-        return;
-    }
-    params.set(key, value);
-}
-
-function setFilterParams(params: URLSearchParams, filters: FilterState): void {
-    setFilterParam(params, "school", filters.school);
-    setFilterParam(params, "class", filters.class);
-    setFilterParam(params, "year", filters.year);
-    setFilterParam(params, "semester", filters.semester);
 }
 
 function uniqueStrings(values: string[]): string[] {
@@ -138,7 +59,6 @@ export function AnalyticsFilters({
 }: AnalyticsFiltersProps) {
     const router = useRouter();
     const pathname = usePathname();
-    const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
     const selectedFilters = buildFilterState({
         selectedSchoolId,
@@ -150,6 +70,22 @@ export function AnalyticsFilters({
         selectedFilters,
         (_currentFilters: FilterState, nextFilters: FilterState) => nextFilters,
     );
+    const latestFiltersRef = useRef<FilterState>(selectedFilters);
+
+    useEffect(() => {
+        latestFiltersRef.current = buildFilterState({
+            selectedSchoolId,
+            selectedClass,
+            selectedAcademicYear,
+            selectedSemester,
+        });
+    }, [
+        selectedAcademicYear,
+        selectedClass,
+        selectedSchoolId,
+        selectedSemester,
+    ]);
+
     const hasSelectedSchool = requireSchoolSelection
         ? optimisticFilters.school.length > 0
         : optimisticFilters.school !== "all";
@@ -163,22 +99,13 @@ export function AnalyticsFilters({
     const safeAvailableSemesters = uniqueNumbers(availableSemesters);
 
     const updateParams = (updates: FilterUpdates): void => {
-        if (isPending) {
-            return;
-        }
-
         const nextFilters = applyFilterUpdates(
-            optimisticFilters,
+            latestFiltersRef.current,
             updates,
             isSystemAdmin,
         );
-        const params = new URLSearchParams(searchParams.toString());
-
-        setFilterParams(params, nextFilters);
-
-        const nextUrl = params.size > 0
-            ? `${pathname}?${params.toString()}`
-            : pathname;
+        latestFiltersRef.current = nextFilters;
+        const nextUrl = buildFilterUrl(pathname, nextFilters);
 
         startTransition(() => {
             setOptimisticFilters(nextFilters);
@@ -201,7 +128,6 @@ export function AnalyticsFilters({
                     schools={schools}
                     selectedSchoolId={optimisticFilters.school}
                     requireExplicitSelection={requireSchoolSelection}
-                    disabled={isPending}
                     onSchoolChange={(schoolId) =>
                         updateParams({
                             school: schoolId,
@@ -223,7 +149,6 @@ export function AnalyticsFilters({
                             ? undefined
                             : optimisticFilters.class
                     }
-                    disabled={isPending}
                     onClassChange={(classValue) =>
                         updateParams({ class: classValue, semester: null })
                     }
@@ -235,7 +160,6 @@ export function AnalyticsFilters({
                 <AcademicYearFilter
                     availableYears={safeAvailableYears}
                     selectedYear={optimisticFilters.year}
-                    disabled={isPending}
                     onYearChange={(yearValue) =>
                         updateParams({ year: yearValue, semester: null })
                     }
@@ -247,7 +171,6 @@ export function AnalyticsFilters({
                 <SemesterFilter
                     availableSemesters={safeAvailableSemesters}
                     selectedSemester={optimisticFilters.semester}
-                    disabled={isPending}
                     onSemesterChange={(semesterValue) =>
                         updateParams({ semester: semesterValue })
                     }
@@ -260,7 +183,6 @@ export function AnalyticsFilters({
                         type="button"
                         variant="secondary"
                         size="sm"
-                        disabled={isPending}
                         onClick={() =>
                             updateParams({
                                 school: null,
