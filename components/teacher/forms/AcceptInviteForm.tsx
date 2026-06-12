@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { HandHelping } from "lucide-react";
+import { AlertCircle, HandHelping, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AUTH_PRIMARY_BUTTON_CLASS } from "@/components/auth/authStyles";
 import {
     acceptInviteSchema,
     type AcceptInviteFormData,
@@ -36,7 +37,9 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
         defaultValues: { token },
     });
 
-    const onSubmit = async (data: AcceptInviteFormData) => {
+    const onSubmit = async (data: AcceptInviteFormData): Promise<void> => {
+        if (isLoading) return;
+
         setIsLoading(true);
         setError("");
 
@@ -44,6 +47,7 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
             const result = await acceptTeacherInvite(token, data.password);
 
             if (!result.success) {
+                setError(result.message);
                 toast.error(result.message);
                 return;
             }
@@ -53,9 +57,10 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
             await new Promise((resolve) => setTimeout(resolve, 1000));
             // Redirect to sign in page
             router.push("/signin?registered=true");
-        } catch (err) {
-            console.error("Accept invite error:", err);
-            toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        } catch {
+            const message = "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
+            setError(message);
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }
@@ -66,69 +71,122 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
             {/* Info Card */}
             <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-sm relative overflow-hidden">
                 <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <HandHelping className="w-5 h-5 text-emerald-500" />{" "}
+                    <HandHelping
+                        className="w-5 h-5 text-emerald-500"
+                        aria-hidden="true"
+                    />
                     ข้อมูลของคุณ
                 </h3>
-                <div className="space-y-2 text-gray-600">
-                    <p className="flex items-center gap-2">
-                        <span className="font-semibold text-emerald-500 w-16">
+                <div className="space-y-2 text-gray-700">
+                    <p className="flex items-start gap-2">
+                        <span className="w-16 shrink-0 font-semibold text-emerald-700">
                             ชื่อ:
                         </span>
-                        {inviteData.firstName} {inviteData.lastName}
+                        <span className="min-w-0 break-words">
+                            {inviteData.firstName} {inviteData.lastName}
+                        </span>
                     </p>
-                    <p className="flex items-center gap-2">
-                        <span className="font-semibold text-emerald-500 w-16">
+                    <p className="flex items-start gap-2">
+                        <span className="w-16 shrink-0 font-semibold text-emerald-700">
                             อีเมล:
                         </span>
-                        {inviteData.email}
+                        <span className="min-w-0 break-all" dir="auto">
+                            {inviteData.email}
+                        </span>
                     </p>
-                    <p className="flex items-center gap-2">
-                        <span className="font-semibold text-emerald-500 w-16">
+                    <p className="flex items-start gap-2">
+                        <span className="w-16 shrink-0 font-semibold text-emerald-700">
                             โรงเรียน:
                         </span>
-                        {inviteData.school.name}
+                        <span className="min-w-0 break-words">
+                            {inviteData.school.name}
+                        </span>
                     </p>
                 </div>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {error && (
-                    <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl font-medium animate-shake">
-                        {error}
+                    <div
+                        className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600"
+                        role="status"
+                        aria-live="polite"
+                    >
+                        <p className="flex items-start gap-1.5">
+                            <AlertCircle
+                                className="mt-0.5 h-4 w-4 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <span className="min-w-0 break-words">
+                                {error}
+                            </span>
+                        </p>
                     </div>
                 )}
 
                 <input type="hidden" {...register("token")} />
 
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                    <label
+                        htmlFor="teacher-invite-password"
+                        className="block text-sm font-bold text-gray-700 mb-2"
+                    >
                         ตั้งรหัสผ่าน <span className="text-red-500">*</span>
                     </label>
                     <input
                         {...register("password")}
+                        id="teacher-invite-password"
                         type="password"
-                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-base placeholder:text-gray-400 hover:border-emerald-300"
+                        autoComplete="new-password"
+                        disabled={isLoading}
+                        aria-invalid={!!errors.password}
+                        aria-describedby={
+                            errors.password
+                                ? "teacher-invite-password-error"
+                                : undefined
+                        }
+                        className="w-full rounded-xl border border-emerald-200 px-4 py-3 outline-none transition-base placeholder:text-gray-500 hover:border-emerald-300 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="อย่างน้อย 6 ตัวอักษร"
                     />
                     {errors.password && (
-                        <p className="mt-1 text-sm text-red-500 font-medium">
+                        <p
+                            id="teacher-invite-password-error"
+                            role="alert"
+                            className="mt-1 text-sm font-medium text-red-600"
+                        >
                             {errors.password.message}
                         </p>
                     )}
                 </div>
 
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                    <label
+                        htmlFor="teacher-invite-confirm-password"
+                        className="block text-sm font-bold text-gray-700 mb-2"
+                    >
                         ยืนยันรหัสผ่าน <span className="text-red-500">*</span>
                     </label>
                     <input
                         {...register("confirmPassword")}
+                        id="teacher-invite-confirm-password"
                         type="password"
-                        className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 outline-none transition-base placeholder:text-gray-400 hover:border-emerald-300"
+                        autoComplete="new-password"
+                        disabled={isLoading}
+                        aria-invalid={!!errors.confirmPassword}
+                        aria-describedby={
+                            errors.confirmPassword
+                                ? "teacher-invite-confirm-password-error"
+                                : undefined
+                        }
+                        className="w-full rounded-xl border border-emerald-200 px-4 py-3 outline-none transition-base placeholder:text-gray-500 hover:border-emerald-300 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="กรอกรหัสผ่านอีกครั้ง"
                     />
                     {errors.confirmPassword && (
-                        <p className="mt-1 text-sm text-red-500 font-medium">
+                        <p
+                            id="teacher-invite-confirm-password-error"
+                            role="alert"
+                            className="mt-1 text-sm font-medium text-red-600"
+                        >
                             {errors.confirmPassword.message}
                         </p>
                     )}
@@ -137,16 +195,18 @@ export function AcceptInviteForm({ token, inviteData }: AcceptInviteFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3.5 px-4 bg-[var(--brand-primary)] text-white font-bold rounded-xl hover:bg-[var(--brand-primary-hover)] disabled:opacity-50 transition-base duration-200 shadow-sm"
+                    aria-busy={isLoading}
+                    className={`${AUTH_PRIMARY_BUTTON_CLASS} sm:w-full`}
                 >
-                    {isLoading ? (
-                        <span className="flex items-center justify-center gap-2">
-                            <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                            กำลังลงทะเบียน…
-                        </span>
-                    ) : (
-                        "ลงทะเบียนเข้าร่วมโครงการ"
+                    {isLoading && (
+                        <Loader2
+                            className="h-5 w-5 animate-spin"
+                            aria-hidden="true"
+                        />
                     )}
+                    {isLoading
+                        ? "กำลังลงทะเบียน…"
+                        : "ลงทะเบียนเข้าร่วมโครงการ"}
                 </button>
             </form>
         </div>

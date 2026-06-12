@@ -16,12 +16,14 @@ interface UseForgotPasswordReturn {
     errors: ReturnType<typeof useForm<ForgotPasswordFormData>>["formState"]["errors"];
     isSubmitting: boolean;
     emailSent: boolean;
+    serverError: string | null;
     onSubmit: (data: ForgotPasswordFormData) => Promise<void>;
 }
 
 export function useForgotPassword(): UseForgotPasswordReturn {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [emailSent, setEmailSent] = useState(false);
+    const [serverError, setServerError] = useState<string | null>(null);
 
     const {
         register,
@@ -33,11 +35,13 @@ export function useForgotPassword(): UseForgotPasswordReturn {
 
     const onSubmit = async (data: ForgotPasswordFormData): Promise<void> => {
         setIsSubmitting(true);
+        setServerError(null);
 
         try {
             const result = await requestPasswordReset({ email: data.email });
 
             if (!result.success) {
+                setServerError(result.message);
                 toast.error(result.message);
                 return;
             }
@@ -45,7 +49,9 @@ export function useForgotPassword(): UseForgotPasswordReturn {
             setEmailSent(true);
             toast.success(result.message);
         } catch {
-            toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+            const message = "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
+            setServerError(message);
+            toast.error(message);
         } finally {
             setIsSubmitting(false);
         }
@@ -57,6 +63,7 @@ export function useForgotPassword(): UseForgotPasswordReturn {
         errors,
         isSubmitting,
         emailSent,
+        serverError,
         onSubmit,
     };
 }

@@ -6,6 +6,12 @@ import Image from "next/image";
 import { AuthBackgroundImage } from "@/components/auth/AuthBackgroundImage";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
 import type { Metadata } from "next";
+import {
+    AUTH_CARD_CLASS,
+    AUTH_ERROR_CARD_CLASS,
+    AUTH_HOME_LINK_CLASS,
+    AUTH_PRIMARY_BUTTON_CLASS,
+} from "@/components/auth/authStyles";
 
 export const metadata: Metadata = {
     title: "ลงทะเบียนครูผู้ดูแล | โครงการครูนางฟ้า",
@@ -22,14 +28,14 @@ export default async function InvitePage({ params }: InvitePageProps) {
 
     if (!result.success || !result.invite) {
         return (
-            <div className="relative min-h-dvh flex flex-col overflow-hidden">
+            <div className="relative flex min-h-dvh flex-col overflow-x-hidden">
                 <AuthBackgroundImage />
 
                 <NavbarGreenBar>
                     <div className="ml-auto pr-6 sm:pr-12 lg:pr-[131px] flex items-center">
                         <Link
                             href="/"
-                            className="text-white hover:opacity-80 transition-opacity font-medium text-xl sm:text-2xl lg:text-[30px]"
+                            className={AUTH_HOME_LINK_CLASS}
                         >
                             หน้าหลัก
                         </Link>
@@ -37,17 +43,22 @@ export default async function InvitePage({ params }: InvitePageProps) {
                 </NavbarGreenBar>
 
                 <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-8 sm:pt-12 pb-8">
-                    <div className="w-full max-w-sm bg-white/90 backdrop-blur-md rounded-3xl border-2 border-red-200 shadow-xl p-8 text-center">
+                    <div className={AUTH_ERROR_CARD_CLASS}>
                         <div className="mb-4 flex justify-center">
-                            <XCircle className="w-16 h-16 text-red-400" />
+                            <XCircle
+                                className="w-16 h-16 text-red-400"
+                                aria-hidden="true"
+                            />
                         </div>
                         <h1 className="text-2xl font-bold text-gray-800 mb-3">
                             ลิงก์ไม่ถูกต้อง
                         </h1>
-                        <p className="text-gray-600 mb-6">{result.message}</p>
+                        <p className="mb-6 break-words text-gray-600">
+                            {result.message}
+                        </p>
                         <Link
                             href="/"
-                            className="inline-block px-6 py-3 bg-[#00DB87] hover:bg-[#00c078] text-white rounded-full font-bold shadow-md hover:shadow-lg transition-base"
+                            className={AUTH_PRIMARY_BUTTON_CLASS}
                         >
                             กลับหน้าหลัก
                         </Link>
@@ -58,7 +69,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
     }
 
     return (
-        <div className="relative min-h-dvh flex flex-col overflow-hidden">
+        <div className="relative flex min-h-dvh flex-col overflow-x-hidden">
             {/* Background image — grass/flowers */}
             <AuthBackgroundImage />
 
@@ -68,7 +79,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
                 <div className="ml-auto pr-6 sm:pr-12 lg:pr-[131px] flex items-center">
                     <Link
                         href="/"
-                        className="text-white hover:opacity-80 transition-opacity font-medium text-xl sm:text-2xl lg:text-[30px]"
+                        className={AUTH_HOME_LINK_CLASS}
                     >
                         หน้าหลัก
                     </Link>
@@ -96,14 +107,14 @@ export default async function InvitePage({ params }: InvitePageProps) {
                         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
                             สร้างบัญชีครูนางฟ้า
                         </h2>
-                        <p className="text-sm text-gray-700 font-medium">
+                        <p className="text-sm font-medium leading-6 text-gray-700">
                             คุณได้รับคำเชิญให้เข้าร่วมระบบ กรุณาตั้งรหัสผ่าน
                         </p>
                     </div>
                 </div>
 
                 {/* Form Card */}
-                <div className="w-full max-w-sm bg-white/90 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-sm px-6 sm:px-8 py-7 sm:py-8">
+                <div className={AUTH_CARD_CLASS}>
                     <AcceptInviteForm
                         token={token}
                         inviteData={result.invite}

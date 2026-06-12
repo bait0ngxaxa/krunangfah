@@ -7,15 +7,50 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import {
     signInSchema,
     type SignInFormData,
 } from "@/lib/validations/auth.validation";
 import { getRateLimitMessageFromNextAuthCode } from "@/lib/rate-limit-errors";
+import {
+    AUTH_INPUT_CLASS,
+    AUTH_PRIMARY_BUTTON_CLASS,
+    AUTH_TEXT_LINK_CLASS,
+} from "@/components/auth/authStyles";
 
 interface SignInFormProps {
     callbackUrl?: string;
+}
+
+interface SignInResponseBody {
+    success?: boolean;
+    message?: string;
+    code?: string;
+    redirectTo?: string;
+}
+
+function isSignInResponseBody(value: unknown): value is SignInResponseBody {
+    if (!value || typeof value !== "object") return false;
+
+    const body = value as Record<string, unknown>;
+    return (
+        (body.success === undefined || typeof body.success === "boolean") &&
+        (body.message === undefined || typeof body.message === "string") &&
+        (body.code === undefined || typeof body.code === "string") &&
+        (body.redirectTo === undefined || typeof body.redirectTo === "string")
+    );
+}
+
+async function readSignInResponse(
+    response: Response,
+): Promise<SignInResponseBody> {
+    try {
+        const body: unknown = await response.json();
+        return isSignInResponseBody(body) ? body : {};
+    } catch {
+        return {};
+    }
 }
 
 export function getSafeCallbackUrl(callbackUrl?: string): string {
@@ -61,23 +96,21 @@ export function SignInForm({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
-            const result = (await response.json()) as {
-                success?: boolean;
-                message?: string;
-                code?: string;
-                redirectTo?: string;
-            };
+            const result = await readSignInResponse(response);
 
             if (!response.ok || !result.success) {
                 const rateLimitMessage = getRateLimitMessageFromNextAuthCode(
                     result.code,
                 );
                 if (rateLimitMessage) {
+                    setError(rateLimitMessage);
                     toast.error(rateLimitMessage);
                     return;
                 }
 
-                toast.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+                const message = result.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+                setError(message);
+                toast.error(message);
                 return;
             }
 
@@ -85,7 +118,9 @@ export function SignInForm({
             router.push(getSafeCallbackUrl(callbackUrl || result.redirectTo));
             router.refresh();
         } catch {
-            toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+            const message = "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
+            setError(message);
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }
@@ -109,14 +144,14 @@ export function SignInForm({
                     disabled={isLoading}
                     aria-invalid={errors.email ? "true" : "false"}
                     aria-describedby={errors.email ? "email-error" : undefined}
-                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
+                    className={AUTH_INPUT_CLASS}
                     placeholder="your@email.com"
                 />
                 {errors.email && (
                     <p
                         id="email-error"
                         role="alert"
-                        className="mt-1.5 text-sm text-red-500 font-medium"
+                        className="mt-1.5 text-sm font-medium text-red-600"
                     >
                         {errors.email.message}
                     </p>
@@ -140,14 +175,14 @@ export function SignInForm({
                     aria-describedby={
                         errors.password ? "password-error" : undefined
                     }
-                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
+                    className={AUTH_INPUT_CLASS}
                     placeholder="••••••••"
                 />
                 {errors.password && (
                     <p
                         id="password-error"
                         role="alert"
-                        className="mt-1.5 text-sm text-red-500 font-medium"
+                        className="mt-1.5 text-sm font-medium text-red-600"
                     >
                         {errors.password.message}
                     </p>
@@ -155,7 +190,7 @@ export function SignInForm({
                 <div className="mt-2 text-right">
                     <Link
                         href="/forgot-password"
-                        className="text-sm text-emerald-500 hover:text-emerald-600 font-medium transition-colors"
+                        className={AUTH_TEXT_LINK_CLASS}
                     >
                         ลืมรหัสผ่าน?
                     </Link>
@@ -163,8 +198,18 @@ export function SignInForm({
             </div>
 
             {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-                    <p className="text-sm text-red-600 text-center">{error}</p>
+                <div
+                    className="rounded-xl border border-red-200 bg-red-50 p-3"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <p className="flex items-start gap-1.5 text-sm text-red-600">
+                        <AlertCircle
+                            className="mt-0.5 h-4 w-4 shrink-0"
+                            aria-hidden="true"
+                        />
+                        <span className="min-w-0 break-words">{error}</span>
+                    </p>
                 </div>
             )}
 
@@ -173,7 +218,7 @@ export function SignInForm({
                     type="submit"
                     disabled={isLoading}
                     aria-busy={isLoading}
-                    className="inline-flex items-center justify-center gap-2 bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-base duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+                    className={AUTH_PRIMARY_BUTTON_CLASS}
                 >
                     {isLoading && (
                         <Loader2

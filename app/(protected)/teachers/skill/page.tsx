@@ -9,8 +9,9 @@ export default function TeacherSkillPage() {
         {
             id: "videos",
             label: (
-                <span className="flex items-center gap-1.5">
-                    <BookOpen className="w-4 h-4" /> อัพสกิลคุณครู
+                <span className="flex min-w-0 items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <span className="truncate">อัพสกิลคุณครู</span>
                 </span>
             ),
             content: <VideoUpskillTab />,
@@ -18,9 +19,11 @@ export default function TeacherSkillPage() {
         {
             id: "tools",
             label: (
-                <span className="flex items-center gap-1.5">
-                    <Package className="w-4 h-4" /> เครื่องมือ Healthy Emotion
-                    Box
+                <span className="flex min-w-0 items-center gap-1.5">
+                    <Package className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <span className="truncate">
+                        เครื่องมือ Healthy Emotion Box
+                    </span>
                 </span>
             ),
             content: <ToolsIntroTab />,
@@ -34,11 +37,12 @@ export default function TeacherSkillPage() {
                 subtitle="เรียนรู้และพัฒนาทักษะในการดูแลสุขภาพจิตนักเรียน"
                 icon={GraduationCap}
                 imageSrc="/image/upskills.webp"
+                imageAlt="ภาพประกอบการพัฒนาทักษะคุณครู"
             />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8 relative z-10 w-full space-y-6">
                 {/* Tabs Component */}
-                <Tabs tabs={tabs} defaultTab="videos" />
+                <Tabs tabs={tabs} defaultTab="videos" syncWithUrl />
             </div>
         </div>
     );

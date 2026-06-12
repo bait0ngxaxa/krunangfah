@@ -36,7 +36,7 @@ function getVariantStyle(variant: HeaderVariant): VariantStyle {
             "relative bg-white rounded-2xl border-2 border-gray-100 shadow-sm p-5 sm:p-6 overflow-hidden group",
         accent: "",
         iconWrap:
-            "w-12 h-12 rounded-2xl bg-white border-2 border-[var(--brand-primary)] flex items-center justify-center shadow-sm group-hover:scale-105 group-hover:rotate-3 transition-base duration-500",
+            "w-12 h-12 rounded-2xl bg-white border-2 border-[var(--brand-primary)] flex items-center justify-center shadow-sm transition-colors duration-200 group-hover:bg-[var(--brand-primary-soft)]",
         icon: "w-6 h-6 text-[var(--brand-primary)]",
     };
 }
@@ -57,7 +57,7 @@ export function PageHeaderCard({
             <div className="relative flex items-center gap-4">
                 <div className="relative shrink-0">
                     <div className={style.iconWrap}>
-                        <Icon className={style.icon} />
+                        <Icon className={style.icon} aria-hidden="true" />
                     </div>
                 </div>
 

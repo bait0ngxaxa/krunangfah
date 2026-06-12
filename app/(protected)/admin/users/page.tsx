@@ -26,18 +26,15 @@ export default async function AdminUsersPage() {
     ]);
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4 relative overflow-hidden">
-            {/* Decorative Background */}
-            <div className="absolute top-0 left-0 w-96 h-96 bg-[var(--brand-primary)] rounded-full mix-blend-multiply filter blur-3xl opacity-10 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#34D399] rounded-full mix-blend-multiply filter blur-3xl opacity-10 translate-x-1/2 translate-y-1/2 pointer-events-none" />
-
-            <div className="max-w-4xl mx-auto relative z-10">
+        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 px-4 py-6">
+            <div className="mx-auto max-w-4xl">
                 <BackButton href="/dashboard" label="กลับหน้าหลัก" />
 
                 <PageHeaderCard
                     icon={UsersRound}
                     title="จัดการผู้ใช้งาน"
                     description="ดูข้อมูลผู้ใช้ทั้งหมดในระบบ"
+                    variant="neutral"
                     className="mb-8"
                 />
 

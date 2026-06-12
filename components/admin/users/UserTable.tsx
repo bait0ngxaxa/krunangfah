@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+    AlertCircle,
     Users,
     UserCircle,
     School,
@@ -10,6 +11,7 @@ import {
     Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PaginationControls } from "@/components/ui/PaginationControls";
@@ -39,23 +41,34 @@ function UserCard({
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const isSystemAdmin = user.role === "system_admin";
-    const initials = user.teacherName
-        ? user.teacherName.charAt(0)
-        : user.email.charAt(0).toUpperCase();
+    const displayName = user.teacherName ?? user.email;
+    const initials = Array.from(displayName.trim()).at(0) ?? "?";
 
-    async function handleConfirmDelete() {
+    async function handleConfirmDelete(): Promise<void> {
+        if (isDeleting) return;
+
+        setDeleteError(null);
         setIsDeleting(true);
-        const result = await deleteUser(user.id);
-        if (result.success) {
-            toast.success(result.message);
-            onMutated();
-        } else {
+        try {
+            const result = await deleteUser(user.id);
+            if (result.success) {
+                toast.success(result.message);
+                onMutated();
+                setShowDeleteDialog(false);
+                return;
+            }
+            setDeleteError(result.message);
             toast.error(result.message);
+        } catch {
+            const message = "ลบผู้ใช้ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+            setDeleteError(message);
+            toast.error(message);
+        } finally {
+            setIsDeleting(false);
         }
-        setIsDeleting(false);
-        setShowDeleteDialog(false);
     }
 
     return (
@@ -63,7 +76,10 @@ function UserCard({
             <div className="flex items-start gap-3">
                 {/* Avatar */}
                 <div className="shrink-0 w-10 h-10 rounded-full bg-linear-to-br from-emerald-100 to-teal-100 flex items-center justify-center ring-1 ring-emerald-200/50">
-                    <span className="text-sm font-bold text-emerald-600">
+                    <span
+                        className="text-sm font-bold text-emerald-700"
+                        aria-hidden="true"
+                    >
                         {initials}
                     </span>
                 </div>
@@ -73,11 +89,19 @@ function UserCard({
                     <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                             {user.teacherName && (
-                                <p className="text-sm font-bold text-gray-800 truncate">
+                                <p
+                                    className="break-words text-sm font-bold leading-5 text-gray-800"
+                                    title={user.teacherName}
+                                    dir="auto"
+                                >
                                     {user.teacherName}
                                 </p>
                             )}
-                            <p className="text-xs text-gray-500 truncate">
+                            <p
+                                className="break-all text-xs leading-5 text-gray-600"
+                                title={user.email}
+                                dir="auto"
+                            >
                                 {user.email}
                             </p>
                         </div>
@@ -93,9 +117,14 @@ function UserCard({
                             <ProfileBadge hasProfile={user.hasTeacherProfile} />
                         )}
                         {user.advisoryClass && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-50 text-gray-600 border border-gray-100">
-                                <GraduationCap className="w-3 h-3" />
-                                {user.advisoryClass}
+                            <span className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-gray-100 bg-gray-50 px-2 py-0.5 text-[10px] font-semibold text-gray-700">
+                                <GraduationCap
+                                    className="h-3 w-3 shrink-0"
+                                    aria-hidden="true"
+                                />
+                                <span className="truncate">
+                                    {user.advisoryClass}
+                                </span>
                             </span>
                         )}
                         {/* Edit button — show for users with teacher profile */}
@@ -103,10 +132,11 @@ function UserCard({
                             <button
                                 type="button"
                                 onClick={() => setIsEditing(true)}
+                                aria-label={`แก้ไขห้องที่ปรึกษาของ ${displayName}`}
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition-colors cursor-pointer"
                                 title="แก้ไขห้องที่ปรึกษา"
                             >
-                                <Pencil className="w-3 h-3" />
+                                <Pencil className="w-3 h-3" aria-hidden="true" />
                                 แก้ไข
                             </button>
                         )}
@@ -129,12 +159,20 @@ function UserCard({
                     )}
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-50">
-                        <div className="flex items-center gap-3 text-[11px] text-gray-400">
+                    <div className="mt-2.5 flex flex-col gap-2 border-t border-gray-50 pt-2.5 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] leading-5 text-gray-600">
                             {user.schoolName && (
-                                <span className="inline-flex items-center gap-1">
-                                    <School className="w-3 h-3" />
-                                    {user.schoolName}
+                                <span className="inline-flex min-w-0 items-center gap-1">
+                                    <School
+                                        className="h-3 w-3 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    <span
+                                        className="truncate"
+                                        title={user.schoolName}
+                                    >
+                                        {user.schoolName}
+                                    </span>
                                 </span>
                             )}
                             <span>
@@ -152,28 +190,49 @@ function UserCard({
 
                         {/* Actions — hidden for system_admin */}
                         {!isSystemAdmin && (
-                            <button
+                            <Button
                                 type="button"
                                 onClick={() => setShowDeleteDialog(true)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600"
+                                aria-label={`ลบ ${displayName} ออกจากระบบ`}
+                                variant="danger"
+                                size="sm"
+                                className="text-xs"
                                 title="ลบผู้ใช้"
                             >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-3 h-3" aria-hidden="true" />
                                 ลบ
-                            </button>
+                            </Button>
                         )}
                     </div>
+
+                    {deleteError && (
+                        <p
+                            className="mt-2 flex items-start gap-1.5 text-xs leading-5 text-red-600"
+                            role="status"
+                            aria-live="polite"
+                        >
+                            <AlertCircle
+                                className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <span>{deleteError}</span>
+                        </p>
+                    )}
                 </div>
             </div>
 
             <ConfirmDialog
                 isOpen={showDeleteDialog}
                 title="ลบผู้ใช้ออกจากระบบ"
-                message={`ต้องการลบ "${user.teacherName ?? user.email}" ออกจากระบบใช่หรือไม่? บัญชีนี้จะถูกปิดใช้งานและไม่สามารถเข้าสู่ระบบได้อีก`}
+                message={`ต้องการลบ "${displayName}" ออกจากระบบใช่หรือไม่? บัญชีนี้จะถูกปิดใช้งานและไม่สามารถเข้าสู่ระบบได้อีก`}
                 confirmLabel="ยืนยันลบ"
                 isLoading={isDeleting}
                 onConfirm={handleConfirmDelete}
-                onCancel={() => setShowDeleteDialog(false)}
+                onCancel={() => {
+                    if (isDeleting) return;
+                    setDeleteError(null);
+                    setShowDeleteDialog(false);
+                }}
             />
         </div>
     );
@@ -207,7 +266,7 @@ export function UserTable({
                 />
             ) : (
                 <>
-                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                    <div className="max-h-[600px] space-y-3 overflow-y-auto pr-1">
                         {users.map((user) => (
                             <UserCard
                                 key={user.id}

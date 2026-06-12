@@ -13,14 +13,14 @@ export function PrimaryAdminManager({
 
     if (admins.length <= 1) {
         return (
-            <p className="text-sm text-gray-400 text-center py-4">
+            <p className="py-4 text-center text-sm text-gray-600">
                 ยังไม่มีผู้ดูแลคนอื่นในโรงเรียน
             </p>
         );
     }
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-2" aria-live="polite">
             {admins.map((admin) => (
                 <AdminListItem
                     key={admin.id}
@@ -33,7 +33,7 @@ export function PrimaryAdminManager({
                 />
             ))}
 
-            <p className="text-xs text-gray-400 pt-1">
+            <p className="pt-1 text-xs leading-5 text-gray-600">
                 ผู้ดูแลที่มีสิทธิ์แอดมินสามารถจัดการห้องเรียน
                 และจัดการรายชื่อครูได้
             </p>

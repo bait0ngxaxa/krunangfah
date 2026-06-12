@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const signInSchema = z.object({
-    email: z.string().email("อีเมลไม่ถูกต้อง"),
+    email: z.string().trim().email("อีเมลไม่ถูกต้อง").max(254, "อีเมลยาวเกินไป"),
     password: z.string().min(1, "กรุณากรอกรหัสผ่าน"),
 });
 
@@ -20,7 +20,7 @@ export const inviteRegisterSchema = z
 export type InviteRegisterFormData = z.infer<typeof inviteRegisterSchema>;
 
 export const forgotPasswordSchema = z.object({
-    email: z.string().email("อีเมลไม่ถูกต้อง"),
+    email: z.string().trim().email("อีเมลไม่ถูกต้อง").max(254, "อีเมลยาวเกินไป"),
 });
 
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;

@@ -24,16 +24,17 @@ export function UserManagement({ initialData, schools }: UserManagementProps) {
         ["users", selectedSchoolId, searchQuery, page],
         actionFetcher(() =>
             getUsers({
-                schoolId: selectedSchoolId === "all" ? undefined : selectedSchoolId,
+                schoolId:
+                    selectedSchoolId === "all" ? undefined : selectedSchoolId,
                 search: searchQuery || undefined,
                 page,
-            })
+            }),
         ),
         {
             ...searchSWRConfig,
             fallbackData: initialData,
             keepPreviousData: true,
-        }
+        },
     );
 
     const handleSchoolChange = useCallback((schoolId: string) => {
@@ -61,13 +62,16 @@ export function UserManagement({ initialData, schools }: UserManagementProps) {
             )}
 
             {/* Search */}
-            <div className="relative bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-4 flex items-center gap-3 overflow-hidden">
+            <div className="relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-4 shadow-sm">
                 <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-emerald-200/30 to-green-300/20 rounded-full blur-lg pointer-events-none" />
                 <div className="relative p-2.5 bg-linear-to-br from-emerald-100 to-green-100 rounded-xl shadow-inner ring-1 ring-emerald-200/50 text-emerald-500">
                     {isValidating ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2
+                            className="h-5 w-5 animate-spin"
+                            aria-hidden="true"
+                        />
                     ) : (
-                        <Search className="w-5 h-5" />
+                        <Search className="h-5 w-5" aria-hidden="true" />
                     )}
                 </div>
                 <input
@@ -75,7 +79,9 @@ export function UserManagement({ initialData, schools }: UserManagementProps) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="ค้นหาด้วย email หรือชื่อ..."
-                    className="relative flex-1 min-w-0 px-4 py-2.5 border border-emerald-100 rounded-xl focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 transition-base outline-none bg-white/70 backdrop-blur-sm hover:border-emerald-300 text-gray-600 font-medium placeholder:text-gray-400"
+                    aria-label="ค้นหาผู้ใช้งานด้วยอีเมลหรือชื่อ"
+                    aria-busy={isValidating}
+                    className="relative min-w-0 flex-1 rounded-xl border border-emerald-100 bg-white px-4 py-2.5 font-medium text-gray-800 outline-none transition-base placeholder:text-gray-500 hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200"
                 />
             </div>
 

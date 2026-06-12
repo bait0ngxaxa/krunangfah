@@ -14,12 +14,16 @@ export function AdminListItem({
     const displayName = admin.teacherName ?? admin.email;
 
     return (
-        <div className="rounded-xl border border-gray-100 bg-gray-50/50 overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <div className="overflow-hidden rounded-xl border border-gray-100 bg-gray-50/50">
+            <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 {/* Admin info */}
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-gray-800 truncate">
+                        <span
+                            className="min-w-0 break-words text-sm font-medium leading-5 text-gray-800"
+                            title={displayName}
+                            dir="auto"
+                        >
                             {displayName}
                         </span>
                         {isCurrentUser && (
@@ -34,7 +38,11 @@ export function AdminListItem({
                         )}
                     </div>
                     {admin.teacherName && (
-                        <p className="text-xs text-gray-400 truncate mt-0.5">
+                        <p
+                            className="mt-0.5 break-all text-xs leading-5 text-gray-600"
+                            title={admin.email}
+                            dir="auto"
+                        >
                             {admin.email}
                         </p>
                     )}
@@ -46,7 +54,13 @@ export function AdminListItem({
                         type="button"
                         onClick={() => onToggle(admin.id)}
                         disabled={isLoading}
-                        className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        aria-label={
+                            admin.isPrimary
+                                ? `ถอดสิทธิ์แอดมินของ ${displayName}`
+                                : `เพิ่มสิทธิ์แอดมินให้ ${displayName}`
+                        }
+                        aria-pressed={admin.isPrimary}
+                        className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                             isConfirming
                                 ? "bg-red-500 text-white hover:bg-red-600"
                                 : admin.isPrimary
@@ -70,13 +84,16 @@ export function AdminListItem({
                 <div className="px-4 pb-3 animate-in fade-in slide-in-from-top-1 duration-200">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-2">
                         <div className="flex items-start gap-2">
-                            <ShieldAlert className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                            <div className="text-xs text-red-700 space-y-1">
-                                <p className="font-bold">
+                            <ShieldAlert
+                                className="mt-0.5 h-4 w-4 shrink-0 text-red-500"
+                                aria-hidden="true"
+                            />
+                            <div className="min-w-0 space-y-1 text-xs text-red-700">
+                                <p className="break-words font-bold">
                                     ถอดสิทธิ์แอดมินของ &quot;{displayName}
                                     &quot;?
                                 </p>
-                                <p className="text-red-600">
+                                <p className="text-red-600 leading-5">
                                     ผู้ดูแลคนนี้จะไม่สามารถจัดการห้องเรียน
                                     เชิญครู หรือจัดการรายชื่อครูได้อีก
                                 </p>

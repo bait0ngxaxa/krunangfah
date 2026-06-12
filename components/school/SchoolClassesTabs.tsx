@@ -31,17 +31,20 @@ export function SchoolClassesTabs({
                 </span>
             ),
             content: (
-                <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-gray-100">
-                    <div className="flex items-center gap-3 mb-4">
+                <div className="rounded-2xl border-2 border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+                    <div className="mb-4 flex items-start gap-3">
                         <div className="w-8 h-8 rounded-xl bg-white border border-[var(--brand-primary)] flex items-center justify-center shadow-sm">
-                            <UserCheck className="w-4 h-4 text-[var(--brand-primary)]" />
+                            <UserCheck
+                                className="w-4 h-4 text-[var(--brand-primary)]"
+                                aria-hidden="true"
+                            />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <h2 className="text-base font-bold text-gray-800">
                                 ครูที่ลงทะเบียนแล้ว
                             </h2>
-                            <p className="text-xs text-gray-400">
-                                {registeredTeachers.length} คน —
+                            <p className="text-xs leading-5 text-gray-600">
+                                {registeredTeachers.length} คน,
                                 แก้ไขห้องที่ปรึกษา / เปลี่ยนบทบาท
                             </p>
                         </div>
@@ -63,16 +66,19 @@ export function SchoolClassesTabs({
                 </span>
             ),
             content: (
-                <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-gray-100">
-                    <div className="flex items-center gap-3 mb-4">
+                <div className="rounded-2xl border-2 border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+                    <div className="mb-4 flex items-start gap-3">
                         <div className="w-8 h-8 rounded-xl bg-white border border-amber-400 flex items-center justify-center shadow-sm">
-                            <Shield className="w-4 h-4 text-amber-500" />
+                            <Shield
+                                className="w-4 h-4 text-amber-500"
+                                aria-hidden="true"
+                            />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <h2 className="text-base font-bold text-gray-800">
                                 จัดการสิทธิ์ผู้ดูแล
                             </h2>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs leading-5 text-gray-600">
                                 เพิ่มหรือถอดสิทธิ์แอดมิน ให้ผู้ดูแลคนอื่น
                             </p>
                         </div>

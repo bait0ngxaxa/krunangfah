@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useCallback, type KeyboardEvent, type ReactNode } from "react";
+import {
+    useId,
+    useState,
+    useCallback,
+    type KeyboardEvent,
+    type ReactNode,
+} from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 export interface Tab {
@@ -17,6 +23,7 @@ interface TabsProps {
 }
 
 export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
+    const instanceId = useId();
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
@@ -77,17 +84,28 @@ export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
 
             handleTabChange(nextTabId);
             window.requestAnimationFrame(() => {
-                document.getElementById(`tab-${nextTabId}`)?.focus();
+                document
+                    .getElementById(`${instanceId}-tab-${nextTabId}`)
+                    ?.focus();
             });
         },
-        [handleTabChange, tabs],
+        [handleTabChange, instanceId, tabs],
     );
 
     // In URL-sync mode, the query string is the source of truth (supports back/forward reliably).
-    const resolvedActiveTab = syncWithUrl ? resolveUrlTab() : activeTab;
+    const fallbackTabId = defaultTab || tabs[0]?.id || "";
+    const resolvedActiveTab = syncWithUrl
+        ? resolveUrlTab()
+        : tabs.some((tab) => tab.id === activeTab)
+          ? activeTab
+          : fallbackTabId;
     const activeTabContent = tabs.find((tab) => tab.id === resolvedActiveTab)?.content;
-    const activeTabButtonId = `tab-${resolvedActiveTab}`;
-    const tabPanelId = "tabs-panel";
+    const activeTabButtonId = `${instanceId}-tab-${resolvedActiveTab}`;
+    const tabPanelId = `${instanceId}-tabs-panel`;
+
+    if (tabs.length === 0) {
+        return null;
+    }
 
     return (
         <div className="w-full">
@@ -101,7 +119,7 @@ export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
                         <button
                             key={tab.id}
                             type="button"
-                            id={`tab-${tab.id}`}
+                            id={`${instanceId}-tab-${tab.id}`}
                             role="tab"
                             aria-selected={resolvedActiveTab === tab.id}
                             aria-controls={tabPanelId}

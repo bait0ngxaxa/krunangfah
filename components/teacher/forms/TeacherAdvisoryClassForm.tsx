@@ -30,6 +30,7 @@ interface AdvisoryClassSelectProps {
     classes: AdvisoryClassOption[];
     allClassesLabel: string;
     isLoading: boolean;
+    hasError: boolean;
     onChange: (value: string) => void;
 }
 
@@ -46,6 +47,7 @@ function AdvisoryClassSelect({
     classes,
     allClassesLabel,
     isLoading,
+    hasError,
     onChange,
 }: AdvisoryClassSelectProps) {
     return (
@@ -53,7 +55,10 @@ function AdvisoryClassSelect({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             disabled={isLoading}
-            className="flex-1 min-w-0 px-3 py-1.5 border border-emerald-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 outline-none bg-white"
+            aria-label="เลือกห้องที่ปรึกษา"
+            aria-invalid={hasError}
+            aria-describedby={hasError ? "advisory-class-error" : undefined}
+            className="min-w-0 flex-1 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs text-gray-800 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:bg-gray-50"
         >
             <option value="">เลือกห้อง</option>
             <option value="ทุกห้อง">{allClassesLabel}</option>
@@ -111,48 +116,81 @@ export function TeacherAdvisoryClassForm({
     );
     const [isLoading, setIsLoading] = useState(!initialClasses && !!schoolId);
     const [isSaving, setIsSaving] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
         if (initialClasses || !schoolId) return;
 
+        let isActive = true;
         getClassesBySchool(schoolId)
-            .then((result) => setClasses(result))
-            .catch(() => toast.error("ไม่สามารถโหลดรายชื่อห้องเรียนได้"))
-            .finally(() => setIsLoading(false));
+            .then((result) => {
+                if (!isActive) return;
+                setClasses(result);
+            })
+            .catch(() => {
+                if (!isActive) return;
+                const message = "ไม่สามารถโหลดรายชื่อห้องเรียนได้";
+                setErrorMessage(message);
+                toast.error(message);
+            })
+            .finally(() => {
+                if (!isActive) return;
+                setIsLoading(false);
+            });
+
+        return () => {
+            isActive = false;
+        };
     }, [initialClasses, schoolId]);
 
     async function handleSave(): Promise<void> {
-        if (!selectedClass) return;
+        if (!selectedClass || isSaving) return;
 
+        setErrorMessage(null);
         setIsSaving(true);
-        const result = await updateTeacherProfile(teacherId, {
-            advisoryClass: selectedClass,
-        });
-        setIsSaving(false);
+        try {
+            const result = await updateTeacherProfile(teacherId, {
+                advisoryClass: selectedClass,
+            });
 
-        if (!result.success) {
-            toast.error(result.message);
-            return;
+            if (!result.success) {
+                setErrorMessage(result.message);
+                toast.error(result.message);
+                return;
+            }
+
+            toast.success(result.message);
+            onSaved();
+        } catch {
+            const message = "บันทึกห้องที่ปรึกษาไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+            setErrorMessage(message);
+            toast.error(message);
+        } finally {
+            setIsSaving(false);
         }
-
-        toast.success(result.message);
-        onSaved();
     }
 
     return (
         <div
             className={cn(
-                "mt-2 pt-2 border-t border-emerald-100 flex items-center gap-2",
+                "mt-2 flex flex-wrap items-center gap-2 border-t border-emerald-100 pt-2",
                 className,
             )}
         >
-            <GraduationCap className="w-4 h-4 text-emerald-500 shrink-0" />
+            <GraduationCap
+                className="w-4 h-4 shrink-0 text-emerald-600"
+                aria-hidden="true"
+            />
             <AdvisoryClassSelect
                 value={selectedClass}
                 classes={classes}
                 allClassesLabel={allClassesLabel}
                 isLoading={isLoading}
-                onChange={setSelectedClass}
+                hasError={!!errorMessage}
+                onChange={(value) => {
+                    setSelectedClass(value);
+                    setErrorMessage(null);
+                }}
             />
             <FormActions
                 isSaving={isSaving}
@@ -161,6 +199,16 @@ export function TeacherAdvisoryClassForm({
                 onSave={handleSave}
                 onCancel={onCancel}
             />
+            {errorMessage && (
+                <p
+                    id="advisory-class-error"
+                    className="basis-full text-xs leading-5 text-red-600"
+                    role="status"
+                    aria-live="polite"
+                >
+                    {errorMessage}
+                </p>
+            )}
         </div>
     );
 }

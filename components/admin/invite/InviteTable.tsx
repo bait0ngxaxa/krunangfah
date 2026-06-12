@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+    AlertCircle,
     ClipboardList,
     Mail,
 } from "lucide-react";
@@ -38,6 +39,7 @@ function InviteCard({
 }) {
     const [copied, setCopied] = useState(false);
     const [isRevoking, setIsRevoking] = useState(false);
+    const [actionError, setActionError] = useState<string | null>(null);
 
     const status = getInviteStatus({
         completedAt: invite.usedAt,
@@ -45,29 +47,46 @@ function InviteCard({
         completedStatus: "used",
     });
 
-    async function handleCopy() {
+    async function handleCopy(): Promise<void> {
         try {
             await navigator.clipboard.writeText(
                 buildInviteUrl(`/invite/admin/${invite.token}`),
             );
             setCopied(true);
+            setActionError(null);
             toast.success("คัดลอกลิงก์คำเชิญเรียบร้อย");
             setTimeout(() => setCopied(false), 2000);
         } catch {
-            toast.error("ไม่สามารถคัดลอกลิงก์ได้ กรุณาคัดลอกด้วยตนเอง");
+            const message = "ไม่สามารถคัดลอกลิงก์ได้ กรุณาคัดลอกด้วยตนเอง";
+            setActionError(message);
+            toast.error(message);
         }
     }
 
-    async function handleConfirmRevoke() {
+    async function handleConfirmRevoke(): Promise<boolean> {
+        if (isRevoking) return false;
+
+        setActionError(null);
         setIsRevoking(true);
-        const result = await revokeSchoolAdminInvite(invite.id);
-        if (result.success) {
-            toast.success(`ยกเลิกคำเชิญสำหรับ "${invite.email}" สำเร็จ`);
-            onRevoked();
-        } else {
-            toast.error("เกิดข้อผิดพลาดในการยกเลิกคำเชิญ");
+        try {
+            const result = await revokeSchoolAdminInvite(invite.id);
+            if (result.success) {
+                toast.success(`ยกเลิกคำเชิญสำหรับ "${invite.email}" สำเร็จ`);
+                onRevoked();
+                return true;
+            }
+            const message = result.message || "เกิดข้อผิดพลาดในการยกเลิกคำเชิญ";
+            setActionError(message);
+            toast.error(message);
+            return false;
+        } catch {
+            const message = "ยกเลิกคำเชิญไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+            setActionError(message);
+            toast.error(message);
+            return false;
+        } finally {
+            setIsRevoking(false);
         }
-        setIsRevoking(false);
     }
 
     return (
@@ -75,10 +94,17 @@ function InviteCard({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                     <div className="shrink-0 w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                        <Mail className="w-4 h-4 text-gray-600" />
+                        <Mail
+                            className="w-4 h-4 text-gray-600"
+                            aria-hidden="true"
+                        />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-gray-800 truncate">
+                        <p
+                            className="break-all text-sm font-bold leading-5 text-gray-800"
+                            title={invite.email}
+                            dir="auto"
+                        >
                             {invite.email}
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
@@ -103,7 +129,20 @@ function InviteCard({
                     )}
                 </div>
             </div>
-            <div className="mt-3 flex flex-col gap-1.5 border-t border-gray-50 pt-3 text-[11px] text-gray-400 sm:flex-row sm:items-center sm:gap-4">
+            {actionError && (
+                <p
+                    className="mt-3 flex items-start gap-1.5 text-xs leading-5 text-red-600"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <AlertCircle
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>{actionError}</span>
+                </p>
+            )}
+            <div className="mt-3 flex flex-col gap-1.5 border-t border-gray-50 pt-3 text-[11px] leading-5 text-gray-600 sm:flex-row sm:items-center sm:gap-4">
                 <span>
                     สร้างเมื่อ{" "}
                     {formatInviteDate(invite.createdAt)}
@@ -121,7 +160,9 @@ function InviteCard({
                     </span>
                 </span>
                 {invite.creator?.name && (
-                    <span className="break-words">โดย {invite.creator.name}</span>
+                    <span className="break-words" title={invite.creator.name}>
+                        โดย {invite.creator.name}
+                    </span>
                 )}
             </div>
         </div>

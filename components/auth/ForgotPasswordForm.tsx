@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { AlertCircle, Loader2, Mail } from "lucide-react";
 import { useForgotPassword } from "@/hooks/useForgotPassword";
+import {
+    AUTH_INPUT_CLASS,
+    AUTH_PRIMARY_BUTTON_CLASS,
+    AUTH_TEXT_LINK_CLASS,
+} from "@/components/auth/authStyles";
 
 export function ForgotPasswordForm() {
     const {
@@ -11,6 +16,7 @@ export function ForgotPasswordForm() {
         errors,
         isSubmitting,
         emailSent,
+        serverError,
         onSubmit,
     } = useForgotPassword();
 
@@ -18,7 +24,10 @@ export function ForgotPasswordForm() {
         return (
             <div className="text-center space-y-4">
                 <div className="mx-auto w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center">
-                    <Mail className="w-8 h-8 text-emerald-500" />
+                    <Mail
+                        className="w-8 h-8 text-emerald-500"
+                        aria-hidden="true"
+                    />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900">
                     ส่งลิงก์แล้ว
@@ -27,12 +36,12 @@ export function ForgotPasswordForm() {
                     กรุณาตรวจสอบอีเมลของคุณ หากอีเมลนี้มีอยู่ในระบบ
                     คุณจะได้รับลิงก์สำหรับรีเซ็ตรหัสผ่าน
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-gray-600">
                     ลิงก์จะหมดอายุภายใน 1 ชั่วโมง
                 </p>
                 <Link
                     href="/signin"
-                    className="inline-block mt-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                    className={`mt-2 inline-block ${AUTH_TEXT_LINK_CLASS}`}
                 >
                     กลับไปหน้าเข้าสู่ระบบ
                 </Link>
@@ -55,22 +64,51 @@ export function ForgotPasswordForm() {
                     id="email"
                     autoComplete="email"
                     disabled={isSubmitting}
-                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
+                    aria-invalid={!!errors.email}
+                    aria-describedby={
+                        errors.email ? "forgot-email-error" : undefined
+                    }
+                    className={AUTH_INPUT_CLASS}
                     placeholder="your@email.com"
                 />
                 {errors.email && (
-                    <p className="mt-1.5 text-sm text-red-500 font-medium">
+                    <p
+                        id="forgot-email-error"
+                        role="alert"
+                        className="mt-1.5 text-sm font-medium text-red-600"
+                    >
                         {errors.email.message}
                     </p>
                 )}
             </div>
 
+            {serverError && (
+                <p
+                    className="flex items-start gap-1.5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <AlertCircle
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span className="min-w-0 break-words">{serverError}</span>
+                </p>
+            )}
+
             <div className="flex justify-center pt-1">
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-base duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+                    aria-busy={isSubmitting}
+                    className={AUTH_PRIMARY_BUTTON_CLASS}
                 >
+                    {isSubmitting && (
+                        <Loader2
+                            className="h-5 w-5 animate-spin"
+                            aria-hidden="true"
+                        />
+                    )}
                     {isSubmitting ? "กำลังส่ง…" : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
                 </button>
             </div>
@@ -78,7 +116,7 @@ export function ForgotPasswordForm() {
             <div className="text-center">
                 <Link
                     href="/signin"
-                    className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                    className={AUTH_TEXT_LINK_CLASS}
                 >
                     กลับไปหน้าเข้าสู่ระบบ
                 </Link>

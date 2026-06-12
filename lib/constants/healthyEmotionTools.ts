@@ -106,7 +106,7 @@ export const HEALTHY_EMOTION_TOOLS: HealthyEmotionTool[] = [
     },
 ];
 
-export const COLOR_STYLES: Record<string, string> = {
+export const COLOR_STYLES: Record<HealthyEmotionTool["color"], string> = {
     pink: "bg-pink-500",
     purple: "bg-purple-500",
     blue: "bg-blue-500",
@@ -118,7 +118,7 @@ export const COLOR_STYLES: Record<string, string> = {
     rose: "bg-rose-500",
 };
 
-export const BORDER_STYLES: Record<string, string> = {
+export const BORDER_STYLES: Record<HealthyEmotionTool["color"], string> = {
     pink: "border-pink-200",
     purple: "border-purple-200",
     blue: "border-blue-200",

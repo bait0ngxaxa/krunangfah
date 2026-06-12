@@ -5,6 +5,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { AlertCircle, Loader2 } from "lucide-react";
+import {
+    AUTH_INPUT_CLASS,
+    AUTH_PRIMARY_BUTTON_CLASS,
+} from "@/components/auth/authStyles";
 import {
     inviteRegisterSchema,
     type InviteRegisterFormData,
@@ -16,6 +21,32 @@ interface InviteRegisterFormProps {
     token: string;
     email: string;
     redirectTo?: string;
+}
+
+interface InviteSignInResponse {
+    success?: boolean;
+    code?: string;
+}
+
+function isInviteSignInResponse(value: unknown): value is InviteSignInResponse {
+    if (!value || typeof value !== "object") return false;
+
+    const body = value as Record<string, unknown>;
+    return (
+        (body.success === undefined || typeof body.success === "boolean") &&
+        (body.code === undefined || typeof body.code === "string")
+    );
+}
+
+async function readInviteSignInResponse(
+    response: Response,
+): Promise<InviteSignInResponse> {
+    try {
+        const body: unknown = await response.json();
+        return isInviteSignInResponse(body) ? body : {};
+    } catch {
+        return {};
+    }
 }
 
 export function InviteRegisterForm({
@@ -35,48 +66,57 @@ export function InviteRegisterForm({
         resolver: zodResolver(inviteRegisterSchema),
     });
 
-    const onSubmit = async (data: InviteRegisterFormData) => {
+    const onSubmit = async (data: InviteRegisterFormData): Promise<void> => {
+        if (isLoading) return;
+
         setIsLoading(true);
         setServerError(null);
 
-        const result = await acceptSchoolAdminInvite(token, data.password);
+        try {
+            const result = await acceptSchoolAdminInvite(token, data.password);
 
-        if (!result.success) {
-            setServerError(result.message);
-            setIsLoading(false);
-            return;
-        }
+            if (!result.success) {
+                setServerError(result.message);
+                return;
+            }
 
-        toast.success("สร้างบัญชีสำเร็จ กำลังเข้าสู่ระบบ…");
+            toast.success("สร้างบัญชีสำเร็จ กำลังเข้าสู่ระบบ…");
 
-        const signInResponse = await fetch("/api/auth/signin", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password: data.password }),
-        });
-        const signInResult = (await signInResponse.json()) as {
-            success?: boolean;
-            code?: string;
-        };
+            const signInResponse = await fetch("/api/auth/signin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password: data.password }),
+            });
+            const signInResult = await readInviteSignInResponse(signInResponse);
 
-        if (!signInResponse.ok || !signInResult.success) {
-            const rateLimitMessage = getRateLimitMessageFromNextAuthCode(
-                signInResult.code,
-            );
-            if (rateLimitMessage) {
-                toast.error(rateLimitMessage);
+            if (!signInResponse.ok || !signInResult.success) {
+                const rateLimitMessage = getRateLimitMessageFromNextAuthCode(
+                    signInResult.code,
+                );
+                if (rateLimitMessage) {
+                    setServerError(rateLimitMessage);
+                    toast.error(rateLimitMessage);
+                    router.push("/signin");
+                    return;
+                }
+
+                const message = "สร้างบัญชีสำเร็จ กรุณาเข้าสู่ระบบด้วยตัวเอง";
+                setServerError(message);
+                toast.error(message);
                 router.push("/signin");
                 return;
             }
 
-            toast.error("สร้างบัญชีสำเร็จ กรุณาเข้าสู่ระบบด้วยตัวเอง");
-            router.push("/signin");
-            return;
+            const destination = result.redirectTo ?? defaultRedirectTo;
+            router.push(destination);
+            router.refresh();
+        } catch {
+            const message = "สร้างบัญชีไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+            setServerError(message);
+            toast.error(message);
+        } finally {
+            setIsLoading(false);
         }
-
-        const destination = result.redirectTo ?? defaultRedirectTo;
-        router.push(destination);
-        router.refresh();
     };
 
     return (
@@ -94,7 +134,8 @@ export function InviteRegisterForm({
                     type="email"
                     readOnly
                     value={email}
-                    className="w-full px-4 py-3.5 border-2 border-emerald-100 rounded-full bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
+                    aria-label="อีเมลจากคำเชิญ"
+                    className="w-full cursor-not-allowed rounded-full border-2 border-emerald-100 bg-gray-50 px-4 py-3.5 text-gray-600 outline-none"
                 />
             </div>
 
@@ -112,11 +153,19 @@ export function InviteRegisterForm({
                     id="password"
                     autoComplete="new-password"
                     disabled={isLoading}
-                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
+                    aria-invalid={!!errors.password}
+                    aria-describedby={
+                        errors.password ? "invite-password-error" : undefined
+                    }
+                    className={AUTH_INPUT_CLASS}
                     placeholder="อย่างน้อย 6 ตัวอักษร"
                 />
                 {errors.password && (
-                    <p className="mt-1.5 text-sm text-red-500 font-medium">
+                    <p
+                        id="invite-password-error"
+                        role="alert"
+                        className="mt-1.5 text-sm font-medium text-red-600"
+                    >
                         {errors.password.message}
                     </p>
                 )}
@@ -136,20 +185,40 @@ export function InviteRegisterForm({
                     id="confirmPassword"
                     autoComplete="new-password"
                     disabled={isLoading}
-                    className="w-full px-4 py-3.5 border-2 border-emerald-300 rounded-full focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-base outline-none text-gray-800 placeholder:text-gray-400"
+                    aria-invalid={!!errors.confirmPassword}
+                    aria-describedby={
+                        errors.confirmPassword
+                            ? "invite-confirm-password-error"
+                            : undefined
+                    }
+                    className={AUTH_INPUT_CLASS}
                     placeholder="••••••••"
                 />
                 {errors.confirmPassword && (
-                    <p className="mt-1.5 text-sm text-red-500 font-medium">
+                    <p
+                        id="invite-confirm-password-error"
+                        role="alert"
+                        className="mt-1.5 text-sm font-medium text-red-600"
+                    >
                         {errors.confirmPassword.message}
                     </p>
                 )}
             </div>
 
             {serverError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-                    <p className="text-sm text-red-600 text-center">
-                        {serverError}
+                <div
+                    className="rounded-xl border border-red-200 bg-red-50 p-3"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <p className="flex items-start gap-1.5 text-sm text-red-600">
+                        <AlertCircle
+                            className="mt-0.5 h-4 w-4 shrink-0"
+                            aria-hidden="true"
+                        />
+                        <span className="min-w-0 break-words">
+                            {serverError}
+                        </span>
                     </p>
                 </div>
             )}
@@ -158,8 +227,15 @@ export function InviteRegisterForm({
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-[#00DB87] hover:bg-[#00c078] text-white text-lg font-bold py-3 px-12 rounded-full focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-base duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+                    aria-busy={isLoading}
+                    className={AUTH_PRIMARY_BUTTON_CLASS}
                 >
+                    {isLoading && (
+                        <Loader2
+                            className="h-5 w-5 animate-spin"
+                            aria-hidden="true"
+                        />
+                    )}
                     {isLoading ? "กำลังสร้างบัญชี…" : "สร้างบัญชี"}
                 </button>
             </div>

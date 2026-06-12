@@ -16,12 +16,14 @@ interface UseResetPasswordReturn {
     handleSubmit: ReturnType<typeof useForm<ResetPasswordFormData>>["handleSubmit"];
     errors: ReturnType<typeof useForm<ResetPasswordFormData>>["formState"]["errors"];
     isSubmitting: boolean;
+    serverError: string | null;
     onSubmit: (data: ResetPasswordFormData) => Promise<void>;
 }
 
 export function useResetPassword(token: string): UseResetPasswordReturn {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [serverError, setServerError] = useState<string | null>(null);
 
     const {
         register,
@@ -34,6 +36,7 @@ export function useResetPassword(token: string): UseResetPasswordReturn {
 
     const onSubmit = async (data: ResetPasswordFormData): Promise<void> => {
         setIsSubmitting(true);
+        setServerError(null);
 
         try {
             const result = await resetPassword({
@@ -43,6 +46,7 @@ export function useResetPassword(token: string): UseResetPasswordReturn {
             });
 
             if (!result.success) {
+                setServerError(result.message);
                 toast.error(result.message);
                 return;
             }
@@ -50,7 +54,9 @@ export function useResetPassword(token: string): UseResetPasswordReturn {
             toast.success(result.message);
             router.push("/signin");
         } catch {
-            toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+            const message = "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
+            setServerError(message);
+            toast.error(message);
         } finally {
             setIsSubmitting(false);
         }
@@ -61,6 +67,7 @@ export function useResetPassword(token: string): UseResetPasswordReturn {
         handleSubmit,
         errors,
         isSubmitting,
+        serverError,
         onSubmit,
     };
 }

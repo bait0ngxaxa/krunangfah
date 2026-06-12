@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
 import { getServerSession } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { AUTH_CARD_CLASS, AUTH_HOME_LINK_CLASS } from "@/components/auth/authStyles";
 
 export const metadata: Metadata = {
     title: "เข้าสู่ระบบ | โครงการครูนางฟ้า",
@@ -25,7 +26,7 @@ export default async function SignInPage({
     }
 
     return (
-        <div className="relative min-h-dvh flex flex-col overflow-hidden">
+        <div className="relative flex min-h-dvh flex-col overflow-x-hidden">
             {/* Background image — grass/flowers */}
             <AuthBackgroundImage />
 
@@ -35,7 +36,7 @@ export default async function SignInPage({
                 <div className="ml-auto pr-4 sm:pr-12 lg:pr-[131px] flex items-center shrink-0">
                     <Link
                         href="/"
-                        className="text-white hover:opacity-80 transition-opacity font-medium whitespace-nowrap text-base sm:text-lg lg:text-xl"
+                        className={AUTH_HOME_LINK_CLASS}
                     >
                         หน้าหลัก
                     </Link>
@@ -58,7 +59,7 @@ export default async function SignInPage({
                 </div>
 
                 {/* Sign-in card */}
-                <div className="w-full max-w-sm bg-white/90 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-sm px-6 sm:px-8 py-7 sm:py-8">
+                <div className={AUTH_CARD_CLASS}>
                     <SignInForm callbackUrl={callbackUrl} />
                 </div>
             </div>
