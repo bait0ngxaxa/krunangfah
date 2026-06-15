@@ -197,6 +197,26 @@ describe("extractClientIp", () => {
         expect(extractClientIp(getter)).toBe("5.6.7.8");
     });
 
+    it("should ignore invalid x-forwarded-for and use x-real-ip", () => {
+        const getter = (name: string) => {
+            if (name === "x-forwarded-for") return "not an ip";
+            if (name === "x-real-ip") return "5.6.7.8";
+            return null;
+        };
+
+        expect(extractClientIp(getter)).toBe("5.6.7.8");
+    });
+
+    it("should return unknown for invalid IP headers", () => {
+        const getter = (name: string) => {
+            if (name === "x-forwarded-for") return "not an ip";
+            if (name === "x-real-ip") return "also invalid";
+            return null;
+        };
+
+        expect(extractClientIp(getter)).toBe("unknown");
+    });
+
     it("should trim x-real-ip header", () => {
         const getter = (name: string) => {
             if (name === "x-real-ip") return "  5.6.7.8  ";
@@ -242,6 +262,15 @@ describe("extractRateLimitKey", () => {
 
     it("should return unknown when both IP and user-agent are missing", () => {
         const getter = () => null;
+        expect(extractRateLimitKey(getter)).toBe("unknown");
+    });
+
+    it("should return unknown when user-agent normalizes to empty", () => {
+        const getter = (name: string) => {
+            if (name === "user-agent") return "   ";
+            return null;
+        };
+
         expect(extractRateLimitKey(getter)).toBe("unknown");
     });
 });

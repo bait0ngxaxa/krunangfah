@@ -28,6 +28,7 @@ const PHQTrendChart = dynamic(
 );
 import { getCounselingSessions } from "@/lib/actions/counseling.actions";
 import { getHomeVisits } from "@/lib/actions/home-visit.actions";
+import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
 import { requireAuth } from "@/lib/session";
 import { Tabs } from "@/components/ui/Tabs";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
@@ -128,15 +129,18 @@ async function StudentDetailContent({
     counselingPage: number;
     homeVisitPage: number;
 }) {
-    const [session, student] = await Promise.all([
+    const [session, student, schoolClasses] = await Promise.all([
         requireAuth(),
         getStudentDetail(studentId),
+        getSchoolClasses(),
     ]);
     const currentUserId = session.user.id;
     const isSystemAdmin = session.user.role === "system_admin";
     const canManageStudentStatus =
         session.user.role === "school_admin" ||
         session.user.role === "class_teacher";
+    const canEditStudentProfile = canManageStudentStatus;
+    const canEditStudentClass = session.user.role === "school_admin";
 
     if (!student) {
         notFound();
@@ -173,9 +177,7 @@ async function StudentDetailContent({
     ]);
 
     const activePhqResult = getLatestPhqResult(student.phqResults);
-    const visibleStudent = isSystemAdmin
-        ? student
-        : { ...student, nationalId: null };
+    const visibleStudent = student;
     const isReferralLockedForClassTeacher =
         session.user.role === "class_teacher" && Boolean(student.referral);
     const canManageActivities =
@@ -294,8 +296,10 @@ async function StudentDetailContent({
             <StudentProfileCard
                 student={visibleStudent}
                 latestResult={latestResult}
+                schoolClasses={schoolClasses}
                 canViewNationalId={isSystemAdmin}
-                canManageStatus={canManageStudentStatus}
+                canEditProfile={canEditStudentProfile}
+                canEditClass={canEditStudentClass}
             />
 
             {latestResult && !isSystemAdmin && (

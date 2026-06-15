@@ -14,6 +14,10 @@ import { logError } from "@/lib/utils/logging";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
 import {
+    studentProfileUpdateSchema,
+    type StudentProfileUpdateInput,
+} from "@/lib/validations/student-profile.validation";
+import {
     clearIdempotentOperation,
     completeIdempotentOperation,
     startIdempotentOperation,
@@ -33,6 +37,27 @@ const IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS = 30 * 60;
 interface UpdateStudentStatusResult {
     success: boolean;
     message: string;
+}
+
+interface UpdateStudentProfileResult {
+    success: boolean;
+    message: string;
+}
+
+interface EditableStudentProfileRecord {
+    id: string;
+    studentId: string;
+    nationalId: string | null;
+    class: string;
+    schoolId: string;
+    status: StudentStatus;
+}
+
+interface AdjustSchoolClassCountParams {
+    academicYearId: string | null;
+    schoolId: string;
+    className: string;
+    delta: number;
 }
 
 function createImportStudentSummary(
@@ -805,6 +830,282 @@ export async function updateStudentStatus(
         return {
             success: false,
             message: "เกิดข้อผิดพลาดในการอัปเดตสถานะนักเรียน",
+        };
+    }
+}
+
+function getStudentProfileValidationMessage(
+    input: unknown,
+): StudentProfileUpdateInput | string {
+    const parsed = studentProfileUpdateSchema.safeParse(input);
+
+    if (!parsed.success) {
+        return parsed.error.issues[0]?.message ?? "ข้อมูลนักเรียนไม่ถูกต้อง";
+    }
+
+    return parsed.data;
+}
+
+async function getEditableStudentProfile(
+    params: {
+        studentId: string;
+        userId: string;
+        userRole: string;
+    },
+): Promise<EditableStudentProfileRecord | string> {
+    const user = await prisma.user.findUnique({
+        where: { id: params.userId },
+        select: {
+            schoolId: true,
+            teacher: { select: { advisoryClass: true } },
+        },
+    });
+
+    if (!user?.schoolId) {
+        return "ไม่พบโรงเรียนของคุณ";
+    }
+
+    const student = await prisma.student.findFirst({
+        where: {
+            id: params.studentId,
+            schoolId: user.schoolId,
+            ...(params.userRole === "class_teacher"
+                ? { class: user.teacher?.advisoryClass ?? "" }
+                : {}),
+        },
+        select: {
+            id: true,
+            studentId: true,
+            nationalId: true,
+            class: true,
+            schoolId: true,
+            status: true,
+        },
+    });
+
+    return student ?? "ไม่พบนักเรียนที่ต้องการแก้ไข";
+}
+
+async function adjustSchoolClassExpectedCount(
+    tx: Prisma.TransactionClient,
+    params: AdjustSchoolClassCountParams,
+): Promise<void> {
+    if (!params.academicYearId || params.delta === 0) return;
+
+    const schoolClass = await tx.schoolClass.findUnique({
+        where: {
+            schoolId_name: {
+                schoolId: params.schoolId,
+                name: params.className,
+            },
+        },
+        select: {
+            id: true,
+            expectedStudentCount: true,
+            terms: {
+                where: { academicYearId: params.academicYearId },
+                select: { expectedStudentCount: true },
+                take: 1,
+            },
+        },
+    });
+
+    if (!schoolClass) return;
+
+    const baseCount =
+        schoolClass.terms[0]?.expectedStudentCount ??
+        schoolClass.expectedStudentCount;
+    const nextCount = Math.max(1, baseCount + params.delta);
+
+    await tx.schoolClass.update({
+        where: { id: schoolClass.id },
+        data: { expectedStudentCount: nextCount },
+    });
+    await tx.schoolClassTerm.upsert({
+        where: {
+            schoolClassId_academicYearId: {
+                schoolClassId: schoolClass.id,
+                academicYearId: params.academicYearId,
+            },
+        },
+        create: {
+            schoolClassId: schoolClass.id,
+            academicYearId: params.academicYearId,
+            expectedStudentCount: nextCount,
+        },
+        update: { expectedStudentCount: nextCount },
+    });
+}
+
+async function validateStudentProfileUpdateRules(
+    student: EditableStudentProfileRecord,
+    input: StudentProfileUpdateInput,
+    userRole: string,
+): Promise<string | null> {
+    if (userRole === "class_teacher" && input.class !== student.class) {
+        return "ครูประจำชั้นไม่สามารถย้ายห้องนักเรียนได้";
+    }
+
+    if (input.class !== student.class) {
+        const schoolClass = await prisma.schoolClass.findUnique({
+            where: {
+                schoolId_name: {
+                    schoolId: student.schoolId,
+                    name: input.class,
+                },
+            },
+            select: { id: true },
+        });
+
+        if (!schoolClass) {
+            return "ไม่พบห้องเรียนที่ต้องการย้ายไป";
+        }
+    }
+
+    if (input.nationalId !== student.nationalId && input.nationalId) {
+        const duplicateNationalIdStudent = await prisma.student.findUnique({
+            where: { nationalId: input.nationalId },
+            select: { id: true },
+        });
+
+        if (
+            duplicateNationalIdStudent &&
+            duplicateNationalIdStudent.id !== student.id
+        ) {
+            return "เลขบัตรประชาชนนี้มีอยู่ในระบบแล้ว";
+        }
+    }
+
+    if (input.studentId === student.studentId) return null;
+
+    const duplicateStudent = await prisma.student.findUnique({
+        where: {
+            studentId_schoolId: {
+                studentId: input.studentId,
+                schoolId: student.schoolId,
+            },
+        },
+        select: { id: true },
+    });
+
+    return duplicateStudent && duplicateStudent.id !== student.id
+        ? "รหัสนักเรียนนี้มีอยู่ในโรงเรียนแล้ว"
+        : null;
+}
+
+async function saveStudentProfileUpdate(
+    student: EditableStudentProfileRecord,
+    input: StudentProfileUpdateInput,
+): Promise<void> {
+    const statusChanged = student.status !== input.status;
+    const academicYearId = statusChanged ? await getCurrentAcademicYearId() : null;
+    const oldStatusInactive = isInactiveStudentStatus(student.status);
+    const newStatusInactive = isInactiveStudentStatus(input.status);
+    const expectedCountDelta =
+        !statusChanged || oldStatusInactive === newStatusInactive
+            ? 0
+            : newStatusInactive
+              ? -1
+              : 1;
+
+    await prisma.$transaction(async (tx) => {
+        await tx.student.update({
+            where: { id: student.id },
+            data: {
+                studentId: input.studentId,
+                nationalId: input.nationalId,
+                firstName: input.firstName,
+                lastName: input.lastName,
+                gender: input.gender,
+                age: input.age,
+                class: input.class,
+                status: input.status,
+                ...(statusChanged
+                    ? {
+                          statusChangedAt: new Date(),
+                          leftAt: newStatusInactive ? new Date() : null,
+                      }
+                    : {}),
+            },
+        });
+
+        await adjustSchoolClassExpectedCount(tx, {
+            academicYearId,
+            schoolId: student.schoolId,
+            className: student.class,
+            delta: expectedCountDelta,
+        });
+    });
+}
+
+function revalidateStudentProfilePaths(
+    student: EditableStudentProfileRecord,
+    input: StudentProfileUpdateInput,
+): void {
+    revalidatePath("/dashboard");
+    revalidatePath("/students");
+    revalidatePath(`/students/${student.id}`);
+    if (input.class !== student.class || input.status !== student.status) {
+        revalidatePath("/analytics");
+        revalidatePath("/school/classes");
+        revalidateAnalyticsCache(student.schoolId);
+    }
+}
+
+export async function updateStudentProfile(
+    studentId: string,
+    input: unknown,
+): Promise<UpdateStudentProfileResult> {
+    try {
+        const session = await requireAuth();
+        const userRole = session.user.role;
+
+        if (userRole === "system_admin") {
+            return {
+                success: false,
+                message: "System admin ดูข้อมูลนักเรียนได้อย่างเดียว",
+            };
+        }
+
+        if (userRole !== "school_admin" && userRole !== "class_teacher") {
+            return {
+                success: false,
+                message: "คุณไม่มีสิทธิ์แก้ไขข้อมูลนักเรียน",
+            };
+        }
+
+        const validated = getStudentProfileValidationMessage(input);
+        if (typeof validated === "string") {
+            return { success: false, message: validated };
+        }
+
+        const student = await getEditableStudentProfile({
+            studentId,
+            userId: session.user.id,
+            userRole,
+        });
+        if (typeof student === "string") {
+            return { success: false, message: student };
+        }
+
+        const ruleError = await validateStudentProfileUpdateRules(
+            student,
+            validated,
+            userRole,
+        );
+        if (ruleError) {
+            return { success: false, message: ruleError };
+        }
+
+        await saveStudentProfileUpdate(student, validated);
+        revalidateStudentProfilePaths(student, validated);
+
+        return { success: true, message: "อัปเดตข้อมูลนักเรียนสำเร็จ" };
+    } catch (error) {
+        logError("Update student profile error:", error);
+        return {
+            success: false,
+            message: "เกิดข้อผิดพลาดในการอัปเดตข้อมูลนักเรียน",
         };
     }
 }

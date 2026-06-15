@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
     User,
     FileText,
@@ -9,6 +10,7 @@ import {
     Hash,
     Cake,
     CreditCard,
+    Pencil,
 } from "lucide-react";
 import {
     getRiskLevelConfig,
@@ -16,6 +18,7 @@ import {
 } from "@/lib/constants/risk-levels";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
 import { StudentStatusControl } from "./StudentStatusControl";
+import { StudentProfileEditModal } from "./StudentProfileEditModal";
 
 interface StudentProfileCardProps {
         student: {
@@ -40,16 +43,24 @@ interface StudentProfileCardProps {
             semester: number;
         };
     } | null;
+    schoolClasses?: Array<{
+        id: string;
+        name: string;
+    }>;
     canViewNationalId?: boolean;
-    canManageStatus?: boolean;
+    canEditProfile?: boolean;
+    canEditClass?: boolean;
 }
 
 export function StudentProfileCard({
     student,
     latestResult,
+    schoolClasses = [],
     canViewNationalId = false,
-    canManageStatus = false,
+    canEditProfile = false,
+    canEditClass = false,
 }: StudentProfileCardProps) {
+    const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
     const risk = latestResult
         ? getRiskLevelConfig(latestResult.riskLevel as RiskLevel)
         : null;
@@ -72,9 +83,24 @@ export function StudentProfileCard({
                         </div>
                     </div>
                     <div className="min-w-0 text-center sm:text-left">
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 wrap-break-words">
-                            {student.firstName} {student.lastName}
-                        </h1>
+                        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 wrap-break-words">
+                                {student.firstName} {student.lastName}
+                            </h1>
+                            {canEditProfile && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsProfileEditOpen(true)}
+                                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition-all hover:border-emerald-300 hover:text-emerald-600 hover:shadow-md focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:outline-none"
+                                    aria-label="แก้ไขข้อมูลนักเรียน"
+                                >
+                                    <Pencil
+                                        className="h-4 w-4"
+                                        aria-hidden="true"
+                                    />
+                                </button>
+                            )}
+                        </div>
                         <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-gray-500 font-medium">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-emerald-200 bg-emerald-50/70 text-emerald-700 shadow-sm">
                                 <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-emerald-200 bg-white">
@@ -179,10 +205,19 @@ export function StudentProfileCard({
                     <StudentStatusControl
                         studentId={student.id}
                         currentStatus={student.status ?? "ACTIVE"}
-                        canEdit={canManageStatus}
+                        canEdit={false}
                     />
                 </div>
             </div>
+            {isProfileEditOpen && (
+                <StudentProfileEditModal
+                    student={student}
+                    schoolClasses={schoolClasses}
+                    canEditClass={canEditClass}
+                    isOpen={isProfileEditOpen}
+                    onClose={() => setIsProfileEditOpen(false)}
+                />
+            )}
 
             {!latestResult && (
                 <div className="mt-8 p-6 bg-emerald-50/50 rounded-2xl border-2 border-dashed border-emerald-200 text-center text-gray-500 flex flex-col items-center gap-2">

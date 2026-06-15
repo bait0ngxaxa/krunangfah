@@ -5,6 +5,13 @@ export const INPUT_LIMITS = {
         className: 50,
         classStudentCount: 200,
     },
+    student: {
+        studentId: 50,
+        firstName: 100,
+        lastName: 100,
+        className: 50,
+        age: 100,
+    },
     teacher: {
         firstName: 100,
         lastName: 100,
