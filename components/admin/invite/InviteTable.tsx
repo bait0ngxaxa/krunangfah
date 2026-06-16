@@ -188,8 +188,9 @@ export function InviteTable({ invites, onRevoked }: InviteTableProps) {
                 <EmptyState
                     icon={ClipboardList}
                     title="ยังไม่มีคำเชิญ"
-                    description="สร้างคำเชิญด้านบนเพื่อเชิญแอดมิน"
+                    description="เริ่มจากกรอกอีเมล เลือกบทบาท แล้วสร้างลิงก์คำเชิญด้านบน"
                     className="p-12"
+                    variant="emerald"
                 />
             ) : (
                 <>

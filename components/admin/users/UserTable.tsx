@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
     AlertCircle,
+    Search,
     Users,
     UserCircle,
     School,
@@ -29,6 +30,7 @@ interface UserTableProps {
     pageSize: number;
     onPageChange: (page: number) => void;
     onMutated: () => void;
+    hasActiveFilters?: boolean;
 }
 
 function UserCard({
@@ -245,6 +247,7 @@ export function UserTable({
     pageSize,
     onPageChange,
     onMutated,
+    hasActiveFilters = false,
 }: UserTableProps) {
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const start = (page - 1) * pageSize;
@@ -259,10 +262,19 @@ export function UserTable({
 
             {users.length === 0 ? (
                 <EmptyState
-                    icon={Users}
-                    title="ไม่พบผู้ใช้งาน"
-                    description="ลองเปลี่ยนตัวกรองหรือคำค้นหา"
+                    icon={hasActiveFilters ? Search : Users}
+                    title={
+                        hasActiveFilters
+                            ? "ไม่พบผู้ใช้ตามเงื่อนไขนี้"
+                            : "ยังไม่มีผู้ใช้งาน"
+                    }
+                    description={
+                        hasActiveFilters
+                            ? "ลองล้างคำค้นหา หรือเลือกทุกโรงเรียนเพื่อดูรายการทั้งหมด"
+                            : "ผู้ใช้จะแสดงที่นี่หลังจากรับคำเชิญและสร้างบัญชี"
+                    }
                     className="p-12"
+                    variant="emerald"
                 />
             ) : (
                 <>

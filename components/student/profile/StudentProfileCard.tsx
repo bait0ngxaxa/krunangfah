@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactElement } from "react";
 import {
     User,
     FileText,
@@ -11,26 +12,28 @@ import {
     Cake,
     CreditCard,
     Pencil,
+    CalendarDays,
+    type LucideIcon,
 } from "lucide-react";
 import {
     getRiskLevelConfig,
-    type RiskLevel,
+    isRiskLevel,
 } from "@/lib/constants/risk-levels";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
 import { StudentStatusControl } from "./StudentStatusControl";
 import { StudentProfileEditModal } from "./StudentProfileEditModal";
 
 interface StudentProfileCardProps {
-        student: {
-            id: string;
-            firstName: string;
-            lastName: string;
-            studentId?: string | null;
-            nationalId?: string | null;
-            gender?: string | null;
-            age?: number | null;
-            class: string;
-            status?: string | null;
+    student: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        studentId?: string | null;
+        nationalId?: string | null;
+        gender?: string | null;
+        age?: number | null;
+        class: string;
+        status?: string | null;
     };
     latestResult?: {
         totalScore: number;
@@ -52,6 +55,76 @@ interface StudentProfileCardProps {
     canEditClass?: boolean;
 }
 
+interface DetailItem {
+    label: string;
+    value: string;
+    icon: LucideIcon;
+    tone: string;
+}
+
+function formatGender(gender?: string | null): string | null {
+    if (!gender) return null;
+    return gender === "MALE" ? "ชาย" : "หญิง";
+}
+
+function formatAssessmentDate(date: Date): string {
+    return new Date(date).toLocaleDateString("th-TH", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    });
+}
+
+function buildDetailItems(
+    student: StudentProfileCardProps["student"],
+    canViewNationalId: boolean,
+): DetailItem[] {
+    const items: DetailItem[] = [
+        {
+            label: "ห้องเรียน",
+            value: student.class,
+            icon: School,
+            tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+        },
+    ];
+    const gender = formatGender(student.gender);
+
+    if (gender) {
+        items.push({
+            label: "เพศ",
+            value: gender,
+            icon: User,
+            tone: "border-violet-200 bg-violet-50 text-violet-800",
+        });
+    }
+    if (student.age) {
+        items.push({
+            label: "อายุ",
+            value: `${student.age} ปี`,
+            icon: Cake,
+            tone: "border-sky-200 bg-sky-50 text-sky-800",
+        });
+    }
+    if (student.studentId) {
+        items.push({
+            label: "รหัสนักเรียน",
+            value: student.studentId,
+            icon: Hash,
+            tone: "border-slate-200 bg-slate-50 text-slate-700",
+        });
+    }
+    if (canViewNationalId && student.nationalId) {
+        items.push({
+            label: "เลขบัตร",
+            value: student.nationalId,
+            icon: CreditCard,
+            tone: "border-amber-200 bg-amber-50 text-amber-800",
+        });
+    }
+
+    return items;
+}
+
 export function StudentProfileCard({
     student,
     latestResult,
@@ -59,147 +132,108 @@ export function StudentProfileCard({
     canViewNationalId = false,
     canEditProfile = false,
     canEditClass = false,
-}: StudentProfileCardProps) {
+}: StudentProfileCardProps): ReactElement {
     const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
-    const risk = latestResult
-        ? getRiskLevelConfig(latestResult.riskLevel as RiskLevel)
-        : null;
-    const avatarBg = risk
-        ? `bg-gradient-to-br ${risk.gradient}`
-        : "bg-[var(--brand-primary)]";
+    const latestRiskLevel =
+        latestResult && isRiskLevel(latestResult.riskLevel)
+            ? latestResult.riskLevel
+            : null;
+    const risk = latestRiskLevel ? getRiskLevelConfig(latestRiskLevel) : null;
+    const detailItems = buildDetailItems(student, canViewNationalId);
+    const avatarBg = risk ? risk.bgSolid : "bg-[var(--brand-primary)]";
 
     return (
-        <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 sm:p-7 md:p-8 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-base duration-300 hover:shadow-[0_24px_44px_-24px_rgba(15,23,42,0.5)]">
-            <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-cyan-200/25 blur-3xl" />
-            <div className="relative flex flex-col gap-7 md:flex-row md:items-start md:justify-between z-10">
-                {/* Student Info */}
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-                    <div className="relative shrink-0">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_8px_rgba(15,23,42,0.04)]">
+            <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8 lg:p-7">
+                <div className="min-w-0">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                         <div
-                            className={`h-18 w-18 sm:h-24 sm:w-24 rounded-full ${avatarBg} flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-lg ring-4 ring-white/90`}
+                            className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl ${avatarBg} text-2xl font-bold text-white sm:h-20 sm:w-20 sm:text-3xl`}
+                            aria-hidden="true"
                         >
                             {student.firstName.charAt(0)}
                         </div>
-                    </div>
-                    <div className="min-w-0 text-center sm:text-left">
-                        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
-                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 wrap-break-words">
-                                {student.firstName} {student.lastName}
-                            </h1>
-                            {canEditProfile && (
-                                <button
-                                    type="button"
-                                    onClick={() => setIsProfileEditOpen(true)}
-                                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition-all hover:border-emerald-300 hover:text-emerald-600 hover:shadow-md focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:outline-none"
-                                    aria-label="แก้ไขข้อมูลนักเรียน"
-                                >
-                                    <Pencil
-                                        className="h-4 w-4"
-                                        aria-hidden="true"
-                                    />
-                                </button>
-                            )}
-                        </div>
-                        <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-gray-500 font-medium">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-emerald-200 bg-emerald-50/70 text-emerald-700 shadow-sm">
-                                <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-emerald-200 bg-white">
-                                        <School className="w-3 h-3" aria-hidden="true" />
-                                </span>
-                                ห้อง {student.class}
-                            </span>
-                            {student.gender && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-purple-200 bg-purple-50/70 text-purple-700 shadow-sm">
-                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-purple-200 bg-white">
-                                        <User className="w-3 h-3" aria-hidden="true" />
-                                    </span>
-                                    {student.gender === "MALE" ? "ชาย" : "หญิง"}
-                                </span>
-                            )}
-                            {student.age && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-blue-200 bg-blue-50/70 text-blue-700 shadow-sm">
-                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-blue-200 bg-white">
-                                        <Cake className="w-3 h-3" aria-hidden="true" />
-                                    </span>
-                                    อายุ {student.age} ปี
-                                </span>
-                            )}
-                            {student.studentId && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-gray-200 bg-white/90 text-gray-700 shadow-sm">
-                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-gray-200 bg-white">
-                                        <Hash className="w-3 h-3" aria-hidden="true" />
-                                    </span>
-                                    รหัส {student.studentId}
-                                </span>
-                            )}
-                            {canViewNationalId && student.nationalId && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-amber-200 bg-amber-50/70 text-amber-700 shadow-sm">
-                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-amber-200 bg-white">
-                                        <CreditCard className="w-3 h-3" aria-hidden="true" />
-                                    </span>
-                                    เลขบัตร {student.nationalId}
-                                </span>
-                            )}
+
+                        <div className="min-w-0 flex-1">
+                            <div className="flex min-w-0 items-start gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-slate-500">
+                                        ข้อมูลนักเรียน
+                                    </p>
+                                    <h1 className="mt-1 break-words text-pretty text-2xl font-bold leading-tight text-slate-950 sm:text-3xl">
+                                        {student.firstName} {student.lastName}
+                                    </h1>
+                                </div>
+                                {canEditProfile && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsProfileEditOpen(true)}
+                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+                                        aria-label="แก้ไขข้อมูลนักเรียน"
+                                    >
+                                        <Pencil
+                                            className="h-4 w-4"
+                                            aria-hidden="true"
+                                        />
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                {detailItems.map((item) => (
+                                    <DetailPill key={item.label} item={item} />
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Risk Badge */}
-                <div className="flex w-full md:w-auto flex-col items-stretch md:items-end gap-3">
+                <div className="flex flex-col gap-4 border-t border-slate-100 pt-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
                     {risk && latestResult && (
                         <>
-                        <div
-                            className={`${risk.headerGradient} ${risk.headerTextColor} pl-4 pr-5 py-2.5 rounded-2xl font-bold text-base shadow-md flex items-center gap-2.5`}
-                        >
-                            <span className="text-lg leading-none">
-                                {risk.emoji}
-                            </span>
-                            <span>{risk.label}</span>
-                        </div>
-                        {latestResult.riskLevel === "red" && (
-                            <div
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-sm border transition-transform hover:scale-105 ${
-                                    latestResult.referredToHospital
-                                        ? "bg-orange-50 text-orange-700 border-orange-200"
-                                        : "bg-sky-50 text-sky-700 border-sky-200"
-                                }`}
-                            >
-                                {latestResult.referredToHospital ? (
-                                    <>
-                                        <Hospital className="w-4 h-4" aria-hidden="true" />
-                                        ส่งต่อ:{" "}
-                                        {latestResult.hospitalName ||
-                                            "โรงพยาบาล"}
-                                    </>
-                                ) : (
-                                    <>
-                                        <ClipboardCheck className="w-4 h-4" aria-hidden="true" />
-                                        ติดตามต่อ
-                                    </>
-                                )}
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div
+                                    className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold ${risk.headerGradient} ${risk.headerTextColor}`}
+                                >
+                                    <span className="text-base leading-none">
+                                        {risk.emoji}
+                                    </span>
+                                    <span>{risk.label}</span>
+                                </div>
                             </div>
-                        )}
-                        <div className="rounded-2xl border border-gray-200 bg-white/75 px-4 py-3 shadow-sm md:text-right">
-                            <div className="text-sm text-gray-500 font-medium">
-                                ประเมินล่าสุด:{" "}
-                                <span className="text-emerald-600">
-                                    {formatAcademicYear(
-                                        latestResult.academicYear.year,
-                                        latestResult.academicYear.semester,
-                                        "long",
-                                    )}
-                                </span>
+
+                            {latestRiskLevel === "red" && (
+                                <ReferralState
+                                    hospitalName={latestResult.hospitalName}
+                                    referredToHospital={
+                                        latestResult.referredToHospital
+                                    }
+                                />
+                            )}
+
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-start gap-2 text-slate-600">
+                                    <CalendarDays
+                                        className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                                        aria-hidden="true"
+                                    />
+                                    <div>
+                                        <p className="font-semibold text-slate-800">
+                                            {formatAcademicYear(
+                                                latestResult.academicYear.year,
+                                                latestResult.academicYear
+                                                    .semester,
+                                                "long",
+                                            )}
+                                        </p>
+                                        <p className="text-xs text-slate-500">
+                                            {formatAssessmentDate(
+                                                latestResult.createdAt,
+                                            )}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="mt-1 inline-flex rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-500">
-                                {new Date(
-                                    latestResult.createdAt,
-                                ).toLocaleDateString("th-TH", {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                })}
-                            </div>
-                        </div>
                         </>
                     )}
                     <StudentStatusControl
@@ -220,13 +254,52 @@ export function StudentProfileCard({
             )}
 
             {!latestResult && (
-                <div className="mt-8 p-6 bg-emerald-50/50 rounded-2xl border-2 border-dashed border-emerald-200 text-center text-gray-500 flex flex-col items-center gap-2">
-                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-300 bg-white text-gray-500 shadow-sm">
-                        <FileText className="w-6 h-6" aria-hidden="true" />
+                <div className="mx-5 mb-5 flex items-center gap-3 rounded-xl border border-dashed border-emerald-200 bg-emerald-50 px-4 py-3 text-slate-600 sm:mx-6 lg:mx-7">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-700">
+                        <FileText className="h-5 w-5" aria-hidden="true" />
                     </span>
-                    <p className="font-medium">ยังไม่มีผลการคัดกรอง PHQ-A</p>
+                    <p className="font-semibold">ยังไม่มีผลการคัดกรอง PHQ-A</p>
                 </div>
             )}
+        </section>
+    );
+}
+
+function DetailPill({ item }: { item: DetailItem }): ReactElement {
+    const Icon = item.icon;
+
+    return (
+        <span
+            className={`inline-flex min-h-9 max-w-full min-w-0 items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-semibold ${item.tone}`}
+        >
+            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="shrink-0 text-current opacity-70">{item.label}</span>
+            <span className="truncate">{item.value}</span>
+        </span>
+    );
+}
+
+function ReferralState({
+    hospitalName,
+    referredToHospital,
+}: {
+    hospitalName?: string | null;
+    referredToHospital: boolean;
+}): ReactElement {
+    const Icon = referredToHospital ? Hospital : ClipboardCheck;
+    const label = referredToHospital
+        ? `ส่งต่อ: ${hospitalName || "โรงพยาบาล"}`
+        : "ติดตามต่อ";
+    const tone = referredToHospital
+        ? "border-orange-200 bg-orange-50 text-orange-800"
+        : "border-sky-200 bg-sky-50 text-sky-800";
+
+    return (
+        <div
+            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold ${tone}`}
+        >
+            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">{label}</span>
         </div>
     );
 }

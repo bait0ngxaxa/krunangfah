@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     getAcademicYears,
+    getCurrentAcademicYearTerms,
     getCurrentAcademicYearRecord,
 } from "@/lib/actions/academic-year.actions";
 
@@ -94,5 +95,22 @@ describe("academic-year.actions", () => {
                 update: { isCurrent: true },
             }),
         );
+    });
+
+    it("returns every academic year for filters and history views", async () => {
+        await getAcademicYears();
+
+        expect(mocks.findMany).toHaveBeenCalledWith({
+            orderBy: [{ year: "desc" }, { semester: "desc" }],
+        });
+    });
+
+    it("returns only terms from the current academic year for current workflows", async () => {
+        await getCurrentAcademicYearTerms();
+
+        expect(mocks.findMany).toHaveBeenCalledWith({
+            where: { year: 2569 },
+            orderBy: [{ year: "desc" }, { semester: "desc" }],
+        });
     });
 });

@@ -1,6 +1,14 @@
 "use client";
 
-import { UserCheck, Shield } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+    CheckCircle2,
+    GraduationCap,
+    Shield,
+    ShieldCheck,
+    UserCheck,
+    UserCog,
+} from "lucide-react";
 import { Tabs, type Tab } from "@/components/ui/Tabs";
 import { PrimaryAdminManager } from "@/components/school/admin";
 import { SchoolTeacherList } from "@/components/school/SchoolTeacherList";
@@ -21,6 +29,10 @@ export function SchoolClassesTabs({
     registeredTeachers,
     currentUserId,
 }: SchoolClassesTabsProps) {
+    const teacherWithClassCount = registeredTeachers.filter(
+        (teacher) => !!teacher.advisoryClass,
+    ).length;
+    const adminCount = schoolAdmins.length;
     const tabs: Tab[] = [
         {
             id: "teachers",
@@ -86,11 +98,103 @@ export function SchoolClassesTabs({
                     <PrimaryAdminManager
                         initialAdmins={schoolAdmins}
                         currentUserId={currentUserId}
+                        registeredTeacherCount={registeredTeachers.length}
                     />
                 </div>
             ),
         },
     ];
 
-    return <Tabs tabs={tabs} defaultTab="teachers" />;
+    return (
+        <div className="space-y-5">
+            <SchoolUserOnboardingPanel
+                teacherCount={registeredTeachers.length}
+                teacherWithClassCount={teacherWithClassCount}
+                classCount={classes.length}
+                adminCount={adminCount}
+            />
+            <Tabs tabs={tabs} defaultTab="teachers" />
+        </div>
+    );
+}
+
+function SchoolUserOnboardingPanel({
+    teacherCount,
+    teacherWithClassCount,
+    classCount,
+    adminCount,
+}: {
+    teacherCount: number;
+    teacherWithClassCount: number;
+    classCount: number;
+    adminCount: number;
+}): ReactNode {
+    return (
+        <section className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-emerald-800">
+                        <UserCog className="h-4 w-4" aria-hidden="true" />
+                        <h2 className="text-sm font-bold">
+                            อ่านสถานะครูก่อนจัดการบัญชี
+                        </h2>
+                    </div>
+                    <p className="mt-1 max-w-2xl text-xs leading-5 text-emerald-950/75">
+                        ใช้หน้านี้เพื่อตรวจว่าครูเข้าระบบแล้วหรือยัง
+                        ห้องที่ปรึกษาถูกต้องไหม และควรให้ใครช่วยดูแลข้อมูลโรงเรียน
+                    </p>
+                </div>
+                <span className="w-fit shrink-0 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-800">
+                    ครูในระบบ {teacherCount} คน
+                </span>
+            </div>
+
+            <div className="mt-4 grid gap-2 md:grid-cols-4">
+                <SchoolUserGuideStep
+                    icon={<UserCheck className="h-4 w-4" aria-hidden="true" />}
+                    title="ดูรายชื่อครู"
+                    description="ครูที่รับคำเชิญและสร้างโปรไฟล์แล้วจะแสดงในแท็บครูในระบบ"
+                />
+                <SchoolUserGuideStep
+                    icon={<GraduationCap className="h-4 w-4" aria-hidden="true" />}
+                    title="ตรวจห้องที่ปรึกษา"
+                    description={`${teacherWithClassCount} จาก ${teacherCount} คนมีห้องที่ปรึกษา, ห้องเรียนทั้งหมด ${classCount} ห้อง`}
+                />
+                <SchoolUserGuideStep
+                    icon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
+                    title="แก้เฉพาะที่จำเป็น"
+                    description="แก้ห้องเมื่อข้อมูลผิด หรือลบครูที่ไม่ควรเข้าใช้งานระบบแล้ว"
+                />
+                <SchoolUserGuideStep
+                    icon={<ShieldCheck className="h-4 w-4" aria-hidden="true" />}
+                    title="จัดการสิทธิ์"
+                    description={`มีผู้ดูแลโรงเรียน ${adminCount} คน ถ้าต้องแบ่งงานให้ใช้แท็บจัดการสิทธิ์`}
+                />
+            </div>
+        </section>
+    );
+}
+
+function SchoolUserGuideStep({
+    icon,
+    title,
+    description,
+}: {
+    icon: ReactNode;
+    title: string;
+    description: string;
+}): ReactNode {
+    return (
+        <div className="rounded-xl border border-emerald-100 bg-white p-3 text-emerald-900">
+            <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                    {icon}
+                </span>
+                <span className="text-sm font-bold">{title}</span>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-emerald-950/70">
+                {description}
+            </p>
+        </div>
+    );
 }

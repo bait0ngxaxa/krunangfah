@@ -6,6 +6,7 @@ export type { SchoolAdminItem };
 export interface PrimaryAdminManagerProps {
     initialAdmins: SchoolAdminItem[];
     currentUserId: string;
+    registeredTeacherCount?: number;
 }
 
 export interface UsePrimaryAdminReturn {

@@ -38,6 +38,10 @@ vi.mock("@/lib/actions/analytics/cache", () => ({
     revalidateAnalyticsCache: vi.fn(),
 }));
 
+vi.mock("@/lib/actions/student/cache", () => ({
+    revalidateStudentsCache: vi.fn(),
+}));
+
 vi.mock("@/lib/actions/school-setup.actions", () => ({
     ensureSchoolClassTermsForAcademicYear: vi.fn(),
 }));
@@ -53,6 +57,7 @@ vi.mock("@/lib/utils/logging", () => ({
 }));
 
 import { requireAuth } from "@/lib/session";
+import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import { updateStudentProfile } from "@/lib/actions/student/mutations";
 
 function validInput(overrides: Record<string, unknown> = {}) {
@@ -155,5 +160,9 @@ describe("updateStudentProfile", () => {
             },
         });
         expect(prismaMock.phqResult.update).not.toHaveBeenCalled();
+        expect(revalidateStudentsCache).toHaveBeenCalledWith(
+            "school-1",
+            "student-1",
+        );
     });
 });

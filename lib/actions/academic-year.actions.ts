@@ -35,6 +35,30 @@ export async function getAcademicYears(): Promise<AcademicYear[]> {
 }
 
 /**
+ * ดึงเฉพาะเทอมของปีการศึกษาปัจจุบัน สำหรับ workflow ที่ไม่ควรเลือกปีย้อนหลัง
+ */
+export async function getCurrentAcademicYearTerms(): Promise<AcademicYear[]> {
+    try {
+        await requireAuth();
+
+        const current = getCurrentAcademicYear();
+
+        await activateCurrentAcademicYear(current);
+
+        return prisma.academicYear.findMany({
+            where: { year: current.year },
+            orderBy: [{ year: "desc" }, { semester: "desc" }],
+        });
+    } catch (error) {
+        return handleActionError({
+            context: "Get current academic year terms error:",
+            error,
+            fallback: [],
+        });
+    }
+}
+
+/**
  * ดึงปีการศึกษาปัจจุบัน (ที่ isCurrent = true)
  */
 export async function getCurrentAcademicYearRecord(): Promise<AcademicYear | null> {

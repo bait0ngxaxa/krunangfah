@@ -11,7 +11,7 @@ import {
     getIncompleteActivityWarning,
 } from "@/lib/actions/student/main";
 import { importStudents } from "@/lib/actions/student/mutations";
-import { getAcademicYears } from "@/lib/actions/academic-year.actions";
+import { getCurrentAcademicYearTerms } from "@/lib/actions/academic-year.actions";
 import { getCurrentTeacherProfile } from "@/lib/actions/teacher.actions";
 import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
 import type {
@@ -107,7 +107,7 @@ export function useImportPreview({
         const loadData = async (): Promise<void> => {
             try {
                 const [years, profile, classes] = await Promise.all([
-                    getAcademicYears(),
+                    getCurrentAcademicYearTerms(),
                     getCurrentTeacherProfile().catch((err) => {
                         console.error("Failed to load teacher profile:", err);
                         return null;

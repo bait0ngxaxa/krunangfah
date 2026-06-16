@@ -26,6 +26,7 @@ import {
     createImportIdempotencyKey,
     isImportResult,
 } from "./import-idempotency";
+import { revalidateStudentsCache } from "./cache";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
 const COUNT_EXCLUDED_STUDENT_STATUSES = new Set<StudentStatus>([
@@ -631,6 +632,7 @@ export async function importStudents(
         revalidatePath("/dashboard");
         revalidatePath("/students");
         revalidatePath("/analytics");
+        revalidateStudentsCache(schoolId);
         revalidateAnalyticsCache(schoolId);
 
         const importedCount = txResult.importedCount;
@@ -822,6 +824,7 @@ export async function updateStudentStatus(
         revalidatePath(`/students/${student.id}`);
         revalidatePath("/analytics");
         revalidatePath("/school/classes");
+        revalidateStudentsCache(student.schoolId, student.id);
         revalidateAnalyticsCache(student.schoolId);
 
         return { success: true, message: "อัปเดตสถานะนักเรียนสำเร็จ" };
@@ -1045,6 +1048,7 @@ function revalidateStudentProfilePaths(
     revalidatePath("/dashboard");
     revalidatePath("/students");
     revalidatePath(`/students/${student.id}`);
+    revalidateStudentsCache(student.schoolId, student.id);
     if (input.class !== student.class || input.status !== student.status) {
         revalidatePath("/analytics");
         revalidatePath("/school/classes");

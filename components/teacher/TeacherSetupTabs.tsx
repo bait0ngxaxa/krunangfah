@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LayoutGrid, Users, UserPlus, Info, CheckCircle2 } from "lucide-react";
+import type { ReactNode } from "react";
+import { LayoutGrid, Users, UserPlus, Info } from "lucide-react";
 import { ClassListEditor } from "@/components/school/classes";
 import { TeacherRosterEditor } from "@/components/school/roster";
 import { AddTeacherForm } from "@/components/teacher/forms/AddTeacherForm/AddTeacherForm";
 import { TeacherInviteList } from "@/components/teacher/forms/AddTeacherForm/components";
 import { buttonVariants } from "@/components/ui/Button";
+import {
+    TeacherOnboardingGuide,
+    type TeacherSetupSectionId,
+} from "@/components/teacher/TeacherOnboardingGuide";
 import type { AcademicYearOption } from "@/components/school/classes";
 import type { SchoolClassItem } from "@/types/school-setup.types";
 import type { TeacherRosterItem } from "@/types/school-setup.types";
@@ -20,7 +25,7 @@ interface TeacherSetupTabsProps {
     isPrimary: boolean;
 }
 
-type FlowSectionId = "classes" | "roster";
+type FlowSectionId = TeacherSetupSectionId;
 
 const FLOW_SECTIONS: Array<{
     id: FlowSectionId;
@@ -28,28 +33,9 @@ const FLOW_SECTIONS: Array<{
     mobileLabel: string;
 }> = [
     { id: "classes", shortLabel: "1 ห้องเรียน", mobileLabel: "1" },
-    { id: "roster", shortLabel: "2 รายชื่อครู / คำเชิญ", mobileLabel: "2" },
+    { id: "roster", shortLabel: "2 เพิ่มครู", mobileLabel: "2" },
+    { id: "invite", shortLabel: "3 เชิญครู", mobileLabel: "3" },
 ];
-
-function StepBadge({
-    step,
-    title,
-    countLabel,
-}: {
-    step: number;
-    title: string;
-    countLabel: string;
-}): React.ReactNode {
-    return (
-        <div className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
-            <p className="text-xs font-semibold text-emerald-700">
-                ขั้นตอน {step}
-            </p>
-            <p className="mt-1 text-sm font-bold text-gray-800">{title}</p>
-            <p className="mt-1 text-xs text-gray-500">{countLabel}</p>
-        </div>
-    );
-}
 
 function SectionCard({
     id,
@@ -62,12 +48,12 @@ function SectionCard({
     icon: React.ReactNode;
     title: string;
     subtitle: string;
-    children: React.ReactNode;
-}): React.ReactNode {
+    children: ReactNode;
+}): ReactNode {
     return (
         <section
             id={id}
-            className="scroll-mt-32 bg-white rounded-3xl shadow-sm p-6 sm:p-8 border-2 border-gray-100"
+            className="scroll-mt-32 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6"
         >
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-xl bg-[var(--brand-primary)] flex items-center justify-center shadow-sm text-white">
@@ -211,26 +197,12 @@ export function TeacherSetupTabs({
                 </div>
             </nav>
 
-            <div className="rounded-3xl border border-gray-100 bg-emerald-50/60 p-4 sm:p-5">
-                <div className="flex items-center gap-2 text-emerald-700">
-                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                    <p className="text-sm font-semibold">
-                        ลำดับการทำงานที่แนะนำ
-                    </p>
-                </div>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <StepBadge
-                        step={1}
-                        title="เตรียมห้องเรียน"
-                        countLabel={`${classes.length} ห้อง`}
-                    />
-                    <StepBadge
-                        step={2}
-                        title="รายชื่อครู / คำเชิญ"
-                        countLabel={`${rosterItems.length} คน`}
-                    />
-                </div>
-            </div>
+            <TeacherOnboardingGuide
+                classCount={classes.length}
+                rosterCount={rosterItems.length}
+                inviteCount={invites.length}
+                onSelect={handleJumpToSection}
+            />
 
             <SectionCard
                 id="classes"
@@ -248,8 +220,8 @@ export function TeacherSetupTabs({
             <SectionCard
                 id="roster"
                 icon={<Users className="w-4 h-4" aria-hidden="true" />}
-                title="ขั้นตอน 2: เพิ่ม-ลบ ครู และส่งคำเชิญ"
-                subtitle="บันทึกข้อมูลครู แล้วเลือกครูจากรายการเพื่อสร้างลิงก์เชิญ"
+                title="ขั้นตอน 2: เพิ่ม-ลบ ครู"
+                subtitle="เตรียมข้อมูลครูก่อนสร้างลิงก์เชิญ"
             >
                 <TeacherRosterEditor
                     initialRoster={rosterItems}
@@ -257,22 +229,15 @@ export function TeacherSetupTabs({
                     onUpdate={handleRosterUpdate}
                     readOnly={false}
                 />
-                <div className="mt-6 border-t border-gray-100 pt-6">
-                    <div className="mb-4 flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600">
-                            <UserPlus className="h-4 w-4" aria-hidden="true" />
-                        </div>
-                        <div>
-                            <h3 className="text-sm font-bold text-gray-800">
-                                ส่งคำเชิญจากรายชื่อครู
-                            </h3>
-                            <p className="text-xs text-gray-400">
-                                เลือกครูจากรายการด้านบนเพื่อสร้างลิงก์เชิญ
-                            </p>
-                        </div>
-                    </div>
-                    <AddTeacherForm roster={rosterItems} invites={invites} />
-                </div>
+            </SectionCard>
+
+            <SectionCard
+                id="invite"
+                icon={<UserPlus className="w-4 h-4" aria-hidden="true" />}
+                title="ขั้นตอน 3: เชิญครูเข้าระบบ"
+                subtitle="เลือกครูจากรายชื่อเพื่อสร้างลิงก์เชิญ"
+            >
+                <AddTeacherForm roster={rosterItems} invites={invites} />
             </SectionCard>
 
             <TeacherInviteList invites={invites} />

@@ -90,6 +90,16 @@ export function AddTeacherForm({
     const selectedTeacher = roster.find((t) => t.id === selectedRosterId);
     const blockedCount = blockedInvites.length;
     const missingEmailCount = roster.filter((t) => !t.email).length;
+    const emptyRosterTitle =
+        roster.length === 0
+            ? "ยังไม่มีรายชื่อครู"
+            : "ยังไม่มีครูที่พร้อมเชิญ";
+    const emptyRosterDescription =
+        roster.length === 0
+            ? "เพิ่มครูในขั้นตอนที่ 2 ก่อน แล้วกลับมาเลือกครูเพื่อสร้างลิงก์เชิญ"
+            : missingEmailCount > 0
+              ? "ครูบางคนยังไม่มีอีเมล กรุณาแก้ไขข้อมูลครูก่อนส่งคำเชิญ"
+              : "ครูทุกคนมีคำเชิญค้างอยู่หรือเปิดใช้งานแล้ว";
 
     return (
         <form
@@ -166,11 +176,10 @@ export function AddTeacherForm({
                         aria-hidden="true"
                     />
                     <p className="text-sm text-gray-500 font-medium">
-                        ยังไม่มีครูและชั้นเรียน โปรดเพิ่มก่อน
+                        {emptyRosterTitle}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                        เพิ่มห้องเรียนและครูในส่วน &quot;ขั้นตอน 1&quot; และ
-                        &quot;ขั้นตอน 2&quot; ด้านบนก่อน
+                        {emptyRosterDescription}
                     </p>
                 </div>
             )}
