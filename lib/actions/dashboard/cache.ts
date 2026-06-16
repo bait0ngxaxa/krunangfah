@@ -1,4 +1,4 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 export const DASHBOARD_TAG = "dashboard";
 export const SCHOOLS_TAG = "schools";
@@ -19,6 +19,7 @@ export function buildSchoolsListCacheKey(): string[] {
 }
 
 export function revalidateDashboardCache(): void {
-    revalidateTag(DASHBOARD_TAG, "default");
-    revalidateTag(SCHOOLS_TAG, "default");
+    updateTag(DASHBOARD_TAG);
+    updateTag(SCHOOLS_TAG);
+    revalidatePath("/dashboard");
 }

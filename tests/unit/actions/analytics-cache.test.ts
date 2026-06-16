@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     revalidatePath: vi.fn(),
-    revalidateTag: vi.fn(),
+    updateTag: vi.fn(),
     revalidateRedisAnalyticsCache: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
     revalidatePath: mocks.revalidatePath,
-    revalidateTag: mocks.revalidateTag,
+    updateTag: mocks.updateTag,
 }));
 
 vi.mock("@/lib/actions/analytics/redis-cache", () => ({
@@ -44,21 +44,15 @@ describe("analytics cache invalidation", () => {
         await Promise.resolve();
 
         expect(mocks.revalidateRedisAnalyticsCache).toHaveBeenCalledWith("school-1");
-        expect(mocks.revalidateTag).not.toHaveBeenCalled();
+        expect(mocks.updateTag).not.toHaveBeenCalled();
         expect(mocks.revalidatePath).not.toHaveBeenCalled();
 
         deferred.resolve();
         await result;
 
-        expect(mocks.revalidateTag).toHaveBeenCalledWith("analytics", "default");
-        expect(mocks.revalidateTag).toHaveBeenCalledWith(
-            "analytics-overview",
-            "default",
-        );
-        expect(mocks.revalidateTag).toHaveBeenCalledWith(
-            "analytics:school:school-1",
-            "default",
-        );
+        expect(mocks.updateTag).toHaveBeenCalledWith("analytics");
+        expect(mocks.updateTag).toHaveBeenCalledWith("analytics-overview");
+        expect(mocks.updateTag).toHaveBeenCalledWith("analytics:school:school-1");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/analytics");
     });
 });

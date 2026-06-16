@@ -83,6 +83,7 @@ vi.mock("@/lib/user", () => ({
 
 vi.mock("next/cache", () => ({
     revalidatePath: vi.fn(),
+    updateTag: vi.fn(),
 }));
 
 // Provide some valid base input

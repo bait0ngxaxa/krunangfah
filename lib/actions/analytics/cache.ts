@@ -1,4 +1,4 @@
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { revalidateRedisAnalyticsCache } from "./redis-cache";
 
 const ANALYTICS_TAG = "analytics";
@@ -18,11 +18,11 @@ export function getAnalyticsCacheTags(schoolId?: string): string[] {
 
 export async function revalidateAnalyticsCache(schoolId?: string): Promise<void> {
     await revalidateRedisAnalyticsCache(schoolId);
-    revalidateTag(ANALYTICS_TAG, "default");
-    revalidateTag(ANALYTICS_OVERVIEW_TAG, "default");
+    updateTag(ANALYTICS_TAG);
+    updateTag(ANALYTICS_OVERVIEW_TAG);
     revalidatePath("/analytics");
 
     if (schoolId) {
-        revalidateTag(getAnalyticsSchoolTag(schoolId), "default");
+        updateTag(getAnalyticsSchoolTag(schoolId));
     }
 }

@@ -1,4 +1,4 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import type { GetStudentsOptions } from "./types";
 
 const STUDENTS_TAG = "students";
@@ -89,13 +89,15 @@ export function revalidateStudentsCache(
     schoolId?: string,
     studentId?: string,
 ): void {
-    revalidateTag(STUDENTS_TAG, "default");
-    revalidateTag(STUDENT_DETAIL_TAG, "default");
+    updateTag(STUDENTS_TAG);
+    updateTag(STUDENT_DETAIL_TAG);
+    revalidatePath("/students");
 
     if (schoolId) {
-        revalidateTag(getStudentsSchoolTag(schoolId), "default");
+        updateTag(getStudentsSchoolTag(schoolId));
     }
     if (studentId) {
-        revalidateTag(getStudentDetailItemTag(studentId), "default");
+        updateTag(getStudentDetailItemTag(studentId));
+        revalidatePath(`/students/${studentId}`);
     }
 }

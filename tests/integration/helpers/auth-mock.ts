@@ -70,6 +70,7 @@ vi.mock("@/lib/session", () => ({
 vi.mock("next/cache", () => ({
     revalidatePath: vi.fn(),
     revalidateTag: vi.fn(),
+    updateTag: vi.fn(),
     unstable_cache: vi.fn(
         (fn: (...args: unknown[]) => unknown) =>
             (...args: unknown[]) =>
