@@ -18,6 +18,7 @@ const prismaMock = vi.hoisted(() => ({
         upsert: vi.fn(),
     },
     phqResult: {
+        findFirst: vi.fn(),
         update: vi.fn(),
     },
 }));
@@ -74,6 +75,28 @@ function validInput(overrides: Record<string, unknown> = {}) {
     };
 }
 
+function updatedStudentProfile(overrides: Record<string, unknown> = {}) {
+    return {
+        id: "student-1",
+        studentId: "ST-001",
+        nationalId: "1103700000011",
+        firstName: "สมหญิง",
+        lastName: "ใจดี",
+        gender: null,
+        age: 13,
+        class: "ม.1/1",
+        status: "ACTIVE",
+        ...overrides,
+    };
+}
+
+function latestProfileContext(overrides: Record<string, unknown> = {}) {
+    return {
+        activePhqResultId: "phq-latest",
+        ...overrides,
+    };
+}
+
 describe("updateStudentProfile", () => {
     beforeEach(() => {
         vi.resetAllMocks();
@@ -96,7 +119,8 @@ describe("updateStudentProfile", () => {
             status: "ACTIVE",
         });
         prismaMock.student.findUnique.mockResolvedValue(null);
-        prismaMock.student.update.mockResolvedValue({});
+        prismaMock.student.update.mockResolvedValue(updatedStudentProfile());
+        prismaMock.phqResult.findFirst.mockResolvedValue({ id: "phq-latest" });
         prismaMock.schoolClass.findUnique.mockResolvedValue({ id: "class-2" });
         prismaMock.$transaction.mockImplementation(async (callback) =>
             callback(prismaMock),
@@ -117,25 +141,32 @@ describe("updateStudentProfile", () => {
         expect(prismaMock.student.update).not.toHaveBeenCalled();
     });
 
-    it("blocks class_teacher from moving a student to another class", async () => {
-        vi.mocked(requireAuth).mockResolvedValue({
-            user: {
-                id: "teacher-1",
-                role: "class_teacher",
-            },
-        } as Awaited<ReturnType<typeof requireAuth>>);
-        prismaMock.user.findUnique.mockResolvedValue({
-            schoolId: "school-1",
-            teacher: { advisoryClass: "ม.1/1" },
-        });
-
+    it("blocks profile class changes for every editable role", async () => {
         const result = await updateStudentProfile(
             "student-1",
             validInput({ class: "ม.1/2" }),
+            latestProfileContext(),
         );
 
         expect(result.success).toBe(false);
-        expect(result.message).toBe("ครูประจำชั้นไม่สามารถย้ายห้องนักเรียนได้");
+        expect(result.message).toBe(
+            "ห้องเรียนแก้ไขได้จากการนำเข้าข้อมูลเท่านั้น",
+        );
+        expect(prismaMock.schoolClass.findUnique).not.toHaveBeenCalled();
+        expect(prismaMock.student.update).not.toHaveBeenCalled();
+    });
+
+    it("blocks stale profile updates from historical filters", async () => {
+        const result = await updateStudentProfile(
+            "student-1",
+            validInput({ firstName: "สมหญิง" }),
+            latestProfileContext({ activePhqResultId: "phq-old" }),
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.message).toBe(
+            "กำลังดูข้อมูลย้อนหลัง กรุณากลับไปที่ปีการศึกษาล่าสุดก่อนแก้ไขข้อมูลนักเรียน",
+        );
         expect(prismaMock.student.update).not.toHaveBeenCalled();
     });
 
@@ -143,6 +174,7 @@ describe("updateStudentProfile", () => {
         const result = await updateStudentProfile(
             "student-1",
             validInput({ firstName: "สมหญิง", gender: null }),
+            latestProfileContext(),
         );
 
         expect(result.success).toBe(true);
@@ -158,7 +190,19 @@ describe("updateStudentProfile", () => {
                 class: "ม.1/1",
                 status: "ACTIVE",
             },
+            select: {
+                id: true,
+                studentId: true,
+                nationalId: true,
+                firstName: true,
+                lastName: true,
+                gender: true,
+                age: true,
+                class: true,
+                status: true,
+            },
         });
+        expect(result.student).toEqual(updatedStudentProfile());
         expect(prismaMock.phqResult.update).not.toHaveBeenCalled();
         expect(revalidateStudentsCache).toHaveBeenCalledWith(
             "school-1",

@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { updateStudentProfile } from "@/lib/actions/student/mutations";
 import {
-    buildClassOptions,
     StudentProfileFields,
     type StudentProfileFormState,
 } from "./StudentProfileEditFields";
@@ -29,17 +28,14 @@ interface EditableStudent {
     status?: string | null;
 }
 
-interface SchoolClassOption {
-    id: string;
-    name: string;
-}
+type SavedStudentProfile = EditableStudent;
 
 interface StudentProfileEditModalProps {
     student: EditableStudent;
-    schoolClasses: SchoolClassOption[];
-    canEditClass: boolean;
+    activePhqResultId: string;
     isOpen: boolean;
     onClose: () => void;
+    onSaved: (student: SavedStudentProfile) => void;
 }
 
 interface StudentProfileSubmitPayload
@@ -89,10 +85,10 @@ function toSubmitPayload(
 
 export function StudentProfileEditModal({
     student,
-    schoolClasses,
-    canEditClass,
+    activePhqResultId,
     isOpen,
     onClose,
+    onSaved,
 }: StudentProfileEditModalProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -101,7 +97,6 @@ export function StudentProfileEditModal({
         createInitialState(student),
     );
     const hasChanges = hasFormChanges(form, baselineForm);
-    const classOptions = buildClassOptions(schoolClasses, student.class);
 
     if (typeof document === "undefined" || !isOpen) return null;
 
@@ -126,6 +121,7 @@ export function StudentProfileEditModal({
             const result = await updateStudentProfile(
                 student.id,
                 toSubmitPayload(form),
+                { activePhqResultId },
             );
             if (!result.success) {
                 toast.error(result.message);
@@ -133,8 +129,10 @@ export function StudentProfileEditModal({
             }
 
             toast.success(result.message);
-            setBaselineForm(form);
-            setForm(form);
+            const nextForm = createInitialState(result.student);
+            onSaved(result.student);
+            setBaselineForm(nextForm);
+            setForm(nextForm);
             onClose();
             router.refresh();
         });
@@ -155,8 +153,6 @@ export function StudentProfileEditModal({
                 <CloseButton isPending={isPending} onClose={handleClose} />
                 <div className="overflow-y-auto px-4 pb-4 pt-12 sm:px-5">
                     <StudentProfileFields
-                        canEditClass={canEditClass}
-                        classOptions={classOptions}
                         form={form}
                         isPending={isPending}
                         updateField={updateField}

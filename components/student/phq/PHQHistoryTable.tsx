@@ -14,6 +14,7 @@ interface PHQResult {
     totalScore: number;
     riskLevel: string;
     createdAt: Date;
+    assessmentRound: number;
     q9a: boolean;
     q9b: boolean;
     academicYear: {
@@ -59,13 +60,7 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
                     <thead>
                         <tr className="border-b border-gray-200 bg-slate-50/90">
                             <th className="text-left py-4 px-6 font-bold text-gray-700">
-                                ครั้งที่
-                            </th>
-                            <th className="text-left py-4 px-6 font-bold text-gray-700">
-                                วันที่
-                            </th>
-                            <th className="text-left py-4 px-6 font-bold text-gray-700">
-                                ปีการศึกษา/เทอม
+                                ปีการศึกษา/เทอม/ครั้งที่
                             </th>
                             <th className="text-center py-4 px-6 font-bold text-gray-700">
                                 คะแนนรวม
@@ -76,40 +71,29 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
                             <th className="text-center py-4 px-6 font-bold text-gray-700">
                                 หมายเหตุ
                             </th>
+                            <th className="text-left py-4 px-6 font-bold text-gray-700">
+                                วันที่
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {results.map((result, index) => {
+                        {results.map((result) => {
                             const risk = getRiskLevelConfig(
                                 result.riskLevel as RiskLevel,
                             );
                             const hasWarning = result.q9a || result.q9b;
-                            const rowNumber =
-                                pagination.total -
-                                ((pagination.page - 1) * pagination.pageSize + index);
 
                             return (
                                 <tr
                                     key={result.id}
                                     className="transition-colors hover:bg-slate-50/80"
                                 >
-                                    <td className="py-4 px-6 font-medium text-gray-700 tabular-nums">
-                                        {rowNumber}
-                                    </td>
-                                    <td className="py-4 px-6 text-gray-600">
-                                        {new Date(
-                                            result.createdAt,
-                                        ).toLocaleDateString("th-TH", {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                        })}
-                                    </td>
-                                    <td className="py-4 px-6 text-gray-600">
+                                    <td className="py-4 px-6 font-semibold text-gray-700">
                                         {formatAcademicYear(
                                             result.academicYear.year,
                                             result.academicYear.semester,
-                                        )}
+                                        )}{" "}
+                                        ครั้งที่ {result.assessmentRound}
                                     </td>
                                     <td className="py-4 px-6 text-center font-bold text-gray-800 tabular-nums">
                                         {result.totalScore}
@@ -143,6 +127,15 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
                                             </div>
                                         )}
                                     </td>
+                                    <td className="py-4 px-6 text-gray-600">
+                                        {new Date(
+                                            result.createdAt,
+                                        ).toLocaleDateString("th-TH", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                        })}
+                                    </td>
                                 </tr>
                             );
                         })}
@@ -152,14 +145,11 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
 
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
-                {results.map((result, index) => {
+                {results.map((result) => {
                     const risk = getRiskLevelConfig(
                         result.riskLevel as RiskLevel,
                     );
                     const hasWarning = result.q9a || result.q9b;
-                    const rowNumber =
-                        pagination.total -
-                        ((pagination.page - 1) * pagination.pageSize + index);
 
                     return (
                         <div
@@ -169,7 +159,12 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <div className="mb-1 text-sm font-medium text-slate-500">
-                                        ครั้งที่ {rowNumber}
+                                        {formatAcademicYear(
+                                            result.academicYear.year,
+                                            result.academicYear.semester,
+                                            "long",
+                                        )}{" "}
+                                        ครั้งที่ {result.assessmentRound}
                                     </div>
                                     <div className="font-bold text-gray-800">
                                         {new Date(
@@ -199,17 +194,6 @@ export function PHQHistoryTable({ results, pagination }: PHQHistoryTableProps) {
                                 </div>
                             )}
                             <div className="space-y-3">
-                                <div className="text-sm text-gray-600 flex items-center gap-2">
-                                    <span
-                                        className="w-1.5 h-1.5 rounded-full bg-emerald-300"
-                                        aria-hidden="true"
-                                    />
-                                    {formatAcademicYear(
-                                        result.academicYear.year,
-                                        result.academicYear.semester,
-                                        "long",
-                                    )}
-                                </div>
                                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                                     <span className="text-sm text-gray-600 font-medium">
                                         คะแนนรวม

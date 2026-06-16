@@ -40,9 +40,32 @@ interface UpdateStudentStatusResult {
     message: string;
 }
 
-interface UpdateStudentProfileResult {
-    success: boolean;
-    message: string;
+interface UpdatedStudentProfile {
+    id: string;
+    studentId: string;
+    nationalId: string | null;
+    firstName: string;
+    lastName: string;
+    gender: string | null;
+    age: number | null;
+    class: string;
+    status: StudentStatus;
+}
+
+type UpdateStudentProfileResult =
+    | {
+          success: true;
+          message: string;
+          student: UpdatedStudentProfile;
+      }
+    | {
+          success: false;
+          message: string;
+          student?: never;
+      };
+
+interface StudentProfileUpdateContext {
+    activePhqResultId: string;
 }
 
 interface EditableStudentProfileRecord {
@@ -849,6 +872,22 @@ function getStudentProfileValidationMessage(
     return parsed.data;
 }
 
+function getStudentProfileUpdateContext(
+    input: unknown,
+): StudentProfileUpdateContext | string {
+    if (!input || typeof input !== "object") {
+        return "กรุณาโหลดหน้าข้อมูลล่าสุดก่อนแก้ไขข้อมูลนักเรียน";
+    }
+
+    const activePhqResultId = (input as { activePhqResultId?: unknown })
+        .activePhqResultId;
+    if (typeof activePhqResultId !== "string" || !activePhqResultId.trim()) {
+        return "กรุณาโหลดหน้าข้อมูลล่าสุดก่อนแก้ไขข้อมูลนักเรียน";
+    }
+
+    return { activePhqResultId };
+}
+
 async function getEditableStudentProfile(
     params: {
         studentId: string;
@@ -887,6 +926,25 @@ async function getEditableStudentProfile(
     });
 
     return student ?? "ไม่พบนักเรียนที่ต้องการแก้ไข";
+}
+
+async function validateLatestImportedProfileContext(
+    studentId: string,
+    context: StudentProfileUpdateContext,
+): Promise<string | null> {
+    const latestPhqResult = await prisma.phqResult.findFirst({
+        where: { studentId },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+    });
+
+    if (!latestPhqResult) {
+        return "แก้ไขข้อมูลได้เฉพาะนักเรียนที่มีข้อมูลนำเข้าล่าสุดเท่านั้น";
+    }
+
+    return latestPhqResult.id === context.activePhqResultId
+        ? null
+        : "กำลังดูข้อมูลย้อนหลัง กรุณากลับไปที่ปีการศึกษาล่าสุดก่อนแก้ไขข้อมูลนักเรียน";
 }
 
 async function adjustSchoolClassExpectedCount(
@@ -943,26 +1001,9 @@ async function adjustSchoolClassExpectedCount(
 async function validateStudentProfileUpdateRules(
     student: EditableStudentProfileRecord,
     input: StudentProfileUpdateInput,
-    userRole: string,
 ): Promise<string | null> {
-    if (userRole === "class_teacher" && input.class !== student.class) {
-        return "ครูประจำชั้นไม่สามารถย้ายห้องนักเรียนได้";
-    }
-
     if (input.class !== student.class) {
-        const schoolClass = await prisma.schoolClass.findUnique({
-            where: {
-                schoolId_name: {
-                    schoolId: student.schoolId,
-                    name: input.class,
-                },
-            },
-            select: { id: true },
-        });
-
-        if (!schoolClass) {
-            return "ไม่พบห้องเรียนที่ต้องการย้ายไป";
-        }
+        return "ห้องเรียนแก้ไขได้จากการนำเข้าข้อมูลเท่านั้น";
     }
 
     if (input.nationalId !== student.nationalId && input.nationalId) {
@@ -999,7 +1040,7 @@ async function validateStudentProfileUpdateRules(
 async function saveStudentProfileUpdate(
     student: EditableStudentProfileRecord,
     input: StudentProfileUpdateInput,
-): Promise<void> {
+): Promise<UpdatedStudentProfile> {
     const statusChanged = student.status !== input.status;
     const academicYearId = statusChanged ? await getCurrentAcademicYearId() : null;
     const oldStatusInactive = isInactiveStudentStatus(student.status);
@@ -1011,8 +1052,8 @@ async function saveStudentProfileUpdate(
               ? -1
               : 1;
 
-    await prisma.$transaction(async (tx) => {
-        await tx.student.update({
+    return prisma.$transaction(async (tx) => {
+        const updatedStudent = await tx.student.update({
             where: { id: student.id },
             data: {
                 studentId: input.studentId,
@@ -1021,7 +1062,7 @@ async function saveStudentProfileUpdate(
                 lastName: input.lastName,
                 gender: input.gender,
                 age: input.age,
-                class: input.class,
+                class: student.class,
                 status: input.status,
                 ...(statusChanged
                     ? {
@@ -1029,6 +1070,17 @@ async function saveStudentProfileUpdate(
                           leftAt: newStatusInactive ? new Date() : null,
                       }
                     : {}),
+            },
+            select: {
+                id: true,
+                studentId: true,
+                nationalId: true,
+                firstName: true,
+                lastName: true,
+                gender: true,
+                age: true,
+                class: true,
+                status: true,
             },
         });
 
@@ -1038,6 +1090,8 @@ async function saveStudentProfileUpdate(
             className: student.class,
             delta: expectedCountDelta,
         });
+
+        return updatedStudent;
     });
 }
 
@@ -1059,6 +1113,7 @@ function revalidateStudentProfilePaths(
 export async function updateStudentProfile(
     studentId: string,
     input: unknown,
+    context?: unknown,
 ): Promise<UpdateStudentProfileResult> {
     try {
         const session = await requireAuth();
@@ -1083,6 +1138,11 @@ export async function updateStudentProfile(
             return { success: false, message: validated };
         }
 
+        const updateContext = getStudentProfileUpdateContext(context);
+        if (typeof updateContext === "string") {
+            return { success: false, message: updateContext };
+        }
+
         const student = await getEditableStudentProfile({
             studentId,
             userId: session.user.id,
@@ -1092,19 +1152,30 @@ export async function updateStudentProfile(
             return { success: false, message: student };
         }
 
+        const contextError = await validateLatestImportedProfileContext(
+            student.id,
+            updateContext,
+        );
+        if (contextError) {
+            return { success: false, message: contextError };
+        }
+
         const ruleError = await validateStudentProfileUpdateRules(
             student,
             validated,
-            userRole,
         );
         if (ruleError) {
             return { success: false, message: ruleError };
         }
 
-        await saveStudentProfileUpdate(student, validated);
+        const updatedStudent = await saveStudentProfileUpdate(student, validated);
         revalidateStudentProfilePaths(student, validated);
 
-        return { success: true, message: "อัปเดตข้อมูลนักเรียนสำเร็จ" };
+        return {
+            success: true,
+            message: "อัปเดตข้อมูลนักเรียนสำเร็จ",
+            student: updatedStudent,
+        };
     } catch (error) {
         logError("Update student profile error:", error);
         return {

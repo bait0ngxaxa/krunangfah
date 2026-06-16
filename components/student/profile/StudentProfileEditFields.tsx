@@ -2,7 +2,6 @@ import {
     BadgeCheck,
     Cake,
     CreditCard,
-    GraduationCap,
     Hash,
     type LucideIcon,
     UserRound,
@@ -49,24 +48,6 @@ export type UpdateField = (
     field: keyof StudentProfileFormState,
     value: string,
 ) => void;
-
-interface SchoolClassOption {
-    id: string;
-    name: string;
-}
-
-export function buildClassOptions(
-    schoolClasses: SchoolClassOption[],
-    currentClass: string,
-): SelectOption[] {
-    const options = schoolClasses.map((schoolClass) => ({
-        value: schoolClass.name,
-        label: schoolClass.name,
-    }));
-    return options.some((option) => option.value === currentClass)
-        ? options
-        : [{ value: currentClass, label: currentClass }, ...options];
-}
 
 function FieldLabel({
     Icon,
@@ -215,18 +196,11 @@ function PersonalFieldControls({
     );
 }
 
-interface SchoolFieldControlsProps extends FormControlsProps {
-    classOptions: readonly SelectOption[];
-    canEditClass: boolean;
-}
-
 function SchoolFieldControls({
-    canEditClass,
-    classOptions,
     form,
     isPending,
     updateField,
-}: SchoolFieldControlsProps) {
+}: FormControlsProps) {
     return (
         <>
             <TextField
@@ -256,16 +230,6 @@ function SchoolFieldControls({
                 disabled={isPending}
             />
             <SelectField
-                Icon={GraduationCap}
-                id="student-class"
-                label="ห้องเรียน"
-                value={form.class}
-                options={classOptions}
-                onChange={(value) => updateField("class", value)}
-                required
-                disabled={isPending || !canEditClass}
-            />
-            <SelectField
                 Icon={BadgeCheck}
                 id="student-status"
                 label="สถานะ"
@@ -278,9 +242,7 @@ function SchoolFieldControls({
     );
 }
 
-type StudentProfileFieldsProps = SchoolFieldControlsProps;
-
-export function StudentProfileFields(props: StudentProfileFieldsProps) {
+export function StudentProfileFields(props: FormControlsProps) {
     return (
         <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4">
             <div className="mb-3 flex items-center gap-2">

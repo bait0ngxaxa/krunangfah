@@ -36,23 +36,21 @@ interface StudentProfileCardProps {
         status?: string | null;
     };
     latestResult?: {
+        id: string;
         totalScore: number;
         riskLevel: string;
         referredToHospital: boolean;
         hospitalName?: string | null;
         createdAt: Date;
+        assessmentRound: number;
         academicYear: {
             year: number;
             semester: number;
         };
     } | null;
-    schoolClasses?: Array<{
-        id: string;
-        name: string;
-    }>;
+    activePhqResultId?: string;
     canViewNationalId?: boolean;
     canEditProfile?: boolean;
-    canEditClass?: boolean;
 }
 
 interface DetailItem {
@@ -128,18 +126,18 @@ function buildDetailItems(
 export function StudentProfileCard({
     student,
     latestResult,
-    schoolClasses = [],
+    activePhqResultId,
     canViewNationalId = false,
     canEditProfile = false,
-    canEditClass = false,
 }: StudentProfileCardProps): ReactElement {
     const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
+    const [profileStudent, setProfileStudent] = useState(student);
     const latestRiskLevel =
         latestResult && isRiskLevel(latestResult.riskLevel)
             ? latestResult.riskLevel
             : null;
     const risk = latestRiskLevel ? getRiskLevelConfig(latestRiskLevel) : null;
-    const detailItems = buildDetailItems(student, canViewNationalId);
+    const detailItems = buildDetailItems(profileStudent, canViewNationalId);
     const avatarBg = risk ? risk.bgSolid : "bg-[var(--brand-primary)]";
 
     return (
@@ -151,7 +149,7 @@ export function StudentProfileCard({
                             className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl ${avatarBg} text-2xl font-bold text-white sm:h-20 sm:w-20 sm:text-3xl`}
                             aria-hidden="true"
                         >
-                            {student.firstName.charAt(0)}
+                            {profileStudent.firstName.charAt(0)}
                         </div>
 
                         <div className="min-w-0 flex-1">
@@ -161,7 +159,8 @@ export function StudentProfileCard({
                                         ข้อมูลนักเรียน
                                     </p>
                                     <h1 className="mt-1 break-words text-pretty text-2xl font-bold leading-tight text-slate-950 sm:text-3xl">
-                                        {student.firstName} {student.lastName}
+                                        {profileStudent.firstName}{" "}
+                                        {profileStudent.lastName}
                                     </h1>
                                 </div>
                                 {canEditProfile && (
@@ -224,7 +223,9 @@ export function StudentProfileCard({
                                                 latestResult.academicYear
                                                     .semester,
                                                 "long",
-                                            )}
+                                            )}{" "}
+                                            ครั้งที่{" "}
+                                            {latestResult.assessmentRound}
                                         </p>
                                         <p className="text-xs text-slate-500">
                                             {formatAssessmentDate(
@@ -237,19 +238,19 @@ export function StudentProfileCard({
                         </>
                     )}
                     <StudentStatusControl
-                        studentId={student.id}
-                        currentStatus={student.status ?? "ACTIVE"}
+                        studentId={profileStudent.id}
+                        currentStatus={profileStudent.status ?? "ACTIVE"}
                         canEdit={false}
                     />
                 </div>
             </div>
-            {isProfileEditOpen && (
+            {isProfileEditOpen && activePhqResultId && (
                 <StudentProfileEditModal
-                    student={student}
-                    schoolClasses={schoolClasses}
-                    canEditClass={canEditClass}
+                    student={profileStudent}
+                    activePhqResultId={activePhqResultId}
                     isOpen={isProfileEditOpen}
                     onClose={() => setIsProfileEditOpen(false)}
+                    onSaved={setProfileStudent}
                 />
             )}
 
