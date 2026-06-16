@@ -63,9 +63,11 @@ export interface AnalyticsData {
     availableClasses: string[];
     availableAcademicYears: number[];
     availableSemesters: number[];
+    availableRounds: number[];
     currentClass?: string;
     currentAcademicYear?: number;
     currentSemester?: number;
+    currentRound?: number;
     trendData: TrendDataPoint[];
     activityProgressByRisk: ActivityProgressByRisk[];
     activityCompletionSummary: ActivityCompletionSummary;

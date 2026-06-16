@@ -156,14 +156,19 @@ export async function createTestPhqResult(
     studentId: string,
     academicYearId: string,
     importedById: string,
-    overrides: { riskLevel?: string; totalScore?: number } = {},
+    overrides: {
+        riskLevel?: string;
+        totalScore?: number;
+        assessmentRound?: number;
+        createdAt?: Date;
+    } = {},
 ) {
     const phq = await prisma.phqResult.create({
         data: {
             studentId,
             academicYearId,
             importedById,
-            assessmentRound: 1,
+            assessmentRound: overrides.assessmentRound ?? 1,
             q1: 2,
             q2: 2,
             q3: 2,
@@ -177,6 +182,7 @@ export async function createTestPhqResult(
             q9b: false,
             totalScore: overrides.totalScore ?? 8,
             riskLevel: (overrides.riskLevel as "yellow") ?? "yellow",
+            createdAt: overrides.createdAt,
         },
     });
     createdIds.phqResults.push(phq.id);

@@ -168,7 +168,7 @@ function SchoolUserOnboardingPanel({
                 <SchoolUserGuideStep
                     icon={<ShieldCheck className="h-4 w-4" aria-hidden="true" />}
                     title="จัดการสิทธิ์"
-                    description={`มีผู้ดูแลโรงเรียน ${adminCount} คน ถ้าต้องแบ่งงานให้ใช้แท็บจัดการสิทธิ์`}
+                    description={`มีครูนางฟ้า ${adminCount} คน ถ้าต้องแบ่งงานให้ใช้แท็บจัดการสิทธิ์`}
                 />
             </div>
         </section>

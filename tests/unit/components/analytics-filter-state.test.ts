@@ -13,21 +13,27 @@ describe("analytics filter state", () => {
             selectedClass: "all",
             selectedAcademicYear: "all",
             selectedSemester: "all",
+            selectedRound: "all",
         });
 
         latestFilters = applyFilterUpdates(
             latestFilters,
-            { class: "ม.1/1", semester: null },
+            { class: "ม.1/1", semester: null, round: null },
             true,
         );
         latestFilters = applyFilterUpdates(
             latestFilters,
-            { year: "2569", semester: null },
+            { year: "2569", semester: null, round: null },
             true,
         );
         latestFilters = applyFilterUpdates(
             latestFilters,
-            { semester: "2" },
+            { semester: "2", round: null },
+            true,
+        );
+        latestFilters = applyFilterUpdates(
+            latestFilters,
+            { round: "1" },
             true,
         );
 
@@ -36,9 +42,10 @@ describe("analytics filter state", () => {
             class: "ม.1/1",
             year: "2569",
             semester: "2",
+            round: "1",
         });
         expect(buildFilterUrl("/analytics", latestFilters)).toBe(
-            "/analytics?school=school-1&class=%E0%B8%A1.1%2F1&year=2569&semester=2",
+            "/analytics?school=school-1&class=%E0%B8%A1.1%2F1&year=2569&semester=2&round=1",
         );
     });
 
@@ -49,12 +56,14 @@ describe("analytics filter state", () => {
                 class: "ม.1/1",
                 year: "2569",
                 semester: "2",
+                round: "1",
             },
             {
                 school: null,
                 class: null,
                 year: null,
                 semester: null,
+                round: null,
             },
             true,
         );
@@ -64,6 +73,7 @@ describe("analytics filter state", () => {
             class: "all",
             year: "all",
             semester: "all",
+            round: "all",
         });
         expect(buildFilterUrl("/analytics", nextFilters)).toBe("/analytics");
     });

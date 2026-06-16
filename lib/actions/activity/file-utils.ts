@@ -475,7 +475,7 @@ export async function deleteWorksheetUpload(
             });
         }
 
-        revalidateAnalyticsCache(upload.activityProgress.student.schoolId);
+        await revalidateAnalyticsCache(upload.activityProgress.student.schoolId);
 
         return { success: true, message: "ลบไฟล์สำเร็จ" };
     } catch (error) {

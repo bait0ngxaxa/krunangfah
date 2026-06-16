@@ -99,7 +99,7 @@ export async function updateHospitalReferral(
         });
 
         revalidatePath(`/students/${phqResult.studentId}`);
-        revalidateAnalyticsCache(phqResult.student.schoolId);
+        await revalidateAnalyticsCache(phqResult.student.schoolId);
 
         return {
             success: true,

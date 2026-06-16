@@ -22,6 +22,7 @@ interface AnalyticsPageProps {
         school?: string;
         year?: string;
         semester?: string;
+        round?: string;
     }>;
 }
 
@@ -59,6 +60,16 @@ function parseSemesterFilter(semesterValue?: string): number | undefined {
     return parsedSemester;
 }
 
+function parseRoundFilter(roundValue?: string): number | undefined {
+    if (!roundValue) return undefined;
+
+    if (!/^[12]$/.test(roundValue)) {
+        return undefined;
+    }
+
+    return Number.parseInt(roundValue, 10);
+}
+
 export default async function AnalyticsPage({
     searchParams,
 }: AnalyticsPageProps) {
@@ -71,6 +82,7 @@ export default async function AnalyticsPage({
     // ── Phase 1: Parse & pre-validate params (no DB calls) ──
     const parsedYear = parseYearFilter(params.year);
     const parsedSemester = parseSemesterFilter(params.semester);
+    const parsedRound = parseRoundFilter(params.round);
 
     if (params.year && parsedYear === undefined) {
         warnings.push(`ค่า year ไม่ถูกต้อง ("${formatWarningValue(params.year)}") ระบบจึงใช้ "ทุกปีการศึกษา"`);
@@ -78,6 +90,11 @@ export default async function AnalyticsPage({
     if (params.semester && parsedSemester === undefined) {
         warnings.push(
             `ค่า semester ไม่ถูกต้อง ("${formatWarningValue(params.semester)}") ระบบจึงใช้ "ทุกเทอม"`,
+        );
+    }
+    if (params.round && parsedRound === undefined) {
+        warnings.push(
+            `ค่า round ไม่ถูกต้อง ("${formatWarningValue(params.round)}") ระบบจึงใช้ "ทุกครั้ง"`,
         );
     }
     if (userRole === "class_teacher" && params.class && params.class !== "all") {
@@ -91,6 +108,7 @@ export default async function AnalyticsPage({
     let selectedClass = userRole === "class_teacher" ? "all" : (params.class ?? "all");
     let selectedAcademicYear = parsedYear === undefined ? "all" : params.year ?? "all";
     let selectedSemester = parsedSemester === undefined ? "all" : params.semester ?? "all";
+    let selectedRound = parsedRound === undefined ? "all" : params.round ?? "all";
 
     // ── Phase 2: Validate schoolId against DB before main fetch ──
     // Fetch schools first (lightweight) to validate schoolId before the heavy analytics query
@@ -135,6 +153,7 @@ export default async function AnalyticsPage({
                         selectedSchoolId={selectedSchoolId}
                         selectedAcademicYear={selectedAcademicYear}
                         selectedSemester={selectedSemester}
+                        selectedRound={selectedRound}
                         filterWarnings={warnings}
                         requireSchoolSelection={true}
                         systemOverview={systemOverview}
@@ -150,6 +169,7 @@ export default async function AnalyticsPage({
         selectedSchoolId,
         parsedYear,
         parsedSemester,
+        parsedRound,
     );
 
     if (!analyticsData) {
@@ -184,6 +204,16 @@ export default async function AnalyticsPage({
         selectedSemester = "all";
     }
 
+    if (
+        selectedRound !== "all" &&
+        !analyticsData.availableRounds.includes(Number(selectedRound))
+    ) {
+        warnings.push(
+            `ไม่พบครั้งที่ "${selectedRound}" ในขอบเขตข้อมูล ระบบจึงใช้ "ทุกครั้ง"`,
+        );
+        selectedRound = "all";
+    }
+
     return (
         <div className="min-h-screen bg-slate-50 relative overflow-hidden">
             <PageBanner
@@ -205,6 +235,7 @@ export default async function AnalyticsPage({
                     selectedSchoolId={selectedSchoolId}
                     selectedAcademicYear={selectedAcademicYear}
                     selectedSemester={selectedSemester}
+                    selectedRound={selectedRound}
                     filterWarnings={warnings}
                     systemOverview={null}
                 />

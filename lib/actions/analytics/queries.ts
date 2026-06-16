@@ -69,6 +69,7 @@ export async function getCombinedAnalytics(
     classFilter?: string,
     academicYear?: number,
     semester?: number,
+    assessmentRound?: number,
 ): Promise<CombinedAnalyticsResult> {
     const schoolCondition = schoolId
         ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
@@ -90,6 +91,10 @@ export async function getCombinedAnalytics(
 
     const semesterCondition = semester !== undefined
         ? Prisma.sql`AND ay.semester = ${semester}`
+        : Prisma.empty;
+
+    const roundCondition = assessmentRound !== undefined
+        ? Prisma.sql`AND pr."assessmentRound" = ${assessmentRound}`
         : Prisma.empty;
 
     // Single query that computes everything from one table scan
@@ -118,6 +123,7 @@ export async function getCombinedAnalytics(
               ${classCondition}
               ${yearCondition}
               ${semesterCondition}
+              ${roundCondition}
         ),
         latest_phq AS (
             SELECT "studentId", "riskLevel", "referredToHospital", grade
@@ -206,6 +212,7 @@ export async function getTrendData(
     classFilter?: string,
     academicYear?: number,
     semester?: number,
+    assessmentRound?: number,
 ): Promise<TrendDataResult[]> {
     const schoolCondition = schoolId
         ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
@@ -221,6 +228,10 @@ export async function getTrendData(
 
     const semesterCondition = semester !== undefined
         ? Prisma.sql`AND ay.semester = ${semester}`
+        : Prisma.empty;
+
+    const roundCondition = assessmentRound !== undefined
+        ? Prisma.sql`AND pr."assessmentRound" = ${assessmentRound}`
         : Prisma.empty;
 
     return prisma.$queryRaw<TrendDataResult[]>`
@@ -241,6 +252,7 @@ export async function getTrendData(
               ${classCondition}
               ${yearCondition}
               ${semesterCondition}
+              ${roundCondition}
         )
         SELECT
             academic_year,
@@ -268,6 +280,7 @@ export async function getActivityProgressByRisk(
     classFilter?: string,
     academicYear?: number,
     semester?: number,
+    assessmentRound?: number,
 ): Promise<ActivityProgressResult[]> {
     const schoolCondition = schoolId
         ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
@@ -291,8 +304,12 @@ export async function getActivityProgressByRisk(
         ? Prisma.sql`AND ay.semester = ${semester}`
         : Prisma.empty;
 
+    const roundCondition = assessmentRound !== undefined
+        ? Prisma.sql`AND pr."assessmentRound" = ${assessmentRound}`
+        : Prisma.empty;
+
     return prisma.$queryRaw<ActivityProgressResult[]>`
-        WITH ranked_phq AS (
+        WITH filtered_phq AS (
             SELECT
                 pr.id as phq_id,
                 pr."studentId",
@@ -308,10 +325,11 @@ export async function getActivityProgressByRisk(
               ${classCondition}
               ${yearCondition}
               ${semesterCondition}
+              ${roundCondition}
         ),
         latest_phq AS (
             SELECT phq_id, "studentId", risk_level
-            FROM ranked_phq
+            FROM filtered_phq
             WHERE rn = 1
         ),
         activity_counts AS (
@@ -320,7 +338,9 @@ export async function getActivityProgressByRisk(
                 ap."activityNumber",
                 COUNT(DISTINCT ap."studentId")::bigint as completed_count
             FROM latest_phq lp
-            JOIN activity_progress ap ON ap."phqResultId" = lp.phq_id
+            JOIN activity_progress ap
+              ON ap."studentId" = lp."studentId"
+             AND ap."phqResultId" = lp.phq_id
             WHERE ap.status = 'completed'
             GROUP BY lp.risk_level, ap."activityNumber"
         )
@@ -343,6 +363,7 @@ export async function getActivityCompletionSummary(
     classFilter?: string,
     academicYear?: number,
     semester?: number,
+    assessmentRound?: number,
 ): Promise<ActivityCompletionSummaryResult> {
     const schoolCondition = schoolId
         ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
@@ -365,6 +386,10 @@ export async function getActivityCompletionSummary(
     const semesterCondition = semester !== undefined
         ? Prisma.sql`AND ay.semester = ${semester}`
         : Prisma.empty;
+
+    const roundCondition = assessmentRound !== undefined
+        ? Prisma.sql`AND pr."assessmentRound" = ${assessmentRound}`
+        : Prisma.empty;
     const requiredActivityRows = Object.entries(
         REQUIRED_ACTIVITY_NUMBERS_BY_RISK,
     ).flatMap(([riskLevel, activityNumbers]) =>
@@ -377,7 +402,7 @@ export async function getActivityCompletionSummary(
         WITH required_activity(risk_level, activity_number) AS (
             VALUES ${Prisma.join(requiredActivityRows)}
         ),
-        ranked_phq AS (
+        filtered_phq AS (
             SELECT
                 pr.id as phq_id,
                 pr."studentId",
@@ -393,6 +418,7 @@ export async function getActivityCompletionSummary(
               ${classCondition}
               ${yearCondition}
               ${semesterCondition}
+              ${roundCondition}
         ),
         required_students AS (
             SELECT
@@ -400,7 +426,7 @@ export async function getActivityCompletionSummary(
                 rp."studentId",
                 rp.risk_level,
                 COUNT(ra.activity_number)::int as required_count
-            FROM ranked_phq rp
+            FROM filtered_phq rp
             JOIN required_activity ra ON ra.risk_level = rp.risk_level
             WHERE rp.rn = 1
             GROUP BY rp.phq_id, rp."studentId", rp.risk_level
@@ -415,8 +441,9 @@ export async function getActivityCompletionSummary(
             FROM required_students rs
             JOIN required_activity ra ON ra.risk_level = rs.risk_level
             LEFT JOIN activity_progress ap
-              ON ap."phqResultId" = rs.phq_id
+              ON ap."studentId" = rs."studentId"
              AND ap."activityNumber" = ra.activity_number
+             AND ap."phqResultId" = rs.phq_id
             GROUP BY rs."studentId", rs.required_count
         )
         SELECT

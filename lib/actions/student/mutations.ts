@@ -656,7 +656,7 @@ export async function importStudents(
         revalidatePath("/students");
         revalidatePath("/analytics");
         revalidateStudentsCache(schoolId);
-        revalidateAnalyticsCache(schoolId);
+        await revalidateAnalyticsCache(schoolId);
 
         const importedCount = txResult.importedCount;
         const failedCount = errors.length;
@@ -848,7 +848,7 @@ export async function updateStudentStatus(
         revalidatePath("/analytics");
         revalidatePath("/school/classes");
         revalidateStudentsCache(student.schoolId, student.id);
-        revalidateAnalyticsCache(student.schoolId);
+        await revalidateAnalyticsCache(student.schoolId);
 
         return { success: true, message: "อัปเดตสถานะนักเรียนสำเร็จ" };
     } catch (error) {
@@ -1095,10 +1095,10 @@ async function saveStudentProfileUpdate(
     });
 }
 
-function revalidateStudentProfilePaths(
+async function revalidateStudentProfilePaths(
     student: EditableStudentProfileRecord,
     input: StudentProfileUpdateInput,
-): void {
+): Promise<void> {
     revalidatePath("/dashboard");
     revalidatePath("/students");
     revalidatePath(`/students/${student.id}`);
@@ -1106,7 +1106,7 @@ function revalidateStudentProfilePaths(
     if (input.class !== student.class || input.status !== student.status) {
         revalidatePath("/analytics");
         revalidatePath("/school/classes");
-        revalidateAnalyticsCache(student.schoolId);
+        await revalidateAnalyticsCache(student.schoolId);
     }
 }
 
@@ -1169,7 +1169,7 @@ export async function updateStudentProfile(
         }
 
         const updatedStudent = await saveStudentProfileUpdate(student, validated);
-        revalidateStudentProfilePaths(student, validated);
+        await revalidateStudentProfilePaths(student, validated);
 
         return {
             success: true,

@@ -41,9 +41,11 @@ function createAnalyticsData(): AnalyticsData {
         availableClasses: ["ม.1/1"],
         availableAcademicYears: [2569],
         availableSemesters: [1],
+        availableRounds: [1],
         currentClass: "ม.1/1",
         currentAcademicYear: 2569,
         currentSemester: 1,
+        currentRound: 1,
         trendData: [
             {
                 period: "ต้นเทอม/1",
@@ -138,6 +140,7 @@ describe("analytics Redis cache", () => {
             targetClass: "ม.1/1",
             academicYearStr: "2569",
             semesterStr: "1",
+            roundStr: "1",
         });
         mocks.get.mockResolvedValue(JSON.stringify(data));
 
@@ -155,6 +158,7 @@ describe("analytics Redis cache", () => {
             targetClass: "ม.1/1",
             academicYearStr: "2569",
             semesterStr: "1",
+            roundStr: "1",
         });
 
         await setRedisCachedAnalyticsData(keyParts, data, "school-1");

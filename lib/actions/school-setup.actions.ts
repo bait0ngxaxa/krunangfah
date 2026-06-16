@@ -337,7 +337,7 @@ export async function addSchoolClass(
         );
 
         revalidatePath(CLASSES_PATH);
-        revalidateAnalyticsCache(schoolId);
+        await revalidateAnalyticsCache(schoolId);
 
         return {
             success: true,
@@ -404,7 +404,7 @@ export async function updateSchoolClassStudentCount(
         await upsertCurrentSchoolClassTerm(id, parsedCount.data, academicYearId);
 
         revalidatePath(CLASSES_PATH);
-        revalidateAnalyticsCache(schoolId);
+        await revalidateAnalyticsCache(schoolId);
 
         return {
             success: true,
@@ -465,7 +465,7 @@ export async function removeSchoolClass(
         await prisma.schoolClass.delete({ where: { id } });
 
         revalidatePath(CLASSES_PATH);
-        revalidateAnalyticsCache(schoolId);
+        await revalidateAnalyticsCache(schoolId);
 
         return { success: true, message: "ลบห้องเรียนสำเร็จ" };
     } catch (error) {

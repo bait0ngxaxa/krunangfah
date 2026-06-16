@@ -10,6 +10,12 @@ import {
     createTestUser,
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
+import {
+    createRoundScopeScenario,
+    expectAllRoomScope,
+    expectSingleRoomScope,
+    readActivityAnalytics,
+} from "./helpers/analytics-round-scope";
 
 const { getActivityCompletionSummary } = await import(
     "@/lib/actions/analytics/queries"
@@ -108,5 +114,17 @@ describe("Integration: analytics activity completion summary", () => {
         expect(Number(summary.not_started_students)).toBe(1);
         expect(Number(summary.in_progress_students)).toBe(1);
         expect(Number(summary.completed_students)).toBe(1);
+    });
+
+    it("does not mix activity progress from older rounds in all-room and class filters", async () => {
+        const scenario = await createRoundScopeScenario();
+        const allRoomAnalytics = await readActivityAnalytics(scenario);
+        const singleRoomAnalytics = await readActivityAnalytics(
+            scenario,
+            scenario.focusedClass,
+        );
+
+        expectAllRoomScope(allRoomAnalytics);
+        expectSingleRoomScope(singleRoomAnalytics);
     });
 });

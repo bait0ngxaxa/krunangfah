@@ -1,4 +1,4 @@
-export type FilterKey = "school" | "class" | "year" | "semester";
+export type FilterKey = "school" | "class" | "year" | "semester" | "round";
 export type FilterUpdates = Partial<Record<FilterKey, string | null>>;
 
 export interface FilterState {
@@ -6,6 +6,7 @@ export interface FilterState {
     class: string;
     year: string;
     semester: string;
+    round: string;
 }
 
 export function buildFilterState(input: {
@@ -13,12 +14,14 @@ export function buildFilterState(input: {
     selectedClass: string;
     selectedAcademicYear: string;
     selectedSemester: string;
+    selectedRound: string;
 }): FilterState {
     return {
         school: input.selectedSchoolId,
         class: input.selectedClass,
         year: input.selectedAcademicYear,
         semester: input.selectedSemester,
+        round: input.selectedRound,
     };
 }
 
@@ -65,6 +68,10 @@ export function applyFilterUpdates(
             updates.semester === undefined
                 ? current.semester
                 : resolveFilterValue("semester", updates.semester, isSystemAdmin),
+        round:
+            updates.round === undefined
+                ? current.round
+                : resolveFilterValue("round", updates.round, isSystemAdmin),
     };
 }
 
@@ -88,6 +95,7 @@ export function setFilterParams(
     setFilterParam(params, "class", filters.class);
     setFilterParam(params, "year", filters.year);
     setFilterParam(params, "semester", filters.semester);
+    setFilterParam(params, "round", filters.round);
 }
 
 export function buildFilterUrl(pathname: string, filters: FilterState): string {

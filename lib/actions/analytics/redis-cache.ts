@@ -116,12 +116,15 @@ function isAnalyticsData(value: unknown): value is AnalyticsData {
         isStringArray(value.availableClasses) &&
         isNumberArray(value.availableAcademicYears) &&
         isNumberArray(value.availableSemesters) &&
+        isNumberArray(value.availableRounds) &&
         (value.currentClass === undefined ||
             typeof value.currentClass === "string") &&
         (value.currentAcademicYear === undefined ||
             typeof value.currentAcademicYear === "number") &&
         (value.currentSemester === undefined ||
             typeof value.currentSemester === "number") &&
+        (value.currentRound === undefined ||
+            typeof value.currentRound === "number") &&
         Array.isArray(value.trendData) &&
         value.trendData.every(isTrendDataPoint) &&
         Array.isArray(value.activityProgressByRisk) &&
@@ -220,6 +223,7 @@ export function createAnalyticsRedisKeyParts(input: {
     targetClass: string;
     academicYearStr: string;
     semesterStr: string;
+    roundStr: string;
 }): string[] {
     return [
         "analytics-data",
@@ -228,6 +232,7 @@ export function createAnalyticsRedisKeyParts(input: {
         `class:${input.targetClass || "all"}`,
         `year:${input.academicYearStr || "all"}`,
         `semester:${input.semesterStr || "all"}`,
+        `round:${input.roundStr || "all"}`,
     ];
 }
 

@@ -25,6 +25,7 @@ interface AnalyticsContentProps {
     selectedSchoolId: string;
     selectedAcademicYear: string;
     selectedSemester: string;
+    selectedRound: string;
     filterWarnings: string[];
     requireSchoolSelection?: boolean;
     systemOverview?: SystemAnalyticsOverview | null;
@@ -74,6 +75,7 @@ export function AnalyticsContent({
     selectedSchoolId,
     selectedAcademicYear,
     selectedSemester,
+    selectedRound,
     filterWarnings,
     requireSchoolSelection = false,
     systemOverview,
@@ -97,10 +99,12 @@ export function AnalyticsContent({
                     availableClasses={[]}
                     availableYears={systemOverview?.availableAcademicYears ?? []}
                     availableSemesters={systemOverview?.availableSemesters ?? []}
+                    availableRounds={[]}
                     selectedSchoolId={selectedSchoolId}
                     selectedClass={selectedClass}
                     selectedAcademicYear={selectedAcademicYear}
                     selectedSemester={selectedSemester}
+                    selectedRound={selectedRound}
                     isSystemAdmin={isSystemAdmin}
                     showClassFilter={false}
                     requireSchoolSelection={true}
@@ -150,10 +154,12 @@ export function AnalyticsContent({
                 availableClasses={data.availableClasses}
                 availableYears={data.availableAcademicYears}
                 availableSemesters={data.availableSemesters}
+                availableRounds={data.availableRounds}
                 selectedSchoolId={selectedSchoolId}
                 selectedClass={selectedClass}
                 selectedAcademicYear={selectedAcademicYear}
                 selectedSemester={selectedSemester}
+                selectedRound={selectedRound}
                 isSystemAdmin={isSystemAdmin}
                 showClassFilter={showClassFilter}
             />

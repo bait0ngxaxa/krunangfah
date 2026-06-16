@@ -270,6 +270,7 @@ export async function confirmActivityComplete(
         }
 
         if (activityProgress.status === "completed") {
+            await revalidateAnalyticsCache(activityProgress.student.schoolId);
             return {
                 success: true,
                 activityNumber: activityProgress.activityNumber,
@@ -350,7 +351,7 @@ export async function confirmActivityComplete(
         });
 
         if (result.success) {
-            revalidateAnalyticsCache(activityProgress.student.schoolId);
+            await revalidateAnalyticsCache(activityProgress.student.schoolId);
         }
 
         return result;

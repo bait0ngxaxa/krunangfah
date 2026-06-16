@@ -5,6 +5,7 @@ import { useEffect, useOptimistic, useRef, useTransition } from "react";
 import { RotateCcw } from "lucide-react";
 
 import { AcademicYearFilter } from "./filters/AcademicYearFilter";
+import { AssessmentRoundFilter } from "./filters/AssessmentRoundFilter";
 import { ClassFilter } from "./filters/ClassFilter";
 import { SemesterFilter } from "./filters/SemesterFilter";
 import { SchoolFilter } from "./filters/SchoolFilter";
@@ -27,10 +28,12 @@ interface AnalyticsFiltersProps {
     availableClasses: string[];
     availableYears: number[];
     availableSemesters: number[];
+    availableRounds: number[];
     selectedSchoolId: string;
     selectedClass: string;
     selectedAcademicYear: string;
     selectedSemester: string;
+    selectedRound: string;
     isSystemAdmin: boolean;
     showClassFilter: boolean;
     requireSchoolSelection?: boolean;
@@ -49,10 +52,12 @@ export function AnalyticsFilters({
     availableClasses,
     availableYears,
     availableSemesters,
+    availableRounds,
     selectedSchoolId,
     selectedClass,
     selectedAcademicYear,
     selectedSemester,
+    selectedRound,
     isSystemAdmin,
     showClassFilter,
     requireSchoolSelection = false,
@@ -65,6 +70,7 @@ export function AnalyticsFilters({
         selectedClass,
         selectedAcademicYear,
         selectedSemester,
+        selectedRound,
     });
     const [optimisticFilters, setOptimisticFilters] = useOptimistic(
         selectedFilters,
@@ -78,10 +84,12 @@ export function AnalyticsFilters({
             selectedClass,
             selectedAcademicYear,
             selectedSemester,
+            selectedRound,
         });
     }, [
         selectedAcademicYear,
         selectedClass,
+        selectedRound,
         selectedSchoolId,
         selectedSemester,
     ]);
@@ -93,10 +101,12 @@ export function AnalyticsFilters({
         hasSelectedSchool ||
         optimisticFilters.class !== "all" ||
         optimisticFilters.year !== "all" ||
-        optimisticFilters.semester !== "all";
+        optimisticFilters.semester !== "all" ||
+        optimisticFilters.round !== "all";
     const safeAvailableClasses = uniqueStrings(availableClasses);
     const safeAvailableYears = uniqueNumbers(availableYears);
     const safeAvailableSemesters = uniqueNumbers(availableSemesters);
+    const safeAvailableRounds = uniqueNumbers(availableRounds);
 
     const updateParams = (updates: FilterUpdates): void => {
         const nextFilters = applyFilterUpdates(
@@ -134,6 +144,7 @@ export function AnalyticsFilters({
                             class: null,
                             year: null,
                             semester: null,
+                            round: null,
                         })
                     }
                 />
@@ -150,7 +161,7 @@ export function AnalyticsFilters({
                             : optimisticFilters.class
                     }
                     onClassChange={(classValue) =>
-                        updateParams({ class: classValue, semester: null })
+                        updateParams({ class: classValue, semester: null, round: null })
                     }
                 />
             ) : null}
@@ -161,7 +172,7 @@ export function AnalyticsFilters({
                     availableYears={safeAvailableYears}
                     selectedYear={optimisticFilters.year}
                     onYearChange={(yearValue) =>
-                        updateParams({ year: yearValue, semester: null })
+                        updateParams({ year: yearValue, semester: null, round: null })
                     }
                 />
             ) : null}
@@ -172,7 +183,18 @@ export function AnalyticsFilters({
                     availableSemesters={safeAvailableSemesters}
                     selectedSemester={optimisticFilters.semester}
                     onSemesterChange={(semesterValue) =>
-                        updateParams({ semester: semesterValue })
+                        updateParams({ semester: semesterValue, round: null })
+                    }
+                />
+            ) : null}
+
+            {safeAvailableRounds.length > 1 &&
+            (!requireSchoolSelection || hasSelectedSchool) ? (
+                <AssessmentRoundFilter
+                    availableRounds={safeAvailableRounds}
+                    selectedRound={optimisticFilters.round}
+                    onRoundChange={(roundValue) =>
+                        updateParams({ round: roundValue })
                     }
                 />
             ) : null}
@@ -189,6 +211,7 @@ export function AnalyticsFilters({
                                 class: null,
                                 year: null,
                                 semester: null,
+                                round: null,
                             })
                         }
                     >

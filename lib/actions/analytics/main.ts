@@ -40,6 +40,7 @@ function buildAnalyticsCacheKey(input: {
     targetClass: string;
     academicYearStr: string;
     semesterStr: string;
+    roundStr: string;
 }): string[] {
     return createAnalyticsRedisKeyParts(input);
 }
@@ -50,10 +51,12 @@ async function fetchAnalyticsData(
     role: string,
     academicYearStr: string,
     semesterStr: string,
+    roundStr: string,
 ): Promise<AnalyticsData> {
     const classFilter = targetClass || undefined;
     let academicYear = academicYearStr ? parseInt(academicYearStr, 10) : undefined;
     const semester = semesterStr ? parseInt(semesterStr, 10) : undefined;
+    const assessmentRound = roundStr ? parseInt(roundStr, 10) : undefined;
 
     if (!schoolId && !academicYear && !semester) {
         const latestYear = await prisma.academicYear.findFirst({
@@ -104,14 +107,15 @@ async function fetchAnalyticsData(
             distinct: ["year", "semester"],
             orderBy: [{ year: "desc" }, { semester: "asc" }],
         }),
-        getCombinedAnalytics(schoolId, classFilter, academicYear, semester),
-        getTrendData(schoolId, classFilter, academicYear, semester),
-        getActivityProgressByRisk(schoolId, classFilter, academicYear, semester),
+        getCombinedAnalytics(schoolId, classFilter, academicYear, semester, assessmentRound),
+        getTrendData(schoolId, classFilter, academicYear, semester, assessmentRound),
+        getActivityProgressByRisk(schoolId, classFilter, academicYear, semester, assessmentRound),
         getActivityCompletionSummary(
             schoolId,
             classFilter,
             academicYear,
             semester,
+            assessmentRound,
         ),
     ]);
 
@@ -121,6 +125,32 @@ async function fetchAnalyticsData(
     const availableSemesters = Array.from(
         new Set(availableAcademicTermsRaw.map((term) => term.semester)),
     ).sort((a, b) => a - b);
+
+    // Query distinct assessment rounds available for current filter scope
+    const shouldFilterAcademicTerm =
+        academicYear !== undefined || semester !== undefined;
+    const availableRoundsRaw = await prisma.phqResult.findMany({
+        where: {
+            student: {
+                ...(schoolId ? { schoolId } : {}),
+                ...(classFilter ? { class: classFilter } : {}),
+            },
+            ...(shouldFilterAcademicTerm
+                ? {
+                      academicYear: {
+                          ...(academicYear !== undefined
+                              ? { year: academicYear }
+                              : {}),
+                          ...(semester !== undefined ? { semester } : {}),
+                      },
+                  }
+                : {}),
+        },
+        select: { assessmentRound: true },
+        distinct: ["assessmentRound"],
+        orderBy: { assessmentRound: "asc" },
+    });
+    const availableRounds = availableRoundsRaw.map((r) => r.assessmentRound);
 
     const {
         riskLevelCounts: riskLevelCountsRaw,
@@ -164,9 +194,11 @@ async function fetchAnalyticsData(
         availableClasses,
         availableAcademicYears,
         availableSemesters,
+        availableRounds,
         currentClass: classFilter,
         currentAcademicYear: academicYear,
         currentSemester: semester,
+        currentRound: assessmentRound,
         trendData,
         activityProgressByRisk,
         activityCompletionSummary,
@@ -251,6 +283,7 @@ async function getCachedAnalyticsData(
     role: string,
     academicYearStr: string,
     semesterStr: string,
+    roundStr: string,
 ): Promise<AnalyticsData> {
     const cacheKey = buildAnalyticsCacheKey({
         role,
@@ -258,6 +291,7 @@ async function getCachedAnalyticsData(
         targetClass,
         academicYearStr,
         semesterStr,
+        roundStr,
     });
     const redisCached = await getRedisCachedAnalyticsData(cacheKey);
     if (redisCached) {
@@ -272,6 +306,7 @@ async function getCachedAnalyticsData(
                 role,
                 academicYearStr,
                 semesterStr,
+                roundStr,
             ),
         cacheKey,
         { revalidate: 300, tags: getAnalyticsCacheTags(schoolId) },
@@ -287,6 +322,7 @@ export async function getAnalyticsSummary(
     schoolFilter?: string,
     academicYear?: number,
     semester?: number,
+    assessmentRound?: number,
 ): Promise<AnalyticsData | null> {
     try {
         const viewer = await getViewerContext();
@@ -320,6 +356,7 @@ export async function getAnalyticsSummary(
             viewer.role,
             academicYear?.toString() ?? "",
             semester?.toString() ?? "",
+            assessmentRound?.toString() ?? "",
         );
     } catch (error) {
         return handleActionError({
