@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { ActivityStatus, Prisma, StudentStatus } from "@prisma/client";
+import { ActivityStatus, Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/session";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { calculateRiskLevel } from "@/lib/utils/phq-scoring";
@@ -18,6 +18,11 @@ import {
     type StudentProfileUpdateInput,
 } from "@/lib/validations/student-profile.validation";
 import {
+    isStudentCountExcludedStatus,
+    parseStudentStatusValue,
+    type StudentStatusValue,
+} from "@/lib/constants/student-status";
+import {
     clearIdempotentOperation,
     completeIdempotentOperation,
     startIdempotentOperation,
@@ -29,10 +34,6 @@ import {
 import { revalidateStudentsCache } from "./cache";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
-const COUNT_EXCLUDED_STUDENT_STATUSES = new Set<StudentStatus>([
-    StudentStatus.RESIGNED,
-    StudentStatus.TRANSFERRED,
-]);
 const IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS = 30 * 60;
 
 interface UpdateStudentStatusResult {
@@ -49,7 +50,7 @@ interface UpdatedStudentProfile {
     gender: string | null;
     age: number | null;
     class: string;
-    status: StudentStatus;
+    status: StudentStatusValue;
 }
 
 type UpdateStudentProfileResult =
@@ -74,7 +75,7 @@ interface EditableStudentProfileRecord {
     nationalId: string | null;
     class: string;
     schoolId: string;
-    status: StudentStatus;
+    status: StudentStatusValue;
 }
 
 interface AdjustSchoolClassCountParams {
@@ -105,10 +106,6 @@ function getActivityNumbersByRiskLevel(riskLevel: RiskLevel): number[] {
         return [];
     }
     return ACTIVITY_INDICES[riskLevel as keyof typeof ACTIVITY_INDICES];
-}
-
-function isInactiveStudentStatus(status: StudentStatus): boolean {
-    return COUNT_EXCLUDED_STUDENT_STATUSES.has(status);
 }
 
 async function getCurrentAcademicYearId(): Promise<string | null> {
@@ -732,9 +729,7 @@ export async function updateStudentStatus(
             };
         }
 
-        const parsedStatus = Object.values(StudentStatus).find(
-            (value) => value === status,
-        );
+        const parsedStatus = parseStudentStatusValue(status);
         if (!parsedStatus) {
             return { success: false, message: "สถานะนักเรียนไม่ถูกต้อง" };
         }
@@ -776,8 +771,8 @@ export async function updateStudentStatus(
         }
 
         const academicYearId = await getCurrentAcademicYearId();
-        const oldStatusInactive = isInactiveStudentStatus(student.status);
-        const newStatusInactive = isInactiveStudentStatus(parsedStatus);
+        const oldStatusInactive = isStudentCountExcludedStatus(student.status);
+        const newStatusInactive = isStudentCountExcludedStatus(parsedStatus);
         const expectedCountDelta =
             oldStatusInactive === newStatusInactive
                 ? 0
@@ -1043,8 +1038,8 @@ async function saveStudentProfileUpdate(
 ): Promise<UpdatedStudentProfile> {
     const statusChanged = student.status !== input.status;
     const academicYearId = statusChanged ? await getCurrentAcademicYearId() : null;
-    const oldStatusInactive = isInactiveStudentStatus(student.status);
-    const newStatusInactive = isInactiveStudentStatus(input.status);
+    const oldStatusInactive = isStudentCountExcludedStatus(student.status);
+    const newStatusInactive = isStudentCountExcludedStatus(input.status);
     const expectedCountDelta =
         !statusChanged || oldStatusInactive === newStatusInactive
             ? 0

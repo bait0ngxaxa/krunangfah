@@ -263,6 +263,7 @@ export async function createHomeVisit(data: {
             studentId: validated.studentId,
             userId,
             userRole: session.user.role,
+            mode: "manage",
         });
 
         if (!allowed) {
@@ -400,6 +401,7 @@ export async function deleteHomeVisit(
             studentId: visit.studentId,
             userId: session.user.id,
             userRole: session.user.role,
+            mode: "manage",
         });
 
         if (!allowed) {

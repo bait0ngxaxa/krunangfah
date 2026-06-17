@@ -28,6 +28,8 @@ interface ConversationViewProps {
     phqResultId?: string;
     initialReferralStatus?: boolean;
     initialHospitalName?: string;
+    canRecordActions?: boolean;
+    actionLockedMessage?: string;
 }
 
 interface StepCardProps {
@@ -107,6 +109,8 @@ export function ConversationView({
     phqResultId,
     initialReferralStatus,
     initialHospitalName,
+    canRecordActions = true,
+    actionLockedMessage,
 }: ConversationViewProps) {
     const router = useRouter();
     const [showCounselingModal, setShowCounselingModal] = useState(false);
@@ -146,7 +150,7 @@ export function ConversationView({
                             bgClass={config.bg}
                         />
 
-                        {showRecordSteps && (
+                        {showRecordSteps && canRecordActions && (
                             <>
                                 {/* Step 2: Counseling Summary */}
                                 <StepCard
@@ -174,6 +178,12 @@ export function ConversationView({
                                     bgClass={config.bg}
                                 />
                             </>
+                        )}
+                        {showRecordSteps && !canRecordActions && (
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 text-center text-sm font-medium text-amber-700 shadow-sm">
+                                {actionLockedMessage ??
+                                    "ไม่สามารถบันทึกการช่วยเหลือสำหรับนักเรียนสถานะนี้ได้"}
+                            </div>
                         )}
                     </div>
                 </div>

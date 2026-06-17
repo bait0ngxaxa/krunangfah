@@ -18,6 +18,7 @@ import {
     createReferralSchema,
     revokeReferralSchema,
 } from "@/lib/validations/referral.validation";
+import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 import type {
     ReferralActionResponse,
     TeacherPickerOption,
@@ -46,6 +47,7 @@ export async function createStudentReferral(input: {
                     id: true,
                     class: true,
                     schoolId: true,
+                    status: true,
                     referral: {
                         select: { toTeacherUserId: true },
                     },
@@ -82,6 +84,11 @@ export async function createStudentReferral(input: {
         }
         if (validated.toTeacherUserId === userId) {
             return { success: false, message: "ไม่สามารถส่งต่อให้ตัวเองได้" };
+        }
+
+        const statusError = getStudentActionBlockedMessage(student.status);
+        if (statusError) {
+            return { success: false, message: statusError };
         }
 
         // Access control

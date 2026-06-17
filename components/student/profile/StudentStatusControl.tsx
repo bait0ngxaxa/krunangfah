@@ -5,22 +5,18 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil, X } from "lucide-react";
 import { updateStudentStatus } from "@/lib/actions/student/mutations";
-
-const STUDENT_STATUS_OPTIONS = [
-    { value: "ACTIVE", label: "กำลังศึกษา" },
-    { value: "RESIGNED", label: "ลาออก" },
-    { value: "TRANSFERRED", label: "ย้ายออก" },
-    { value: "GRADUATED", label: "เรียนจบ" },
-] as const;
-
-type StatusValue = (typeof STUDENT_STATUS_OPTIONS)[number]["value"];
+import {
+    getStudentStatusLabel,
+    STUDENT_STATUS_OPTIONS,
+    type StudentStatusValue,
+} from "@/lib/constants/student-status";
 
 interface StatusStyle {
     badge: string;
     dot: string;
 }
 
-const STATUS_STYLES: Record<StatusValue, StatusStyle> = {
+const STATUS_STYLES: Record<StudentStatusValue, StatusStyle> = {
     ACTIVE: {
         badge: "border-emerald-200 bg-emerald-50/80 text-emerald-700",
         dot: "bg-emerald-500",
@@ -44,15 +40,19 @@ const FALLBACK_STYLE: StatusStyle = {
     dot: "bg-gray-400",
 };
 
-function getStatusLabel(status: string): string {
-    return (
-        STUDENT_STATUS_OPTIONS.find((opt) => opt.value === status)?.label ??
-        status
-    );
-}
-
 function getStatusStyle(status: string): StatusStyle {
-    return STATUS_STYLES[status as StatusValue] ?? FALLBACK_STYLE;
+    switch (status) {
+        case "ACTIVE":
+            return STATUS_STYLES.ACTIVE;
+        case "RESIGNED":
+            return STATUS_STYLES.RESIGNED;
+        case "TRANSFERRED":
+            return STATUS_STYLES.TRANSFERRED;
+        case "GRADUATED":
+            return STATUS_STYLES.GRADUATED;
+        default:
+            return FALLBACK_STYLE;
+    }
 }
 
 interface StudentStatusControlProps {
@@ -113,7 +113,7 @@ export function StudentStatusControl({
                         className={`inline-block h-2 w-2 rounded-full ${style.dot}`}
                         aria-hidden="true"
                     />
-                    {getStatusLabel(currentStatus)}
+                    {getStudentStatusLabel(currentStatus)}
                 </span>
                 {canEdit && (
                     <button

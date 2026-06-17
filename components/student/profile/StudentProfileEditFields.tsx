@@ -8,13 +8,7 @@ import {
     UsersRound,
     VenusAndMars,
 } from "lucide-react";
-
-const STATUS_OPTIONS = [
-    { value: "ACTIVE", label: "กำลังศึกษา" },
-    { value: "RESIGNED", label: "ลาออก" },
-    { value: "TRANSFERRED", label: "ย้ายออก" },
-    { value: "GRADUATED", label: "เรียนจบ" },
-] as const;
+import { STUDENT_STATUS_OPTIONS } from "@/lib/constants/student-status";
 
 const GENDER_OPTIONS = [
     { value: "", label: "ไม่ระบุ" },
@@ -234,7 +228,7 @@ function SchoolFieldControls({
                 id="student-status"
                 label="สถานะ"
                 value={form.status}
-                options={STATUS_OPTIONS}
+                options={STUDENT_STATUS_OPTIONS}
                 onChange={(value) => updateField("status", value)}
                 disabled={isPending}
             />

@@ -11,6 +11,7 @@ import {
     getRequestedOrLatestPhqResult,
 } from "@/lib/utils/phq-result-selection";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
+import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -50,8 +51,11 @@ export default async function StudentHelpPage({
         selectedResult.id === activePhqResult.id;
     const isReferralLockedForClassTeacher =
         session.user.role === "class_teacher" && Boolean(student.referral);
+    const statusLockedMessage = getStudentActionBlockedMessage(student.status);
     const canStartActivities =
-        canManageActivities && !isReferralLockedForClassTeacher;
+        canManageActivities &&
+        !isReferralLockedForClassTeacher &&
+        !statusLockedMessage;
     const riskLevel = selectedResult.riskLevel as RiskLevel;
     const config = getColorConfig(riskLevel);
     const studentName = `${student.firstName} ${student.lastName}`;
@@ -68,6 +72,11 @@ export default async function StudentHelpPage({
                     phqResultId: selectedResult.id,
                     initialReferralStatus: selectedResult.referredToHospital,
                     initialHospitalName: selectedResult.hospitalName ?? undefined,
+                    canRecordActions:
+                        canManageActivities && !statusLockedMessage,
+                    actionLockedMessage:
+                        statusLockedMessage ??
+                        "กำลังดูข้อมูลย้อนหลัง จึงบันทึกการช่วยเหลือได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
                 })}
             />
         );
@@ -85,11 +94,12 @@ export default async function StudentHelpPage({
             phqResultId={selectedResult.id}
             canStartActivities={canStartActivities}
             actionLockedMessage={
-                isReferralLockedForClassTeacher
+                statusLockedMessage ??
+                (isReferralLockedForClassTeacher
                     ? ERROR_MESSAGES.activity.classTeacherReferredLocked
                     : canManageActivities
                       ? undefined
-                      : "กำลังดูข้อมูลย้อนหลัง จึงเริ่มทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน"
+                      : "กำลังดูข้อมูลย้อนหลัง จึงเริ่มทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน")
             }
         />
     );

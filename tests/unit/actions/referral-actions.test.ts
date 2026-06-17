@@ -58,6 +58,7 @@ describe("referral actions business rules", () => {
                 id: validStudentId,
                 class: "ม.1/1",
                 schoolId: "school-1",
+                status: "ACTIVE",
                 referral: null,
             } as never);
 
@@ -108,6 +109,7 @@ describe("referral actions business rules", () => {
                 id: validStudentId,
                 class: "ม.2/1",
                 schoolId: "school-1",
+                status: "ACTIVE",
                 referral: {
                     toTeacherUserId: validSchoolAdminUserId,
                 },
@@ -155,6 +157,7 @@ describe("referral actions business rules", () => {
                 id: validStudentId,
                 class: "ม.1/1",
                 schoolId: "school-1",
+                status: "ACTIVE",
                 referral: null,
             } as never);
 
@@ -186,6 +189,47 @@ describe("referral actions business rules", () => {
 
             expect(result.success).toBe(false);
             expect(result.message).toBe("สามารถส่งต่อให้ครูนางฟ้าเท่านั้น");
+        });
+
+        it("rejects referral when student has graduated", async () => {
+            vi.mocked(requireAuth).mockResolvedValue({
+                user: { id: validClassTeacherUserId, role: "class_teacher" },
+            } as never);
+
+            vi.mocked(prisma.student.findUnique).mockResolvedValue({
+                id: validStudentId,
+                class: "ม.1/1",
+                schoolId: "school-1",
+                status: "GRADUATED",
+                referral: null,
+            } as never);
+
+            vi.mocked(prisma.user.findUnique)
+                .mockResolvedValueOnce({
+                    schoolId: "school-1",
+                    teacher: {
+                        advisoryClass: "ม.1/1",
+                        firstName: "ครู",
+                        lastName: "ประจำชั้น",
+                    },
+                } as never)
+                .mockResolvedValueOnce({
+                    id: validSchoolAdminUserId,
+                    schoolId: "school-1",
+                    teacher: {
+                        firstName: "ครู",
+                        lastName: "นางฟ้า",
+                    },
+                } as never);
+
+            const result = await createStudentReferral({
+                studentId: validStudentId,
+                toTeacherUserId: validSchoolAdminUserId,
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.message).toContain("เรียนจบ");
+            expect(prisma.studentReferral.upsert).not.toHaveBeenCalled();
         });
     });
 

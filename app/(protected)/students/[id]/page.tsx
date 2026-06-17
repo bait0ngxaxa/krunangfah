@@ -39,6 +39,7 @@ import {
 } from "@/lib/utils/student-detail-filters";
 import { getLatestPhqResult } from "@/lib/utils/phq-result-selection";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
+import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 
 const PHQ_HISTORY_PAGE_SIZE = 10;
 const COUNSELING_PAGE_SIZE = 10;
@@ -182,17 +183,24 @@ async function StudentDetailContent({
         canManageStudentStatus && isViewingLatestImportedResult;
     const isReferralLockedForClassTeacher =
         session.user.role === "class_teacher" && Boolean(student.referral);
+    const studentStatusLockedMessage = getStudentActionBlockedMessage(
+        student.status,
+    );
+    const canManageStudentCareRecords =
+        isViewingLatestImportedResult && !studentStatusLockedMessage;
     const canManageActivities =
         latestResult?.id !== undefined &&
         activePhqResult?.id !== undefined &&
         latestResult.id === activePhqResult.id &&
-        !isReferralLockedForClassTeacher;
+        !isReferralLockedForClassTeacher &&
+        !studentStatusLockedMessage;
     const activityActionLockedMessage =
-        isReferralLockedForClassTeacher
+        studentStatusLockedMessage ??
+        (isReferralLockedForClassTeacher
             ? ERROR_MESSAGES.activity.classTeacherReferredLocked
             : !canManageActivities && latestResult
             ? "กำลังดูข้อมูลย้อนหลัง จึงทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน"
-            : undefined;
+            : undefined);
     const phqPagination = buildOffsetPagination(
         phqPage,
         PHQ_HISTORY_PAGE_SIZE,
@@ -237,7 +245,7 @@ async function StudentDetailContent({
                 pagination={counselingSessionData.pagination}
                 studentId={studentId}
                 academicYearId={recordAcademicYearId}
-                readOnly={isSystemAdmin || !isViewingLatestImportedResult}
+                readOnly={isSystemAdmin || !canManageStudentCareRecords}
                 isFilteredByAcademicYear={Boolean(selectedYearId)}
             />
         </div>
@@ -249,7 +257,7 @@ async function StudentDetailContent({
             pagination={homeVisitData.pagination}
             studentId={studentId}
             academicYearId={recordAcademicYearId}
-            readOnly={isSystemAdmin || !isViewingLatestImportedResult}
+            readOnly={isSystemAdmin || !canManageStudentCareRecords}
             isFilteredByAcademicYear={Boolean(selectedYearId)}
         />
     );
@@ -304,7 +312,7 @@ async function StudentDetailContent({
                 canEditProfile={canEditStudentProfile}
             />
 
-            {latestResult && !isSystemAdmin && isViewingLatestImportedResult && (
+            {latestResult && !isSystemAdmin && canManageStudentCareRecords && (
                 <div className="flex justify-end">
                     <ReferralButton
                         studentId={studentId}

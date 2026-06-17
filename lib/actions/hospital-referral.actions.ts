@@ -16,6 +16,7 @@ import { requireAuth } from "@/lib/session";
 import { updateHospitalReferralSchema } from "@/lib/validations/hospital-referral.validation";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { handleActionError } from "./error-handler";
+import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 
 interface UpdateHospitalReferralParams {
     phqResultId: string;
@@ -43,6 +44,7 @@ export async function updateHospitalReferral(
                         select: {
                             class: true,
                             schoolId: true,
+                            status: true,
                         },
                     },
                 },
@@ -85,6 +87,13 @@ export async function updateHospitalReferral(
                     };
                 }
             }
+        }
+
+        const statusError = getStudentActionBlockedMessage(
+            phqResult.student.status,
+        );
+        if (statusError) {
+            return { success: false, error: statusError };
         }
 
         // Update referral status and hospital name

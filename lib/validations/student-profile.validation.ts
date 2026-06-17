@@ -1,6 +1,7 @@
-import { Gender, StudentStatus } from "@prisma/client";
+import { Gender } from "@prisma/client";
 import { z } from "zod";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
+import { STUDENT_STATUS_VALUES } from "@/lib/constants/student-status";
 import { sanitizeName, sanitizeText } from "@/lib/utils/text-sanitizer";
 
 export const studentProfileUpdateSchema = z
@@ -40,7 +41,7 @@ export const studentProfileUpdateSchema = z
             .min(1, "กรุณากรอกห้องเรียน")
             .max(INPUT_LIMITS.student.className, "ห้องเรียนยาวเกินไป")
             .transform(sanitizeText),
-        status: z.enum(StudentStatus, {
+        status: z.enum(STUDENT_STATUS_VALUES, {
             message: "สถานะนักเรียนไม่ถูกต้อง",
         }),
     })

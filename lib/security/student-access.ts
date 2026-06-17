@@ -1,5 +1,12 @@
 import type { UserRole } from "@/types/auth.types";
 import { prisma } from "@/lib/prisma";
+import {
+    canStudentPerformActions,
+    getStudentActionBlockedMessage,
+    type StudentStatusValue,
+} from "@/lib/constants/student-status";
+
+type StudentAccessMode = "read" | "manage";
 
 interface AccessActor {
     role: UserRole;
@@ -16,11 +23,27 @@ interface VerifyStudentAccessParams {
     studentId: string;
     userId: string;
     userRole: UserRole;
+    mode?: StudentAccessMode;
 }
 
 interface StudentAccessResult {
     allowed: boolean;
     error?: string;
+}
+
+function getStudentActionStatusResult(
+    status: StudentStatusValue,
+): StudentAccessResult {
+    if (canStudentPerformActions(status)) {
+        return { allowed: true };
+    }
+
+    return {
+        allowed: false,
+        error:
+            getStudentActionBlockedMessage(status) ??
+            "นักเรียนสถานะนี้ไม่สามารถทำกิจกรรมหรือบันทึกการช่วยเหลือต่อได้",
+    };
 }
 
 /**
@@ -58,16 +81,21 @@ export async function verifyStudentAccessForUser({
     studentId,
     userId,
     userRole,
+    mode = "read",
 }: VerifyStudentAccessParams): Promise<StudentAccessResult> {
     if (userRole === "system_admin") {
         const student = await prisma.student.findUnique({
             where: { id: studentId },
-            select: { id: true },
+            select: { id: true, status: true },
         });
 
-        return student
-            ? { allowed: true }
-            : { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
+        if (!student) {
+            return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
+        }
+
+        return mode === "manage"
+            ? getStudentActionStatusResult(student.status)
+            : { allowed: true };
     }
 
     const [user, student] = await Promise.all([
@@ -80,7 +108,7 @@ export async function verifyStudentAccessForUser({
         }),
         prisma.student.findUnique({
             where: { id: studentId },
-            select: { schoolId: true, class: true },
+            select: { schoolId: true, class: true, status: true },
         }),
     ]);
 
@@ -102,7 +130,9 @@ export async function verifyStudentAccessForUser({
     );
 
     if (allowed) {
-        return { allowed: true };
+        return mode === "manage"
+            ? getStudentActionStatusResult(student.status)
+            : { allowed: true };
     }
 
     if (userRole === "class_teacher") {

@@ -30,6 +30,7 @@ import {
     compressWorksheetImageBuffer,
     isSupportedWorksheetImageExtension,
 } from "@/lib/utils/server-image-compression";
+import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 
 /** Allowed image extensions for home visit photos */
 const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
@@ -142,7 +143,9 @@ export async function uploadHomeVisitPhoto(
             select: {
                 id: true,
                 studentId: true,
-                student: { select: { schoolId: true, class: true } },
+                student: {
+                    select: { schoolId: true, class: true, status: true },
+                },
                 photos: { select: { id: true } },
             },
         });
@@ -192,6 +195,13 @@ export async function uploadHomeVisitPhoto(
                 success: false,
                 message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
             };
+        }
+
+        const statusError = getStudentActionBlockedMessage(
+            homeVisit.student.status,
+        );
+        if (statusError) {
+            return { success: false, message: statusError };
         }
 
         // Create upload directory
@@ -277,7 +287,13 @@ export async function deleteHomeVisitPhoto(
                 homeVisit: {
                     select: {
                         studentId: true,
-                        student: { select: { schoolId: true, class: true } },
+                        student: {
+                            select: {
+                                schoolId: true,
+                                class: true,
+                                status: true,
+                            },
+                        },
                     },
                 },
             },
@@ -314,6 +330,13 @@ export async function deleteHomeVisitPhoto(
 
         if (!canAccess) {
             return { success: false, message: "ไม่มีสิทธิ์ลบรูปภาพนี้" };
+        }
+
+        const statusError = getStudentActionBlockedMessage(
+            photo.homeVisit.student.status,
+        );
+        if (statusError) {
+            return { success: false, message: statusError };
         }
 
         // Delete file from disk

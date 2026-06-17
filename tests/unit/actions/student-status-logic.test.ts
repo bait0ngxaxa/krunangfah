@@ -2,73 +2,74 @@
  * Unit Tests: Student Status Logic
  *
  * Covers pure logic extracted from updateStudentStatus:
- * - isInactiveStudentStatus classification
+ * - count-excluded status classification
+ * - action availability classification
  * - expectedCountDelta calculation for class count adjustment
  */
 
 import { describe, it, expect } from "vitest";
-
-// ═══════════════════════════════════════════════════════════
-// Replicate pure logic from lib/actions/student/mutations.ts
-// ═══════════════════════════════════════════════════════════
-
-type StudentStatus =
-    | "ACTIVE"
-    | "RESIGNED"
-    | "TRANSFERRED"
-    | "GRADUATED";
-
-const COUNT_EXCLUDED_STUDENT_STATUSES = new Set<StudentStatus>([
-    "RESIGNED",
-    "TRANSFERRED",
-]);
-
-function isInactiveStudentStatus(status: StudentStatus): boolean {
-    return COUNT_EXCLUDED_STUDENT_STATUSES.has(status);
-}
+import {
+    canStudentPerformActions,
+    isStudentStatusValue,
+    isStudentCountExcludedStatus,
+    STUDENT_STATUS,
+    STUDENT_STATUS_VALUES,
+    type StudentStatusValue,
+} from "@/lib/constants/student-status";
 
 /**
  * Calculate class count adjustment when transitioning between statuses.
- * Returns -1 when student leaves (active→inactive),
- *          +1 when student returns (inactive→active),
+ * Returns -1 when student leaves denominator,
+ *          +1 when student returns to denominator,
  *           0 when category doesn't change.
  */
 function calculateExpectedCountDelta(
-    oldStatus: StudentStatus,
-    newStatus: StudentStatus,
+    oldStatus: StudentStatusValue,
+    newStatus: StudentStatusValue,
 ): number {
-    const oldInactive = isInactiveStudentStatus(oldStatus);
-    const newInactive = isInactiveStudentStatus(newStatus);
+    const oldExcluded = isStudentCountExcludedStatus(oldStatus);
+    const newExcluded = isStudentCountExcludedStatus(newStatus);
 
-    if (oldInactive === newInactive) return 0;
-    return newInactive ? -1 : 1;
+    if (oldExcluded === newExcluded) return 0;
+    return newExcluded ? -1 : 1;
 }
 
 // ═══════════════════════════════════════════════════════════
 // Tests
 // ═══════════════════════════════════════════════════════════
 
-describe("isInactiveStudentStatus", () => {
+describe("isStudentCountExcludedStatus", () => {
     it.each([
-        ["RESIGNED", true],
-        ["TRANSFERRED", true],
-        ["ACTIVE", false],
-        ["GRADUATED", false],
+        [STUDENT_STATUS.RESIGNED, true],
+        [STUDENT_STATUS.TRANSFERRED, true],
+        [STUDENT_STATUS.ACTIVE, false],
+        [STUDENT_STATUS.GRADUATED, false],
     ] as const)(
-        "should classify %s as inactive=%s",
+        "should classify %s as count-excluded=%s",
         (status, expected) => {
-            expect(isInactiveStudentStatus(status)).toBe(expected);
+            expect(isStudentCountExcludedStatus(status)).toBe(expected);
         },
     );
+});
+
+describe("canStudentPerformActions", () => {
+    it.each([
+        [STUDENT_STATUS.ACTIVE, true],
+        [STUDENT_STATUS.RESIGNED, false],
+        [STUDENT_STATUS.TRANSFERRED, false],
+        [STUDENT_STATUS.GRADUATED, false],
+    ] as const)("should classify %s as action-allowed=%s", (status, expected) => {
+        expect(canStudentPerformActions(status)).toBe(expected);
+    });
 });
 
 describe("calculateExpectedCountDelta", () => {
     describe("active → inactive (decrement)", () => {
         it.each([
-            ["ACTIVE", "RESIGNED"],
-            ["ACTIVE", "TRANSFERRED"],
-            ["GRADUATED", "RESIGNED"],
-            ["GRADUATED", "TRANSFERRED"],
+            [STUDENT_STATUS.ACTIVE, STUDENT_STATUS.RESIGNED],
+            [STUDENT_STATUS.ACTIVE, STUDENT_STATUS.TRANSFERRED],
+            [STUDENT_STATUS.GRADUATED, STUDENT_STATUS.RESIGNED],
+            [STUDENT_STATUS.GRADUATED, STUDENT_STATUS.TRANSFERRED],
         ] as const)(
             "%s → %s should return -1",
             (from, to) => {
@@ -79,10 +80,10 @@ describe("calculateExpectedCountDelta", () => {
 
     describe("inactive → active (increment)", () => {
         it.each([
-            ["RESIGNED", "ACTIVE"],
-            ["RESIGNED", "GRADUATED"],
-            ["TRANSFERRED", "ACTIVE"],
-            ["TRANSFERRED", "GRADUATED"],
+            [STUDENT_STATUS.RESIGNED, STUDENT_STATUS.ACTIVE],
+            [STUDENT_STATUS.RESIGNED, STUDENT_STATUS.GRADUATED],
+            [STUDENT_STATUS.TRANSFERRED, STUDENT_STATUS.ACTIVE],
+            [STUDENT_STATUS.TRANSFERRED, STUDENT_STATUS.GRADUATED],
         ] as const)(
             "%s → %s should return +1",
             (from, to) => {
@@ -93,26 +94,19 @@ describe("calculateExpectedCountDelta", () => {
 
     describe("same category (no change)", () => {
         it.each([
-            ["ACTIVE", "GRADUATED"],
-            ["GRADUATED", "ACTIVE"],
-            ["RESIGNED", "TRANSFERRED"],
+            [STUDENT_STATUS.ACTIVE, STUDENT_STATUS.GRADUATED],
+            [STUDENT_STATUS.GRADUATED, STUDENT_STATUS.ACTIVE],
+            [STUDENT_STATUS.RESIGNED, STUDENT_STATUS.TRANSFERRED],
         ] as const)(
             "%s → %s should return 0",
             (from, to) => {
-                // ACTIVE↔GRADUATED both non-inactive → 0
-                // RESIGNED↔TRANSFERRED both inactive → 0
                 expect(calculateExpectedCountDelta(from, to)).toBe(0);
             },
         );
     });
 
     describe("edge: same status", () => {
-        it.each([
-            "ACTIVE",
-            "RESIGNED",
-            "TRANSFERRED",
-            "GRADUATED",
-        ] as const)(
+        it.each(STUDENT_STATUS_VALUES)(
             "%s → %s should return 0 (identity)",
             (status) => {
                 expect(calculateExpectedCountDelta(status, status)).toBe(0);
@@ -144,27 +138,16 @@ describe("Role authorization logic for updateStudentStatus", () => {
 });
 
 describe("Status validation", () => {
-    const VALID_STATUSES: readonly string[] = [
-        "ACTIVE",
-        "RESIGNED",
-        "TRANSFERRED",
-        "GRADUATED",
-    ];
-
-    function isValidStatus(status: string): boolean {
-        return VALID_STATUSES.includes(status);
-    }
-
     it("should accept all valid StudentStatus values", () => {
-        for (const status of VALID_STATUSES) {
-            expect(isValidStatus(status)).toBe(true);
+        for (const status of STUDENT_STATUS_VALUES) {
+            expect(isStudentStatusValue(status)).toBe(true);
         }
     });
 
     it("should reject unknown status strings", () => {
-        expect(isValidStatus("EXPELLED")).toBe(false);
-        expect(isValidStatus("active")).toBe(false);
-        expect(isValidStatus("")).toBe(false);
-        expect(isValidStatus("SUSPENDED")).toBe(false);
+        expect(isStudentStatusValue("EXPELLED")).toBe(false);
+        expect(isStudentStatusValue("active")).toBe(false);
+        expect(isStudentStatusValue("")).toBe(false);
+        expect(isStudentStatusValue("SUSPENDED")).toBe(false);
     });
 });

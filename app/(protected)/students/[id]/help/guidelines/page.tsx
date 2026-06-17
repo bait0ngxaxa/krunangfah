@@ -16,6 +16,7 @@ import {
     getRequestedOrLatestPhqResult,
 } from "@/lib/utils/phq-result-selection";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
+import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -50,10 +51,12 @@ export default async function GuidelinesPage({
         redirect(studentHelpRoute(studentId));
     }
 
+    const statusLockedMessage = getStudentActionBlockedMessage(student.status);
     const canStartActivities =
         activePhqResult?.id !== undefined &&
         selectedPhqResult.id !== undefined &&
-        activePhqResult.id === selectedPhqResult.id;
+        activePhqResult.id === selectedPhqResult.id &&
+        !statusLockedMessage;
     const startHref = studentHelpStartRoute(studentId, phqResultId);
     const backHref = canStartActivities
         ? startHref
@@ -114,7 +117,8 @@ export default async function GuidelinesPage({
                             </Link>
                         ) : (
                             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 text-center text-sm font-medium text-amber-700 shadow-sm">
-                                กำลังดูข้อมูลย้อนหลัง จึงเริ่มทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน
+                                {statusLockedMessage ??
+                                    "กำลังดูข้อมูลย้อนหลัง จึงเริ่มทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน"}
                             </div>
                         )}
                     </div>

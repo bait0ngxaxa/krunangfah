@@ -240,6 +240,7 @@ export async function createCounselingSession(data: {
             studentId: validated.studentId,
             userId,
             userRole: session.user.role,
+            mode: "manage",
         });
 
         if (!allowed) {

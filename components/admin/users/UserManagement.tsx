@@ -164,7 +164,7 @@ function UserOnboardingPanel({
                 <UserGuideStep
                     icon={<ShieldCheck className="h-4 w-4" aria-hidden="true" />}
                     title="ดูบทบาท"
-                    description={`ในผลลัพธ์นี้มีบัญชีผู้ดูแล ${adminCount} บัญชี`}
+                    description={`ในผลลัพธ์นี้มีบัญชีครู ${adminCount} บัญชี`}
                 />
                 <UserGuideStep
                     icon={<GraduationCap className="h-4 w-4" aria-hidden="true" />}

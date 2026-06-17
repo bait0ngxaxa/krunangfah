@@ -145,6 +145,30 @@ describe("Integration: Activity Flow", () => {
             expect(result.success).toBe(true);
         });
 
+        it("rejects assessment when student has graduated", async () => {
+            mockSession(USERS.classTeacher);
+            await prisma.student.update({
+                where: { id: studentId },
+                data: { status: "GRADUATED", leftAt: null },
+            });
+
+            try {
+                const result = await submitTeacherAssessment(activityProgressId, {
+                    internalProblems: "ปัญหาภายใน",
+                    externalProblems: "ปัญหาภายนอก",
+                    problemType: "internal",
+                });
+
+                expect(result.success).toBe(false);
+                expect(result.error).toContain("เรียนจบ");
+            } finally {
+                await prisma.student.update({
+                    where: { id: studentId },
+                    data: { status: "ACTIVE", leftAt: null },
+                });
+            }
+        });
+
         it("rejects assessment when status is 'locked'", async () => {
             const lockedAp = await createTestActivityProgress(
                 studentId,

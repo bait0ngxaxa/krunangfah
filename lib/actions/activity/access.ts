@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
+import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 
 type ActivityAccessMode = "read" | "manage";
 
@@ -22,14 +23,21 @@ export async function verifyStudentActivityAccess(
     if (userRole === "system_admin") {
         const student = await prisma.student.findUnique({
             where: { id: studentId },
-            select: { id: true },
+            select: { id: true, status: true },
         });
 
         if (!student) {
             return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
         }
 
-        return { allowed: true };
+        const statusError =
+            mode === "manage"
+                ? getStudentActionBlockedMessage(student.status)
+                : null;
+
+        return statusError
+            ? { allowed: false, error: statusError }
+            : { allowed: true };
     }
 
     const [user, student] = await Promise.all([
@@ -49,6 +57,7 @@ export async function verifyStudentActivityAccess(
             select: {
                 schoolId: true,
                 class: true,
+                status: true,
                 referral: {
                     select: {
                         id: true,
@@ -71,7 +80,14 @@ export async function verifyStudentActivityAccess(
     }
 
     if (userRole !== "class_teacher") {
-        return { allowed: true };
+        const statusError =
+            mode === "manage"
+                ? getStudentActionBlockedMessage(student.status)
+                : null;
+
+        return statusError
+            ? { allowed: false, error: statusError }
+            : { allowed: true };
     }
 
     const advisoryClass = user.teacher?.advisoryClass;
@@ -80,6 +96,14 @@ export async function verifyStudentActivityAccess(
             allowed: false,
             error: "คุณสามารถเข้าถึงข้อมูลได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
         };
+    }
+
+    const statusError =
+        mode === "manage"
+            ? getStudentActionBlockedMessage(student.status)
+            : null;
+    if (statusError) {
+        return { allowed: false, error: statusError };
     }
 
     if (mode === "manage" && student.referral) {
