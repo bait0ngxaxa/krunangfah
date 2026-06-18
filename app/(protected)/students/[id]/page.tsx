@@ -4,13 +4,11 @@ import dynamic from "next/dynamic";
 import { BarChart3, Target, Home } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { getStudentDetail } from "@/lib/actions/student/main";
-import { StudentProfileCard } from "@/components/student/profile/StudentProfileCard";
+import { StudentProfileSection } from "@/components/student/profile/StudentProfileSection";
 import { PHQHistoryTable } from "@/components/student/phq/PHQHistoryTable";
 import { ActivityProgressTable } from "@/components/student/activity/ActivityProgressTable";
 import { CounselingLogTable } from "@/components/student/counseling/CounselingLogTable";
 import { AcademicYearFilter } from "@/components/student/profile/AcademicYearFilter";
-import { ReferralButton } from "@/components/student/referral/ReferralButton";
-import { HospitalReferralButton } from "@/components/student/referral/HospitalReferralButton";
 import { HomeVisitTab } from "@/components/student/home-visit/HomeVisitTab";
 
 // Lazy-load chart library to keep initial bundle for detail page smaller.
@@ -304,33 +302,18 @@ async function StudentDetailContent({
 
     return (
         <div className="space-y-7">
-            <StudentProfileCard
-                key={visibleStudent.id}
+            <StudentProfileSection
+                key={`${visibleStudent.id}:${visibleStudent.status}`}
                 student={visibleStudent}
                 latestResult={latestResult}
                 activePhqResultId={activePhqResult?.id}
                 canViewNationalId={isSystemAdmin}
                 canEditProfile={canEditStudentProfile}
+                canManageLatestCareRecords={isViewingLatestImportedResult}
+                currentUserId={currentUserId}
+                currentUserRole={session.user.role}
+                referral={student.referral}
             />
-
-            {latestResult && !isSystemAdmin && canManageStudentCareRecords && (
-                <div className="flex flex-wrap justify-end gap-3">
-                    {latestResult.riskLevel === "red" && (
-                        <HospitalReferralButton
-                            phqResultId={latestResult.id}
-                            initialStatus={latestResult.referredToHospital}
-                            initialHospitalName={latestResult.hospitalName}
-                        />
-                    )}
-                    <ReferralButton
-                        studentId={studentId}
-                        studentName={`${student.firstName} ${student.lastName}`}
-                        referral={student.referral}
-                        currentUserId={currentUserId}
-                        currentUserRole={session.user.role}
-                    />
-                </div>
-            )}
 
             {uniqueYears.length > 1 && (
                 <AcademicYearFilter

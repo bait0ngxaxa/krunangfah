@@ -23,37 +23,42 @@ import { formatAcademicYear } from "@/lib/utils/academic-year";
 import { StudentStatusControl } from "./StudentStatusControl";
 import { StudentProfileEditModal } from "./StudentProfileEditModal";
 
-interface StudentProfileCardProps {
-    student: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        studentId?: string | null;
-        nationalId?: string | null;
-        gender?: string | null;
-        age?: number | null;
-        class: string;
-        school?: {
-            name: string;
-        } | null;
-        status?: string | null;
-    };
-    latestResult?: {
-        id: string;
-        totalScore: number;
-        riskLevel: string;
-        referredToHospital: boolean;
-        hospitalName?: string | null;
-        createdAt: Date;
-        assessmentRound: number;
-        academicYear: {
-            year: number;
-            semester: number;
-        };
+export interface StudentProfileStudent {
+    id: string;
+    firstName: string;
+    lastName: string;
+    studentId?: string | null;
+    nationalId?: string | null;
+    gender?: string | null;
+    age?: number | null;
+    class: string;
+    school?: {
+        name: string;
     } | null;
+    status?: string | null;
+}
+
+export interface StudentProfileLatestResult {
+    id: string;
+    totalScore: number;
+    riskLevel: string;
+    referredToHospital: boolean;
+    hospitalName?: string | null;
+    createdAt: Date;
+    assessmentRound: number;
+    academicYear: {
+        year: number;
+        semester: number;
+    };
+}
+
+interface StudentProfileCardProps {
+    student: StudentProfileStudent;
+    latestResult?: StudentProfileLatestResult | null;
     activePhqResultId?: string;
     canViewNationalId?: boolean;
     canEditProfile?: boolean;
+    onProfileSaved?: (student: StudentProfileStudent) => void;
 }
 
 interface DetailItem {
@@ -143,6 +148,7 @@ export function StudentProfileCard({
     activePhqResultId,
     canViewNationalId = false,
     canEditProfile = false,
+    onProfileSaved,
 }: StudentProfileCardProps): ReactElement {
     const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
     const [profileStudent, setProfileStudent] = useState(student);
@@ -153,6 +159,15 @@ export function StudentProfileCard({
     const risk = latestRiskLevel ? getRiskLevelConfig(latestRiskLevel) : null;
     const detailItems = buildDetailItems(profileStudent, canViewNationalId);
     const avatarBg = risk ? risk.bgSolid : "bg-[var(--brand-primary)]";
+
+    function handleProfileSaved(updatedStudent: StudentProfileStudent): void {
+        const nextStudent = {
+            ...profileStudent,
+            ...updatedStudent,
+        };
+        setProfileStudent(nextStudent);
+        onProfileSaved?.(nextStudent);
+    }
 
     return (
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_8px_rgba(15,23,42,0.04)]">
@@ -264,12 +279,7 @@ export function StudentProfileCard({
                     activePhqResultId={activePhqResultId}
                     isOpen={isProfileEditOpen}
                     onClose={() => setIsProfileEditOpen(false)}
-                    onSaved={(updatedStudent) =>
-                        setProfileStudent((currentStudent) => ({
-                            ...currentStudent,
-                            ...updatedStudent,
-                        }))
-                    }
+                    onSaved={handleProfileSaved}
                 />
             )}
 
