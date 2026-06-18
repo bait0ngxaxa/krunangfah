@@ -11,6 +11,26 @@ interface ProgressIndicatorProps {
     riskLevel: "orange" | "yellow" | "green";
 }
 
+function getProgressPercentage(completedCount: number, total: number): number {
+    const maxSegments = Math.max(total - 1, 1);
+    const completedSegments = Math.min(Math.max(completedCount, 0), maxSegments);
+
+    return (completedSegments / maxSegments) * 100;
+}
+
+function getActivityDisplayIndex(
+    activityNumbers: number[],
+    activityNumber: number,
+): number {
+    const index = activityNumbers.indexOf(activityNumber);
+
+    return index >= 0 ? index + 1 : activityNumber;
+}
+
+function getActivityLabel(title: string): string {
+    return title.split(": ")[1] || title;
+}
+
 /**
  * Progress indicator showing activity completion status
  */
@@ -21,12 +41,21 @@ export function ProgressIndicator({
     currentActivityNumber,
     riskLevel,
 }: ProgressIndicatorProps) {
+    const progressByActivityNumber = new Map(
+        activityProgress.map((progress) => [
+            progress.activityNumber,
+            progress,
+        ]),
+    );
     const completedCount = activities.filter(
-        (a) =>
-            activityProgress.find((p) => p.activityNumber === a.number)
-                ?.status === "completed",
+        (activity) =>
+            progressByActivityNumber.get(activity.number)?.status ===
+            "completed",
     ).length;
-    const progressPercentage = (completedCount / (activities.length - 1)) * 100;
+    const progressPercentage = getProgressPercentage(
+        completedCount,
+        activities.length,
+    );
     const activeCircleStyle = getRiskLevelConfig(riskLevel).circleActive;
 
     return (
@@ -40,24 +69,27 @@ export function ProgressIndicator({
 
             {/* Desktop: Horizontal Timeline (md+) */}
             <div className="hidden md:block relative">
-                {/* Background Line */}
-                <div className="absolute top-[17px] left-0 w-full h-1.5 bg-gray-100 rounded-full z-0" />
-
-                {/* Progress Line */}
-                <div
-                    className="absolute top-[17px] left-0 h-1.5 bg-[#34D399] rounded-full z-0 transition-base duration-1000 ease-out shadow-sm"
-                    style={{ width: `${progressPercentage}%` }}
-                />
+                <div className="absolute left-5 right-5 top-[17px] z-0 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                    <div
+                        className="h-full rounded-full bg-[#34D399] shadow-sm transition-base duration-1000 ease-out"
+                        style={{ width: `${progressPercentage}%` }}
+                    />
+                </div>
 
                 <div className="flex justify-between items-start">
                     {activities.map((activity) => {
-                        const progress = activityProgress.find(
-                            (p) => p.activityNumber === activity.number,
+                        const progress = progressByActivityNumber.get(
+                            activity.number,
                         );
                         const isCompleted = progress?.status === "completed";
                         const isCurrent =
                             activity.number === currentActivityNumber;
                         const isLocked = progress?.status === "locked";
+                        const displayIndex = getActivityDisplayIndex(
+                            activityNumbers,
+                            activity.number,
+                        );
+                        const isActiveLabel = isCompleted || isCurrent;
 
                         let circleClass =
                             "bg-white border-2 border-gray-200 text-gray-300";
@@ -88,15 +120,12 @@ export function ProgressIndicator({
                                 </div>
 
                                 <div
-                                    className={`text-center transition-base duration-300 flex flex-col items-center ${isCurrent ? "scale-105" : "opacity-60 group-hover:opacity-100"}`}
+                                    className={`text-center transition-base duration-300 flex flex-col items-center ${isCurrent ? "scale-105" : ""} ${isActiveLabel ? "opacity-100" : "opacity-60 group-hover:opacity-100"}`}
                                 >
                                     <span
-                                        className={`text-xs font-bold mb-1.5 ${isCurrent ? "text-gray-800" : "text-gray-500"}`}
+                                        className={`text-xs font-bold mb-1.5 ${isActiveLabel ? "text-gray-800" : "text-gray-500"}`}
                                     >
-                                        กิจกรรมที่{" "}
-                                        {activityNumbers.indexOf(
-                                            activity.number,
-                                        ) + 1}
+                                        กิจกรรมที่ {displayIndex}
                                     </span>
 
                                     <span
@@ -116,10 +145,9 @@ export function ProgressIndicator({
                                     </span>
 
                                     <span
-                                        className={`text-[10px] leading-tight line-clamp-2 max-w-[90px] text-center ${isCurrent ? "text-gray-600 font-bold" : "text-gray-400"}`}
+                                        className={`text-[10px] leading-tight line-clamp-2 max-w-[90px] text-center ${isActiveLabel ? "text-gray-600 font-bold" : "text-gray-400"}`}
                                     >
-                                        {activity.title.split(": ")[1] ||
-                                            activity.title}
+                                        {getActivityLabel(activity.title)}
                                     </span>
                                 </div>
                             </div>
@@ -130,24 +158,27 @@ export function ProgressIndicator({
 
             {/* Mobile: Vertical Timeline */}
             <div className="md:hidden relative">
-                {/* Vertical Background Line */}
-                <div className="absolute top-0 left-[18px] w-1 h-full bg-gray-100 rounded-full z-0" />
-
-                {/* Vertical Progress Line */}
-                <div
-                    className="absolute top-0 left-[18px] w-1 bg-[#34D399] rounded-full z-0 transition-base duration-1000 ease-out"
-                    style={{ height: `${progressPercentage}%` }}
-                />
+                <div className="absolute bottom-5 left-[18px] top-5 z-0 w-1 overflow-hidden rounded-full bg-gray-100">
+                    <div
+                        className="w-full rounded-full bg-[#34D399] transition-base duration-1000 ease-out"
+                        style={{ height: `${progressPercentage}%` }}
+                    />
+                </div>
 
                 <div className="flex flex-col gap-6">
                     {activities.map((activity) => {
-                        const progress = activityProgress.find(
-                            (p) => p.activityNumber === activity.number,
+                        const progress = progressByActivityNumber.get(
+                            activity.number,
                         );
                         const isCompleted = progress?.status === "completed";
                         const isCurrent =
                             activity.number === currentActivityNumber;
                         const isLocked = progress?.status === "locked";
+                        const displayIndex = getActivityDisplayIndex(
+                            activityNumbers,
+                            activity.number,
+                        );
+                        const isActiveLabel = isCompleted || isCurrent;
 
                         let circleClass =
                             "bg-white border-2 border-gray-200 text-gray-300";
@@ -180,21 +211,17 @@ export function ProgressIndicator({
 
                                 {/* Label */}
                                 <div
-                                    className={`flex-1 min-w-0 flex items-center gap-2 ${isCurrent ? "" : "opacity-60"}`}
+                                    className={`flex-1 min-w-0 flex items-center gap-2 ${isActiveLabel ? "opacity-100" : "opacity-60"}`}
                                 >
                                     <div className="min-w-0">
                                         <span
-                                            className={`text-sm font-bold block ${isCurrent ? "text-gray-800" : "text-gray-500"}`}
+                                            className={`text-sm font-bold block ${isActiveLabel ? "text-gray-800" : "text-gray-500"}`}
                                         >
-                                            กิจกรรมที่{" "}
-                                            {activityNumbers.indexOf(
-                                                activity.number,
-                                            ) + 1}
-                                            :{" "}
+                                            กิจกรรมที่ {displayIndex}:{" "}
                                             <span className="font-medium">
-                                                {activity.title.split(
-                                                    ": ",
-                                                )[1] || activity.title}
+                                                {getActivityLabel(
+                                                    activity.title,
+                                                )}
                                             </span>
                                         </span>
                                     </div>

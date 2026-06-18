@@ -7,7 +7,7 @@ import {
     type KeyboardEvent,
     type ReactNode,
 } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 
 export interface Tab {
     id: string;
@@ -25,8 +25,8 @@ interface TabsProps {
 export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
     const instanceId = useId();
     const searchParams = useSearchParams();
-    const router = useRouter();
     const pathname = usePathname();
+    const fallbackTabId = defaultTab || tabs[0]?.id || "";
 
     const resolveUrlTab = useCallback((): string => {
         if (syncWithUrl) {
@@ -35,24 +35,27 @@ export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
                 return urlTab;
             }
         }
-        return defaultTab || tabs[0]?.id || "";
-    }, [syncWithUrl, searchParams, tabs, defaultTab]);
+        return fallbackTabId;
+    }, [syncWithUrl, searchParams, tabs, fallbackTabId]);
 
-    const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id || "");
+    const [activeTab, setActiveTab] = useState(() => resolveUrlTab());
 
     const handleTabChange = useCallback(
         (tabId: string): void => {
+            setActiveTab(tabId);
+
             if (syncWithUrl) {
                 const params = new URLSearchParams(searchParams.toString());
                 params.set("tab", tabId);
-                router.replace(`${pathname}?${params.toString()}`, {
-                    scroll: false,
-                });
-                return;
+                const queryString = params.toString();
+                window.history.replaceState(
+                    window.history.state,
+                    "",
+                    queryString ? `${pathname}?${queryString}` : pathname,
+                );
             }
-            setActiveTab(tabId);
         },
-        [syncWithUrl, searchParams, router, pathname],
+        [syncWithUrl, searchParams, pathname],
     );
 
     const handleTabKeyDown = useCallback(
@@ -92,13 +95,9 @@ export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
         [handleTabChange, instanceId, tabs],
     );
 
-    // In URL-sync mode, the query string is the source of truth (supports back/forward reliably).
-    const fallbackTabId = defaultTab || tabs[0]?.id || "";
-    const resolvedActiveTab = syncWithUrl
-        ? resolveUrlTab()
-        : tabs.some((tab) => tab.id === activeTab)
-          ? activeTab
-          : fallbackTabId;
+    const resolvedActiveTab = tabs.some((tab) => tab.id === activeTab)
+        ? activeTab
+        : fallbackTabId;
     const activeTabContent = tabs.find((tab) => tab.id === resolvedActiveTab)?.content;
     const activeTabButtonId = `${instanceId}-tab-${resolvedActiveTab}`;
     const tabPanelId = `${instanceId}-tabs-panel`;

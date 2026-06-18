@@ -10,6 +10,7 @@ export type Activity = {
 export type ColorTheme = {
     gradient: string;
     bg: string;
+    foreground: string;
     text: string;
     lightBg: string;
     textColor: string;
@@ -67,6 +68,7 @@ const COLOR_CONFIG: Record<RiskLevel, ColorTheme> = {
     orange: {
         gradient: "from-orange-500 to-amber-500",
         bg: "bg-orange-500",
+        foreground: "text-white",
         text: "สีส้ม",
         lightBg: "bg-orange-50",
         textColor: "text-orange-600",
@@ -77,6 +79,7 @@ const COLOR_CONFIG: Record<RiskLevel, ColorTheme> = {
     yellow: {
         gradient: "from-yellow-400 to-amber-400",
         bg: "bg-yellow-400",
+        foreground: "text-white",
         text: "สีเหลือง",
         lightBg: "bg-yellow-50",
         textColor: "text-yellow-600",
@@ -87,6 +90,7 @@ const COLOR_CONFIG: Record<RiskLevel, ColorTheme> = {
     green: {
         gradient: "from-green-500 to-emerald-500",
         bg: "bg-green-500",
+        foreground: "text-white",
         text: "สีเขียว",
         lightBg: "bg-green-50",
         textColor: "text-green-600",
@@ -97,6 +101,7 @@ const COLOR_CONFIG: Record<RiskLevel, ColorTheme> = {
     red: {
         gradient: "from-red-500 to-rose-500",
         bg: "bg-red-500",
+        foreground: "text-white",
         text: "สีแดง",
         lightBg: "bg-red-50",
         textColor: "text-red-600",
@@ -107,6 +112,7 @@ const COLOR_CONFIG: Record<RiskLevel, ColorTheme> = {
     blue: {
         gradient: "from-blue-500 to-cyan-500",
         bg: "bg-blue-500",
+        foreground: "text-white",
         text: "สีฟ้า",
         lightBg: "bg-blue-50",
         textColor: "text-blue-600",

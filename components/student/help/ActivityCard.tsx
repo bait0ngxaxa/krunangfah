@@ -8,36 +8,39 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({ activity, index, config }: ActivityCardProps) {
+    const hasSingleWorksheet = activity.worksheets.length === 1;
+
     return (
-        <div className="group relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/90 p-5 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.4)] transition-base duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_42px_-24px_rgba(15,23,42,0.48)] content-visibility-auto sm:p-8">
-            <div className="flex items-center gap-6 mb-8">
+        <article className="group relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white/90 p-4 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.4)] transition-base duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_42px_-24px_rgba(15,23,42,0.48)] content-visibility-auto sm:p-6">
+            <div className="mb-5 flex min-w-0 items-start gap-4 sm:mb-6 sm:items-center sm:gap-5">
                 <div
-                    className={`relative flex h-16 w-16 shrink-0 rotate-3 items-center justify-center rounded-3xl text-3xl font-bold text-white shadow-lg ${config.bg}`}
+                    className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-bold shadow-md sm:h-14 sm:w-14 sm:text-2xl ${config.bg} ${config.foreground}`}
                 >
-                    <span className="relative z-10 transition-transform group-hover:scale-110">
+                    <span className="relative z-10">
                         {index + 1}
                     </span>
-                    <div
-                        className="absolute inset-0 bg-black/5 rounded-3xl transform scale-110 -z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-hidden="true"
-                    />
                 </div>
                 <div className="min-w-0">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    <h3 className="mb-1 break-words text-lg font-bold leading-7 text-gray-800 sm:text-xl">
                         {activity.title}
                     </h3>
-                    <p className="text-gray-600 font-medium leading-relaxed">
+                    <p className="text-sm font-medium leading-6 text-gray-600 sm:text-base">
                         {activity.description}
                     </p>
                 </div>
             </div>
 
-            {/* Worksheet previews - Large horizontal layout */}
-            <div className="flex flex-row gap-6 justify-center overflow-x-auto pb-4">
+            <div
+                className={
+                    hasSingleWorksheet
+                        ? "grid grid-cols-1 justify-items-center gap-3 sm:gap-4"
+                        : "grid grid-cols-2 gap-3 sm:gap-4"
+                }
+            >
                 {activity.worksheets.map((worksheet, wIndex) => (
                     <div
-                        key={wIndex}
-                        className="group relative h-64 w-48 shrink-0 overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-md transition-base duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                        key={worksheet}
+                        className={`relative aspect-[3/4] min-h-0 overflow-hidden rounded-xl border border-gray-200/80 bg-white shadow-sm transition-base duration-300 hover:-translate-y-0.5 hover:shadow-md ${hasSingleWorksheet ? "w-full max-w-48" : ""}`}
                     >
                         <Image
                             src={worksheet}
@@ -45,11 +48,11 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                             fill
                             className="object-cover"
                             quality={70}
-                            sizes="(max-width: 768px) 100vw, 33vw"
+                            sizes="(max-width: 768px) 42vw, 12rem"
                         />
-                        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center">
+                        <div className="absolute inset-x-0 bottom-0 flex justify-center bg-linear-to-t from-black/70 to-transparent p-3">
                             <span
-                                className={`rounded-full border border-white/80 px-2 py-1 text-xs font-bold text-white shadow-sm ${config.bg}`}
+                                className={`rounded-full border border-white/80 px-2 py-1 text-xs font-bold shadow-sm ${config.bg} ${config.foreground}`}
                             >
                                 ใบที่ {wIndex + 1}
                             </span>
@@ -57,6 +60,6 @@ export function ActivityCard({ activity, index, config }: ActivityCardProps) {
                     </div>
                 ))}
             </div>
-        </div>
+        </article>
     );
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     ACTIVITY_INDICES,
+    getColorConfig,
     getActivities,
     type Activity,
 } from "@/lib/config/help-page-config";
@@ -32,6 +33,14 @@ describe("help-page-config getActivities", () => {
     it("should return empty list for risk levels without worksheets", () => {
         expect(getActivities("red")).toEqual([]);
         expect(getActivities("blue")).toEqual([]);
+    });
+});
+
+describe("help-page-config getColorConfig", () => {
+    it("should use white foreground text for activity controls", () => {
+        expect(getColorConfig("orange").foreground).toBe("text-white");
+        expect(getColorConfig("yellow").foreground).toBe("text-white");
+        expect(getColorConfig("green").foreground).toBe("text-white");
     });
 });
 
