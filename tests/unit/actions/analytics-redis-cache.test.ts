@@ -4,6 +4,7 @@ import {
     createAnalyticsRedisKeyParts,
     getRedisCachedAnalyticsData,
     getRedisCachedSystemOverview,
+    readRedisCachedAnalyticsData,
     revalidateRedisAnalyticsCache,
     setRedisCachedAnalyticsData,
     setRedisCachedSystemOverview,
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
     expire: vi.fn(),
     sMembers: vi.fn(),
     del: vi.fn(),
+    incr: vi.fn(),
 }));
 
 vi.mock("@/lib/redis", () => ({
@@ -123,13 +125,15 @@ describe("analytics Redis cache", () => {
             expire: mocks.expire,
             sMembers: mocks.sMembers,
             del: mocks.del,
+            incr: mocks.incr,
         });
-        mocks.get.mockResolvedValue(null);
+        mocks.get.mockResolvedValue("0");
         mocks.setEx.mockResolvedValue("OK");
         mocks.sAdd.mockResolvedValue(1);
         mocks.expire.mockResolvedValue(1);
         mocks.sMembers.mockResolvedValue([]);
         mocks.del.mockResolvedValue(1);
+        mocks.incr.mockResolvedValue(1);
     });
 
     it("returns cached analytics data when the stored payload is valid", async () => {
@@ -142,7 +146,9 @@ describe("analytics Redis cache", () => {
             semesterStr: "1",
             roundStr: "1",
         });
-        mocks.get.mockResolvedValue(JSON.stringify(data));
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(data));
 
         const cached = await getRedisCachedAnalyticsData(keyParts);
 
@@ -180,7 +186,10 @@ describe("analytics Redis cache", () => {
 
     it("returns cached system overview when the stored payload is valid", async () => {
         const overview = createOverview();
-        mocks.get.mockResolvedValue(JSON.stringify(overview));
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(overview));
 
         const cached = await getRedisCachedSystemOverview([
             "analytics-system-overview",
@@ -205,6 +214,46 @@ describe("analytics Redis cache", () => {
         );
     });
 
+    it("writes back using the generation observed during the cache miss", async () => {
+        const data = createAnalyticsData();
+        const keyParts = createAnalyticsRedisKeyParts({
+            role: "school_admin",
+            schoolId: "school-1",
+            targetClass: "ม.1/1",
+            academicYearStr: "2569",
+            semesterStr: "1",
+            roundStr: "1",
+        });
+        mocks.get
+            .mockResolvedValueOnce("4")
+            .mockResolvedValueOnce("7")
+            .mockResolvedValueOnce(null);
+
+        const lookup = await readRedisCachedAnalyticsData(keyParts, "school-1");
+        mocks.get.mockClear();
+
+        await setRedisCachedAnalyticsData(
+            keyParts,
+            data,
+            "school-1",
+            lookup.versionedKeyParts,
+        );
+
+        expect(lookup.data).toBeNull();
+        expect(lookup.versionedKeyParts).toContain(
+            "version:analytics:tag:global:4",
+        );
+        expect(lookup.versionedKeyParts).toContain(
+            "version:analytics:tag:school:school-1:7",
+        );
+        expect(mocks.get).not.toHaveBeenCalled();
+        expect(mocks.setEx).toHaveBeenCalledWith(
+            expect.stringMatching(/^analytics:cache:/),
+            300,
+            JSON.stringify(data),
+        );
+    });
+
     it("invalidates tracked analytics cache keys without scanning Redis", async () => {
         mocks.sMembers
             .mockResolvedValueOnce(["analytics:cache:global-key"])
@@ -216,6 +265,15 @@ describe("analytics Redis cache", () => {
         expect(mocks.sMembers).toHaveBeenCalledWith("analytics:tag:global");
         expect(mocks.sMembers).toHaveBeenCalledWith("analytics:tag:overview");
         expect(mocks.sMembers).toHaveBeenCalledWith("analytics:tag:school:school-1");
+        expect(mocks.incr).toHaveBeenCalledWith(
+            "analytics:tag-version:analytics:tag:global",
+        );
+        expect(mocks.incr).toHaveBeenCalledWith(
+            "analytics:tag-version:analytics:tag:overview",
+        );
+        expect(mocks.incr).toHaveBeenCalledWith(
+            "analytics:tag-version:analytics:tag:school:school-1",
+        );
         expect(mocks.del).toHaveBeenCalledWith(["analytics:cache:global-key"]);
         expect(mocks.del).toHaveBeenCalledWith("analytics:tag:global");
         expect(mocks.del).toHaveBeenCalledWith(["analytics:cache:overview-key"]);

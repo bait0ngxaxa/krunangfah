@@ -11,6 +11,8 @@ import type {
 } from "@/types/user-management.types";
 import type { Prisma } from "@prisma/client";
 import { revalidateDashboardCache } from "./dashboard/cache";
+import { deleteUserSessionCaches } from "@/lib/auth/session-cache";
+import { revokeUserSessions } from "@/lib/auth/session-store";
 
 const DEFAULT_PAGE_SIZE = 15;
 
@@ -161,6 +163,7 @@ export async function changeUserRole(
         data: { role: newRole },
     });
 
+    await deleteUserSessionCaches(userId);
     revalidateDashboardCache();
     return { success: true, message: "เปลี่ยนบทบาทสำเร็จ" };
 }
@@ -231,6 +234,7 @@ export async function deleteUser(userId: string): Promise<MutationResponse> {
         },
     });
 
+    await revokeUserSessions(userId);
     revalidateDashboardCache();
     return { success: true, message: `ลบผู้ใช้ ${target.email} สำเร็จ` };
 }
@@ -344,6 +348,7 @@ export async function updateTeacherProfile(
         }),
     ]);
 
+    await deleteUserSessionCaches(userId);
     revalidateDashboardCache();
     return { success: true, message: "แก้ไขห้องที่ปรึกษาสำเร็จ" };
 }

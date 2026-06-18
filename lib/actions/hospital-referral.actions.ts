@@ -15,6 +15,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/session";
 import { updateHospitalReferralSchema } from "@/lib/validations/hospital-referral.validation";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
+import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import { handleActionError } from "./error-handler";
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 
@@ -108,6 +109,7 @@ export async function updateHospitalReferral(
         });
 
         revalidatePath(`/students/${phqResult.studentId}`);
+        revalidateStudentsCache(phqResult.student.schoolId, phqResult.studentId);
         await revalidateAnalyticsCache(phqResult.student.schoolId);
 
         return {

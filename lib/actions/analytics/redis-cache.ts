@@ -1,23 +1,20 @@
-import { createHash } from "crypto";
 import { getRedisClient } from "@/lib/redis";
 import { logError } from "@/lib/utils/logging";
 import type { AnalyticsData, SystemAnalyticsOverview } from "./types";
+import {
+    ANALYTICS_REDIS_GLOBAL_TAG,
+    ANALYTICS_REDIS_OVERVIEW_TAG,
+    ANALYTICS_REDIS_TTL_SECONDS,
+    createCacheKey,
+    createSchoolTag,
+    createTagVersionKey,
+    createUniqueTags,
+    createVersionedKeyParts,
+} from "./redis-cache-keys";
 
-const ANALYTICS_REDIS_TTL_SECONDS = 5 * 60;
-const ANALYTICS_REDIS_KEY_PREFIX = "analytics:cache";
-const ANALYTICS_REDIS_TAG_PREFIX = "analytics:tag";
-const ANALYTICS_REDIS_GLOBAL_TAG = `${ANALYTICS_REDIS_TAG_PREFIX}:global`;
-const ANALYTICS_REDIS_OVERVIEW_TAG = `${ANALYTICS_REDIS_TAG_PREFIX}:overview`;
-
-function createCacheKey(parts: string[]): string {
-    const digest = createHash("sha256")
-        .update(JSON.stringify(parts))
-        .digest("hex");
-    return `${ANALYTICS_REDIS_KEY_PREFIX}:${digest}`;
-}
-
-function createSchoolTag(schoolId: string): string {
-    return `${ANALYTICS_REDIS_TAG_PREFIX}:school:${schoolId}`;
+interface CacheRead<T> {
+    data: T | null;
+    versionedKeyParts: string[] | null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -157,20 +154,27 @@ function isSystemAnalyticsOverview(value: unknown): value is SystemAnalyticsOver
 
 async function getJsonCache<T>(
     keyParts: string[],
+    tags: string[],
     guard: (value: unknown) => value is T,
-): Promise<T | null> {
+): Promise<CacheRead<T>> {
     const client = await getRedisClient();
-    if (!client) return null;
+    if (!client) return { data: null, versionedKeyParts: null };
 
     try {
-        const cached = await client.get(createCacheKey(keyParts));
-        if (!cached) return null;
+        const uniqueTags = createUniqueTags(tags);
+        const versionedKeyParts = await createVersionedKeyParts(
+            client,
+            keyParts,
+            uniqueTags,
+        );
+        const cached = await client.get(createCacheKey(versionedKeyParts));
+        if (!cached) return { data: null, versionedKeyParts };
 
         const parsed: unknown = JSON.parse(cached);
-        return guard(parsed) ? parsed : null;
+        return { data: guard(parsed) ? parsed : null, versionedKeyParts };
     } catch (error) {
         logError("Analytics Redis cache read error:", error);
-        return null;
+        return { data: null, versionedKeyParts: null };
     }
 }
 
@@ -178,14 +182,18 @@ async function setJsonCache(
     keyParts: string[],
     value: unknown,
     tags: string[],
+    versionedKeyParts?: string[] | null,
 ): Promise<void> {
     const client = await getRedisClient();
     if (!client) return;
 
-    const cacheKey = createCacheKey(keyParts);
-    const uniqueTags = Array.from(new Set([ANALYTICS_REDIS_GLOBAL_TAG, ...tags]));
-
     try {
+        const uniqueTags = createUniqueTags(tags);
+        const effectiveKeyParts =
+            versionedKeyParts ??
+            (await createVersionedKeyParts(client, keyParts, uniqueTags));
+        const cacheKey = createCacheKey(effectiveKeyParts);
+
         await client.setEx(
             cacheKey,
             ANALYTICS_REDIS_TTL_SECONDS,
@@ -207,6 +215,7 @@ async function invalidateTag(tag: string): Promise<void> {
     if (!client) return;
 
     try {
+        await client.incr(createTagVersionKey(tag));
         const keys = await client.sMembers(tag);
         if (keys.length > 0) {
             await client.del(keys);
@@ -247,32 +256,59 @@ export function createSystemOverviewRedisKeyParts(input: {
     ];
 }
 
-export function getRedisCachedAnalyticsData(
+export function readRedisCachedAnalyticsData(
+    keyParts: string[],
+    schoolId?: string,
+): Promise<CacheRead<AnalyticsData>> {
+    const tags = schoolId ? [createSchoolTag(schoolId)] : [];
+    return getJsonCache(keyParts, tags, isAnalyticsData);
+}
+
+export async function getRedisCachedAnalyticsData(
     keyParts: string[],
 ): Promise<AnalyticsData | null> {
-    return getJsonCache(keyParts, isAnalyticsData);
+    const result = await readRedisCachedAnalyticsData(keyParts);
+    return result.data;
 }
 
 export function setRedisCachedAnalyticsData(
     keyParts: string[],
     data: AnalyticsData,
     schoolId?: string,
+    versionedKeyParts?: string[] | null,
 ): Promise<void> {
     const tags = schoolId ? [createSchoolTag(schoolId)] : [];
-    return setJsonCache(keyParts, data, tags);
+    return setJsonCache(keyParts, data, tags, versionedKeyParts);
 }
 
-export function getRedisCachedSystemOverview(
+export function readRedisCachedSystemOverview(
+    keyParts: string[],
+): Promise<CacheRead<SystemAnalyticsOverview>> {
+    return getJsonCache(
+        keyParts,
+        [ANALYTICS_REDIS_OVERVIEW_TAG],
+        isSystemAnalyticsOverview,
+    );
+}
+
+export async function getRedisCachedSystemOverview(
     keyParts: string[],
 ): Promise<SystemAnalyticsOverview | null> {
-    return getJsonCache(keyParts, isSystemAnalyticsOverview);
+    const result = await readRedisCachedSystemOverview(keyParts);
+    return result.data;
 }
 
 export function setRedisCachedSystemOverview(
     keyParts: string[],
     data: SystemAnalyticsOverview,
+    versionedKeyParts?: string[] | null,
 ): Promise<void> {
-    return setJsonCache(keyParts, data, [ANALYTICS_REDIS_OVERVIEW_TAG]);
+    return setJsonCache(
+        keyParts,
+        data,
+        [ANALYTICS_REDIS_OVERVIEW_TAG],
+        versionedKeyParts,
+    );
 }
 
 export async function revalidateRedisAnalyticsCache(

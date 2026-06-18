@@ -23,8 +23,8 @@ import {
 import {
     createAnalyticsRedisKeyParts,
     createSystemOverviewRedisKeyParts,
-    getRedisCachedAnalyticsData,
-    getRedisCachedSystemOverview,
+    readRedisCachedAnalyticsData,
+    readRedisCachedSystemOverview,
     setRedisCachedAnalyticsData,
     setRedisCachedSystemOverview,
 } from "./redis-cache";
@@ -293,9 +293,9 @@ async function getCachedAnalyticsData(
         semesterStr,
         roundStr,
     });
-    const redisCached = await getRedisCachedAnalyticsData(cacheKey);
-    if (redisCached) {
-        return redisCached;
+    const redisCached = await readRedisCachedAnalyticsData(cacheKey, schoolId);
+    if (redisCached.data) {
+        return redisCached.data;
     }
 
     const cachedFetcher = unstable_cache(
@@ -313,7 +313,12 @@ async function getCachedAnalyticsData(
     );
 
     const data = await cachedFetcher();
-    await setRedisCachedAnalyticsData(cacheKey, data, schoolId);
+    await setRedisCachedAnalyticsData(
+        cacheKey,
+        data,
+        schoolId,
+        redisCached.versionedKeyParts,
+    );
     return data;
 }
 
@@ -466,9 +471,9 @@ export async function getSystemAnalyticsOverview(
             academicYear,
             semester,
         });
-        const redisCached = await getRedisCachedSystemOverview(overviewCacheKey);
-        if (redisCached) {
-            return redisCached;
+        const redisCached = await readRedisCachedSystemOverview(overviewCacheKey);
+        if (redisCached.data) {
+            return redisCached.data;
         }
 
         const cachedOverviewFetcher = unstable_cache(
@@ -478,7 +483,11 @@ export async function getSystemAnalyticsOverview(
         );
 
         const data = await cachedOverviewFetcher();
-        await setRedisCachedSystemOverview(overviewCacheKey, data);
+        await setRedisCachedSystemOverview(
+            overviewCacheKey,
+            data,
+            redisCached.versionedKeyParts,
+        );
         return data;
     } catch (error) {
         return handleActionError({
