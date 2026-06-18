@@ -46,6 +46,11 @@ export function StudentResultItem({
                         <span className="max-w-full break-words rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">
                             ห้อง {student.class}
                         </span>
+                        {canViewNationalId && student.school?.name && (
+                            <span className="max-w-full break-words rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
+                                {student.school.name}
+                            </span>
+                        )}
                         {student.studentId && (
                             <span className="max-w-full break-words text-xs text-gray-500">
                                 #{student.studentId}

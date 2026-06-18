@@ -58,6 +58,9 @@ function createSearchResult(nationalId: string) {
         nationalId,
         class: "ม.1/1",
         schoolId: "school-1",
+        school: {
+            name: "โรงเรียนทดสอบ",
+        },
         createdAt: now,
         updatedAt: now,
         age: 13,

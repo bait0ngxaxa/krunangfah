@@ -145,6 +145,7 @@ export function AnalyticsContent({
         pieChartTitle,
         showAdminTables: userRole === "school_admin" || isSystemAdmin,
         userRole,
+        selectedClass,
     });
 
     return (

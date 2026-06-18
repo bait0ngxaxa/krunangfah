@@ -6,6 +6,7 @@ import { toSafeCount } from "../utils";
 
 interface ActivityProgressTableProps {
     activityProgressByRisk: ActivityProgressByRisk[];
+    scopeLabel: string;
 }
 
 const ACTIVITY_LABELS = [
@@ -18,7 +19,9 @@ const ACTIVITY_LABELS = [
 
 export function ActivitySummaryTable({
     activityProgressByRisk,
+    scopeLabel,
 }: ActivityProgressTableProps) {
+    const title = `กระบวนการช่วยเหลือ (${scopeLabel})`;
     const orderedData = RISK_LEVELS
         .map((level) =>
             activityProgressByRisk.find((item) => item.riskLevel === level),
@@ -31,7 +34,7 @@ export function ActivitySummaryTable({
                 <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 blur-3xl" />
                 <h2 className="relative mb-4 text-center text-xl font-bold text-slate-800">
-                    กระบวนการช่วยเหลือ (ห้องที่ปรึกษา)
+                    {title}
                 </h2>
                 <div className="relative flex flex-col items-center gap-3 text-gray-400">
                     <div className="relative w-16 h-16">
@@ -54,12 +57,12 @@ export function ActivitySummaryTable({
             <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 blur-3xl" />
             <h2 className="relative mb-6 text-center text-xl font-extrabold tracking-tight text-slate-800">
-                กระบวนการช่วยเหลือ (ห้องที่ปรึกษา)
+                {title}
             </h2>
             <div className="relative overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-sm">
                 <table
                     className="w-full border-collapse"
-                    aria-label="กระบวนการช่วยเหลือ (ห้องที่ปรึกษา)"
+                    aria-label={title}
                 >
                     <thead>
                         <tr className="bg-slate-50 text-slate-700">
@@ -141,9 +144,14 @@ export function ActivitySummaryTable({
                                                   : "bg-white" // Required & empty state
                                         }`}
                                     >
-                                        {hasActivities &&
-                                        noActivity > 0 ? (
-                                            <span className="font-bold text-red-500">
+                                        {hasActivities ? (
+                                            <span
+                                                className={
+                                                    noActivity > 0
+                                                        ? "font-bold text-red-500"
+                                                        : "font-bold text-slate-500"
+                                                }
+                                            >
                                                 {noActivity}
                                             </span>
                                         ) : null}

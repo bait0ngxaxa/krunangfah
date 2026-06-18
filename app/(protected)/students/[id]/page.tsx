@@ -10,6 +10,7 @@ import { ActivityProgressTable } from "@/components/student/activity/ActivityPro
 import { CounselingLogTable } from "@/components/student/counseling/CounselingLogTable";
 import { AcademicYearFilter } from "@/components/student/profile/AcademicYearFilter";
 import { ReferralButton } from "@/components/student/referral/ReferralButton";
+import { HospitalReferralButton } from "@/components/student/referral/HospitalReferralButton";
 import { HomeVisitTab } from "@/components/student/home-visit/HomeVisitTab";
 
 // Lazy-load chart library to keep initial bundle for detail page smaller.
@@ -313,7 +314,14 @@ async function StudentDetailContent({
             />
 
             {latestResult && !isSystemAdmin && canManageStudentCareRecords && (
-                <div className="flex justify-end">
+                <div className="flex flex-wrap justify-end gap-3">
+                    {latestResult.riskLevel === "red" && (
+                        <HospitalReferralButton
+                            phqResultId={latestResult.id}
+                            initialStatus={latestResult.referredToHospital}
+                            initialHospitalName={latestResult.hospitalName}
+                        />
+                    )}
                     <ReferralButton
                         studentId={studentId}
                         studentName={`${student.firstName} ${student.lastName}`}

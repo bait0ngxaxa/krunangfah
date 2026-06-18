@@ -7,6 +7,9 @@ export type Student = {
     studentId: string | null;
     nationalId?: string | null;
     class: string;
+    school?: {
+        name: string;
+    } | null;
     phqResults: Array<{
         totalScore: number;
         riskLevel: string;

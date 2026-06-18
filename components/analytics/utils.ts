@@ -103,3 +103,16 @@ export function getPieChartTitle(
             return "ข้อมูลนักเรียน";
     }
 }
+
+export function getClassScopeLabel(
+    selectedClass: string,
+    userRole?: string,
+): string {
+    if (selectedClass !== "all") {
+        return `ห้อง ${selectedClass}`;
+    }
+    if (userRole === "class_teacher") {
+        return "ห้องที่ปรึกษา";
+    }
+    return "ทั้งหมด";
+}

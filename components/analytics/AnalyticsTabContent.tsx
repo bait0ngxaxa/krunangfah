@@ -5,6 +5,7 @@ import type { RiskPieChartDataItem } from "@/components/ui/RiskPieChart";
 import type { Tab } from "@/components/ui/Tabs";
 import type { AnalyticsData } from "@/lib/actions/analytics/types";
 import {
+    getClassScopeLabel,
     normalizeGradeRiskData,
     normalizeTrendData,
 } from "./utils";
@@ -20,6 +21,7 @@ interface AnalyticsTabContentProps {
     pieChartTitle: string;
     showAdminTables: boolean;
     userRole?: string;
+    selectedClass: string;
 }
 
 export function buildAnalyticsTabs({
@@ -28,10 +30,12 @@ export function buildAnalyticsTabs({
     pieChartTitle,
     showAdminTables,
     userRole,
+    selectedClass,
 }: AnalyticsTabContentProps): Tab[] {
     const isClassTeacher = userRole === "class_teacher";
     const safeTrendData = normalizeTrendData(data.trendData);
     const safeGradeRiskData = normalizeGradeRiskData(data.gradeRiskData);
+    const classScopeLabel = getClassScopeLabel(selectedClass, userRole);
 
     return [
         {
@@ -93,6 +97,7 @@ export function buildAnalyticsTabs({
             content: (
                 <ActivitySummaryTable
                     activityProgressByRisk={data.activityProgressByRisk}
+                    scopeLabel={classScopeLabel}
                 />
             ),
         },

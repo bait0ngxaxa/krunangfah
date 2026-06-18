@@ -538,6 +538,11 @@ export async function searchStudentsQuery(
     return prisma.student.findMany({
         where: whereClause,
         include: {
+            school: {
+                select: {
+                    name: true,
+                },
+            },
             phqResults: {
                 orderBy: { createdAt: "desc" },
                 take: 1,
@@ -575,6 +580,11 @@ export async function getStudentDetailQuery(
     return prisma.student.findFirst({
         where: whereClause,
         include: {
+            school: {
+                select: {
+                    name: true,
+                },
+            },
             phqResults: {
                 include: {
                     academicYear: true,

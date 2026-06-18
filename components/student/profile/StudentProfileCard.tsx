@@ -33,6 +33,9 @@ interface StudentProfileCardProps {
         gender?: string | null;
         age?: number | null;
         class: string;
+        school?: {
+            name: string;
+        } | null;
         status?: string | null;
     };
     latestResult?: {
@@ -58,6 +61,7 @@ interface DetailItem {
     value: string;
     icon: LucideIcon;
     tone: string;
+    hideLabel?: boolean;
 }
 
 function formatGender(gender?: string | null): string | null {
@@ -86,6 +90,16 @@ function buildDetailItems(
         },
     ];
     const gender = formatGender(student.gender);
+
+    if (canViewNationalId && student.school?.name) {
+        items.push({
+            label: "โรงเรียน",
+            value: student.school.name,
+            icon: School,
+            tone: "border-cyan-200 bg-cyan-50 text-cyan-800",
+            hideLabel: true,
+        });
+    }
 
     if (gender) {
         items.push({
@@ -250,7 +264,12 @@ export function StudentProfileCard({
                     activePhqResultId={activePhqResultId}
                     isOpen={isProfileEditOpen}
                     onClose={() => setIsProfileEditOpen(false)}
-                    onSaved={setProfileStudent}
+                    onSaved={(updatedStudent) =>
+                        setProfileStudent((currentStudent) => ({
+                            ...currentStudent,
+                            ...updatedStudent,
+                        }))
+                    }
                 />
             )}
 
@@ -274,7 +293,11 @@ function DetailPill({ item }: { item: DetailItem }): ReactElement {
             className={`inline-flex min-h-9 max-w-full min-w-0 items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-semibold ${item.tone}`}
         >
             <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span className="shrink-0 text-current opacity-70">{item.label}</span>
+            {!item.hideLabel && (
+                <span className="shrink-0 text-current opacity-70">
+                    {item.label}
+                </span>
+            )}
             <span className="truncate">{item.value}</span>
         </span>
     );
