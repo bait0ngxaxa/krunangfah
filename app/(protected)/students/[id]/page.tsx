@@ -186,19 +186,18 @@ async function StudentDetailContent({
     const studentStatusLockedMessage = getStudentActionBlockedMessage(
         student.status,
     );
-    const canManageStudentCareRecords =
-        isViewingLatestImportedResult && !studentStatusLockedMessage;
-    const canManageActivities =
+    const canManageLatestCareRecordsIgnoringStatus =
+        isViewingLatestImportedResult;
+    const canManageActivitiesIgnoringStatus =
         latestResult?.id !== undefined &&
         activePhqResult?.id !== undefined &&
         latestResult.id === activePhqResult.id &&
-        !isReferralLockedForClassTeacher &&
-        !studentStatusLockedMessage;
+        !isReferralLockedForClassTeacher;
     const activityActionLockedMessage =
         studentStatusLockedMessage ??
         (isReferralLockedForClassTeacher
             ? ERROR_MESSAGES.activity.classTeacherReferredLocked
-            : !canManageActivities && latestResult
+            : !canManageActivitiesIgnoringStatus && latestResult
             ? "กำลังดูข้อมูลย้อนหลัง จึงทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน"
             : undefined);
     const phqPagination = buildOffsetPagination(
@@ -236,7 +235,9 @@ async function StudentDetailContent({
                         semester: latestResult.academicYear.semester,
                         assessmentRound: latestResult.assessmentRound,
                     }}
-                    readOnly={isSystemAdmin || !canManageActivities}
+                    readOnly={
+                        isSystemAdmin || !canManageActivitiesIgnoringStatus
+                    }
                     actionLockedMessage={activityActionLockedMessage}
                 />
             )}
@@ -245,7 +246,10 @@ async function StudentDetailContent({
                 pagination={counselingSessionData.pagination}
                 studentId={studentId}
                 academicYearId={recordAcademicYearId}
-                readOnly={isSystemAdmin || !canManageStudentCareRecords}
+                readOnly={
+                    isSystemAdmin ||
+                    !canManageLatestCareRecordsIgnoringStatus
+                }
                 isFilteredByAcademicYear={Boolean(selectedYearId)}
             />
         </div>
@@ -257,7 +261,9 @@ async function StudentDetailContent({
             pagination={homeVisitData.pagination}
             studentId={studentId}
             academicYearId={recordAcademicYearId}
-            readOnly={isSystemAdmin || !canManageStudentCareRecords}
+            readOnly={
+                isSystemAdmin || !canManageLatestCareRecordsIgnoringStatus
+            }
             isFilteredByAcademicYear={Boolean(selectedYearId)}
         />
     );
