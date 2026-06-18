@@ -8,6 +8,7 @@ import {
     getRequestedOrLatestPhqResult,
 } from "@/lib/utils/phq-result-selection";
 import { getWorksheetActivityIndices } from "@/components/activity/ActivityWorkspace/constants";
+import { canStudentPerformActions } from "@/lib/constants/student-status";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -60,6 +61,9 @@ export default async function EncouragementRoute({
         redirect(studentHelpRoute(studentId));
     }
     if (session.user.role === "class_teacher" && Boolean(student.referral)) {
+        redirect(studentHelpRoute(studentId));
+    }
+    if (!canStudentPerformActions(student.status)) {
         redirect(studentHelpRoute(studentId));
     }
 

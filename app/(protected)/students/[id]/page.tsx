@@ -5,6 +5,7 @@ import { BarChart3, Target, Home } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { getStudentDetail } from "@/lib/actions/student/main";
 import { StudentProfileSection } from "@/components/student/profile/StudentProfileSection";
+import { StudentStatusProvider } from "@/components/student/profile/StudentStatusContext";
 import { PHQHistoryTable } from "@/components/student/phq/PHQHistoryTable";
 import { ActivityProgressTable } from "@/components/student/activity/ActivityProgressTable";
 import { CounselingLogTable } from "@/components/student/counseling/CounselingLogTable";
@@ -301,29 +302,31 @@ async function StudentDetailContent({
     ];
 
     return (
-        <div className="space-y-7">
-            <StudentProfileSection
-                key={`${visibleStudent.id}:${visibleStudent.status}`}
-                student={visibleStudent}
-                latestResult={latestResult}
-                activePhqResultId={activePhqResult?.id}
-                canViewNationalId={isSystemAdmin}
-                canEditProfile={canEditStudentProfile}
-                canManageLatestCareRecords={isViewingLatestImportedResult}
-                currentUserId={currentUserId}
-                currentUserRole={session.user.role}
-                referral={student.referral}
-            />
-
-            {uniqueYears.length > 1 && (
-                <AcademicYearFilter
-                    academicYears={uniqueYears}
-                    currentYearId={selectedYearId}
+        <StudentStatusProvider initialStatus={visibleStudent.status}>
+            <div className="space-y-7">
+                <StudentProfileSection
+                    key={`${visibleStudent.id}:${visibleStudent.status}`}
+                    student={visibleStudent}
+                    latestResult={latestResult}
+                    activePhqResultId={activePhqResult?.id}
+                    canViewNationalId={isSystemAdmin}
+                    canEditProfile={canEditStudentProfile}
+                    canManageLatestCareRecords={isViewingLatestImportedResult}
+                    currentUserId={currentUserId}
+                    currentUserRole={session.user.role}
+                    referral={student.referral}
                 />
-            )}
 
-            <Tabs tabs={tabs} defaultTab="phq-results" syncWithUrl />
-        </div>
+                {uniqueYears.length > 1 && (
+                    <AcademicYearFilter
+                        academicYears={uniqueYears}
+                        currentYearId={selectedYearId}
+                    />
+                )}
+
+                <Tabs tabs={tabs} defaultTab="phq-results" syncWithUrl />
+            </div>
+        </StudentStatusProvider>
     );
 }
 

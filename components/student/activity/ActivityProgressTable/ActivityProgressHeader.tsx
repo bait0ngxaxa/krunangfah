@@ -1,8 +1,11 @@
+"use client";
+
 import { FileText, Rocket, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { getRiskLevelLabel } from "./utils";
 import type { AssessmentPeriod } from "./types";
 import { buttonVariants } from "@/components/ui/Button";
+import { useStudentStatusLock } from "@/components/student/profile/StudentStatusContext";
 import {
     getRiskLevelConfig,
     type RiskLevel,
@@ -32,6 +35,9 @@ export function ActivityProgressHeader({
 }: ActivityProgressHeaderProps) {
     const progressPercent = (completedCount / totalCount) * 100;
     const riskStyle = getRiskLevelConfig(riskLevel);
+    const { actionLockedMessage: effectiveLockedMessage, isLockedByStatus } =
+        useStudentStatusLock(actionLockedMessage);
+    const effectiveReadOnly = readOnly || isLockedByStatus;
 
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -75,12 +81,12 @@ export function ActivityProgressHeader({
                     </div>
                 </div>
             </div>
-            {actionLockedMessage ? (
+            {effectiveLockedMessage ? (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700 md:max-w-sm">
-                    {actionLockedMessage}
+                    {effectiveLockedMessage}
                 </div>
             ) : null}
-            {!readOnly && !actionLockedMessage && (
+            {!effectiveReadOnly && !effectiveLockedMessage && (
                 <Link
                     href={studentHelpStartRoute(studentId, phqResultId)}
                     className={buttonVariants({

@@ -9,6 +9,7 @@ import { HomeVisitCard } from "./HomeVisitCard";
 import { AddHomeVisitModal } from "./AddHomeVisitModal";
 import { Button } from "@/components/ui/Button";
 import { QueryPagination } from "@/components/ui/QueryPagination";
+import { useStudentStatusLock } from "@/components/student/profile/StudentStatusContext";
 
 interface HomeVisitTabProps {
     visits: HomeVisitData[];
@@ -29,6 +30,8 @@ export function HomeVisitTab({
 }: HomeVisitTabProps) {
     const router = useRouter();
     const [showAddModal, setShowAddModal] = useState(false);
+    const { isLockedByStatus } = useStudentStatusLock();
+    const effectiveReadOnly = readOnly || isLockedByStatus;
 
     const handleSuccess = () => {
         router.refresh();
@@ -74,7 +77,7 @@ export function HomeVisitTab({
                         <HomeVisitCard
                             key={visit.id}
                             visit={visit}
-                            readOnly={readOnly}
+                            readOnly={effectiveReadOnly}
                             onDeleted={handleSuccess}
                         />
                     ))}
@@ -88,7 +91,7 @@ export function HomeVisitTab({
             />
 
             {/* Add Button */}
-            {!readOnly && (
+            {!effectiveReadOnly && (
                 <div className="mt-6 flex justify-end">
                     <Button
                         onClick={() => setShowAddModal(true)}
@@ -102,7 +105,7 @@ export function HomeVisitTab({
             )}
 
             {/* Add Modal */}
-            {!readOnly && showAddModal && (
+            {!effectiveReadOnly && showAddModal && (
                 <AddHomeVisitModal
                     studentId={studentId}
                     academicYearId={academicYearId}

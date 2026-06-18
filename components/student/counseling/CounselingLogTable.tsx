@@ -8,6 +8,7 @@ import type { OffsetPagination } from "@/types/pagination.types";
 import { AddCounselingModal } from "./AddCounselingModal";
 import { Button } from "@/components/ui/Button";
 import { QueryPagination } from "@/components/ui/QueryPagination";
+import { useStudentStatusLock } from "@/components/student/profile/StudentStatusContext";
 
 interface CounselingLogTableProps {
     sessions: CounselingSession[];
@@ -28,6 +29,8 @@ export function CounselingLogTable({
 }: CounselingLogTableProps) {
     const router = useRouter();
     const [showAddModal, setShowAddModal] = useState(false);
+    const { isLockedByStatus } = useStudentStatusLock();
+    const effectiveReadOnly = readOnly || isLockedByStatus;
 
     const formatDate = (date: Date) => {
         return new Date(date).toLocaleDateString("th-TH", {
@@ -128,7 +131,7 @@ export function CounselingLogTable({
             />
 
             {/* Add Button — ซ่อนเมื่อ readOnly */}
-            {!readOnly && (
+            {!effectiveReadOnly && (
                 <div className="mt-6 flex justify-end">
                     <Button
                         onClick={() => setShowAddModal(true)}
@@ -142,7 +145,7 @@ export function CounselingLogTable({
             )}
 
             {/* Add Modal */}
-            {!readOnly && showAddModal && (
+            {!effectiveReadOnly && showAddModal && (
                 <AddCounselingModal
                     studentId={studentId}
                     academicYearId={academicYearId}

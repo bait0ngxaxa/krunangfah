@@ -1,7 +1,7 @@
 import { CheckCircle2, Lock } from "lucide-react";
 import { getActivityName } from "./utils";
 import { WorksheetPreviewButton } from "../WorksheetPreviewButton";
-import { ScheduleDateCell } from "./ScheduleDateCell";
+import { StatusAwareScheduleDateCell } from "./StatusAwareScheduleDateCell";
 import { AssessmentDetail } from "./AssessmentDetail";
 import type { ActivityProgress } from "./types";
 
@@ -105,7 +105,7 @@ export function ActivityRow({ progress, index, readOnly = false }: ActivityRowPr
                         <span className="font-medium md:hidden text-gray-500 text-sm">
                             วันที่:{" "}
                         </span>
-                        <ScheduleDateCell
+                        <StatusAwareScheduleDateCell
                             activityProgressId={progress.id}
                             currentDate={progress.scheduledDate}
                             isLocked={isLocked}

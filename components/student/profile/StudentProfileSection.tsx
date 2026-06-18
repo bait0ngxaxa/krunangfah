@@ -5,6 +5,7 @@ import {
     getStudentActionBlockedMessage,
     parseStudentStatusValue,
 } from "@/lib/constants/student-status";
+import { useStudentStatusContext } from "./StudentStatusContext";
 import { HospitalReferralButton } from "@/components/student/referral/HospitalReferralButton";
 import { ReferralButton } from "@/components/student/referral/ReferralButton";
 import {
@@ -55,14 +56,25 @@ export function StudentProfileSection({
     referral,
 }: StudentProfileSectionProps) {
     const [profileStudent, setProfileStudent] = useState(student);
+    const studentStatus = useStudentStatusContext();
 
-    const blockedMessage = getBlockedMessage(profileStudent.status);
+    const blockedMessage = getBlockedMessage(
+        studentStatus?.status ?? profileStudent.status,
+    );
     const canShowActionButtons =
         latestResult !== null &&
         latestResult !== undefined &&
         currentUserRole !== "system_admin" &&
         canManageLatestCareRecords &&
         !blockedMessage;
+
+    function handleProfileSaved(updatedStudent: StudentProfileStudent): void {
+        const parsedStatus = parseStudentStatusValue(updatedStudent.status);
+        setProfileStudent(updatedStudent);
+        if (parsedStatus) {
+            studentStatus?.setStatus(parsedStatus);
+        }
+    }
 
     return (
         <>
@@ -73,7 +85,7 @@ export function StudentProfileSection({
                 activePhqResultId={activePhqResultId}
                 canViewNationalId={canViewNationalId}
                 canEditProfile={canEditProfile}
-                onProfileSaved={setProfileStudent}
+                onProfileSaved={handleProfileSaved}
             />
 
             {canShowActionButtons && (
