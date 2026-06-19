@@ -135,15 +135,19 @@ function SelectField({
 
 interface FormControlsProps {
     form: StudentProfileFormState;
+    isProfileLocked: boolean;
     isPending: boolean;
     updateField: UpdateField;
 }
 
 function PersonalFieldControls({
     form,
+    isProfileLocked,
     isPending,
     updateField,
 }: FormControlsProps) {
+    const isDisabled = isPending || isProfileLocked;
+
     return (
         <>
             <TextField
@@ -154,7 +158,7 @@ function PersonalFieldControls({
                 onChange={(value) => updateField("firstName", value)}
                 maxLength={100}
                 required
-                disabled={isPending}
+                disabled={isDisabled}
             />
             <TextField
                 Icon={UsersRound}
@@ -164,7 +168,7 @@ function PersonalFieldControls({
                 onChange={(value) => updateField("lastName", value)}
                 maxLength={100}
                 required
-                disabled={isPending}
+                disabled={isDisabled}
             />
             <SelectField
                 Icon={VenusAndMars}
@@ -173,7 +177,7 @@ function PersonalFieldControls({
                 value={form.gender}
                 options={GENDER_OPTIONS}
                 onChange={(value) => updateField("gender", value)}
-                disabled={isPending}
+                disabled={isDisabled}
             />
             <TextField
                 Icon={Cake}
@@ -184,7 +188,7 @@ function PersonalFieldControls({
                 type="number"
                 min={1}
                 max={100}
-                disabled={isPending}
+                disabled={isDisabled}
             />
         </>
     );
@@ -192,9 +196,12 @@ function PersonalFieldControls({
 
 function SchoolFieldControls({
     form,
+    isProfileLocked,
     isPending,
     updateField,
 }: FormControlsProps) {
+    const isSchoolInfoDisabled = isPending || isProfileLocked;
+
     return (
         <>
             <TextField
@@ -205,7 +212,7 @@ function SchoolFieldControls({
                 onChange={(value) => updateField("studentId", value)}
                 maxLength={50}
                 required
-                disabled={isPending}
+                disabled={isSchoolInfoDisabled}
             />
             <TextField
                 Icon={CreditCard}
@@ -221,7 +228,7 @@ function SchoolFieldControls({
                 inputMode="numeric"
                 maxLength={13}
                 placeholder="ตัวเลข 13 หลัก"
-                disabled={isPending}
+                disabled={isSchoolInfoDisabled}
             />
             <SelectField
                 Icon={BadgeCheck}

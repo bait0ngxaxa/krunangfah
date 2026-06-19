@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { updateStudentProfile } from "@/lib/actions/student/mutations";
+import { STUDENT_STATUS } from "@/lib/constants/student-status";
 import {
     StudentProfileFields,
     type StudentProfileFormState,
@@ -83,6 +84,25 @@ function toSubmitPayload(
     };
 }
 
+function isEditableStudentProfile(status?: string | null): boolean {
+    return (status ?? STUDENT_STATUS.ACTIVE) === STUDENT_STATUS.ACTIVE;
+}
+
+function canSubmitStudentProfile(
+    form: StudentProfileFormState,
+    baseline: StudentProfileFormState,
+    isProfileLocked: boolean,
+): boolean {
+    const hasChanges = hasFormChanges(form, baseline);
+    if (!hasChanges) return false;
+    if (!isProfileLocked) return true;
+
+    return (
+        form.status === STUDENT_STATUS.ACTIVE &&
+        baseline.status !== STUDENT_STATUS.ACTIVE
+    );
+}
+
 export function StudentProfileEditModal({
     student,
     activePhqResultId,
@@ -96,7 +116,12 @@ export function StudentProfileEditModal({
     const [baselineForm, setBaselineForm] = useState(() =>
         createInitialState(student),
     );
-    const hasChanges = hasFormChanges(form, baselineForm);
+    const isProfileLocked = !isEditableStudentProfile(baselineForm.status);
+    const canSubmit = canSubmitStudentProfile(
+        form,
+        baselineForm,
+        isProfileLocked,
+    );
 
     if (typeof document === "undefined" || !isOpen) return null;
 
@@ -115,7 +140,7 @@ export function StudentProfileEditModal({
 
     function handleSubmit(event: FormEvent<HTMLFormElement>): void {
         event.preventDefault();
-        if (isPending || !hasChanges) return;
+        if (isPending || !canSubmit) return;
 
         startTransition(async () => {
             const result = await updateStudentProfile(
@@ -154,12 +179,13 @@ export function StudentProfileEditModal({
                 <div className="overflow-y-auto px-4 pb-4 pt-12 sm:px-5">
                     <StudentProfileFields
                         form={form}
+                        isProfileLocked={isProfileLocked}
                         isPending={isPending}
                         updateField={updateField}
                     />
                 </div>
                 <ModalFooter
-                    hasChanges={hasChanges}
+                    canSubmit={canSubmit}
                     isPending={isPending}
                     onClose={handleClose}
                 />
@@ -190,11 +216,11 @@ function CloseButton({
 }
 
 function ModalFooter({
-    hasChanges,
+    canSubmit,
     isPending,
     onClose,
 }: {
-    hasChanges: boolean;
+    canSubmit: boolean;
     isPending: boolean;
     onClose: () => void;
 }) {
@@ -211,7 +237,7 @@ function ModalFooter({
             <Button
                 type="submit"
                 variant="primary"
-                disabled={isPending || !hasChanges}
+                disabled={isPending || !canSubmit}
             >
                 <Save className="h-4 w-4" aria-hidden="true" />
                 {isPending ? "กำลังบันทึก..." : "บันทึก"}
