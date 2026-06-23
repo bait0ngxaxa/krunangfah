@@ -1,5 +1,12 @@
 export const UPLOAD_ACTION_TIMEOUT_MS = 45_000;
 
+export class UploadTimeoutError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "UploadTimeoutError";
+    }
+}
+
 export async function withTimeout<T>(
     promise: Promise<T>,
     timeoutMs: number,
@@ -9,7 +16,7 @@ export async function withTimeout<T>(
 
     const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = globalThis.setTimeout(() => {
-            reject(new Error(timeoutMessage));
+            reject(new UploadTimeoutError(timeoutMessage));
         }, timeoutMs);
     });
 

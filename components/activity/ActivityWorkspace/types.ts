@@ -42,6 +42,7 @@ export interface PreviewFile {
 export interface UseActivityWorkspaceReturn {
     // State
     uploading: string | null;
+    canRetryUpload: boolean;
     previewFile: PreviewFile | null;
     setPreviewFile: (file: PreviewFile | null) => void;
     teacherNotes: string;
@@ -66,6 +67,7 @@ export interface UseActivityWorkspaceReturn {
 
     // Handlers
     handleFileSelect: (progressId: string) => void;
+    handleRetryUpload: () => Promise<void>;
     handleDeleteUpload: (uploadId: string) => Promise<void>;
     handleConfirmComplete: () => Promise<void>;
     handleSaveNotes: () => Promise<void>;

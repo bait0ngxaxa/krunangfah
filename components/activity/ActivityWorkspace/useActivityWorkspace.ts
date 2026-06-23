@@ -22,6 +22,7 @@ import {
     UPLOAD_ACTION_TIMEOUT_MS,
     withTimeout,
 } from "@/lib/utils/with-timeout";
+import { retryUpload } from "@/lib/utils/upload-retry";
 import type {
     ActivityWorkspaceProps,
     UseActivityWorkspaceReturn,
@@ -37,6 +38,12 @@ function getErrorMessage(error: unknown): string {
         return error.message;
     }
     return "เกิดข้อผิดพลาดในการอัปโหลด";
+}
+
+interface PendingWorksheetUpload {
+    progressId: string;
+    file: File;
+    requestId: string;
 }
 
 /**
@@ -55,6 +62,8 @@ export function useActivityWorkspace({
 
     // State
     const [uploading, setUploading] = useState<string | null>(null);
+    const [pendingUpload, setPendingUpload] =
+        useState<PendingWorksheetUpload | null>(null);
     const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
     const [teacherNotesDraft, setTeacherNotesDraft] = useState<{
         progressId: string | null;
@@ -97,7 +106,11 @@ export function useActivityWorkspace({
         });
     };
 
-    const handleUpload = async (progressId: string, file: File): Promise<void> => {
+    const handleUpload = async (
+        progressId: string,
+        file: File,
+        requestId = crypto.randomUUID(),
+    ): Promise<void> => {
         if (uploading) return;
 
         if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {
@@ -113,24 +126,48 @@ export function useActivityWorkspace({
 
             const formData = new FormData();
             formData.append("file", processedFile);
+            formData.append("uploadRequestId", requestId);
 
-            const result = await withTimeout(
-                uploadWorksheet(progressId, formData),
-                UPLOAD_ACTION_TIMEOUT_MS,
-                "อัปโหลดใช้เวลานานเกินไป",
+            const result = await retryUpload(
+                () =>
+                    withTimeout(
+                        uploadWorksheet(progressId, formData),
+                        UPLOAD_ACTION_TIMEOUT_MS,
+                        "กำลังตรวจสอบสถานะการอัปโหลด",
+                    ),
+                ({ attempt, maxAttempts }) => {
+                    toast.info(`กำลังลองอัปโหลดอีกครั้ง (${attempt}/${maxAttempts})`);
+                },
             );
 
             if (result.success) {
+                setPendingUpload(null);
                 toast.success("อัปโหลดใบงานสำเร็จ");
                 router.refresh();
             } else {
+                setPendingUpload(
+                    result.retryable ? { progressId, file, requestId } : null,
+                );
                 toast.error(result.message || "เกิดข้อผิดพลาดในการอัปโหลด");
             }
         } catch (error) {
+            setPendingUpload({ progressId, file, requestId });
             toast.error(getErrorMessage(error));
         } finally {
             setUploading(null);
         }
+    };
+
+    const handleRetryUpload = async (): Promise<void> => {
+        if (!pendingUpload || uploading) {
+            return;
+        }
+
+        await handleUpload(
+            pendingUpload.progressId,
+            pendingUpload.file,
+            pendingUpload.requestId,
+        );
     };
 
     const handleConfirmComplete = async (): Promise<void> => {
@@ -176,6 +213,7 @@ export function useActivityWorkspace({
         input.onchange = (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (file) {
+                setPendingUpload(null);
                 handleUpload(progressId, file);
             }
         };
@@ -222,6 +260,7 @@ export function useActivityWorkspace({
     return {
         // State
         uploading,
+        canRetryUpload: pendingUpload !== null,
         previewFile,
         setPreviewFile,
         teacherNotes,
@@ -238,6 +277,7 @@ export function useActivityWorkspace({
 
         // Handlers
         handleFileSelect,
+        handleRetryUpload,
         handleDeleteUpload,
         handleConfirmComplete,
         handleSaveNotes,

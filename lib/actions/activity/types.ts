@@ -43,7 +43,9 @@ export interface UploadWorksheetResult {
         | "UPLOAD_FILE_WRITE_FAILED"
         | "UPLOAD_DB_FAILED"
         | "UPLOAD_POST_PROCESS_FAILED"
+        | "UPLOAD_REQUEST_ID_INVALID"
         | "UPLOAD_UNKNOWN_ERROR";
+    retryable?: boolean;
     uploadedCount?: number;
     requiredCount?: number;
     allUploaded?: boolean;

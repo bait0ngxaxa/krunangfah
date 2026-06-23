@@ -355,6 +355,7 @@ model WorksheetUpload {
   fileSize            Int      // ขนาดไฟล์ (bytes)
   
   uploadedById        String   // FK to User (ครูที่อัปโหลด)
+  idempotencyKey      String?  @unique @db.Uuid
   uploadedAt          DateTime @default(now())
 
   activityProgress    ActivityProgress @relation(fields: [activityProgressId], references: [id], onDelete: Cascade)
@@ -498,6 +499,7 @@ model HomeVisitPhoto {
   fileUrl     String
   fileType    String
   fileSize    Int
+  idempotencyKey String? @unique @db.Uuid
   uploadedAt  DateTime @default(now())
 
   homeVisit HomeVisit @relation(fields: [homeVisitId], references: [id], onDelete: Cascade)

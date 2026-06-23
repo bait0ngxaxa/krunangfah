@@ -30,6 +30,7 @@ export function ActivityWorkspace({
 }: ActivityWorkspaceProps) {
     const {
         uploading,
+        canRetryUpload,
         previewFile,
         setPreviewFile,
         teacherNotes,
@@ -43,6 +44,7 @@ export function ActivityWorkspace({
         currentActivity,
         handleConfirmComplete,
         handleFileSelect,
+        handleRetryUpload,
         handleDeleteUpload,
         handleSaveNotes,
     } = useActivityWorkspace({
@@ -126,7 +128,9 @@ export function ActivityWorkspace({
                                         }
                                         riskLevel={riskLevel}
                                         uploading={uploading}
+                                        canRetryUpload={canRetryUpload}
                                         onFileSelect={handleFileSelect}
+                                        onRetryUpload={handleRetryUpload}
                                         onRemove={handleDeleteUpload}
                                         onConfirmComplete={
                                             handleConfirmComplete

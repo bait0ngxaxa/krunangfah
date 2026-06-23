@@ -31,6 +31,8 @@ import {
     isSupportedWorksheetImageExtension,
 } from "@/lib/utils/server-image-compression";
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
+import { acquireRedisLock, releaseRedisLock } from "@/lib/redis-lock";
+import { getUploadRequestId } from "@/lib/validations/upload.validation";
 
 /** Allowed image extensions for home visit photos */
 const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
@@ -40,6 +42,27 @@ const MAX_FILE_SIZE = MAX_IMAGE_UPLOAD_SIZE;
 
 /** Maximum photos per home visit */
 const MAX_PHOTOS_PER_VISIT = 5;
+const HOME_VISIT_UPLOAD_LOCK_TTL_SECONDS = 90;
+
+export interface HomeVisitPhotoUploadResult {
+    success: boolean;
+    message: string;
+    error?:
+        | "UPLOAD_UNAUTHORIZED"
+        | "UPLOAD_REQUEST_ID_INVALID"
+        | "UPLOAD_FILE_MISSING"
+        | "UPLOAD_FILE_TOO_LARGE"
+        | "UPLOAD_INVALID_EXTENSION"
+        | "UPLOAD_SIGNATURE_MISMATCH"
+        | "UPLOAD_NOT_FOUND"
+        | "UPLOAD_ACCESS_DENIED"
+        | "UPLOAD_LIMIT_REACHED"
+        | "UPLOAD_IN_PROGRESS"
+        | "UPLOAD_IMAGE_COMPRESSION_FAILED"
+        | "UPLOAD_UNKNOWN_ERROR";
+    retryable?: boolean;
+    photo?: { id: string; fileUrl: string; fileName: string };
+}
 
 function getValidExtension(fileName: string): string | null {
     const parts = fileName.split(".");
@@ -51,38 +74,112 @@ function getValidExtension(fileName: string): string | null {
     return ALLOWED_IMAGE_EXTENSIONS.has(ext) ? ext : null;
 }
 
+function createHomeVisitPhotoLockKey(homeVisitId: string): string {
+    return `lock:home-visit-photo-upload:${homeVisitId}`;
+}
+
+async function withHomeVisitPhotoLock(
+    homeVisitId: string,
+    callback: () => Promise<HomeVisitPhotoUploadResult>,
+): Promise<HomeVisitPhotoUploadResult> {
+    const lock = await acquireRedisLock(
+        createHomeVisitPhotoLockKey(homeVisitId),
+        HOME_VISIT_UPLOAD_LOCK_TTL_SECONDS,
+    );
+    if (!lock) {
+        return {
+            success: false,
+            message: "มีการอัปโหลดรูปภาพนี้อยู่ กรุณารอสักครู่แล้วลองใหม่",
+            error: "UPLOAD_IN_PROGRESS",
+            retryable: true,
+        };
+    }
+
+    try {
+        return await callback();
+    } finally {
+        await releaseRedisLock(lock);
+    }
+}
+
+async function findIdempotentHomeVisitPhoto(
+    idempotencyKey: string,
+    homeVisitId: string,
+): Promise<HomeVisitPhotoUploadResult | null> {
+    const photo = await prisma.homeVisitPhoto.findUnique({
+        where: { idempotencyKey },
+        select: { id: true, homeVisitId: true, fileName: true, fileUrl: true },
+    });
+
+    if (!photo) {
+        return null;
+    }
+    if (photo.homeVisitId !== homeVisitId) {
+        return {
+            success: false,
+            message: "คำขออัปโหลดไม่ถูกต้อง",
+            error: "UPLOAD_REQUEST_ID_INVALID",
+        };
+    }
+
+    return {
+        success: true,
+        message: "อัปโหลดรูปภาพสำเร็จ",
+        photo: {
+            id: photo.id,
+            fileName: photo.fileName,
+            fileUrl: photo.fileUrl,
+        },
+    };
+}
+
 /**
  * Upload a photo for a home visit
  */
 export async function uploadHomeVisitPhoto(
     homeVisitId: string,
     formData: FormData,
-): Promise<{
-    success: boolean;
-    message: string;
-    photo?: { id: string; fileUrl: string; fileName: string };
-}> {
+): Promise<HomeVisitPhotoUploadResult> {
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return { success: false, message: "ไม่อนุญาตให้เข้าถึง" };
+            return {
+                success: false,
+                message: "ไม่อนุญาตให้เข้าถึง",
+                error: "UPLOAD_UNAUTHORIZED",
+            };
         }
 
         if (session.user.role === "system_admin") {
             return {
                 success: false,
                 message: ERROR_MESSAGES.role.systemAdminReadonly("อัปโหลดรูปภาพ"),
+                error: "UPLOAD_ACCESS_DENIED",
+            };
+        }
+
+        const idempotencyKey = getUploadRequestId(formData);
+        if (!idempotencyKey) {
+            return {
+                success: false,
+                message: "คำขออัปโหลดไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง",
+                error: "UPLOAD_REQUEST_ID_INVALID",
             };
         }
 
         const file = formData.get("file") as File;
         if (!file) {
-            return { success: false, message: "ไม่พบไฟล์" };
+            return {
+                success: false,
+                message: "ไม่พบไฟล์",
+                error: "UPLOAD_FILE_MISSING",
+            };
         }
         if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {
             return {
                 success: false,
                 message: `ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด ${MAX_IMAGE_UPLOAD_INPUT_SIZE_MB}MB)`,
+                error: "UPLOAD_FILE_TOO_LARGE",
             };
         }
 
@@ -92,6 +189,7 @@ export async function uploadHomeVisitPhoto(
             return {
                 success: false,
                 message: "รองรับไฟล์รูปภาพ .jpg, .jpeg, .png เท่านั้น",
+                error: "UPLOAD_INVALID_EXTENSION",
             };
         }
 
@@ -107,6 +205,7 @@ export async function uploadHomeVisitPhoto(
                 success: false,
                 message:
                     "เนื้อหาไฟล์ไม่ตรงกับนามสกุล กรุณาอัปโหลดไฟล์ที่ถูกต้อง",
+                error: "UPLOAD_SIGNATURE_MISMATCH",
             };
         }
 
@@ -114,6 +213,7 @@ export async function uploadHomeVisitPhoto(
             return {
                 success: false,
                 message: "นามสกุลไฟล์รูปภาพไม่ถูกต้อง",
+                error: "UPLOAD_INVALID_EXTENSION",
             };
         }
 
@@ -127,6 +227,7 @@ export async function uploadHomeVisitPhoto(
             return {
                 success: false,
                 message: "ไม่สามารถบีบอัดรูปภาพได้ กรุณาเลือกรูปอื่นแล้วลองใหม่",
+                error: "UPLOAD_IMAGE_COMPRESSION_FAILED",
             };
         }
 
@@ -134,6 +235,7 @@ export async function uploadHomeVisitPhoto(
             return {
                 success: false,
                 message: `ไฟล์ใหญ่เกินไปหลังบีบอัด (สูงสุด ${MAX_IMAGE_UPLOAD_SIZE_MB}MB)`,
+                error: "UPLOAD_FILE_TOO_LARGE",
             };
         }
 
@@ -146,19 +248,14 @@ export async function uploadHomeVisitPhoto(
                 student: {
                     select: { schoolId: true, class: true, status: true },
                 },
-                photos: { select: { id: true } },
             },
         });
 
         if (!homeVisit) {
-            return { success: false, message: "ไม่พบข้อมูลการเยี่ยมบ้าน" };
-        }
-
-        // Check max photos limit
-        if (homeVisit.photos.length >= MAX_PHOTOS_PER_VISIT) {
             return {
                 success: false,
-                message: `อัปโหลดรูปภาพได้สูงสุด ${MAX_PHOTOS_PER_VISIT} รูปต่อครั้ง`,
+                message: "ไม่พบข้อมูลการเยี่ยมบ้าน",
+                error: "UPLOAD_NOT_FOUND",
             };
         }
 
@@ -175,6 +272,7 @@ export async function uploadHomeVisitPhoto(
             return {
                 success: false,
                 message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+                error: "UPLOAD_ACCESS_DENIED",
             };
         }
 
@@ -194,6 +292,7 @@ export async function uploadHomeVisitPhoto(
             return {
                 success: false,
                 message: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+                error: "UPLOAD_ACCESS_DENIED",
             };
         }
 
@@ -201,64 +300,109 @@ export async function uploadHomeVisitPhoto(
             homeVisit.student.status,
         );
         if (statusError) {
-            return { success: false, message: statusError };
+            return {
+                success: false,
+                message: statusError,
+                error: "UPLOAD_ACCESS_DENIED",
+            };
         }
 
-        // Create upload directory
-        const uploadDir = join(
-            process.cwd(),
-            ".data",
-            "uploads",
-            "home-visits",
+        const existingPhoto = await findIdempotentHomeVisitPhoto(
+            idempotencyKey,
+            homeVisitId,
         );
-        if (!existsSync(uploadDir)) {
-            await mkdir(uploadDir, { recursive: true });
+        if (existingPhoto) {
+            return existingPhoto;
         }
 
-        // Generate unique filename
-        const timestamp = Date.now();
-        const fileName = `${homeVisit.studentId}_visit_${timestamp}.${outputExt}`;
-        const filePath = join(uploadDir, fileName);
+        return withHomeVisitPhotoLock(homeVisitId, async () => {
+            const photoAfterLock = await findIdempotentHomeVisitPhoto(
+                idempotencyKey,
+                homeVisitId,
+            );
+            if (photoAfterLock) {
+                return photoAfterLock;
+            }
 
-        // Save file to disk
-        // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB UUID + timestamp + whitelist-validated extension
-        await writeFile(filePath, buffer);
-
-        // Save to database
-        const fileUrl = `/api/uploads/home-visits/${fileName}`;
-        let photo;
-
-        try {
-            photo = await prisma.homeVisitPhoto.create({
-                data: {
-                    homeVisitId,
-                    fileName: file.name,
-                    fileUrl,
-                    fileType: outputMimeType,
-                    fileSize: buffer.length,
-                },
+            const photoCount = await prisma.homeVisitPhoto.count({
+                where: { homeVisitId },
             });
-        } catch (dbError) {
-            // Clean up orphaned file if DB insert fails
-            const { unlink } = await import("fs/promises");
-            await unlink(filePath).catch(() => {});
-            throw dbError;
-        }
+            if (photoCount >= MAX_PHOTOS_PER_VISIT) {
+                return {
+                    success: false,
+                    message: `อัปโหลดรูปภาพได้สูงสุด ${MAX_PHOTOS_PER_VISIT} รูปต่อครั้ง`,
+                    error: "UPLOAD_LIMIT_REACHED",
+                };
+            }
 
-        revalidatePath(`/students/${homeVisit.studentId}`);
+            // Create upload directory
+            const uploadDir = join(
+                process.cwd(),
+                ".data",
+                "uploads",
+                "home-visits",
+            );
+            if (!existsSync(uploadDir)) {
+                await mkdir(uploadDir, { recursive: true });
+            }
 
-        return {
-            success: true,
-            message: "อัปโหลดรูปภาพสำเร็จ",
-            photo: {
-                id: photo.id,
-                fileUrl: photo.fileUrl,
-                fileName: photo.fileName,
-            },
-        };
+            // Generate unique filename
+            const timestamp = Date.now();
+            const fileName = `${homeVisit.studentId}_visit_${timestamp}.${outputExt}`;
+            const filePath = join(uploadDir, fileName);
+
+            // Save file to disk
+            // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB UUID + timestamp + whitelist-validated extension
+            await writeFile(filePath, buffer);
+
+            // Save to database
+            const fileUrl = `/api/uploads/home-visits/${fileName}`;
+            let photo;
+
+            try {
+                photo = await prisma.homeVisitPhoto.create({
+                    data: {
+                        homeVisitId,
+                        fileName: file.name,
+                        fileUrl,
+                        fileType: outputMimeType,
+                        fileSize: buffer.length,
+                        idempotencyKey,
+                    },
+                });
+            } catch (dbError) {
+                const duplicatePhoto = await findIdempotentHomeVisitPhoto(
+                    idempotencyKey,
+                    homeVisitId,
+                );
+                const { unlink } = await import("fs/promises");
+                await unlink(filePath).catch(() => {});
+                if (duplicatePhoto) {
+                    return duplicatePhoto;
+                }
+                throw dbError;
+            }
+
+            revalidatePath(`/students/${homeVisit.studentId}`);
+
+            return {
+                success: true,
+                message: "อัปโหลดรูปภาพสำเร็จ",
+                photo: {
+                    id: photo.id,
+                    fileUrl: photo.fileUrl,
+                    fileName: photo.fileName,
+                },
+            };
+        });
     } catch (error) {
         logError("Error uploading home visit photo:", error);
-        return { success: false, message: "เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ" };
+        return {
+            success: false,
+            message: "เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ",
+            error: "UPLOAD_UNKNOWN_ERROR",
+            retryable: true,
+        };
     }
 }
 

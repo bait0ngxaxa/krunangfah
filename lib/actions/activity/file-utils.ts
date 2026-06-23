@@ -32,9 +32,10 @@ import {
 } from "@/lib/utils/server-image-compression";
 import { verifyStudentActivityAccess } from "./access";
 import { acquireRedisLock, releaseRedisLock } from "@/lib/redis-lock";
+import { getUploadRequestId } from "@/lib/validations/upload.validation";
 
 const MAX_WORKSHEET_NUMBER_RETRIES = 3;
-const WORKSHEET_UPLOAD_LOCK_TTL_SECONDS = 30;
+const WORKSHEET_UPLOAD_LOCK_TTL_SECONDS = 90;
 
 class UploadWorksheetError extends Error {
     constructor(
@@ -68,6 +69,52 @@ function createWorksheetUploadLockKey(activityProgressId: string): string {
     return `lock:worksheet-upload:${activityProgressId}`;
 }
 
+async function findIdempotentWorksheetUpload(
+    idempotencyKey: string,
+    activityProgressId: string,
+): Promise<UploadWorksheetResult | null> {
+    const upload = await prisma.worksheetUpload.findUnique({
+        where: { idempotencyKey },
+        select: {
+            id: true,
+            activityProgressId: true,
+            worksheetNumber: true,
+            fileUrl: true,
+            activityProgress: { select: { activityNumber: true } },
+        },
+    });
+
+    if (!upload) {
+        return null;
+    }
+    if (upload.activityProgressId !== activityProgressId) {
+        return {
+            success: false,
+            message: "คำขออัปโหลดไม่ถูกต้อง",
+            error: "UPLOAD_REQUEST_ID_INVALID",
+        };
+    }
+
+    const uploadedCount = await prisma.worksheetUpload.count({
+        where: { activityProgressId },
+    });
+    const requiredCount = REQUIRED_WORKSHEETS[upload.activityProgress.activityNumber] || 2;
+
+    return {
+        success: true,
+        message: "อัปโหลดใบงานสำเร็จ",
+        worksheet: {
+            id: upload.id,
+            worksheetNumber: upload.worksheetNumber,
+            filePath: upload.fileUrl,
+        },
+        uploadedCount,
+        requiredCount,
+        allUploaded: uploadedCount >= requiredCount,
+        activityNumber: upload.activityProgress.activityNumber,
+    };
+}
+
 async function withWorksheetUploadLock(
     activityProgressId: string,
     callback: () => Promise<UploadWorksheetResult>,
@@ -82,6 +129,7 @@ async function withWorksheetUploadLock(
             success: false,
             message: "มีการอัปโหลดใบงานนี้อยู่ กรุณารอสักครู่แล้วลองใหม่",
             error: "UPLOAD_IN_PROGRESS",
+            retryable: true,
         };
     }
 
@@ -112,6 +160,15 @@ export async function uploadWorksheet(
                 success: false,
                 message: ERROR_MESSAGES.role.systemAdminUploadWorksheet,
                 error: "UPLOAD_ACCESS_DENIED",
+            };
+        }
+
+        const idempotencyKey = getUploadRequestId(formData);
+        if (!idempotencyKey) {
+            return {
+                success: false,
+                message: "คำขออัปโหลดไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง",
+                error: "UPLOAD_REQUEST_ID_INVALID",
             };
         }
 
@@ -229,7 +286,23 @@ export async function uploadWorksheet(
             };
         }
 
+        const existingUpload = await findIdempotentWorksheetUpload(
+            idempotencyKey,
+            activityProgressId,
+        );
+        if (existingUpload) {
+            return existingUpload;
+        }
+
         return withWorksheetUploadLock(activityProgressId, async () => {
+        const uploadAfterLock = await findIdempotentWorksheetUpload(
+            idempotencyKey,
+            activityProgressId,
+        );
+        if (uploadAfterLock) {
+            return uploadAfterLock;
+        }
+
         // Create upload directory if not exists
         // SECURITY: Store outside public/ to prevent unauthenticated access
         // Files are served exclusively through the /api/uploads/ route with auth checks
@@ -292,6 +365,7 @@ export async function uploadWorksheet(
                             fileType: outputFileType,
                             fileSize: buffer.length,
                             uploadedById: session.user.id,
+                            idempotencyKey,
                         },
                         select: { id: true },
                     });
@@ -299,10 +373,20 @@ export async function uploadWorksheet(
                 } catch (createError) {
                     if (
                         createError instanceof Prisma.PrismaClientKnownRequestError &&
-                        createError.code === "P2002" &&
-                        attempt < MAX_WORKSHEET_NUMBER_RETRIES - 1
+                        createError.code === "P2002"
                     ) {
-                        continue;
+                        const duplicateUpload = await findIdempotentWorksheetUpload(
+                            idempotencyKey,
+                            activityProgressId,
+                        );
+                        if (duplicateUpload) {
+                            const { unlink } = await import("fs/promises");
+                            await unlink(filePath).catch(() => {});
+                            return duplicateUpload;
+                        }
+                        if (attempt < MAX_WORKSHEET_NUMBER_RETRIES - 1) {
+                            continue;
+                        }
                     }
                     throw createError;
                 }
@@ -371,6 +455,7 @@ export async function uploadWorksheet(
                 success: false,
                 message: error.message,
                 error: error.code,
+                retryable: error.code !== "UPLOAD_IMAGE_COMPRESSION_FAILED",
             };
         }
 
@@ -378,6 +463,7 @@ export async function uploadWorksheet(
             success: false,
             message: "เกิดข้อผิดพลาดในการอัปโหลดใบงาน",
             error: "UPLOAD_UNKNOWN_ERROR",
+            retryable: true,
         };
     }
 }

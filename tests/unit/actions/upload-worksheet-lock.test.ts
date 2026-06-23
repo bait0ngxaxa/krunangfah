@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
     auth: vi.fn(),
     activityProgressFindUnique: vi.fn(),
     worksheetUploadFindMany: vi.fn(),
+    worksheetUploadFindUnique: vi.fn(),
     worksheetUploadCreate: vi.fn(),
     worksheetUploadCount: vi.fn(),
     activityProgressUpdate: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock("@/lib/prisma", () => ({
         },
         worksheetUpload: {
             findMany: mocks.worksheetUploadFindMany,
+            findUnique: mocks.worksheetUploadFindUnique,
             create: mocks.worksheetUploadCreate,
             count: mocks.worksheetUploadCount,
         },
@@ -72,6 +74,7 @@ function createWorksheetFormData(): FormData {
     });
     const formData = new FormData();
     formData.set("file", file);
+    formData.set("uploadRequestId", "00000000-0000-4000-8000-000000000001");
     return formData;
 }
 
@@ -121,10 +124,11 @@ describe("uploadWorksheet lock", () => {
             success: false,
             message: "มีการอัปโหลดใบงานนี้อยู่ กรุณารอสักครู่แล้วลองใหม่",
             error: "UPLOAD_IN_PROGRESS",
+            retryable: true,
         });
         expect(mocks.acquireRedisLock).toHaveBeenCalledWith(
             "lock:worksheet-upload:progress-1",
-            30,
+            90,
         );
         expect(mocks.writeFile).not.toHaveBeenCalled();
         expect(mocks.worksheetUploadCreate).not.toHaveBeenCalled();
@@ -149,5 +153,31 @@ describe("uploadWorksheet lock", () => {
         expect(result.success).toBe(true);
         expect(result.worksheet?.worksheetNumber).toBe(1);
         expect(mocks.releaseRedisLock).toHaveBeenCalledWith(lock);
+    });
+
+    it("returns the completed upload for a repeated request id", async () => {
+        mocks.worksheetUploadFindUnique.mockResolvedValue({
+            id: "upload-1",
+            activityProgressId: "progress-1",
+            worksheetNumber: 1,
+            fileUrl: "/api/uploads/worksheets/upload-1.png",
+            activityProgress: { activityNumber: 1 },
+        });
+        mocks.worksheetUploadCount.mockResolvedValue(1);
+
+        const result = await uploadWorksheet(
+            "progress-1",
+            createWorksheetFormData(),
+        );
+
+        expect(result).toMatchObject({
+            success: true,
+            worksheet: {
+                id: "upload-1",
+                worksheetNumber: 1,
+            },
+        });
+        expect(mocks.acquireRedisLock).not.toHaveBeenCalled();
+        expect(mocks.writeFile).not.toHaveBeenCalled();
     });
 });

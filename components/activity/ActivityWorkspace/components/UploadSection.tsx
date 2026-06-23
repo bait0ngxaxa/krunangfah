@@ -17,7 +17,9 @@ interface UploadSectionProps {
     currentActivityNumber: number;
     riskLevel: "orange" | "yellow" | "green";
     uploading: string | null;
+    canRetryUpload: boolean;
     onFileSelect: (progressId: string) => void;
+    onRetryUpload: () => Promise<void>;
     onRemove: (uploadId: string) => Promise<void>;
     onConfirmComplete: () => Promise<void>;
     onPreview: (file: PreviewFile) => void;
@@ -32,7 +34,9 @@ export function UploadSection({
     currentActivityNumber,
     riskLevel,
     uploading,
+    canRetryUpload,
     onFileSelect,
+    onRetryUpload,
     onRemove,
     onConfirmComplete,
     onPreview,
@@ -178,6 +182,15 @@ export function UploadSection({
                                 </>
                             )}
                         </button>
+                        {canRetryUpload && (
+                            <button
+                                onClick={onRetryUpload}
+                                disabled={uploading === currentProgress.id}
+                                className="mt-2 w-full rounded-xl border border-amber-300 bg-amber-50 py-2 text-sm font-bold text-amber-800 transition-base hover:bg-amber-100 disabled:opacity-50"
+                            >
+                                ลองอัปโหลดไฟล์เดิมอีกครั้ง
+                            </button>
+                        )}
                     </>
                 ) : (
                     /* All files uploaded — show confirm button */

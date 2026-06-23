@@ -12,6 +12,7 @@ import {
     UPLOAD_ACTION_TIMEOUT_MS,
     withTimeout,
 } from "@/lib/utils/with-timeout";
+import { retryUpload } from "@/lib/utils/upload-retry";
 import {
     uploadHomeVisitPhoto,
     deleteHomeVisitPhoto,
@@ -32,6 +33,11 @@ interface HomeVisitPhotoUploaderProps {
 
 const MAX_PHOTOS = 5;
 
+interface PendingHomeVisitPhotoUpload {
+    file: File;
+    requestId: string;
+}
+
 function getErrorMessage(error: unknown): string {
     if (error instanceof Error && error.message.trim().length > 0) {
         return error.message;
@@ -47,6 +53,8 @@ export function HomeVisitPhotoUploader({
     onUploadingChange,
 }: HomeVisitPhotoUploaderProps) {
     const [uploading, setUploading] = useState(false);
+    const [pendingUpload, setPendingUpload] =
+        useState<PendingHomeVisitPhotoUpload | null>(null);
     const [viewerIndex, setViewerIndex] = useState<number | null>(null);
     const [deleteDialogPhotoId, setDeleteDialogPhotoId] = useState<string | null>(
         null,
@@ -58,14 +66,14 @@ export function HomeVisitPhotoUploader({
         onUploadingChange?.(uploading);
     }, [onUploadingChange, uploading]);
 
-    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        // Reset value so selecting the same file triggers onChange again.
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
+    const uploadPhoto = async (
+        file: File,
+        requestId = crypto.randomUUID(),
+    ): Promise<void> => {
+        if (uploading) {
+            return;
         }
+
         if (file.size > MAX_IMAGE_UPLOAD_INPUT_SIZE) {
             toast.error(
                 `ไฟล์ต้นฉบับใหญ่เกินไป (สูงสุด ${MAX_IMAGE_UPLOAD_INPUT_SIZE_MB}MB)`,
@@ -80,33 +88,69 @@ export function HomeVisitPhotoUploader({
 
             const formData = new FormData();
             formData.append("file", compressed);
+            formData.append("uploadRequestId", requestId);
 
-            const result = await withTimeout(
-                uploadHomeVisitPhoto(homeVisitId, formData),
-                UPLOAD_ACTION_TIMEOUT_MS,
-                "อัปโหลดใช้เวลานานเกินไป",
+            const result = await retryUpload(
+                () =>
+                    withTimeout(
+                        uploadHomeVisitPhoto(homeVisitId, formData),
+                        UPLOAD_ACTION_TIMEOUT_MS,
+                        "กำลังตรวจสอบสถานะการอัปโหลด",
+                    ),
+                ({ attempt, maxAttempts }) => {
+                    toast.info(`กำลังลองอัปโหลดอีกครั้ง (${attempt}/${maxAttempts})`);
+                },
             );
 
             if (result.success && result.photo) {
-                onPhotosChange([
-                    ...photos,
-                    {
-                        id: result.photo.id,
-                        fileName: result.photo.fileName,
-                        fileUrl: result.photo.fileUrl,
-                        fileType: compressed.type,
-                        fileSize: compressed.size,
-                    },
-                ]);
+                setPendingUpload(null);
+                if (!photos.some((photo) => photo.id === result.photo?.id)) {
+                    onPhotosChange([
+                        ...photos,
+                        {
+                            id: result.photo.id,
+                            fileName: result.photo.fileName,
+                            fileUrl: result.photo.fileUrl,
+                            fileType: compressed.type,
+                            fileSize: compressed.size,
+                        },
+                    ]);
+                }
                 toast.success("อัปโหลดรูปภาพสำเร็จ");
             } else {
+                setPendingUpload(
+                    result.retryable ? { file, requestId } : null,
+                );
                 toast.error(result.message);
             }
         } catch (error) {
+            setPendingUpload({ file, requestId });
             toast.error(getErrorMessage(error));
         } finally {
             setUploading(false);
         }
+    };
+
+    const handleFileSelect = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ): Promise<void> => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Reset value so selecting the same file triggers onChange again.
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+        setPendingUpload(null);
+        await uploadPhoto(file);
+    };
+
+    const handleRetryUpload = async (): Promise<void> => {
+        if (!pendingUpload || uploading) {
+            return;
+        }
+
+        await uploadPhoto(pendingUpload.file, pendingUpload.requestId);
     };
 
     const handleDeleteConfirm = async () => {
@@ -194,6 +238,19 @@ export function HomeVisitPhotoUploader({
                     </div>
                 )}
             </div>
+
+            {pendingUpload && (
+                <Button
+                    type="button"
+                    onClick={handleRetryUpload}
+                    disabled={uploading}
+                    variant="secondary"
+                    size="sm"
+                    className="mt-3 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                >
+                    ลองอัปโหลดรูปเดิมอีกครั้ง
+                </Button>
+            )}
 
             <input
                 ref={fileInputRef}

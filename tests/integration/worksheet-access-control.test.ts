@@ -78,6 +78,10 @@ describe("Integration: Worksheet Access Control", () => {
         });
         const formData = new FormData();
         formData.set("file", file);
+        formData.set(
+            "uploadRequestId",
+            "00000000-0000-4000-8000-000000000001",
+        );
 
         const result = await uploadWorksheet(activityProgressId, formData);
         expect(result.success).toBe(false);
