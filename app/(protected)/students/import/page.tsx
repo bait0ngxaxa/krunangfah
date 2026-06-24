@@ -29,7 +29,7 @@ export default async function StudentImportPage() {
                 icon={FileUp}
                 imageSrc="/image/dashboard/import.webp"
                 imageAlt="นำเข้าข้อมูลนักเรียน"
-                imageContainerClassName="absolute bottom-0 left-1/2 -translate-x-1/2 w-[100px] sm:w-[150px] lg:w-[190px] pointer-events-none z-10 flex items-end"
+                imageContainerClassName="relative z-10 mx-auto mt-2 flex w-[120px] items-end pointer-events-none sm:w-[130px] md:absolute md:bottom-0 md:left-1/2 md:mt-0 md:w-[150px] md:-translate-x-1/2 lg:w-[190px]"
                 backUrl="/students"
                 backLabel="กลับหน้านักเรียน"
             />

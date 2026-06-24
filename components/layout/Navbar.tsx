@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     Menu,
     X,
@@ -22,9 +22,18 @@ interface NavbarProps {
 export function Navbar({ hasStudents }: NavbarProps) {
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
 
     const isActive = (path: string) => pathname?.startsWith(path);
     const mobileMenuId = "primary-mobile-navigation";
+
+    const closeMobileMenu = useCallback((): void => {
+        const mobileMenu = document.getElementById(mobileMenuId);
+        if (mobileMenu?.contains(document.activeElement)) {
+            mobileMenuButtonRef.current?.focus();
+        }
+        setIsMobileMenuOpen(false);
+    }, [mobileMenuId]);
 
     const allNavLinks = [
         { href: "/dashboard", label: "หน้าหลัก", icon: LayoutDashboard },
@@ -54,13 +63,13 @@ export function Navbar({ hasStudents }: NavbarProps) {
 
         const handleEscape = (event: KeyboardEvent): void => {
             if (event.key === "Escape") {
-                setIsMobileMenuOpen(false);
+                closeMobileMenu();
             }
         };
 
         document.addEventListener("keydown", handleEscape);
         return () => document.removeEventListener("keydown", handleEscape);
-    }, [isMobileMenuOpen]);
+    }, [closeMobileMenu, isMobileMenuOpen]);
 
     return (
         <>
@@ -105,8 +114,15 @@ export function Navbar({ hasStudents }: NavbarProps) {
 
                     {/* Mobile menu button */}
                     <button
+                        ref={mobileMenuButtonRef}
                         type="button"
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        onClick={() => {
+                            if (isMobileMenuOpen) {
+                                closeMobileMenu();
+                                return;
+                            }
+                            setIsMobileMenuOpen(true);
+                        }}
                         aria-controls={mobileMenuId}
                         aria-expanded={isMobileMenuOpen}
                         className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg p-2 text-white/85 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:hidden"
@@ -134,6 +150,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
                         : "opacity-0 -translate-y-2 scale-y-95 pointer-events-none"
                 } motion-safe:transition-[opacity,transform] motion-safe:duration-300 motion-safe:ease-out`}
                 aria-hidden={!isMobileMenuOpen}
+                inert={!isMobileMenuOpen}
             >
                 <div className="overflow-hidden rounded-b-2xl bg-[#00DB87] shadow-lg">
                     <div className="space-y-1 px-3 pb-3 pt-2">
@@ -141,7 +158,7 @@ export function Navbar({ hasStudents }: NavbarProps) {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                onClick={() => setIsMobileMenuOpen(false)}
+                                onClick={closeMobileMenu}
                                 aria-current={isActive(link.href) ? "page" : undefined}
                                 tabIndex={isMobileMenuOpen ? undefined : -1}
                                 className={`flex min-h-11 items-center gap-2 rounded-lg px-4 py-2.5 text-base font-semibold transition-colors duration-200 motion-safe:transition-transform motion-safe:hover:translate-x-1 ${

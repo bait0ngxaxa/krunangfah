@@ -18,6 +18,7 @@ interface ActivityProgressHeaderProps {
     riskLevel: RiskLevel;
     completedCount: number;
     totalCount: number;
+    isComplete: boolean;
     assessmentPeriod: AssessmentPeriod;
     readOnly?: boolean;
     actionLockedMessage?: string;
@@ -29,6 +30,7 @@ export function ActivityProgressHeader({
     riskLevel,
     completedCount,
     totalCount,
+    isComplete,
     assessmentPeriod,
     readOnly = false,
     actionLockedMessage,
@@ -86,7 +88,7 @@ export function ActivityProgressHeader({
                     {effectiveLockedMessage}
                 </div>
             ) : null}
-            {!effectiveReadOnly && !effectiveLockedMessage && (
+            {!isComplete && !effectiveReadOnly && !effectiveLockedMessage && (
                 <Link
                     href={studentHelpStartRoute(studentId, phqResultId)}
                     className={buttonVariants({

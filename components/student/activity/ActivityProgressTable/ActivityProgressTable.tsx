@@ -1,6 +1,7 @@
 import { getActivityProgress } from "@/lib/actions/activity";
+import { getActivitySequenceSummary } from "@/lib/actions/activity/constants";
 import type { ActivityProgressTableProps } from "./types";
-import { getActivityNumbers, getCompletedCount } from "./utils";
+import { getActivityNumbers } from "./utils";
 import { ActivityProgressHeader } from "./ActivityProgressHeader";
 import { ActivityRow } from "./ActivityRow";
 
@@ -34,7 +35,10 @@ export async function ActivityProgressTable({
     }
 
     const progressData = result.data;
-    const completedCount = getCompletedCount(progressData);
+    const activitySummary = getActivitySequenceSummary(
+        riskLevel,
+        progressData,
+    );
 
     return (
         <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-base duration-300 hover:shadow-md md:p-8">
@@ -43,8 +47,9 @@ export async function ActivityProgressTable({
                 studentId={studentId}
                 phqResultId={phqResultId}
                 riskLevel={riskLevel}
-                completedCount={completedCount}
+                completedCount={activitySummary.completedCount}
                 totalCount={activityNumbers.length}
+                isComplete={activitySummary.isComplete}
                 assessmentPeriod={assessmentPeriod}
                 readOnly={readOnly}
                 actionLockedMessage={actionLockedMessage}

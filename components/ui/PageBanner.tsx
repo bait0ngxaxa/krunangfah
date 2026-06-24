@@ -100,7 +100,7 @@ export function PageBanner({
                 <div
                     className={
                         imageContainerClassName ??
-                        "absolute bottom-0 left-1/2 -translate-x-1/2 w-[260px] sm:w-[380px] lg:w-[460px] pointer-events-none z-10 flex items-end"
+                        "relative z-10 mx-auto mt-2 flex w-[260px] items-end pointer-events-none sm:w-[300px] md:absolute md:bottom-0 md:left-1/2 md:mt-0 md:w-[380px] md:-translate-x-1/2 lg:w-[460px]"
                     }
                 >
                     <Image
@@ -109,7 +109,7 @@ export function PageBanner({
                         width={600}
                         height={500}
                         sizes="(min-width: 1024px) 680px, (min-width: 640px) 560px, 280px"
-                        className="w-full h-auto object-contain object-bottom drop-shadow-lg -mb-2"
+                        className="page-banner-illustration w-full h-auto object-contain object-bottom drop-shadow-lg -mb-2"
                         priority
                     />
                 </div>

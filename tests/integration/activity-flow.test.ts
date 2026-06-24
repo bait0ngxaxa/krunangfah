@@ -38,9 +38,11 @@ const SAME_SCHOOL_OTHER_CLASS_TEACHER: MockUser = {
 };
 
 const { getActivityProgress } = await import("@/lib/actions/activity/queries");
-const { submitTeacherAssessment, confirmActivityComplete } = await import(
-    "@/lib/actions/activity/mutations"
-);
+const {
+    initializeActivityProgress,
+    submitTeacherAssessment,
+    confirmActivityComplete,
+} = await import("@/lib/actions/activity/mutations");
 
 describe("Integration: Activity Flow", () => {
     let studentId: string;
@@ -425,6 +427,50 @@ describe("Integration: Activity Flow", () => {
 
             expect(result.success).toBe(true);
             expect(result.activityNumber).toBe(6);
+        });
+    });
+
+    describe("initializeActivityProgress - New PHQ Result", () => {
+        it("creates a separate sequence for the newest academic term", async () => {
+            const nextAcademicYear = await createTestAcademicYear({
+                year: 2600,
+                semester: 1,
+            });
+            const nextPhqResult = await createTestPhqResult(
+                studentId,
+                nextAcademicYear.id,
+                USERS.classTeacher.id,
+                {
+                    riskLevel: "green",
+                    createdAt: new Date("2030-05-01T00:00:00.000Z"),
+                },
+            );
+            const previousProgressCount = await prisma.activityProgress.count({
+                where: { studentId, phqResultId },
+            });
+
+            mockSession(USERS.classTeacher);
+            const result = await initializeActivityProgress(
+                studentId,
+                nextPhqResult.id,
+                "green",
+            );
+            const nextProgress = await prisma.activityProgress.findMany({
+                where: { studentId, phqResultId: nextPhqResult.id },
+                orderBy: { activityNumber: "asc" },
+                select: { activityNumber: true, status: true },
+            });
+            const unchangedPreviousCount = await prisma.activityProgress.count({
+                where: { studentId, phqResultId },
+            });
+
+            expect(result).toEqual({ success: true, count: 3 });
+            expect(nextProgress).toEqual([
+                { activityNumber: 1, status: "in_progress" },
+                { activityNumber: 2, status: "locked" },
+                { activityNumber: 5, status: "locked" },
+            ]);
+            expect(unchangedPreviousCount).toBe(previousProgressCount);
         });
     });
 });

@@ -5,6 +5,7 @@ import {
 } from "@/lib/actions/activity";
 import { redirect, notFound } from "next/navigation";
 import { ActivityWorkspace } from "@/components/activity/ActivityWorkspace/ActivityWorkspace";
+import { ActivitySequenceComplete } from "@/components/activity/ActivitySequenceComplete";
 import { requireAuth } from "@/lib/session";
 import {
     studentHelpRoute,
@@ -15,6 +16,8 @@ import {
     getRequestedOrLatestPhqResult,
 } from "@/lib/utils/phq-result-selection";
 import { canStudentPerformActions } from "@/lib/constants/student-status";
+import { getActivitySequenceSummary } from "@/lib/actions/activity/constants";
+import { formatAcademicYear } from "@/lib/utils/academic-year";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -100,6 +103,25 @@ export default async function ActivityStartPage({
     const activityProgress = progressResult.success
         ? progressResult.data || []
         : [];
+    const activitySummary = getActivitySequenceSummary(
+        riskLevel,
+        activityProgress,
+    );
+
+    if (activitySummary.isComplete) {
+        return (
+            <ActivitySequenceComplete
+                studentId={studentId}
+                studentName={`${student.firstName} ${student.lastName}`}
+                assessmentPeriodLabel={formatAcademicYear(
+                    latestResult.academicYear.year,
+                    latestResult.academicYear.semester,
+                    "long",
+                )}
+                completedCount={activitySummary.completedCount}
+            />
+        );
+    }
 
     return (
         <ActivityWorkspace

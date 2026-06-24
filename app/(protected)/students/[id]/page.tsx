@@ -6,6 +6,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { getStudentDetail } from "@/lib/actions/student/main";
 import { StudentProfileSection } from "@/components/student/profile/StudentProfileSection";
 import { StudentStatusProvider } from "@/components/student/profile/StudentStatusContext";
+import { StudentDetailScrollTop } from "@/components/student/profile/StudentDetailScrollTop";
 import { PHQHistoryTable } from "@/components/student/phq/PHQHistoryTable";
 import { ActivityProgressTable } from "@/components/student/activity/ActivityProgressTable";
 import { CounselingLogTable } from "@/components/student/counseling/CounselingLogTable";
@@ -101,6 +102,7 @@ export default async function StudentDetailPage({
 
             <div className="relative z-10 mx-auto max-w-7xl">
                 <BackButton href="/students" label="กลับหน้านักเรียน" />
+                <StudentDetailScrollTop key={id} />
 
                 <Suspense fallback={<StudentDetailSkeleton />}>
                     <StudentDetailContent

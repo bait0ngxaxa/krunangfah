@@ -84,6 +84,22 @@ textarea::placeholder {
 }
 
 /* Animations */
+@keyframes page-banner-illustration-enter {
+    from {
+        opacity: 0.88;
+        transform: translateY(6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.page-banner-illustration {
+    animation: page-banner-illustration-enter 220ms
+        cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @keyframes fade-in-up {
     from {
         opacity: 0;
@@ -438,6 +454,10 @@ h1, h2, h3, h4, h5, h6 {
     .backdrop-blur-sm,
     .backdrop-blur-xl {
         backdrop-filter: none !important;
+    }
+
+    .page-banner-illustration {
+        animation: none;
     }
 }
 

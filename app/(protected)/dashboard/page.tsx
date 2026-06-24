@@ -197,7 +197,7 @@ async function DashboardContent({ session }: { session: Session }) {
                 }
                 imageSrc="/image/dashboard/main.webp"
                 imageAlt="หน้าหลักระบบดูแลช่วยเหลือนักเรียน"
-                imageContainerClassName="absolute bottom-0 left-1/2 -translate-x-1/2 w-[280px] sm:w-[560px] lg:w-[680px] pointer-events-none z-10 flex items-end"
+                imageContainerClassName="relative z-10 mx-auto mt-2 flex w-[280px] items-end pointer-events-none sm:w-[420px] md:absolute md:bottom-0 md:left-1/2 md:mt-0 md:w-[560px] md:-translate-x-1/2 lg:w-[680px]"
                 showBackButton={false}
                 actionNode={
                     <div className="inline-flex min-w-0 items-center gap-2 rounded-full border border-emerald-300 bg-emerald-400 px-4 py-2 text-sm font-bold text-white shadow-md">

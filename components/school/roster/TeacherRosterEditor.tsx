@@ -4,6 +4,7 @@ import { UserPlus } from "lucide-react";
 import { useTeacherRoster } from "./useTeacherRoster";
 import { RosterForm, RosterList, RosterEmptyState } from "./components";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Button } from "@/components/ui/Button";
 import type { TeacherRosterEditorProps } from "./types";
 
 export function TeacherRosterEditor({
@@ -41,14 +42,16 @@ export function TeacherRosterEditor({
             {/* Add teacher button / form toggle */}
             {!readOnly &&
                 (!showForm ? (
-                    <button
+                    <Button
                         type="button"
                         onClick={openAddForm}
-                        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[var(--brand-primary)]/50 text-[var(--brand-primary-hover)] rounded-xl font-bold text-sm hover:bg-cyan-50 hover:border-[var(--brand-primary)] transition-colors cursor-pointer"
+                        variant="primary"
+                        size="lg"
+                        fullWidth
                     >
-                        <UserPlus className="w-4 h-4" />
+                        <UserPlus className="h-5 w-5" aria-hidden="true" />
                         เพิ่มครูในโรงเรียน
-                    </button>
+                    </Button>
                 ) : (
                     <RosterForm
                         editingId={editingId}

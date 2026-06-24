@@ -7,6 +7,51 @@ export const ACTIVITY_INDICES: Record<string, number[]> = {
     green: [1, 2, 5],
 };
 
+export function getActivityIndices(riskLevel: string): number[] {
+    switch (riskLevel) {
+        case "orange":
+            return ACTIVITY_INDICES.orange;
+        case "yellow":
+            return ACTIVITY_INDICES.yellow;
+        case "green":
+            return ACTIVITY_INDICES.green;
+        default:
+            return [];
+    }
+}
+
+interface ActivityProgressStatus {
+    activityNumber: number;
+    status: string;
+}
+
+export interface ActivitySequenceSummary {
+    completedCount: number;
+    isComplete: boolean;
+}
+
+export function getActivitySequenceSummary(
+    riskLevel: string,
+    activityProgress: readonly ActivityProgressStatus[],
+): ActivitySequenceSummary {
+    const activityNumbers = getActivityIndices(riskLevel);
+    const completedActivityNumbers = new Set(
+        activityProgress
+            .filter((activity) => activity.status === "completed")
+            .map((activity) => activity.activityNumber),
+    );
+    const completedCount = activityNumbers.filter((activityNumber) =>
+        completedActivityNumbers.has(activityNumber),
+    ).length;
+
+    return {
+        completedCount,
+        isComplete:
+            activityNumbers.length > 0 &&
+            completedCount === activityNumbers.length,
+    };
+}
+
 // Required number of worksheets per activity
 export const REQUIRED_WORKSHEETS: Record<number, number> = {
     1: 2,

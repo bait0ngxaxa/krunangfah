@@ -140,7 +140,7 @@ export default async function AnalyticsPage({
                     icon={BarChart3}
                     imageSrc="/image/dashboard/analytics.png"
                     imageAlt="Analytics Dashboard"
-                    imageContainerClassName="absolute bottom-4 left-1/2 -translate-x-1/2 w-[200px] sm:w-[300px] lg:w-[360px] pointer-events-none z-10 flex items-end"
+                    imageContainerClassName="relative z-10 mx-auto mt-2 flex w-[220px] items-end pointer-events-none sm:w-[240px] md:absolute md:bottom-4 md:left-1/2 md:mt-0 md:w-[300px] md:-translate-x-1/2 lg:w-[360px]"
                     backUrl="/dashboard"
                 />
 
@@ -222,7 +222,7 @@ export default async function AnalyticsPage({
                 icon={BarChart3}
                 imageSrc="/image/dashboard/analytics.png"
                 imageAlt="Analytics Dashboard"
-                imageContainerClassName="absolute bottom-4 left-1/2 -translate-x-1/2 w-[200px] sm:w-[300px] lg:w-[360px] pointer-events-none z-10 flex items-end"
+                imageContainerClassName="relative z-10 mx-auto mt-2 flex w-[220px] items-end pointer-events-none sm:w-[240px] md:absolute md:bottom-4 md:left-1/2 md:mt-0 md:w-[300px] md:-translate-x-1/2 lg:w-[360px]"
                 backUrl="/dashboard"
             />
 

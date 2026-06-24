@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { ActivityStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
-import { ACTIVITY_INDICES } from "./constants";
+import { getActivityIndices } from "./constants";
 import type { SubmitAssessmentData } from "./types";
 import { handleActionError } from "@/lib/actions/error-handler";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
@@ -80,9 +80,7 @@ export async function initializeActivityProgress(
             return { success: false, error: latestCheck.error };
         }
 
-        const activityNumbers = Object.hasOwn(ACTIVITY_INDICES, riskLevel)
-            ? ACTIVITY_INDICES[riskLevel as keyof typeof ACTIVITY_INDICES]
-            : [];
+        const activityNumbers = getActivityIndices(riskLevel);
 
         if (activityNumbers.length === 0) {
             // Red/blue risk groups do not use worksheet activity flow.
