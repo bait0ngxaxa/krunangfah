@@ -77,6 +77,8 @@ export default async function AnalyticsPage({
     const params = await searchParams;
     const userRole = session.user.role;
     const isSystemAdmin = userRole === "system_admin";
+    const isPrimaryAdmin =
+        userRole === "school_admin" && session.user.isPrimary === true;
     const warnings: string[] = [];
 
     // ── Phase 1: Parse & pre-validate params (no DB calls) ──
@@ -149,6 +151,7 @@ export default async function AnalyticsPage({
                         data={null}
                         schools={schools}
                         userRole={userRole}
+                        isPrimaryAdmin={isPrimaryAdmin}
                         selectedClass={selectedClass}
                         selectedSchoolId={selectedSchoolId}
                         selectedAcademicYear={selectedAcademicYear}
@@ -231,6 +234,7 @@ export default async function AnalyticsPage({
                     data={analyticsData}
                     schools={schools}
                     userRole={userRole}
+                    isPrimaryAdmin={isPrimaryAdmin}
                     selectedClass={selectedClass}
                     selectedSchoolId={selectedSchoolId}
                     selectedAcademicYear={selectedAcademicYear}

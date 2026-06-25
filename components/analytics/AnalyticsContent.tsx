@@ -6,6 +6,10 @@ import { AnalyticsFilters } from "./AnalyticsFilters";
 import { AnalyticsSummaryCards } from "./AnalyticsSummaryCards";
 import { buildAnalyticsTabs } from "./AnalyticsTabContent";
 import { SystemOverviewCards } from "./SystemOverviewCards";
+import {
+    canExportNamedSubmission,
+    canManageNamedSubmissionExport,
+} from "./export-state";
 import type {
     AnalyticsData,
     SystemAnalyticsOverview,
@@ -21,6 +25,7 @@ interface AnalyticsContentProps {
     data: AnalyticsData | null;
     schools?: SchoolOption[];
     userRole: UserRole;
+    isPrimaryAdmin: boolean;
     selectedClass: string;
     selectedSchoolId: string;
     selectedAcademicYear: string;
@@ -71,6 +76,7 @@ export function AnalyticsContent({
     data,
     schools,
     userRole,
+    isPrimaryAdmin,
     selectedClass,
     selectedSchoolId,
     selectedAcademicYear,
@@ -108,6 +114,8 @@ export function AnalyticsContent({
                     isSystemAdmin={isSystemAdmin}
                     showClassFilter={false}
                     requireSchoolSelection={true}
+                    canExportNamedSubmission={false}
+                    canManageNamedSubmissionExport={false}
                 />
                 <FilterWarnings warnings={filterWarnings} />
                 {systemOverview ? (
@@ -163,6 +171,15 @@ export function AnalyticsContent({
                 selectedRound={selectedRound}
                 isSystemAdmin={isSystemAdmin}
                 showClassFilter={showClassFilter}
+                canExportNamedSubmission={canExportNamedSubmission(
+                    userRole,
+                    isPrimaryAdmin,
+                    data.studentsWithAssessment,
+                )}
+                canManageNamedSubmissionExport={canManageNamedSubmissionExport(
+                    userRole,
+                    isPrimaryAdmin,
+                )}
             />
             <FilterWarnings warnings={filterWarnings} />
             <AnalyticsSummaryCards

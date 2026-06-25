@@ -10,8 +10,10 @@ import { ClassFilter } from "./filters/ClassFilter";
 import { SemesterFilter } from "./filters/SemesterFilter";
 import { SchoolFilter } from "./filters/SchoolFilter";
 import { Button } from "@/components/ui/Button";
+import { NamedSubmissionExportButton } from "./NamedSubmissionExportButton";
 import {
     applyFilterUpdates,
+    buildNamedSubmissionExportUrl,
     buildFilterState,
     buildFilterUrl,
     type FilterState,
@@ -37,6 +39,8 @@ interface AnalyticsFiltersProps {
     isSystemAdmin: boolean;
     showClassFilter: boolean;
     requireSchoolSelection?: boolean;
+    canExportNamedSubmission?: boolean;
+    canManageNamedSubmissionExport?: boolean;
 }
 
 function uniqueStrings(values: string[]): string[] {
@@ -61,6 +65,8 @@ export function AnalyticsFilters({
     isSystemAdmin,
     showClassFilter,
     requireSchoolSelection = false,
+    canExportNamedSubmission = false,
+    canManageNamedSubmissionExport = false,
 }: AnalyticsFiltersProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -199,25 +205,33 @@ export function AnalyticsFilters({
                 />
             ) : null}
 
-            {hasActiveFilters ? (
-                <div className="flex justify-end">
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() =>
-                            updateParams({
-                                school: null,
-                                class: null,
-                                year: null,
-                                semester: null,
-                                round: null,
-                            })
-                        }
-                    >
-                        <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                        รีเซ็ตตัวกรอง
-                    </Button>
+            {canManageNamedSubmissionExport || hasActiveFilters ? (
+                <div className="flex flex-wrap justify-end gap-2">
+                    {canManageNamedSubmissionExport ? (
+                        <NamedSubmissionExportButton
+                            href={buildNamedSubmissionExportUrl(optimisticFilters)}
+                            disabled={!canExportNamedSubmission}
+                        />
+                    ) : null}
+                    {hasActiveFilters ? (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                                updateParams({
+                                    school: null,
+                                    class: null,
+                                    year: null,
+                                    semester: null,
+                                    round: null,
+                                })
+                            }
+                        >
+                            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                            รีเซ็ตตัวกรอง
+                        </Button>
+                    ) : null}
                 </div>
             ) : null}
         </div>

@@ -105,3 +105,12 @@ export function buildFilterUrl(pathname: string, filters: FilterState): string {
     const queryString = params.toString();
     return queryString ? `${pathname}?${queryString}` : pathname;
 }
+
+export function buildNamedSubmissionExportUrl(filters: FilterState): string {
+    const params = new URLSearchParams();
+    setFilterParams(params, filters);
+
+    const queryString = params.toString();
+    const pathname = "/api/v1/exports/named-submission";
+    return queryString ? `${pathname}?${queryString}` : pathname;
+}

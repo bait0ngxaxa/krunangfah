@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     applyFilterUpdates,
+    buildNamedSubmissionExportUrl,
     buildFilterState,
     buildFilterUrl,
     type FilterState,
@@ -76,5 +77,19 @@ describe("analytics filter state", () => {
             round: "all",
         });
         expect(buildFilterUrl("/analytics", nextFilters)).toBe("/analytics");
+    });
+
+    it("builds an export URL from the active filters", () => {
+        const exportUrl = buildNamedSubmissionExportUrl({
+            school: "cm9lt9j8f0000z1ntt9r2w0ab",
+            class: "ม.2/5",
+            year: "2569",
+            semester: "1",
+            round: "2",
+        });
+
+        expect(exportUrl).toBe(
+            "/api/v1/exports/named-submission?school=cm9lt9j8f0000z1ntt9r2w0ab&class=%E0%B8%A1.2%2F5&year=2569&semester=1&round=2",
+        );
     });
 });
