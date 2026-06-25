@@ -11,6 +11,7 @@ import {
 import { cleanupAll } from "./helpers/cleanup";
 import {
     createTestAcademicYear,
+    createTestActivityProgress,
     createTestPhqResult,
     createTestSchool,
     createTestStudent,
@@ -48,10 +49,27 @@ describe("Integration: named submission export route", () => {
             where: { id: included.id },
             data: { nationalId: "0123456789012" },
         });
-        await createTestPhqResult(included.id, term.id, USERS.systemAdmin.id, {
-            assessmentRound: 1,
-            riskLevel: "yellow",
-            totalScore: 15,
+        const includedPhq = await createTestPhqResult(
+            included.id,
+            term.id,
+            USERS.systemAdmin.id,
+            {
+                assessmentRound: 1,
+                riskLevel: "yellow",
+                totalScore: 15,
+            },
+        );
+        await createTestActivityProgress(included.id, includedPhq.id, 1, {
+            status: "completed",
+        });
+        await createTestActivityProgress(included.id, includedPhq.id, 2, {
+            status: "completed",
+        });
+        await createTestActivityProgress(included.id, includedPhq.id, 3, {
+            status: "locked",
+        });
+        await createTestActivityProgress(included.id, includedPhq.id, 5, {
+            status: "in_progress",
         });
 
         const excluded = await createTestStudent(otherSchool.id, {
@@ -102,6 +120,8 @@ describe("Integration: named submission export route", () => {
         expect(worksheet?.getRow(2).getCell(6).value).toBe("0123456789012");
         expect(worksheet?.getRow(2).getCell(13).value).toBe(15);
         expect(worksheet?.getRow(2).getCell(14).value).toBe("สีเหลือง");
+        expect(worksheet?.getRow(2).getCell(15).value).toBe(4);
+        expect(worksheet?.getRow(2).getCell(16).value).toBe(2);
     });
 
     it("allows primary school_admin and enforces its own school scope", async () => {

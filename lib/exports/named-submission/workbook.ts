@@ -21,8 +21,23 @@ export const NAMED_SUBMISSION_COLUMNS: readonly NamedSubmissionColumn[] = [
     { key: "assessmentDate", header: "วันที่คัดกรอง", width: 18 },
     { key: "totalScore", header: "คะแนนรวม PHQ-A", width: 18 },
     { key: "riskGroup", header: "กลุ่มสีความเสี่ยง", width: 20 },
+    { key: "requiredActivityCount", header: "กิจกรรมที่ต้องทำ", width: 18 },
+    { key: "completedActivityCount", header: "กิจกรรมที่ทำแล้ว", width: 18 },
     { key: "referralStatus", header: "สถานะส่งต่อ", width: 16 },
 ];
+
+function getExcelColumnName(index: number): string {
+    let current = index;
+    let columnName = "";
+
+    while (current > 0) {
+        const remainder = (current - 1) % 26;
+        columnName = String.fromCharCode(65 + remainder) + columnName;
+        current = Math.floor((current - 1) / 26);
+    }
+
+    return columnName;
+}
 
 export async function createNamedSubmissionWorkbook(
     rows: NamedSubmissionRow[],
@@ -39,7 +54,10 @@ export async function createNamedSubmissionWorkbook(
     }));
     worksheet.addRows(rows);
     worksheet.views = [{ state: "frozen", ySplit: 1 }];
-    worksheet.autoFilter = { from: "A1", to: "O1" };
+    worksheet.autoFilter = {
+        from: "A1",
+        to: `${getExcelColumnName(NAMED_SUBMISSION_COLUMNS.length)}1`,
+    };
     worksheet.getRow(1).font = { bold: true };
     worksheet.getColumn("studentId").numFmt = "@";
     worksheet.getColumn("nationalId").numFmt = "@";

@@ -31,6 +31,13 @@ export const namedSubmissionSelect = {
             },
         },
     },
+    activityProgress: {
+        orderBy: { activityNumber: "asc" },
+        select: {
+            activityNumber: true,
+            status: true,
+        },
+    },
 } as const satisfies Prisma.PhqResultSelect;
 
 export type NamedSubmissionRecord = Prisma.PhqResultGetPayload<{
@@ -52,5 +59,7 @@ export interface NamedSubmissionRow {
     assessmentDate: string;
     totalScore: number;
     riskGroup: string;
+    requiredActivityCount: number;
+    completedActivityCount: number;
     referralStatus: string;
 }

@@ -27,6 +27,12 @@ const sampleRecord: NamedSubmissionRecord = {
         status: "ACTIVE",
         school: { name: "โรงเรียนทดสอบ", province: "กรุงเทพมหานคร" },
     },
+    activityProgress: [
+        { activityNumber: 1, status: "completed" },
+        { activityNumber: 2, status: "completed" },
+        { activityNumber: 3, status: "locked" },
+        { activityNumber: 5, status: "in_progress" },
+    ],
 };
 
 describe("named submission export", () => {
@@ -70,7 +76,9 @@ describe("named submission export", () => {
         expect(worksheet?.getRow(2).getCell(3).value).toBe("000123");
         expect(worksheet?.getRow(2).getCell(6).value).toBe("0123456789012");
         expect(worksheet?.getRow(2).getCell(14).value).toBe("สีเหลือง");
-        expect(worksheet?.getRow(2).getCell(15).value).toBe("ส่งต่อแล้ว");
+        expect(worksheet?.getRow(2).getCell(15).value).toBe(4);
+        expect(worksheet?.getRow(2).getCell(16).value).toBe(2);
+        expect(worksheet?.getRow(2).getCell(17).value).toBe("ส่งต่อแล้ว");
         expect(worksheet?.columnCount).toBe(NAMED_SUBMISSION_COLUMNS.length);
     });
 
