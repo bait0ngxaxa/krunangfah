@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import {
     getCurrentSessionId,
+    revokeOtherUserSessions,
+    revokeUserSessionById,
     updateCurrentSessionMetadata,
 } from "@/lib/auth/session-store";
 import { handleActionError } from "./error-handler";
@@ -98,14 +100,7 @@ export async function revokeSessionById(
             };
         }
 
-        await prisma.userSession.updateMany({
-            where: {
-                id: parsedSessionId,
-                userId: session.user.id,
-                revokedAt: null,
-            },
-            data: { revokedAt: new Date() },
-        });
+        await revokeUserSessionById(session.user.id, parsedSessionId);
 
         const refreshed = await listMySessions();
         return {
@@ -130,14 +125,7 @@ export async function revokeOtherSessions(): Promise<SessionManagementResponse> 
         const session = await requireAuth();
         const currentSessionId = await getCurrentSessionId();
 
-        await prisma.userSession.updateMany({
-            where: {
-                userId: session.user.id,
-                revokedAt: null,
-                id: currentSessionId ? { not: currentSessionId } : undefined,
-            },
-            data: { revokedAt: new Date() },
-        });
+        await revokeOtherUserSessions(session.user.id, currentSessionId);
 
         const refreshed = await listMySessions();
         return {

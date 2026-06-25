@@ -4,7 +4,9 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import {
     getRequestSession,
+    revokeOtherUserSessions,
     revokeSessionToken,
+    revokeUserSessionById,
     revokeUserSessions,
     rotateCurrentSessionToken,
     signInWithPassword,
@@ -398,6 +400,34 @@ describe("lib/auth/session-store", () => {
 
         expect(mocks.userSessionUpdateMany).toHaveBeenCalledWith({
             where: { userId: "user-1", revokedAt: null },
+            data: { revokedAt: new Date("2026-06-01T08:00:00.000Z") },
+        });
+        expect(mocks.deleteUserSessionCaches).toHaveBeenCalledWith("user-1");
+    });
+
+    it("deletes tracked caches when revoking one user session", async () => {
+        await revokeUserSessionById("user-1", "session-2");
+
+        expect(mocks.userSessionUpdateMany).toHaveBeenCalledWith({
+            where: {
+                id: "session-2",
+                userId: "user-1",
+                revokedAt: null,
+            },
+            data: { revokedAt: new Date("2026-06-01T08:00:00.000Z") },
+        });
+        expect(mocks.deleteUserSessionCaches).toHaveBeenCalledWith("user-1");
+    });
+
+    it("deletes tracked caches when revoking other user sessions", async () => {
+        await revokeOtherUserSessions("user-1", "session-1");
+
+        expect(mocks.userSessionUpdateMany).toHaveBeenCalledWith({
+            where: {
+                userId: "user-1",
+                revokedAt: null,
+                id: { not: "session-1" },
+            },
             data: { revokedAt: new Date("2026-06-01T08:00:00.000Z") },
         });
         expect(mocks.deleteUserSessionCaches).toHaveBeenCalledWith("user-1");

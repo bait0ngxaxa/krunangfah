@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import {
     getCurrentSessionId,
+    revokeOtherUserSessions,
+    revokeUserSessionById,
     updateCurrentSessionMetadata,
 } from "@/lib/auth/session-store";
 import {
@@ -16,9 +18,10 @@ const mocks = vi.hoisted(() => ({
     headers: vi.fn(),
     requireAuth: vi.fn(),
     getCurrentSessionId: vi.fn(),
+    revokeOtherUserSessions: vi.fn(),
+    revokeUserSessionById: vi.fn(),
     updateCurrentSessionMetadata: vi.fn(),
     userSessionFindMany: vi.fn(),
-    userSessionUpdateMany: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -31,6 +34,8 @@ vi.mock("@/lib/session", () => ({
 
 vi.mock("@/lib/auth/session-store", () => ({
     getCurrentSessionId: mocks.getCurrentSessionId,
+    revokeOtherUserSessions: mocks.revokeOtherUserSessions,
+    revokeUserSessionById: mocks.revokeUserSessionById,
     updateCurrentSessionMetadata: mocks.updateCurrentSessionMetadata,
 }));
 
@@ -38,7 +43,6 @@ vi.mock("@/lib/prisma", () => ({
     prisma: {
         userSession: {
             findMany: mocks.userSessionFindMany,
-            updateMany: mocks.userSessionUpdateMany,
         },
     },
 }));
@@ -95,6 +99,8 @@ describe("session management actions", () => {
         mockSession();
         mockHeaders();
         vi.mocked(getCurrentSessionId).mockResolvedValue("current-session");
+        vi.mocked(revokeOtherUserSessions).mockResolvedValue(undefined);
+        vi.mocked(revokeUserSessionById).mockResolvedValue(undefined);
         vi.mocked(updateCurrentSessionMetadata).mockResolvedValue(undefined);
         vi.mocked(prisma.userSession.findMany).mockResolvedValue(
             createSessionRows() as never,
@@ -141,20 +147,16 @@ describe("session management actions", () => {
         expect(result.message).toBe(
             "ไม่สามารถออกจากระบบ session ปัจจุบันจากหน้านี้ได้",
         );
-        expect(prisma.userSession.updateMany).not.toHaveBeenCalled();
+        expect(revokeUserSessionById).not.toHaveBeenCalled();
     });
 
     it("revokes a selected non-current session owned by the user", async () => {
         const result = await revokeSessionById("other-session");
 
-        expect(prisma.userSession.updateMany).toHaveBeenCalledWith({
-            where: {
-                id: "other-session",
-                userId: "user-1",
-                revokedAt: null,
-            },
-            data: { revokedAt: new Date("2026-06-01T10:30:00.000Z") },
-        });
+        expect(revokeUserSessionById).toHaveBeenCalledWith(
+            "user-1",
+            "other-session",
+        );
         expect(result.success).toBe(true);
         expect(result.message).toBe("ออกจากระบบอุปกรณ์ที่เลือกแล้ว");
     });
@@ -162,14 +164,10 @@ describe("session management actions", () => {
     it("revokes every other active session while keeping the current one", async () => {
         const result = await revokeOtherSessions();
 
-        expect(prisma.userSession.updateMany).toHaveBeenCalledWith({
-            where: {
-                userId: "user-1",
-                revokedAt: null,
-                id: { not: "current-session" },
-            },
-            data: { revokedAt: new Date("2026-06-01T10:30:00.000Z") },
-        });
+        expect(revokeOtherUserSessions).toHaveBeenCalledWith(
+            "user-1",
+            "current-session",
+        );
         expect(result.success).toBe(true);
         expect(result.message).toBe("ออกจากระบบอุปกรณ์อื่นทั้งหมดแล้ว");
     });

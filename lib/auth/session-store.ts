@@ -403,6 +403,32 @@ export async function revokeUserSessions(userId: string): Promise<void> {
     await deleteUserSessionCaches(userId);
 }
 
+export async function revokeUserSessionById(
+    userId: string,
+    sessionId: string,
+): Promise<void> {
+    await prisma.userSession.updateMany({
+        where: { id: sessionId, userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+    });
+    await deleteUserSessionCaches(userId);
+}
+
+export async function revokeOtherUserSessions(
+    userId: string,
+    currentSessionId: string | null,
+): Promise<void> {
+    await prisma.userSession.updateMany({
+        where: {
+            userId,
+            revokedAt: null,
+            id: currentSessionId ? { not: currentSessionId } : undefined,
+        },
+        data: { revokedAt: new Date() },
+    });
+    await deleteUserSessionCaches(userId);
+}
+
 export async function getCurrentSessionToken(): Promise<string | null> {
     const cookieStore = await cookies();
     return cookieStore.get(SESSION_COOKIE_NAME)?.value ?? null;
