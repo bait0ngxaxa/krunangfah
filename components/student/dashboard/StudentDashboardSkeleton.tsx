@@ -1,3 +1,5 @@
+import { Skeleton } from "@/components/ui/Skeleton";
+
 /**
  * Student Dashboard Skeleton
  * Loading skeleton for student dashboard
@@ -5,24 +7,28 @@
 
 export function StudentDashboardSkeleton() {
     return (
-        <div className="space-y-6 animate-pulse">
+        <div
+            className="space-y-6"
+            role="status"
+            aria-label="กำลังโหลดแดชบอร์ดนักเรียน"
+        >
             {/* Class filter skeleton */}
             <div className="bg-white rounded-xl shadow-md p-4">
-                <div className="h-4 w-24 bg-gray-200 rounded mb-2" />
-                <div className="h-10 w-64 bg-gray-200 rounded-lg" />
+                <Skeleton className="mb-2 h-4 w-24 rounded" />
+                <Skeleton className="h-10 w-64 rounded-lg" />
             </div>
 
             {/* Pie chart skeleton */}
             <div className="bg-white rounded-xl shadow-md p-6">
-                <div className="h-6 w-48 bg-gray-200 rounded mx-auto mb-6" />
+                <Skeleton className="mx-auto mb-6 h-6 w-48 rounded" />
                 <div className="flex justify-center">
-                    <div className="w-48 h-48 bg-gray-200 rounded-full" />
+                    <Skeleton className="h-48 w-48 rounded-full" />
                 </div>
                 <div className="flex justify-center gap-4 mt-6">
                     {[1, 2, 3, 4, 5].map((i) => (
                         <div key={i} className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-gray-200 rounded-full" />
-                            <div className="h-4 w-12 bg-gray-200 rounded" />
+                            <Skeleton className="h-3 w-3 rounded-full" />
+                            <Skeleton className="h-4 w-12 rounded" />
                         </div>
                     ))}
                 </div>
@@ -30,7 +36,7 @@ export function StudentDashboardSkeleton() {
 
             {/* Student groups skeleton */}
             <div className="bg-white p-4 rounded-xl border-2 border-gray-100 shadow-sm">
-                <div className="h-6 w-64 bg-gray-200 rounded" />
+                <Skeleton className="h-6 w-64 rounded" />
             </div>
 
             {/* Risk group cards skeleton */}
@@ -40,16 +46,13 @@ export function StudentDashboardSkeleton() {
                     className="bg-white rounded-xl shadow-md p-4 space-y-3"
                 >
                     <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 bg-gray-200 rounded" />
-                        <div className="h-5 w-32 bg-gray-200 rounded" />
-                        <div className="h-5 w-16 bg-gray-200 rounded-full ml-auto" />
+                        <Skeleton className="h-4 w-4 rounded" />
+                        <Skeleton className="h-5 w-32 rounded" />
+                        <Skeleton className="ml-auto h-5 w-16 rounded-full" />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[1, 2].map((j) => (
-                            <div
-                                key={j}
-                                className="h-16 bg-gray-100 rounded-lg"
-                            />
+                            <Skeleton key={j} className="h-16 rounded-lg" />
                         ))}
                     </div>
                 </div>

@@ -1,3 +1,5 @@
+import { Skeleton } from "@/components/ui/Skeleton";
+
 /**
  * Analytics Skeleton Component
  * Loading skeleton for analytics content
@@ -5,44 +7,46 @@
 
 export function AnalyticsSkeleton() {
     return (
-        <div className="space-y-6 animate-pulse">
+        <div
+            className="space-y-6"
+            role="status"
+            aria-label="กำลังโหลดหน้าสรุปข้อมูล"
+        >
             {/* Tab skeleton */}
-            <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
-                <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 blur-3xl" />
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                 {/* Fake tab buttons */}
-                <div className="relative z-10 mb-6 flex gap-4 border-b border-gray-200 pb-4">
-                    <div className="h-10 w-28 bg-gray-100 rounded-xl" />
-                    <div className="h-10 w-28 bg-gray-100 rounded-xl" />
-                    <div className="h-10 w-32 bg-gray-100 rounded-xl" />
+                <div className="mb-6 flex gap-4 border-b border-gray-200 pb-4">
+                    <Skeleton className="h-10 w-28 rounded-xl" />
+                    <Skeleton className="h-10 w-28 rounded-xl" />
+                    <Skeleton className="h-10 w-32 rounded-xl" />
                 </div>
 
                 {/* Fake content grid */}
-                <div className="relative z-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     {/* Fake table */}
                     <div className="space-y-3">
-                        <div className="h-6 w-48 bg-gray-200 rounded" />
+                        <Skeleton className="h-6 w-48 rounded" />
                         {[1, 2, 3, 4, 5].map((i) => (
                             <div key={i} className="flex gap-3">
-                                <div className="h-8 w-20 bg-gray-100 rounded" />
-                                <div className="h-8 flex-1 bg-gray-100 rounded" />
-                                <div className="h-8 w-16 bg-gray-100 rounded" />
+                                <Skeleton className="h-8 w-20 rounded" />
+                                <Skeleton className="h-8 flex-1 rounded" />
+                                <Skeleton className="h-8 w-16 rounded" />
                             </div>
                         ))}
                     </div>
 
                     {/* Fake pie chart */}
                     <div className="flex flex-col items-center justify-center">
-                        <div className="h-6 w-48 bg-gray-200 rounded mb-6" />
-                        <div className="w-48 h-48 bg-gray-200 rounded-full" />
+                        <Skeleton className="mb-6 h-6 w-48 rounded" />
+                        <Skeleton className="h-48 w-48 rounded-full" />
                         <div className="flex gap-4 mt-6">
                             {[1, 2, 3, 4, 5].map((i) => (
                                 <div
                                     key={i}
                                     className="flex items-center gap-2"
                                 >
-                                    <div className="w-3 h-3 bg-gray-200 rounded-full" />
-                                    <div className="h-4 w-12 bg-gray-200 rounded" />
+                                    <Skeleton className="h-3 w-3 rounded-full" />
+                                    <Skeleton className="h-4 w-12 rounded" />
                                 </div>
                             ))}
                         </div>

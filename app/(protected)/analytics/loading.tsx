@@ -1,13 +1,18 @@
 import { AnalyticsSkeleton } from "@/components/analytics/AnalyticsSkeleton";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export default function Loading() {
     return (
-        <div className="min-h-screen bg-slate-50 py-8 px-4">
+        <div
+            className="min-h-screen bg-slate-50 px-4 py-8"
+            role="status"
+            aria-label="กำลังโหลดหน้าสรุปข้อมูล"
+        >
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="bg-white rounded-2xl shadow-sm p-6 border-2 border-gray-100">
-                    <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-2" />
-                    <div className="h-4 w-96 bg-gray-200 rounded animate-pulse" />
+                    <Skeleton className="mb-2 h-8 w-64 rounded" />
+                    <Skeleton className="h-4 w-96 rounded" />
                 </div>
 
                 {/* Summary Cards Skeleton */}
@@ -15,13 +20,13 @@ export default function Loading() {
                     {[1, 2, 3].map((i) => (
                         <div
                             key={i}
-                            className="bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-6 animate-pulse"
+                            className="bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-6"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="w-14 h-14 bg-gray-200 rounded-lg" />
+                                <Skeleton className="h-14 w-14 rounded-lg" />
                                 <div>
-                                    <div className="h-4 w-24 bg-gray-200 rounded mb-2" />
-                                    <div className="h-8 w-16 bg-gray-200 rounded" />
+                                    <Skeleton className="mb-2 h-4 w-24 rounded" />
+                                    <Skeleton className="h-8 w-16 rounded" />
                                 </div>
                             </div>
                         </div>

@@ -1,31 +1,31 @@
+import { Skeleton } from "@/components/ui/Skeleton";
+
 export default function Loading() {
     return (
-        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4 relative overflow-hidden">
-            {/* Decorative Background Elements */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40" />
-                <div className="absolute bottom-10 left-10 w-64 h-64 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40" />
-            </div>
-
+        <div
+            className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-6"
+            role="status"
+            aria-label="กำลังโหลดรายละเอียดนักเรียน"
+        >
             <div className="max-w-6xl mx-auto relative z-10">
                 {/* Back Button Skeleton */}
-                <div className="h-9 w-36 bg-gray-200 rounded-full animate-pulse mb-4" />
+                <Skeleton className="mb-4 h-9 w-36 rounded-full" />
 
                 <div className="space-y-6">
                     {/* Profile Card Skeleton */}
                     <div className="bg-white rounded-2xl shadow-sm p-6 border-2 border-gray-100">
                         <div className="flex items-center gap-4 mb-4">
-                            <div className="w-16 h-16 bg-gray-200 rounded-2xl animate-pulse" />
+                            <Skeleton className="h-16 w-16 rounded-2xl" />
                             <div className="flex-1">
-                                <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-2" />
-                                <div className="h-4 w-56 bg-gray-200 rounded animate-pulse" />
+                                <Skeleton className="mb-2 h-6 w-40 rounded" />
+                                <Skeleton className="h-4 w-56 rounded" />
                             </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
                             {[1, 2, 3, 4].map((i) => (
-                                <div
+                                <Skeleton
                                     key={i}
-                                    className="h-16 bg-gray-100 rounded-xl animate-pulse"
+                                    className="h-16 rounded-xl"
                                 />
                             ))}
                         </div>
@@ -34,14 +34,14 @@ export default function Loading() {
                     {/* Tabs Skeleton */}
                     <div className="bg-white rounded-2xl shadow-sm p-6 border-2 border-gray-100">
                         <div className="flex gap-4 mb-6">
-                            <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
-                            <div className="h-10 w-40 bg-gray-200 rounded-lg animate-pulse" />
+                            <Skeleton className="h-10 w-32 rounded-lg" />
+                            <Skeleton className="h-10 w-40 rounded-lg" />
                         </div>
                         <div className="space-y-3">
                             {[1, 2, 3].map((i) => (
-                                <div
+                                <Skeleton
                                     key={i}
-                                    className="h-16 bg-gray-100 rounded-xl animate-pulse"
+                                    className="h-16 rounded-xl"
                                 />
                             ))}
                         </div>

@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import { HeroCard } from "@/components/dashboard/cards/HeroCard";
 import { QuickActionCard } from "@/components/dashboard/cards/QuickActionCard";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { type UserRole } from "@/types/auth.types";
 import {
     GraduationCap,
@@ -22,10 +23,11 @@ const StudentSearch = dynamic(
     {
         loading: () => (
             <div
-                className="h-14 animate-pulse rounded-2xl bg-slate-100"
                 role="status"
                 aria-label="กำลังโหลดช่องค้นหานักเรียน"
-            />
+            >
+                <Skeleton className="h-14 rounded-2xl" />
+            </div>
         ),
     },
 );

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ExcelUploader } from "@/components/student/import/ExcelUploader";
 import { ImportResultDialog } from "@/components/student/import/ImportResultDialog";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import type { ImportResult } from "@/lib/actions/student/types";
 import { toast } from "sonner";
@@ -18,13 +19,14 @@ const ImportPreview = dynamic(
         ssr: false,
         loading: () => (
             <div
-                className="flex flex-col items-center justify-center gap-3 py-16"
+                className="space-y-3 py-8"
                 role="status"
+                aria-label="กำลังเตรียมพรีวิวข้อมูล"
             >
-                <div className="h-10 w-10 animate-spin rounded-full border-2 border-emerald-100 border-b-emerald-500" />
-                <p className="text-sm font-medium text-gray-600">
-                    กำลังเตรียมพรีวิวข้อมูล…
-                </p>
+                <Skeleton className="h-5 w-44 rounded" />
+                {[1, 2, 3, 4].map((row) => (
+                    <Skeleton key={row} className="h-12 w-full rounded-xl" />
+                ))}
             </div>
         ),
     },

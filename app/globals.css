@@ -5,6 +5,8 @@
     --foreground: #171717;
     --ui-text-heading: #1f2937; /* gray-800 */
     --ui-text-body: #4b5563; /* gray-600 */
+    --skeleton-base: #e5e7eb;
+    --skeleton-highlight: rgba(255, 255, 255, 0.74);
     --brand-primary: #0bd0d9;
     --brand-primary-hover: #09b8c0;
     --brand-primary-soft: #e6fafb;
@@ -374,6 +376,34 @@ textarea::placeholder {
     transition-duration: 150ms;
 }
 
+@keyframes skeleton-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--skeleton-base);
+    color: transparent;
+    isolation: isolate;
+}
+
+.skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        transparent,
+        var(--skeleton-highlight),
+        transparent
+    );
+    animation: skeleton-shimmer 1.45s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
 /* Touch: prevent double-tap zoom delay on interactive elements */
 button,
 a,
@@ -458,6 +488,10 @@ h1, h2, h3, h4, h5, h6 {
 
     .page-banner-illustration {
         animation: none;
+    }
+
+    .skeleton-shimmer::after {
+        display: none;
     }
 }
 
