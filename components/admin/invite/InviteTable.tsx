@@ -15,7 +15,6 @@ import { RoleBadge } from "@/components/ui/badges";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableMetaRow } from "@/components/ui/TableMetaRow";
 import {
-    buildInviteUrl,
     formatInviteDate,
     getInviteStatus,
     getInviteStatusLabel,
@@ -37,7 +36,6 @@ function InviteCard({
     invite: SchoolAdminInvite;
     onRevoked: () => void;
 }) {
-    const [copied, setCopied] = useState(false);
     const [isRevoking, setIsRevoking] = useState(false);
     const [actionError, setActionError] = useState<string | null>(null);
 
@@ -46,24 +44,6 @@ function InviteCard({
         expiresAt: invite.expiresAt,
         completedStatus: "used",
     });
-
-    async function handleCopy(): Promise<void> {
-        if (!invite.token) return;
-
-        try {
-            await navigator.clipboard.writeText(
-                buildInviteUrl(`/invite/admin/${invite.token}`),
-            );
-            setCopied(true);
-            setActionError(null);
-            toast.success("คัดลอกลิงก์คำเชิญเรียบร้อย");
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            const message = "ไม่สามารถคัดลอกลิงก์ได้ กรุณาคัดลอกด้วยตนเอง";
-            setActionError(message);
-            toast.error(message);
-        }
-    }
 
     async function handleConfirmRevoke(): Promise<boolean> {
         if (isRevoking) return false;
@@ -121,13 +101,11 @@ function InviteCard({
                     />
                     {status === "pending" && (
                         <InviteActionRow
-                            copied={copied}
                             isRevoking={isRevoking}
-                            onCopy={handleCopy}
                             onConfirmRevoke={handleConfirmRevoke}
                             revokeDialogTitle="ยกเลิกคำเชิญ"
                             revokeDialogMessage={`ต้องการยกเลิกคำเชิญของ "${invite.email}" ใช่หรือไม่?`}
-                            showCopyButton={invite.token.length > 0}
+                            showCopyButton={false}
                         />
                     )}
                 </div>

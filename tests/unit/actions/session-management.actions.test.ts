@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import {
-    getCurrentSessionId,
     revokeOtherUserSessions,
     revokeUserSessionById,
     updateCurrentSessionMetadata,
@@ -17,7 +16,6 @@ import {
 const mocks = vi.hoisted(() => ({
     headers: vi.fn(),
     requireAuth: vi.fn(),
-    getCurrentSessionId: vi.fn(),
     revokeOtherUserSessions: vi.fn(),
     revokeUserSessionById: vi.fn(),
     updateCurrentSessionMetadata: vi.fn(),
@@ -33,7 +31,6 @@ vi.mock("@/lib/auth/session", () => ({
 }));
 
 vi.mock("@/lib/auth/session-store", () => ({
-    getCurrentSessionId: mocks.getCurrentSessionId,
     revokeOtherUserSessions: mocks.revokeOtherUserSessions,
     revokeUserSessionById: mocks.revokeUserSessionById,
     updateCurrentSessionMetadata: mocks.updateCurrentSessionMetadata,
@@ -49,6 +46,7 @@ vi.mock("@/lib/database/prisma", () => ({
 
 function mockSession(): void {
     vi.mocked(requireAuth).mockResolvedValue({
+        sessionId: "current-session",
         expires: "2026-06-02T00:00:00.000Z",
         user: {
             id: "user-1",
@@ -98,7 +96,6 @@ describe("session management actions", () => {
         vi.clearAllMocks();
         mockSession();
         mockHeaders();
-        vi.mocked(getCurrentSessionId).mockResolvedValue("current-session");
         vi.mocked(revokeOtherUserSessions).mockResolvedValue(undefined);
         vi.mocked(revokeUserSessionById).mockResolvedValue(undefined);
         vi.mocked(updateCurrentSessionMetadata).mockResolvedValue(undefined);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,6 +29,8 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
     const [inviteUrl, setInviteUrl] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const inviteResultRef = useRef<HTMLDivElement | null>(null);
+    const inviteLinkInputRef = useRef<HTMLInputElement | null>(null);
 
     const {
         register,
@@ -39,6 +41,33 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
         resolver: zodResolver(inviteFormSchema),
         defaultValues: { role: "school_admin" },
     });
+
+    useEffect(() => {
+        if (!inviteUrl) return;
+
+        const resultPanel = inviteResultRef.current;
+        const linkInput = inviteLinkInputRef.current;
+        if (!resultPanel || !linkInput) return;
+
+        const prefersReducedMotion = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
+
+        resultPanel.scrollIntoView({
+            behavior: prefersReducedMotion ? "auto" : "smooth",
+            block: "center",
+        });
+
+        const focusTimer = window.setTimeout(
+            () => {
+                linkInput.focus({ preventScroll: true });
+                linkInput.select();
+            },
+            prefersReducedMotion ? 0 : 220,
+        );
+
+        return () => window.clearTimeout(focusTimer);
+    }, [inviteUrl]);
 
     async function onSubmit(data: InviteFormData): Promise<void> {
         setErrorMessage(null);
@@ -151,6 +180,7 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
 
             {inviteUrl && (
                 <div
+                    ref={inviteResultRef}
                     className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4"
                     role="status"
                     aria-live="polite"
@@ -158,13 +188,17 @@ export function InviteCreateForm({ onCreated }: InviteCreateFormProps) {
                     <p className="text-sm font-semibold text-green-700 mb-2">
                         สร้างคำเชิญสำเร็จ คัดลอกลิงก์ด้านล่างเพื่อส่งให้ผู้รับ
                     </p>
+                    <p className="mb-3 text-xs font-medium leading-5 text-green-800">
+                        ลิงก์จะแสดงแค่ครั้งเดียว กรุณาคัดลอกก่อนออกจากหน้านี้
+                    </p>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <input
+                            ref={inviteLinkInputRef}
                             type="text"
                             readOnly
                             value={inviteUrl}
                             aria-label="ลิงก์คำเชิญที่สร้างแล้ว"
-                            className="min-w-0 flex-1 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none"
+                            className="min-w-0 flex-1 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none transition-colors focus:border-green-500 focus:ring-2 focus:ring-green-200"
                         />
                         <Button
                             type="button"

@@ -3,6 +3,7 @@ import { compare } from "bcryptjs";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/database/prisma";
 import {
+    getCurrentSessionId,
     getRequestSession,
     revokeOtherUserSessions,
     revokeSessionToken,
@@ -216,8 +217,14 @@ describe("lib/auth/session-store", () => {
         const session = await getRequestSession();
 
         expect(session?.user.id).toBe("user-1");
-        expect(mocks.userSessionUpdate).toHaveBeenCalledWith({
-            where: { id: "session-1" },
+        expect(session?.sessionId).toBe("session-1");
+        expect(mocks.userSessionUpdateMany).toHaveBeenCalledWith({
+            where: {
+                id: "session-1",
+                lastActivityAt: {
+                    lte: new Date("2026-06-01T07:59:00.000Z"),
+                },
+            },
             data: { lastActivityAt: new Date("2026-06-01T08:00:00.000Z") },
         });
         expect(mocks.setCachedSession).toHaveBeenCalledWith(
@@ -227,6 +234,29 @@ describe("lib/auth/session-store", () => {
                 user: expect.objectContaining({ id: "user-1" }),
                 lastActivityAt: "2026-06-01T08:00:00.000Z",
                 activityPersistedAt: "2026-06-01T08:00:00.000Z",
+            }),
+        );
+    });
+
+    it("hydrates the cache without touching recent database activity", async () => {
+        setCookieToken("recent-token");
+        mocks.userSessionFindUnique.mockResolvedValue({
+            id: "session-1",
+            expiresAt: new Date("2026-06-01T20:00:00.000Z"),
+            revokedAt: null,
+            lastActivityAt: new Date("2026-06-01T07:59:30.000Z"),
+            user: createDbUser(),
+        });
+
+        const session = await getRequestSession();
+
+        expect(session?.sessionId).toBe("session-1");
+        expect(mocks.userSessionUpdateMany).not.toHaveBeenCalled();
+        expect(mocks.setCachedSession).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({
+                lastActivityAt: "2026-06-01T08:00:00.000Z",
+                activityPersistedAt: "2026-06-01T07:59:30.000Z",
             }),
         );
     });
@@ -246,6 +276,7 @@ describe("lib/auth/session-store", () => {
         const session = await getRequestSession();
 
         expect(session?.user.id).toBe("user-1");
+        expect(session?.sessionId).toBe("session-1");
         expect(mocks.userSessionFindUnique).not.toHaveBeenCalled();
         expect(mocks.userSessionUpdate).not.toHaveBeenCalled();
         expect(mocks.setCachedSession).toHaveBeenCalledWith(
@@ -255,6 +286,24 @@ describe("lib/auth/session-store", () => {
                 activityPersistedAt: "2026-06-01T07:59:30.000Z",
             }),
         );
+    });
+
+    it("reads the current session id from cache before querying the database", async () => {
+        setCookieToken("cached-token");
+        mocks.getCachedSession.mockResolvedValue({
+            sessionId: "session-1",
+            expiresAt: "2026-06-01T20:00:00.000Z",
+            revokedAt: null,
+            lastActivityAt: "2026-06-01T07:59:30.000Z",
+            activityPersistedAt: "2026-06-01T07:59:30.000Z",
+            sessionVersion: 0,
+            user: createCachedUser(),
+        });
+
+        const sessionId = await getCurrentSessionId();
+
+        expect(sessionId).toBe("session-1");
+        expect(mocks.userSessionFindUnique).not.toHaveBeenCalled();
     });
 
     it("rejects cached sessions marked as revoked", async () => {
@@ -322,8 +371,13 @@ describe("lib/auth/session-store", () => {
 
         await getRequestSession();
 
-        expect(mocks.userSessionUpdate).toHaveBeenCalledWith({
-            where: { id: "session-1" },
+        expect(mocks.userSessionUpdateMany).toHaveBeenCalledWith({
+            where: {
+                id: "session-1",
+                lastActivityAt: {
+                    lte: new Date("2026-06-01T07:59:00.000Z"),
+                },
+            },
             data: { lastActivityAt: new Date("2026-06-01T08:00:00.000Z") },
         });
         expect(mocks.setCachedSession).toHaveBeenCalledWith(

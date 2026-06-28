@@ -187,6 +187,7 @@ function createSessionPayload(
     session: DbSessionWithUser,
     now: Date,
     sessionVersion: number,
+    activityPersistedAt = now,
 ): CachedSessionPayload {
     return {
         sessionId: session.id,
@@ -197,13 +198,14 @@ function createSessionPayload(
         expiresAt: session.expiresAt.toISOString(),
         revokedAt: session.revokedAt?.toISOString() ?? null,
         lastActivityAt: now.toISOString(),
-        activityPersistedAt: now.toISOString(),
+        activityPersistedAt: activityPersistedAt.toISOString(),
         sessionVersion,
     };
 }
 
 function toSession(payload: CachedSessionPayload): Session {
     return {
+        sessionId: payload.sessionId,
         expires: payload.expiresAt,
         user: payload.user,
     };
@@ -268,7 +270,13 @@ function shouldPersistActivity(
     payload: CachedSessionPayload,
     now: Date,
 ): boolean {
-    const activityPersistedAt = new Date(payload.activityPersistedAt);
+    return shouldPersistActivityAt(new Date(payload.activityPersistedAt), now);
+}
+
+function shouldPersistActivityAt(
+    activityPersistedAt: Date,
+    now: Date,
+): boolean {
     if (Number.isNaN(activityPersistedAt.getTime())) {
         return true;
     }
@@ -277,6 +285,28 @@ function shouldPersistActivity(
         now.getTime() - activityPersistedAt.getTime() >=
         SESSION_ACTIVITY_FLUSH_INTERVAL_MS
     );
+}
+
+function getActivityFlushThreshold(now: Date): Date {
+    return new Date(now.getTime() - SESSION_ACTIVITY_FLUSH_INTERVAL_MS);
+}
+
+async function persistSessionActivity(
+    sessionId: string,
+    now: Date,
+    context: string,
+): Promise<void> {
+    try {
+        await prisma.userSession.updateMany({
+            where: {
+                id: sessionId,
+                lastActivityAt: { lte: getActivityFlushThreshold(now) },
+            },
+            data: { lastActivityAt: now },
+        });
+    } catch (error) {
+        logError(context, error);
+    }
 }
 
 async function syncSystemAdminRole(user: {
@@ -492,8 +522,14 @@ export async function getCurrentSessionId(): Promise<string | null> {
         return null;
     }
 
+    const tokenHash = hashSessionToken(token);
+    const cachedSession = await getCachedSession(tokenHash);
+    if (cachedSession) {
+        return cachedSession.sessionId;
+    }
+
     const session = await prisma.userSession.findUnique({
-        where: { sessionTokenHash: hashSessionToken(token) },
+        where: { sessionTokenHash: tokenHash },
         select: { id: true },
     });
 
@@ -630,14 +666,11 @@ async function resolveCachedSession(
     await setCachedSession(tokenHash, touchedSession);
 
     if (shouldPersist) {
-        try {
-            await prisma.userSession.update({
-                where: { id: payload.sessionId },
-                data: { lastActivityAt: now },
-            });
-        } catch (error) {
-            logError("Session cached activity update error:", error);
-        }
+        await persistSessionActivity(
+            payload.sessionId,
+            now,
+            "Session cached activity update error:",
+        );
     }
 
     return { session: toSession(touchedSession), shouldQueryDatabase: false };
@@ -679,17 +712,24 @@ async function getSessionByToken(token: string): Promise<Session | null> {
         return null;
     }
 
-    try {
-        await prisma.userSession.update({
-            where: { id: session.id },
-            data: { lastActivityAt: now },
-        });
-    } catch (error) {
-        logError("Session activity update error:", error);
+    const shouldPersist = shouldPersistActivityAt(session.lastActivityAt, now);
+    const activityPersistedAt = shouldPersist ? now : session.lastActivityAt;
+
+    if (shouldPersist) {
+        await persistSessionActivity(
+            session.id,
+            now,
+            "Session activity update error:",
+        );
     }
 
     const sessionVersion = await getUserSessionVersion(session.user.id);
-    const payload = createSessionPayload(session, now, sessionVersion);
+    const payload = createSessionPayload(
+        session,
+        now,
+        sessionVersion,
+        activityPersistedAt,
+    );
     await setCachedSession(tokenHash, payload);
 
     return toSession(payload);

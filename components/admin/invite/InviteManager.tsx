@@ -110,7 +110,7 @@ function InviteOnboardingPanel({
                 <InviteStep
                     icon={<ClipboardCheck className="h-4 w-4" aria-hidden="true" />}
                     title="ติดตามสถานะ"
-                    description="คัดลอกซ้ำหรือยกเลิกลิงก์ที่ยังรอตอบรับได้จากรายการคำเชิญ"
+                    description="ตรวจสถานะและยกเลิกลิงก์ที่ยังรอตอบรับได้จากรายการคำเชิญ"
                 />
             </ol>
         </section>

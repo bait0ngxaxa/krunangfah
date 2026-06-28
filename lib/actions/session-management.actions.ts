@@ -5,7 +5,6 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import {
-    getCurrentSessionId,
     revokeOtherUserSessions,
     revokeUserSessionById,
     updateCurrentSessionMetadata,
@@ -43,7 +42,7 @@ function toManagedSession(
 export async function listMySessions(): Promise<SessionManagementResponse> {
     try {
         const session = await requireAuth();
-        const currentSessionId = await getCurrentSessionId();
+        const currentSessionId = session.sessionId ?? null;
         const headerStore = await headers();
         await updateCurrentSessionMetadata((name) => headerStore.get(name));
         const now = new Date();
@@ -90,7 +89,7 @@ export async function revokeSessionById(
     try {
         const parsedSessionId = sessionIdSchema.parse(sessionId);
         const session = await requireAuth();
-        const currentSessionId = await getCurrentSessionId();
+        const currentSessionId = session.sessionId ?? null;
 
         if (parsedSessionId === currentSessionId) {
             return {
@@ -123,7 +122,7 @@ export async function revokeSessionById(
 export async function revokeOtherSessions(): Promise<SessionManagementResponse> {
     try {
         const session = await requireAuth();
-        const currentSessionId = await getCurrentSessionId();
+        const currentSessionId = session.sessionId ?? null;
 
         await revokeOtherUserSessions(session.user.id, currentSessionId);
 

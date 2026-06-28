@@ -131,7 +131,13 @@ export async function getSchoolAdminInvites(): Promise<SchoolAdminInvite[]> {
     await requireAdmin();
 
     const invites = await prisma.schoolAdminInvite.findMany({
-        include: {
+        select: {
+            id: true,
+            email: true,
+            role: true,
+            usedAt: true,
+            expiresAt: true,
+            createdAt: true,
             creator: { select: { name: true, email: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -139,7 +145,6 @@ export async function getSchoolAdminInvites(): Promise<SchoolAdminInvite[]> {
 
     return invites.map((inv) => ({
         id: inv.id,
-        token: "",
         email: inv.email,
         role: inv.role as InviteRole,
         usedAt: inv.usedAt,

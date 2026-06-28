@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface InviteActionRowProps {
-    copied: boolean;
     isRevoking: boolean;
-    onCopy: () => void | Promise<void>;
     onConfirmRevoke: () => boolean | void | Promise<boolean | void>;
     revokeDialogTitle: string;
     revokeDialogMessage: string;
+    copied?: boolean;
+    onCopy?: () => void | Promise<void>;
     copyTitle?: string;
     copyLabel?: string;
     copiedLabel?: string;
@@ -21,12 +21,12 @@ interface InviteActionRowProps {
 }
 
 export function InviteActionRow({
-    copied,
     isRevoking,
-    onCopy,
     onConfirmRevoke,
     revokeDialogTitle,
     revokeDialogMessage,
+    copied = false,
+    onCopy,
     copyTitle = "คัดลอกลิงก์",
     copyLabel = "คัดลอกลิงก์",
     copiedLabel = "คัดลอกแล้ว",
@@ -35,6 +35,7 @@ export function InviteActionRow({
     showCopyButton = true,
 }: InviteActionRowProps) {
     const [showRevokeDialog, setShowRevokeDialog] = useState(false);
+    const canCopy = showCopyButton && typeof onCopy === "function";
 
     async function handleConfirmRevoke(): Promise<void> {
         const shouldClose = await onConfirmRevoke();
@@ -48,12 +49,12 @@ export function InviteActionRow({
         <>
             <div
                 className={
-                    showCopyButton
+                    canCopy
                         ? "grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-1.5"
                         : "grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-1.5"
                 }
             >
-                {showCopyButton && (
+                {canCopy && (
                     <Button
                         type="button"
                         onClick={onCopy}

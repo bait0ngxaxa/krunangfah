@@ -5,5 +5,5 @@ export default function AuthLayout({
 }: {
     children: React.ReactNode;
 }) {
-    return <Providers>{children}</Providers>;
+    return <Providers rotateSession={false}>{children}</Providers>;
 }

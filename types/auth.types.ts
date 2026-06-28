@@ -29,6 +29,7 @@ export interface ExtendedUser {
  */
 declare module "next-auth" {
     interface Session {
+        sessionId?: string;
         user: ExtendedUser;
     }
 

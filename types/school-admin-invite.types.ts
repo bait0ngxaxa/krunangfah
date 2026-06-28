@@ -4,7 +4,6 @@ export type InviteRole = "system_admin" | "school_admin";
 
 export interface SchoolAdminInvite {
     id: string;
-    token: string;
     email: string;
     role: InviteRole;
     usedAt: Date | null;
