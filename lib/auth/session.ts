@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import type { UserRole } from "@/types/auth.types";
 import type { Session } from "next-auth";
 import { redirect } from "next/navigation";

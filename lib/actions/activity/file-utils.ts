@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import { Prisma } from "@prisma/client";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
@@ -31,7 +31,7 @@ import {
     isSupportedWorksheetImageExtension,
 } from "@/lib/utils/server-image-compression";
 import { verifyStudentActivityAccess } from "./access";
-import { acquireRedisLock, releaseRedisLock } from "@/lib/redis-lock";
+import { acquireRedisLock, releaseRedisLock } from "@/lib/cache/redis-lock";
 import { getUploadRequestId } from "@/lib/validations/upload.validation";
 
 const MAX_WORKSHEET_NUMBER_RETRIES = 3;

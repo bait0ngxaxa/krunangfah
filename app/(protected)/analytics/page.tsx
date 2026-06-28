@@ -8,7 +8,7 @@ import {
     getSystemAnalyticsOverview,
 } from "@/lib/actions/analytics/main";
 import { getSchools } from "@/lib/actions/dashboard.actions";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

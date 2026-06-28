@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { NavbarWrapper } from "@/components/layout/NavbarWrapper";
-import { requireAuth } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth/session";
+import { prisma } from "@/lib/database/prisma";
 import { Providers } from "@/components/ui/Providers";
 import { Skeleton } from "@/components/ui/Skeleton";
 

@@ -1,7 +1,7 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { requirePrimaryAdmin, requireAuth } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { requirePrimaryAdmin, requireAuth } from "@/lib/auth/session";
 import { revalidatePath } from "next/cache";
 import type { SchoolAdminItem, PrimaryToggleResponse } from "@/types/primary-admin.types";
 

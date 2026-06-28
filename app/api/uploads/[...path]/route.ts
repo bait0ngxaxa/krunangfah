@@ -4,7 +4,7 @@ import { join, resolve, normalize } from "path";
 import { existsSync } from "fs";
 import { Readable } from "stream";
 import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import { canAccessStudentByRole } from "@/lib/security/student-access";
 import { logError } from "@/lib/utils/logging";
 

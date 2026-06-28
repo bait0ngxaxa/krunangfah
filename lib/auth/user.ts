@@ -2,11 +2,11 @@
  * User management - สร้าง/ค้นหา/จัดการข้อมูลผู้ใช้
  *
  * ฟังก์ชันที่เกี่ยวกับ User record ใน database
- * สำหรับ session/auth ให้ใช้ @/lib/session แทน
+ * สำหรับ session/auth ให้ใช้ @/lib/auth/session แทน
  */
 
 import { hash } from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import { logError } from "@/lib/utils/logging";
 import type {
     ExtendedUser,

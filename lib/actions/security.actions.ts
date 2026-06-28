@@ -7,17 +7,17 @@
 
 import { compare } from "bcryptjs";
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
-import { hashPassword } from "@/lib/user";
+import { prisma } from "@/lib/database/prisma";
+import { requireAuth } from "@/lib/auth/session";
+import { hashPassword } from "@/lib/auth/user";
 import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
 import {
     RATE_LIMIT_PASSWORD_CHANGE,
     RATE_LIMIT_PASSWORD_CHANGE_FLOOD,
 } from "@/lib/constants/rate-limit";
-import { createUserRateLimitKey } from "@/lib/rate-limit-keys";
+import { createUserRateLimitKey } from "@/lib/rate-limit/keys";
 import { passwordChangeSchema } from "@/lib/validations/profile.validation";
-import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
+import { createRateLimitErrorPayload } from "@/lib/rate-limit/errors";
 import { handleActionError } from "./error-handler";
 import type {
     PasswordChangeInput,

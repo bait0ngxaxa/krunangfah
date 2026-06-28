@@ -9,12 +9,12 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { setupAuthMocks, createMockUsers } from "./helpers/auth-mock";
 import { createTestSchool, createTestUser } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import bcrypt from "bcryptjs";
 import {
     generatePasswordResetToken,
     hashPasswordResetToken,
-} from "@/lib/token";
+} from "@/lib/auth/token";
 
 setupAuthMocks();
 

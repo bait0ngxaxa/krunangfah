@@ -2,8 +2,8 @@
 
 import { z } from "zod";
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { requireAuth } from "@/lib/auth/session";
 import {
     getCurrentSessionId,
     revokeOtherUserSessions,

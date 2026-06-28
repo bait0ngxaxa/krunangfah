@@ -1,7 +1,7 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireAuth } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { requireAdmin, requireAuth } from "@/lib/auth/session";
 import type {
     GetUsersOptions,
     UserListResponse,

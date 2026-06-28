@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Gender, StudentStatus } from "@prisma/client";
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {},
 }));
 
@@ -9,7 +9,7 @@ vi.mock("@/lib/auth/viewer-context", () => ({
     getViewerContext: vi.fn(),
 }));
 
-vi.mock("@/lib/session", () => ({
+vi.mock("@/lib/auth/session", () => ({
     isSystemAdmin: vi.fn((role: string) => role === "system_admin"),
 }));
 

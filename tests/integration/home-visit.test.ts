@@ -19,7 +19,7 @@ import {
     createTestAcademicYear,
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 
 setupAuthMocks();
 

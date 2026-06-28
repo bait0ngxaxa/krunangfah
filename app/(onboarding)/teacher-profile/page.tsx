@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { GraduationCap } from "lucide-react";
 import { TeacherProfileForm } from "@/components/teacher/forms/TeacherProfileForm/TeacherProfileForm";
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
-import { requireAuth } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth/session";
+import { prisma } from "@/lib/database/prisma";
 import { getTeacherProfile } from "@/lib/actions/teacher.actions";
 import type { Metadata } from "next";
 

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
+import { getServerSession } from "@/lib/auth/session";
+import { prisma } from "@/lib/database/prisma";
 import { SchoolSetupWizard } from "@/components/school/setup/SchoolSetupWizard";
 import { School } from "lucide-react";
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";

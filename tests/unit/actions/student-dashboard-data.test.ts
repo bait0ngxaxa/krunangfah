@@ -4,7 +4,7 @@ vi.mock("@/lib/auth/viewer-context", () => ({
     getViewerContext: vi.fn(),
 }));
 
-vi.mock("@/lib/session", () => ({
+vi.mock("@/lib/auth/session", () => ({
     isSystemAdmin: vi.fn((role: string) => role === "system_admin"),
 }));
 

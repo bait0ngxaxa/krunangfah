@@ -39,7 +39,7 @@ describe("lib/email", () => {
     // Configuration guard
     // -----------------------------------------------------------------------
     it("throws when RESEND_API_KEY is missing", async () => {
-        const { sendPasswordResetEmail } = await import("@/lib/email");
+        const { sendPasswordResetEmail } = await import("@/lib/notifications/email");
 
         await expect(
             sendPasswordResetEmail("user@test.local", "token-1"),
@@ -58,7 +58,7 @@ describe("lib/email", () => {
 
         mocks.send.mockResolvedValue({ data: { id: "email-1" }, error: null });
 
-        const { sendPasswordResetEmail } = await import("@/lib/email");
+        const { sendPasswordResetEmail } = await import("@/lib/notifications/email");
 
         await sendPasswordResetEmail("user@test.local", "token-123");
 
@@ -90,7 +90,7 @@ describe("lib/email", () => {
             error: { name: "validation_error", message: "invalid email" },
         });
 
-        const { sendPasswordResetEmail } = await import("@/lib/email");
+        const { sendPasswordResetEmail } = await import("@/lib/notifications/email");
 
         await expect(
             sendPasswordResetEmail("bad-email", "token-fail"),
@@ -113,7 +113,7 @@ describe("lib/email", () => {
             })
             .mockResolvedValueOnce({ data: { id: "email-ok" }, error: null });
 
-        const { sendPasswordResetEmail } = await import("@/lib/email");
+        const { sendPasswordResetEmail } = await import("@/lib/notifications/email");
 
         // Run the call while advancing fake timers concurrently
         const promise = sendPasswordResetEmail("user@test.local", "tok");
@@ -134,7 +134,7 @@ describe("lib/email", () => {
             error: { name: "internal_server_error", message: "server blew up" },
         });
 
-        const { sendPasswordResetEmail } = await import("@/lib/email");
+        const { sendPasswordResetEmail } = await import("@/lib/notifications/email");
 
         // Attach rejection handler BEFORE running timers to avoid unhandled rejection
         const assertion = expect(
@@ -157,7 +157,7 @@ describe("lib/email", () => {
 
         mocks.send.mockResolvedValue({ data: { id: "x" }, error: null });
 
-        const { sendPasswordResetEmail } = await import("@/lib/email");
+        const { sendPasswordResetEmail } = await import("@/lib/notifications/email");
 
         await sendPasswordResetEmail("first@test.local", "a");
         await sendPasswordResetEmail("second@test.local", "b");

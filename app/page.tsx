@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
-import { getServerSession } from "@/lib/session";
+import { getServerSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 

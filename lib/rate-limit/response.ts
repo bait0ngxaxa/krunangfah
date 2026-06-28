@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { RateLimitResult } from "@/types/rate-limit.types";
-import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
+import { createRateLimitErrorPayload } from "@/lib/rate-limit/errors";
 
 export function createRateLimitApiResponse(result: RateLimitResult): NextResponse {
     const error = createRateLimitErrorPayload(result);

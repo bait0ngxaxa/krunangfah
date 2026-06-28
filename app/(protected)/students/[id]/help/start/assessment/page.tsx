@@ -2,7 +2,7 @@ import { getStudentDetail } from "@/lib/actions/student/main";
 import { getActivityProgress } from "@/lib/actions/activity";
 import { redirect, notFound } from "next/navigation";
 import { TeacherAssessmentForm } from "@/components/activity/TeacherAssessmentForm";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { ACTIVITIES } from "@/lib/config/help-page-config";
 import { getWorksheetActivityIndices } from "@/components/activity/ActivityWorkspace/constants";
 import {

@@ -1,7 +1,7 @@
 /**
  * Auth Mock Helper for Integration Tests
  *
- * Mocks @/lib/auth/auth and @/lib/session to simulate different user sessions.
+ * Mocks @/lib/auth/auth and @/lib/auth/session to simulate different user sessions.
  * Each test file should call createMockUsers() to get unique user IDs.
  */
 
@@ -35,7 +35,7 @@ vi.mock("@/lib/auth/auth", () => ({
     auth: vi.fn(() => Promise.resolve(getMockSession())),
 }));
 
-vi.mock("@/lib/session", () => ({
+vi.mock("@/lib/auth/session", () => ({
     getServerSession: vi.fn(() => Promise.resolve(getMockSession())),
     requireAuth: vi.fn(async () => {
         const session = getMockSession();

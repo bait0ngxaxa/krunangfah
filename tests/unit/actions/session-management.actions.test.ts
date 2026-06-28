@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { requireAuth } from "@/lib/auth/session";
 import {
     getCurrentSessionId,
     revokeOtherUserSessions,
@@ -28,7 +28,7 @@ vi.mock("next/headers", () => ({
     headers: mocks.headers,
 }));
 
-vi.mock("@/lib/session", () => ({
+vi.mock("@/lib/auth/session", () => ({
     requireAuth: mocks.requireAuth,
 }));
 
@@ -39,7 +39,7 @@ vi.mock("@/lib/auth/session-store", () => ({
     updateCurrentSessionMetadata: mocks.updateCurrentSessionMetadata,
 }));
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         userSession: {
             findMany: mocks.userSessionFindMany,

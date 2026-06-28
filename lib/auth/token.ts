@@ -6,7 +6,7 @@
  */
 
 import crypto from "crypto";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 /** Token lifetime: 1 hour */

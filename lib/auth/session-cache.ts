@@ -1,5 +1,5 @@
 import type { ExtendedUser } from "@/types/auth.types";
-import { getRedisClient } from "@/lib/redis";
+import { getRedisClient } from "@/lib/cache/redis";
 import { logError } from "@/lib/utils/logging";
 
 const SESSION_CACHE_PREFIX = "session";

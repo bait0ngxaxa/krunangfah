@@ -5,7 +5,7 @@ import { RATE_LIMIT_AUTH_GENERAL } from "@/lib/constants/rate-limit";
 import {
     attachRateLimitHeaders,
     createRateLimitApiResponse,
-} from "@/lib/rate-limit-response";
+} from "@/lib/rate-limit/response";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/session-store";
 
 // Rate limiter singletons (persist across requests)

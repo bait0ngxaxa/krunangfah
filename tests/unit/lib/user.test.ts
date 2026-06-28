@@ -4,7 +4,7 @@ vi.mock("bcryptjs", () => ({
     hash: vi.fn(),
 }));
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         user: {
             findUnique: vi.fn(),
@@ -17,8 +17,8 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { hash } from "bcryptjs";
-import { prisma } from "@/lib/prisma";
-import { createUser, getUserById, hashPassword } from "@/lib/user";
+import { prisma } from "@/lib/database/prisma";
+import { createUser, getUserById, hashPassword } from "@/lib/auth/user";
 
 describe("lib/user", () => {
     beforeEach(() => {

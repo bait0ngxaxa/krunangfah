@@ -21,7 +21,7 @@ vi.mock("@/lib/auth/auth", () => ({
     auth: mocks.auth,
 }));
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         activityProgress: {
             findUnique: mocks.activityProgressFindUnique,
@@ -54,7 +54,7 @@ vi.mock("@/lib/actions/activity/access", () => ({
     verifyStudentActivityAccess: mocks.verifyStudentActivityAccess,
 }));
 
-vi.mock("@/lib/redis-lock", () => ({
+vi.mock("@/lib/cache/redis-lock", () => ({
     acquireRedisLock: mocks.acquireRedisLock,
     releaseRedisLock: mocks.releaseRedisLock,
 }));

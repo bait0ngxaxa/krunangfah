@@ -3,7 +3,7 @@ import { createHash, randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 import type { Session } from "next-auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import {
     createRateLimiter,
     extractClientIp,
@@ -17,8 +17,8 @@ import {
     createRateLimitMessage,
     encodeNextAuthRateLimitCode,
     pickRateLimitResult,
-} from "@/lib/rate-limit-errors";
-import { createEmailRateLimitKey } from "@/lib/rate-limit-keys";
+} from "@/lib/rate-limit/errors";
+import { createEmailRateLimitKey } from "@/lib/rate-limit/keys";
 import { signInSchema } from "@/lib/validations/auth.validation";
 import { logError } from "@/lib/utils/logging";
 import {

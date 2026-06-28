@@ -1,8 +1,8 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import { ActivityStatus, Prisma } from "@prisma/client";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { calculateRiskLevel } from "@/lib/utils/phq-scoring";
 import type { RiskLevel } from "@/lib/constants/risk-levels";
@@ -26,7 +26,7 @@ import {
     clearIdempotentOperation,
     completeIdempotentOperation,
     startIdempotentOperation,
-} from "@/lib/redis-idempotency";
+} from "@/lib/cache/redis-idempotency";
 import {
     createImportIdempotencyKey,
     isImportResult,

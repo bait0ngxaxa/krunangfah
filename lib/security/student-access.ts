@@ -1,5 +1,5 @@
 import type { UserRole } from "@/types/auth.types";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import {
     canStudentPerformActions,
     getStudentActionBlockedMessage,

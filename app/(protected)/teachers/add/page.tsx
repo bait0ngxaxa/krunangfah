@@ -1,7 +1,7 @@
 import { UserPlus } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
 import { getCurrentAcademicYearTerms } from "@/lib/actions/academic-year.actions";
 import { getSchoolRoster } from "@/lib/actions/teacher-roster.actions";

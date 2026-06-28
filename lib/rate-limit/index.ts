@@ -120,7 +120,7 @@ export function createRateLimiter(config: RateLimitConfig): RateLimiter {
             return redisLimiterPromise;
         }
 
-        redisLimiterPromise = import("@/lib/rate-limit-redis").then(
+        redisLimiterPromise = import("@/lib/rate-limit/redis").then(
             ({ createRedisRateLimiter }) => createRedisRateLimiter(config),
         );
 

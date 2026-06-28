@@ -1,7 +1,7 @@
 import { UsersRound } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { getUsers } from "@/lib/actions/user-management.actions";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { UserManagement } from "@/components/admin/users/UserManagement";

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
-import { getServerSession } from "@/lib/session";
+import { getServerSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { AUTH_CARD_CLASS, AUTH_HOME_LINK_CLASS } from "@/components/auth/authStyles";
 

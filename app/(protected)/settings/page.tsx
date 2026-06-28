@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { SecuritySettingsForm } from "@/components/settings/SecuritySettingsForm/SecuritySettingsForm";
 import { SessionManagementPanel } from "@/components/settings/SessionManagementPanel";
 import { listMySessions } from "@/lib/actions/session-management.actions";

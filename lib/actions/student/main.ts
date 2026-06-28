@@ -5,8 +5,8 @@
 
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { isSystemAdmin } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { isSystemAdmin } from "@/lib/auth/session";
 import { unstable_cache } from "next/cache";
 import { getViewerContext } from "@/lib/auth/viewer-context";
 import {

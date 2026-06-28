@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import {
     Users,
     School,

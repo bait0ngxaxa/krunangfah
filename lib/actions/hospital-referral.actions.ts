@@ -10,9 +10,9 @@
 
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { updateHospitalReferralSchema } from "@/lib/validations/hospital-referral.validation";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";

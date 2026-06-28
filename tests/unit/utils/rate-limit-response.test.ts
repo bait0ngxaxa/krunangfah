@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import {
     attachRateLimitHeaders,
     createRateLimitApiResponse,
-} from "@/lib/rate-limit-response";
+} from "@/lib/rate-limit/response";
 import type { RateLimitResult } from "@/types/rate-limit.types";
 
 function blockedResult(): RateLimitResult {

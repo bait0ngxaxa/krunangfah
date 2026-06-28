@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 

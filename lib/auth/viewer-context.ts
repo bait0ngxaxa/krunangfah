@@ -1,7 +1,7 @@
 import { cache } from "react";
 
-import { prisma } from "@/lib/prisma";
-import { isSystemAdmin, requireAuth } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { isSystemAdmin, requireAuth } from "@/lib/auth/session";
 import type { UserRole } from "@/types/auth.types";
 
 export interface SessionUserContext {

@@ -8,13 +8,13 @@
 "use server";
 
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
-import { hashPassword } from "@/lib/user";
+import { prisma } from "@/lib/database/prisma";
+import { hashPassword } from "@/lib/auth/user";
 import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
 import {
     createEmailRateLimitKey,
     createTokenRateLimitKey,
-} from "@/lib/rate-limit-keys";
+} from "@/lib/rate-limit/keys";
 import {
     RATE_LIMIT_FORGOT_PASSWORD,
     RATE_LIMIT_PASSWORD_RESET_SUBMIT,
@@ -22,14 +22,14 @@ import {
 import {
     generatePasswordResetToken,
     hashPasswordResetToken,
-} from "@/lib/token";
-import { sendPasswordResetEmail } from "@/lib/email";
+} from "@/lib/auth/token";
+import { sendPasswordResetEmail } from "@/lib/notifications/email";
 import { logError } from "@/lib/utils/logging";
 import {
     forgotPasswordSchema,
     resetPasswordSchema,
 } from "@/lib/validations/auth.validation";
-import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
+import { createRateLimitErrorPayload } from "@/lib/rate-limit/errors";
 import type { RateLimitErrorPayload } from "@/types/rate-limit.types";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 

@@ -1,7 +1,7 @@
 "use server";
 
-import { requireAuth } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth/session";
+import { prisma } from "@/lib/database/prisma";
 import { ActivityStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 import { getActivityIndices } from "./constants";

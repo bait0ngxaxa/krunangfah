@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
     logError: vi.fn(),
 }));
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         academicYear: {
             findMany: mocks.findMany,
@@ -25,7 +25,7 @@ vi.mock("@/lib/prisma", () => ({
     },
 }));
 
-vi.mock("@/lib/session", () => ({
+vi.mock("@/lib/auth/session", () => ({
     requireAuth: mocks.requireAuth,
 }));
 

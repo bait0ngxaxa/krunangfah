@@ -15,7 +15,7 @@ import {
     type InviteRegisterFormData,
 } from "@/lib/validations/auth.validation";
 import { acceptSchoolAdminInvite } from "@/lib/actions/school-admin-invite.actions";
-import { getRateLimitMessageFromNextAuthCode } from "@/lib/rate-limit-errors";
+import { getRateLimitMessageFromNextAuthCode } from "@/lib/rate-limit/errors";
 
 interface InviteRegisterFormProps {
     token: string;

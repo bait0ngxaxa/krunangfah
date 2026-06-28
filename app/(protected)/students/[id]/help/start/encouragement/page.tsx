@@ -1,7 +1,7 @@
 import { getStudentDetail } from "@/lib/actions/student/main";
 import { redirect, notFound } from "next/navigation";
 import { EncouragementPage } from "@/components/activity/EncouragementPage";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { studentHelpRoute, studentRoute } from "@/lib/constants/student-routes";
 import {
     getLatestPhqResult,

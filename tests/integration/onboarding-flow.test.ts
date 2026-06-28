@@ -19,7 +19,7 @@ import {
     mockUnauthenticated,
     createMockUsers,
 } from "./helpers/auth-mock";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 
 // ── Setup mocks BEFORE dynamic imports ──
 setupAuthMocks();

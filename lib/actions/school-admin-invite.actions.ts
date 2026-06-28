@@ -1,9 +1,9 @@
 "use server";
 
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/session";
-import { hashPassword } from "@/lib/user";
+import { prisma } from "@/lib/database/prisma";
+import { requireAdmin } from "@/lib/auth/session";
+import { hashPassword } from "@/lib/auth/user";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { z } from "zod";
@@ -12,7 +12,7 @@ import {
     inviteRoleSchema,
 } from "@/lib/validations/auth.validation";
 import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
-import { createTokenRateLimitKey } from "@/lib/rate-limit-keys";
+import { createTokenRateLimitKey } from "@/lib/rate-limit/keys";
 import { RATE_LIMIT_AUTH_SIGNIN } from "@/lib/constants/rate-limit";
 import type {
     SchoolAdminInvite,
@@ -20,7 +20,7 @@ import type {
     InviteRole,
 } from "@/types/school-admin-invite.types";
 import type { AuthResponse } from "@/types/auth.types";
-import { createRateLimitErrorPayload } from "@/lib/rate-limit-errors";
+import { createRateLimitErrorPayload } from "@/lib/rate-limit/errors";
 import { handleActionError } from "./error-handler";
 
 const INVITES_PATH = "/admin/invites";

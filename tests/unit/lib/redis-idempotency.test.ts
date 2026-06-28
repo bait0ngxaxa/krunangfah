@@ -3,7 +3,7 @@ import {
     clearIdempotentOperation,
     completeIdempotentOperation,
     startIdempotentOperation,
-} from "@/lib/redis-idempotency";
+} from "@/lib/cache/redis-idempotency";
 
 const mocks = vi.hoisted(() => ({
     getRedisClient: vi.fn(),
@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
     del: vi.fn(),
 }));
 
-vi.mock("@/lib/redis", () => ({
+vi.mock("@/lib/cache/redis", () => ({
     getRedisClient: mocks.getRedisClient,
 }));
 

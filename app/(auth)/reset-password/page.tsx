@@ -5,7 +5,7 @@ import Image from "next/image";
 import { AlertTriangle } from "lucide-react";
 import type { Metadata } from "next";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
-import { getServerSession } from "@/lib/session";
+import { getServerSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { AUTH_CARD_CLASS, AUTH_HOME_LINK_CLASS, AUTH_TEXT_LINK_CLASS } from "@/components/auth/authStyles";
 

@@ -1,8 +1,8 @@
 "use server";
 
 import type { UserRole, ProjectRole } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { requireAuth, requirePrimaryAdmin } from "@/lib/auth/session";
 import { handleActionError } from "./error-handler";
 import {
     teacherRosterSchema,

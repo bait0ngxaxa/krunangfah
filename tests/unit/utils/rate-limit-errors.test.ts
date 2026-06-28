@@ -6,7 +6,7 @@ import {
     getRateLimitMessageFromNextAuthCode,
     parseNextAuthRateLimitCode,
     pickRateLimitResult,
-} from "@/lib/rate-limit-errors";
+} from "@/lib/rate-limit/errors";
 import type { RateLimitResult } from "@/types/rate-limit.types";
 
 const baseResult: RateLimitResult = {

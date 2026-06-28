@@ -10,7 +10,7 @@ import { NextRequest } from "next/server";
 import { join } from "path";
 import { mkdir, writeFile, unlink } from "fs/promises";
 import { existsSync } from "fs";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import {
     createMockUsers,
     mockSession,

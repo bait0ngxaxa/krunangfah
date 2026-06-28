@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { NavbarGreenBar } from "@/components/layout/NavbarGreenBar";
 import { Providers } from "@/components/ui/Providers";

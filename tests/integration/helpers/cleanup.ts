@@ -5,7 +5,7 @@
  * Follows FK order: children first, then parents.
  */
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import { getCreatedIds } from "./seed";
 
 /**

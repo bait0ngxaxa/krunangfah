@@ -23,11 +23,11 @@ const prismaMock = vi.hoisted(() => ({
     },
 }));
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: prismaMock,
 }));
 
-vi.mock("@/lib/session", () => ({
+vi.mock("@/lib/auth/session", () => ({
     requireAuth: vi.fn(),
 }));
 
@@ -48,7 +48,7 @@ vi.mock("@/lib/actions/school-setup.actions", () => ({
     ensureSchoolClassTermsForAcademicYear: vi.fn(),
 }));
 
-vi.mock("@/lib/redis-idempotency", () => ({
+vi.mock("@/lib/cache/redis-idempotency", () => ({
     clearIdempotentOperation: vi.fn(),
     completeIdempotentOperation: vi.fn(),
     startIdempotentOperation: vi.fn(),
@@ -58,7 +58,7 @@ vi.mock("@/lib/utils/logging", () => ({
     logError: vi.fn(),
 }));
 
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import { updateStudentProfile } from "@/lib/actions/student/mutations";
 

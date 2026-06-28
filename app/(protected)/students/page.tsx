@@ -3,7 +3,7 @@ import { FileUp, ClipboardList, Users } from "lucide-react";
 import { getStudentDashboardData } from "@/lib/actions/student/dashboard";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { getReferredOutStudents } from "@/lib/actions/referral.actions";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { StudentDashboard } from "@/components/student/dashboard/StudentDashboard";
 import { StudentDashboardSkeleton } from "@/components/student/dashboard/StudentDashboardSkeleton";
 import { shouldShowStudentsImportEmptyState } from "@/components/student/dashboard/page-state";

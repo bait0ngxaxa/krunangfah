@@ -12,7 +12,7 @@ vi.mock("@/lib/exports/named-submission/service", () => ({
     createNamedSubmissionExport: mocks.createNamedSubmissionExport,
 }));
 
-vi.mock("@/lib/session", () => ({
+vi.mock("@/lib/auth/session", () => ({
     requireAdmin: mocks.requireAdmin,
     requirePrimaryAdmin: mocks.requirePrimaryAdmin,
 }));

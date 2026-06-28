@@ -12,11 +12,11 @@ const mocks = vi.hoisted(() => ({
     clearIdempotentOperation: vi.fn(),
 }));
 
-vi.mock("@/lib/session", () => ({
+vi.mock("@/lib/auth/session", () => ({
     requireAuth: mocks.requireAuth,
 }));
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         user: {
             findUnique: mocks.userFindUnique,
@@ -36,7 +36,7 @@ vi.mock("@/lib/actions/school-setup.actions", () => ({
         mocks.ensureSchoolClassTermsForAcademicYear,
 }));
 
-vi.mock("@/lib/redis-idempotency", () => ({
+vi.mock("@/lib/cache/redis-idempotency", () => ({
     startIdempotentOperation: mocks.startIdempotentOperation,
     completeIdempotentOperation: mocks.completeIdempotentOperation,
     clearIdempotentOperation: mocks.clearIdempotentOperation,

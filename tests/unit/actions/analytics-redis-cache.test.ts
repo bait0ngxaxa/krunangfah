@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => ({
     incr: vi.fn(),
 }));
 
-vi.mock("@/lib/redis", () => ({
+vi.mock("@/lib/cache/redis", () => ({
     getRedisClient: mocks.getRedisClient,
 }));
 

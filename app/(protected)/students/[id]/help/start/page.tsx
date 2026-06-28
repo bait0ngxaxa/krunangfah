@@ -6,7 +6,7 @@ import {
 import { redirect, notFound } from "next/navigation";
 import { ActivityWorkspace } from "@/components/activity/ActivityWorkspace/ActivityWorkspace";
 import { ActivitySequenceComplete } from "@/components/activity/ActivitySequenceComplete";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import {
     studentHelpRoute,
     studentRoute,

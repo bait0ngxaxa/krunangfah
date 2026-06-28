@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { compare } from "bcryptjs";
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import {
     getRequestSession,
     revokeOtherUserSessions,
@@ -48,7 +48,7 @@ vi.mock("@/lib/rate-limit", () => ({
     extractRateLimitKey: vi.fn(() => "203.0.113.42"),
 }));
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         user: {
             findUnique: mocks.userFindUnique,

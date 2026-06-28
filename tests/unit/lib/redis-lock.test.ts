@@ -3,7 +3,7 @@ import {
     acquireRedisLock,
     releaseRedisLock,
     type RedisLock,
-} from "@/lib/redis-lock";
+} from "@/lib/cache/redis-lock";
 
 const mocks = vi.hoisted(() => ({
     getRedisClient: vi.fn(),
@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
     eval: vi.fn(),
 }));
 
-vi.mock("@/lib/redis", () => ({
+vi.mock("@/lib/cache/redis", () => ({
     getRedisClient: mocks.getRedisClient,
 }));
 

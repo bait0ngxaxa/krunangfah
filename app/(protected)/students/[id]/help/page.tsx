@@ -4,7 +4,7 @@ import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { getColorConfig, getActivities } from "@/lib/config/help-page-config";
 import { ConversationView } from "@/components/student/help/ConversationView";
 import { ActivityView } from "@/components/student/help/ActivityView";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { studentRoute } from "@/lib/constants/student-routes";
 import {
     getLatestPhqResult,

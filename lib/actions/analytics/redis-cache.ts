@@ -1,4 +1,4 @@
-import { getRedisClient } from "@/lib/redis";
+import { getRedisClient } from "@/lib/cache/redis";
 import { logError } from "@/lib/utils/logging";
 import type { AnalyticsData, SystemAnalyticsOverview } from "./types";
 import {

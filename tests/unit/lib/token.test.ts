@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import crypto from "crypto";
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         $transaction: vi.fn(),
         passwordResetToken: {
@@ -12,12 +12,12 @@ vi.mock("@/lib/prisma", () => ({
     },
 }));
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import {
     generatePasswordResetToken,
     hashPasswordResetToken,
     verifyPasswordResetToken,
-} from "@/lib/token";
+} from "@/lib/auth/token";
 
 describe("lib/token", () => {
     beforeEach(() => {

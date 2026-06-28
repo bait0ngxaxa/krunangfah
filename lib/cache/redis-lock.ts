@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { getRedisClient } from "@/lib/redis";
+import { getRedisClient } from "@/lib/cache/redis";
 import { logError } from "@/lib/utils/logging";
 
 const RELEASE_LOCK_SCRIPT = `

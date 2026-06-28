@@ -5,7 +5,7 @@ vi.mock("@/lib/auth/auth", () => ({
     auth: vi.fn(),
 }));
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         user: {
             findUnique: vi.fn(),
@@ -14,8 +14,8 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireAuth, requirePrimaryAdmin } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { requireAdmin, requireAuth, requirePrimaryAdmin } from "@/lib/auth/session";
 
 // Cast to simple async fn to avoid NextAuth's complex overloaded signatures
 const mockAuth = vi.mocked(auth) as unknown as ReturnType<typeof vi.fn<() => Promise<Session | null>>>;

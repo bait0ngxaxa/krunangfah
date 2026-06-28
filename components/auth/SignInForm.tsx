@@ -12,7 +12,7 @@ import {
     signInSchema,
     type SignInFormData,
 } from "@/lib/validations/auth.validation";
-import { getRateLimitMessageFromNextAuthCode } from "@/lib/rate-limit-errors";
+import { getRateLimitMessageFromNextAuthCode } from "@/lib/rate-limit/errors";
 import {
     AUTH_INPUT_CLASS,
     AUTH_PRIMARY_BUTTON_CLASS,

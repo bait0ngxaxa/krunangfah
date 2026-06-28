@@ -8,9 +8,9 @@ import {
     getTeacherInvite,
     getMyTeacherInvites,
 } from "@/lib/actions/teacher-invite/queries";
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
-import { hashPassword } from "@/lib/user";
+import { prisma } from "@/lib/database/prisma";
+import { requireAuth } from "@/lib/auth/session";
+import { hashPassword } from "@/lib/auth/user";
 import { revalidatePath } from "next/cache";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
 
@@ -30,7 +30,7 @@ const prismaMocks = vi.hoisted(() => ({
 }));
 
 // Mock external dependencies
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         user: {
             findUnique: prismaMocks.mockUserFindUnique,
@@ -73,11 +73,11 @@ vi.mock("@/lib/prisma", () => ({
     },
 }));
 
-vi.mock("@/lib/session", () => ({
+vi.mock("@/lib/auth/session", () => ({
     requireAuth: vi.fn(),
 }));
 
-vi.mock("@/lib/user", () => ({
+vi.mock("@/lib/auth/user", () => ({
     hashPassword: vi.fn(),
 }));
 

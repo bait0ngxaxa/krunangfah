@@ -1,8 +1,8 @@
 "use server";
 
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, requirePrimaryAdmin } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { requireAuth, requirePrimaryAdmin } from "@/lib/auth/session";
 import { revalidatePath } from "next/cache";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";

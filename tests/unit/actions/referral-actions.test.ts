@@ -4,7 +4,7 @@ import {
     getTeachersForReferral,
 } from "@/lib/actions/referral.actions";
 
-vi.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         student: {
             findUnique: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock("@/lib/prisma", () => ({
     },
 }));
 
-vi.mock("@/lib/session", () => ({
+vi.mock("@/lib/auth/session", () => ({
     isSystemAdmin: vi.fn((role: string) => role === "system_admin"),
     requireAuth: vi.fn(),
 }));
@@ -36,8 +36,8 @@ vi.mock("@/lib/actions/error-handler", () => ({
     handleActionError: vi.fn(({ fallback }) => fallback),
 }));
 
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { requireAuth } from "@/lib/auth/session";
 
 const validStudentId = "cmaaaaaaa0000000000000001";
 const validSchoolAdminUserId = "cmaaaaaaa0000000000000002";

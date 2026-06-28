@@ -11,7 +11,7 @@
 "use server";
 
 import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
@@ -31,7 +31,7 @@ import {
     isSupportedWorksheetImageExtension,
 } from "@/lib/utils/server-image-compression";
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
-import { acquireRedisLock, releaseRedisLock } from "@/lib/redis-lock";
+import { acquireRedisLock, releaseRedisLock } from "@/lib/cache/redis-lock";
 import { getUploadRequestId } from "@/lib/validations/upload.validation";
 
 /** Allowed image extensions for home visit photos */

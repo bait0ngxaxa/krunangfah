@@ -14,7 +14,7 @@ import { getStudentDetail } from "@/lib/actions/student/main";
 import { getColorConfig } from "@/lib/config/help-page-config";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { HelpPageHeader } from "@/components/student/help/HelpPageHeader";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import {
     studentHelpRoute,
     studentHelpStartRoute,

@@ -34,7 +34,7 @@ const PHQTrendChart = dynamic(
 );
 import { getCounselingSessions } from "@/lib/actions/counseling.actions";
 import { getHomeVisits } from "@/lib/actions/home-visit.actions";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import { Tabs } from "@/components/ui/Tabs";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import type { OffsetPagination } from "@/types/pagination.types";

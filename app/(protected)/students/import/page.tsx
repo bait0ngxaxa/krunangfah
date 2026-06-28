@@ -1,7 +1,7 @@
 import { FileUp } from "lucide-react";
 import { PageBanner } from "@/components/ui/PageBanner";
 import { ImportClient } from "@/components/student/import/ImportClient";
-import { requireAuth } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/session";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

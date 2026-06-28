@@ -5,7 +5,7 @@
  * Uses Prisma's auto-generated CUIDs (important: Zod validates .cuid())
  */
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import type { MockUser } from "./auth-mock";
 
 // Track created IDs for cleanup

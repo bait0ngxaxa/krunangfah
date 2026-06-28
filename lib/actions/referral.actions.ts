@@ -10,8 +10,8 @@
 
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isSystemAdmin } from "@/lib/session";
+import { prisma } from "@/lib/database/prisma";
+import { requireAuth, isSystemAdmin } from "@/lib/auth/session";
 import { handleActionError } from "./error-handler";
 import { revalidateStudentsCache } from "./student/cache";
 import {

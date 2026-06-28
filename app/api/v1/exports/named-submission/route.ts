@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createNamedSubmissionExport } from "@/lib/exports/named-submission/service";
 import { parseNamedSubmissionFilters } from "@/lib/exports/named-submission/validation";
-import { requireAdmin, requirePrimaryAdmin } from "@/lib/session";
+import { requireAdmin, requirePrimaryAdmin } from "@/lib/auth/session";
 import { logError } from "@/lib/utils/logging";
 import type { NamedSubmissionFilters } from "@/lib/exports/named-submission/types";
 

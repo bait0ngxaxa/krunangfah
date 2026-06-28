@@ -1,7 +1,7 @@
 "use server";
 
 import { getViewerContext } from "@/lib/auth/viewer-context";
-import { isSystemAdmin } from "@/lib/session";
+import { isSystemAdmin } from "@/lib/auth/session";
 import { handleActionError } from "@/lib/actions/error-handler";
 import { isRiskLevel } from "@/lib/constants/risk-levels";
 import {

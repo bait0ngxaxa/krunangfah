@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/database/prisma";
 import { REQUIRED_ACTIVITY_NUMBERS_BY_RISK } from "./constants";
 
 // ========================================
