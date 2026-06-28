@@ -4,8 +4,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import { hashPassword } from "@/lib/auth/user";
+import { generateInviteToken, hashToken } from "@/lib/auth/token";
 import { revalidatePath } from "next/cache";
-import { randomBytes } from "crypto";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
 import { teacherInviteSchema } from "@/lib/validations/teacher-invite.validation";
@@ -59,7 +59,8 @@ export async function createTeacherInvite(
         const schoolId = user.schoolId;
 
         // Token is single-use and must be unguessable.
-        const token = randomBytes(32).toString("hex");
+        const token = generateInviteToken();
+        const tokenHash = hashToken(token);
 
         // Invite expires in 7 days.
         const invite = await runSerializableTransaction(async (tx) => {
@@ -97,7 +98,7 @@ export async function createTeacherInvite(
             expiresAt.setDate(expiresAt.getDate() + 7);
 
             const inviteData = {
-                token,
+                token: tokenHash,
                 email: data.email,
                 firstName: data.firstName,
                 lastName: data.lastName,
@@ -129,7 +130,7 @@ export async function createTeacherInvite(
             return {
                 success: true,
                 message: "สร้างคำเชิญสำเร็จ",
-                invite: persistedInvite,
+                invite: { ...persistedInvite, token: "" },
                 inviteLink: process.env.NEXTAUTH_URL
                     ? `${process.env.NEXTAUTH_URL}/invite/${token}`
                     : `/invite/${token}`,
@@ -174,11 +175,12 @@ export async function acceptTeacherInvite(
     try {
         // Password is stored hashed only.
         const hashedPassword = await hashPassword(password);
+        const tokenHash = hashToken(token);
 
         return await runSerializableTransaction(async (tx) => {
             const claimResult = await tx.teacherInvite.updateMany({
                 where: {
-                    token,
+                    token: tokenHash,
                     acceptedAt: null,
                     expiresAt: { gt: new Date() },
                 },
@@ -187,7 +189,7 @@ export async function acceptTeacherInvite(
 
             if (claimResult.count === 0) {
                 const inviteState = await tx.teacherInvite.findUnique({
-                    where: { token },
+                    where: { token: tokenHash },
                     select: {
                         id: true,
                         acceptedAt: true,
@@ -207,7 +209,7 @@ export async function acceptTeacherInvite(
             }
 
             const invite = await tx.teacherInvite.findUnique({
-                where: { token },
+                where: { token: tokenHash },
             });
 
             if (!invite) {

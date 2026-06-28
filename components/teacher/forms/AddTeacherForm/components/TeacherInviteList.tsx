@@ -44,7 +44,9 @@ function InviteCard({
         completedStatus: "accepted",
     });
 
-    async function handleCopy() {
+    async function handleCopy(): Promise<void> {
+        if (!invite.token) return;
+
         try {
             await navigator.clipboard.writeText(
                 buildInviteUrl(`/invite/${invite.token}`),
@@ -107,6 +109,7 @@ function InviteCard({
                             onConfirmRevoke={handleConfirmRevoke}
                             revokeDialogTitle="ยกเลิกคำเชิญ"
                             revokeDialogMessage={`ต้องการยกเลิกคำเชิญของ "${invite.firstName} ${invite.lastName}" ใช่หรือไม่?`}
+                            showCopyButton={invite.token.length > 0}
                         />
                     )}
                 </div>

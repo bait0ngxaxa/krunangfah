@@ -18,6 +18,7 @@ import {
 import { createTestSchool, createTestUser } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
+import { hashToken } from "@/lib/auth/token";
 
 setupAuthMocks();
 
@@ -67,9 +68,10 @@ describe("Integration: School Admin Invite Flow", () => {
         expect(token.length).toBeGreaterThan(0);
 
         const dbInvite = await prisma.schoolAdminInvite.findUnique({
-            where: { token },
+            where: { token: hashToken(token) },
         });
         expect(dbInvite).not.toBeNull();
+        expect(dbInvite?.token).not.toBe(token);
         expect(dbInvite?.email).toBe(email);
         expect(dbInvite?.usedAt).toBeNull();
         expect(dbInvite?.role).toBe("school_admin");
@@ -94,7 +96,7 @@ describe("Integration: School Admin Invite Flow", () => {
         expect(createdUser?.isPrimary).toBe(true);
 
         const usedInvite = await prisma.schoolAdminInvite.findUnique({
-            where: { token },
+            where: { token: hashToken(token) },
             select: { usedAt: true },
         });
         expect(usedInvite?.usedAt).not.toBeNull();
@@ -112,7 +114,7 @@ describe("Integration: School Admin Invite Flow", () => {
         const token = `expired-token-${Date.now()}`;
         await prisma.schoolAdminInvite.create({
             data: {
-                token,
+                token: hashToken(token),
                 email,
                 role: "school_admin",
                 expiresAt: new Date(Date.now() - 60_000),

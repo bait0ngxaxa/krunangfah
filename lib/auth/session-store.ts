@@ -22,9 +22,11 @@ import { createEmailRateLimitKey } from "@/lib/rate-limit/keys";
 import { signInSchema } from "@/lib/validations/auth.validation";
 import { logError } from "@/lib/utils/logging";
 import {
+    bumpUserSessionVersion,
     deleteCachedSession,
     deleteUserSessionCaches,
     getCachedSession,
+    getUserSessionVersion,
     setCachedSession,
     type CachedSessionPayload,
 } from "@/lib/auth/session-cache";
@@ -184,6 +186,7 @@ function toExtendedUser(user: {
 function createSessionPayload(
     session: DbSessionWithUser,
     now: Date,
+    sessionVersion: number,
 ): CachedSessionPayload {
     return {
         sessionId: session.id,
@@ -192,8 +195,10 @@ function createSessionPayload(
             role: session.user.role as UserRole,
         }),
         expiresAt: session.expiresAt.toISOString(),
+        revokedAt: session.revokedAt?.toISOString() ?? null,
         lastActivityAt: now.toISOString(),
         activityPersistedAt: now.toISOString(),
+        sessionVersion,
     };
 }
 
@@ -207,9 +212,14 @@ function toSession(payload: CachedSessionPayload): Session {
 function isCachedSessionValid(
     payload: CachedSessionPayload,
     now: Date,
+    currentVersion: number,
 ): boolean {
     const expiresAt = new Date(payload.expiresAt);
     const lastActivityAt = new Date(payload.lastActivityAt);
+
+    if (payload.revokedAt) {
+        return false;
+    }
 
     if (
         Number.isNaN(expiresAt.getTime()) ||
@@ -222,7 +232,36 @@ function isCachedSessionValid(
         return false;
     }
 
-    return now.getTime() - lastActivityAt.getTime() <= IDLE_TIMEOUT_MS;
+    if (isCachedSessionVersionStale(payload, currentVersion)) {
+        return false;
+    }
+
+    return !hasCachedSessionIdleTimedOut(payload, now);
+}
+
+function getCachedSessionVersion(payload: CachedSessionPayload): number {
+    return Number.isFinite(payload.sessionVersion)
+        ? payload.sessionVersion
+        : 0;
+}
+
+function isCachedSessionVersionStale(
+    payload: CachedSessionPayload,
+    currentVersion: number,
+): boolean {
+    return currentVersion > 0 && getCachedSessionVersion(payload) < currentVersion;
+}
+
+function hasCachedSessionIdleTimedOut(
+    payload: CachedSessionPayload,
+    now: Date,
+): boolean {
+    const lastActivityAt = new Date(payload.lastActivityAt);
+    if (Number.isNaN(lastActivityAt.getTime())) {
+        return false;
+    }
+
+    return now.getTime() - lastActivityAt.getTime() > IDLE_TIMEOUT_MS;
 }
 
 function shouldPersistActivity(
@@ -313,7 +352,11 @@ async function createUserSession(
         include: { user: true },
     }) as DbSessionWithUser;
 
-    await setCachedSession(tokenHash, createSessionPayload(session, now));
+    const sessionVersion = await getUserSessionVersion(userId);
+    await setCachedSession(
+        tokenHash,
+        createSessionPayload(session, now, sessionVersion),
+    );
 
     return token;
 }
@@ -395,12 +438,21 @@ export async function revokeSessionToken(token: string): Promise<void> {
     await deleteCachedSession(tokenHash);
 }
 
+export async function invalidateUserSessionCaches(
+    userId: string,
+): Promise<void> {
+    await Promise.all([
+        bumpUserSessionVersion(userId),
+        deleteUserSessionCaches(userId),
+    ]);
+}
+
 export async function revokeUserSessions(userId: string): Promise<void> {
     await prisma.userSession.updateMany({
         where: { userId, revokedAt: null },
         data: { revokedAt: new Date() },
     });
-    await deleteUserSessionCaches(userId);
+    await invalidateUserSessionCaches(userId);
 }
 
 export async function revokeUserSessionById(
@@ -411,7 +463,7 @@ export async function revokeUserSessionById(
         where: { id: sessionId, userId, revokedAt: null },
         data: { revokedAt: new Date() },
     });
-    await deleteUserSessionCaches(userId);
+    await invalidateUserSessionCaches(userId);
 }
 
 export async function revokeOtherUserSessions(
@@ -426,7 +478,7 @@ export async function revokeOtherUserSessions(
         },
         data: { revokedAt: new Date() },
     });
-    await deleteUserSessionCaches(userId);
+    await invalidateUserSessionCaches(userId);
 }
 
 export async function getCurrentSessionToken(): Promise<string | null> {
@@ -538,47 +590,74 @@ export function getSessionCookieMaxAge(expiresAt: Date): number {
     return Math.max(Math.ceil((expiresAt.getTime() - Date.now()) / 1000), 0);
 }
 
+interface CachedSessionResolution {
+    session: Session | null;
+    shouldQueryDatabase: boolean;
+}
+
+async function resolveCachedSession(
+    token: string,
+    tokenHash: string,
+    payload: CachedSessionPayload,
+    now: Date,
+): Promise<CachedSessionResolution> {
+    const currentVersion = await getUserSessionVersion(payload.user.id);
+
+    if (!isCachedSessionValid(payload, now, currentVersion)) {
+        if (isCachedSessionVersionStale(payload, currentVersion)) {
+            await deleteCachedSession(tokenHash);
+            return { session: null, shouldQueryDatabase: true };
+        }
+
+        if (hasCachedSessionIdleTimedOut(payload, now)) {
+            await revokeSessionToken(token);
+        } else {
+            await deleteCachedSession(tokenHash);
+        }
+        return { session: null, shouldQueryDatabase: false };
+    }
+
+    const shouldPersist = shouldPersistActivity(payload, now);
+    const touchedSession: CachedSessionPayload = {
+        ...payload,
+        sessionVersion:
+            currentVersion > 0 ? currentVersion : getCachedSessionVersion(payload),
+        lastActivityAt: now.toISOString(),
+        activityPersistedAt: shouldPersist
+            ? now.toISOString()
+            : payload.activityPersistedAt,
+    };
+    await setCachedSession(tokenHash, touchedSession);
+
+    if (shouldPersist) {
+        try {
+            await prisma.userSession.update({
+                where: { id: payload.sessionId },
+                data: { lastActivityAt: now },
+            });
+        } catch (error) {
+            logError("Session cached activity update error:", error);
+        }
+    }
+
+    return { session: toSession(touchedSession), shouldQueryDatabase: false };
+}
+
 async function getSessionByToken(token: string): Promise<Session | null> {
     const now = new Date();
     const tokenHash = hashSessionToken(token);
     const cachedSession = await getCachedSession(tokenHash);
 
     if (cachedSession) {
-        if (!isCachedSessionValid(cachedSession, now)) {
-            const lastActivityAt = new Date(cachedSession.lastActivityAt);
-            if (
-                !Number.isNaN(lastActivityAt.getTime()) &&
-                now.getTime() - lastActivityAt.getTime() > IDLE_TIMEOUT_MS
-            ) {
-                await revokeSessionToken(token);
-            } else {
-                await deleteCachedSession(tokenHash);
-            }
-            return null;
+        const cached = await resolveCachedSession(
+            token,
+            tokenHash,
+            cachedSession,
+            now,
+        );
+        if (!cached.shouldQueryDatabase) {
+            return cached.session;
         }
-
-        const shouldPersist = shouldPersistActivity(cachedSession, now);
-        const touchedSession: CachedSessionPayload = {
-            ...cachedSession,
-            lastActivityAt: now.toISOString(),
-            activityPersistedAt: shouldPersist
-                ? now.toISOString()
-                : cachedSession.activityPersistedAt,
-        };
-        await setCachedSession(tokenHash, touchedSession);
-
-        if (shouldPersist) {
-            try {
-                await prisma.userSession.update({
-                    where: { id: cachedSession.sessionId },
-                    data: { lastActivityAt: now },
-                });
-            } catch (error) {
-                logError("Session cached activity update error:", error);
-            }
-        }
-
-        return toSession(touchedSession);
     }
 
     const session = await prisma.userSession.findUnique({
@@ -609,7 +688,8 @@ async function getSessionByToken(token: string): Promise<Session | null> {
         logError("Session activity update error:", error);
     }
 
-    const payload = createSessionPayload(session, now);
+    const sessionVersion = await getUserSessionVersion(session.user.id);
+    const payload = createSessionPayload(session, now, sessionVersion);
     await setCachedSession(tokenHash, payload);
 
     return toSession(payload);

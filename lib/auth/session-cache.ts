@@ -4,14 +4,18 @@ import { logError } from "@/lib/utils/logging";
 
 const SESSION_CACHE_PREFIX = "session";
 const USER_SESSION_CACHE_PREFIX = "user-session-cache";
+const SESSION_VERSION_PREFIX = "session-version";
 const SESSION_CACHE_TTL_SECONDS = 5 * 60;
 
 export interface CachedSessionPayload {
     sessionId: string;
     user: ExtendedUser;
     expiresAt: string;
+    revokedAt: string | null;
     lastActivityAt: string;
     activityPersistedAt: string;
+    /** Snapshot of the user's session-revocation version when cached. */
+    sessionVersion: number;
 }
 
 function createSessionCacheKey(tokenHash: string): string {
@@ -20,6 +24,65 @@ function createSessionCacheKey(tokenHash: string): string {
 
 function createUserSessionCacheKey(userId: string): string {
     return `${USER_SESSION_CACHE_PREFIX}:${userId}`;
+}
+
+function createSessionVersionKey(userId: string): string {
+    return `${SESSION_VERSION_PREFIX}:${userId}`;
+}
+
+/**
+ * Bump a user's session-revocation version. Any cached session whose
+ * snapshot version is older becomes invalid on the next read, so a revoke
+ * that forgot to drop the cache cannot keep serving a dead session.
+ *
+ * @returns The new version number (Redis unavailable → 0, no-op).
+ */
+export async function bumpUserSessionVersion(
+    userId: string,
+): Promise<number> {
+    const client = await getRedisClient();
+    if (!client) {
+        return 0;
+    }
+
+    try {
+        // INCR creates the key at 1 on first bump; set a TTL so the key
+        // does not accumulate forever for dormant users.
+        const next = await client.incr(createSessionVersionKey(userId));
+        await client.expire(
+            createSessionVersionKey(userId),
+            SESSION_CACHE_TTL_SECONDS * 2,
+        );
+        return next;
+    } catch (error) {
+        logError("Session version bump error:", error);
+        return 0;
+    }
+}
+
+/**
+ * Read a user's current session-revocation version.
+ * @returns The version number (Redis unavailable → 0, treated as "no check").
+ */
+export async function getUserSessionVersion(
+    userId: string,
+): Promise<number> {
+    const client = await getRedisClient();
+    if (!client) {
+        return 0;
+    }
+
+    try {
+        const raw = await client.get(createSessionVersionKey(userId));
+        if (raw === null) {
+            return 0;
+        }
+        const parsedVersion = Number(raw);
+        return Number.isFinite(parsedVersion) ? parsedVersion : 0;
+    } catch (error) {
+        logError("Session version read error:", error);
+        return 0;
+    }
 }
 
 function isStringRecord(value: unknown): value is Record<string, unknown> {
@@ -109,8 +172,10 @@ function parseCachedSession(value: string): CachedSessionPayload | null {
             sessionId,
             user,
             expiresAt,
+            revokedAt,
             lastActivityAt,
             activityPersistedAt,
+            sessionVersion,
         } = parsed;
 
         if (
@@ -127,12 +192,27 @@ function parseCachedSession(value: string): CachedSessionPayload | null {
             return null;
         }
 
+        const parsedRevokedAt = parseOptionalDate(revokedAt ?? null);
+        if (parsedRevokedAt === undefined) {
+            return null;
+        }
+
+        // Backward-compat: caches written before the version field existed
+        // (or with it absent) default to 0 — treated as "no version check".
+        const parsedVersion =
+            typeof sessionVersion === "number" &&
+            Number.isFinite(sessionVersion)
+                ? sessionVersion
+                : 0;
+
         return {
             sessionId,
             user: cachedUser,
             expiresAt,
+            revokedAt: parsedRevokedAt?.toISOString() ?? null,
             lastActivityAt,
             activityPersistedAt,
+            sessionVersion: parsedVersion,
         };
     } catch (error) {
         logError("Session cache parse error:", error);

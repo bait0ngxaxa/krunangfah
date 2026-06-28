@@ -18,6 +18,7 @@ import {
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
+import { hashToken } from "@/lib/auth/token";
 
 setupAuthMocks();
 
@@ -79,9 +80,10 @@ describe("Integration: Teacher Invite", () => {
 
         it("rejects expired invite", async () => {
             const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-            const invite = await prisma.teacherInvite.create({
+            const plainToken = `test-expired-${uid}`;
+            await prisma.teacherInvite.create({
                 data: {
-                    token: `test-expired-${uid}`,
+                    token: hashToken(plainToken),
                     email: `test-expired-${uid}@test.local`,
                     firstName: "Expired",
                     lastName: "Teacher",
@@ -97,7 +99,7 @@ describe("Integration: Teacher Invite", () => {
             });
 
             const result = await acceptTeacherInvite(
-                invite.token,
+                plainToken,
                 "password123",
             );
             expect(result.success).toBe(false);
@@ -106,10 +108,11 @@ describe("Integration: Teacher Invite", () => {
         it("successfully accepts invite and creates user + teacher atomically", async () => {
             const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
             const inviteEmail = `test-invite-${uid}@test.local`;
+            const plainToken = `test-valid-invite-${uid}`;
 
             const invite = await prisma.teacherInvite.create({
                 data: {
-                    token: `test-valid-invite-${uid}`,
+                    token: hashToken(plainToken),
                     email: inviteEmail,
                     firstName: "New",
                     lastName: "Teacher",
@@ -125,7 +128,7 @@ describe("Integration: Teacher Invite", () => {
             });
 
             const result = await acceptTeacherInvite(
-                invite.token,
+                plainToken,
                 "SecurePassword123!",
             );
 
@@ -158,9 +161,10 @@ describe("Integration: Teacher Invite", () => {
 
         it("rejects already-accepted invite", async () => {
             const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-            const invite = await prisma.teacherInvite.create({
+            const plainToken = `test-dup-${uid}`;
+            await prisma.teacherInvite.create({
                 data: {
-                    token: `test-dup-${uid}`,
+                    token: hashToken(plainToken),
                     email: `test-dup-${uid}@test.local`,
                     firstName: "Dup",
                     lastName: "Teacher",
@@ -177,7 +181,7 @@ describe("Integration: Teacher Invite", () => {
             });
 
             const result = await acceptTeacherInvite(
-                invite.token,
+                plainToken,
                 "password123",
             );
             expect(result.success).toBe(false);
@@ -185,9 +189,10 @@ describe("Integration: Teacher Invite", () => {
 
         it("returns a domain error when the same invite token is reused after success", async () => {
             const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-            const invite = await prisma.teacherInvite.create({
+            const plainToken = `test-reuse-${uid}`;
+            await prisma.teacherInvite.create({
                 data: {
-                    token: `test-reuse-${uid}`,
+                    token: hashToken(plainToken),
                     email: `test-reuse-${uid}@test.local`,
                     firstName: "Reuse",
                     lastName: "Teacher",
@@ -203,13 +208,13 @@ describe("Integration: Teacher Invite", () => {
             });
 
             const firstResult = await acceptTeacherInvite(
-                invite.token,
+                plainToken,
                 "Password123!",
             );
             expect(firstResult.success).toBe(true);
 
             const secondResult = await acceptTeacherInvite(
-                invite.token,
+                plainToken,
                 "Password123!",
             );
             expect(secondResult.success).toBe(false);
@@ -233,6 +238,17 @@ describe("Integration: Teacher Invite", () => {
                 projectRole: "care",
             });
             expect(firstResult.success).toBe(true);
+            if (!firstResult.success) {
+                throw new Error("expected teacher invite creation to succeed");
+            }
+            const plainToken = firstResult.inviteLink?.split("/").at(-1) ?? "";
+            const dbInvite = await prisma.teacherInvite.findFirst({
+                where: { email: inviteEmail },
+                select: { token: true },
+            });
+            expect(dbInvite?.token).toBe(hashToken(plainToken));
+            expect(dbInvite?.token).not.toBe(plainToken);
+            expect(firstResult.invite?.token).toBe("");
 
             const secondResult = await createTeacherInvite({
                 email: inviteEmail,
@@ -264,7 +280,7 @@ describe("Integration: Teacher Invite", () => {
 
             const expiredInvite = await prisma.teacherInvite.create({
                 data: {
-                    token: `expired-token-${Date.now()}`,
+                    token: hashToken(`expired-token-${Date.now()}`),
                     email: inviteEmail,
                     firstName: "Expired",
                     lastName: "Invite",
@@ -310,7 +326,7 @@ describe("Integration: Teacher Invite", () => {
             // Create an invite in the DB for this school
             await prisma.teacherInvite.create({
                 data: {
-                    token: `test-stale-jwt-${uid}`,
+                    token: hashToken(`test-stale-jwt-${uid}`),
                     email: `test-stale-${uid}@test.local`,
                     firstName: "StaleJWT",
                     lastName: "Teacher",
@@ -338,6 +354,7 @@ describe("Integration: Teacher Invite", () => {
             expect(
                 result.invites.some((inv) => inv.firstName === "StaleJWT"),
             ).toBe(true);
+            expect(result.invites.every((inv) => inv.token === "")).toBe(true);
         });
 
         it("returns invites normally when JWT has schoolId", async () => {

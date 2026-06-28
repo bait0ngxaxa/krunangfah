@@ -4,8 +4,8 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/database/prisma";
 import { requireAdmin } from "@/lib/auth/session";
 import { hashPassword } from "@/lib/auth/user";
+import { generateInviteToken, hashToken } from "@/lib/auth/token";
 import { revalidatePath } from "next/cache";
-import { randomBytes } from "crypto";
 import { z } from "zod";
 import {
     inviteRegisterSchema,
@@ -87,13 +87,14 @@ export async function createSchoolAdminInvite(
             where: { email: normalizedEmail },
         });
 
-        const token = randomBytes(32).toString("hex");
+        const token = generateInviteToken();
+        const tokenHash = hashToken(token);
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
         await prisma.schoolAdminInvite.create({
             data: {
-                token,
+                token: tokenHash,
                 email: normalizedEmail,
                 role: parsedRole.data,
                 expiresAt,
@@ -138,7 +139,7 @@ export async function getSchoolAdminInvites(): Promise<SchoolAdminInvite[]> {
 
     return invites.map((inv) => ({
         id: inv.id,
-        token: inv.token,
+        token: "",
         email: inv.email,
         role: inv.role as InviteRole,
         usedAt: inv.usedAt,
@@ -195,8 +196,9 @@ export async function revokeSchoolAdminInvite(
 export async function validateInviteToken(
     token: string,
 ): Promise<{ email: string; role: InviteRole }> {
+    const tokenHash = hashToken(token);
     const invite = await prisma.schoolAdminInvite.findUnique({
-        where: { token },
+        where: { token: tokenHash },
     });
 
     if (!invite) {
@@ -241,6 +243,7 @@ export async function acceptSchoolAdminInvite(
     // Validate token and get role
     let inviteEmail: string;
     let inviteRole: InviteRole;
+    const tokenHash = hashToken(token);
     try {
         const result = await validateInviteToken(token);
         inviteEmail = result.email;
@@ -284,7 +287,7 @@ export async function acceptSchoolAdminInvite(
             }
 
             await tx.schoolAdminInvite.update({
-                where: { token },
+                where: { token: tokenHash },
                 data: { usedAt: new Date() },
             });
 

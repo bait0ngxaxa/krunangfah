@@ -17,6 +17,7 @@ interface InviteActionRowProps {
     copiedLabel?: string;
     revokeButtonLabel?: string;
     confirmLabel?: string;
+    showCopyButton?: boolean;
 }
 
 export function InviteActionRow({
@@ -31,6 +32,7 @@ export function InviteActionRow({
     copiedLabel = "คัดลอกแล้ว",
     revokeButtonLabel = "ยกเลิก",
     confirmLabel = "ยืนยันยกเลิก",
+    showCopyButton = true,
 }: InviteActionRowProps) {
     const [showRevokeDialog, setShowRevokeDialog] = useState(false);
 
@@ -44,23 +46,37 @@ export function InviteActionRow({
 
     return (
         <>
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-1.5">
-                <Button
-                    type="button"
-                    onClick={onCopy}
-                    disabled={isRevoking}
-                    variant="secondary"
-                    size="sm"
-                    className="justify-center px-2.5 py-1.5 text-xs"
-                    title={copyTitle}
-                >
-                    {copied ? (
-                        <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                    ) : (
-                        <Copy className="w-3.5 h-3.5" aria-hidden="true" />
-                    )}
-                    {copied ? copiedLabel : copyLabel}
-                </Button>
+            <div
+                className={
+                    showCopyButton
+                        ? "grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-1.5"
+                        : "grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-1.5"
+                }
+            >
+                {showCopyButton && (
+                    <Button
+                        type="button"
+                        onClick={onCopy}
+                        disabled={isRevoking}
+                        variant="secondary"
+                        size="sm"
+                        className="justify-center px-2.5 py-1.5 text-xs"
+                        title={copyTitle}
+                    >
+                        {copied ? (
+                            <Check
+                                className="w-3.5 h-3.5"
+                                aria-hidden="true"
+                            />
+                        ) : (
+                            <Copy
+                                className="w-3.5 h-3.5"
+                                aria-hidden="true"
+                            />
+                        )}
+                        {copied ? copiedLabel : copyLabel}
+                    </Button>
+                )}
 
                 <Button
                     type="button"

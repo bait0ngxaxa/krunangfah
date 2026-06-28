@@ -10,6 +10,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import { hashPassword } from "@/lib/auth/user";
+import { invalidateUserSessionCaches } from "@/lib/auth/session-store";
 import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
 import {
     RATE_LIMIT_PASSWORD_CHANGE,
@@ -18,6 +19,7 @@ import {
 import { createUserRateLimitKey } from "@/lib/rate-limit/keys";
 import { passwordChangeSchema } from "@/lib/validations/profile.validation";
 import { createRateLimitErrorPayload } from "@/lib/rate-limit/errors";
+import { logError } from "@/lib/utils/logging";
 import { handleActionError } from "./error-handler";
 import type {
     PasswordChangeInput,
@@ -123,6 +125,12 @@ export async function changePassword(
                 data: { revokedAt: new Date() },
             }),
         ]);
+
+        // Drop cached sessions so revoked sessions take effect immediately
+        // instead of being served until the cache TTL (5 min) elapses.
+        await invalidateUserSessionCaches(userId).catch((error) =>
+            logError("Change password cache invalidation error:", error),
+        );
 
         return {
             success: true,

@@ -10,6 +10,7 @@
 import { headers } from "next/headers";
 import { prisma } from "@/lib/database/prisma";
 import { hashPassword } from "@/lib/auth/user";
+import { invalidateUserSessionCaches } from "@/lib/auth/session-store";
 import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
 import {
     createEmailRateLimitKey,
@@ -38,6 +39,10 @@ interface ActionResult {
     message: string;
     error?: RateLimitErrorPayload;
 }
+
+type ResetPasswordMutationResult = ActionResult & {
+    userId?: string;
+};
 
 // Module-level singletons
 const forgotPasswordRequestLimiter = createRateLimiter(
@@ -182,16 +187,38 @@ export async function resetPassword(input: {
             } satisfies ActionResult;
         }
 
-        await tx.user.update({
+        // Invalidate all sessions atomically with the password change:
+        // a user resetting a forgotten password often does so because the
+        // account was compromised — keep no stale sessions alive.
+        const updatedUser = await tx.user.update({
             where: { email: record.email },
             data: { password: hashedPassword },
+            select: { id: true },
+        });
+
+        await tx.userSession.updateMany({
+            where: { userId: updatedUser.id, revokedAt: null },
+            data: { revokedAt: new Date() },
         });
 
         return {
             success: true,
             message: "รีเซ็ตรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่",
-        } satisfies ActionResult;
+            userId: updatedUser.id,
+        } satisfies ResetPasswordMutationResult;
     });
 
-    return result;
+    // Clear Redis session cache outside the transaction (best-effort).
+    // The revocation above is already authoritative in the DB; this just
+    // collapses the cache window so cached sessions are dropped immediately.
+    if (result.success && result.userId) {
+        await invalidateUserSessionCaches(result.userId).catch((error) =>
+            logError("Reset password cache invalidation error:", error),
+        );
+    }
+
+    return {
+        success: result.success,
+        message: result.message,
+    };
 }

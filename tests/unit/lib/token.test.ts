@@ -14,7 +14,9 @@ vi.mock("@/lib/database/prisma", () => ({
 
 import { prisma } from "@/lib/database/prisma";
 import {
+    generateInviteToken,
     generatePasswordResetToken,
+    hashToken,
     hashPasswordResetToken,
     verifyPasswordResetToken,
 } from "@/lib/auth/token";
@@ -30,7 +32,22 @@ describe("lib/token", () => {
         const hash2 = hashPasswordResetToken(value);
 
         expect(hash1).toBe(hash2);
+        expect(hash1).toBe(hashToken(value));
         expect(hash1).toMatch(/^[a-f0-9]{64}$/);
+    });
+
+    it("generateInviteToken returns a URL-safe plaintext token", () => {
+        const randomSpy = vi
+            .spyOn(crypto, "randomBytes")
+            .mockReturnValue(Buffer.alloc(32, 1) as never);
+
+        const token = generateInviteToken();
+
+        expect(token).toMatch(/^[A-Za-z0-9_-]+$/);
+        expect(token).not.toMatch(/^[a-f0-9]{64}$/);
+        expect(hashToken(token)).toMatch(/^[a-f0-9]{64}$/);
+
+        randomSpy.mockRestore();
     });
 
     it("generatePasswordResetToken upserts hashed token in a transaction", async () => {

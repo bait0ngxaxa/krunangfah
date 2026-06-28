@@ -107,6 +107,21 @@ describe("Integration: Password Reset", () => {
             });
             validToken = plainToken;
 
+            const resetUser = await prisma.user.findUniqueOrThrow({
+                where: { email: testUserEmail },
+                select: { id: true },
+            });
+            const sessionBeforeReset = await prisma.userSession.create({
+                data: {
+                    userId: resetUser.id,
+                    sessionTokenHash: `reset-session-${Date.now()}`,
+                    expiresAt: new Date(Date.now() + 3600000),
+                    lastActivityAt: new Date(),
+                    tokenRotatedAt: new Date(),
+                },
+                select: { id: true },
+            });
+
             const newPassword = "NewSecurePassword123!";
             const result = await resetPassword({
                 token: validToken,
@@ -132,6 +147,12 @@ describe("Integration: Password Reset", () => {
                 where: { token: token.token },
             });
             expect(deletedToken).toBeNull();
+
+            const revokedSession = await prisma.userSession.findUnique({
+                where: { id: sessionBeforeReset.id },
+                select: { revokedAt: true },
+            });
+            expect(revokedSession?.revokedAt).toBeInstanceOf(Date);
         });
 
         it("token cannot be reused after reset", async () => {

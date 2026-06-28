@@ -24,7 +24,9 @@ const mocks = vi.hoisted(() => ({
     userSessionFindUnique: vi.fn(),
     userSessionUpdate: vi.fn(),
     userSessionUpdateMany: vi.fn(),
+    bumpUserSessionVersion: vi.fn(),
     getCachedSession: vi.fn(),
+    getUserSessionVersion: vi.fn(),
     setCachedSession: vi.fn(),
     deleteCachedSession: vi.fn(),
     deleteUserSessionCaches: vi.fn(),
@@ -67,7 +69,9 @@ vi.mock("@/lib/database/prisma", () => ({
 }));
 
 vi.mock("@/lib/auth/session-cache", () => ({
+    bumpUserSessionVersion: mocks.bumpUserSessionVersion,
     getCachedSession: mocks.getCachedSession,
+    getUserSessionVersion: mocks.getUserSessionVersion,
     setCachedSession: mocks.setCachedSession,
     deleteCachedSession: mocks.deleteCachedSession,
     deleteUserSessionCaches: mocks.deleteUserSessionCaches,
@@ -101,6 +105,23 @@ function createDbUser() {
     };
 }
 
+function createCachedUser() {
+    const user = createDbUser();
+
+    return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        role: user.role,
+        isPrimary: user.isPrimary,
+        schoolId: user.schoolId,
+        emailVerified: user.emailVerified,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+    };
+}
+
 describe("lib/auth/session-store", () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -113,7 +134,9 @@ describe("lib/auth/session-store", () => {
             resetAt: 1,
             retryAfterSeconds: 0,
         });
+        mocks.bumpUserSessionVersion.mockResolvedValue(1);
         mocks.getCachedSession.mockResolvedValue(null);
+        mocks.getUserSessionVersion.mockResolvedValue(0);
         mocks.setCachedSession.mockResolvedValue(undefined);
         mocks.deleteCachedSession.mockResolvedValue(undefined);
         mocks.deleteUserSessionCaches.mockResolvedValue(undefined);
@@ -213,20 +236,11 @@ describe("lib/auth/session-store", () => {
         mocks.getCachedSession.mockResolvedValue({
             sessionId: "session-1",
             expiresAt: "2026-06-01T20:00:00.000Z",
+            revokedAt: null,
             lastActivityAt: "2026-06-01T07:59:30.000Z",
             activityPersistedAt: "2026-06-01T07:59:30.000Z",
-            user: {
-                id: "user-1",
-                email: "teacher@example.com",
-                name: "ครูทดสอบ",
-                image: null,
-                role: "school_admin",
-                isPrimary: true,
-                schoolId: "school-1",
-                emailVerified: null,
-                createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                updatedAt: new Date("2026-01-02T00:00:00.000Z"),
-            },
+            sessionVersion: 0,
+            user: createCachedUser(),
         });
 
         const session = await getRequestSession();
@@ -243,25 +257,67 @@ describe("lib/auth/session-store", () => {
         );
     });
 
+    it("rejects cached sessions marked as revoked", async () => {
+        setCookieToken("revoked-cached-token");
+        mocks.getCachedSession.mockResolvedValue({
+            sessionId: "session-1",
+            expiresAt: "2026-06-01T20:00:00.000Z",
+            revokedAt: "2026-06-01T07:58:00.000Z",
+            lastActivityAt: "2026-06-01T07:59:30.000Z",
+            activityPersistedAt: "2026-06-01T07:59:30.000Z",
+            sessionVersion: 0,
+            user: createCachedUser(),
+        });
+
+        const session = await getRequestSession();
+
+        expect(session).toBeNull();
+        expect(mocks.deleteCachedSession).toHaveBeenCalledWith(expect.any(String));
+        expect(mocks.userSessionFindUnique).not.toHaveBeenCalled();
+        expect(mocks.setCachedSession).not.toHaveBeenCalled();
+    });
+
+    it("rechecks the database when cached session version is stale", async () => {
+        setCookieToken("stale-cached-token");
+        mocks.getCachedSession.mockResolvedValue({
+            sessionId: "session-1",
+            expiresAt: "2026-06-01T20:00:00.000Z",
+            revokedAt: null,
+            lastActivityAt: "2026-06-01T07:59:30.000Z",
+            activityPersistedAt: "2026-06-01T07:59:30.000Z",
+            sessionVersion: 1,
+            user: createCachedUser(),
+        });
+        mocks.getUserSessionVersion.mockResolvedValue(2);
+        mocks.userSessionFindUnique.mockResolvedValue({
+            id: "session-1",
+            expiresAt: new Date("2026-06-01T20:00:00.000Z"),
+            revokedAt: new Date("2026-06-01T07:58:00.000Z"),
+            lastActivityAt: new Date("2026-06-01T07:59:30.000Z"),
+            user: createDbUser(),
+        });
+
+        const session = await getRequestSession();
+
+        expect(session).toBeNull();
+        expect(mocks.deleteCachedSession).toHaveBeenCalledWith(expect.any(String));
+        expect(mocks.userSessionFindUnique).toHaveBeenCalledWith({
+            where: { sessionTokenHash: expect.any(String) },
+            include: { user: true },
+        });
+        expect(mocks.setCachedSession).not.toHaveBeenCalled();
+    });
+
     it("persists cached session activity after the flush interval", async () => {
         setCookieToken("cached-token");
         mocks.getCachedSession.mockResolvedValue({
             sessionId: "session-1",
             expiresAt: "2026-06-01T20:00:00.000Z",
+            revokedAt: null,
             lastActivityAt: "2026-06-01T07:55:00.000Z",
             activityPersistedAt: "2026-06-01T07:55:00.000Z",
-            user: {
-                id: "user-1",
-                email: "teacher@example.com",
-                name: "ครูทดสอบ",
-                image: null,
-                role: "school_admin",
-                isPrimary: true,
-                schoolId: "school-1",
-                emailVerified: null,
-                createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                updatedAt: new Date("2026-01-02T00:00:00.000Z"),
-            },
+            sessionVersion: 0,
+            user: createCachedUser(),
         });
 
         await getRequestSession();
@@ -402,6 +458,7 @@ describe("lib/auth/session-store", () => {
             where: { userId: "user-1", revokedAt: null },
             data: { revokedAt: new Date("2026-06-01T08:00:00.000Z") },
         });
+        expect(mocks.bumpUserSessionVersion).toHaveBeenCalledWith("user-1");
         expect(mocks.deleteUserSessionCaches).toHaveBeenCalledWith("user-1");
     });
 
@@ -416,6 +473,7 @@ describe("lib/auth/session-store", () => {
             },
             data: { revokedAt: new Date("2026-06-01T08:00:00.000Z") },
         });
+        expect(mocks.bumpUserSessionVersion).toHaveBeenCalledWith("user-1");
         expect(mocks.deleteUserSessionCaches).toHaveBeenCalledWith("user-1");
     });
 
@@ -430,6 +488,7 @@ describe("lib/auth/session-store", () => {
             },
             data: { revokedAt: new Date("2026-06-01T08:00:00.000Z") },
         });
+        expect(mocks.bumpUserSessionVersion).toHaveBeenCalledWith("user-1");
         expect(mocks.deleteUserSessionCaches).toHaveBeenCalledWith("user-1");
     });
 });

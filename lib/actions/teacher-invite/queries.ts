@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
+import { hashToken } from "@/lib/auth/token";
 import type { InviteResponse, InviteListResponse } from "./types";
 import { handleActionError } from "../error-handler";
 
@@ -10,8 +11,9 @@ import { handleActionError } from "../error-handler";
  */
 export async function getTeacherInvite(token: string): Promise<InviteResponse> {
     try {
+        const tokenHash = hashToken(token);
         const invite = await prisma.teacherInvite.findUnique({
-            where: { token },
+            where: { token: tokenHash },
             include: {
                 school: true,
             },
@@ -29,7 +31,11 @@ export async function getTeacherInvite(token: string): Promise<InviteResponse> {
             return { success: false, message: "คำเชิญหมดอายุแล้ว" };
         }
 
-        return { success: true, message: "พบคำเชิญ", invite };
+        return {
+            success: true,
+            message: "พบคำเชิญ",
+            invite: { ...invite, token: "" },
+        };
     } catch (error) {
         return handleActionError({
             context: "Get teacher invite error:",
@@ -65,7 +71,10 @@ export async function getMyTeacherInvites(): Promise<InviteListResponse> {
             orderBy: { createdAt: "desc" },
         });
 
-        return { success: true, invites };
+        return {
+            success: true,
+            invites: invites.map((invite) => ({ ...invite, token: "" })),
+        };
     } catch (error) {
         return handleActionError({
             context: "Get school teacher invites error:",

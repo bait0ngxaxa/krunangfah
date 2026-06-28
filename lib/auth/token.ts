@@ -11,6 +11,7 @@ import { runSerializableTransaction } from "@/lib/utils/serializable-transaction
 
 /** Token lifetime: 1 hour */
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000;
+const INVITE_TOKEN_BYTES = 32;
 
 interface TokenVerificationResult {
     valid: true;
@@ -26,10 +27,24 @@ interface TokenVerificationError {
 type VerifyResult = TokenVerificationResult | TokenVerificationError;
 
 /**
+ * One-way hash for bearer tokens before DB persistence.
+ */
+export function hashToken(token: string): string {
+    return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+/**
  * One-way hash for password reset tokens before DB persistence.
  */
 export function hashPasswordResetToken(token: string): string {
-    return crypto.createHash("sha256").update(token).digest("hex");
+    return hashToken(token);
+}
+
+/**
+ * Generate a high-entropy invite token. Only the hash is stored in the DB.
+ */
+export function generateInviteToken(): string {
+    return crypto.randomBytes(INVITE_TOKEN_BYTES).toString("base64url");
 }
 
 /**
