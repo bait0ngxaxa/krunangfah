@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth/auth";
+import { requireAuth } from "@/lib/auth/session";
 import { prisma } from "@/lib/database/prisma";
 import { Prisma } from "@prisma/client";
 import { writeFile, mkdir } from "fs/promises";
@@ -145,14 +145,7 @@ export async function uploadWorksheet(
     formData: FormData,
 ): Promise<UploadWorksheetResult> {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return {
-                success: false,
-                message: "ไม่อนุญาตให้เข้าถึง",
-                error: "UPLOAD_UNAUTHORIZED",
-            };
-        }
+        const session = await requireAuth();
 
         // system_admin เป็น readonly — ไม่สามารถอัปโหลดใบงานได้
         if (session.user.role === "system_admin") {
@@ -475,10 +468,7 @@ export async function deleteWorksheetUpload(
     uploadId: string,
 ): Promise<{ success: boolean; message: string }> {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, message: "ไม่อนุญาตให้เข้าถึง" };
-        }
+        const session = await requireAuth();
 
         if (session.user.role === "system_admin") {
             return {

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/database/prisma";
 import { requirePrimaryAdmin, requireAuth } from "@/lib/auth/session";
+import { invalidateUserSessionCaches } from "@/lib/auth/session-store";
 import { revalidatePath } from "next/cache";
 import type { SchoolAdminItem, PrimaryToggleResponse } from "@/types/primary-admin.types";
 
@@ -110,6 +111,7 @@ export async function togglePrimaryStatus(
         data: { isPrimary: newPrimaryStatus },
     });
 
+    await invalidateUserSessionCaches(targetUserId);
     revalidatePath("/school/classes");
 
     const statusText = newPrimaryStatus ? "เพิ่มสิทธิ์" : "ถอดสิทธิ์";

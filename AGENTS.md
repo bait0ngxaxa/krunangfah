@@ -36,6 +36,20 @@
 - **Git & Docs:** Use Conventional Commits. Comments should explain the "WHY", not the "WHAT".
 - **PROJECT.md:** Drop into the project root to define the tech stack and override specific rules.
 
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues for `bait0ngxaxa/krunangfah`; external PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Triage uses the default canonical label vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This repo uses a single-context domain docs layout. See `docs/agents/domain.md`.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
