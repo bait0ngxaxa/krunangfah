@@ -77,6 +77,7 @@ vi.mock("@/lib/rate-limit", () => ({
         destroy: async () => undefined,
     }),
     extractRateLimitKey: () => "127.0.0.1",
+    TRUSTED_PROXY_HEADERS: { trustProxyHeaders: true },
 }));
 
 vi.mock("next/headers", () => ({

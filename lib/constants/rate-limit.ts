@@ -16,7 +16,7 @@ export const RATE_LIMIT_AUTH_SIGNIN: RateLimitConfig = {
 
 /**
  * Rate limit for general auth API requests
- * 20 requests per minute per IP
+ * 20 requests per minute per trusted request source
  */
 export const RATE_LIMIT_AUTH_GENERAL: RateLimitConfig = {
     maxRequests: 20,
@@ -26,7 +26,7 @@ export const RATE_LIMIT_AUTH_GENERAL: RateLimitConfig = {
 
 /**
  * Broad flood guard for signin traffic from one network
- * 120 requests per minute per IP/user-agent key
+ * 120 requests per minute per trusted request source
  */
 export const RATE_LIMIT_AUTH_FLOOD: RateLimitConfig = {
     maxRequests: 120,
@@ -36,7 +36,7 @@ export const RATE_LIMIT_AUTH_FLOOD: RateLimitConfig = {
 
 /**
  * Rate limit for forgot-password requests
- * 3 attempts per hour per IP
+ * 3 attempts per hour per trusted request source and email
  */
 export const RATE_LIMIT_FORGOT_PASSWORD: RateLimitConfig = {
     maxRequests: 3,
@@ -46,7 +46,7 @@ export const RATE_LIMIT_FORGOT_PASSWORD: RateLimitConfig = {
 
 /**
  * Rate limit for password reset submit (token + new password)
- * 10 attempts per hour per IP
+ * 10 attempts per hour per token
  */
 export const RATE_LIMIT_PASSWORD_RESET_SUBMIT: RateLimitConfig = {
     maxRequests: 10,
@@ -56,7 +56,7 @@ export const RATE_LIMIT_PASSWORD_RESET_SUBMIT: RateLimitConfig = {
 
 /**
  * Rate limit for password change requests
- * 3 attempts per hour per IP (stricter than signin for security)
+ * 3 attempts per hour per user (stricter than signin for security)
  */
 export const RATE_LIMIT_PASSWORD_CHANGE: RateLimitConfig = {
     maxRequests: 3,
@@ -66,7 +66,7 @@ export const RATE_LIMIT_PASSWORD_CHANGE: RateLimitConfig = {
 
 /**
  * Broad flood guard before authenticated password-change rate limiting
- * 60 requests per hour per IP/user-agent key
+ * 60 requests per hour per trusted request source
  */
 export const RATE_LIMIT_PASSWORD_CHANGE_FLOOD: RateLimitConfig = {
     maxRequests: 60,

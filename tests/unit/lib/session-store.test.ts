@@ -49,6 +49,7 @@ vi.mock("@/lib/rate-limit", () => ({
     })),
     extractClientIp: vi.fn(() => "203.0.113.42"),
     extractRateLimitKey: vi.fn(() => "203.0.113.42"),
+    TRUSTED_PROXY_HEADERS: { trustProxyHeaders: true },
 }));
 
 vi.mock("@/lib/database/prisma", () => ({

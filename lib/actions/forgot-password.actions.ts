@@ -11,7 +11,11 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/database/prisma";
 import { hashPassword } from "@/lib/auth/user";
 import { invalidateUserSessionCaches } from "@/lib/auth/session-store";
-import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
+import {
+    createRateLimiter,
+    extractRateLimitKey,
+    TRUSTED_PROXY_HEADERS,
+} from "@/lib/rate-limit";
 import {
     createEmailRateLimitKey,
     createTokenRateLimitKey,
@@ -62,7 +66,10 @@ export async function requestPasswordReset(input: {
 }): Promise<ActionResult> {
     // --- Rate limit ---
     const headerStore = await headers();
-    const rateLimitKey = extractRateLimitKey((name) => headerStore.get(name));
+    const rateLimitKey = extractRateLimitKey(
+        (name) => headerStore.get(name),
+        TRUSTED_PROXY_HEADERS,
+    );
     const rawEmail = typeof input?.email === "string" ? input.email : "";
     const emailRateLimitKey = createEmailRateLimitKey(rateLimitKey, rawEmail);
     const rateLimitResult =

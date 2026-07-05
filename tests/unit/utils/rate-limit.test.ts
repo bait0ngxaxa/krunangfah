@@ -164,47 +164,67 @@ describe("createRateLimiter", () => {
 });
 
 describe("extractClientIp", () => {
-    it("should extract IP from x-forwarded-for header", () => {
+    it("should ignore x-forwarded-for by default", () => {
         const getter = (name: string) => {
             if (name === "x-forwarded-for") return "1.2.3.4";
             return null;
         };
-        expect(extractClientIp(getter)).toBe("1.2.3.4");
+
+        expect(extractClientIp(getter)).toBe("unknown");
     });
 
-    it("should extract first IP from comma-separated x-forwarded-for", () => {
+    it("should extract IP from x-forwarded-for only for trusted proxy headers", () => {
+        const getter = (name: string) => {
+            if (name === "x-forwarded-for") return "1.2.3.4";
+            return null;
+        };
+
+        expect(extractClientIp(getter, { trustProxyHeaders: true })).toBe(
+            "1.2.3.4",
+        );
+    });
+
+    it("should extract first trusted IP from comma-separated x-forwarded-for", () => {
         const getter = (name: string) => {
             if (name === "x-forwarded-for")
                 return "1.2.3.4, 10.0.0.1, 10.0.0.2";
             return null;
         };
-        expect(extractClientIp(getter)).toBe("1.2.3.4");
+        expect(extractClientIp(getter, { trustProxyHeaders: true })).toBe(
+            "1.2.3.4",
+        );
     });
 
-    it("should trim whitespace from x-forwarded-for IP", () => {
+    it("should trim whitespace from trusted x-forwarded-for IP", () => {
         const getter = (name: string) => {
             if (name === "x-forwarded-for") return "  1.2.3.4  , 10.0.0.1";
             return null;
         };
-        expect(extractClientIp(getter)).toBe("1.2.3.4");
+        expect(extractClientIp(getter, { trustProxyHeaders: true })).toBe(
+            "1.2.3.4",
+        );
     });
 
-    it("should fall back to x-real-ip header", () => {
+    it("should fall back to trusted x-real-ip header", () => {
         const getter = (name: string) => {
             if (name === "x-real-ip") return "5.6.7.8";
             return null;
         };
-        expect(extractClientIp(getter)).toBe("5.6.7.8");
+        expect(extractClientIp(getter, { trustProxyHeaders: true })).toBe(
+            "5.6.7.8",
+        );
     });
 
-    it("should ignore invalid x-forwarded-for and use x-real-ip", () => {
+    it("should ignore invalid trusted x-forwarded-for and use x-real-ip", () => {
         const getter = (name: string) => {
             if (name === "x-forwarded-for") return "not an ip";
             if (name === "x-real-ip") return "5.6.7.8";
             return null;
         };
 
-        expect(extractClientIp(getter)).toBe("5.6.7.8");
+        expect(extractClientIp(getter, { trustProxyHeaders: true })).toBe(
+            "5.6.7.8",
+        );
     });
 
     it("should return unknown for invalid IP headers", () => {
@@ -214,7 +234,9 @@ describe("extractClientIp", () => {
             return null;
         };
 
-        expect(extractClientIp(getter)).toBe("unknown");
+        expect(extractClientIp(getter, { trustProxyHeaders: true })).toBe(
+            "unknown",
+        );
     });
 
     it("should trim x-real-ip header", () => {
@@ -222,16 +244,20 @@ describe("extractClientIp", () => {
             if (name === "x-real-ip") return "  5.6.7.8  ";
             return null;
         };
-        expect(extractClientIp(getter)).toBe("5.6.7.8");
+        expect(extractClientIp(getter, { trustProxyHeaders: true })).toBe(
+            "5.6.7.8",
+        );
     });
 
-    it("should prefer x-forwarded-for over x-real-ip", () => {
+    it("should prefer trusted x-real-ip over x-forwarded-for", () => {
         const getter = (name: string) => {
             if (name === "x-forwarded-for") return "1.1.1.1";
             if (name === "x-real-ip") return "2.2.2.2";
             return null;
         };
-        expect(extractClientIp(getter)).toBe("1.1.1.1");
+        expect(extractClientIp(getter, { trustProxyHeaders: true })).toBe(
+            "2.2.2.2",
+        );
     });
 
     it("should return 'unknown' when no headers are present", () => {
@@ -241,23 +267,100 @@ describe("extractClientIp", () => {
 });
 
 describe("extractRateLimitKey", () => {
-    it("should use IP when available", () => {
+    it("should not allow spoofed x-forwarded-for values to rotate rate-limit keys", async () => {
+        const spoofedIps = ["1.2.3.4", "5.6.7.8"];
+        const limiter = createRateLimiter({
+            maxRequests: 1,
+            windowMs: 60_000,
+            name: "spoofed-forwarded-for",
+        });
+
+        try {
+            const firstKey = extractRateLimitKey((name) => {
+                if (name === "x-forwarded-for") return spoofedIps[0] ?? null;
+                if (name === "user-agent") return "Mozilla/5.0 TestAgent";
+                return null;
+            });
+            const secondKey = extractRateLimitKey((name) => {
+                if (name === "x-forwarded-for") return spoofedIps[1] ?? null;
+                if (name === "user-agent") return "Mozilla/5.0 TestAgent";
+                return null;
+            });
+
+            const first = await limiter.check(firstKey);
+            const second = await limiter.check(secondKey);
+
+            expect(first.allowed).toBe(true);
+            expect(second.allowed).toBe(false);
+        } finally {
+            await limiter.destroy();
+        }
+    });
+
+    it("should use trusted x-real-ip when x-forwarded-for is spoofed", async () => {
+        const limiter = createRateLimiter({
+            maxRequests: 1,
+            windowMs: 60_000,
+            name: "trusted-real-ip",
+        });
+
+        try {
+            const firstKey = extractRateLimitKey(
+                (name) => {
+                    if (name === "x-real-ip") return "203.0.113.10";
+                    if (name === "x-forwarded-for") return "1.2.3.4";
+                    return null;
+                },
+                { trustProxyHeaders: true },
+            );
+            const secondKey = extractRateLimitKey(
+                (name) => {
+                    if (name === "x-real-ip") return "203.0.113.10";
+                    if (name === "x-forwarded-for") return "5.6.7.8";
+                    return null;
+                },
+                { trustProxyHeaders: true },
+            );
+
+            const first = await limiter.check(firstKey);
+            const second = await limiter.check(secondKey);
+
+            expect(first.allowed).toBe(true);
+            expect(second.allowed).toBe(false);
+        } finally {
+            await limiter.destroy();
+        }
+    });
+
+    it("should not use spoofable x-forwarded-for by default", () => {
         const getter = (name: string) => {
             if (name === "x-forwarded-for") return "1.2.3.4";
             if (name === "user-agent") return "Mozilla/5.0";
             return null;
         };
 
-        expect(extractRateLimitKey(getter)).toBe("1.2.3.4");
+        expect(extractRateLimitKey(getter)).toBe("unknown");
     });
 
-    it("should fall back to normalized user-agent when IP is unknown", () => {
+    it("should use IP when proxy headers are explicitly trusted", () => {
+        const getter = (name: string) => {
+            if (name === "x-forwarded-for") return "1.2.3.4";
+            if (name === "user-agent") return "Mozilla/5.0";
+            return null;
+        };
+
+        expect(extractRateLimitKey(getter, { trustProxyHeaders: true })).toBe(
+            "1.2.3.4",
+        );
+    });
+
+    it("should not fall back to spoofable user-agent when IP is unknown", () => {
         const getter = (name: string) => {
             if (name === "user-agent") return "  Mozilla/5.0   TestAgent  ";
             return null;
         };
 
-        expect(extractRateLimitKey(getter)).toBe("ua:mozilla/5.0 testagent");
+        expect(extractRateLimitKey(getter)).toBe("unknown");
     });
 
     it("should return unknown when both IP and user-agent are missing", () => {

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
+import {
+    createRateLimiter,
+    extractRateLimitKey,
+    TRUSTED_PROXY_HEADERS,
+} from "@/lib/rate-limit";
 import { RATE_LIMIT_AUTH_GENERAL } from "@/lib/constants/rate-limit";
 import {
     attachRateLimitHeaders,
@@ -34,6 +38,7 @@ export default async function proxy(req: NextRequest) {
     if (pathname.startsWith("/api/auth/") && req.method === "POST") {
         const rateLimitKey = extractRateLimitKey((name) =>
             req.headers.get(name),
+            TRUSTED_PROXY_HEADERS,
         );
 
         // Skip stricter endpoints that have their own limiter.

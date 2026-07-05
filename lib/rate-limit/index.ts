@@ -9,6 +9,46 @@ import {
     RATE_LIMIT_MAX_ENTRIES,
 } from "@/lib/constants/rate-limit";
 
+export interface RateLimitHeaderOptions {
+    readonly trustProxyHeaders?: boolean;
+}
+
+export const TRUSTED_PROXY_HEADERS: RateLimitHeaderOptions = {
+    trustProxyHeaders: true,
+};
+
+function getFirstForwardedIp(forwarded: string): string {
+    return forwarded.split(",")[0]?.trim() ?? "";
+}
+
+function isValidIpv4(ip: string): boolean {
+    const parts = ip.split(".");
+    if (parts.length !== 4) {
+        return false;
+    }
+
+    return parts.every((part) => {
+        if (!/^\d{1,3}$/.test(part)) {
+            return false;
+        }
+
+        const value = Number(part);
+        return value >= 0 && value <= 255;
+    });
+}
+
+function isValidIp(ip: string): boolean {
+    if (ip.length === 0 || ip.length > 45) {
+        return false;
+    }
+
+    if (ip.includes(".")) {
+        return isValidIpv4(ip);
+    }
+
+    return /^[\da-fA-F:]+$/.test(ip) && ip.includes(":");
+}
+
 /**
  * Creates an in-memory rate limiter with sliding window algorithm.
  *
@@ -168,22 +208,18 @@ export function createRateLimiter(config: RateLimitConfig): RateLimiter {
 /**
  * Extract client IP address from request headers.
  * Works in both middleware (NextRequest) and server actions (headers()).
+ * Proxy IP headers are client-spoofable unless infrastructure strips and
+ * rewrites them, so they are ignored by default.
  *
  * @param headerGetter - Function that returns a header value by name
  * @returns The client IP string, or "unknown" if not determinable
  */
 export function extractClientIp(
     headerGetter: (name: string) => string | null,
+    options: RateLimitHeaderOptions = {},
 ): string {
-    // Basic IPv4/IPv6 format validation
-    const isValidIp = (ip: string) =>
-        /^[\d.:a-fA-F]+$/.test(ip) && ip.length <= 45;
-
-    const forwarded = headerGetter("x-forwarded-for");
-    if (forwarded) {
-        // x-forwarded-for may contain multiple IPs: client, proxy1, proxy2
-        const ip = forwarded.split(",")[0].trim();
-        if (isValidIp(ip)) return ip;
+    if (!options.trustProxyHeaders) {
+        return "unknown";
     }
 
     const realIp = headerGetter("x-real-ip");
@@ -192,31 +228,28 @@ export function extractClientIp(
         if (isValidIp(ip)) return ip;
     }
 
+    const forwarded = headerGetter("x-forwarded-for");
+    if (forwarded) {
+        // x-forwarded-for may contain multiple IPs: client, proxy1, proxy2
+        const ip = getFirstForwardedIp(forwarded);
+        if (isValidIp(ip)) return ip;
+    }
+
     return "unknown";
 }
 
 /**
  * Build stable rate-limit key from request headers.
- * Falls back to normalized user-agent when IP is unavailable.
+ * Returns "unknown" when there is no trusted server-derived client identity.
  */
 export function extractRateLimitKey(
     headerGetter: (name: string) => string | null,
+    options: RateLimitHeaderOptions = {},
 ): string {
-    const ip = extractClientIp(headerGetter);
+    const ip = extractClientIp(headerGetter, options);
     if (ip !== "unknown") {
         return ip;
     }
 
-    const userAgent = headerGetter("user-agent");
-    if (!userAgent) {
-        return "unknown";
-    }
-
-    const normalizedUserAgent = userAgent
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, " ")
-        .slice(0, 160);
-
-    return normalizedUserAgent ? `ua:${normalizedUserAgent}` : "unknown";
+    return "unknown";
 }

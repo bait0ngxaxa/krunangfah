@@ -11,7 +11,11 @@ import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import { hashPassword } from "@/lib/auth/user";
 import { invalidateUserSessionCaches } from "@/lib/auth/session-store";
-import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
+import {
+    createRateLimiter,
+    extractRateLimitKey,
+    TRUSTED_PROXY_HEADERS,
+} from "@/lib/rate-limit";
 import {
     RATE_LIMIT_PASSWORD_CHANGE,
     RATE_LIMIT_PASSWORD_CHANGE_FLOOD,
@@ -26,7 +30,7 @@ import type {
     PasswordChangeResponse,
 } from "@/types/profile.types";
 
-// Broad IP/user-agent guard before authenticated per-user limiting.
+// Broad request-source guard before authenticated per-user limiting.
 const passwordChangeFloodLimiter = createRateLimiter(
     RATE_LIMIT_PASSWORD_CHANGE_FLOOD,
 );
@@ -52,6 +56,7 @@ export async function changePassword(
         const headerStore = await headers();
         const rateLimitKey = extractRateLimitKey((name) =>
             headerStore.get(name),
+            TRUSTED_PROXY_HEADERS,
         );
 
         const floodLimitResult =

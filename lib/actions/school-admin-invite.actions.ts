@@ -11,7 +11,11 @@ import {
     inviteRegisterSchema,
     inviteRoleSchema,
 } from "@/lib/validations/auth.validation";
-import { createRateLimiter, extractRateLimitKey } from "@/lib/rate-limit";
+import {
+    createRateLimiter,
+    extractRateLimitKey,
+    TRUSTED_PROXY_HEADERS,
+} from "@/lib/rate-limit";
 import { createTokenRateLimitKey } from "@/lib/rate-limit/keys";
 import { RATE_LIMIT_AUTH_SIGNIN } from "@/lib/constants/rate-limit";
 import type {
@@ -231,7 +235,10 @@ export async function acceptSchoolAdminInvite(
 ): Promise<AuthResponse> {
     // Rate limiting
     const headerStore = await headers();
-    const requestKey = extractRateLimitKey((name) => headerStore.get(name));
+    const requestKey = extractRateLimitKey(
+        (name) => headerStore.get(name),
+        TRUSTED_PROXY_HEADERS,
+    );
     const rawToken = typeof token === "string" ? token : "";
     const rateLimitKey = `${requestKey}:${createTokenRateLimitKey(rawToken)}`;
     const rateLimitResult = await inviteAcceptLimiter.check(rateLimitKey);

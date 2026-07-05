@@ -8,6 +8,7 @@ import {
     createRateLimiter,
     extractClientIp,
     extractRateLimitKey,
+    TRUSTED_PROXY_HEADERS,
 } from "@/lib/rate-limit";
 import {
     RATE_LIMIT_AUTH_FLOOD,
@@ -149,7 +150,9 @@ function getSessionMetadata(
     return {
         userAgentLabel: getUserAgentLabel(userAgent),
         userAgentHash: userAgent ? hashText(userAgent) : null,
-        lastIpPrefix: getIpPrefix(extractClientIp(headerGetter)),
+        lastIpPrefix: getIpPrefix(
+            extractClientIp(headerGetter, TRUSTED_PROXY_HEADERS),
+        ),
     };
 }
 
@@ -342,7 +345,10 @@ async function checkSigninRateLimit(
     email: string,
     headerGetter: (name: string) => string | null,
 ): Promise<SignInFailure | null> {
-    const rateLimitKey = extractRateLimitKey(headerGetter);
+    const rateLimitKey = extractRateLimitKey(
+        headerGetter,
+        TRUSTED_PROXY_HEADERS,
+    );
     const credentialKey = createEmailRateLimitKey(rateLimitKey, email);
     const [credentialLimit, floodLimit] = await Promise.all([
         signinAttemptLimiter.check(credentialKey),
