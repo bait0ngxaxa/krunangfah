@@ -15,6 +15,10 @@ vi.mock("@/lib/auth/session", () => ({
     getServerSession: mocks.getServerSession,
 }));
 
+vi.mock("@/lib/database/prisma", () => ({
+    prisma: {},
+}));
+
 vi.mock("next/navigation", () => ({
     redirect: mocks.redirect,
 }));

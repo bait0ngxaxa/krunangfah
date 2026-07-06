@@ -47,6 +47,27 @@ interface HospitalReferralResult {
     referral_count: bigint;
 }
 
+function buildActiveStudentSchoolCondition(
+    schoolId: string | undefined,
+): Prisma.Sql {
+    if (schoolId) {
+        return Prisma.sql`
+            WHERE s."schoolId" = ${schoolId}
+              AND s."disabledAt" IS NULL
+              AND s."isTestData" = false
+              AND sch."disabledAt" IS NULL
+              AND sch."isTestData" = false
+        `;
+    }
+
+    return Prisma.sql`
+        WHERE s."disabledAt" IS NULL
+          AND s."isTestData" = false
+          AND sch."disabledAt" IS NULL
+          AND sch."isTestData" = false
+    `;
+}
+
 /** Combined result from single optimized query */
 export interface CombinedAnalyticsResult {
     riskLevelCounts: RiskLevelCountResult[];
@@ -71,9 +92,7 @@ export async function getCombinedAnalytics(
     semester?: number,
     assessmentRound?: number,
 ): Promise<CombinedAnalyticsResult> {
-    const schoolCondition = schoolId
-        ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
-        : Prisma.sql`WHERE 1=1`;
+    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
 
     const classCondition = classFilter
         ? Prisma.sql`AND s.class = ${classFilter}`
@@ -118,6 +137,7 @@ export async function getCombinedAnalytics(
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
+            JOIN schools sch ON s."schoolId" = sch.id
             ${yearJoin}
             ${schoolCondition}
               ${classCondition}
@@ -214,9 +234,7 @@ export async function getTrendData(
     semester?: number,
     assessmentRound?: number,
 ): Promise<TrendDataResult[]> {
-    const schoolCondition = schoolId
-        ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
-        : Prisma.sql`WHERE 1=1`;
+    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
 
     const classCondition = classFilter
         ? Prisma.sql`AND s.class = ${classFilter}`
@@ -247,6 +265,7 @@ export async function getTrendData(
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
+            JOIN schools sch ON s."schoolId" = sch.id
             JOIN academic_years ay ON pr."academicYearId" = ay.id
             ${schoolCondition}
               ${classCondition}
@@ -282,9 +301,7 @@ export async function getActivityProgressByRisk(
     semester?: number,
     assessmentRound?: number,
 ): Promise<ActivityProgressResult[]> {
-    const schoolCondition = schoolId
-        ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
-        : Prisma.sql`WHERE 1=1`;
+    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
 
     const classCondition = classFilter
         ? Prisma.sql`AND s.class = ${classFilter}`
@@ -320,6 +337,7 @@ export async function getActivityProgressByRisk(
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
+            JOIN schools sch ON s."schoolId" = sch.id
             ${yearJoin}
             ${schoolCondition}
               ${classCondition}
@@ -365,9 +383,7 @@ export async function getActivityCompletionSummary(
     semester?: number,
     assessmentRound?: number,
 ): Promise<ActivityCompletionSummaryResult> {
-    const schoolCondition = schoolId
-        ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
-        : Prisma.sql`WHERE 1=1`;
+    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
 
     const classCondition = classFilter
         ? Prisma.sql`AND s.class = ${classFilter}`
@@ -413,6 +429,7 @@ export async function getActivityCompletionSummary(
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
+            JOIN schools sch ON s."schoolId" = sch.id
             ${yearJoin}
             ${schoolCondition}
               ${classCondition}

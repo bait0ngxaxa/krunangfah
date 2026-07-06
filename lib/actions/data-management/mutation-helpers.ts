@@ -160,6 +160,7 @@ export async function revalidateAfterStudent(studentId: string): Promise<void> {
         where: { id: studentId },
         select: { schoolId: true },
     });
+    revalidateDashboardCache();
     revalidateStudentsCache(student?.schoolId, studentId);
     await revalidateAnalyticsCache(student?.schoolId);
     revalidatePath(DATA_MANAGEMENT_PATH);

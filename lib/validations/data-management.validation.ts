@@ -12,6 +12,8 @@ export const dataManagementSearchSchema = z.object({
     dataState: z.enum(["all", "active", "disabled", "test"]).default("all"),
     schoolId: z.string().trim().max(100).optional(),
     province: z.string().trim().max(100).optional(),
+    schoolCursor: z.string().cuid("cursor โรงเรียนไม่ถูกต้อง").optional(),
+    studentCursor: z.string().cuid("cursor นักเรียนไม่ถูกต้อง").optional(),
 });
 
 export const dataManagementReasonSchema = z.object({

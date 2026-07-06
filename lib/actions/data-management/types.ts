@@ -18,6 +18,8 @@ export interface SearchDataManagementTargetsInput {
     dataState?: "all" | "active" | "disabled" | "test";
     schoolId?: string;
     province?: string;
+    schoolCursor?: string;
+    studentCursor?: string;
 }
 
 export interface SchoolSearchResult {
@@ -51,6 +53,10 @@ export interface StudentSearchResult {
 export interface DataManagementSearchResult {
     schools: SchoolSearchResult[];
     students: StudentSearchResult[];
+    schoolNextCursor: string | null;
+    studentNextCursor: string | null;
+    schoolHasMore: boolean;
+    studentHasMore: boolean;
 }
 
 export interface ImpactSummary {

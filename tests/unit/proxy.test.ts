@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import proxy from "@/proxy";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/session-store";
+
+vi.mock("@/lib/database/prisma", () => ({
+    prisma: {},
+}));
 
 function createRequest(path: string, token?: string): NextRequest {
     const request = new NextRequest(`http://localhost${path}`);

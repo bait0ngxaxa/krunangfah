@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { DatabaseZap } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/Button";
 import {
     getDataManagementPreview,
     listDataManagementEvents,
@@ -27,7 +28,14 @@ import type {
     PendingDataManagementAction,
 } from "./types";
 
-const EMPTY_RESULTS: DataManagementSearchResult = { schools: [], students: [] };
+const EMPTY_RESULTS: DataManagementSearchResult = {
+    schools: [],
+    students: [],
+    schoolNextCursor: null,
+    studentNextCursor: null,
+    schoolHasMore: false,
+    studentHasMore: false,
+};
 
 export function DataManagementCenter() {
     const [query, setQuery] = useState("");
@@ -50,6 +58,7 @@ export function DataManagementCenter() {
         [results],
     );
     const canSearch = hasDataManagementSearchIntent({ query, dataState });
+    const hasMore = results.schoolHasMore || results.studentHasMore;
 
     const refreshSearch = useCallback(() => {
         if (!canSearch) {
@@ -66,6 +75,25 @@ export function DataManagementCenter() {
             setResults(next);
         });
     }, [canSearch, dataState, query, targetType]);
+
+    const loadMore = useCallback(() => {
+        if (!canSearch || !hasMore) return;
+        const nextTargetType = getNextTargetType(results, targetType);
+        startTransition(async () => {
+            const next = await searchDataManagement({
+                query,
+                dataState,
+                targetType: nextTargetType,
+                schoolCursor: results.schoolHasMore
+                    ? results.schoolNextCursor ?? undefined
+                    : undefined,
+                studentCursor: results.studentHasMore
+                    ? results.studentNextCursor ?? undefined
+                    : undefined,
+            });
+            setResults(mergeSearchResults(results, next, nextTargetType));
+        });
+    }, [canSearch, dataState, hasMore, query, results, targetType]);
 
     const loadPreview = useCallback((target: ManagedTarget) => {
         startTransition(async () => {
@@ -156,9 +184,22 @@ export function DataManagementCenter() {
                         </div>
                     ) : null}
                     {hasSearched && targets.length > 0 ? (
-                        <p className="mt-3 text-xs text-gray-500">
-                            แสดงผลลัพธ์แบบจำกัดจำนวน ถ้าไม่เจอข้อมูลให้เพิ่มคำค้นให้เฉพาะขึ้น
-                        </p>
+                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-xs text-gray-500">
+                                แสดงผลลัพธ์แบบแบ่งหน้า ถ้าไม่เจอข้อมูลให้เพิ่มคำค้นให้เฉพาะขึ้น
+                            </p>
+                            {hasMore ? (
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={isPending}
+                                    onClick={loadMore}
+                                >
+                                    โหลดเพิ่ม
+                                </Button>
+                            ) : null}
+                        </div>
                     ) : null}
                 </div>
             </section>
@@ -183,6 +224,48 @@ export function DataManagementCenter() {
             />
         </div>
     );
+}
+
+function getNextTargetType(
+    results: DataManagementSearchResult,
+    currentTargetType: "all" | ManagedTargetType,
+): "all" | ManagedTargetType {
+    if (currentTargetType !== "all") return currentTargetType;
+    if (results.schoolHasMore && results.studentHasMore) return "all";
+    return results.schoolHasMore ? "school" : "student";
+}
+
+function mergeSearchResults(
+    current: DataManagementSearchResult,
+    next: DataManagementSearchResult,
+    loadedTargetType: "all" | ManagedTargetType,
+): DataManagementSearchResult {
+    return {
+        schools:
+            loadedTargetType === "student"
+                ? current.schools
+                : [...current.schools, ...next.schools],
+        students:
+            loadedTargetType === "school"
+                ? current.students
+                : [...current.students, ...next.students],
+        schoolNextCursor:
+            loadedTargetType === "student"
+                ? current.schoolNextCursor
+                : next.schoolNextCursor,
+        studentNextCursor:
+            loadedTargetType === "school"
+                ? current.studentNextCursor
+                : next.studentNextCursor,
+        schoolHasMore:
+            loadedTargetType === "student"
+                ? current.schoolHasMore
+                : next.schoolHasMore,
+        studentHasMore:
+            loadedTargetType === "school"
+                ? current.studentHasMore
+                : next.studentHasMore,
+    };
 }
 
 function EmptySelection() {

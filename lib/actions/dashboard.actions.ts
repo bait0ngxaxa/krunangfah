@@ -15,8 +15,16 @@ async function getCachedDashboardData(userId: string, role: string) {
     const cachedFetcher = unstable_cache(
         async () => {
             if (role === "system_admin") {
-                const studentCount = await prisma.student.count();
-                const schoolCount = await prisma.school.count();
+                const studentCount = await prisma.student.count({
+                    where: {
+                        disabledAt: null,
+                        isTestData: false,
+                        school: { disabledAt: null, isTestData: false },
+                    },
+                });
+                const schoolCount = await prisma.school.count({
+                    where: { disabledAt: null, isTestData: false },
+                });
                 return { teacher: null, studentCount, schoolCount };
             }
 
@@ -36,6 +44,9 @@ async function getCachedDashboardData(userId: string, role: string) {
             const studentCount = await prisma.student.count({
                 where: {
                     schoolId: teacher.user.schoolId,
+                    disabledAt: null,
+                    isTestData: false,
+                    school: { disabledAt: null, isTestData: false },
                     ...(role === "class_teacher" && {
                         class: teacher.advisoryClass,
                     }),
@@ -59,6 +70,7 @@ async function getCachedSchools() {
         async () =>
             prisma.school.findMany({
                 select: { id: true, name: true },
+                where: { disabledAt: null, isTestData: false },
                 orderBy: { name: "asc" },
             }),
         buildSchoolsListCacheKey(),

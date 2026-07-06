@@ -1,11 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/database/prisma", () => ({
+    prisma: {},
+}));
+
 import {
     fileUrlToLocalPath,
     maskNationalId,
     toEventItem,
 } from "@/lib/actions/data-management/helpers";
 import { hasDataManagementSearchIntent } from "@/lib/actions/data-management/search-intent";
-import { dataManagementReasonSchema } from "@/lib/validations/data-management.validation";
+import {
+    dataManagementReasonSchema,
+    dataManagementSearchSchema,
+} from "@/lib/validations/data-management.validation";
 
 describe("data management helpers", () => {
     it("masks national id in search results", () => {
@@ -43,6 +51,21 @@ describe("data management helpers", () => {
         expect(hasDataManagementSearchIntent({ dataState: "disabled" })).toBe(true);
         expect(hasDataManagementSearchIntent({ dataState: "test" })).toBe(true);
         expect(hasDataManagementSearchIntent({ province: "เชียงใหม่" })).toBe(true);
+    });
+
+    it("validates search cursors for paginated data management search", () => {
+        const valid = dataManagementSearchSchema.safeParse({
+            query: "รร",
+            schoolCursor: "cmpjfvisu001bjx2mezlfvfdl",
+            studentCursor: "cmpuqkyxe000bm6psmpxb1g0z",
+        });
+        const invalid = dataManagementSearchSchema.safeParse({
+            query: "รร",
+            schoolCursor: "not-a-cursor",
+        });
+
+        expect(valid.success).toBe(true);
+        expect(invalid.success).toBe(false);
     });
 
     it("maps event snapshots into list items", () => {

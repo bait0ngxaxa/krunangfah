@@ -83,7 +83,10 @@ async function fetchAnalyticsData(
         showClassFilter
             ? prisma.schoolClass
                   .findMany({
-                      where: { ...(schoolId ? { schoolId } : {}) },
+                      where: {
+                          ...(schoolId ? { schoolId } : {}),
+                          school: { disabledAt: null, isTestData: false },
+                      },
                       select: { name: true },
                       orderBy: { name: "asc" },
                   })
@@ -96,6 +99,9 @@ async function fetchAnalyticsData(
                         student: {
                             ...(schoolId ? { schoolId } : {}),
                             ...(classFilter ? { class: classFilter } : {}),
+                            disabledAt: null,
+                            isTestData: false,
+                            school: { disabledAt: null, isTestData: false },
                         },
                     },
                 },
@@ -134,6 +140,9 @@ async function fetchAnalyticsData(
             student: {
                 ...(schoolId ? { schoolId } : {}),
                 ...(classFilter ? { class: classFilter } : {}),
+                disabledAt: null,
+                isTestData: false,
+                school: { disabledAt: null, isTestData: false },
             },
             ...(shouldFilterAcademicTerm
                 ? {
@@ -236,6 +245,7 @@ async function getExpectedStudentCount(
                 schoolClass: {
                     ...(schoolId ? { schoolId } : {}),
                     ...(classFilter ? { name: classFilter } : {}),
+                    school: { disabledAt: null, isTestData: false },
                 },
             },
             _sum: { expectedStudentCount: true },
@@ -250,6 +260,7 @@ async function getExpectedStudentCount(
         where: {
             ...(schoolId ? { schoolId } : {}),
             ...(classFilter ? { name: classFilter } : {}),
+            school: { disabledAt: null, isTestData: false },
         },
         _sum: { expectedStudentCount: true },
     });
@@ -377,7 +388,7 @@ async function fetchSystemAnalyticsOverview(
     semester?: number,
 ): Promise<SystemAnalyticsOverview> {
     const [totalSchools, currentAcademicYear, overviewOptions] = await Promise.all([
-        prisma.school.count(),
+        prisma.school.count({ where: { disabledAt: null, isTestData: false } }),
         getCurrentAcademicYearRecord(),
         getOverviewAcademicYearOptions(),
     ]);
@@ -410,6 +421,7 @@ async function fetchSystemAnalyticsOverview(
     }
 
     const schools = await prisma.school.findMany({
+        where: { disabledAt: null, isTestData: false },
         select: { id: true },
     });
     await Promise.all(
@@ -431,7 +443,13 @@ async function fetchSystemAnalyticsOverview(
     const assessedStudentsRaw = await prisma.$queryRaw<Array<{ count: bigint }>>`
         SELECT COUNT(DISTINCT pr."studentId")::bigint as count
         FROM phq_results pr
+        JOIN students s ON pr."studentId" = s.id
+        JOIN schools sch ON s."schoolId" = sch.id
         WHERE pr."academicYearId" = ${resolvedAcademicYear.id}
+          AND s."disabledAt" IS NULL
+          AND s."isTestData" = false
+          AND sch."disabledAt" IS NULL
+          AND sch."isTestData" = false
     `;
     const studentsWithAssessment = Number(
         assessedStudentsRaw[0]?.count ?? BigInt(0),

@@ -43,14 +43,23 @@ import type {
     DataManagementTargetInput,
 } from "@/lib/validations/data-management.validation";
 
+const EMPTY_SEARCH_RESULT: DataManagementSearchResult = {
+    schools: [],
+    students: [],
+    schoolNextCursor: null,
+    studentNextCursor: null,
+    schoolHasMore: false,
+    studentHasMore: false,
+};
+
 export async function searchDataManagement(
     input: unknown,
 ): Promise<DataManagementSearchResult> {
     await requireAdmin();
     const parsed = dataManagementSearchSchema.safeParse(input ?? {});
-    if (!parsed.success) return { schools: [], students: [] };
+    if (!parsed.success) return EMPTY_SEARCH_RESULT;
     if (!hasDataManagementSearchIntent(parsed.data)) {
-        return { schools: [], students: [] };
+        return EMPTY_SEARCH_RESULT;
     }
     return searchDataManagementTargets(parsed.data);
 }
