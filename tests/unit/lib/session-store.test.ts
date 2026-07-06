@@ -104,6 +104,7 @@ function createDbUser() {
         emailVerified: null,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
         updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+        school: { disabledAt: null },
     };
 }
 
@@ -171,7 +172,11 @@ describe("lib/auth/session-store", () => {
                 userAgentHash: expect.any(String),
                 lastIpPrefix: "203.0.113.0/24",
             }),
-            include: { user: true },
+            include: {
+                user: {
+                    include: { school: { select: { disabledAt: true } } },
+                },
+            },
         });
         const data = mocks.userSessionCreate.mock.calls[0][0].data;
         expect(data.sessionTokenHash).toHaveLength(64);
@@ -353,7 +358,11 @@ describe("lib/auth/session-store", () => {
         expect(mocks.deleteCachedSession).toHaveBeenCalledWith(expect.any(String));
         expect(mocks.userSessionFindUnique).toHaveBeenCalledWith({
             where: { sessionTokenHash: expect.any(String) },
-            include: { user: true },
+            include: {
+                user: {
+                    include: { school: { select: { disabledAt: true } } },
+                },
+            },
         });
         expect(mocks.setCachedSession).not.toHaveBeenCalled();
     });

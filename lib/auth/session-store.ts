@@ -83,6 +83,7 @@ interface DbSessionWithUser {
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
+        school: { disabledAt: Date | null } | null;
     };
 }
 
@@ -385,7 +386,7 @@ async function createUserSession(
             tokenRotatedAt: now,
             ...metadata,
         },
-        include: { user: true },
+        include: { user: { include: { school: { select: { disabledAt: true } } } } },
     }) as DbSessionWithUser;
 
     const sessionVersion = await getUserSessionVersion(userId);
@@ -412,9 +413,18 @@ export async function signInWithPassword(
         return rateLimitFailure;
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+        where: { email },
+        include: { school: { select: { disabledAt: true } } },
+    });
     if (!user || user.deletedAt || !user.password) {
         return { success: false, message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
+    }
+    if (user.role !== "system_admin" && user.school?.disabledAt) {
+        return {
+            success: false,
+            message: "โรงเรียนนี้ถูกปิดใช้งานแล้ว กรุณาติดต่อผู้ดูแลระบบ",
+        };
     }
 
     const passwordValid = await compare(password, user.password);
@@ -590,7 +600,13 @@ export async function rotateCurrentSessionToken(): Promise<RotatedSessionToken |
             expiresAt: true,
             revokedAt: true,
             tokenRotatedAt: true,
-            user: { select: { deletedAt: true } },
+            user: {
+                select: {
+                    deletedAt: true,
+                    role: true,
+                    school: { select: { disabledAt: true } },
+                },
+            },
         },
     });
 
@@ -598,7 +614,10 @@ export async function rotateCurrentSessionToken(): Promise<RotatedSessionToken |
         return null;
     }
 
-    if (session.user.deletedAt) {
+    if (
+        session.user.deletedAt ||
+        (session.user.role !== "system_admin" && session.user.school?.disabledAt)
+    ) {
         await revokeSessionToken(token);
         return null;
     }
@@ -701,7 +720,7 @@ async function getSessionByToken(token: string): Promise<Session | null> {
 
     const session = await prisma.userSession.findUnique({
         where: { sessionTokenHash: tokenHash },
-        include: { user: true },
+        include: { user: { include: { school: { select: { disabledAt: true } } } } },
     }) as DbSessionWithUser | null;
 
     if (!session || session.revokedAt || session.expiresAt <= now) {
@@ -713,7 +732,10 @@ async function getSessionByToken(token: string): Promise<Session | null> {
         return null;
     }
 
-    if (session.user.deletedAt) {
+    if (
+        session.user.deletedAt ||
+        (session.user.role !== "system_admin" && session.user.school?.disabledAt)
+    ) {
         await revokeSessionToken(token);
         return null;
     }

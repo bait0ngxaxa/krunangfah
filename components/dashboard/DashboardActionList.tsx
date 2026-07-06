@@ -13,6 +13,7 @@ import {
     Link as LinkIcon,
     Upload,
     UsersRound,
+    DatabaseZap,
 } from "lucide-react";
 
 const StudentSearch = dynamic(
@@ -101,6 +102,15 @@ export function DashboardActionList({
                             icon={UsersRound}
                             title="จัดการผู้ใช้งาน"
                             description="ดูข้อมูลผู้ใช้ในระบบ"
+                        />
+                    )}
+
+                    {isSystemAdmin && (
+                        <QuickActionCard
+                            href="/admin/data-management"
+                            icon={DatabaseZap}
+                            title="ศูนย์จัดการข้อมูล"
+                            description="ปิดใช้งาน กู้คืน และลบถาวรข้อมูลทดสอบ"
                         />
                     )}
 

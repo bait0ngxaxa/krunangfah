@@ -45,17 +45,40 @@ enum ProblemType {
   external
 }
 
+enum DataManagementTargetType {
+  school
+  student
+}
+
+enum DataManagementAction {
+  MARK_TEST_DATA
+  UNMARK_TEST_DATA
+  DISABLE
+  RESTORE
+  PERMANENT_DELETE
+}
+
 // ==================== Models ====================
 
 
 
 // School - โรงเรียน
 model School {
-  id        String    @id @default(cuid())
-  name      String    // ชื่อโรงเรียน
-  province  String?   // จังหวัด
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  name        String    // ชื่อโรงเรียน
+  province    String?   // จังหวัด
+  disabledAt  DateTime?
+  disabledById String?
+  disabledReason String? @db.Text
+  restoredAt  DateTime?
+  restoredById String?
+  restoreReason String? @db.Text
+  isTestData  Boolean   @default(false)
+  testDataMarkedAt DateTime?
+  testDataMarkedById String?
+  testDataReason String? @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   users          User[]
   teacherInvites TeacherInvite[]
@@ -63,6 +86,8 @@ model School {
   classes        SchoolClass[]
   teacherRoster  SchoolTeacherRoster[]
 
+  @@index([disabledAt])
+  @@index([isTestData])
   @@map("schools")
 }
 
@@ -245,6 +270,16 @@ model Student {
   status        StudentStatus @default(ACTIVE)
   statusChangedAt DateTime?
   leftAt        DateTime?
+  disabledAt    DateTime?
+  disabledById  String?
+  disabledReason String? @db.Text
+  restoredAt    DateTime?
+  restoredById  String?
+  restoreReason String? @db.Text
+  isTestData    Boolean  @default(false)
+  testDataMarkedAt DateTime?
+  testDataMarkedById String?
+  testDataReason String? @db.Text
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -257,8 +292,30 @@ model Student {
 
   @@unique([studentId, schoolId]) // ป้องกันซ้ำ: รหัสนักเรียน + โรงเรียน
   @@index([schoolId, class]) // For filtering by school and class
+  @@index([disabledAt])
+  @@index([isTestData])
   @@index([firstName, lastName]) // For name search
   @@map("students")
+}
+
+// Data Management Event - ประวัติการจัดการข้อมูลโดย system_admin
+model DataManagementEvent {
+  id             String                   @id @default(cuid())
+  targetType     DataManagementTargetType
+  targetId       String
+  action         DataManagementAction
+  reason         String                   @db.Text
+  actorUserId    String
+  actorSnapshot  Json
+  targetSnapshot Json
+  impactSnapshot Json
+  warnings       Json?
+  createdAt      DateTime                 @default(now())
+
+  @@index([targetType, targetId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@map("data_management_events")
 }
 
 // PHQ-A Result - ผลคัดกรองสุขภาพจิต
