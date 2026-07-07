@@ -157,6 +157,7 @@ export async function getCounselingSessions(
 
         const whereClause: Prisma.CounselingSessionWhereInput = {
             studentId,
+            deletedAt: null,
             ...buildAcademicYearRecordFilter(
                 options?.academicYearId,
                 options?.dateRange,
@@ -274,7 +275,10 @@ export async function createCounselingSession(data: {
                 counselingSession = await prisma.$transaction(
                     async (tx) => {
                         const lastSession = await tx.counselingSession.findFirst({
-                            where: { studentId: validated.studentId },
+                            where: {
+                                studentId: validated.studentId,
+                                deletedAt: null,
+                            },
                             orderBy: { sessionNumber: "desc" },
                             select: { sessionNumber: true },
                         });

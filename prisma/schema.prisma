@@ -58,6 +58,22 @@ enum DataManagementAction {
   PERMANENT_DELETE
 }
 
+enum SystemAdminEventTargetType {
+  school
+  student
+  user
+  teacher
+  counselingSession
+  homeVisit
+  phqResult
+  activityProgress
+  studentReferral
+}
+
+enum SystemAdminEventAction {
+  EDIT
+}
+
 // ==================== Models ====================
 
 
@@ -318,6 +334,25 @@ model DataManagementEvent {
   @@map("data_management_events")
 }
 
+// System Admin Event - ประวัติการแก้ไขข้อมูลโดย system_admin
+model SystemAdminEvent {
+  id             String                     @id @default(cuid())
+  targetType     SystemAdminEventTargetType
+  targetId       String
+  action         SystemAdminEventAction
+  reason         String                     @db.Text
+  actorUserId    String
+  actorSnapshot  Json
+  targetSnapshot Json
+  changes        Json
+  createdAt      DateTime                   @default(now())
+
+  @@index([targetType, targetId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@map("system_admin_events")
+}
+
 // PHQ-A Result - ผลคัดกรองสุขภาพจิต
 model PhqResult {
   id              String   @id @default(cuid())
@@ -432,6 +467,9 @@ model CounselingSession {
   counselorName   String    // ครูที่ปรึกษา
   summary         String    @db.Text // สรุปประเด็นที่ปรึกษา
   createdById     String    // FK to User (ครูที่บันทึก)
+  deletedAt       DateTime?
+  deletedById     String?
+  deleteReason    String?   @db.Text
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -441,6 +479,7 @@ model CounselingSession {
 
   @@unique([studentId, sessionNumber])
   @@index([academicYearId])
+  @@index([studentId, deletedAt])
   @@map("counseling_sessions")
 }
 
@@ -535,6 +574,9 @@ model HomeVisit {
   teacherName       String    // snapshot ชื่อครู
   teacherRole       String    // snapshot บทบาทครู
   createdById       String
+  deletedAt         DateTime?
+  deletedById       String?
+  deleteReason      String?   @db.Text
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -545,6 +587,7 @@ model HomeVisit {
 
   @@unique([studentId, visitNumber])
   @@index([academicYearId])
+  @@index([studentId, deletedAt])
   @@map("home_visits")
 }
 

@@ -1,0 +1,105 @@
+"use client";
+
+import type { SystemEntityResult } from "@/lib/actions/system-admin/types";
+import { getEntityTypeLabel } from "./labels";
+import { StatusBadge } from "./StatusBadge";
+
+interface SystemResultListProps {
+    results: SystemEntityResult[];
+    selectedId: string | null;
+    hasSearched: boolean;
+    isPending: boolean;
+    onSelect: (entity: SystemEntityResult) => void;
+}
+
+export function SystemResultList({
+    results,
+    selectedId,
+    hasSearched,
+    isPending,
+    onSelect,
+}: SystemResultListProps) {
+    if (!hasSearched) {
+        return <ResultMessage title="ยังไม่ได้ค้นหา" description="เริ่มจากโรงเรียน ผู้ใช้ ครู หรือนักเรียนที่ต้องดูแล" />;
+    }
+
+    if (isPending) {
+        return <ResultMessage title="กำลังค้นหา" description="กำลังตรวจรายการที่ตรงกับคำค้น" />;
+    }
+
+    if (results.length === 0) {
+        return <ResultMessage title="ไม่พบข้อมูล" description="ลองใช้ชื่อ อีเมล รหัสนักเรียน หรือชื่อโรงเรียนให้เฉพาะขึ้น" />;
+    }
+
+    return (
+        <div className="max-h-[460px] space-y-2 overflow-y-auto pr-1">
+            {results.map((entity) => (
+                <button
+                    key={`${entity.type}:${entity.id}`}
+                    type="button"
+                    onClick={() => onSelect(entity)}
+                    className={`w-full rounded-xl border p-3 text-left transition-base ${
+                        selectedId === entity.id
+                            ? "border-emerald-300 bg-emerald-50"
+                            : "border-gray-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/50"
+                    }`}
+                >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                            <p className="text-sm font-extrabold text-gray-900">
+                                {getPrimaryLabel(entity)}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-600">
+                                {getSecondaryLabel(entity)}
+                            </p>
+                        </div>
+                        <StatusBadge>{getEntityTypeLabel(entity.type)}</StatusBadge>
+                    </div>
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function ResultMessage({
+    title,
+    description,
+}: {
+    title: string;
+    description: string;
+}) {
+    return (
+        <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/50 p-6 text-center">
+            <h2 className="text-base font-extrabold text-gray-900">{title}</h2>
+            <p className="mt-1 max-w-sm text-sm leading-6 text-gray-600">
+                {description}
+            </p>
+        </div>
+    );
+}
+
+function getPrimaryLabel(entity: SystemEntityResult): string {
+    switch (entity.type) {
+        case "school":
+            return entity.name;
+        case "user":
+            return entity.teacherName ?? entity.name ?? entity.email;
+        case "teacher":
+            return `${entity.firstName} ${entity.lastName}`;
+        case "student":
+            return `${entity.firstName} ${entity.lastName}`;
+    }
+}
+
+function getSecondaryLabel(entity: SystemEntityResult): string {
+    switch (entity.type) {
+        case "school":
+            return entity.province ?? "ไม่ระบุจังหวัด";
+        case "user":
+            return `${entity.email}${entity.schoolName ? ` · ${entity.schoolName}` : ""}`;
+        case "teacher":
+            return `${entity.email}${entity.schoolName ? ` · ${entity.schoolName}` : ""}`;
+        case "student":
+            return `${entity.studentId} · ${entity.class} · ${entity.schoolName}`;
+    }
+}

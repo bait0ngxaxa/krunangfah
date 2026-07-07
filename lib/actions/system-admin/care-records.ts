@@ -1,0 +1,269 @@
+import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
+import { revalidateStudentsCache } from "@/lib/actions/student/cache";
+import { prisma } from "@/lib/database/prisma";
+import type {
+    SystemCounselingRecord,
+    SystemEditResponse,
+    SystemHomeVisitRecord,
+} from "./types";
+import type {
+    SystemCounselingEditInput,
+    SystemHomeVisitEditInput,
+} from "@/lib/validations/system-admin.validation";
+import { createSystemAdminEditEvent } from "./events";
+import type { Actor } from "./mutations";
+import {
+    COUNSELING_SELECT,
+    HOME_VISIT_SELECT,
+    toCounselingRecord,
+    toHomeVisitRecord,
+} from "./care-records-selects";
+
+export { getStudentCareRecords } from "./care-records-read";
+export { softDeleteSystemCareRecord } from "./care-records-delete";
+export { resetSystemActivityProgress } from "./care-records-activity-reset";
+export { resetSystemPhqResult } from "./care-records-phq-reset";
+export {
+    deleteSystemReferral,
+    saveSystemPhqResult,
+    saveSystemReferral,
+} from "./care-records-admin";
+
+export async function saveSystemCounselingRecord(
+    input: SystemCounselingEditInput,
+    actor: Actor,
+): Promise<SystemEditResponse<SystemCounselingRecord>> {
+    const existing = input.id
+        ? await prisma.counselingSession.findFirst({
+              where: { id: input.id, deletedAt: null },
+              select: COUNSELING_SELECT,
+          })
+        : null;
+
+    const result = await prisma.$transaction(async (tx) => {
+        if (existing) return updateCounseling(tx, existing, input, actor);
+        return createCounseling(tx, input, actor);
+    });
+
+    revalidateCareRecordPaths(input.studentId);
+    return { success: true, message: "บันทึกการให้คำปรึกษาสำเร็จ", updated: result };
+}
+
+export async function saveSystemHomeVisitRecord(
+    input: SystemHomeVisitEditInput,
+    actor: Actor,
+): Promise<SystemEditResponse<SystemHomeVisitRecord>> {
+    const existing = input.id
+        ? await prisma.homeVisit.findFirst({
+              where: { id: input.id, deletedAt: null },
+              select: HOME_VISIT_SELECT,
+          })
+        : null;
+
+    const result = await prisma.$transaction(async (tx) => {
+        if (existing) return updateHomeVisit(tx, existing, input, actor);
+        return createHomeVisit(tx, input, actor);
+    });
+
+    revalidateCareRecordPaths(input.studentId);
+    return { success: true, message: "บันทึกการเยี่ยมบ้านสำเร็จ", updated: result };
+}
+
+async function updateCounseling(
+    tx: Prisma.TransactionClient,
+    existing: CounselingRow,
+    input: SystemCounselingEditInput,
+    actor: Actor,
+): Promise<SystemCounselingRecord> {
+    const changes = [
+        createChange("sessionDate", "วันที่", existing.sessionDate, input.sessionDate),
+        createChange("counselorName", "ผู้ให้คำปรึกษา", existing.counselorName, input.counselorName),
+        createChange("summary", "สรุป", existing.summary, input.summary),
+    ].filter(isChange);
+    if (changes.length === 0) return toCounselingRecord(existing);
+
+    const updated = await tx.counselingSession.update({
+        where: { id: existing.id },
+        data: {
+            sessionDate: input.sessionDate,
+            counselorName: input.counselorName,
+            summary: input.summary,
+        },
+        select: COUNSELING_SELECT,
+    });
+    await createSystemAdminEditEvent({
+        tx,
+        targetType: "counselingSession",
+        targetId: updated.id,
+        targetLabel: `ปรึกษาครั้งที่ ${updated.sessionNumber}`,
+        reason: input.reason,
+        actor,
+        changes,
+    });
+    return toCounselingRecord(updated);
+}
+
+async function createCounseling(
+    tx: Prisma.TransactionClient,
+    input: SystemCounselingEditInput,
+    actor: Actor,
+): Promise<SystemCounselingRecord> {
+    const sessionNumber = await getNextCounselingNumber(tx, input.studentId);
+    const created = await tx.counselingSession.create({
+        data: {
+            studentId: input.studentId,
+            sessionNumber,
+            sessionDate: input.sessionDate,
+            counselorName: input.counselorName,
+            summary: input.summary,
+            createdById: actor.id,
+        },
+        select: COUNSELING_SELECT,
+    });
+    await createSystemAdminEditEvent({
+        tx,
+        targetType: "counselingSession",
+        targetId: created.id,
+        targetLabel: `ปรึกษาครั้งที่ ${created.sessionNumber}`,
+        reason: input.reason,
+        actor,
+        changes: [{ field: "record", label: "เพิ่มบันทึก", before: null, after: "created" }],
+    });
+    return toCounselingRecord(created);
+}
+
+async function updateHomeVisit(
+    tx: Prisma.TransactionClient,
+    existing: HomeVisitRow,
+    input: SystemHomeVisitEditInput,
+    actor: Actor,
+): Promise<SystemHomeVisitRecord> {
+    const nextScheduledDate = input.nextScheduledDate || null;
+    const changes = [
+        createChange("visitDate", "วันที่เยี่ยมบ้าน", existing.visitDate, input.visitDate),
+        createChange("description", "รายละเอียด", existing.description, input.description),
+        createChange("nextScheduledDate", "นัดครั้งถัดไป", existing.nextScheduledDate, nextScheduledDate),
+        createChange("teacherName", "ครูเจ้าของรายการ", existing.teacherName, input.teacherName),
+        createChange("teacherRole", "บทบาทครู", existing.teacherRole, input.teacherRole),
+    ].filter(isChange);
+    if (changes.length === 0) return toHomeVisitRecord(existing);
+
+    const updated = await tx.homeVisit.update({
+        where: { id: existing.id },
+        data: {
+            visitDate: input.visitDate,
+            description: input.description,
+            nextScheduledDate,
+            teacherName: input.teacherName,
+            teacherRole: input.teacherRole,
+        },
+        select: HOME_VISIT_SELECT,
+    });
+    await createSystemAdminEditEvent({
+        tx,
+        targetType: "homeVisit",
+        targetId: updated.id,
+        targetLabel: `เยี่ยมบ้านครั้งที่ ${updated.visitNumber}`,
+        reason: input.reason,
+        actor,
+        changes,
+    });
+    return toHomeVisitRecord(updated);
+}
+
+async function createHomeVisit(
+    tx: Prisma.TransactionClient,
+    input: SystemHomeVisitEditInput,
+    actor: Actor,
+): Promise<SystemHomeVisitRecord> {
+    const visitNumber = await getNextHomeVisitNumber(tx, input.studentId);
+    const created = await tx.homeVisit.create({
+        data: {
+            studentId: input.studentId,
+            visitNumber,
+            visitDate: input.visitDate,
+            description: input.description,
+            nextScheduledDate: input.nextScheduledDate || null,
+            teacherName: input.teacherName,
+            teacherRole: input.teacherRole,
+            createdById: actor.id,
+        },
+        select: HOME_VISIT_SELECT,
+    });
+    await createSystemAdminEditEvent({
+        tx,
+        targetType: "homeVisit",
+        targetId: created.id,
+        targetLabel: `เยี่ยมบ้านครั้งที่ ${created.visitNumber}`,
+        reason: input.reason,
+        actor,
+        changes: [{ field: "record", label: "เพิ่มบันทึก", before: null, after: "created" }],
+    });
+    return toHomeVisitRecord(created);
+}
+
+async function getNextCounselingNumber(
+    tx: Prisma.TransactionClient,
+    studentId: string,
+): Promise<number> {
+    const last = await tx.counselingSession.findFirst({
+        where: { studentId, deletedAt: null },
+        orderBy: { sessionNumber: "desc" },
+        select: { sessionNumber: true },
+    });
+    return (last?.sessionNumber ?? 0) + 1;
+}
+
+async function getNextHomeVisitNumber(
+    tx: Prisma.TransactionClient,
+    studentId: string,
+): Promise<number> {
+    const last = await tx.homeVisit.findFirst({
+        where: { studentId, deletedAt: null },
+        orderBy: { visitNumber: "desc" },
+        select: { visitNumber: true },
+    });
+    return (last?.visitNumber ?? 0) + 1;
+}
+
+function revalidateCareRecordPaths(studentId: string): void {
+    revalidateStudentsCache(studentId);
+    revalidatePath(`/students/${studentId}`);
+    revalidatePath("/admin/system");
+}
+
+function createChange(
+    field: string,
+    label: string,
+    before: string | number | boolean | Date | null,
+    after: string | number | boolean | Date | null,
+): Change | null {
+    const previous = serializeValue(before);
+    const next = serializeValue(after);
+    if (previous === next) return null;
+    return { field, label, before: previous, after: next };
+}
+
+function serializeValue(value: string | number | boolean | Date | null) {
+    return value instanceof Date ? value.toISOString() : value;
+}
+
+function isChange(change: Change | null): change is Change {
+    return change !== null;
+}
+
+type Change = {
+    field: string;
+    label: string;
+    before: string | number | boolean | null;
+    after: string | number | boolean | null;
+};
+
+type CounselingRow = Prisma.CounselingSessionGetPayload<{
+    select: typeof COUNSELING_SELECT;
+}>;
+
+type HomeVisitRow = Prisma.HomeVisitGetPayload<{
+    select: typeof HOME_VISIT_SELECT;
+}>;

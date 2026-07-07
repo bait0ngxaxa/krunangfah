@@ -14,6 +14,7 @@ import {
     Upload,
     UsersRound,
     DatabaseZap,
+    ShieldCheck,
 } from "lucide-react";
 
 const StudentSearch = dynamic(
@@ -96,6 +97,15 @@ export function DashboardActionList({
 
             {(isSystemAdmin || isSchoolAdmin) && (
                 <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {isSystemAdmin && (
+                        <QuickActionCard
+                            href="/admin/system"
+                            icon={ShieldCheck}
+                            title="ศูนย์ดูแลระบบ"
+                            description="ค้นหาโรงเรียน ผู้ใช้ ครู และนักเรียนจากจุดเดียว"
+                        />
+                    )}
+
                     {isSystemAdmin && (
                         <QuickActionCard
                             href="/admin/users"
