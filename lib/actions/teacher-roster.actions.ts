@@ -4,6 +4,7 @@ import type { UserRole, ProjectRole } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth, requirePrimaryAdmin } from "@/lib/auth/session";
 import { handleActionError } from "./error-handler";
+import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
 import {
     teacherRosterSchema,
     type TeacherRosterFormData,
@@ -234,7 +235,7 @@ export async function addTeacherToRoster(
                 userRole: rest.userRole as UserRole,
                 advisoryClass:
                     rest.userRole === "school_admin"
-                        ? "ทุกห้อง"
+                        ? ADMIN_ADVISORY_CLASS
                         : rest.advisoryClass,
                 schoolRole: rest.schoolRole.trim(),
                 projectRole: rest.projectRole as ProjectRole,
@@ -424,7 +425,7 @@ export async function updateRosterEntry(
                 userRole: rest.userRole as UserRole,
                 advisoryClass:
                     rest.userRole === "school_admin"
-                        ? "ทุกห้อง"
+                        ? ADMIN_ADVISORY_CLASS
                         : rest.advisoryClass,
                 schoolRole: rest.schoolRole.trim(),
                 projectRole: rest.projectRole as ProjectRole,

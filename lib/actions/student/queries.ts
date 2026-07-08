@@ -23,6 +23,27 @@ interface DashboardSummaryFilterOptions {
     referredOnly?: boolean;
 }
 
+function buildActiveStudentSchoolCondition(
+    schoolId: string | undefined,
+): Prisma.Sql {
+    if (schoolId) {
+        return Prisma.sql`
+            WHERE s."schoolId" = ${schoolId}
+              AND s."disabledAt" IS NULL
+              AND s."isTestData" = false
+              AND sch."disabledAt" IS NULL
+              AND sch."isTestData" = false
+        `;
+    }
+
+    return Prisma.sql`
+        WHERE s."disabledAt" IS NULL
+          AND s."isTestData" = false
+          AND sch."disabledAt" IS NULL
+          AND sch."isTestData" = false
+    `;
+}
+
 function applyClassFilter(
     whereClause: Prisma.StudentWhereInput,
     classFilter?: string,
@@ -86,9 +107,7 @@ async function getStudentIdsByLatestRiskQuery(
     classFilter?: string,
     referredOnly?: boolean,
 ): Promise<string[]> {
-    const schoolCondition = schoolId
-        ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
-        : Prisma.sql`WHERE 1=1`;
+    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
     const teacherCondition =
         userRole === "class_teacher" && advisoryClass && userId
             ? Prisma.sql`AND s."class" = ${advisoryClass}`
@@ -115,6 +134,7 @@ async function getStudentIdsByLatestRiskQuery(
                 ) AS rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
+            JOIN schools sch ON s."schoolId" = sch.id
             ${schoolCondition}
               ${teacherCondition}
               ${classCondition}
@@ -181,9 +201,7 @@ export async function getRiskLevelCountsQuery(
     options?: DashboardSummaryFilterOptions,
 ): Promise<RiskCountRaw[]> {
     // Build base visibility scope from role + school context.
-    const schoolCondition = schoolId
-        ? Prisma.sql`WHERE s."schoolId" = ${schoolId}`
-        : Prisma.sql`WHERE 1=1`;
+    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
 
     // class_teacher can see own advisory class plus students referred to them.
     const teacherCondition =
@@ -221,6 +239,7 @@ export async function getRiskLevelCountsQuery(
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
+            JOIN schools sch ON s."schoolId" = sch.id
             ${schoolCondition}
               ${teacherCondition}
               ${classCondition}
@@ -244,6 +263,9 @@ function buildReferralAwareWhere(
 ): Prisma.StudentWhereInput {
     const where: Prisma.StudentWhereInput = {
         ...(schoolId ? { schoolId } : {}),
+        disabledAt: null,
+        isTestData: false,
+        school: { disabledAt: null, isTestData: false },
     };
 
     if (userRole === "class_teacher" && advisoryClass) {

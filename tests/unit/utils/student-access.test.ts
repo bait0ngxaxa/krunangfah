@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/database/prisma", () => ({
+    prisma: {},
+}));
+
 import { canAccessStudentByRole } from "@/lib/security/student-access";
 
 describe("canAccessStudentByRole", () => {

@@ -75,6 +75,7 @@ describe("lib/session", () => {
                 isPrimary: true,
                 schoolId: true,
                 deletedAt: true,
+                school: { select: { disabledAt: true } },
             },
         });
         expect(session.user.role).toBe("school_admin");

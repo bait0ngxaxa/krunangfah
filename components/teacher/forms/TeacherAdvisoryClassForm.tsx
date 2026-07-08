@@ -7,6 +7,7 @@ import {
     getClassesBySchool,
     updateTeacherProfile,
 } from "@/lib/actions/user-management.actions";
+import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
 import { cn } from "@/lib/utils/cn";
 
 interface AdvisoryClassOption {
@@ -20,6 +21,7 @@ interface TeacherAdvisoryClassFormProps {
     classes?: AdvisoryClassOption[];
     schoolId?: string | null;
     allClassesLabel: string;
+    includeAllClassesOption?: boolean;
     className?: string;
     onSaved: () => void;
     onCancel: () => void;
@@ -29,6 +31,7 @@ interface AdvisoryClassSelectProps {
     value: string;
     classes: AdvisoryClassOption[];
     allClassesLabel: string;
+    includeAllClassesOption: boolean;
     isLoading: boolean;
     hasError: boolean;
     onChange: (value: string) => void;
@@ -46,6 +49,7 @@ function AdvisoryClassSelect({
     value,
     classes,
     allClassesLabel,
+    includeAllClassesOption,
     isLoading,
     hasError,
     onChange,
@@ -61,7 +65,9 @@ function AdvisoryClassSelect({
             className="min-w-0 flex-1 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs text-gray-800 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:bg-gray-50"
         >
             <option value="">เลือกห้อง</option>
-            <option value="ทุกห้อง">{allClassesLabel}</option>
+            {includeAllClassesOption ? (
+                <option value={ADMIN_ADVISORY_CLASS}>{allClassesLabel}</option>
+            ) : null}
             {classes.map((c) => (
                 <option key={c.id} value={c.name}>
                     {c.name}
@@ -106,6 +112,7 @@ export function TeacherAdvisoryClassForm({
     classes: initialClasses,
     schoolId,
     allClassesLabel,
+    includeAllClassesOption = true,
     className,
     onSaved,
     onCancel,
@@ -185,6 +192,7 @@ export function TeacherAdvisoryClassForm({
                 value={selectedClass}
                 classes={classes}
                 allClassesLabel={allClassesLabel}
+                includeAllClassesOption={includeAllClassesOption}
                 isLoading={isLoading}
                 hasError={!!errorMessage}
                 onChange={(value) => {

@@ -172,6 +172,7 @@ export async function getHomeVisits(
 
         const whereClause: Prisma.HomeVisitWhereInput = {
             studentId,
+            deletedAt: null,
             ...buildAcademicYearRecordFilter(
                 options?.academicYearId,
                 options?.dateRange,
@@ -310,7 +311,10 @@ export async function createHomeVisit(data: {
                 visit = await prisma.$transaction(
                     async (tx) => {
                         const lastVisit = await tx.homeVisit.findFirst({
-                            where: { studentId: validated.studentId },
+                            where: {
+                                studentId: validated.studentId,
+                                deletedAt: null,
+                            },
                             orderBy: { visitNumber: "desc" },
                             select: { visitNumber: true },
                         });

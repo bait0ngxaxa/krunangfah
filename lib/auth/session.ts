@@ -21,10 +21,12 @@ async function getFreshAccessClaims(
             isPrimary: true,
             schoolId: true,
             deletedAt: true,
+            school: { select: { disabledAt: true } },
         },
     });
 
     if (!user || user.deletedAt) return null;
+    if (user.role !== "system_admin" && user.school?.disabledAt) return null;
 
     return {
         role: user.role as UserRole,

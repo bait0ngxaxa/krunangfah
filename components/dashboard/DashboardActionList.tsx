@@ -13,6 +13,7 @@ import {
     Link as LinkIcon,
     Upload,
     UsersRound,
+    ShieldCheck,
 } from "lucide-react";
 
 const StudentSearch = dynamic(
@@ -68,7 +69,7 @@ export function DashboardActionList({
                             <div className="inline-flex max-w-full items-center gap-1.5 rounded-xl bg-[var(--brand-primary)] px-3.5 py-1.5 text-[11px] font-bold text-white shadow-sm transition-base hover:brightness-95 sm:text-xs">
                                 <Upload className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" />
                                 <span className="min-w-0 break-words">
-                                    Import Excel
+                                    นำเข้า Excel
                                 </span>
                             </div>
                         }
@@ -97,10 +98,10 @@ export function DashboardActionList({
                 <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {isSystemAdmin && (
                         <QuickActionCard
-                            href="/admin/users"
-                            icon={UsersRound}
-                            title="จัดการผู้ใช้งาน"
-                            description="ดูข้อมูลผู้ใช้ในระบบ"
+                            href="/admin/system"
+                            icon={ShieldCheck}
+                            title="ศูนย์ดูแลระบบ"
+                            description="ค้นหาโรงเรียน ผู้ใช้ ครู และนักเรียนจากจุดเดียว"
                         />
                     )}
 
@@ -108,8 +109,8 @@ export function DashboardActionList({
                         <QuickActionCard
                             href="/admin/invites"
                             icon={LinkIcon}
-                            title="Invite Links"
-                            description="เชิญ Admin"
+                            title="ลิงก์คำเชิญ"
+                            description="เชิญผู้ดูแลโรงเรียน"
                         />
                     )}
 

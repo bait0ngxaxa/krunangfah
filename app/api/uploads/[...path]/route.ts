@@ -95,8 +95,10 @@ export async function GET(
                         include: {
                             student: {
                                 select: {
+                                    disabledAt: true,
                                     schoolId: true,
                                     class: true,
+                                    school: { select: { disabledAt: true } },
                                 },
                             },
                         },
@@ -106,6 +108,12 @@ export async function GET(
 
             if (!photo) {
                 return new NextResponse("File not found", { status: 404 });
+            }
+            if (
+                photo.homeVisit.student.disabledAt ||
+                photo.homeVisit.student.school.disabledAt
+            ) {
+                return new NextResponse("Forbidden", { status: 403 });
             }
 
             const canAccess = canAccessStudentByRole(
@@ -135,8 +143,10 @@ export async function GET(
                         include: {
                             student: {
                                 select: {
+                                    disabledAt: true,
                                     schoolId: true,
                                     class: true,
+                                    school: { select: { disabledAt: true } },
                                 },
                             },
                         },
@@ -146,6 +156,12 @@ export async function GET(
 
             if (!worksheet) {
                 return new NextResponse("File not found", { status: 404 });
+            }
+            if (
+                worksheet.activityProgress.student.disabledAt ||
+                worksheet.activityProgress.student.school.disabledAt
+            ) {
+                return new NextResponse("Forbidden", { status: 403 });
             }
 
             const canAccess = canAccessStudentByRole(

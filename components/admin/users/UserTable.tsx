@@ -150,7 +150,7 @@ function UserCard({
                             teacherId={user.id}
                             initialAdvisoryClass={user.advisoryClass}
                             schoolId={user.schoolId}
-                            allClassesLabel="ทุกห้อง (Admin)"
+                            allClassesLabel="ทุกห้อง (ผู้ดูแล)"
                             className="mt-2.5 pt-2.5"
                             onSaved={() => {
                                 setIsEditing(false);

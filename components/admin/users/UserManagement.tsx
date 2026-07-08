@@ -94,7 +94,7 @@ export function UserManagement({ initialData, schools }: UserManagementProps) {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="ค้นหาด้วย email หรือชื่อ..."
+                    placeholder="ค้นหาด้วยอีเมลหรือชื่อ..."
                     aria-label="ค้นหาผู้ใช้งานด้วยอีเมลหรือชื่อ"
                     aria-busy={isValidating}
                     className="relative min-w-0 flex-1 rounded-xl border border-emerald-100 bg-white px-4 py-2.5 font-medium text-gray-800 outline-none transition-base placeholder:text-gray-500 hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200"
@@ -164,7 +164,7 @@ function UserOnboardingPanel({
                 <UserGuideStep
                     icon={<ShieldCheck className="h-4 w-4" aria-hidden="true" />}
                     title="ดูบทบาท"
-                    description={`ในผลลัพธ์นี้มีบัญชีครู ${adminCount} บัญชี`}
+                    description={`ในผลลัพธ์นี้มีบัญชีผู้ดูแล ${adminCount} บัญชี`}
                 />
                 <UserGuideStep
                     icon={<GraduationCap className="h-4 w-4" aria-hidden="true" />}

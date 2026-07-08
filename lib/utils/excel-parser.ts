@@ -4,6 +4,7 @@ import {
     MAX_IMPORT_FILE_SIZE_BYTES,
     MAX_IMPORT_ROW_COUNT,
 } from "@/lib/constants/import";
+import { PHQA_SCORE_LABELS } from "@/lib/constants/phq-score-labels";
 import { logError } from "@/lib/utils/logging";
 
 export type ParsedGender = "MALE" | "FEMALE";
@@ -21,13 +22,6 @@ const PHQA_TEMPLATE_HEADERS = {
     q9a: "ใน 1 เดือนที่ผ่านมา มีช่วงไหนที่คุณคิดอยากตาย หรือไม่คิดอยากมีชีวิตอยู่อย่างจริงจังหรือไม่",
     q9b: "ตลอดชีวิตที่ผ่านมา คุณเคยพยายามที่ทำให้ตัวเองตายหรือลงมือฆ่าตัวตายหรือไม่",
 } as const;
-const PHQA_SCORE_LABELS = new Map<string, number>([
-    ["ไม่มเลย", 0],
-    ["ไม่มีเลย", 0],
-    ["มีบางวัน", 1],
-    ["มีมากกว่า 7 วัน", 2],
-    ["มีแทบทุกวัน", 3],
-]);
 const FIELD_HEADER_ALIASES = {
     gender: ["เพศ", "เพศกำเนิด"],
     age: ["อายุ", "อายุ (ปี)"],

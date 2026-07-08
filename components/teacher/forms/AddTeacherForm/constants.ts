@@ -1,1 +1,1 @@
-export const ADMIN_ADVISORY_CLASS = "ทุกห้อง";
+export { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";

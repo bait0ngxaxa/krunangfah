@@ -1,10 +1,7 @@
 /**
  * Vitest Setup File
- * Global test configuration and mocks
+ * Global test configuration and safety guards.
  */
-
-// Add any global test setup here
-// For example: mock environment variables, global mocks, etc.
 
 // Mock environment variables if needed
 if (process.env.NODE_ENV !== "test") {
@@ -12,4 +9,9 @@ if (process.env.NODE_ENV !== "test") {
         value: "test",
         writable: true,
     });
+}
+
+if (process.env.DATABASE_URL) {
+    process.env.__REAL_DATABASE_URL_FORBIDDEN_IN_TESTS = process.env.DATABASE_URL;
+    delete process.env.DATABASE_URL;
 }

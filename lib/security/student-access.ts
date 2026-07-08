@@ -86,11 +86,19 @@ export async function verifyStudentAccessForUser({
     if (userRole === "system_admin") {
         const student = await prisma.student.findUnique({
             where: { id: studentId },
-            select: { id: true, status: true },
+            select: {
+                id: true,
+                status: true,
+                disabledAt: true,
+                school: { select: { disabledAt: true } },
+            },
         });
 
         if (!student) {
             return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
+        }
+        if (student.disabledAt || student.school.disabledAt) {
+            return { allowed: false, error: "ข้อมูลนักเรียนนี้ถูกปิดใช้งานแล้ว" };
         }
 
         return mode === "manage"
@@ -108,7 +116,13 @@ export async function verifyStudentAccessForUser({
         }),
         prisma.student.findUnique({
             where: { id: studentId },
-            select: { schoolId: true, class: true, status: true },
+            select: {
+                schoolId: true,
+                class: true,
+                status: true,
+                disabledAt: true,
+                school: { select: { disabledAt: true } },
+            },
         }),
     ]);
 
@@ -118,6 +132,9 @@ export async function verifyStudentAccessForUser({
 
     if (!student) {
         return { allowed: false, error: "ไม่พบข้อมูลนักเรียน" };
+    }
+    if (student.disabledAt || student.school.disabledAt) {
+        return { allowed: false, error: "ข้อมูลนักเรียนนี้ถูกปิดใช้งานแล้ว" };
     }
 
     const allowed = canAccessStudentByRole(
