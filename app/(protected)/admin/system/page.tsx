@@ -18,15 +18,16 @@ export default async function SystemOperationsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 px-4 py-6">
-            <div className="mx-auto max-w-[1600px]">
-                <BackButton href="/dashboard" label="กลับหน้าหลัก" />
+        <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 px-4 py-6 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-[1520px] space-y-6">
+                <div>
+                    <BackButton href="/dashboard" label="กลับหน้าหลัก" />
+                </div>
                 <PageHeaderCard
                     icon={ShieldCheck}
                     title="ศูนย์ดูแลระบบ"
                     description="ค้นหาโรงเรียน บุคลากร และนักเรียนจากจุดเดียว แล้วจัดการข้อมูลต่อได้ทันที"
                     variant="neutral"
-                    className="mb-6"
                 />
                 <SystemOperationsCenter />
             </div>

@@ -38,10 +38,10 @@ export function SystemCareActivityGroups({
                     className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3"
                 >
                     <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-extrabold text-gray-900">
+                        <p className="text-sm font-semibold text-gray-950">
                             {group.label}
                         </p>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-emerald-700">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium tabular-nums text-emerald-700">
                             {group.records.length} กิจกรรม
                         </span>
                     </div>

@@ -33,7 +33,7 @@ export function SystemEventPanel() {
                 <div>
                     <div className="flex items-center gap-2">
                         <Clock3 className="h-4 w-4 text-emerald-600" />
-                        <h2 className="text-base font-extrabold text-gray-900">
+                        <h2 className="text-base font-semibold text-gray-950">
                             เหตุการณ์การจัดการข้อมูล
                         </h2>
                     </div>
@@ -76,7 +76,7 @@ export function EditEventRow({ event }: { event: SystemAdminEditEventItem }) {
         <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
             <div className="flex items-start justify-between gap-2">
                 <div>
-                    <p className="text-sm font-bold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-950">
                         แก้ไขข้อมูล: {event.targetLabel}
                     </p>
                     <p className="mt-1 text-xs font-medium text-gray-700">
@@ -92,7 +92,7 @@ export function EditEventRow({ event }: { event: SystemAdminEditEventItem }) {
                 {event.changes.map((change) => (
                     <span
                         key={`${event.id}:${change.field}`}
-                        className="rounded-full border border-emerald-200 bg-white px-2 py-1 text-xs font-bold text-emerald-800"
+                        className="rounded-full border border-emerald-200 bg-white px-2 py-1 text-xs font-medium text-emerald-800"
                     >
                         {change.label}
                     </span>

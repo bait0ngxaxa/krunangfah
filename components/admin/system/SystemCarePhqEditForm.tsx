@@ -75,7 +75,7 @@ export function SystemCarePhqEditForm({
 }) {
     return (
         <div className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-            <p className="text-sm font-extrabold text-emerald-950">{title}</p>
+            <p className="text-sm font-semibold text-emerald-950">{title}</p>
             <ScoreGrid value={value} onChange={onChange} />
             <SafetyGrid value={value} onChange={onChange} />
             {value.referredToHospital ? (
@@ -149,7 +149,7 @@ function HospitalNameField({
 }) {
     return (
         <label className="mt-3 block">
-            <span className="text-sm font-bold text-emerald-950">
+            <span className="text-sm font-medium text-emerald-950">
                 ชื่อโรงพยาบาล
             </span>
             <input
@@ -170,7 +170,7 @@ function ReasonField({
 }) {
     return (
         <label className="mt-3 block">
-            <span className="text-sm font-bold text-emerald-950">
+            <span className="text-sm font-medium text-emerald-950">
                 เหตุผลการแก้ไข
             </span>
             <textarea
@@ -218,11 +218,11 @@ function ScoreSelect({
 }) {
     return (
         <label className="block">
-            <span className="text-xs font-bold text-emerald-950">{label}</span>
+            <span className="text-xs font-medium text-emerald-950">{label}</span>
             <select
                 value={value}
                 onChange={(event) => onChange(Number(event.target.value))}
-                className="mt-1 w-full rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm font-bold text-gray-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                className="mt-1 w-full rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm font-medium text-gray-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
             >
                 {PHQA_SCORE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -270,7 +270,7 @@ function CheckboxField({
     onChange: (checked: boolean) => void;
 }) {
     return (
-        <label className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm font-bold text-emerald-950">
+        <label className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm font-medium text-emerald-950">
             <input
                 type="checkbox"
                 checked={checked}

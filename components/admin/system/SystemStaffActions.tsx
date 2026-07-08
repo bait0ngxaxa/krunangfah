@@ -103,14 +103,16 @@ export function SystemStaffActions({
     };
 
     return (
-        <section className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-            <div className="flex items-start gap-2">
-                <UserCog className="mt-0.5 h-4 w-4 text-emerald-700" />
+        <section className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 ring-1 ring-emerald-100">
+                    <UserCog className="h-4 w-4" />
+                </div>
                 <div>
-                    <h3 className="text-sm font-extrabold text-gray-900">
+                    <h3 className="text-base font-semibold text-gray-950">
                         จัดการบัญชีบุคลากร
                     </h3>
-                    <p className="mt-1 text-xs leading-5 text-gray-700">
+                    <p className="mt-1 text-sm leading-6 text-gray-700">
                         แก้บทบาทบัญชีและการเข้าถึงของบุคลากรจากผลค้นหาเดียว
                     </p>
                 </div>
@@ -118,7 +120,7 @@ export function SystemStaffActions({
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
                 <label className="block">
-                    <span className="text-xs font-bold text-gray-700">
+                    <span className="text-xs font-medium text-gray-700">
                         บทบาทบัญชี
                     </span>
                     <select
@@ -130,7 +132,7 @@ export function SystemStaffActions({
                             })
                         }
                         disabled={!canChangeRole || isPending}
-                        className="mt-1 w-full rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm font-bold text-gray-900 outline-none transition-base focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 disabled:bg-gray-50"
+                        className="mt-1 w-full rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm font-medium text-gray-900 outline-none transition-base focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 disabled:bg-gray-50"
                     >
                         {STAFF_ROLE_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
