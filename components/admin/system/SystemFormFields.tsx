@@ -22,8 +22,8 @@ export function FormShell({
     onSave: () => void;
 }) {
     return (
-        <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
-            <div className="grid gap-3 sm:grid-cols-2">{children}</div>
+        <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 sm:p-5">
+            <div className="grid gap-4 sm:grid-cols-2">{children}</div>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
                 <Button
                     type="button"
@@ -62,7 +62,7 @@ export function TextField({
 }) {
     return (
         <label className="block">
-            <span className="mb-1 block text-xs font-bold text-gray-700">
+            <span className="mb-1 block text-xs font-medium text-gray-700">
                 {label}
             </span>
             <input
@@ -91,14 +91,14 @@ export function SelectField({
 }) {
     return (
         <label className="block">
-            <span className="mb-1 block text-xs font-bold text-gray-700">
+            <span className="mb-1 block text-xs font-medium text-gray-700">
                 {label}
             </span>
             <select
                 value={value}
                 disabled={disabled}
                 onChange={(event) => onChange(event.target.value)}
-                className="w-full rounded-xl border border-emerald-100 bg-white px-3 py-2.5 text-sm font-bold text-gray-900 outline-none transition-base focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-50"
+                className="w-full rounded-xl border border-emerald-100 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 outline-none transition-base focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-50"
             >
                 {options.map((option) => (
                     <option
@@ -123,7 +123,7 @@ export function ReasonField({
 }) {
     return (
         <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs font-bold text-gray-700">
+            <span className="mb-1 block text-xs font-medium text-gray-700">
                 เหตุผลการแก้ไข (บังคับ)
             </span>
             <textarea

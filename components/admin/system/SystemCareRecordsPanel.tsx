@@ -54,8 +54,8 @@ export function SystemCareRecordsPanel({ studentId }: { studentId: string }) {
 
     if (!data) {
         return (
-            <section className="mt-5 rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
+            <section className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     กำลังโหลดข้อมูลดูแลนักเรียน
                 </div>
@@ -64,7 +64,7 @@ export function SystemCareRecordsPanel({ studentId }: { studentId: string }) {
     }
 
     return (
-        <section className="mt-5 space-y-4">
+        <section className="space-y-5">
             <SummaryGrid data={data} />
             <SystemCareAdminPanel
                 data={data}

@@ -106,14 +106,16 @@ export function SystemDataManagementSection({
     };
 
     return (
-        <section className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-            <div className="flex items-start gap-2">
-                <DatabaseZap className="mt-0.5 h-4 w-4 text-emerald-700" />
+        <section className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 ring-1 ring-emerald-100">
+                    <DatabaseZap className="h-4 w-4" />
+                </div>
                 <div>
-                    <h3 className="text-sm font-extrabold text-gray-900">
+                    <h3 className="text-base font-semibold text-gray-950">
                         จัดการข้อมูล
                     </h3>
-                    <p className="mt-1 text-xs leading-5 text-gray-700">
+                    <p className="mt-1 text-sm leading-6 text-gray-700">
                         ตรวจผลกระทบและดำเนินการโดยไม่ออกจากศูนย์ดูแลระบบ
                     </p>
                 </div>
@@ -127,7 +129,7 @@ export function SystemDataManagementSection({
             ) : null}
 
             {preview ? (
-                <div className="mt-4 space-y-4">
+                <div className="mt-5 space-y-5">
                     <ImpactGrid impact={preview.impact} targetType={preview.type} />
                     <DataActionButtons preview={preview} onAction={openAction} />
                     <RecentEvents preview={preview} />
@@ -204,7 +206,7 @@ function DataActionButtons({
 function RecentEvents({ preview }: { preview: ManagedPreview }) {
     return (
         <div>
-            <h4 className="text-sm font-bold text-gray-900">
+            <h4 className="text-sm font-semibold text-gray-950">
                 ประวัติการจัดการข้อมูล
             </h4>
             <div className="mt-2 space-y-2">

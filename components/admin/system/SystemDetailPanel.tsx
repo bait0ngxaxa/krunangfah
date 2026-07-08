@@ -53,92 +53,99 @@ export function SystemDetailPanel({
 
     if (!entity) {
         return (
-            <aside className="flex min-h-[520px] flex-col items-center justify-center rounded-2xl border border-emerald-100 bg-white p-6 text-center shadow-sm">
-                <ShieldCheck className="h-10 w-10 text-emerald-600" />
-                <h2 className="mt-3 text-lg font-extrabold text-gray-900">
+            <aside className="flex min-h-[520px] flex-col items-center justify-center rounded-2xl border border-dashed border-emerald-200 bg-white/80 p-6 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                    <ShieldCheck className="h-8 w-8" />
+                </div>
+                <h2 className="mt-4 text-lg font-semibold text-gray-950">
                     เลือกข้อมูลเพื่อดูรายละเอียด
                 </h2>
-                <p className="mt-1 max-w-xs text-sm leading-6 text-gray-600">
-                    ค้นหาแล้วเลือกข้อมูลเพื่อดูรายละเอียดและจัดการจากหน้านี้
+                <p className="mt-2 max-w-sm text-sm leading-6 text-gray-600">
+                    ค้นหาแล้วเลือกข้อมูลจากคอลัมน์ซ้าย เพื่อดูรายละเอียด แก้ไขข้อมูล และตรวจประวัติที่เกี่ยวข้อง
                 </p>
             </aside>
         );
     }
 
     return (
-        <aside className="min-w-0 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700">
-                    <EntityIcon type={entity.type} />
+        <aside className="min-w-0 space-y-5">
+            <section className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+                            <EntityIcon type={entity.type} />
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="break-words text-2xl font-semibold leading-tight text-gray-950">
+                                {getTitle(entity)}
+                            </h2>
+                            <p className="mt-1 break-words text-sm leading-6 text-gray-600">
+                                {getSubtitle(entity)}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 md:justify-end">
+                        {getBadges(entity).map((badge) => (
+                            <StatusBadge key={badge.label} tone={badge.tone}>
+                                {badge.label}
+                            </StatusBadge>
+                        ))}
+                    </div>
                 </div>
-                <div className="min-w-0">
-                    <h2 className="text-lg font-extrabold text-gray-900">
-                        {getTitle(entity)}
-                    </h2>
-                    <p className="text-sm text-gray-600">{getSubtitle(entity)}</p>
+
+                <div className="mt-5 border-t border-gray-100 pt-5">
+                    {entity.type === "staff" ? (
+                        <StaffDetailSections entity={entity} />
+                    ) : (
+                        <DetailGrid items={getDetails(entity)} />
+                    )}
                 </div>
-            </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-                {getBadges(entity).map((badge) => (
-                    <StatusBadge key={badge.label} tone={badge.tone}>
-                        {badge.label}
-                    </StatusBadge>
-                ))}
-            </div>
-
-            {entity.type === "staff" ? (
-                <StaffDetailSections entity={entity} />
-            ) : (
-                <DetailGrid items={getDetails(entity)} />
-            )}
-
-            <div className="mt-5 space-y-2">
-                {canEdit(entity) ? (
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        fullWidth
-                        className="justify-between"
-                        onClick={() => setIsEditing((current) => !current)}
-                    >
-                        <span>{isEditing ? "ปิดฟอร์มแก้ไข" : "แก้ไขข้อมูล"}</span>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
+                <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                    {canEdit(entity) ? (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="justify-between"
+                            onClick={() => setIsEditing((current) => !current)}
+                        >
+                            <span>{isEditing ? "ปิดฟอร์มแก้ไข" : "แก้ไขข้อมูล"}</span>
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    ) : null}
+                    {canEditTeacherProfile(entity) ? (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="justify-between"
+                            onClick={() => setIsEditing((current) => !current)}
+                        >
+                            <span>
+                                {isEditing
+                                    ? "ปิดฟอร์มแก้ไขโปรไฟล์ครู"
+                                    : "แก้ไขโปรไฟล์ครู"}
+                            </span>
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    ) : null}
+                </div>
+                {isEditing && canEdit(entity) ? (
+                    <SystemEditForm
+                        key={`${entity.type}:${entity.id}`}
+                        entity={entity}
+                        onSaved={onEntityUpdated}
+                        onCancel={() => setIsEditing(false)}
+                    />
                 ) : null}
-                {canEditTeacherProfile(entity) ? (
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        fullWidth
-                        className="justify-between"
-                        onClick={() => setIsEditing((current) => !current)}
-                    >
-                        <span>
-                            {isEditing
-                                ? "ปิดฟอร์มแก้ไขโปรไฟล์ครู"
-                                : "แก้ไขโปรไฟล์ครู"}
-                        </span>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
+                {isEditing && canEditTeacherProfile(entity) ? (
+                    <SystemTeacherProfileForm
+                        key={`teacher:${entity.id}`}
+                        entity={entity}
+                        onSaved={onEntityUpdated}
+                        onCancel={() => setIsEditing(false)}
+                    />
                 ) : null}
-            </div>
-            {isEditing && canEdit(entity) ? (
-                <SystemEditForm
-                    key={`${entity.type}:${entity.id}`}
-                    entity={entity}
-                    onSaved={onEntityUpdated}
-                    onCancel={() => setIsEditing(false)}
-                />
-            ) : null}
-            {isEditing && canEditTeacherProfile(entity) ? (
-                <SystemTeacherProfileForm
-                    key={`teacher:${entity.id}`}
-                    entity={entity}
-                    onSaved={onEntityUpdated}
-                    onCancel={() => setIsEditing(false)}
-                />
-            ) : null}
+            </section>
             {entity.type === "staff" ? (
                 <SystemStaffActions
                     entity={entity}
@@ -270,10 +277,10 @@ function StaffDetailSections({
     entity: Extract<SystemEntityResult, { type: "staff" }>;
 }) {
     return (
-        <div className="mt-5 space-y-4">
+        <div className="space-y-5">
             {getStaffDetailSections(entity).map((section) => (
                 <section key={section.title}>
-                    <h3 className="mb-2 text-sm font-extrabold text-gray-900">
+                    <h3 className="mb-2 text-sm font-semibold text-gray-950">
                         {section.title}
                     </h3>
                     <DetailGrid items={section.items} />
@@ -285,16 +292,16 @@ function StaffDetailSections({
 
 function DetailGrid({ items }: { items: DetailItem[] }) {
     return (
-        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <dl className="grid gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => (
                 <div
                     key={item.label}
-                    className="rounded-xl border border-gray-100 bg-gray-50 p-3"
+                    className="min-w-0 border-b border-gray-100 pb-3"
                 >
-                    <dt className="text-xs font-bold text-gray-500">
+                    <dt className="text-xs font-medium text-gray-600">
                         {item.label}
                     </dt>
-                    <dd className="mt-1 break-words text-sm font-bold text-gray-900">
+                    <dd className="mt-1 break-words text-sm font-semibold leading-6 text-gray-950">
                         {item.value}
                     </dd>
                 </div>

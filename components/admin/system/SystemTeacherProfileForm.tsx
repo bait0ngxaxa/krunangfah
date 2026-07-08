@@ -52,7 +52,7 @@ export function SystemTeacherProfileForm({
 
     return (
         <section className="mt-4 rounded-xl border border-emerald-100 bg-white p-3">
-            <h4 className="text-sm font-extrabold text-gray-900">
+            <h4 className="text-sm font-semibold text-gray-950">
                 แก้ไขโปรไฟล์ครู
             </h4>
             <p className="mt-1 text-xs leading-5 text-gray-600">

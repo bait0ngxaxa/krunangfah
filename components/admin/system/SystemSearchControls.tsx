@@ -30,15 +30,15 @@ export function SystemSearchControls({
 }: SystemSearchControlsProps) {
     return (
         <form
-            className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm"
+            className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm sm:p-5"
             onSubmit={(event) => {
                 event.preventDefault();
                 onSearch();
             }}
         >
-            <div className="flex flex-col gap-3">
-                <label className="min-w-0 flex-1">
-                    <span className="mb-1.5 flex items-center gap-2 text-sm font-bold text-gray-800">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_auto] lg:items-end">
+                <label className="min-w-0">
+                    <span className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-gray-800">
                         <Search className="h-4 w-4 text-emerald-600" />
                         ค้นหาข้อมูล
                     </span>
@@ -51,8 +51,8 @@ export function SystemSearchControls({
                     />
                 </label>
 
-                <label>
-                    <span className="mb-1.5 flex items-center gap-2 text-sm font-bold text-gray-800">
+                <label className="min-w-0">
+                    <span className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-gray-800">
                         <SlidersHorizontal className="h-4 w-4 text-emerald-600" />
                         ประเภท
                     </span>
@@ -61,7 +61,7 @@ export function SystemSearchControls({
                         onChange={(event) =>
                             onEntityTypeChange(event.target.value as SystemEntityFilter)
                         }
-                        className="w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm font-bold text-gray-900 outline-none transition-base hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                        className="w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none transition-base hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                     >
                         {ENTITY_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -70,17 +70,20 @@ export function SystemSearchControls({
                         ))}
                     </select>
                 </label>
-            </div>
 
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs leading-5 text-gray-600">
-                    พิมพ์อย่างน้อย 2 ตัวอักษร ระบบจะค้นหาเฉพาะเมื่อกดค้นหา
-                </p>
-                <Button type="submit" variant="primary" disabled={isPending}>
+                <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={isPending}
+                    className="min-h-11 lg:self-end"
+                >
                     <Search className="h-4 w-4" />
                     {isPending ? "กำลังค้นหา" : "ค้นหา"}
                 </Button>
             </div>
+            <p className="mt-3 text-xs leading-5 text-gray-600">
+                พิมพ์อย่างน้อย 2 ตัวอักษร ระบบจะค้นหาเฉพาะเมื่อกดค้นหา
+            </p>
         </form>
     );
 }

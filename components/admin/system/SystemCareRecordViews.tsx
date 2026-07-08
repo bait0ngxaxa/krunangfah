@@ -40,7 +40,7 @@ export function RecordSection({
     return (
         <div className="rounded-2xl border border-gray-100 bg-white p-4">
             <div className="flex items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-sm font-extrabold text-gray-900">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-950">
                     {icon}
                     {title}
                 </h3>
@@ -73,7 +73,7 @@ export function RecordRow({
         <article className="rounded-xl border border-gray-100 bg-gray-50 p-3">
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <p className="text-sm font-extrabold text-gray-900">{title}</p>
+                    <p className="text-sm font-semibold text-gray-950">{title}</p>
                     <p className="mt-1 text-xs font-medium text-gray-600">{subtitle}</p>
                 </div>
                 {actions || onDelete ? (
@@ -94,7 +94,7 @@ export function RecordRow({
                 ) : null}
             </div>
             <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-700">{body}</p>
-            {meta ? <p className="mt-2 text-xs font-bold text-gray-500">{meta}</p> : null}
+            {meta ? <p className="mt-2 text-xs font-medium text-gray-500">{meta}</p> : null}
             {children}
         </article>
     );
@@ -131,9 +131,9 @@ export function DeleteReasonBox({
 }) {
     return (
         <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
-            <p className="text-sm font-extrabold text-red-900">{title}</p>
+            <p className="text-sm font-semibold text-red-900">{title}</p>
             <label className="mt-3 block">
-                <span className="text-sm font-bold text-red-900">
+                <span className="text-sm font-semibold text-red-900">
                     {reasonLabel}
                 </span>
                 <textarea
@@ -168,11 +168,11 @@ function SummaryCard({
 }) {
     return (
         <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
+            <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
                 <ClipboardList className="h-4 w-4" />
                 {label}
             </div>
-            <p className="mt-2 text-base font-extrabold text-gray-900">{value}</p>
+            <p className="mt-2 text-lg font-semibold leading-6 text-gray-950">{value}</p>
             <p className="mt-1 truncate text-xs font-medium text-gray-600">{detail}</p>
         </div>
     );
