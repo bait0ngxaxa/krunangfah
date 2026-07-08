@@ -16,8 +16,7 @@ interface SystemSearchControlsProps {
 const ENTITY_OPTIONS: Array<{ value: SystemEntityFilter; label: string }> = [
     { value: "all", label: "ทั้งหมด" },
     { value: "school", label: "โรงเรียน" },
-    { value: "user", label: "ผู้ใช้งาน" },
-    { value: "teacher", label: "ครู" },
+    { value: "staff", label: "บุคลากร" },
     { value: "student", label: "นักเรียน" },
 ];
 
@@ -41,13 +40,13 @@ export function SystemSearchControls({
                 <label className="min-w-0 flex-1">
                     <span className="mb-1.5 flex items-center gap-2 text-sm font-bold text-gray-800">
                         <Search className="h-4 w-4 text-emerald-600" />
-                        ค้นหา entity
+                        ค้นหาข้อมูล
                     </span>
                     <input
                         type="search"
                         value={query}
                         onChange={(event) => onQueryChange(event.target.value)}
-                        placeholder="ชื่อโรงเรียน อีเมลครู ชื่อนักเรียน รหัสนักเรียน..."
+                        placeholder="ชื่อโรงเรียน ชื่อบุคลากร อีเมล ชื่อนักเรียน รหัสนักเรียน..."
                         className="w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none transition-base placeholder:text-gray-500 hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                     />
                 </label>

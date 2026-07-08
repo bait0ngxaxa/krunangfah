@@ -208,7 +208,7 @@ async function getNextCounselingNumber(
     studentId: string,
 ): Promise<number> {
     const last = await tx.counselingSession.findFirst({
-        where: { studentId, deletedAt: null },
+        where: { studentId },
         orderBy: { sessionNumber: "desc" },
         select: { sessionNumber: true },
     });
@@ -220,7 +220,7 @@ async function getNextHomeVisitNumber(
     studentId: string,
 ): Promise<number> {
     const last = await tx.homeVisit.findFirst({
-        where: { studentId, deletedAt: null },
+        where: { studentId },
         orderBy: { visitNumber: "desc" },
         select: { visitNumber: true },
     });

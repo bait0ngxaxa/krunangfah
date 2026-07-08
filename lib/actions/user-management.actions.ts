@@ -8,11 +8,13 @@ import type {
     UserListItem,
     MutationResponse,
     ChangeableRole,
+    StaffRoleSelection,
 } from "@/types/user-management.types";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, UserRole } from "@prisma/client";
 import { revalidateDashboardCache } from "./dashboard/cache";
 import { deleteUserSessionCaches } from "@/lib/auth/session-cache";
 import { revokeUserSessions } from "@/lib/auth/session-store";
+import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
 
 const DEFAULT_PAGE_SIZE = 15;
 
@@ -90,10 +92,15 @@ export async function getUsers(
     return { users: mapped, total, page, pageSize };
 }
 
-const VALID_ROLES: ChangeableRole[] = ["school_admin", "class_teacher"];
+const VALID_ROLE_SELECTIONS: ChangeableRole[] = [
+    "primary_school_admin",
+    "angel_teacher",
+    "school_admin",
+    "class_teacher",
+];
 
 /**
- * Change user role (school_admin ↔ class_teacher only)
+ * Change staff role among ผู้ดูแลโรงเรียน, ครูนางฟ้า, and ครูประจำชั้น.
  * Cannot change to/from system_admin
  */
 export async function changeUserRole(
@@ -102,16 +109,18 @@ export async function changeUserRole(
 ): Promise<MutationResponse> {
     const session = await requireAdmin();
 
-    if (!VALID_ROLES.includes(newRole)) {
+    if (!VALID_ROLE_SELECTIONS.includes(newRole)) {
         return { success: false, message: "บทบาทไม่ถูกต้อง" };
     }
 
+    const assignment = toRoleAssignment(newRole);
     const target = await prisma.user.findUnique({
         where: { id: userId },
         select: {
             id: true,
             role: true,
             isPrimary: true,
+            schoolId: true,
             deletedAt: true,
             teacher: { select: { id: true, advisoryClass: true } },
         },
@@ -129,28 +138,32 @@ export async function changeUserRole(
         return { success: false, message: "ผู้ใช้นี้ถูกลบแล้ว" };
     }
 
-    if (target.isPrimary) {
-        return { success: false, message: "ไม่สามารถเปลี่ยนบทบาทของ Primary Admin เพราะโรงเรียนจะไม่มีผู้ดูแลหลัก" };
-    }
-
     if (target.id === session.user.id) {
         return { success: false, message: "ไม่สามารถเปลี่ยนบทบาทของตัวเอง" };
     }
 
-    if (target.role === newRole) {
+    if (getCurrentAssignment(target) === assignment.selection) {
         return { success: false, message: "บทบาทไม่เปลี่ยนแปลง" };
     }
 
+    if (await blocksSolePrimaryDemotion(target, assignment.selection)) {
+        return {
+            success: false,
+            message:
+                "โรงเรียนนี้มีผู้ดูแลโรงเรียนเพียงคนเดียว ต้องเพิ่มผู้ดูแลโรงเรียนอีกคนก่อนเปลี่ยนบทบาท",
+        };
+    }
+
     // class_teacher ต้องมี teacher profile + advisoryClass ที่เป็นห้องจริง
-    // school_admin ได้ advisoryClass = "ทุกห้อง" ตอนสร้างโปรไฟล์ ซึ่งใช้กับ class_teacher ไม่ได้
-    if (newRole === "class_teacher") {
+    // school_admin ได้ advisoryClass = "ทุกห้อง" ซึ่งใช้กับ class_teacher ไม่ได้
+    if (assignment.selection === "class_teacher") {
         if (!target.teacher) {
             return {
                 success: false,
                 message: "ผู้ใช้ยังไม่มีโปรไฟล์ครู ไม่สามารถเปลี่ยนเป็นครูประจำชั้นได้",
             };
         }
-        if (target.teacher.advisoryClass === "ทุกห้อง") {
+        if (target.teacher.advisoryClass === ADMIN_ADVISORY_CLASS) {
             return {
                 success: false,
                 message: "ผู้ใช้มี advisory class เป็น \"ทุกห้อง\" ต้องแก้ไขให้เป็นห้องเรียนจริงก่อน",
@@ -158,14 +171,87 @@ export async function changeUserRole(
         }
     }
 
-    await prisma.user.update({
-        where: { id: userId },
-        data: { role: newRole },
-    });
+    if (assignment.role === "school_admin" && target.teacher) {
+        await prisma.$transaction([
+            prisma.user.update({
+                where: { id: userId },
+                data: { role: assignment.role, isPrimary: assignment.isPrimary },
+            }),
+            prisma.teacher.update({
+                where: { userId },
+                data: { advisoryClass: ADMIN_ADVISORY_CLASS },
+            }),
+        ]);
+    } else {
+        await prisma.user.update({
+            where: { id: userId },
+            data: { role: assignment.role, isPrimary: assignment.isPrimary },
+        });
+    }
 
     await deleteUserSessionCaches(userId);
     revalidateDashboardCache();
     return { success: true, message: "เปลี่ยนบทบาทสำเร็จ" };
+}
+
+interface RoleAssignment {
+    selection: StaffRoleSelection;
+    role: Extract<UserRole, "school_admin" | "class_teacher">;
+    isPrimary: boolean;
+}
+
+function toRoleAssignment(role: ChangeableRole): RoleAssignment {
+    if (role === "primary_school_admin") {
+        return {
+            selection: "primary_school_admin",
+            role: "school_admin",
+            isPrimary: true,
+        };
+    }
+    if (role === "class_teacher") {
+        return {
+            selection: "class_teacher",
+            role: "class_teacher",
+            isPrimary: false,
+        };
+    }
+    return {
+        selection: "angel_teacher",
+        role: "school_admin",
+        isPrimary: false,
+    };
+}
+
+function getCurrentAssignment(user: {
+    role: UserRole;
+    isPrimary: boolean;
+}): StaffRoleSelection {
+    if (user.role === "school_admin" && user.isPrimary) {
+        return "primary_school_admin";
+    }
+    if (user.role === "school_admin") return "angel_teacher";
+    return "class_teacher";
+}
+
+async function blocksSolePrimaryDemotion(
+    user: { isPrimary: boolean; schoolId: string | null },
+    nextSelection: StaffRoleSelection,
+): Promise<boolean> {
+    if (!user.isPrimary || nextSelection === "primary_school_admin") return false;
+    return isSolePrimaryAdmin(user.schoolId);
+}
+
+async function isSolePrimaryAdmin(schoolId: string | null): Promise<boolean> {
+    if (!schoolId) return true;
+    const primaryCount = await prisma.user.count({
+        where: {
+            schoolId,
+            role: "school_admin",
+            isPrimary: true,
+            deletedAt: null,
+        },
+    });
+    return primaryCount <= 1;
 }
 
 /**
@@ -315,16 +401,20 @@ export async function updateTeacherProfile(
         return { success: false, message: "ไม่สามารถแก้ไขครูต่างโรงเรียน" };
     }
 
-    // Primary admin ต้องเป็น "ทุกห้อง" เท่านั้น
-    if (teacher.user.isPrimary && advisoryClass !== "ทุกห้อง") {
+    if (
+        teacher.user.isPrimary &&
+        advisoryClass !== ADMIN_ADVISORY_CLASS &&
+        (await isSolePrimaryAdmin(teacher.user.schoolId))
+    ) {
         return {
             success: false,
-            message: "Primary Admin ต้องดูแลทุกห้อง ไม่สามารถเปลี่ยนเป็นห้องเรียนเฉพาะได้",
+            message:
+                "โรงเรียนนี้มีผู้ดูแลโรงเรียนเพียงคนเดียว ต้องเพิ่มผู้ดูแลโรงเรียนอีกคนก่อนเปลี่ยนเป็นครูประจำชั้น",
         };
     }
 
     // Validate that the class exists in the teacher's school
-    if (teacher.user.schoolId && advisoryClass !== "ทุกห้อง") {
+    if (teacher.user.schoolId && advisoryClass !== ADMIN_ADVISORY_CLASS) {
         const classExists = await prisma.schoolClass.findFirst({
             where: { schoolId: teacher.user.schoolId, name: advisoryClass },
         });
@@ -335,7 +425,7 @@ export async function updateTeacherProfile(
 
     // Auto-determine role from advisoryClass
     const newRole =
-        advisoryClass === "ทุกห้อง" ? "school_admin" : "class_teacher";
+        advisoryClass === ADMIN_ADVISORY_CLASS ? "school_admin" : "class_teacher";
 
     await prisma.$transaction([
         prisma.teacher.update({
@@ -344,7 +434,12 @@ export async function updateTeacherProfile(
         }),
         prisma.user.update({
             where: { id: userId },
-            data: { role: newRole },
+            data: {
+                role: newRole,
+                isPrimary: advisoryClass === ADMIN_ADVISORY_CLASS
+                    ? teacher.user.isPrimary
+                    : false,
+            },
         }),
     ]);
 

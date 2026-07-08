@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { ClipboardList, Pencil, Plus, Trash2 } from "lucide-react";
+import { ClipboardList, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { SystemCareRecordResponse } from "@/lib/actions/system-admin/types";
+import { getActivityStatusLabel, getPhqRiskLevelLabel } from "./labels";
 
 export function SummaryGrid({ data }: { data: SystemCareRecordResponse }) {
     const latestPhq = data.phqResults[0];
@@ -11,12 +12,12 @@ export function SummaryGrid({ data }: { data: SystemCareRecordResponse }) {
             <SummaryCard
                 label="PHQ ล่าสุด"
                 value={latestPhq ? `${latestPhq.totalScore} คะแนน` : "-"}
-                detail={latestPhq ? `${latestPhq.riskLevel} · รอบ ${latestPhq.assessmentRound}` : "ไม่มีข้อมูล"}
+                detail={latestPhq ? `${getPhqRiskLevelLabel(latestPhq.riskLevel)} · รอบ ${latestPhq.assessmentRound}` : "ไม่มีข้อมูล"}
             />
             <SummaryCard
                 label="กิจกรรม"
                 value={`${data.activityProgress.length} รายการ`}
-                detail={latestActivity ? `ล่าสุด: ${latestActivity.status}` : "ไม่มีข้อมูล"}
+                detail={latestActivity ? `ล่าสุด: ${getActivityStatusLabel(latestActivity.status)}` : "ไม่มีข้อมูล"}
             />
             <SummaryCard
                 label="ส่งต่อ"
@@ -31,12 +32,10 @@ export function RecordSection({
     title,
     icon,
     children,
-    onAdd,
 }: {
     title: string;
     icon: ReactNode;
     children: ReactNode;
-    onAdd?: () => void;
 }) {
     return (
         <div className="rounded-2xl border border-gray-100 bg-white p-4">
@@ -45,12 +44,6 @@ export function RecordSection({
                     {icon}
                     {title}
                 </h3>
-                {onAdd ? (
-                    <Button type="button" variant="secondary" size="sm" onClick={onAdd}>
-                        <Plus className="h-4 w-4" />
-                        เพิ่ม
-                    </Button>
-                ) : null}
             </div>
             <div className="mt-3 space-y-2">{children}</div>
         </div>
@@ -63,16 +56,18 @@ export function RecordRow({
     body,
     meta,
     children,
-    onEdit,
+    actions,
     onDelete,
+    deleteLabel = "ลบรายการ",
 }: {
     title: string;
     subtitle: string;
     body: string;
     meta?: string;
     children?: ReactNode;
-    onEdit?: () => void;
-    onDelete: () => void;
+    actions?: ReactNode;
+    onDelete?: () => void;
+    deleteLabel?: string;
 }) {
     return (
         <article className="rounded-xl border border-gray-100 bg-gray-50 p-3">
@@ -81,16 +76,22 @@ export function RecordRow({
                     <p className="text-sm font-extrabold text-gray-900">{title}</p>
                     <p className="mt-1 text-xs font-medium text-gray-600">{subtitle}</p>
                 </div>
-                <div className="flex shrink-0 gap-1">
-                    {onEdit ? (
-                        <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                    ) : null}
-                    <Button type="button" variant="ghost" size="sm" onClick={onDelete}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
+                {actions || onDelete ? (
+                    <div className="flex shrink-0 gap-1">
+                        {actions}
+                        {onDelete ? (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                aria-label={deleteLabel}
+                                onClick={onDelete}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        ) : null}
+                    </div>
+                ) : null}
             </div>
             <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-700">{body}</p>
             {meta ? <p className="mt-2 text-xs font-bold text-gray-500">{meta}</p> : null}
@@ -110,6 +111,8 @@ export function EmptyState() {
 export function DeleteReasonBox({
     title,
     buttonLabel,
+    reasonLabel = "เหตุผลการลบ",
+    reasonPlaceholder = "ระบุเหตุผลการลบ เช่น ข้อมูลผิดหรือบันทึกซ้ำ",
     value,
     isPending,
     onChange,
@@ -118,6 +121,8 @@ export function DeleteReasonBox({
 }: {
     title: string;
     buttonLabel: string;
+    reasonLabel?: string;
+    reasonPlaceholder?: string;
     value: string;
     isPending: boolean;
     onChange: (value: string) => void;
@@ -127,13 +132,18 @@ export function DeleteReasonBox({
     return (
         <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
             <p className="text-sm font-extrabold text-red-900">{title}</p>
-            <textarea
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                rows={3}
-                placeholder="ระบุเหตุผลการลบ"
-                className="mt-3 w-full resize-none rounded-xl border border-red-100 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 outline-none placeholder:text-gray-500 focus:border-red-300 focus:ring-2 focus:ring-red-100"
-            />
+            <label className="mt-3 block">
+                <span className="text-sm font-bold text-red-900">
+                    {reasonLabel}
+                </span>
+                <textarea
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                    rows={3}
+                    placeholder={reasonPlaceholder}
+                    className="mt-2 w-full resize-none rounded-xl border border-red-100 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 outline-none placeholder:text-gray-500 focus:border-red-300 focus:ring-2 focus:ring-red-100"
+                />
+            </label>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
                 <Button type="button" variant="ghost" disabled={isPending} onClick={onCancel}>
                     ยกเลิก

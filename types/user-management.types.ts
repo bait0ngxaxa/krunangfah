@@ -33,4 +33,9 @@ export interface MutationResponse {
     message: string;
 }
 
-export type ChangeableRole = "school_admin" | "class_teacher";
+export type StaffRoleSelection =
+    | "primary_school_admin"
+    | "angel_teacher"
+    | "class_teacher";
+
+export type ChangeableRole = StaffRoleSelection | "school_admin";

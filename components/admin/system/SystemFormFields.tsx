@@ -4,6 +4,12 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
+export interface SelectOption {
+    value: string;
+    label: string;
+    disabled?: boolean;
+}
+
 export function FormShell({
     children,
     isPending,
@@ -74,11 +80,13 @@ export function SelectField({
     label,
     value,
     options,
+    disabled = false,
     onChange,
 }: {
     label: string;
     value: string;
-    options: Array<{ value: string; label: string }>;
+    options: SelectOption[];
+    disabled?: boolean;
     onChange: (value: string) => void;
 }) {
     return (
@@ -88,11 +96,16 @@ export function SelectField({
             </span>
             <select
                 value={value}
+                disabled={disabled}
                 onChange={(event) => onChange(event.target.value)}
-                className="w-full rounded-xl border border-emerald-100 bg-white px-3 py-2.5 text-sm font-bold text-gray-900 outline-none transition-base focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                className="w-full rounded-xl border border-emerald-100 bg-white px-3 py-2.5 text-sm font-bold text-gray-900 outline-none transition-base focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-50"
             >
                 {options.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <option
+                        key={option.value}
+                        value={option.value}
+                        disabled={option.disabled}
+                    >
                         {option.label}
                     </option>
                 ))}

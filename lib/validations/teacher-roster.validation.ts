@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { UserRole, ProjectRole } from "@prisma/client";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
+import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
 import { sanitizeName, sanitizeText } from "@/lib/utils/text-sanitizer";
 
 // ดึง enum values จาก Prisma โดยตรง — ไม่ hardcode
@@ -10,7 +11,7 @@ const userRoleValues = [UserRole.school_admin, UserRole.class_teacher] as [
     ...string[],
 ];
 
-export const ADMIN_ADVISORY_CLASS = "ทุกห้อง";
+export { ADMIN_ADVISORY_CLASS };
 
 export const teacherRosterSchema = z
     .object({

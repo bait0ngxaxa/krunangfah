@@ -1,13 +1,13 @@
-import type { Gender, ProjectRole, StudentStatus, UserRole } from "@prisma/client";
+import type {
+    Gender,
+    ProjectRole,
+    StudentStatus,
+    SystemAdminEventTargetType,
+    UserRole,
+} from "@prisma/client";
 
-export type SystemEntityKind = "school" | "user" | "teacher" | "student";
-export type SystemAdminEventTargetKind =
-    | SystemEntityKind
-    | "counselingSession"
-    | "homeVisit"
-    | "phqResult"
-    | "activityProgress"
-    | "studentReferral";
+export type SystemEntityKind = "school" | "staff" | "student";
+export type SystemAdminEventTargetKind = SystemAdminEventTargetType;
 
 export interface SchoolEntityResult {
     type: "school";
@@ -20,8 +20,8 @@ export interface SchoolEntityResult {
     studentCount: number;
 }
 
-export interface UserEntityResult {
-    type: "user";
+export interface StaffEntityResult {
+    type: "staff";
     id: string;
     email: string;
     name: string | null;
@@ -30,25 +30,15 @@ export interface UserEntityResult {
     deletedAt: Date | null;
     schoolId: string | null;
     schoolName: string | null;
+    hasTeacherProfile: boolean;
+    teacherId: string | null;
     teacherName: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    age: number | null;
     advisoryClass: string | null;
-}
-
-export interface TeacherEntityResult {
-    type: "teacher";
-    id: string;
-    userId: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    age: number;
-    advisoryClass: string;
-    schoolRole: string;
-    projectRole: ProjectRole;
-    userRole: UserRole;
-    deletedAt: Date | null;
-    schoolId: string | null;
-    schoolName: string | null;
+    schoolRole: string | null;
+    projectRole: ProjectRole | null;
 }
 
 export interface StudentEntityResult {
@@ -69,19 +59,23 @@ export interface StudentEntityResult {
     schoolName: string;
     schoolDisabledAt: Date | null;
     schoolIsTestData: boolean;
+    classOptions: SystemClassOption[];
 }
 
 export type SystemEntityResult =
     | SchoolEntityResult
-    | UserEntityResult
-    | TeacherEntityResult
+    | StaffEntityResult
     | StudentEntityResult;
 
 export interface SystemSearchResult {
     schools: SchoolEntityResult[];
-    users: UserEntityResult[];
-    teachers: TeacherEntityResult[];
+    staffs: StaffEntityResult[];
     students: StudentEntityResult[];
+}
+
+export interface SystemClassOption {
+    id: string;
+    name: string;
 }
 
 export interface SystemAdminEditChange {
@@ -120,6 +114,7 @@ export interface SystemCareRecordResponse {
 export interface SystemPhqRecord {
     id: string;
     academicYearLabel: string;
+    isLatestTerm: boolean;
     assessmentRound: number;
     q1: number;
     q2: number;

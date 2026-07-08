@@ -17,6 +17,7 @@ import {
     ReasonField,
     SelectField,
     TextField,
+    type SelectOption,
 } from "./SystemFormFields";
 
 interface SystemEditFormProps {
@@ -95,7 +96,7 @@ function StudentEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
         lastName: student.lastName,
         gender: student.gender ?? "",
         age: student.age?.toString() ?? "",
-        class: student.class,
+        class: getInitialClassValue(student),
         status: student.status,
         reason: "",
     });
@@ -163,9 +164,10 @@ function StudentEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
                 inputMode="numeric"
                 onChange={(value) => update("age", value)}
             />
-            <TextField
+            <SelectField
                 label="ห้อง"
                 value={form.class}
+                options={getClassOptions(student)}
                 onChange={(value) => update("class", value)}
             />
             <SelectField
@@ -185,4 +187,31 @@ function StudentEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
             />
         </FormShell>
     );
+}
+
+function getInitialClassValue(student: StudentEntityResult): string {
+    const hasCurrentClass = student.classOptions.some(
+        (option) => option.name === student.class,
+    );
+    return hasCurrentClass ? student.class : "";
+}
+
+function getClassOptions(student: StudentEntityResult): SelectOption[] {
+    if (student.classOptions.length === 0) {
+        return [
+            {
+                value: "",
+                label: "ยังไม่มีห้องเรียนที่สร้างไว้",
+                disabled: true,
+            },
+        ];
+    }
+
+    const options = student.classOptions.map((option) => ({
+        value: option.name,
+        label: option.name,
+    }));
+
+    if (getInitialClassValue(student)) return options;
+    return [{ value: "", label: "เลือกห้องเรียน" }, ...options];
 }

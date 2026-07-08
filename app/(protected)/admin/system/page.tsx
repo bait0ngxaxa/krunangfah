@@ -8,7 +8,7 @@ import { SystemOperationsCenter } from "@/components/admin/system/SystemOperatio
 
 export const metadata: Metadata = {
     title: "ศูนย์ดูแลระบบ | โครงการครูนางฟ้า",
-    description: "ค้นหาและดูแลข้อมูลหลักสำหรับ System Admin",
+    description: "ค้นหาและดูแลข้อมูลหลักสำหรับผู้ดูแลระบบ",
 };
 
 export default async function SystemOperationsPage() {
@@ -24,7 +24,7 @@ export default async function SystemOperationsPage() {
                 <PageHeaderCard
                     icon={ShieldCheck}
                     title="ศูนย์ดูแลระบบ"
-                    description="ค้นหาโรงเรียน ผู้ใช้งาน ครู และนักเรียนจากจุดเดียว ก่อนเข้า workflow จัดการข้อมูลเดิม"
+                    description="ค้นหาโรงเรียน บุคลากร และนักเรียนจากจุดเดียว แล้วจัดการข้อมูลต่อได้ทันที"
                     variant="neutral"
                     className="mb-6"
                 />

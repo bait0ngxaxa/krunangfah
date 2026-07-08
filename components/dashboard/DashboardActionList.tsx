@@ -13,7 +13,6 @@ import {
     Link as LinkIcon,
     Upload,
     UsersRound,
-    DatabaseZap,
     ShieldCheck,
 } from "lucide-react";
 
@@ -70,7 +69,7 @@ export function DashboardActionList({
                             <div className="inline-flex max-w-full items-center gap-1.5 rounded-xl bg-[var(--brand-primary)] px-3.5 py-1.5 text-[11px] font-bold text-white shadow-sm transition-base hover:brightness-95 sm:text-xs">
                                 <Upload className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" />
                                 <span className="min-w-0 break-words">
-                                    Import Excel
+                                    นำเข้า Excel
                                 </span>
                             </div>
                         }
@@ -108,28 +107,10 @@ export function DashboardActionList({
 
                     {isSystemAdmin && (
                         <QuickActionCard
-                            href="/admin/users"
-                            icon={UsersRound}
-                            title="จัดการผู้ใช้งาน"
-                            description="ดูข้อมูลผู้ใช้ในระบบ"
-                        />
-                    )}
-
-                    {isSystemAdmin && (
-                        <QuickActionCard
-                            href="/admin/data-management"
-                            icon={DatabaseZap}
-                            title="ศูนย์จัดการข้อมูล"
-                            description="ปิดใช้งาน กู้คืน และลบถาวรข้อมูลทดสอบ"
-                        />
-                    )}
-
-                    {isSystemAdmin && (
-                        <QuickActionCard
                             href="/admin/invites"
                             icon={LinkIcon}
-                            title="Invite Links"
-                            description="เชิญ Admin"
+                            title="ลิงก์คำเชิญ"
+                            description="เชิญผู้ดูแลโรงเรียน"
                         />
                     )}
 

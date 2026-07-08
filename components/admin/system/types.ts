@@ -9,8 +9,7 @@ export type SelectedSystemEntity = SystemEntityResult | null;
 
 export const EMPTY_SYSTEM_RESULTS: SystemSearchResult = {
     schools: [],
-    users: [],
-    teachers: [],
+    staffs: [],
     students: [],
 };
 
@@ -19,8 +18,7 @@ export function flattenSystemResults(
 ): SystemEntityResult[] {
     return [
         ...results.schools,
-        ...results.users,
-        ...results.teachers,
+        ...results.staffs,
         ...results.students,
     ];
 }

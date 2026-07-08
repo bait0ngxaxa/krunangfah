@@ -32,6 +32,14 @@ export async function saveSystemPhqResult(
     });
     if (!existing) return { success: false, message: "ไม่พบผลคัดกรอง" };
 
+    const latestPhq = await findLatestPhqForStudent(existing.studentId);
+    if (latestPhq && isNewerTerm(latestPhq, existing)) {
+        return {
+            success: false,
+            message: "แก้ไขผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
+        };
+    }
+
     const scores = toScores(input);
     const calculated = calculateRiskLevel(scores);
     const hospitalName = input.referredToHospital
@@ -168,6 +176,26 @@ async function findTeacherInSchool(userId: string, schoolId: string) {
     });
 }
 
+async function findLatestPhqForStudent(studentId: string) {
+    return prisma.phqResult.findFirst({
+        where: { studentId },
+        select: PHQ_SELECT,
+        orderBy: [
+            { academicYear: { year: "desc" } },
+            { academicYear: { semester: "desc" } },
+            { assessmentRound: "desc" },
+            { createdAt: "desc" },
+        ],
+    });
+}
+
+function isNewerTerm(latest: PhqTermRow, selected: PhqTermRow): boolean {
+    if (latest.academicYear.year !== selected.academicYear.year) {
+        return latest.academicYear.year > selected.academicYear.year;
+    }
+    return latest.academicYear.semester > selected.academicYear.semester;
+}
+
 async function revalidateCarePaths(schoolId: string, studentId: string): Promise<void> {
     revalidateStudentsCache(schoolId, studentId);
     revalidatePath(`/students/${studentId}`);
@@ -212,3 +240,10 @@ type ChangeTuple = [
     string | number | boolean | Date | null,
     string | number | boolean | Date | null,
 ];
+
+type PhqTermRow = {
+    academicYear: {
+        year: number;
+        semester: number;
+    };
+};

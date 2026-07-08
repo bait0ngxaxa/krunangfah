@@ -5,10 +5,10 @@ vi.mock("@/lib/database/prisma", () => ({
 }));
 
 import {
-    fileUrlToLocalPath,
     maskNationalId,
     toEventItem,
 } from "@/lib/actions/data-management/helpers";
+import { fileUrlToLocalPath } from "@/lib/actions/data-management/file-storage";
 import { hasDataManagementSearchIntent } from "@/lib/actions/data-management/search-intent";
 import {
     dataManagementReasonSchema,

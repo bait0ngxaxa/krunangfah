@@ -79,7 +79,9 @@ export async function disableSchool(
     if (result.success && "userIds" in result && Array.isArray(result.userIds)) {
         await Promise.all(result.userIds.map((userId) => invalidateUserSessionCaches(userId)));
     }
-    await revalidateAfterSchool(input.id);
+    if (result.success) {
+        await revalidateAfterSchool(input.id);
+    }
     return { success: result.success, message: result.message };
 }
 
@@ -115,7 +117,9 @@ export async function restoreSchool(
         return success("กู้คืนโรงเรียนสำเร็จ");
     });
 
-    await revalidateAfterSchool(input.id);
+    if (result.success) {
+        await revalidateAfterSchool(input.id);
+    }
     return result;
 }
 
@@ -151,7 +155,9 @@ export async function disableStudent(
         return success("ปิดใช้งานนักเรียนสำเร็จ");
     });
 
-    await revalidateAfterStudent(input.id);
+    if (result.success) {
+        await revalidateAfterStudent(input.id);
+    }
     return result;
 }
 
@@ -187,7 +193,9 @@ export async function restoreStudent(
         return success("กู้คืนนักเรียนสำเร็จ");
     });
 
-    await revalidateAfterStudent(input.id);
+    if (result.success) {
+        await revalidateAfterStudent(input.id);
+    }
     return result;
 }
 
@@ -236,7 +244,9 @@ async function updateSchoolTestState(
         return success(isTestData ? "ตั้งเป็นข้อมูลทดสอบสำเร็จ" : "ยกเลิกข้อมูลทดสอบสำเร็จ");
     });
 
-    await revalidateAfterSchool(input.id);
+    if (result.success) {
+        await revalidateAfterSchool(input.id);
+    }
     return result;
 }
 
@@ -273,6 +283,8 @@ async function updateStudentTestState(
         return success(isTestData ? "ตั้งเป็นข้อมูลทดสอบสำเร็จ" : "ยกเลิกข้อมูลทดสอบสำเร็จ");
     });
 
-    await revalidateAfterStudent(input.id);
+    if (result.success) {
+        await revalidateAfterStudent(input.id);
+    }
     return result;
 }

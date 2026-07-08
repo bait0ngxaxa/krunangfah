@@ -119,6 +119,7 @@ export function toPhqRecord(row: PhqRow): SystemPhqRecord {
     return {
         ...row,
         academicYearLabel: `${row.academicYear.year}/${row.academicYear.semester}`,
+        isLatestTerm: true,
     };
 }
 

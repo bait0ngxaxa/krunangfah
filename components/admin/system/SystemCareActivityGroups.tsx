@@ -6,6 +6,7 @@ import {
     EmptyState,
     RecordRow,
 } from "./SystemCareRecordViews";
+import { getActivityStatusLabel } from "./labels";
 
 export function SystemCareActivityGroups({
     records,
@@ -49,14 +50,17 @@ export function SystemCareActivityGroups({
                             <RecordRow
                                 key={record.id}
                                 title={`กิจกรรมที่ ${record.activityNumber}`}
-                                subtitle={`${record.status} · ${record.teacherName ?? "ไม่ระบุครู"}`}
+                                subtitle={`${getActivityStatusLabel(record.status)} · ${record.teacherName ?? "ไม่ระบุครู"}`}
                                 body={record.teacherNotes ?? "ยังไม่มีบันทึกครู"}
-                                onDelete={() => onStartReset(record)}
+                                deleteLabel={`ล้างผลกิจกรรมที่ ${record.activityNumber}`}
+                                onDelete={canResetActivity(record) ? () => onStartReset(record) : undefined}
                             >
                                 {resetTarget?.id === record.id ? (
                                     <DeleteReasonBox
                                         title={`ล้างผลกิจกรรมที่ ${record.activityNumber}`}
                                         buttonLabel="ล้างผลกิจกรรม"
+                                        reasonLabel="เหตุผลการล้างผลกิจกรรม"
+                                        reasonPlaceholder="เช่น บันทึกกิจกรรมผิดรายการ ต้องถอยกลับให้ครูแก้ไข"
                                         value={resetReason}
                                         isPending={isPending}
                                         onChange={onReasonChange}
@@ -71,6 +75,10 @@ export function SystemCareActivityGroups({
             ))}
         </div>
     );
+}
+
+function canResetActivity(record: SystemActivityRecord): boolean {
+    return record.status === "completed";
 }
 
 function groupActivities(records: SystemActivityRecord[]) {

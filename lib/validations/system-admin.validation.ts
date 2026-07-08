@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { ProjectRole } from "@prisma/client";
+import { INPUT_LIMITS } from "@/lib/constants/input-limits";
+import { sanitizeName, sanitizeText } from "@/lib/utils/text-sanitizer";
 
 export const systemEntityTypes = [
     "all",
     "school",
-    "user",
-    "teacher",
+    "staff",
     "student",
 ] as const;
 
@@ -41,6 +43,34 @@ export const systemStudentEditSchema = z.object({
     age: z.coerce.number().int().min(1).max(120).optional().or(z.literal("")),
     class: z.string().trim().min(1, "กรุณาระบุห้องเรียน").max(50),
     status: z.enum(["ACTIVE", "RESIGNED", "TRANSFERRED", "GRADUATED"]),
+    reason: reasonSchema,
+});
+
+export const systemTeacherProfileEditSchema = z.object({
+    id: z.string().cuid("รหัสบัญชีครูไม่ถูกต้อง"),
+    firstName: z
+        .string()
+        .min(1, "กรุณากรอกชื่อ")
+        .max(INPUT_LIMITS.teacher.firstName, "ชื่อยาวเกินไป")
+        .transform(sanitizeName),
+    lastName: z
+        .string()
+        .min(1, "กรุณากรอกนามสกุล")
+        .max(INPUT_LIMITS.teacher.lastName, "นามสกุลยาวเกินไป")
+        .transform(sanitizeName),
+    age: z.coerce
+        .number({ error: "กรุณากรอกอายุเป็นตัวเลข" })
+        .int("กรุณากรอกอายุเป็นจำนวนเต็ม")
+        .min(18, "อายุต้องมากกว่า 18 ปี")
+        .max(100, "อายุไม่ถูกต้อง"),
+    schoolRole: z
+        .string()
+        .min(1, "กรุณากรอกบทบาทหน้าที่ในโรงเรียน")
+        .max(INPUT_LIMITS.teacher.schoolRole, "บทบาทหน้าที่ยาวเกินไป")
+        .transform(sanitizeText),
+    projectRole: z.enum(ProjectRole, {
+        message: "กรุณาเลือกบทบาทในโครงการ",
+    }),
     reason: reasonSchema,
 });
 
@@ -122,6 +152,9 @@ export type SystemSearchInput = z.infer<typeof systemSearchSchema>;
 export type SystemEntityType = SystemSearchInput["entityType"];
 export type SystemSchoolEditInput = z.infer<typeof systemSchoolEditSchema>;
 export type SystemStudentEditInput = z.infer<typeof systemStudentEditSchema>;
+export type SystemTeacherProfileEditInput = z.infer<
+    typeof systemTeacherProfileEditSchema
+>;
 export type SystemStudentCareRecordsInput = z.infer<
     typeof systemStudentCareRecordsSchema
 >;

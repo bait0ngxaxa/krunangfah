@@ -66,12 +66,22 @@ async function getPhqSummaries(studentId: string) {
             createdAt: true,
             academicYear: { select: { year: true, semester: true } },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: [
+            { academicYear: { year: "desc" } },
+            { academicYear: { semester: "desc" } },
+            { assessmentRound: "desc" },
+            { createdAt: "desc" },
+        ],
         take: 10,
     });
+    const latestTerm = rows[0]?.academicYear ?? null;
     return rows.map((row) => ({
         id: row.id,
         academicYearLabel: `${row.academicYear.year}/${row.academicYear.semester}`,
+        isLatestTerm: latestTerm
+            ? row.academicYear.year === latestTerm.year &&
+              row.academicYear.semester === latestTerm.semester
+            : false,
         assessmentRound: row.assessmentRound,
         q1: row.q1,
         q2: row.q2,

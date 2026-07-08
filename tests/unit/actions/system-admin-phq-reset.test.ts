@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prismaMocks = vi.hoisted(() => {
     const tx = {
-        worksheetUpload: { deleteMany: vi.fn() },
+        worksheetUpload: { deleteMany: vi.fn(), findMany: vi.fn() },
         activityProgress: { deleteMany: vi.fn() },
         phqResult: { deleteMany: vi.fn() },
         systemAdminEvent: { create: vi.fn() },
@@ -10,6 +10,8 @@ const prismaMocks = vi.hoisted(() => {
     return {
         phqResultFindUnique: vi.fn(),
         phqResultFindMany: vi.fn(),
+        phqResultFindFirst: vi.fn(),
+        deleteFilesByUrl: vi.fn(),
         transaction: vi.fn(),
         tx,
     };
@@ -20,6 +22,7 @@ vi.mock("@/lib/database/prisma", () => ({
         phqResult: {
             findUnique: prismaMocks.phqResultFindUnique,
             findMany: prismaMocks.phqResultFindMany,
+            findFirst: prismaMocks.phqResultFindFirst,
         },
         $transaction: prismaMocks.transaction,
     },
@@ -38,12 +41,18 @@ vi.mock("@/lib/actions/student/cache", () => ({
     revalidateStudentsCache: vi.fn(),
 }));
 
+vi.mock("@/lib/actions/data-management/file-storage", () => ({
+    deleteFilesByUrl: prismaMocks.deleteFilesByUrl,
+}));
+
 import { resetSystemPhqResult } from "@/lib/actions/system-admin/care-records-phq-reset";
 
 const studentId = "cmstudent0000000000000001";
 const academicYearId = "cmacademic0000000000001";
+const nextAcademicYearId = "cmacademic0000000000002";
 const phqRound1Id = "cmphq000000000000000001";
 const phqRound2Id = "cmphq000000000000000002";
+const phqNextTermId = "cmphq000000000000000003";
 
 describe("resetSystemPhqResult", () => {
     beforeEach(() => {
@@ -53,13 +62,14 @@ describe("resetSystemPhqResult", () => {
                 callback(prismaMocks.tx),
         );
         prismaMocks.phqResultFindUnique.mockResolvedValue(createPhqRow(phqRound1Id, 1));
-        prismaMocks.phqResultFindMany.mockResolvedValue([
-            createPhqRow(phqRound1Id, 1),
-            createPhqRow(phqRound2Id, 2),
+        prismaMocks.phqResultFindFirst.mockResolvedValue(createPhqRow(phqRound2Id, 2));
+        prismaMocks.tx.worksheetUpload.findMany.mockResolvedValue([
+            { fileUrl: "/api/uploads/worksheets/phq-round-1.png" },
         ]);
+        prismaMocks.deleteFilesByUrl.mockResolvedValue([]);
     });
 
-    it("deletes selected and later PHQ data so teachers can redo the round", async () => {
+    it("deletes only the selected PHQ round so teachers can redo that round", async () => {
         const result = await resetSystemPhqResult(
             { id: phqRound1Id, reason: "ครูนำเข้าคะแนน PHQ ผิดรอบ" },
             {
@@ -71,37 +81,100 @@ describe("resetSystemPhqResult", () => {
         );
 
         expect(result.success).toBe(true);
-        expect(result.updated?.deletedPhqIds).toEqual([phqRound1Id, phqRound2Id]);
-        expect(prismaMocks.phqResultFindMany).toHaveBeenCalledWith({
-            where: {
-                studentId,
-                academicYearId,
-                assessmentRound: { gte: 1 },
-            },
-            select: expect.any(Object),
-            orderBy: { assessmentRound: "asc" },
-        });
+        expect(result.updated?.deletedPhqIds).toEqual([phqRound1Id]);
+        expect(prismaMocks.phqResultFindMany).not.toHaveBeenCalled();
         expect(prismaMocks.tx.worksheetUpload.deleteMany).toHaveBeenCalledWith({
             where: {
                 activityProgress: {
-                    phqResultId: { in: [phqRound1Id, phqRound2Id] },
+                    phqResultId: { in: [phqRound1Id] },
                 },
             },
         });
+        expect(prismaMocks.tx.worksheetUpload.findMany).toHaveBeenCalledWith({
+            where: {
+                activityProgress: {
+                    phqResultId: { in: [phqRound1Id] },
+                },
+            },
+            select: { fileUrl: true },
+        });
         expect(prismaMocks.tx.activityProgress.deleteMany).toHaveBeenCalledWith({
-            where: { phqResultId: { in: [phqRound1Id, phqRound2Id] } },
+            where: { phqResultId: { in: [phqRound1Id] } },
         });
         expect(prismaMocks.tx.phqResult.deleteMany).toHaveBeenCalledWith({
-            where: { id: { in: [phqRound1Id, phqRound2Id] } },
+            where: { id: { in: [phqRound1Id] } },
         });
+        expect(prismaMocks.deleteFilesByUrl).toHaveBeenCalledWith([
+            "/api/uploads/worksheets/phq-round-1.png",
+        ]);
+    });
+
+    it("rejects rollback for an old term when a newer PHQ term exists", async () => {
+        prismaMocks.phqResultFindUnique.mockResolvedValue(
+            createPhqRow(phqRound1Id, 1, { year: 2569, semester: 1 }),
+        );
+        prismaMocks.phqResultFindFirst.mockResolvedValue(
+            createPhqRow(phqNextTermId, 1, {
+                academicYearId: nextAcademicYearId,
+                year: 2569,
+                semester: 2,
+            }),
+        );
+
+        const result = await resetSystemPhqResult(
+            { id: phqRound1Id, reason: "ไม่ควรล้างผลย้อนหลังข้ามเทอม" },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "ล้างผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
+        });
+        expect(prismaMocks.phqResultFindMany).not.toHaveBeenCalled();
+        expect(prismaMocks.transaction).not.toHaveBeenCalled();
+        expect(prismaMocks.deleteFilesByUrl).not.toHaveBeenCalled();
+    });
+
+    it("does not delete worksheet files when the transaction rolls back", async () => {
+        prismaMocks.tx.systemAdminEvent.create.mockRejectedValue(
+            new Error("audit failed"),
+        );
+
+        await expect(
+            resetSystemPhqResult(
+                { id: phqRound1Id, reason: "ทดสอบ rollback เมื่อ audit ล้ม" },
+                {
+                    id: "cmadmin00000000000000001",
+                    email: "admin@example.com",
+                    name: "System Admin",
+                    role: "system_admin",
+                },
+            ),
+        ).rejects.toThrow("audit failed");
+
+        expect(prismaMocks.tx.phqResult.deleteMany).not.toHaveBeenCalled();
+        expect(prismaMocks.deleteFilesByUrl).not.toHaveBeenCalled();
     });
 });
 
-function createPhqRow(id: string, assessmentRound: number) {
+function createPhqRow(
+    id: string,
+    assessmentRound: number,
+    overrides: {
+        academicYearId?: string;
+        year?: number;
+        semester?: number;
+    } = {},
+) {
     return {
         id,
         studentId,
-        academicYearId,
+        academicYearId: overrides.academicYearId ?? academicYearId,
         assessmentRound,
         q1: 1,
         q2: 1,
@@ -119,7 +192,10 @@ function createPhqRow(id: string, assessmentRound: number) {
         referredToHospital: false,
         hospitalName: null,
         createdAt: new Date("2026-07-07T00:00:00.000Z"),
-        academicYear: { year: 2569, semester: 1 },
+        academicYear: {
+            year: overrides.year ?? 2569,
+            semester: overrides.semester ?? 1,
+        },
         student: { schoolId: "cmschool0000000000000001" },
     };
 }

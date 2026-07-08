@@ -1,17 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import {
-    ArrowRight,
     Building2,
     Pencil,
     GraduationCap,
     ShieldCheck,
     UserRound,
 } from "lucide-react";
-import { buttonVariants } from "@/components/ui/Button";
-import type { SystemEntityResult } from "@/lib/actions/system-admin/types";
+import type {
+    SystemEntityResult,
+    SystemSearchResult,
+} from "@/lib/actions/system-admin/types";
 import { Button } from "@/components/ui/Button";
 import {
     getGenderLabel,
@@ -21,16 +21,33 @@ import {
 } from "./labels";
 import { StatusBadge } from "./StatusBadge";
 import { SystemCareRecordsPanel } from "./SystemCareRecordsPanel";
+import { SystemDataManagementSection } from "./SystemDataManagementSection";
 import { SystemEditForm } from "./SystemEditForm";
+import { SystemStaffActions } from "./SystemStaffActions";
+import { SystemTeacherProfileForm } from "./SystemTeacherProfileForm";
+
+interface DetailItem {
+    label: string;
+    value: string;
+}
+
+interface DetailSection {
+    title: string;
+    items: DetailItem[];
+}
 
 interface SystemDetailPanelProps {
     entity: SystemEntityResult | null;
     onEntityUpdated: (entity: SystemEntityResult) => void;
+    onEntityRemoved: (entity: SystemEntityResult) => void;
+    onRefreshSearch: () => Promise<SystemSearchResult>;
 }
 
 export function SystemDetailPanel({
     entity,
     onEntityUpdated,
+    onEntityRemoved,
+    onRefreshSearch,
 }: SystemDetailPanelProps) {
     const [isEditing, setIsEditing] = useState(false);
 
@@ -42,7 +59,7 @@ export function SystemDetailPanel({
                     เลือกข้อมูลเพื่อดูรายละเอียด
                 </h2>
                 <p className="mt-1 max-w-xs text-sm leading-6 text-gray-600">
-                    Phase แรกเป็น read-only detail พร้อมทางลัดไป workflow เดิม
+                    ค้นหาแล้วเลือกข้อมูลเพื่อดูรายละเอียดและจัดการจากหน้านี้
                 </p>
             </aside>
         );
@@ -70,21 +87,11 @@ export function SystemDetailPanel({
                 ))}
             </div>
 
-            <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {getDetails(entity).map((item) => (
-                    <div
-                        key={item.label}
-                        className="rounded-xl border border-gray-100 bg-gray-50 p-3"
-                    >
-                        <dt className="text-xs font-bold text-gray-500">
-                            {item.label}
-                        </dt>
-                        <dd className="mt-1 break-words text-sm font-bold text-gray-900">
-                            {item.value}
-                        </dd>
-                    </div>
-                ))}
-            </dl>
+            {entity.type === "staff" ? (
+                <StaffDetailSections entity={entity} />
+            ) : (
+                <DetailGrid items={getDetails(entity)} />
+            )}
 
             <div className="mt-5 space-y-2">
                 {canEdit(entity) ? (
@@ -99,20 +106,22 @@ export function SystemDetailPanel({
                         <Pencil className="h-4 w-4" />
                     </Button>
                 ) : null}
-                {getShortcuts(entity).map((shortcut) => (
-                    <Link
-                        key={shortcut.href}
-                        href={shortcut.href}
-                        className={buttonVariants({
-                            variant: shortcut.variant,
-                            fullWidth: true,
-                            className: "justify-between",
-                        })}
+                {canEditTeacherProfile(entity) ? (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        fullWidth
+                        className="justify-between"
+                        onClick={() => setIsEditing((current) => !current)}
                     >
-                        <span>{shortcut.label}</span>
-                        <ArrowRight className="h-4 w-4" />
-                    </Link>
-                ))}
+                        <span>
+                            {isEditing
+                                ? "ปิดฟอร์มแก้ไขโปรไฟล์ครู"
+                                : "แก้ไขโปรไฟล์ครู"}
+                        </span>
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                ) : null}
             </div>
             {isEditing && canEdit(entity) ? (
                 <SystemEditForm
@@ -120,6 +129,30 @@ export function SystemDetailPanel({
                     entity={entity}
                     onSaved={onEntityUpdated}
                     onCancel={() => setIsEditing(false)}
+                />
+            ) : null}
+            {isEditing && canEditTeacherProfile(entity) ? (
+                <SystemTeacherProfileForm
+                    key={`teacher:${entity.id}`}
+                    entity={entity}
+                    onSaved={onEntityUpdated}
+                    onCancel={() => setIsEditing(false)}
+                />
+            ) : null}
+            {entity.type === "staff" ? (
+                <SystemStaffActions
+                    entity={entity}
+                    onEntityUpdated={onEntityUpdated}
+                    onEntityRemoved={() => onEntityRemoved(entity)}
+                    onRefreshSearch={onRefreshSearch}
+                />
+            ) : null}
+            {entity.type === "school" || entity.type === "student" ? (
+                <SystemDataManagementSection
+                    entity={entity}
+                    onEntityRemoved={() => onEntityRemoved(entity)}
+                    onEntityUpdated={onEntityUpdated}
+                    onRefreshSearch={onRefreshSearch}
                 />
             ) : null}
             {entity.type === "student" ? (
@@ -135,6 +168,12 @@ function canEdit(
     return entity.type === "school" || entity.type === "student";
 }
 
+function canEditTeacherProfile(
+    entity: SystemEntityResult,
+): entity is Extract<SystemEntityResult, { type: "staff" }> {
+    return entity.type === "staff" && entity.hasTeacherProfile && !entity.deletedAt;
+}
+
 function EntityIcon({ type }: { type: SystemEntityResult["type"] }) {
     if (type === "school") return <Building2 className="h-5 w-5" />;
     if (type === "student") return <GraduationCap className="h-5 w-5" />;
@@ -145,10 +184,8 @@ function getTitle(entity: SystemEntityResult): string {
     switch (entity.type) {
         case "school":
             return entity.name;
-        case "user":
+        case "staff":
             return entity.teacherName ?? entity.name ?? entity.email;
-        case "teacher":
-            return `${entity.firstName} ${entity.lastName}`;
         case "student":
             return `${entity.firstName} ${entity.lastName}`;
     }
@@ -158,41 +195,24 @@ function getSubtitle(entity: SystemEntityResult): string {
     switch (entity.type) {
         case "school":
             return entity.province ?? "ไม่ระบุจังหวัด";
-        case "user":
-            return entity.email;
-        case "teacher":
+        case "staff":
             return `${entity.email} · ${entity.schoolName ?? "ไม่ระบุโรงเรียน"}`;
         case "student":
             return `${entity.studentId} · ${entity.schoolName}`;
     }
 }
 
-function getDetails(entity: SystemEntityResult): Array<{
-    label: string;
-    value: string;
-}> {
+function getDetails(entity: SystemEntityResult): DetailItem[] {
     switch (entity.type) {
         case "school":
             return [
                 { label: "จังหวัด", value: entity.province ?? "-" },
-                { label: "ผู้ใช้งาน", value: `${entity.userCount} บัญชี` },
+                { label: "บัญชีบุคลากร", value: `${entity.userCount} บัญชี` },
                 { label: "นักเรียน", value: `${entity.studentCount} คน` },
-                { label: "School ID", value: entity.id },
+                { label: "รหัสโรงเรียน", value: entity.id },
             ];
-        case "user":
-            return [
-                { label: "บทบาท", value: getRoleLabel(entity.role) },
-                { label: "โรงเรียน", value: entity.schoolName ?? "-" },
-                { label: "ครู", value: entity.teacherName ?? "-" },
-                { label: "User ID", value: entity.id },
-            ];
-        case "teacher":
-            return [
-                { label: "บทบาทระบบ", value: getRoleLabel(entity.userRole) },
-                { label: "บทบาทโครงการ", value: getProjectRoleLabel(entity.projectRole) },
-                { label: "ห้องที่ปรึกษา", value: entity.advisoryClass },
-                { label: "บทบาทในโรงเรียน", value: entity.schoolRole },
-            ];
+        case "staff":
+            return getStaffDetailSections(entity).flatMap((section) => section.items);
         case "student":
             return [
                 { label: "รหัสนักเรียน", value: entity.studentId },
@@ -230,26 +250,90 @@ function getBadges(entity: SystemEntityResult): Array<{
         ];
     }
     return [
-        entity.deletedAt
-            ? { label: "ลบผู้ใช้แล้ว", tone: "danger" }
+            entity.deletedAt
+            ? { label: "ปิดบัญชีแล้ว", tone: "danger" }
             : { label: "เข้าใช้งานได้", tone: "success" },
+        getStaffRoleBadge(entity),
     ];
 }
 
-function getShortcuts(entity: SystemEntityResult): Array<{
-    href: string;
-    label: string;
-    variant: "primary" | "secondary";
-}> {
-    if (entity.type === "user" || entity.type === "teacher") {
-        return [{ href: "/admin/users", label: "เปิดจัดการผู้ใช้งาน", variant: "primary" }];
-    }
+function getStaffRoleBadge(
+    entity: Extract<SystemEntityResult, { type: "staff" }>,
+): { label: string; tone: "neutral" | "success" | "warning" | "danger" } {
+    const label = getRoleLabel(entity.role, { isPrimary: entity.isPrimary });
+    return { label, tone: entity.isPrimary ? "success" : "neutral" };
+}
+
+function StaffDetailSections({
+    entity,
+}: {
+    entity: Extract<SystemEntityResult, { type: "staff" }>;
+}) {
+    return (
+        <div className="mt-5 space-y-4">
+            {getStaffDetailSections(entity).map((section) => (
+                <section key={section.title}>
+                    <h3 className="mb-2 text-sm font-extrabold text-gray-900">
+                        {section.title}
+                    </h3>
+                    <DetailGrid items={section.items} />
+                </section>
+            ))}
+        </div>
+    );
+}
+
+function DetailGrid({ items }: { items: DetailItem[] }) {
+    return (
+        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((item) => (
+                <div
+                    key={item.label}
+                    className="rounded-xl border border-gray-100 bg-gray-50 p-3"
+                >
+                    <dt className="text-xs font-bold text-gray-500">
+                        {item.label}
+                    </dt>
+                    <dd className="mt-1 break-words text-sm font-bold text-gray-900">
+                        {item.value}
+                    </dd>
+                </div>
+            ))}
+        </dl>
+    );
+}
+
+function getStaffDetailSections(
+    entity: Extract<SystemEntityResult, { type: "staff" }>,
+): DetailSection[] {
     return [
         {
-            href: "/admin/data-management",
-            label: "เปิดศูนย์จัดการข้อมูล",
-            variant: "primary",
+            title: "ข้อมูลบัญชี",
+            items: [
+                {
+                    label: "บทบาทบัญชี",
+                    value: getRoleLabel(entity.role, {
+                        isPrimary: entity.isPrimary,
+                    }),
+                },
+                { label: "โรงเรียน", value: entity.schoolName ?? "-" },
+                { label: "อีเมลบัญชี", value: entity.email },
+                { label: "รหัสบัญชี", value: entity.id },
+            ],
         },
-        { href: "/admin/users", label: "เปิดจัดการผู้ใช้งาน", variant: "secondary" },
+        {
+            title: "โปรไฟล์ครู",
+            items: [
+                { label: "ชื่อครู", value: entity.teacherName ?? "-" },
+                { label: "ห้องที่ปรึกษา", value: entity.advisoryClass ?? "-" },
+                {
+                    label: "บทบาทโครงการ",
+                    value: entity.projectRole
+                        ? getProjectRoleLabel(entity.projectRole)
+                        : "-",
+                },
+                { label: "บทบาทในโรงเรียน", value: entity.schoolRole ?? "-" },
+            ],
+        },
     ];
 }

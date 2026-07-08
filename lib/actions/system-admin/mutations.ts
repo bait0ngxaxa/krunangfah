@@ -75,6 +75,19 @@ export async function updateSystemStudent(
         return { success: false, message: "ไม่มีข้อมูลเปลี่ยนแปลง" };
     }
 
+    const classExists = await prisma.schoolClass.findUnique({
+        where: {
+            schoolId_name: {
+                schoolId: student.schoolId,
+                name: normalized.class,
+            },
+        },
+        select: { id: true },
+    });
+    if (!classExists) {
+        return { success: false, message: "ไม่พบห้องเรียนนี้ในโรงเรียน" };
+    }
+
     try {
         const updated = await prisma.$transaction(async (tx) => {
             const next = await tx.student.update({
@@ -148,6 +161,10 @@ const studentEntitySelect = {
             name: true,
             disabledAt: true,
             isTestData: true,
+            classes: {
+                select: { id: true, name: true },
+                orderBy: { name: "asc" },
+            },
         },
     },
 } satisfies Prisma.StudentSelect;
@@ -198,6 +215,7 @@ function toStudentEntityResult(student: StudentForEdit): StudentEntityResult {
         schoolName: student.school.name,
         schoolDisabledAt: student.school.disabledAt,
         schoolIsTestData: student.school.isTestData,
+        classOptions: student.school.classes,
     };
 }
 

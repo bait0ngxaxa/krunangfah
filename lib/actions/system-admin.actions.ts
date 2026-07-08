@@ -4,25 +4,19 @@ import { requireAdmin } from "@/lib/auth/session";
 import {
     getSystemAdminValidationMessage,
     systemCareRecordDeleteSchema,
-    systemCounselingEditSchema,
-    systemHomeVisitEditSchema,
     systemPhqEditSchema,
-    systemReferralEditSchema,
     systemSchoolEditSchema,
     systemSearchSchema,
     systemStudentCareRecordsSchema,
     systemStudentEditSchema,
+    systemTeacherProfileEditSchema,
 } from "@/lib/validations/system-admin.validation";
 import { handleActionError } from "./error-handler";
 import {
     getStudentCareRecords,
     deleteSystemReferral,
     resetSystemActivityProgress,
-    resetSystemPhqResult,
-    saveSystemCounselingRecord,
-    saveSystemHomeVisitRecord,
     saveSystemPhqResult,
-    saveSystemReferral,
     softDeleteSystemCareRecord,
 } from "./system-admin/care-records";
 import { listSystemAdminEditEvents } from "./system-admin/events";
@@ -30,26 +24,23 @@ import {
     updateSystemSchool,
     updateSystemStudent,
 } from "./system-admin/mutations";
+import { updateSystemTeacherProfile } from "./system-admin/staff-mutations";
 import { searchSystemEntities } from "./system-admin/search";
 import type {
     SchoolEntityResult,
+    StaffEntityResult,
     SystemActivityRecord,
     StudentEntityResult,
     SystemCareRecordResponse,
-    SystemCounselingRecord,
     SystemAdminEditEventItem,
     SystemEditResponse,
-    SystemHomeVisitRecord,
     SystemPhqRecord,
-    SystemPhqRollbackResult,
-    SystemReferralRecord,
     SystemSearchResult,
 } from "./system-admin/types";
 
 const EMPTY_SYSTEM_SEARCH_RESULT: SystemSearchResult = {
     schools: [],
-    users: [],
-    teachers: [],
+    staffs: [],
     students: [],
 };
 
@@ -126,6 +117,29 @@ export async function updateSystemAdminStudent(
     }
 }
 
+export async function updateSystemAdminTeacherProfile(
+    input: unknown,
+): Promise<SystemEditResponse<StaffEntityResult>> {
+    try {
+        const parsed = systemTeacherProfileEditSchema.safeParse(input);
+        if (!parsed.success) {
+            return invalidInput(parsed.error, "ข้อมูลโปรไฟล์ครูไม่ถูกต้อง");
+        }
+
+        const session = await requireAdmin();
+        return updateSystemTeacherProfile(parsed.data, toActor(session));
+    } catch (error) {
+        return handleActionError({
+            context: "updateSystemAdminTeacherProfile error:",
+            error,
+            fallback: {
+                success: false,
+                message: "เกิดข้อผิดพลาดในการแก้ไขโปรไฟล์ครู",
+            },
+        });
+    }
+}
+
 export async function listSystemAdminEvents(): Promise<{
     events: SystemAdminEditEventItem[];
 }> {
@@ -158,61 +172,7 @@ export async function getSystemStudentCareRecords(
     }
 }
 
-export async function saveSystemAdminCounseling(
-    input: unknown,
-): Promise<SystemEditResponse<SystemCounselingRecord>> {
-    try {
-        const parsed = systemCounselingEditSchema.safeParse(input);
-        if (!parsed.success) {
-            return invalidInput(parsed.error, "ข้อมูลการให้คำปรึกษาไม่ถูกต้อง");
-        }
-        const session = await requireAdmin();
-        return saveSystemCounselingRecord(parsed.data, {
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.name,
-            role: session.user.role,
-        });
-    } catch (error) {
-        return handleActionError({
-            context: "saveSystemAdminCounseling error:",
-            error,
-            fallback: {
-                success: false,
-                message: "เกิดข้อผิดพลาดในการบันทึกการให้คำปรึกษา",
-            },
-        });
-    }
-}
-
-export async function saveSystemAdminHomeVisit(
-    input: unknown,
-): Promise<SystemEditResponse<SystemHomeVisitRecord>> {
-    try {
-        const parsed = systemHomeVisitEditSchema.safeParse(input);
-        if (!parsed.success) {
-            return invalidInput(parsed.error, "ข้อมูลเยี่ยมบ้านไม่ถูกต้อง");
-        }
-        const session = await requireAdmin();
-        return saveSystemHomeVisitRecord(parsed.data, {
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.name,
-            role: session.user.role,
-        });
-    } catch (error) {
-        return handleActionError({
-            context: "saveSystemAdminHomeVisit error:",
-            error,
-            fallback: {
-                success: false,
-                message: "เกิดข้อผิดพลาดในการบันทึกเยี่ยมบ้าน",
-            },
-        });
-    }
-}
-
-export async function saveSystemAdminPhq(
+export async function updateSystemAdminPhq(
     input: unknown,
 ): Promise<SystemEditResponse<SystemPhqRecord>> {
     try {
@@ -224,30 +184,11 @@ export async function saveSystemAdminPhq(
         return saveSystemPhqResult(parsed.data, toActor(session));
     } catch (error) {
         return handleActionError({
-            context: "saveSystemAdminPhq error:",
-            error,
-            fallback: { success: false, message: "เกิดข้อผิดพลาดในการบันทึก PHQ" },
-        });
-    }
-}
-
-export async function resetSystemAdminPhq(
-    input: unknown,
-): Promise<SystemEditResponse<SystemPhqRollbackResult>> {
-    try {
-        const parsed = systemCareRecordDeleteSchema.safeParse(input);
-        if (!parsed.success) {
-            return invalidInput(parsed.error, "ข้อมูลลบ PHQ ไม่ถูกต้อง");
-        }
-        const session = await requireAdmin();
-        return resetSystemPhqResult(parsed.data, toActor(session));
-    } catch (error) {
-        return handleActionError({
-            context: "resetSystemAdminPhq error:",
+            context: "updateSystemAdminPhq error:",
             error,
             fallback: {
                 success: false,
-                message: "เกิดข้อผิดพลาดในการล้างผล PHQ",
+                message: "เกิดข้อผิดพลาดในการแก้ไขผล PHQ",
             },
         });
     }
@@ -271,25 +212,6 @@ export async function resetSystemAdminActivity(
                 success: false,
                 message: "เกิดข้อผิดพลาดในการล้างผลกิจกรรม",
             },
-        });
-    }
-}
-
-export async function saveSystemAdminReferral(
-    input: unknown,
-): Promise<SystemEditResponse<SystemReferralRecord>> {
-    try {
-        const parsed = systemReferralEditSchema.safeParse(input);
-        if (!parsed.success) {
-            return invalidInput(parsed.error, "ข้อมูลการส่งต่อไม่ถูกต้อง");
-        }
-        const session = await requireAdmin();
-        return saveSystemReferral(parsed.data, toActor(session));
-    } catch (error) {
-        return handleActionError({
-            context: "saveSystemAdminReferral error:",
-            error,
-            fallback: { success: false, message: "เกิดข้อผิดพลาดในการบันทึกการส่งต่อ" },
         });
     }
 }

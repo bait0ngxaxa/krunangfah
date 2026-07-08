@@ -71,13 +71,16 @@ export function SystemEventPanel() {
     );
 }
 
-function EditEventRow({ event }: { event: SystemAdminEditEventItem }) {
+export function EditEventRow({ event }: { event: SystemAdminEditEventItem }) {
     return (
         <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
             <div className="flex items-start justify-between gap-2">
                 <div>
                     <p className="text-sm font-bold text-gray-900">
                         แก้ไขข้อมูล: {event.targetLabel}
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-gray-700">
+                        ทำรายการโดย {event.actorEmail ?? "ไม่พบอีเมลผู้ทำรายการ"}
                     </p>
                     <p className="mt-1 text-xs text-gray-600">{event.reason}</p>
                 </div>

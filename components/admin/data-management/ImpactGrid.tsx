@@ -1,18 +1,34 @@
 import type { ManagedPreview } from "./types";
 
-export function ImpactGrid({ impact }: { impact: ManagedPreview["impact"] }) {
+type ImpactTargetType = ManagedPreview["type"];
+
+export function ImpactGrid({
+    impact,
+    targetType = "school",
+}: {
+    impact: ManagedPreview["impact"];
+    targetType?: ImpactTargetType;
+}) {
     const inviteCount =
         impact.pendingTeacherInviteCount + impact.pendingSchoolAdminInviteCount;
-    const items: [string, number][] = [
-        ["ผู้ใช้", impact.userCount],
-        ["นักเรียน", impact.studentCount],
-        ["PHQ", impact.phqResultCount],
-        ["กิจกรรม", impact.activityProgressCount],
-        ["ปรึกษา", impact.counselingSessionCount],
-        ["เยี่ยมบ้าน", impact.homeVisitCount],
-        ["ไฟล์", impact.fileCount],
-        ["คำเชิญค้าง", inviteCount],
+    const schoolItems: [string, number][] = [
+        ["บัญชีบุคลากร", impact.userCount],
+        ["นักเรียนทั้งหมด", impact.studentCount],
+        ["ผลคัดกรอง", impact.phqResultCount],
+        ["กิจกรรมดูแล", impact.activityProgressCount],
+        ["บันทึกปรึกษา", impact.counselingSessionCount],
+        ["บันทึกเยี่ยมบ้าน", impact.homeVisitCount],
+        ["ไฟล์แนบ", impact.fileCount],
+        ["คำเชิญที่ยังไม่ตอบรับ", inviteCount],
     ];
+    const studentItems: [string, number][] = [
+        ["ผลคัดกรองของนักเรียน", impact.phqResultCount],
+        ["กิจกรรมดูแล", impact.activityProgressCount],
+        ["บันทึกปรึกษา", impact.counselingSessionCount],
+        ["บันทึกเยี่ยมบ้าน", impact.homeVisitCount],
+        ["ไฟล์แนบ", impact.fileCount],
+    ];
+    const items = targetType === "student" ? studentItems : schoolItems;
 
     return (
         <div className="grid grid-cols-2 gap-2">

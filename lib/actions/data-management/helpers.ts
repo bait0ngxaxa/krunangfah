@@ -1,9 +1,5 @@
-import { existsSync } from "fs";
-import { unlink } from "fs/promises";
-import { normalize, resolve } from "path";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
-import { logError } from "@/lib/utils/logging";
 import type { DataManagementEventItem, ImpactSummary } from "./types";
 
 export const DATA_MANAGEMENT_PATH = "/admin/data-management";
@@ -104,48 +100,6 @@ export async function listRecentEvents(
     });
 
     return events.map(toEventItem);
-}
-
-export function fileUrlToLocalPath(fileUrl: string): string | null {
-    const prefix = "/api/uploads/";
-    if (!fileUrl.startsWith(prefix)) return null;
-    const relativePath = fileUrl.slice(prefix.length);
-    if (
-        relativePath.includes("\0") ||
-        relativePath.split("/").some((segment) => segment === "." || segment === "..")
-    ) {
-        return null;
-    }
-
-    const uploadsDir = resolve(process.cwd(), ".data", "uploads");
-    const filePath = normalize(resolve(uploadsDir, relativePath));
-    return filePath.startsWith(uploadsDir) ? filePath : null;
-}
-
-export async function deleteFilesByUrl(fileUrls: string[]): Promise<string[]> {
-    const warnings: string[] = [];
-    const uniqueUrls = Array.from(new Set(fileUrls));
-
-    for (const fileUrl of uniqueUrls) {
-        const filePath = fileUrlToLocalPath(fileUrl);
-        if (!filePath) {
-            warnings.push(`ไม่สามารถแปลง path ไฟล์: ${fileUrl}`);
-            continue;
-        }
-
-        try {
-            // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath is resolved under .data/uploads from a DB fileUrl
-            if (existsSync(filePath)) {
-                // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath is resolved under .data/uploads from a DB fileUrl
-                await unlink(filePath);
-            }
-        } catch (error) {
-            logError("Delete managed file error:", error);
-            warnings.push(`ลบไฟล์ไม่สำเร็จ: ${fileUrl}`);
-        }
-    }
-
-    return warnings;
 }
 
 function readObject(value: Prisma.JsonValue): Prisma.JsonObject {

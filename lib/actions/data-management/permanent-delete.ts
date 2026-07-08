@@ -6,9 +6,9 @@ import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import {
     DATA_MANAGEMENT_PATH,
     createActorSnapshot,
-    deleteFilesByUrl,
     impactToJsonObject,
 } from "./helpers";
+import { deleteFilesByUrl } from "./file-storage";
 import { getSchoolImpact, getStudentImpact } from "./preview";
 import type { DataManagementResponse } from "./types";
 import { revalidatePath } from "next/cache";
@@ -80,6 +80,9 @@ export async function permanentlyDeleteStudent(
         } satisfies DeleteResult;
     });
 
+    if (!result.success) {
+        return { success: false, message: result.message };
+    }
     if (result.success && result.eventId && result.fileUrls) {
         await recordFileWarnings(result.eventId, result.fileUrls);
     }
@@ -144,6 +147,9 @@ export async function permanentlyDeleteSchool(
         } satisfies DeleteResult;
     });
 
+    if (!result.success) {
+        return { success: false, message: result.message };
+    }
     if (result.success && result.eventId && result.fileUrls) {
         await recordFileWarnings(result.eventId, result.fileUrls);
     }

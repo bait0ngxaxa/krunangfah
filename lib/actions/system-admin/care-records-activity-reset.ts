@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import { prisma } from "@/lib/database/prisma";
+import { deleteFilesByUrl } from "@/lib/actions/data-management/file-storage";
 import type {
     SystemActivityRecord,
     SystemEditResponse,
@@ -25,9 +26,15 @@ export async function resetSystemActivityProgress(
         select: ACTIVITY_SELECT,
     });
     if (!existing) return { success: false, message: "ไม่พบกิจกรรม" };
+    if (existing.status !== "completed") {
+        return {
+            success: false,
+            message: "ล้างผลกิจกรรมได้เฉพาะกิจกรรมที่เสร็จแล้ว",
+        };
+    }
 
-    const updated = await prisma.$transaction(async (tx) => {
-        await resetWorksheets(tx, existing);
+    const { updated, fileUrls } = await prisma.$transaction(async (tx) => {
+        const fileUrls = await resetWorksheets(tx, existing);
         await lockLaterActivities(tx, existing);
         const row = await resetSelectedActivity(tx, existing);
         await createSystemAdminEditEvent({
@@ -44,9 +51,10 @@ export async function resetSystemActivityProgress(
                 after: "in_progress",
             }],
         });
-        return row;
+        return { updated: row, fileUrls };
     });
 
+    await deleteFilesByUrl(fileUrls);
     await revalidateCarePaths(updated.student.schoolId, updated.studentId);
     return {
         success: true,
@@ -57,16 +65,22 @@ export async function resetSystemActivityProgress(
 
 type Tx = Prisma.TransactionClient;
 
-async function resetWorksheets(tx: Tx, activity: ActivityRow): Promise<void> {
-    await tx.worksheetUpload.deleteMany({
-        where: {
-            activityProgress: {
-                studentId: activity.studentId,
-                phqResultId: activity.phqResultId,
-                activityNumber: { gte: activity.activityNumber },
-            },
+async function resetWorksheets(tx: Tx, activity: ActivityRow): Promise<string[]> {
+    const where = {
+        activityProgress: {
+            studentId: activity.studentId,
+            phqResultId: activity.phqResultId,
+            activityNumber: { gte: activity.activityNumber },
         },
+    };
+    const files = await tx.worksheetUpload.findMany({
+        where,
+        select: { fileUrl: true },
     });
+    await tx.worksheetUpload.deleteMany({
+        where,
+    });
+    return files.map((file) => file.fileUrl);
 }
 
 async function lockLaterActivities(tx: Tx, activity: ActivityRow): Promise<void> {

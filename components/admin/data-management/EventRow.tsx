@@ -21,6 +21,9 @@ export function EventRow({
             {!compact ? (
                 <p className="mt-1 text-xs text-gray-600">{event.targetLabel}</p>
             ) : null}
+            <p className="mt-1 text-xs font-medium text-gray-700">
+                ทำรายการโดย {event.actorEmail ?? "ไม่พบอีเมลผู้ทำรายการ"}
+            </p>
             <p className="mt-1 text-xs leading-5 text-gray-600">
                 {event.reason}
             </p>

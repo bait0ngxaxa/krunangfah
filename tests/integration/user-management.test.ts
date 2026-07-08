@@ -313,14 +313,14 @@ describe("Integration: User Management", () => {
             expect(result.message).toContain("System Admin");
         });
 
-        it("cannot change isPrimary user role", async () => {
+        it("cannot demote the only primary school admin", async () => {
             mockSession(USERS.systemAdmin);
             const result = await changeUserRole(
                 USERS.schoolAdmin.id,
-                "class_teacher",
+                "angel_teacher",
             );
             expect(result.success).toBe(false);
-            expect(result.message).toContain("Primary Admin");
+            expect(result.message).toContain("ผู้ดูแลโรงเรียนเพียงคนเดียว");
         });
 
         it("rejects class_teacher with advisoryClass = ทุกห้อง", async () => {
@@ -357,6 +357,132 @@ describe("Integration: User Management", () => {
                 .deleteMany({ where: { userId: adminUser.id } })
                 .catch(() => {});
             await prisma.user.delete({ where: { id: adminUser.id } });
+        });
+
+        it("sets advisoryClass to ทุกห้อง when changing teacher to school_admin", async () => {
+            const teacherUser = await prisma.user.create({
+                data: {
+                    email: `role-school-admin-${Date.now()}@test.local`,
+                    name: "Role School Admin",
+                    role: "class_teacher",
+                    isPrimary: false,
+                    schoolId,
+                    password: "$2a$10$fakehash",
+                },
+            });
+            await prisma.teacher.create({
+                data: {
+                    userId: teacherUser.id,
+                    firstName: "Role",
+                    lastName: "SchoolAdmin",
+                    age: 30,
+                    advisoryClass: "ม.1/1",
+                    schoolRole: "ครูประจำชั้น",
+                    projectRole: "care",
+                },
+            });
+
+            mockSession(USERS.systemAdmin);
+            const result = await changeUserRole(teacherUser.id, "school_admin");
+            expect(result.success).toBe(true);
+
+            const updated = await prisma.user.findUnique({
+                where: { id: teacherUser.id },
+                include: { teacher: true },
+            });
+            expect(updated!.role).toBe("school_admin");
+            expect(updated!.isPrimary).toBe(false);
+            expect(updated!.teacher!.advisoryClass).toBe("ทุกห้อง");
+
+            await prisma.teacher
+                .deleteMany({ where: { userId: teacherUser.id } })
+                .catch(() => {});
+            await prisma.user.delete({ where: { id: teacherUser.id } });
+        });
+
+        it("can promote a teacher to primary school admin", async () => {
+            const teacherUser = await prisma.user.create({
+                data: {
+                    email: `role-primary-admin-${Date.now()}@test.local`,
+                    name: "Role Primary Admin",
+                    role: "class_teacher",
+                    isPrimary: false,
+                    schoolId,
+                    password: "$2a$10$fakehash",
+                },
+            });
+            await prisma.teacher.create({
+                data: {
+                    userId: teacherUser.id,
+                    firstName: "Role",
+                    lastName: "PrimaryAdmin",
+                    age: 30,
+                    advisoryClass: "ม.1/1",
+                    schoolRole: "ครูประจำชั้น",
+                    projectRole: "lead",
+                },
+            });
+
+            mockSession(USERS.systemAdmin);
+            const result = await changeUserRole(
+                teacherUser.id,
+                "primary_school_admin",
+            );
+            expect(result.success).toBe(true);
+
+            const updated = await prisma.user.findUnique({
+                where: { id: teacherUser.id },
+                include: { teacher: true },
+            });
+            expect(updated!.role).toBe("school_admin");
+            expect(updated!.isPrimary).toBe(true);
+            expect(updated!.teacher!.advisoryClass).toBe("ทุกห้อง");
+
+            await prisma.teacher
+                .deleteMany({ where: { userId: teacherUser.id } })
+                .catch(() => {});
+            await prisma.user.delete({ where: { id: teacherUser.id } });
+        });
+
+        it("can demote a primary school admin when another primary remains", async () => {
+            const primaryUser = await prisma.user.create({
+                data: {
+                    email: `role-demote-primary-${Date.now()}@test.local`,
+                    name: "Role Demote Primary",
+                    role: "school_admin",
+                    isPrimary: true,
+                    schoolId,
+                    password: "$2a$10$fakehash",
+                },
+            });
+            await prisma.teacher.create({
+                data: {
+                    userId: primaryUser.id,
+                    firstName: "Role",
+                    lastName: "DemotePrimary",
+                    age: 30,
+                    advisoryClass: "ทุกห้อง",
+                    schoolRole: "ผู้ดูแลโรงเรียน",
+                    projectRole: "lead",
+                },
+            });
+
+            mockSession(USERS.systemAdmin);
+            const result = await changeUserRole(primaryUser.id, "angel_teacher");
+            expect(result.success).toBe(true);
+
+            const updated = await prisma.user.findUnique({
+                where: { id: primaryUser.id },
+                include: { teacher: true },
+            });
+            expect(updated!.role).toBe("school_admin");
+            expect(updated!.isPrimary).toBe(false);
+            expect(updated!.teacher!.advisoryClass).toBe("ทุกห้อง");
+
+            await prisma.teacher
+                .deleteMany({ where: { userId: primaryUser.id } })
+                .catch(() => {});
+            await prisma.user.delete({ where: { id: primaryUser.id } });
         });
 
         it("cannot change to same role", async () => {
@@ -423,13 +549,13 @@ describe("Integration: User Management", () => {
                 .catch(() => {});
         });
 
-        it("primary admin must stay ทุกห้อง", async () => {
+        it("sole primary admin cannot be assigned to one class", async () => {
             mockSession(USERS.systemAdmin);
             const result = await updateTeacherProfile(USERS.schoolAdmin.id, {
                 advisoryClass: "ม.1/1",
             });
             expect(result.success).toBe(false);
-            expect(result.message).toContain("Primary Admin");
+            expect(result.message).toContain("ผู้ดูแลโรงเรียนเพียงคนเดียว");
         });
 
         it("rejects non-existent class", async () => {
@@ -458,6 +584,49 @@ describe("Integration: User Management", () => {
                 where: { id: USERS.otherTeacher.id },
             });
             expect(updated!.role).toBe("class_teacher");
+        });
+
+        it("demotes primary admin to class_teacher for real class when another primary remains", async () => {
+            const primaryUser = await prisma.user.create({
+                data: {
+                    email: `profile-demote-primary-${Date.now()}@test.local`,
+                    name: "Profile Demote Primary",
+                    role: "school_admin",
+                    isPrimary: true,
+                    schoolId,
+                    password: "$2a$10$fakehash",
+                },
+            });
+            await prisma.teacher.create({
+                data: {
+                    userId: primaryUser.id,
+                    firstName: "Profile",
+                    lastName: "DemotePrimary",
+                    age: 30,
+                    advisoryClass: "ทุกห้อง",
+                    schoolRole: "ผู้ดูแลโรงเรียน",
+                    projectRole: "lead",
+                },
+            });
+
+            mockSession(USERS.systemAdmin);
+            const result = await updateTeacherProfile(primaryUser.id, {
+                advisoryClass: "ม.1/1",
+            });
+            expect(result.success).toBe(true);
+
+            const updated = await prisma.user.findUnique({
+                where: { id: primaryUser.id },
+                include: { teacher: true },
+            });
+            expect(updated!.role).toBe("class_teacher");
+            expect(updated!.isPrimary).toBe(false);
+            expect(updated!.teacher!.advisoryClass).toBe("ม.1/1");
+
+            await prisma.teacher
+                .deleteMany({ where: { userId: primaryUser.id } })
+                .catch(() => {});
+            await prisma.user.delete({ where: { id: primaryUser.id } });
         });
 
         it("auto-sets role to school_admin for ทุกห้อง", async () => {

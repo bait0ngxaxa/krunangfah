@@ -1,44 +1,36 @@
 "use client";
 
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import type { SystemPhqRecord } from "@/lib/actions/system-admin/types";
+import { EmptyState, RecordRow, RecordSection } from "./SystemCareRecordViews";
 import {
-    PhqForm,
-    type PhqFormValue,
-} from "./SystemCareAdminForms";
-import {
-    DeleteReasonBox,
-    EmptyState,
-    RecordRow,
-    RecordSection,
-} from "./SystemCareRecordViews";
+    SystemCarePhqEditForm,
+    type SystemPhqEditFormState,
+} from "./SystemCarePhqEditForm";
+import { getPhqRiskLevelLabel } from "./labels";
 
 export function SystemCarePhqSection({
     records,
-    editingRecord,
-    resetTarget,
-    resetReason,
+    editTarget,
+    editForm,
     isPending,
-    onEdit,
-    onSave,
+    onStartEdit,
+    onEditChange,
     onCancelEdit,
-    onStartReset,
-    onReasonChange,
-    onCancelReset,
-    onReset,
+    onSaveEdit,
 }: {
     records: SystemPhqRecord[];
-    editingRecord: SystemPhqRecord | null;
-    resetTarget: SystemPhqRecord | null;
-    resetReason: string;
+    editTarget: SystemPhqRecord | null;
+    editForm: SystemPhqEditFormState | null;
     isPending: boolean;
-    onEdit: (record: SystemPhqRecord) => void;
-    onSave: (value: PhqFormValue) => void;
+    onStartEdit: (record: SystemPhqRecord) => void;
+    onEditChange: (
+        field: keyof SystemPhqEditFormState,
+        value: SystemPhqEditFormState[keyof SystemPhqEditFormState],
+    ) => void;
     onCancelEdit: () => void;
-    onStartReset: (record: SystemPhqRecord) => void;
-    onReasonChange: (value: string) => void;
-    onCancelReset: () => void;
-    onReset: () => void;
+    onSaveEdit: () => void;
 }) {
     return (
         <RecordSection
@@ -49,28 +41,30 @@ export function SystemCarePhqSection({
                 <RecordRow
                     key={record.id}
                     title={`${record.academicYearLabel} รอบ ${record.assessmentRound}`}
-                    subtitle={`${record.totalScore} คะแนน · ${record.riskLevel}`}
+                    subtitle={`${record.totalScore} คะแนน · ${getPhqRiskLevelLabel(record.riskLevel)}`}
                     body={getPhqBody(record)}
-                    onEdit={() => onEdit(record)}
-                    onDelete={() => onStartReset(record)}
-                >
-                    {editingRecord?.id === record.id ? (
-                        <PhqForm
-                            record={record}
-                            isPending={isPending}
-                            onCancel={onCancelEdit}
-                            onSave={onSave}
-                        />
+                    meta={record.isLatestTerm ? undefined : "แก้ไขได้เฉพาะเทอมล่าสุด"}
+                    actions={record.isLatestTerm ? (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-label={`แก้ไขผล PHQ รอบ ${record.assessmentRound}`}
+                            title={`แก้ไขผล PHQ รอบ ${record.assessmentRound}`}
+                            onClick={() => onStartEdit(record)}
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </Button>
                     ) : null}
-                    {resetTarget?.id === record.id ? (
-                        <DeleteReasonBox
-                            title={getPhqResetTitle(record)}
-                            buttonLabel="ล้างผล PHQ"
-                            value={resetReason}
+                >
+                    {editTarget?.id === record.id && editForm ? (
+                        <SystemCarePhqEditForm
+                            title={getPhqEditTitle(record)}
+                            value={editForm}
                             isPending={isPending}
-                            onChange={onReasonChange}
-                            onCancel={onCancelReset}
-                            onDelete={onReset}
+                            onChange={onEditChange}
+                            onCancel={onCancelEdit}
+                            onSave={onSaveEdit}
                         />
                     ) : null}
                 </RecordRow>
@@ -85,10 +79,6 @@ function getPhqBody(record: SystemPhqRecord): string {
     return `ส่งต่อโรงพยาบาล: ${record.hospitalName ?? "-"}`;
 }
 
-function getPhqResetTitle(record: SystemPhqRecord): string {
-    const base = `ล้างผล PHQ รอบ ${record.assessmentRound}`;
-    if (record.assessmentRound === 1) {
-        return `${base} และรอบถัดไปในปีเดียวกัน`;
-    }
-    return base;
+function getPhqEditTitle(record: SystemPhqRecord): string {
+    return `แก้ไขผล PHQ รอบ ${record.assessmentRound}`;
 }

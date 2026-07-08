@@ -26,7 +26,7 @@ function getToneClass(tone: NonNullable<StatusBadgeProps["tone"]>): string {
         case "success":
             return "border-emerald-200 bg-emerald-50 text-emerald-800";
         case "warning":
-            return "border-amber-200 bg-amber-50 text-amber-800";
+            return "border-lime-200 bg-lime-50 text-lime-800";
         case "danger":
             return "border-red-200 bg-red-50 text-red-700";
         case "neutral":

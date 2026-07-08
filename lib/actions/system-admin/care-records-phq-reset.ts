@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import { prisma } from "@/lib/database/prisma";
+import { deleteFilesByUrl } from "@/lib/actions/data-management/file-storage";
 import type {
     SystemEditResponse,
     SystemPhqRollbackResult,
@@ -25,15 +26,24 @@ export async function resetSystemPhqResult(
     });
     if (!existing) return { success: false, message: "ไม่พบผลคัดกรอง PHQ" };
 
-    const rollbackTargets = await findRollbackTargets(existing);
-    const deletedPhqIds = rollbackTargets.map((row) => row.id);
+    const latestPhq = await findLatestPhqForStudent(existing.studentId);
+    if (latestPhq && isNewerTerm(latestPhq, existing)) {
+        return {
+            success: false,
+            message: "ล้างผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
+        };
+    }
 
-    await prisma.$transaction(async (tx) => {
-        await deleteRelatedActivities(tx, deletedPhqIds);
+    const deletedPhqIds = [existing.id];
+
+    const fileUrls = await prisma.$transaction(async (tx) => {
+        const fileUrls = await deleteRelatedActivities(tx, deletedPhqIds);
         await logRollbackEvent(tx, existing, input.reason, actor, deletedPhqIds);
         await tx.phqResult.deleteMany({ where: { id: { in: deletedPhqIds } } });
+        return fileUrls;
     });
 
+    await deleteFilesByUrl(fileUrls);
     await revalidateCarePaths(existing.student.schoolId, existing.studentId);
     return {
         success: true,
@@ -44,28 +54,42 @@ export async function resetSystemPhqResult(
 
 type Tx = Prisma.TransactionClient;
 
-async function findRollbackTargets(phq: PhqRow): Promise<PhqRow[]> {
-    return prisma.phqResult.findMany({
-        where: {
-            studentId: phq.studentId,
-            academicYearId: phq.academicYearId,
-            assessmentRound: { gte: phq.assessmentRound },
-        },
+async function findLatestPhqForStudent(studentId: string): Promise<PhqRow | null> {
+    return prisma.phqResult.findFirst({
+        where: { studentId },
         select: PHQ_SELECT,
-        orderBy: { assessmentRound: "asc" },
+        orderBy: [
+            { academicYear: { year: "desc" } },
+            { academicYear: { semester: "desc" } },
+            { assessmentRound: "desc" },
+            { createdAt: "desc" },
+        ],
     });
+}
+
+function isNewerTerm(latest: PhqRow, selected: PhqRow): boolean {
+    if (latest.academicYear.year !== selected.academicYear.year) {
+        return latest.academicYear.year > selected.academicYear.year;
+    }
+    return latest.academicYear.semester > selected.academicYear.semester;
 }
 
 async function deleteRelatedActivities(
     tx: Tx,
     phqResultIds: string[],
-): Promise<void> {
+): Promise<string[]> {
+    const where = { activityProgress: { phqResultId: { in: phqResultIds } } };
+    const files = await tx.worksheetUpload.findMany({
+        where,
+        select: { fileUrl: true },
+    });
     await tx.worksheetUpload.deleteMany({
-        where: { activityProgress: { phqResultId: { in: phqResultIds } } },
+        where,
     });
     await tx.activityProgress.deleteMany({
         where: { phqResultId: { in: phqResultIds } },
     });
+    return files.map((file) => file.fileUrl);
 }
 
 async function logRollbackEvent(

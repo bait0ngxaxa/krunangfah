@@ -47,7 +47,7 @@ export function DetailPanel({
                 </p>
             </div>
 
-            <ImpactGrid impact={preview.impact} />
+            <ImpactGrid impact={preview.impact} targetType={preview.type} />
             <div className="grid gap-2 sm:grid-cols-2">
                 <Button
                     variant="secondary"
@@ -73,7 +73,7 @@ export function DetailPanel({
                 <div className="flex items-start gap-2 text-red-800">
                     <ShieldAlert className="mt-0.5 h-4 w-4" />
                     <div>
-                        <h3 className="text-sm font-bold">Danger zone</h3>
+                        <h3 className="text-sm font-bold">พื้นที่ดำเนินการเสี่ยงสูง</h3>
                         <p className="mt-1 text-xs leading-5 text-red-700">
                             ลบถาวรจะลบข้อมูลในฐานข้อมูลและพยายามลบไฟล์จริงที่เกี่ยวข้อง
                         </p>

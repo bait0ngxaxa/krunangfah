@@ -4,10 +4,9 @@ import { maskNationalId } from "@/lib/actions/data-management/helpers";
 import type { SystemSearchInput } from "@/lib/validations/system-admin.validation";
 import type {
     SchoolEntityResult,
+    StaffEntityResult,
     StudentEntityResult,
     SystemSearchResult,
-    TeacherEntityResult,
-    UserEntityResult,
 } from "./types";
 
 const ENTITY_LIMIT = 8;
@@ -16,22 +15,19 @@ export async function searchSystemEntities(
     input: SystemSearchInput,
 ): Promise<SystemSearchResult> {
     const query = input.query.trim();
-    const [schools, users, teachers, students] = await Promise.all([
+    const [schools, staffs, students] = await Promise.all([
         shouldSearch(input.entityType, "school")
             ? searchSchools(query)
             : Promise.resolve([]),
-        shouldSearch(input.entityType, "user")
-            ? searchUsers(query)
-            : Promise.resolve([]),
-        shouldSearch(input.entityType, "teacher")
-            ? searchTeachers(query)
+        shouldSearch(input.entityType, "staff")
+            ? searchStaffs(query)
             : Promise.resolve([]),
         shouldSearch(input.entityType, "student")
             ? searchStudents(query)
             : Promise.resolve([]),
     ]);
 
-    return { schools, users, teachers, students };
+    return { schools, staffs, students };
 }
 
 function shouldSearch(
@@ -74,9 +70,9 @@ async function searchSchools(query: string): Promise<SchoolEntityResult[]> {
     }));
 }
 
-async function searchUsers(query: string): Promise<UserEntityResult[]> {
+async function searchStaffs(query: string): Promise<StaffEntityResult[]> {
     const users = await prisma.user.findMany({
-        where: buildUserWhere(query),
+        where: buildStaffWhere(query),
         select: {
             id: true,
             email: true,
@@ -88,9 +84,13 @@ async function searchUsers(query: string): Promise<UserEntityResult[]> {
             school: { select: { name: true } },
             teacher: {
                 select: {
+                    id: true,
                     firstName: true,
                     lastName: true,
+                    age: true,
                     advisoryClass: true,
+                    schoolRole: true,
+                    projectRole: true,
                 },
             },
         },
@@ -99,7 +99,7 @@ async function searchUsers(query: string): Promise<UserEntityResult[]> {
     });
 
     return users.map((user) => ({
-        type: "user",
+        type: "staff",
         id: user.id,
         email: user.email,
         name: user.name,
@@ -108,63 +108,17 @@ async function searchUsers(query: string): Promise<UserEntityResult[]> {
         deletedAt: user.deletedAt,
         schoolId: user.schoolId,
         schoolName: user.school?.name ?? null,
+        hasTeacherProfile: user.teacher !== null,
+        teacherId: user.teacher?.id ?? null,
         teacherName: user.teacher
             ? `${user.teacher.firstName} ${user.teacher.lastName}`
             : null,
+        firstName: user.teacher?.firstName ?? null,
+        lastName: user.teacher?.lastName ?? null,
+        age: user.teacher?.age ?? null,
         advisoryClass: user.teacher?.advisoryClass ?? null,
-    }));
-}
-
-async function searchTeachers(query: string): Promise<TeacherEntityResult[]> {
-    const teachers = await prisma.teacher.findMany({
-        where: {
-            OR: [
-                { firstName: { contains: query, mode: "insensitive" } },
-                { lastName: { contains: query, mode: "insensitive" } },
-                { schoolRole: { contains: query, mode: "insensitive" } },
-                { advisoryClass: { contains: query, mode: "insensitive" } },
-                { user: { email: { contains: query, mode: "insensitive" } } },
-                { user: { school: { name: { contains: query, mode: "insensitive" } } } },
-            ],
-        },
-        select: {
-            id: true,
-            userId: true,
-            firstName: true,
-            lastName: true,
-            age: true,
-            advisoryClass: true,
-            schoolRole: true,
-            projectRole: true,
-            user: {
-                select: {
-                    email: true,
-                    role: true,
-                    deletedAt: true,
-                    schoolId: true,
-                    school: { select: { name: true } },
-                },
-            },
-        },
-        orderBy: [{ firstName: "asc" }, { id: "asc" }],
-        take: ENTITY_LIMIT,
-    });
-
-    return teachers.map((teacher) => ({
-        type: "teacher",
-        id: teacher.id,
-        userId: teacher.userId,
-        email: teacher.user.email,
-        firstName: teacher.firstName,
-        lastName: teacher.lastName,
-        age: teacher.age,
-        advisoryClass: teacher.advisoryClass,
-        schoolRole: teacher.schoolRole,
-        projectRole: teacher.projectRole,
-        userRole: teacher.user.role,
-        deletedAt: teacher.user.deletedAt,
-        schoolId: teacher.user.schoolId,
-        schoolName: teacher.user.school?.name ?? null,
+        schoolRole: user.teacher?.schoolRole ?? null,
+        projectRole: user.teacher?.projectRole ?? null,
     }));
 }
 
@@ -199,6 +153,10 @@ async function searchStudents(query: string): Promise<StudentEntityResult[]> {
                     name: true,
                     disabledAt: true,
                     isTestData: true,
+                    classes: {
+                        select: { id: true, name: true },
+                        orderBy: { name: "asc" },
+                    },
                 },
             },
         },
@@ -224,10 +182,11 @@ async function searchStudents(query: string): Promise<StudentEntityResult[]> {
         schoolName: student.school.name,
         schoolDisabledAt: student.school.disabledAt,
         schoolIsTestData: student.school.isTestData,
+        classOptions: student.school.classes,
     }));
 }
 
-function buildUserWhere(query: string): Prisma.UserWhereInput {
+function buildStaffWhere(query: string): Prisma.UserWhereInput {
     return {
         OR: [
             { id: { contains: query, mode: "insensitive" } },
@@ -236,6 +195,8 @@ function buildUserWhere(query: string): Prisma.UserWhereInput {
             { school: { name: { contains: query, mode: "insensitive" } } },
             { teacher: { firstName: { contains: query, mode: "insensitive" } } },
             { teacher: { lastName: { contains: query, mode: "insensitive" } } },
+            { teacher: { advisoryClass: { contains: query, mode: "insensitive" } } },
+            { teacher: { schoolRole: { contains: query, mode: "insensitive" } } },
         ],
     };
 }

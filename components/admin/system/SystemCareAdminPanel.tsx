@@ -7,80 +7,57 @@ import { toast } from "sonner";
 import {
     deleteSystemAdminReferral,
     resetSystemAdminActivity,
-    resetSystemAdminPhq,
-    saveSystemAdminPhq,
-    saveSystemAdminReferral,
+    updateSystemAdminPhq,
 } from "@/lib/actions/system-admin.actions";
 import type {
     SystemActivityRecord,
     SystemCareRecordResponse,
     SystemPhqRecord,
 } from "@/lib/actions/system-admin/types";
-import {
-    type PhqFormValue,
-    type ReferralFormValue,
-} from "./SystemCareAdminForms";
 import { SystemCareActivityGroups } from "./SystemCareActivityGroups";
 import { SystemCarePhqSection } from "./SystemCarePhqSection";
+import {
+    createPhqEditFormState,
+    type SystemPhqEditFormState,
+} from "./SystemCarePhqEditForm";
 import { SystemCareReferralSection } from "./SystemCareReferralSection";
 import {
     DeleteReasonBox,
     RecordSection,
 } from "./SystemCareRecordViews";
 
-type FormState =
-    | { type: "phq"; record: SystemPhqRecord }
-    | { type: "referral" }
-    | null;
-
 export function SystemCareAdminPanel({
-    studentId,
     data,
     setData,
 }: {
-    studentId: string;
     data: SystemCareRecordResponse;
     setData: Dispatch<SetStateAction<SystemCareRecordResponse | null>>;
 }) {
-    const [formState, setFormState] = useState<FormState>(null);
     const [deleteReason, setDeleteReason] = useState("");
     const [isDeletingReferral, setIsDeletingReferral] = useState(false);
-    const [phqResetTarget, setPhqResetTarget] = useState<SystemPhqRecord | null>(null);
-    const [phqResetReason, setPhqResetReason] = useState("");
+    const [phqEditTarget, setPhqEditTarget] = useState<SystemPhqRecord | null>(null);
+    const [phqEditForm, setPhqEditForm] =
+        useState<SystemPhqEditFormState | null>(null);
     const [activityResetTarget, setActivityResetTarget] =
         useState<SystemActivityRecord | null>(null);
     const [activityResetReason, setActivityResetReason] = useState("");
     const [isPending, startTransition] = useTransition();
 
-    const savePhq = (value: PhqFormValue) => {
+    const savePhq = () => {
+        if (!phqEditTarget || !phqEditForm) return;
         startTransition(async () => {
-            const result = await saveSystemAdminPhq(value);
-            const updated = result.updated;
-            if (!result.success || !updated) {
-                toast.error(result.message);
-                return;
-            }
-            setData((current) => updatePhq(current, updated));
-            setFormState(null);
-            toast.success(result.message);
-        });
-    };
-
-    const resetPhq = () => {
-        if (!phqResetTarget) return;
-        startTransition(async () => {
-            const result = await resetSystemAdminPhq({
-                id: phqResetTarget.id,
-                reason: phqResetReason,
+            const result = await updateSystemAdminPhq({
+                id: phqEditTarget.id,
+                ...phqEditForm,
             });
             const updated = result.updated;
             if (!result.success || !updated) {
                 toast.error(result.message);
                 return;
             }
-            setData((current) => resetPhqData(current, updated.deletedPhqIds));
-            setPhqResetTarget(null);
-            setPhqResetReason("");
+            setData((current) => updatePhqData(current, updated));
+            setPhqEditTarget(null);
+            setPhqEditForm(null);
             toast.success(result.message);
         });
     };
@@ -100,20 +77,6 @@ export function SystemCareAdminPanel({
             setData((current) => resetActivityData(current, updated));
             setActivityResetTarget(null);
             setActivityResetReason("");
-            toast.success(result.message);
-        });
-    };
-
-    const saveReferral = (value: ReferralFormValue) => {
-        startTransition(async () => {
-            const result = await saveSystemAdminReferral(value);
-            const updated = result.updated;
-            if (!result.success || !updated) {
-                toast.error(result.message);
-                return;
-            }
-            setData((current) => current ? { ...current, referral: updated } : current);
-            setFormState(null);
             toast.success(result.message);
         });
     };
@@ -141,24 +104,23 @@ export function SystemCareAdminPanel({
         <>
             <SystemCarePhqSection
                 records={data.phqResults}
-                editingRecord={formState?.type === "phq" ? formState.record : null}
-                resetTarget={phqResetTarget}
-                resetReason={phqResetReason}
+                editTarget={phqEditTarget}
+                editForm={phqEditForm}
                 isPending={isPending}
-                onEdit={(record) => {
-                    setPhqResetTarget(null);
-                    setFormState({ type: "phq", record });
+                onStartEdit={(record) => {
+                    setPhqEditTarget(record);
+                    setPhqEditForm(createPhqEditFormState(record));
                 }}
-                onSave={savePhq}
-                onCancelEdit={() => setFormState(null)}
-                onStartReset={(record) => {
-                    setFormState(null);
-                    setPhqResetTarget(record);
-                    setPhqResetReason("");
+                onEditChange={(field, value) => {
+                    setPhqEditForm((current) =>
+                        current ? { ...current, [field]: value } : current,
+                    );
                 }}
-                onReasonChange={setPhqResetReason}
-                onCancelReset={() => setPhqResetTarget(null)}
-                onReset={resetPhq}
+                onCancelEdit={() => {
+                    setPhqEditTarget(null);
+                    setPhqEditForm(null);
+                }}
+                onSaveEdit={savePhq}
             />
 
             <RecordSection
@@ -181,16 +143,8 @@ export function SystemCareAdminPanel({
             </RecordSection>
 
             <SystemCareReferralSection
-                studentId={studentId}
                 referral={data.referral}
-                teacherOptions={data.teacherOptions}
-                isEditing={formState?.type === "referral"}
-                isPending={isPending}
-                onAdd={() => setFormState({ type: "referral" })}
-                onEdit={() => setFormState({ type: "referral" })}
                 onDelete={() => setIsDeletingReferral(true)}
-                onCancel={() => setFormState(null)}
-                onSave={saveReferral}
             />
             {isDeletingReferral ? (
                 <DeleteReasonBox
@@ -207,28 +161,15 @@ export function SystemCareAdminPanel({
     );
 }
 
-function updatePhq(
+function updatePhqData(
     current: SystemCareRecordResponse | null,
     record: SystemPhqRecord,
 ): SystemCareRecordResponse | null {
     if (!current) return current;
     return {
         ...current,
-        phqResults: current.phqResults.map((item) => item.id === record.id ? record : item),
-    };
-}
-
-function resetPhqData(
-    current: SystemCareRecordResponse | null,
-    deletedPhqIds: string[],
-): SystemCareRecordResponse | null {
-    if (!current) return current;
-    const deletedSet = new Set(deletedPhqIds);
-    return {
-        ...current,
-        phqResults: current.phqResults.filter((item) => !deletedSet.has(item.id)),
-        activityProgress: current.activityProgress.filter(
-            (item) => !deletedSet.has(item.phqResultId),
+        phqResults: current.phqResults.map((item) =>
+            item.id === record.id ? record : item,
         ),
     };
 }

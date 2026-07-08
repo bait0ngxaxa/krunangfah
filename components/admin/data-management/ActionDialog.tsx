@@ -23,6 +23,12 @@ export function ActionDialog({
     if (!pendingAction || !preview) return null;
     const isDelete = pendingAction.action === "permanent-delete";
     const disabled = reason.trim().length < 3 || isPending;
+    const reasonLabel = isDelete
+        ? "เหตุผลการลบถาวร"
+        : "เหตุผลการจัดการข้อมูล";
+    const reasonPlaceholder = isDelete
+        ? "เช่น ลบข้อมูลทดสอบที่สร้างเพื่อทดลองระบบ หรือข้อมูลผิดที่ยืนยันแล้ว"
+        : "ระบุเหตุผลเพื่อให้ตรวจสอบย้อนหลังได้";
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
@@ -40,19 +46,21 @@ export function ActionDialog({
                             {pendingAction.title}
                         </h2>
                         <p className="mt-1 text-sm text-gray-600">
-                            ตรวจผลกระทบ กรอกเหตุผล แล้วกดยืนยัน
+                            ตรวจผลกระทบ ใส่เหตุผล แล้วกดยืนยัน
                         </p>
                     </div>
                 </div>
-                {isDelete ? <ImpactGrid impact={preview.impact} /> : null}
+                {isDelete ? (
+                    <ImpactGrid impact={preview.impact} targetType={preview.type} />
+                ) : null}
                 <label className="mt-4 block">
                     <span className="text-sm font-bold text-gray-800">
-                        เหตุผลการจัดการข้อมูล
+                        {reasonLabel}
                     </span>
                     <textarea
                         value={reason}
                         onChange={(event) => onReasonChange(event.target.value)}
-                        placeholder="เช่น ลบโรงเรียนทดสอบที่สร้างเพื่อทดลองระบบ"
+                        placeholder={reasonPlaceholder}
                         className="mt-2 min-h-28 w-full rounded-xl border border-gray-200 p-3 text-sm text-gray-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
                     />
                 </label>

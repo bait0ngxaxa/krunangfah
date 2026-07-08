@@ -27,10 +27,6 @@ import {
     unmarkSchoolTestData,
     unmarkStudentTestData,
 } from "./data-management/mutations";
-import {
-    permanentlyDeleteSchool,
-    permanentlyDeleteStudent,
-} from "./data-management/permanent-delete";
 import type {
     DataManagementEventListResponse,
     DataManagementResponse,
@@ -115,7 +111,9 @@ export async function runDataManagementAction(
             parsedAction.data,
             mutationInput,
         );
-        revalidatePath(DATA_MANAGEMENT_PATH);
+        if (result.success) {
+            revalidatePath(DATA_MANAGEMENT_PATH);
+        }
         return result;
     } catch (error) {
         return handleActionError({
@@ -138,7 +136,7 @@ export async function listDataManagementEvents(): Promise<DataManagementEventLis
     return { events: events.map(toEventItem) };
 }
 
-function dispatchAction(
+async function dispatchAction(
     targetType: DataManagementTargetInput,
     action: DataManagementActionInput,
     input: Parameters<typeof disableSchool>[0],
@@ -148,7 +146,12 @@ function dispatchAction(
         if (action === "unmark-test") return unmarkSchoolTestData(input);
         if (action === "disable") return disableSchool(input);
         if (action === "restore") return restoreSchool(input);
-        if (action === "permanent-delete") return permanentlyDeleteSchool(input);
+        if (action === "permanent-delete") {
+            const { permanentlyDeleteSchool } = await import(
+                "./data-management/permanent-delete"
+            );
+            return permanentlyDeleteSchool(input);
+        }
         return assertNever(action);
     }
 
@@ -156,7 +159,12 @@ function dispatchAction(
     if (action === "unmark-test") return unmarkStudentTestData(input);
     if (action === "disable") return disableStudent(input);
     if (action === "restore") return restoreStudent(input);
-    if (action === "permanent-delete") return permanentlyDeleteStudent(input);
+    if (action === "permanent-delete") {
+        const { permanentlyDeleteStudent } = await import(
+            "./data-management/permanent-delete"
+        );
+        return permanentlyDeleteStudent(input);
+    }
     return assertNever(action);
 }
 

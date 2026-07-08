@@ -1,25 +1,27 @@
 import type { Gender, ProjectRole, StudentStatus, UserRole } from "@prisma/client";
 import type { SystemEntityKind } from "@/lib/actions/system-admin/types";
+import { getRiskLabel, isRiskLevel } from "@/lib/constants/risk-levels";
 
 export function getEntityTypeLabel(type: SystemEntityKind): string {
     switch (type) {
         case "school":
             return "โรงเรียน";
-        case "user":
-            return "ผู้ใช้งาน";
-        case "teacher":
-            return "ครู";
+        case "staff":
+            return "บุคลากร";
         case "student":
             return "นักเรียน";
     }
 }
 
-export function getRoleLabel(role: UserRole): string {
+export function getRoleLabel(
+    role: UserRole,
+    options: { isPrimary?: boolean } = {},
+): string {
     switch (role) {
         case "system_admin":
-            return "System Admin";
+            return "ผู้ดูแลระบบ";
         case "school_admin":
-            return "ผู้ดูแลโรงเรียน";
+            return options.isPrimary ? "ผู้ดูแลโรงเรียน" : "ครูนางฟ้า";
         case "class_teacher":
             return "ครูประจำชั้น";
     }
@@ -47,6 +49,29 @@ export function getStudentStatusLabel(status: StudentStatus): string {
         case "GRADUATED":
             return "จบการศึกษา";
     }
+}
+
+export function getActivityStatusLabel(status: string): string {
+    switch (status) {
+        case "locked":
+            return "ยังไม่เปิด";
+        case "pending":
+            return "รอดำเนินการ";
+        case "in_progress":
+            return "กำลังดำเนินการ";
+        case "completed":
+            return "เสร็จแล้ว";
+        case "skipped":
+            return "ข้ามกิจกรรม";
+        case "cancelled":
+            return "ยกเลิก";
+        default:
+            return status;
+    }
+}
+
+export function getPhqRiskLevelLabel(riskLevel: string): string {
+    return isRiskLevel(riskLevel) ? getRiskLabel(riskLevel) : riskLevel;
 }
 
 export function getGenderLabel(gender: Gender | null): string {

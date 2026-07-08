@@ -1,7 +1,7 @@
 "use client";
 
 import type { SystemEntityResult } from "@/lib/actions/system-admin/types";
-import { getEntityTypeLabel } from "./labels";
+import { getEntityTypeLabel, getRoleLabel } from "./labels";
 import { StatusBadge } from "./StatusBadge";
 
 interface SystemResultListProps {
@@ -20,7 +20,7 @@ export function SystemResultList({
     onSelect,
 }: SystemResultListProps) {
     if (!hasSearched) {
-        return <ResultMessage title="ยังไม่ได้ค้นหา" description="เริ่มจากโรงเรียน ผู้ใช้ ครู หรือนักเรียนที่ต้องดูแล" />;
+        return <ResultMessage title="ยังไม่ได้ค้นหา" description="เริ่มจากโรงเรียน บุคลากร หรือนักเรียนที่ต้องดูแล" />;
     }
 
     if (isPending) {
@@ -82,10 +82,8 @@ function getPrimaryLabel(entity: SystemEntityResult): string {
     switch (entity.type) {
         case "school":
             return entity.name;
-        case "user":
+        case "staff":
             return entity.teacherName ?? entity.name ?? entity.email;
-        case "teacher":
-            return `${entity.firstName} ${entity.lastName}`;
         case "student":
             return `${entity.firstName} ${entity.lastName}`;
     }
@@ -95,10 +93,8 @@ function getSecondaryLabel(entity: SystemEntityResult): string {
     switch (entity.type) {
         case "school":
             return entity.province ?? "ไม่ระบุจังหวัด";
-        case "user":
-            return `${entity.email}${entity.schoolName ? ` · ${entity.schoolName}` : ""}`;
-        case "teacher":
-            return `${entity.email}${entity.schoolName ? ` · ${entity.schoolName}` : ""}`;
+        case "staff":
+            return `${getRoleLabel(entity.role, { isPrimary: entity.isPrimary })} · ${entity.email}${entity.schoolName ? ` · ${entity.schoolName}` : ""}`;
         case "student":
             return `${entity.studentId} · ${entity.class} · ${entity.schoolName}`;
     }

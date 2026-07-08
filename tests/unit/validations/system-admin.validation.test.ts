@@ -15,7 +15,7 @@ describe("systemSearchSchema", () => {
     it("accepts explicit entity search input", () => {
         const parsed = systemSearchSchema.safeParse({
             query: "ครูนางฟ้า",
-            entityType: "teacher",
+            entityType: "staff",
         });
 
         expect(parsed.success).toBe(true);

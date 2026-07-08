@@ -40,6 +40,7 @@ describe("getStudentCareRecords", () => {
             createPhqRow(oldPhqId, 1, new Date("2026-06-07T00:00:00.000Z")),
         ]);
         prismaMocks.studentReferralFindUnique.mockResolvedValue(null);
+        prismaMocks.activityProgressFindMany.mockResolvedValue([]);
         prismaMocks.teacherFindMany.mockResolvedValue([]);
         prismaMocks.counselingSessionFindMany.mockResolvedValue([]);
         prismaMocks.homeVisitFindMany.mockResolvedValue([]);
@@ -60,6 +61,15 @@ describe("getStudentCareRecords", () => {
         expect(result?.activityProgress[1]?.id).toBe("old-activity");
         expect(result?.activityProgress[1]?.academicYearLabel).toBe("2569/1");
         expect(result?.activityProgress[1]?.assessmentRound).toBe(1);
+    });
+
+    it("marks only PHQ results from the latest term as editable", async () => {
+        const result = await getStudentCareRecords(studentId);
+
+        expect(result?.phqResults).toEqual([
+            expect.objectContaining({ id: latestPhqId, isLatestTerm: true }),
+            expect.objectContaining({ id: oldPhqId, isLatestTerm: false }),
+        ]);
     });
 });
 
