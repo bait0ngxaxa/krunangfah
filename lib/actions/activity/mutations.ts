@@ -42,6 +42,104 @@ async function verifyLatestActivityPhqResult(
     return { allowed: true };
 }
 
+function getCompletionScheduleDate(
+    scheduledDate: Date | null,
+    worksheetUploads: { uploadedAt: Date }[],
+): Date | null {
+    return scheduledDate ?? worksheetUploads[0]?.uploadedAt ?? null;
+}
+
+async function unlockNextActivity(
+    tx: Prisma.TransactionClient,
+    studentId: string,
+    phqResultId: string,
+    currentActivityNumber: number,
+) {
+    // Unlock nearest next locked step in same PHQ sequence.
+    const nextActivity = await tx.activityProgress.findFirst({
+        where: {
+            studentId,
+            phqResultId,
+            activityNumber: { gt: currentActivityNumber },
+            status: ActivityStatus.locked,
+        },
+        orderBy: { activityNumber: "asc" },
+    });
+
+    if (nextActivity) {
+        await tx.activityProgress.updateMany({
+            where: {
+                id: nextActivity.id,
+                status: ActivityStatus.locked,
+            },
+            data: {
+                status: ActivityStatus.in_progress,
+                unlockedAt: new Date(),
+            },
+        });
+    }
+}
+
+async function saveAssessmentAndCompleteActivity(
+    activityProgressId: string,
+    data: SubmitAssessmentData,
+): Promise<{ success: boolean; error?: string }> {
+    return runSerializableTransaction(async (tx) => {
+        const currentActivity = await tx.activityProgress.findUnique({
+            where: { id: activityProgressId },
+            select: {
+                id: true,
+                status: true,
+                scheduledDate: true,
+                studentId: true,
+                phqResultId: true,
+                activityNumber: true,
+                worksheetUploads: {
+                    orderBy: { uploadedAt: "desc" },
+                    take: 1,
+                    select: { uploadedAt: true },
+                },
+            },
+        });
+
+        if (!currentActivity) {
+            return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+        }
+
+        if (currentActivity.status !== ActivityStatus.pending_assessment) {
+            return {
+                success: false,
+                error: "ไม่สามารถบันทึกแบบประเมินได้ในสถานะปัจจุบัน",
+            };
+        }
+
+        await tx.activityProgress.update({
+            where: { id: currentActivity.id },
+            data: {
+                internalProblems: data.internalProblems,
+                externalProblems: data.externalProblems,
+                problemType: data.problemType,
+                assessedAt: new Date(),
+                status: ActivityStatus.completed,
+                completedAt: new Date(),
+                scheduledDate: getCompletionScheduleDate(
+                    currentActivity.scheduledDate,
+                    currentActivity.worksheetUploads,
+                ),
+            },
+        });
+
+        await unlockNextActivity(
+            tx,
+            currentActivity.studentId,
+            currentActivity.phqResultId,
+            currentActivity.activityNumber,
+        );
+
+        return { success: true };
+    });
+}
+
 /**
  * Initialize activity progress for a student based on their PHQ result
  * Called automatically when a new PHQ result is created
@@ -143,7 +241,12 @@ export async function submitTeacherAssessment(
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },
-            select: { studentId: true, status: true, phqResultId: true },
+            select: {
+                studentId: true,
+                status: true,
+                phqResultId: true,
+                activityNumber: true,
+            },
         });
 
         if (!activityProgress) {
@@ -181,7 +284,16 @@ export async function submitTeacherAssessment(
             return { success: false, error: latestCheck.error };
         }
 
-        // Save assessment fields without mutating completion status.
+        if (
+            activityProgress.activityNumber === 1 &&
+            activityProgress.status === ActivityStatus.pending_assessment
+        ) {
+            return saveAssessmentAndCompleteActivity(
+                validated.activityProgressId,
+                validated,
+            );
+        }
+
         await prisma.activityProgress.update({
             where: { id: validated.activityProgressId },
             data: {
@@ -205,38 +317,56 @@ export async function submitTeacherAssessment(
     }
 }
 
-/**
- * Unlock next activity when current is completed
- */
-async function unlockNextActivity(
+async function markPendingTeacherAssessment(
     tx: Prisma.TransactionClient,
-    studentId: string,
-    phqResultId: string,
-    currentActivityNumber: number,
-) {
-    // Unlock nearest next locked step in same PHQ sequence.
-    const nextActivity = await tx.activityProgress.findFirst({
-        where: {
-            studentId,
-            phqResultId,
-            activityNumber: { gt: currentActivityNumber },
-            status: ActivityStatus.locked,
+    activity: {
+        id: string;
+        scheduledDate: Date | null;
+        worksheetUploads: { uploadedAt: Date }[];
+    },
+): Promise<void> {
+    await tx.activityProgress.update({
+        where: { id: activity.id },
+        data: {
+            status: ActivityStatus.pending_assessment,
+            completedAt: null,
+            scheduledDate: getCompletionScheduleDate(
+                activity.scheduledDate,
+                activity.worksheetUploads,
+            ),
         },
-        orderBy: { activityNumber: "asc" },
+    });
+}
+
+async function completeActivityAndUnlockNext(
+    tx: Prisma.TransactionClient,
+    activity: {
+        id: string;
+        scheduledDate: Date | null;
+        studentId: string;
+        phqResultId: string;
+        activityNumber: number;
+        worksheetUploads: { uploadedAt: Date }[];
+    },
+): Promise<void> {
+    await tx.activityProgress.update({
+        where: { id: activity.id },
+        data: {
+            status: ActivityStatus.completed,
+            completedAt: new Date(),
+            scheduledDate: getCompletionScheduleDate(
+                activity.scheduledDate,
+                activity.worksheetUploads,
+            ),
+        },
     });
 
-    if (nextActivity) {
-        await tx.activityProgress.updateMany({
-            where: {
-                id: nextActivity.id,
-                status: ActivityStatus.locked,
-            },
-            data: {
-                status: ActivityStatus.in_progress,
-                unlockedAt: new Date(),
-            },
-        });
-    }
+    await unlockNextActivity(
+        tx,
+        activity.studentId,
+        activity.phqResultId,
+        activity.activityNumber,
+    );
 }
 
 /**
@@ -305,6 +435,7 @@ export async function confirmActivityComplete(
                     studentId: true,
                     phqResultId: true,
                     activityNumber: true,
+                    assessedAt: true,
                     worksheetUploads: {
                         orderBy: { uploadedAt: "desc" },
                         take: 1,
@@ -324,23 +455,18 @@ export async function confirmActivityComplete(
                 };
             }
 
-            await tx.activityProgress.update({
-                where: { id: currentActivity.id },
-                data: {
-                    status: ActivityStatus.completed,
-                    completedAt: new Date(),
-                    scheduledDate:
-                        currentActivity.scheduledDate ??
-                        currentActivity.worksheetUploads[0]?.uploadedAt,
-                },
-            });
+            if (
+                currentActivity.activityNumber === 1 &&
+                !currentActivity.assessedAt
+            ) {
+                await markPendingTeacherAssessment(tx, currentActivity);
+                return {
+                    success: true,
+                    activityNumber: currentActivity.activityNumber,
+                };
+            }
 
-            await unlockNextActivity(
-                tx,
-                currentActivity.studentId,
-                currentActivity.phqResultId,
-                currentActivity.activityNumber,
-            );
+            await completeActivityAndUnlockNext(tx, currentActivity);
 
             return {
                 success: true,
