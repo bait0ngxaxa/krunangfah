@@ -107,7 +107,9 @@ describe("resetSystemActivityProgress", () => {
             where: { id: activityId },
             data: expect.objectContaining({
                 status: "in_progress",
+                scheduledDate: null,
                 completedAt: null,
+                teacherId: null,
                 internalProblems: null,
                 externalProblems: null,
                 problemType: null,
@@ -118,6 +120,14 @@ describe("resetSystemActivityProgress", () => {
             "/api/uploads/worksheets/activity-2.png",
             "/api/uploads/worksheets/activity-3.png",
         ]);
+        expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+                action: "RESET",
+                targetType: "activityProgress",
+                targetId: activityId,
+                reason: "ครูบันทึกกิจกรรมเกิน",
+            }),
+        });
     });
 
     it.each(["locked", "in_progress"] as const)(
@@ -175,7 +185,9 @@ function createActivityRow(status: "locked" | "completed" | "in_progress") {
         activityNumber: 2,
         status,
         unlockedAt: new Date("2026-07-07T00:00:00.000Z"),
-        scheduledDate: null,
+        scheduledDate: status === "completed"
+            ? new Date("2026-07-08T00:00:00.000Z")
+            : null,
         completedAt: status === "completed"
             ? new Date("2026-07-07T00:00:00.000Z")
             : null,

@@ -2,11 +2,13 @@ import type {
     Gender,
     ProjectRole,
     StudentStatus,
+    SystemAdminEventAction,
     SystemAdminEventTargetType,
     UserRole,
 } from "@prisma/client";
 
 export type SystemEntityKind = "school" | "staff" | "student";
+export type SystemAdminEventActionKind = SystemAdminEventAction;
 export type SystemAdminEventTargetKind = SystemAdminEventTargetType;
 
 export interface SchoolEntityResult {
@@ -87,6 +89,7 @@ export interface SystemAdminEditChange {
 
 export interface SystemAdminEditEventItem {
     id: string;
+    action: SystemAdminEventActionKind;
     targetType: SystemAdminEventTargetKind;
     targetId: string;
     reason: string;

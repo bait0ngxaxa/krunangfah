@@ -3,6 +3,7 @@ import { prisma } from "@/lib/database/prisma";
 import type {
     SystemAdminEditChange,
     SystemAdminEditEventItem,
+    SystemAdminEventActionKind,
     SystemAdminEventTargetKind,
 } from "./types";
 
@@ -18,6 +19,7 @@ interface CreateSystemAdminEditEventInput {
     targetType: SystemAdminEventTargetKind;
     targetId: string;
     targetLabel: string;
+    action?: SystemAdminEventActionKind;
     reason: string;
     actor: ActorSnapshot;
     changes: SystemAdminEditChange[];
@@ -28,6 +30,7 @@ export async function createSystemAdminEditEvent({
     targetType,
     targetId,
     targetLabel,
+    action = "EDIT",
     reason,
     actor,
     changes,
@@ -36,7 +39,7 @@ export async function createSystemAdminEditEvent({
         data: {
             targetType,
             targetId,
-            action: "EDIT",
+            action,
             reason,
             actorUserId: actor.id,
             actorSnapshot: createActorSnapshot(actor),
@@ -78,6 +81,7 @@ function changesToJson(
 
 function toSystemAdminEditEventItem(event: {
     id: string;
+    action: SystemAdminEventActionKind;
     targetType: SystemAdminEventTargetKind;
     targetId: string;
     reason: string;
@@ -90,6 +94,7 @@ function toSystemAdminEditEventItem(event: {
     const target = readObject(event.targetSnapshot);
     return {
         id: event.id,
+        action: event.action,
         targetType: event.targetType,
         targetId: event.targetId,
         reason: event.reason,

@@ -18,6 +18,7 @@ import { SystemCareActivityGroups } from "./SystemCareActivityGroups";
 import { SystemCarePhqSection } from "./SystemCarePhqSection";
 import {
     createPhqEditFormState,
+    normalizePhqEditFormState,
     type SystemPhqEditFormState,
 } from "./SystemCarePhqEditForm";
 import { SystemCareReferralSection } from "./SystemCareReferralSection";
@@ -113,7 +114,9 @@ export function SystemCareAdminPanel({
                 }}
                 onEditChange={(field, value) => {
                     setPhqEditForm((current) =>
-                        current ? { ...current, [field]: value } : current,
+                        current
+                            ? normalizePhqEditFormState({ ...current, [field]: value })
+                            : current,
                     );
                 }}
                 onCancelEdit={() => {

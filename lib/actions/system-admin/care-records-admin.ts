@@ -2,7 +2,10 @@ import { revalidatePath } from "next/cache";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import { prisma } from "@/lib/database/prisma";
-import { calculateRiskLevel } from "@/lib/utils/phq-scoring";
+import {
+    calculateRiskLevel,
+    canReferPhqToHospital,
+} from "@/lib/utils/phq-scoring";
 import type {
     SystemEditResponse,
     SystemPhqRecord,
@@ -42,7 +45,16 @@ export async function saveSystemPhqResult(
 
     const scores = toScores(input);
     const calculated = calculateRiskLevel(scores);
-    const hospitalName = input.referredToHospital
+    const canReferToHospital = canReferPhqToHospital(scores);
+    if (input.referredToHospital && !canReferToHospital) {
+        return {
+            success: false,
+            message: "แก้ไขการส่งต่อโรงพยาบาลได้เฉพาะ PHQ สีแดง (เสี่ยงสูงมาก)",
+        };
+    }
+
+    const referredToHospital = input.referredToHospital && canReferToHospital;
+    const hospitalName = referredToHospital
         ? input.hospitalName?.trim() ?? null
         : null;
     const changes = createChanges([
@@ -59,7 +71,7 @@ export async function saveSystemPhqResult(
         ["q9b", "เคยพยายามทำร้ายตัวเอง", existing.q9b, input.q9b],
         ["totalScore", "คะแนนรวม", existing.totalScore, calculated.totalScore],
         ["riskLevel", "ระดับความเสี่ยง", existing.riskLevel, calculated.riskLevel],
-        ["referredToHospital", "ส่งต่อโรงพยาบาล", existing.referredToHospital, input.referredToHospital],
+        ["referredToHospital", "ส่งต่อโรงพยาบาล", existing.referredToHospital, referredToHospital],
         ["hospitalName", "โรงพยาบาล", existing.hospitalName, hospitalName],
     ]);
     if (changes.length === 0) return { success: true, message: "ไม่มีข้อมูลเปลี่ยนแปลง", updated: toPhqRecord(existing) };
@@ -71,7 +83,7 @@ export async function saveSystemPhqResult(
                 ...scores,
                 totalScore: calculated.totalScore,
                 riskLevel: calculated.riskLevel,
-                referredToHospital: input.referredToHospital,
+                referredToHospital,
                 hospitalName,
             },
             select: PHQ_SELECT,
@@ -126,6 +138,7 @@ export async function saveSystemReferral(
             targetType: "studentReferral",
             targetId: row.id,
             targetLabel: "การส่งต่อนักเรียน",
+            action: existing ? "EDIT" : "CREATE",
             reason: input.reason,
             actor,
             changes: changes.length > 0 ? changes : [{ field: "record", label: "ยืนยันรายการ", before: null, after: "updated" }],
@@ -154,6 +167,7 @@ export async function deleteSystemReferral(
             targetType: "studentReferral",
             targetId: existing.id,
             targetLabel: "การส่งต่อนักเรียน",
+            action: "DELETE",
             reason: input.reason,
             actor,
             changes: [{ field: "record", label: "ลบการส่งต่อ", before: "active", after: null }],

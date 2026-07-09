@@ -107,6 +107,14 @@ describe("resetSystemPhqResult", () => {
         expect(prismaMocks.deleteFilesByUrl).toHaveBeenCalledWith([
             "/api/uploads/worksheets/phq-round-1.png",
         ]);
+        expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+                action: "RESET",
+                targetType: "phqResult",
+                targetId: phqRound1Id,
+                reason: "ครูนำเข้าคะแนน PHQ ผิดรอบ",
+            }),
+        });
     });
 
     it("rejects rollback for an old term when a newer PHQ term exists", async () => {

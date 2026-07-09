@@ -72,6 +72,9 @@ enum SystemAdminEventTargetType {
 
 enum SystemAdminEventAction {
   EDIT
+  CREATE
+  DELETE
+  RESET
 }
 
 // ==================== Models ====================

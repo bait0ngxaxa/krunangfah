@@ -107,9 +107,72 @@ describe("saveSystemPhqResult", () => {
         expect(prismaMocks.transaction).not.toHaveBeenCalled();
         expect(prismaMocks.tx.phqResult.update).not.toHaveBeenCalled();
     });
+
+    it("rejects hospital referral edits when the edited PHQ score is not red", async () => {
+        const result = await saveSystemPhqResult(
+            createInput("แก้ข้อมูลส่งต่อโรงพยาบาล", {
+                referredToHospital: true,
+                hospitalName: "โรงพยาบาลทดสอบ",
+            }),
+            actor,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "แก้ไขการส่งต่อโรงพยาบาลได้เฉพาะ PHQ สีแดง (เสี่ยงสูงมาก)",
+        });
+        expect(prismaMocks.transaction).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.phqResult.update).not.toHaveBeenCalled();
+    });
+
+    it("allows hospital referral edits when the edited PHQ score is red", async () => {
+        prismaMocks.tx.phqResult.update.mockResolvedValue(
+            createPhqRow(phqId, {
+                q1: 3,
+                totalScore: 20,
+                riskLevel: "red",
+                referredToHospital: true,
+                hospitalName: "โรงพยาบาลทดสอบ",
+            }),
+        );
+
+        const result = await saveSystemPhqResult(
+            createInput("แก้ข้อมูลส่งต่อโรงพยาบาล", {
+                q1: 3,
+                q2: 3,
+                q3: 3,
+                q4: 3,
+                q5: 3,
+                q6: 3,
+                q7: 0,
+                referredToHospital: true,
+                hospitalName: "โรงพยาบาลทดสอบ",
+            }),
+            actor,
+        );
+
+        expect(result.success).toBe(true);
+        expect(prismaMocks.tx.phqResult.update).toHaveBeenCalledWith({
+            where: { id: phqId },
+            data: expect.objectContaining({
+                totalScore: 20,
+                riskLevel: "red",
+                referredToHospital: true,
+                hospitalName: "โรงพยาบาลทดสอบ",
+            }),
+            select: expect.any(Object),
+        });
+    });
 });
 
-function createInput(reason: string) {
+function createInput(
+    reason: string,
+    overrides: Partial<ReturnType<typeof createBaseInput>> = {},
+) {
+    return { ...createBaseInput(reason), ...overrides };
+}
+
+function createBaseInput(reason: string) {
     return {
         id: phqId,
         q1: 2,
@@ -135,6 +198,8 @@ function createPhqRow(
         q1?: number;
         totalScore?: number;
         riskLevel?: string;
+        referredToHospital?: boolean;
+        hospitalName?: string | null;
         year?: number;
         semester?: number;
     } = {},
@@ -157,8 +222,8 @@ function createPhqRow(
         q9b: false,
         totalScore: overrides.totalScore ?? 9,
         riskLevel: overrides.riskLevel ?? "green",
-        referredToHospital: false,
-        hospitalName: null,
+        referredToHospital: overrides.referredToHospital ?? false,
+        hospitalName: overrides.hospitalName ?? null,
         createdAt: new Date("2026-07-07T00:00:00.000Z"),
         academicYear: {
             year: overrides.year ?? 2569,

@@ -111,7 +111,7 @@ describe("importStudents idempotency", () => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
-    it("returns cached completed results without running the import again", async () => {
+    it("returns cached successful completed results without running the import again", async () => {
         const cachedResult = {
             success: true,
             status: "success" as const,
@@ -131,7 +131,38 @@ describe("importStudents idempotency", () => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
-    it("stores early validation results after starting idempotency", async () => {
+    it("clears cached failed completed results and reruns the import", async () => {
+        const cachedResult = {
+            success: false,
+            status: "error" as const,
+            message: "ไม่สามารถนำเข้าได้ทั้งหมด 1 คน (ข้อมูลซ้ำหรือไม่ผ่านเงื่อนไข)",
+            imported: 0,
+            skipped: 0,
+            errors: ["สมชาย ใจดี (1001): มีข้อมูลการประเมินครั้งที่ 1 อยู่แล้ว"],
+        };
+        mocks.startIdempotentOperation.mockResolvedValue({
+            status: "completed",
+            result: cachedResult,
+        });
+        mocks.schoolClassFindMany.mockResolvedValue([{ name: "ม.1/1" }]);
+        mocks.transaction.mockResolvedValue({
+            importedCount: 1,
+            duplicateRoundErrors: [],
+            duplicateRoundFailures: [],
+            importedStudents: [],
+        });
+
+        const result = await importStudents([createParsedStudent()], "ay-input", 1);
+
+        expect(result.success).toBe(true);
+        expect(mocks.clearIdempotentOperation).toHaveBeenCalledWith(
+            expect.stringMatching(/^idem:import-students:user-1:school-1:ay-1:1:/),
+        );
+        expect(mocks.schoolClassFindMany).toHaveBeenCalled();
+        expect(mocks.transaction).toHaveBeenCalled();
+    });
+
+    it("clears early validation results after starting idempotency", async () => {
         mocks.requireAuth.mockResolvedValue({
             user: {
                 id: "user-1",
@@ -151,11 +182,33 @@ describe("importStudents idempotency", () => {
             status: "error",
             message: "ไม่พบข้อมูลห้องที่คุณดูแล กรุณาตั้งค่าโปรไฟล์ก่อน",
         });
-        expect(mocks.completeIdempotentOperation).toHaveBeenCalledWith(
+        expect(mocks.clearIdempotentOperation).toHaveBeenCalledWith(
             expect.stringMatching(/^idem:import-students:user-1:school-1:ay-1:1:/),
-            1800,
-            result,
         );
+        expect(mocks.completeIdempotentOperation).not.toHaveBeenCalled();
         expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("clears duplicate PHQ import errors instead of caching them", async () => {
+        mocks.schoolClassFindMany.mockResolvedValue([{ name: "ม.1/1" }]);
+        mocks.transaction.mockResolvedValue({
+            importedCount: 0,
+            duplicateRoundErrors: [
+                "สมชาย ใจดี (1001): มีข้อมูลการประเมินครั้งที่ 1 อยู่แล้ว",
+            ],
+            duplicateRoundFailures: [],
+            importedStudents: [],
+        });
+
+        const result = await importStudents([createParsedStudent()], "ay-input", 1);
+
+        expect(result.success).toBe(false);
+        expect(result.errors).toContain(
+            "สมชาย ใจดี (1001): มีข้อมูลการประเมินครั้งที่ 1 อยู่แล้ว",
+        );
+        expect(mocks.clearIdempotentOperation).toHaveBeenCalledWith(
+            expect.stringMatching(/^idem:import-students:user-1:school-1:ay-1:1:/),
+        );
+        expect(mocks.completeIdempotentOperation).not.toHaveBeenCalled();
     });
 });

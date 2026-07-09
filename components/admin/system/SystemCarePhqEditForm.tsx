@@ -4,6 +4,10 @@ import { Save, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PHQA_SCORE_OPTIONS } from "@/lib/constants/phq-score-labels";
 import type { SystemPhqRecord } from "@/lib/actions/system-admin/types";
+import {
+    canReferPhqToHospital,
+    type PhqScores,
+} from "@/lib/utils/phq-scoring";
 
 export interface SystemPhqEditFormState {
     q1: number;
@@ -40,7 +44,7 @@ const SCORE_FIELDS = [
 export function createPhqEditFormState(
     record: SystemPhqRecord,
 ): SystemPhqEditFormState {
-    return {
+    return normalizePhqEditFormState({
         q1: record.q1,
         q2: record.q2,
         q3: record.q3,
@@ -55,7 +59,21 @@ export function createPhqEditFormState(
         referredToHospital: record.referredToHospital,
         hospitalName: record.hospitalName ?? "",
         reason: "",
-    };
+    });
+}
+
+export function normalizePhqEditFormState(
+    value: SystemPhqEditFormState,
+): SystemPhqEditFormState {
+    if (canEditHospitalReferral(value)) return value;
+    if (!value.referredToHospital && value.hospitalName === "") return value;
+    return { ...value, referredToHospital: false, hospitalName: "" };
+}
+
+export function canEditHospitalReferral(
+    value: SystemPhqEditFormState,
+): boolean {
+    return canReferPhqToHospital(toPhqScores(value));
 }
 
 export function SystemCarePhqEditForm({
@@ -73,12 +91,18 @@ export function SystemCarePhqEditForm({
     onCancel: () => void;
     onSave: () => void;
 }) {
+    const canEditReferral = canEditHospitalReferral(value);
+
     return (
         <div className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
             <p className="text-sm font-semibold text-emerald-950">{title}</p>
             <ScoreGrid value={value} onChange={onChange} />
-            <SafetyGrid value={value} onChange={onChange} />
-            {value.referredToHospital ? (
+            <SafetyGrid
+                value={value}
+                canEditReferral={canEditReferral}
+                onChange={onChange}
+            />
+            {canEditReferral && value.referredToHospital ? (
                 <HospitalNameField value={value.hospitalName} onChange={onChange} />
             ) : null}
             <ReasonField value={value.reason} onChange={onChange} />
@@ -114,9 +138,11 @@ function ScoreGrid({
 
 function SafetyGrid({
     value,
+    canEditReferral,
     onChange,
 }: {
     value: SystemPhqEditFormState;
+    canEditReferral: boolean;
     onChange: (field: Field, value: Value) => void;
 }) {
     return (
@@ -131,11 +157,13 @@ function SafetyGrid({
                 checked={value.q9b}
                 onChange={(checked) => onChange("q9b", checked)}
             />
-            <CheckboxField
-                label="ส่งต่อโรงพยาบาล"
-                checked={value.referredToHospital}
-                onChange={(checked) => onChange("referredToHospital", checked)}
-            />
+            {canEditReferral ? (
+                <CheckboxField
+                    label="ส่งต่อโรงพยาบาล"
+                    checked={value.referredToHospital}
+                    onChange={(checked) => onChange("referredToHospital", checked)}
+                />
+            ) : null}
         </div>
     );
 }
@@ -258,6 +286,11 @@ function getScoreValue(
         case "q9":
             return value.q9;
     }
+}
+
+function toPhqScores(value: SystemPhqEditFormState): PhqScores {
+    const { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b } = value;
+    return { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b };
 }
 
 function CheckboxField({

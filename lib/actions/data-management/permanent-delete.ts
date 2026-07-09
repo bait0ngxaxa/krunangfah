@@ -33,6 +33,10 @@ interface DeleteResult extends DataManagementResponse {
 }
 
 type Tx = Prisma.TransactionClient;
+type SchoolUserForDelete = {
+    id: string;
+    email: string | null;
+};
 
 export async function permanentlyDeleteStudent(
     input: DeleteInput,
@@ -70,6 +74,7 @@ export async function permanentlyDeleteStudent(
             select: { id: true },
         });
 
+        await deleteStudentDependents(tx, student.id);
         await tx.student.delete({ where: { id: student.id } });
         return {
             success: true,
@@ -109,12 +114,13 @@ export async function permanentlyDeleteSchool(
             return failure("ไม่สามารถลบโรงเรียนที่มี System Admin ผูกอยู่");
         }
 
-        const [impact, fileUrls, userIds] = await Promise.all([
+        const [impact, fileUrls, users] = await Promise.all([
             getSchoolImpact(school.id),
             getSchoolFileUrls(school.id),
-            getSchoolUserIds(tx, school.id),
+            getSchoolUsers(tx, school.id),
         ]);
-        await deleteSchoolDependents(tx, school.id, userIds);
+        const userIds = users.map((user) => user.id);
+        await deleteSchoolDependents(tx, school.id, users);
         await assertNoUserReferences(tx, userIds);
 
         const event = await tx.dataManagementEvent.create({
@@ -164,17 +170,81 @@ export async function permanentlyDeleteSchool(
 async function deleteSchoolDependents(
     tx: Tx,
     schoolId: string,
-    userIds: string[],
+    users: SchoolUserForDelete[],
 ): Promise<void> {
+    const userIds = users.map((user) => user.id);
     await tx.teacherInvite.deleteMany({
         where: { OR: [{ schoolId }, { invitedById: { in: userIds } }] },
     });
     await tx.schoolAdminInvite.deleteMany({
         where: { createdBy: { in: userIds } },
     });
+    await deleteSchoolStudentDependents(tx, schoolId);
     await tx.student.deleteMany({ where: { schoolId } });
     await tx.schoolTeacherRoster.deleteMany({ where: { schoolId } });
     await tx.schoolClass.deleteMany({ where: { schoolId } });
+    await deleteSchoolUserDependents(tx, users);
+}
+
+async function deleteStudentDependents(tx: Tx, studentId: string): Promise<void> {
+    await tx.worksheetUpload.deleteMany({
+        where: { activityProgress: { studentId } },
+    });
+    await tx.homeVisitPhoto.deleteMany({
+        where: { homeVisit: { studentId } },
+    });
+    await tx.studentReferral.deleteMany({ where: { studentId } });
+    await tx.activityProgress.deleteMany({ where: { studentId } });
+    await tx.phqResult.deleteMany({ where: { studentId } });
+    await tx.counselingSession.deleteMany({ where: { studentId } });
+    await tx.homeVisit.deleteMany({ where: { studentId } });
+}
+
+async function deleteSchoolStudentDependents(
+    tx: Tx,
+    schoolId: string,
+): Promise<void> {
+    await tx.worksheetUpload.deleteMany({
+        where: { activityProgress: { student: { schoolId } } },
+    });
+    await tx.homeVisitPhoto.deleteMany({
+        where: { homeVisit: { student: { schoolId } } },
+    });
+    await tx.studentReferral.deleteMany({
+        where: { student: { schoolId } },
+    });
+    await tx.activityProgress.deleteMany({
+        where: { student: { schoolId } },
+    });
+    await tx.phqResult.deleteMany({
+        where: { student: { schoolId } },
+    });
+    await tx.counselingSession.deleteMany({
+        where: { student: { schoolId } },
+    });
+    await tx.homeVisit.deleteMany({
+        where: { student: { schoolId } },
+    });
+}
+
+async function deleteSchoolUserDependents(
+    tx: Tx,
+    users: SchoolUserForDelete[],
+): Promise<void> {
+    const userIds = users.map((user) => user.id);
+    if (userIds.length === 0) return;
+
+    const emails = users
+        .map((user) => user.email)
+        .filter((email): email is string => typeof email === "string");
+
+    await tx.userSession.deleteMany({ where: { userId: { in: userIds } } });
+    await tx.teacher.deleteMany({ where: { userId: { in: userIds } } });
+    if (emails.length > 0) {
+        await tx.passwordResetToken.deleteMany({
+            where: { email: { in: emails } },
+        });
+    }
 }
 
 async function assertNoUserReferences(tx: Tx, userIds: string[]): Promise<void> {
@@ -200,9 +270,14 @@ async function assertNoUserReferences(tx: Tx, userIds: string[]): Promise<void> 
     }
 }
 
-async function getSchoolUserIds(tx: Tx, schoolId: string): Promise<string[]> {
-    const users = await tx.user.findMany({ where: { schoolId }, select: { id: true } });
-    return users.map((user) => user.id);
+async function getSchoolUsers(
+    tx: Tx,
+    schoolId: string,
+): Promise<SchoolUserForDelete[]> {
+    return tx.user.findMany({
+        where: { schoolId },
+        select: { id: true, email: true },
+    });
 }
 
 async function getStudentFileUrls(studentId: string): Promise<string[]> {

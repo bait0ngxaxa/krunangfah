@@ -1,17 +1,27 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useState, useTransition } from "react";
 import { Clock3 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { EventRow } from "@/components/admin/data-management/EventRow";
+import {
+    getActionLabel,
+    toUiAction,
+} from "@/components/admin/data-management/labels";
 import { listDataManagementEvents } from "@/lib/actions/data-management.actions";
 import { listSystemAdminEvents } from "@/lib/actions/system-admin.actions";
 import type { DataManagementEventItem } from "@/components/admin/data-management/types";
-import type { SystemAdminEditEventItem } from "@/lib/actions/system-admin/types";
+import type {
+    SystemAdminEditChange,
+    SystemAdminEditEventItem,
+} from "@/lib/actions/system-admin/types";
+
+export type AuditTimelineItem =
+    | { kind: "edit"; event: SystemAdminEditEventItem }
+    | { kind: "data-management"; event: DataManagementEventItem };
 
 export function SystemEventPanel() {
-    const [events, setEvents] = useState<DataManagementEventItem[]>([]);
-    const [editEvents, setEditEvents] = useState<SystemAdminEditEventItem[]>([]);
+    const [timeline, setTimeline] = useState<AuditTimelineItem[]>([]);
     const [hasLoaded, setHasLoaded] = useState(false);
     const [isPending, startTransition] = useTransition();
 
@@ -21,8 +31,7 @@ export function SystemEventPanel() {
                 listDataManagementEvents(),
                 listSystemAdminEvents(),
             ]);
-            setEvents(dataManagement.events);
-            setEditEvents(systemAdmin.events);
+            setTimeline(buildAuditTimeline(dataManagement.events, systemAdmin.events));
             setHasLoaded(true);
         });
     };
@@ -54,13 +63,13 @@ export function SystemEventPanel() {
 
             {hasLoaded ? (
                 <div className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
-                    {editEvents.map((event) => (
-                        <EditEventRow key={event.id} event={event} />
+                    {timeline.map((item) => (
+                        <AuditTimelineRow
+                            key={`${item.kind}:${item.event.id}`}
+                            item={item}
+                        />
                     ))}
-                    {events.map((event) => (
-                        <EventRow key={event.id} event={event} compact />
-                    ))}
-                    {events.length === 0 && editEvents.length === 0 ? (
+                    {timeline.length === 0 ? (
                         <p className="rounded-xl border border-dashed border-gray-200 p-4 text-sm text-gray-600">
                             ยังไม่มีเหตุการณ์การจัดการหรือการแก้ไขข้อมูล
                         </p>
@@ -71,33 +80,148 @@ export function SystemEventPanel() {
     );
 }
 
+export function buildAuditTimeline(
+    events: DataManagementEventItem[],
+    editEvents: SystemAdminEditEventItem[],
+): AuditTimelineItem[] {
+    return [
+        ...events.map((event) => ({ kind: "data-management", event }) as const),
+        ...editEvents.map((event) => ({ kind: "edit", event }) as const),
+    ].sort((a, b) => b.event.createdAt.getTime() - a.event.createdAt.getTime());
+}
+
+export function AuditTimelineRow({ item }: { item: AuditTimelineItem }) {
+    if (item.kind === "edit") return <EditEventRow event={item.event} />;
+    return <DataManagementAuditEventRow event={item.event} />;
+}
+
 export function EditEventRow({ event }: { event: SystemAdminEditEventItem }) {
     return (
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
+        <AuditEventFrame
+            title={`${getEditEventActionLabel(event.action)}: ${event.targetLabel}`}
+            actorEmail={event.actorEmail}
+            reason={event.reason}
+            createdAt={event.createdAt}
+            tone="emerald"
+        >
+            <ChangeList eventId={event.id} changes={event.changes} />
+        </AuditEventFrame>
+    );
+}
+
+export function DataManagementAuditEventRow({
+    event,
+}: {
+    event: DataManagementEventItem;
+}) {
+    return (
+        <AuditEventFrame
+            title={`${getActionLabel(toUiAction(event.action))}: ${event.targetLabel}`}
+            actorEmail={event.actorEmail}
+            reason={event.reason}
+            createdAt={event.createdAt}
+            tone="gray"
+        >
+            {event.warnings.length > 0 ? (
+                <div className="mt-2 space-y-1">
+                    {event.warnings.map((warning) => (
+                        <p
+                            key={`${event.id}:${warning}`}
+                            className="rounded-lg border border-amber-100 bg-amber-50 px-2.5 py-2 text-xs font-medium text-amber-800"
+                        >
+                            {warning}
+                        </p>
+                    ))}
+                </div>
+            ) : null}
+        </AuditEventFrame>
+    );
+}
+
+function getEditEventActionLabel(
+    action: SystemAdminEditEventItem["action"],
+): string {
+    switch (action) {
+        case "CREATE":
+            return "เพิ่มข้อมูล";
+        case "DELETE":
+            return "ลบข้อมูล";
+        case "RESET":
+            return "ล้างผลข้อมูล";
+        case "EDIT":
+            return "แก้ไขข้อมูล";
+    }
+}
+
+function AuditEventFrame({
+    title,
+    actorEmail,
+    reason,
+    createdAt,
+    tone,
+    children,
+}: {
+    title: string;
+    actorEmail: string | null;
+    reason: string;
+    createdAt: Date;
+    tone: "emerald" | "gray";
+    children: ReactNode;
+}) {
+    const className = tone === "emerald"
+        ? "rounded-xl border border-emerald-100 bg-emerald-50/60 p-3"
+        : "rounded-xl border border-gray-100 bg-gray-50 p-3";
+
+    return (
+        <div className={className}>
             <div className="flex items-start justify-between gap-2">
                 <div>
-                    <p className="text-sm font-semibold text-gray-950">
-                        แก้ไขข้อมูล: {event.targetLabel}
-                    </p>
+                    <p className="text-sm font-semibold text-gray-950">{title}</p>
                     <p className="mt-1 text-xs font-medium text-gray-700">
-                        ทำรายการโดย {event.actorEmail ?? "ไม่พบอีเมลผู้ทำรายการ"}
+                        ทำรายการโดย {actorEmail ?? "ไม่พบอีเมลผู้ทำรายการ"}
                     </p>
-                    <p className="mt-1 text-xs text-gray-600">{event.reason}</p>
+                    <p className="mt-1 text-xs text-gray-600">{reason}</p>
                 </div>
                 <p className="shrink-0 text-xs text-gray-500">
-                    {event.createdAt.toLocaleString("th-TH")}
+                    {createdAt.toLocaleString("th-TH")}
                 </p>
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-                {event.changes.map((change) => (
-                    <span
-                        key={`${event.id}:${change.field}`}
-                        className="rounded-full border border-emerald-200 bg-white px-2 py-1 text-xs font-medium text-emerald-800"
-                    >
-                        {change.label}
-                    </span>
-                ))}
-            </div>
+            {children}
         </div>
     );
+}
+
+function ChangeList({
+    eventId,
+    changes,
+}: {
+    eventId: string;
+    changes: SystemAdminEditChange[];
+}) {
+    if (changes.length === 0) return null;
+
+    return (
+        <div className="mt-2 space-y-1.5">
+            {changes.map((change) => (
+                <div
+                    key={`${eventId}:${change.field}`}
+                    className="rounded-lg border border-emerald-100 bg-white px-2.5 py-2 text-xs text-gray-700"
+                >
+                    <p className="font-semibold text-emerald-900">{change.label}</p>
+                    <div className="mt-1 grid gap-1 sm:grid-cols-2">
+                        <span>จาก {formatAuditValue(change.before)}</span>
+                        <span>เป็น {formatAuditValue(change.after)}</span>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function formatAuditValue(
+    value: SystemAdminEditChange["before"],
+): string {
+    if (value === null || value === "") return "-";
+    if (typeof value === "boolean") return value ? "ใช่" : "ไม่ใช่";
+    return String(value);
 }

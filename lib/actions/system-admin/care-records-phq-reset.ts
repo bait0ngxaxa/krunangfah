@@ -104,6 +104,7 @@ async function logRollbackEvent(
         targetType: "phqResult",
         targetId: phq.id,
         targetLabel: `PHQ รอบ ${phq.assessmentRound}`,
+        action: "RESET",
         reason,
         actor,
         changes: [{

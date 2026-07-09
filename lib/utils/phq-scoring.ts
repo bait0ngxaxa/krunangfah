@@ -82,6 +82,10 @@ export function calculateRiskLevel(scores: PhqScores): ScoringResult {
     return { totalScore, riskLevel, riskLabel, riskColor };
 }
 
+export function canReferPhqToHospital(scores: PhqScores): boolean {
+    return calculateRiskLevel(scores).riskLevel === "red";
+}
+
 /**
  * Calculate total score only
  */

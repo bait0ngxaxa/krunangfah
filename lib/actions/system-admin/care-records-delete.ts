@@ -93,6 +93,7 @@ async function logDeleteEvent(
         targetType,
         targetId,
         targetLabel,
+        action: "DELETE",
         reason,
         actor,
         changes: [

@@ -206,7 +206,10 @@ export async function importStudents(
         );
 
         if (idempotencyResult.status === "completed") {
-            if (isImportResult(idempotencyResult.result)) {
+            if (
+                isImportResult(idempotencyResult.result) &&
+                idempotencyResult.result.success
+            ) {
                 return idempotencyResult.result;
             }
             await clearIdempotentOperation(importIdempotencyKey);
@@ -221,18 +224,22 @@ export async function importStudents(
         }
 
         shouldClearImportIdempotency = idempotencyResult.status === "started";
-        const completeImport = async (
+        const finishImport = async (
             result: ImportResult,
         ): Promise<ImportResult> => {
             if (!importIdempotencyKey || !shouldClearImportIdempotency) {
                 return result;
             }
 
-            await completeIdempotentOperation(
-                importIdempotencyKey,
-                IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS,
-                result,
-            );
+            if (result.success) {
+                await completeIdempotentOperation(
+                    importIdempotencyKey,
+                    IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS,
+                    result,
+                );
+            } else {
+                await clearIdempotentOperation(importIdempotencyKey);
+            }
             shouldClearImportIdempotency = false;
             return result;
         };
@@ -248,7 +255,7 @@ export async function importStudents(
         );
 
         if (isClassTeacher && !advisoryClass) {
-            return completeImport({
+            return finishImport({
                 success: false,
                 status: "error",
                 message: "ไม่พบข้อมูลห้องที่คุณดูแล กรุณาตั้งค่าโปรไฟล์ก่อน",
@@ -265,7 +272,7 @@ export async function importStudents(
             });
 
             if (schoolRound1Count === 0) {
-                return completeImport({
+                return finishImport({
                     success: false,
                     status: "error",
                     message:
@@ -680,7 +687,7 @@ export async function importStudents(
             message = `ไม่สามารถนำเข้าได้ทั้งหมด ${failedCount} คน (ข้อมูลซ้ำหรือไม่ผ่านเงื่อนไข)`;
         }
 
-        return completeImport({
+        return finishImport({
             success: importedCount > 0,
             status:
                 failedCount === 0 && skippedCount === 0

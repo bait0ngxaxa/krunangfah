@@ -42,6 +42,7 @@ import type { Actor } from "@/lib/actions/system-admin/mutations";
 import {
     saveSystemCounselingRecord,
     saveSystemHomeVisitRecord,
+    softDeleteSystemCareRecord,
 } from "@/lib/actions/system-admin/care-records";
 
 const actor: Actor = {
@@ -98,6 +99,14 @@ describe("system admin care record mutations", () => {
             }),
             select: expect.any(Object),
         });
+        expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+                action: "CREATE",
+                targetType: "counselingSession",
+                targetId: "cmcounseling000000000003",
+                reason: "เพิ่มรายการใหม่หลังลบแบบกู้คืนได้",
+            }),
+        });
     });
 
     it("does not reuse a soft-deleted home visit number", async () => {
@@ -135,6 +144,38 @@ describe("system admin care record mutations", () => {
                 createdById: actor.id,
             }),
             select: expect.any(Object),
+        });
+        expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+                action: "CREATE",
+                targetType: "homeVisit",
+                targetId: "cmhomevisit000000000003",
+                reason: "เพิ่มรายการใหม่หลังลบแบบกู้คืนได้",
+            }),
+        });
+    });
+
+    it("records a DELETE audit event when soft deleting a counseling session", async () => {
+        prismaMocks.counselingFindFirst.mockResolvedValue(createCounselingRow(1));
+        prismaMocks.tx.counselingSession.update.mockResolvedValue(createCounselingRow(1));
+
+        const result = await softDeleteSystemCareRecord(
+            "counselingSession",
+            {
+                id: "cmcounseling000000000001",
+                reason: "ลบรายการซ้ำจากเอกสารเดิม",
+            },
+            actor,
+        );
+
+        expect(result.success).toBe(true);
+        expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+                action: "DELETE",
+                targetType: "counselingSession",
+                targetId: "cmcounseling000000000001",
+                reason: "ลบรายการซ้ำจากเอกสารเดิม",
+            }),
         });
     });
 });

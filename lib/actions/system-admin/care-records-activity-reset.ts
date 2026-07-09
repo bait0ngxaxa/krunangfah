@@ -42,6 +42,7 @@ export async function resetSystemActivityProgress(
             targetType: "activityProgress",
             targetId: row.id,
             targetLabel: `กิจกรรมที่ ${row.activityNumber}`,
+            action: "RESET",
             reason: input.reason,
             actor,
             changes: [{
@@ -111,7 +112,9 @@ async function resetSelectedActivity(tx: Tx, activity: ActivityRow) {
         data: {
             status: "in_progress",
             unlockedAt: activity.unlockedAt ?? new Date(),
+            scheduledDate: null,
             completedAt: null,
+            teacherId: null,
             teacherNotes: null,
             internalProblems: null,
             externalProblems: null,
