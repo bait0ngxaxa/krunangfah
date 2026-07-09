@@ -105,7 +105,10 @@ export function SystemEventPanel() {
     }, [startTransition]);
 
     return (
-        <section className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+        <section
+            className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm"
+            aria-labelledby="system-audit-heading"
+        >
             <div className="flex flex-col gap-3">
                 <AuditPanelHeader />
                 <AuditSearchForm
@@ -142,7 +145,10 @@ function AuditPanelHeader() {
         <div>
             <div className="flex items-center gap-2">
                 <Clock3 className="h-4 w-4 text-emerald-600" />
-                <h2 className="text-base font-semibold text-gray-950">
+                <h2
+                    id="system-audit-heading"
+                    className="text-base font-semibold text-gray-950"
+                >
                     ประวัติรวม
                 </h2>
             </div>

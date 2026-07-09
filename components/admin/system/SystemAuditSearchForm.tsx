@@ -81,11 +81,12 @@ function AuditQueryInput({
             <span className="sr-only">ค้นหาประวัติรวม</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
             <input
+                type="search"
                 value={value}
                 maxLength={100}
                 onChange={(event) => onChange(event.target.value)}
                 placeholder="ค้นหาชื่อเป้าหมาย อีเมล เหตุผล หรือ action"
-                className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-950 outline-none transition-base placeholder:text-gray-500 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                className="w-full rounded-xl border border-emerald-100 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-950 outline-none transition-base placeholder:text-gray-500 hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
             />
         </label>
     );
@@ -102,7 +103,7 @@ function AuditKindSelect({
         <select
             value={value}
             onChange={(event) => onChange(event.target.value as AuditEventKind)}
-            className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-950 outline-none transition-base focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+            className="min-h-11 rounded-xl border border-emerald-100 bg-white px-3 py-2.5 text-sm text-gray-950 outline-none transition-base hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
         >
             <option value="all">ทุกประเภทเหตุการณ์</option>
             <option value="edit">การแก้ไขข้อมูล</option>
@@ -127,7 +128,7 @@ function DateInput({
                 type="date"
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-950 outline-none transition-base focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                className="min-h-11 rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm text-gray-950 outline-none transition-base hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
             />
         </label>
     );

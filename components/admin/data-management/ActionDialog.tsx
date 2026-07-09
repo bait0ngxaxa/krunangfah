@@ -29,10 +29,18 @@ export function ActionDialog({
     const reasonPlaceholder = isDelete
         ? "เช่น ลบข้อมูลทดสอบที่สร้างเพื่อทดลองระบบ หรือข้อมูลผิดที่ยืนยันแล้ว"
         : "ระบุเหตุผลเพื่อให้ตรวจสอบย้อนหลังได้";
+    const titleId = "data-management-action-title";
+    const descriptionId = "data-management-action-description";
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
-            <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+            <div
+                className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                aria-describedby={descriptionId}
+            >
                 <div className="flex items-start gap-3">
                     <AlertTriangle
                         className={
@@ -42,10 +50,13 @@ export function ActionDialog({
                         }
                     />
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900">
+                        <h2
+                            id={titleId}
+                            className="text-lg font-bold text-gray-900"
+                        >
                             {pendingAction.title}
                         </h2>
-                        <p className="mt-1 text-sm text-gray-600">
+                        <p id={descriptionId} className="mt-1 text-sm text-gray-600">
                             ตรวจผลกระทบ ใส่เหตุผล แล้วกดยืนยัน
                         </p>
                     </div>
@@ -61,11 +72,12 @@ export function ActionDialog({
                         value={reason}
                         onChange={(event) => onReasonChange(event.target.value)}
                         placeholder={reasonPlaceholder}
-                        className="mt-2 min-h-28 w-full rounded-xl border border-gray-200 p-3 text-sm text-gray-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                        className="mt-2 min-h-28 w-full resize-none rounded-xl border border-emerald-100 p-3 text-sm text-gray-900 outline-none transition-base placeholder:text-gray-500 hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
                     />
                 </label>
-                <div className="mt-4 flex justify-end gap-2">
+                <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                     <Button
+                        type="button"
                         variant="secondary"
                         onClick={onCancel}
                         disabled={isPending}
@@ -73,6 +85,7 @@ export function ActionDialog({
                         ยกเลิก
                     </Button>
                     <Button
+                        type="button"
                         variant={isDelete ? "danger" : "primary"}
                         onClick={onConfirm}
                         disabled={disabled}

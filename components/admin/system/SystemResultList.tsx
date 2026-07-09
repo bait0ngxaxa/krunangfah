@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/Skeleton";
 import type { SystemEntityResult } from "@/lib/actions/system-admin/types";
 import { getEntityTypeLabel, getRoleLabel } from "./labels";
 import { StatusBadge } from "./StatusBadge";
@@ -24,7 +25,7 @@ export function SystemResultList({
     }
 
     if (isPending) {
-        return <ResultMessage title="กำลังค้นหา" description="กำลังตรวจรายการที่ตรงกับคำค้น" />;
+        return <ResultSkeleton />;
     }
 
     if (results.length === 0) {
@@ -32,12 +33,16 @@ export function SystemResultList({
     }
 
     return (
-        <div className="max-h-[calc(100vh-360px)] min-h-[320px] space-y-2 overflow-y-auto pr-1">
+        <div
+            className="max-h-[calc(100vh-360px)] min-h-[320px] space-y-2 overflow-y-auto pr-1"
+            aria-live="polite"
+        >
             {results.map((entity) => (
                 <button
                     key={`${entity.type}:${entity.id}`}
                     type="button"
                     onClick={() => onSelect(entity)}
+                    aria-pressed={selectedId === entity.id}
                     className={`w-full rounded-xl border p-3 text-left transition-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 ${
                         selectedId === entity.id
                             ? "border-emerald-300 bg-emerald-50 shadow-sm"
@@ -56,6 +61,31 @@ export function SystemResultList({
                         <StatusBadge>{getEntityTypeLabel(entity.type)}</StatusBadge>
                     </div>
                 </button>
+            ))}
+        </div>
+    );
+}
+
+function ResultSkeleton() {
+    return (
+        <div
+            className="min-h-[320px] space-y-2"
+            aria-label="กำลังตรวจรายการที่ตรงกับคำค้น"
+            aria-live="polite"
+        >
+            {[0, 1, 2, 3].map((item) => (
+                <div
+                    key={item}
+                    className="rounded-xl border border-gray-100 bg-white p-3"
+                >
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                            <Skeleton className="h-4 w-2/3 rounded-full" />
+                            <Skeleton className="mt-3 h-3 w-full rounded-full" />
+                        </div>
+                        <Skeleton className="h-7 w-16 rounded-full" />
+                    </div>
+                </div>
             ))}
         </div>
     );

@@ -28,6 +28,8 @@ export function SystemSearchControls({
     onEntityTypeChange,
     onSearch,
 }: SystemSearchControlsProps) {
+    const searchHintId = "system-search-hint";
+
     return (
         <form
             className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm sm:p-5"
@@ -47,41 +49,46 @@ export function SystemSearchControls({
                         value={query}
                         onChange={(event) => onQueryChange(event.target.value)}
                         placeholder="ชื่อโรงเรียน ชื่อบุคลากร อีเมล ชื่อนักเรียน รหัสนักเรียน..."
+                        aria-describedby={searchHintId}
                         className="w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none transition-base placeholder:text-gray-500 hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                     />
                 </label>
 
-                <label className="min-w-0">
-                    <span className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <fieldset className="min-w-0">
+                    <legend className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-gray-800">
                         <SlidersHorizontal className="h-4 w-4 text-emerald-600" />
                         ประเภท
-                    </span>
-                    <select
-                        value={entityType}
-                        onChange={(event) =>
-                            onEntityTypeChange(event.target.value as SystemEntityFilter)
-                        }
-                        className="w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none transition-base hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                    >
+                    </legend>
+                    <div className="grid grid-cols-2 gap-2">
                         {ENTITY_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
+                            <label key={option.value} className="min-w-0">
+                                <input
+                                    type="radio"
+                                    name="system-entity-type"
+                                    value={option.value}
+                                    checked={entityType === option.value}
+                                    onChange={() => onEntityTypeChange(option.value)}
+                                    className="peer sr-only"
+                                />
+                                <span className="flex min-h-11 items-center justify-center rounded-xl border border-emerald-100 bg-white px-3 text-center text-sm font-semibold text-gray-700 transition-base hover:border-emerald-300 hover:bg-emerald-50 peer-checked:border-[var(--brand-primary)] peer-checked:bg-[var(--brand-primary-soft)] peer-checked:text-emerald-900 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-200">
+                                    {option.label}
+                                </span>
+                            </label>
                         ))}
-                    </select>
-                </label>
+                    </div>
+                </fieldset>
 
                 <Button
                     type="submit"
                     variant="primary"
                     disabled={isPending}
-                    className="min-h-11 lg:self-end"
+                    className="min-h-11 w-full lg:w-auto lg:self-end"
                 >
                     <Search className="h-4 w-4" />
                     {isPending ? "กำลังค้นหา" : "ค้นหา"}
                 </Button>
             </div>
-            <p className="mt-3 text-xs leading-5 text-gray-600">
+            <p id={searchHintId} className="mt-3 text-xs leading-5 text-gray-600">
                 พิมพ์อย่างน้อย 2 ตัวอักษร ระบบจะค้นหาเฉพาะเมื่อกดค้นหา
             </p>
         </form>

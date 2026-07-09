@@ -49,7 +49,13 @@ export function SystemDetailPanel({
     onEntityRemoved,
     onRefreshSearch,
 }: SystemDetailPanelProps) {
-    const [isEditing, setIsEditing] = useState(false);
+    const [editingEntityKey, setEditingEntityKey] = useState<string | null>(null);
+    const entityKey = entity ? `${entity.type}:${entity.id}` : "empty";
+    const isEditing = editingEntityKey === entityKey;
+    const toggleEditing = () => {
+        setEditingEntityKey((current) => (current === entityKey ? null : entityKey));
+    };
+    const closeEditing = () => setEditingEntityKey(null);
 
     if (!entity) {
         return (
@@ -106,8 +112,9 @@ export function SystemDetailPanel({
                         <Button
                             type="button"
                             variant="secondary"
-                            className="justify-between"
-                            onClick={() => setIsEditing((current) => !current)}
+                            className="w-full justify-between sm:w-auto"
+                            onClick={toggleEditing}
+                            aria-expanded={isEditing}
                         >
                             <span>{isEditing ? "ปิดฟอร์มแก้ไข" : "แก้ไขข้อมูล"}</span>
                             <Pencil className="h-4 w-4" />
@@ -117,8 +124,9 @@ export function SystemDetailPanel({
                         <Button
                             type="button"
                             variant="secondary"
-                            className="justify-between"
-                            onClick={() => setIsEditing((current) => !current)}
+                            className="w-full justify-between sm:w-auto"
+                            onClick={toggleEditing}
+                            aria-expanded={isEditing}
                         >
                             <span>
                                 {isEditing
@@ -134,7 +142,7 @@ export function SystemDetailPanel({
                         key={`${entity.type}:${entity.id}`}
                         entity={entity}
                         onSaved={onEntityUpdated}
-                        onCancel={() => setIsEditing(false)}
+                        onCancel={closeEditing}
                     />
                 ) : null}
                 {isEditing && canEditTeacherProfile(entity) ? (
@@ -142,7 +150,7 @@ export function SystemDetailPanel({
                         key={`teacher:${entity.id}`}
                         entity={entity}
                         onSaved={onEntityUpdated}
-                        onCancel={() => setIsEditing(false)}
+                        onCancel={closeEditing}
                     />
                 ) : null}
             </section>
@@ -257,7 +265,7 @@ function getBadges(entity: SystemEntityResult): Array<{
         ];
     }
     return [
-            entity.deletedAt
+        entity.deletedAt
             ? { label: "ปิดบัญชีแล้ว", tone: "danger" }
             : { label: "เข้าใช้งานได้", tone: "success" },
         getStaffRoleBadge(entity),
