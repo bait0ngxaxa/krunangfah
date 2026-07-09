@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     ClipboardList,
     User,
@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InviteActionRow } from "@/components/ui/InviteActionRow";
+import { ListSearchField } from "@/components/ui/ListSearchField";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SectionCard, SectionCardHeader } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -23,6 +24,8 @@ import { revokeTeacherInvite } from "@/lib/actions/teacher-invite";
 import { RoleBadge } from "@/components/ui/badges";
 
 const PAGE_SIZE = 5;
+const CLASS_TEACHER_LABEL = "ครูประจำชั้น";
+const SCHOOL_ADMIN_LABEL = "ผู้ดูแลโรงเรียน";
 
 interface TeacherInviteListProps {
     invites: TeacherInviteWithAcademicYear[];
@@ -136,24 +139,94 @@ function InviteCard({
     );
 }
 
+function normalizeSearch(value: string): string {
+    return value.trim().toLocaleLowerCase("th-TH");
+}
+
+function getInviteRoleSearchText(role: string): string {
+    if (role === "class_teacher") return `${role} ${CLASS_TEACHER_LABEL}`;
+    if (role === "school_admin") return `${role} ${SCHOOL_ADMIN_LABEL}`;
+    return role;
+}
+
+function getTeacherInviteSearchText(
+    invite: TeacherInviteWithAcademicYear,
+): string {
+    return [
+        invite.firstName,
+        invite.lastName,
+        `${invite.firstName} ${invite.lastName}`,
+        invite.email,
+        getInviteRoleSearchText(invite.userRole),
+        invite.advisoryClass ?? "",
+    ]
+        .join(" ")
+        .toLocaleLowerCase("th-TH");
+}
+
+function getSearchResultSummary({
+    isSearching,
+    filteredCount,
+    totalCount,
+}: {
+    isSearching: boolean;
+    filteredCount: number;
+    totalCount: number;
+}): string {
+    if (!isSearching) return `มีคำเชิญครูทั้งหมด ${totalCount} รายการ`;
+    return `พบคำเชิญครู ${filteredCount} จากทั้งหมด ${totalCount} รายการ`;
+}
+
 export function TeacherInviteList({
     invites,
     onRevoked,
 }: TeacherInviteListProps) {
     const [page, setPage] = useState(1);
-    const totalPages = Math.max(1, Math.ceil(invites.length / PAGE_SIZE));
+    const [searchQuery, setSearchQuery] = useState("");
+    const normalizedQuery = normalizeSearch(searchQuery);
+    const filteredInvites = useMemo(() => {
+        if (!normalizedQuery) return invites;
+
+        return invites.filter((invite) =>
+            getTeacherInviteSearchText(invite).includes(normalizedQuery),
+        );
+    }, [invites, normalizedQuery]);
+    const isSearching = normalizedQuery.length > 0;
+    const totalPages = Math.max(1, Math.ceil(filteredInvites.length / PAGE_SIZE));
     const safeCurrentPage = Math.min(page, totalPages);
     const start = (safeCurrentPage - 1) * PAGE_SIZE;
-    const paginatedInvites = invites.slice(start, start + PAGE_SIZE);
+    const paginatedInvites = filteredInvites.slice(start, start + PAGE_SIZE);
+    const resultSummary = getSearchResultSummary({
+        isSearching,
+        filteredCount: filteredInvites.length,
+        totalCount: invites.length,
+    });
+
+    function handleSearchChange(value: string): void {
+        setSearchQuery(value);
+        setPage(1);
+    }
 
     return (
         <SectionCard className="p-5 sm:p-6">
-            <SectionCardHeader
-                icon={ClipboardList}
-                className="text-lg"
-                titleClassName="text-gray-800"
-                title={`รายการคำเชิญครู (${invites.length})`}
-            />
+            <div className="space-y-4">
+                <SectionCardHeader
+                    icon={ClipboardList}
+                    className="text-lg"
+                    titleClassName="text-gray-800"
+                    title={`รายการคำเชิญครู (${invites.length})`}
+                />
+                {invites.length > 0 && (
+                    <ListSearchField
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        label="ค้นหารายการคำเชิญครู"
+                        placeholder="ค้นหาชื่อ อีเมล บทบาท หรือห้องประจำชั้น"
+                        resultSummary={resultSummary}
+                        borderClassName="border-emerald-100"
+                    />
+                )}
+            </div>
 
             {invites.length === 0 ? (
                 <EmptyState
@@ -163,9 +236,17 @@ export function TeacherInviteList({
                     description="สร้างคำเชิญด้านบนเพื่อเชิญครูเข้าระบบ"
                     className="p-8"
                 />
+            ) : filteredInvites.length === 0 ? (
+                <EmptyState
+                    icon={ClipboardList}
+                    variant="emerald"
+                    title="ไม่พบคำเชิญที่ตรงกับคำค้น"
+                    description="ลองค้นหาด้วยชื่อ อีเมล บทบาท หรือห้องประจำชั้นอื่น"
+                    className="mt-4 p-8"
+                />
             ) : (
                 <>
-                    <div className="max-h-[70vh] space-y-3 overflow-y-auto pr-0 sm:max-h-[400px] sm:pr-1">
+                    <div className="mt-4 max-h-[70vh] space-y-3 overflow-y-auto pr-0 sm:max-h-[400px] sm:pr-1">
                         {paginatedInvites.map((invite) => (
                             <InviteCard
                                 key={invite.id}
@@ -184,8 +265,12 @@ export function TeacherInviteList({
                             summary={
                                 <>
                                     แสดง {start + 1}–
-                                    {Math.min(start + PAGE_SIZE, invites.length)}{" "}
-                                    จาก {invites.length} รายการ
+                                    {Math.min(
+                                        start + PAGE_SIZE,
+                                        filteredInvites.length,
+                                    )}{" "}
+                                    จาก {filteredInvites.length} รายการ
+                                    {isSearching && ` จากทั้งหมด ${invites.length}`}
                                 </>
                             }
                             controls={

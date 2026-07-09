@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     AlertCircle,
     ClipboardList,
@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InviteActionRow } from "@/components/ui/InviteActionRow";
+import { ListSearchField } from "@/components/ui/ListSearchField";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SectionCard, SectionCardHeader } from "@/components/ui/SectionCard";
 import { RoleBadge } from "@/components/ui/badges";
@@ -20,6 +21,7 @@ import {
     getInviteStatusLabel,
 } from "@/components/ui/invite-utils";
 import { revokeSchoolAdminInvite } from "@/lib/actions/school-admin-invite.actions";
+import { USER_ROLE_LABELS } from "@/lib/constants/roles";
 import type { SchoolAdminInvite } from "@/types/school-admin-invite.types";
 
 const PAGE_SIZE = 10;
@@ -150,20 +152,74 @@ function InviteCard({
     );
 }
 
+function normalizeSearch(value: string): string {
+    return value.trim().toLocaleLowerCase("th-TH");
+}
+
+function getInviteRoleSearchText(role: string): string {
+    if (role === "system_admin") {
+        return `${role} ${USER_ROLE_LABELS.system_admin}`;
+    }
+    if (role === "school_admin") {
+        return `${role} ${USER_ROLE_LABELS.school_admin}`;
+    }
+    return role;
+}
+
+function getAdminInviteSearchText(invite: SchoolAdminInvite): string {
+    return [
+        invite.email,
+        getInviteRoleSearchText(invite.role),
+        invite.creator?.name ?? "",
+        invite.creator?.email ?? "",
+    ]
+        .join(" ")
+        .toLocaleLowerCase("th-TH");
+}
+
 export function InviteTable({ invites, onRevoked }: InviteTableProps) {
     const [page, setPage] = useState(1);
-    const totalPages = Math.max(1, Math.ceil(invites.length / PAGE_SIZE));
+    const [searchQuery, setSearchQuery] = useState("");
+    const normalizedQuery = normalizeSearch(searchQuery);
+    const filteredInvites = useMemo(() => {
+        if (!normalizedQuery) return invites;
+
+        return invites.filter((invite) =>
+            getAdminInviteSearchText(invite).includes(normalizedQuery),
+        );
+    }, [invites, normalizedQuery]);
+    const isSearching = normalizedQuery.length > 0;
+    const totalPages = Math.max(1, Math.ceil(filteredInvites.length / PAGE_SIZE));
     const safeCurrentPage = Math.min(page, totalPages);
     const start = (safeCurrentPage - 1) * PAGE_SIZE;
-    const paginatedInvites = invites.slice(start, start + PAGE_SIZE);
+    const paginatedInvites = filteredInvites.slice(start, start + PAGE_SIZE);
+    const resultSummary = isSearching
+        ? `พบคำเชิญแอดมิน ${filteredInvites.length} จากทั้งหมด ${invites.length} รายการ`
+        : `มีคำเชิญแอดมินทั้งหมด ${invites.length} รายการ`;
+
+    function handleSearchChange(value: string): void {
+        setSearchQuery(value);
+        setPage(1);
+    }
 
     return (
         <SectionCard className="p-6 md:p-8">
-            <SectionCardHeader
-                icon={ClipboardList}
-                className="text-xl"
-                title={`รายการคำเชิญ (${invites.length})`}
-            />
+            <div className="space-y-4">
+                <SectionCardHeader
+                    icon={ClipboardList}
+                    className="text-xl"
+                    title={`รายการคำเชิญ (${invites.length})`}
+                />
+                {invites.length > 0 && (
+                    <ListSearchField
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        label="ค้นหารายการคำเชิญแอดมิน"
+                        placeholder="ค้นหาอีเมล บทบาท หรือผู้สร้างคำเชิญ"
+                        resultSummary={resultSummary}
+                    />
+                )}
+            </div>
 
             {invites.length === 0 ? (
                 <EmptyState
@@ -173,9 +229,17 @@ export function InviteTable({ invites, onRevoked }: InviteTableProps) {
                     className="p-12"
                     variant="emerald"
                 />
+            ) : filteredInvites.length === 0 ? (
+                <EmptyState
+                    icon={ClipboardList}
+                    title="ไม่พบคำเชิญที่ตรงกับคำค้น"
+                    description="ลองค้นหาด้วยอีเมล บทบาท หรือชื่อผู้สร้างคำเชิญอื่น"
+                    className="mt-4 p-12"
+                    variant="emerald"
+                />
             ) : (
                 <>
-                    <div className="max-h-[70vh] space-y-3 overflow-y-auto pr-0 sm:max-h-[400px] sm:pr-1">
+                    <div className="mt-4 max-h-[70vh] space-y-3 overflow-y-auto pr-0 sm:max-h-[400px] sm:pr-1">
                         {paginatedInvites.map((invite) => (
                             <InviteCard
                                 key={invite.id}
@@ -193,8 +257,12 @@ export function InviteTable({ invites, onRevoked }: InviteTableProps) {
                             summary={
                                 <>
                                     แสดง {start + 1}–
-                                    {Math.min(start + PAGE_SIZE, invites.length)}{" "}
-                                    จาก {invites.length} รายการ
+                                    {Math.min(
+                                        start + PAGE_SIZE,
+                                        filteredInvites.length,
+                                    )}{" "}
+                                    จาก {filteredInvites.length} รายการ
+                                    {isSearching && ` จากทั้งหมด ${invites.length}`}
                                 </>
                             }
                             controls={
