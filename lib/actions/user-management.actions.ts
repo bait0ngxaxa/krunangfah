@@ -146,6 +146,17 @@ export async function changeUserRole(
         return { success: false, message: "บทบาทไม่เปลี่ยนแปลง" };
     }
 
+    if (
+        assignment.selection === "primary_school_admin" &&
+        target.role !== "school_admin"
+    ) {
+        return {
+            success: false,
+            message:
+                "สามารถเพิ่มสิทธิ์ Primary Admin ได้เฉพาะ school_admin เท่านั้น",
+        };
+    }
+
     if (await blocksSolePrimaryDemotion(target, assignment.selection)) {
         return {
             success: false,

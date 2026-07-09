@@ -400,7 +400,7 @@ describe("Integration: User Management", () => {
             await prisma.user.delete({ where: { id: teacherUser.id } });
         });
 
-        it("can promote a teacher to primary school admin", async () => {
+        it("rejects promoting class_teacher directly to primary school admin", async () => {
             const teacherUser = await prisma.user.create({
                 data: {
                     email: `role-primary-admin-${Date.now()}@test.local`,
@@ -428,15 +428,16 @@ describe("Integration: User Management", () => {
                 teacherUser.id,
                 "primary_school_admin",
             );
-            expect(result.success).toBe(true);
+            expect(result.success).toBe(false);
+            expect(result.message).toContain("เฉพาะ school_admin");
 
             const updated = await prisma.user.findUnique({
                 where: { id: teacherUser.id },
                 include: { teacher: true },
             });
-            expect(updated!.role).toBe("school_admin");
-            expect(updated!.isPrimary).toBe(true);
-            expect(updated!.teacher!.advisoryClass).toBe("ทุกห้อง");
+            expect(updated!.role).toBe("class_teacher");
+            expect(updated!.isPrimary).toBe(false);
+            expect(updated!.teacher!.advisoryClass).toBe("ม.1/1");
 
             await prisma.teacher
                 .deleteMany({ where: { userId: teacherUser.id } })

@@ -26,10 +26,12 @@ interface RoleSelection {
     role: StaffRoleSelection;
 }
 
-const STAFF_ROLE_OPTIONS: Array<{
+type StaffRoleOption = {
     value: StaffRoleSelection;
     label: string;
-}> = [
+};
+
+const STAFF_ROLE_OPTIONS: StaffRoleOption[] = [
     { value: "primary_school_admin", label: "ผู้ดูแลโรงเรียน" },
     { value: "angel_teacher", label: "ครูนางฟ้า" },
     { value: "class_teacher", label: "ครูประจำชั้น" },
@@ -62,6 +64,7 @@ export function SystemStaffActions({
             ? roleSelection.role
             : currentStaffRole;
     const isSystemAdmin = currentRole === "system_admin";
+    const roleOptions = getStaffRoleOptions(currentRole);
     const canChangeRole = !isSystemAdmin && !entity.deletedAt;
     const canEditTeacher = hasTeacherProfile(entity) && !entity.deletedAt;
     const advisoryClass = getAdvisoryClass(entity);
@@ -134,7 +137,7 @@ export function SystemStaffActions({
                         disabled={!canChangeRole || isPending}
                         className="mt-1 w-full rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm font-medium text-gray-900 outline-none transition-base focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 disabled:bg-gray-50"
                     >
-                        {STAFF_ROLE_OPTIONS.map((option) => (
+                        {roleOptions.map((option) => (
                             <option key={option.value} value={option.value}>
                                 {option.label}
                             </option>
@@ -238,6 +241,13 @@ function getCurrentStaffRole(entity: StaffEntityResult): StaffRoleSelection {
     if (role === "school_admin" && entity.isPrimary) return "primary_school_admin";
     if (role === "school_admin") return "angel_teacher";
     return "class_teacher";
+}
+
+function getStaffRoleOptions(role: UserListItem["role"]): StaffRoleOption[] {
+    if (role !== "class_teacher") return STAFF_ROLE_OPTIONS;
+    return STAFF_ROLE_OPTIONS.filter(
+        (option) => option.value !== "primary_school_admin",
+    );
 }
 
 function hasTeacherProfile(entity: StaffEntityResult): boolean {

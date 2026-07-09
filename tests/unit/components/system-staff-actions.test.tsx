@@ -37,6 +37,13 @@ const staff: StaffEntityResult = {
     projectRole: "care",
 };
 
+const classTeacherStaff: StaffEntityResult = {
+    ...staff,
+    role: "class_teacher",
+    isPrimary: false,
+    advisoryClass: "ม.1/1",
+};
+
 const emptyResults: SystemSearchResult = {
     schools: [],
     staffs: [],
@@ -57,5 +64,20 @@ describe("SystemStaffActions", () => {
         expect(html).toContain("จัดการบัญชีบุคลากร");
         expect(html).toContain("เปลี่ยนบทบาท");
         expect(html).not.toContain("แก้ไขโปรไฟล์ครู");
+    });
+
+    it("does not offer primary school admin for class_teacher accounts", () => {
+        const html = renderToStaticMarkup(
+            <SystemStaffActions
+                entity={classTeacherStaff}
+                onEntityUpdated={() => undefined}
+                onEntityRemoved={() => undefined}
+                onRefreshSearch={async () => emptyResults}
+            />,
+        );
+
+        expect(html).not.toContain("ผู้ดูแลโรงเรียน");
+        expect(html).toContain("ครูนางฟ้า");
+        expect(html).toContain("ครูประจำชั้น");
     });
 });
