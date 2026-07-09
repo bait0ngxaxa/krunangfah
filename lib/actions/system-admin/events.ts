@@ -79,7 +79,7 @@ function changesToJson(
     }));
 }
 
-function toSystemAdminEditEventItem(event: {
+export function toSystemAdminEditEventItem(event: {
     id: string;
     action: SystemAdminEventActionKind;
     targetType: SystemAdminEventTargetKind;

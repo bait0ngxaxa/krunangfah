@@ -10,9 +10,30 @@ export const systemEntityTypes = [
     "student",
 ] as const;
 
+export const systemAuditEventKinds = [
+    "all",
+    "edit",
+    "data-management",
+] as const;
+
 export const systemSearchSchema = z.object({
     query: z.string().trim().min(2).max(100),
     entityType: z.enum(systemEntityTypes).default("all"),
+});
+
+export const systemAuditTimelineSchema = z.object({
+    query: z.string().trim().max(100).optional().default(""),
+    eventKind: z.enum(systemAuditEventKinds).default("all"),
+    dateFrom: z.coerce.date().optional(),
+    dateTo: z.coerce.date().optional(),
+    cursor: z
+        .object({
+            kind: z.enum(["edit", "data-management"]),
+            id: z.string().cuid("รหัส cursor ไม่ถูกต้อง"),
+            createdAt: z.coerce.date(),
+        })
+        .optional(),
+    take: z.coerce.number().int().min(10).max(80).default(50),
 });
 
 const reasonSchema = z
@@ -150,6 +171,7 @@ export function getSystemAdminValidationMessage(
 
 export type SystemSearchInput = z.infer<typeof systemSearchSchema>;
 export type SystemEntityType = SystemSearchInput["entityType"];
+export type SystemAuditTimelineInput = z.infer<typeof systemAuditTimelineSchema>;
 export type SystemSchoolEditInput = z.infer<typeof systemSchoolEditSchema>;
 export type SystemStudentEditInput = z.infer<typeof systemStudentEditSchema>;
 export type SystemTeacherProfileEditInput = z.infer<

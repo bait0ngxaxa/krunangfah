@@ -10,6 +10,7 @@ import {
     systemStudentCareRecordsSchema,
     systemStudentEditSchema,
     systemTeacherProfileEditSchema,
+    systemAuditTimelineSchema,
 } from "@/lib/validations/system-admin.validation";
 import { handleActionError } from "./error-handler";
 import {
@@ -26,6 +27,7 @@ import {
 } from "./system-admin/mutations";
 import { updateSystemTeacherProfile } from "./system-admin/staff-mutations";
 import { searchSystemEntities } from "./system-admin/search";
+import { listSystemAuditTimeline } from "./system-admin/audit-timeline";
 import type {
     SchoolEntityResult,
     StaffEntityResult,
@@ -36,6 +38,7 @@ import type {
     SystemEditResponse,
     SystemPhqRecord,
     SystemSearchResult,
+    SystemAuditTimelineResponse,
 } from "./system-admin/types";
 
 const EMPTY_SYSTEM_SEARCH_RESULT: SystemSearchResult = {
@@ -151,6 +154,35 @@ export async function listSystemAdminEvents(): Promise<{
             context: "listSystemAdminEvents error:",
             error,
             fallback: { events: [] },
+        });
+    }
+}
+
+export async function searchSystemAuditTimeline(
+    input: unknown,
+): Promise<SystemAuditTimelineResponse> {
+    try {
+        await requireAdmin();
+        const parsed = systemAuditTimelineSchema.safeParse(input ?? {});
+        if (!parsed.success) {
+            return {
+                success: false,
+                message: "เงื่อนไขค้นหาประวัติไม่ถูกต้อง",
+                events: [],
+                nextCursor: null,
+            };
+        }
+        return listSystemAuditTimeline(parsed.data);
+    } catch (error) {
+        return handleActionError({
+            context: "searchSystemAuditTimeline error:",
+            error,
+            fallback: {
+                success: false,
+                message: "โหลดประวัติรวมไม่สำเร็จ",
+                events: [],
+                nextCursor: null,
+            },
         });
     }
 }

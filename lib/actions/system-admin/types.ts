@@ -6,6 +6,7 @@ import type {
     SystemAdminEventTargetType,
     UserRole,
 } from "@prisma/client";
+import type { DataManagementEventItem } from "@/lib/actions/data-management/types";
 
 export type SystemEntityKind = "school" | "staff" | "student";
 export type SystemAdminEventActionKind = SystemAdminEventAction;
@@ -97,6 +98,26 @@ export interface SystemAdminEditEventItem {
     targetLabel: string;
     changes: SystemAdminEditChange[];
     createdAt: Date;
+}
+
+export interface SystemAuditTimelineCursor {
+    kind: "edit" | "data-management";
+    id: string;
+    createdAt: Date;
+}
+
+export type SystemAuditTimelineItem =
+    | { kind: "edit"; event: SystemAdminEditEventItem }
+    | {
+          kind: "data-management";
+          event: DataManagementEventItem;
+      };
+
+export interface SystemAuditTimelineResponse {
+    success: boolean;
+    message: string;
+    events: SystemAuditTimelineItem[];
+    nextCursor: SystemAuditTimelineCursor | null;
 }
 
 export interface SystemEditResponse<T> {
