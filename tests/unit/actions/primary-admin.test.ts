@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { togglePrimaryStatus } from "@/lib/actions/primary-admin.actions";
+import {
+    getSchoolAdmins,
+    togglePrimaryStatus,
+} from "@/lib/actions/primary-admin.actions";
 
 type MockSession = {
     user: {
@@ -15,13 +18,15 @@ type MockUser = {
     role: "school_admin" | "system_admin" | "class_teacher";
     schoolId: string | null;
     isPrimary: boolean;
+    deletedAt: Date | null;
 };
 
 const mocks = vi.hoisted(() => ({
     requirePrimaryAdmin: vi.fn(),
     requireAuth: vi.fn(),
+    userFindMany: vi.fn(),
     userFindUnique: vi.fn(),
-    userUpdate: vi.fn(),
+    userUpdateMany: vi.fn(),
     revalidatePath: vi.fn(),
     invalidateUserSessionCaches: vi.fn(),
 }));
@@ -34,8 +39,9 @@ vi.mock("@/lib/auth/session", () => ({
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         user: {
+            findMany: mocks.userFindMany,
             findUnique: mocks.userFindUnique,
-            update: mocks.userUpdate,
+            updateMany: mocks.userUpdateMany,
         },
     },
 }));
@@ -65,6 +71,7 @@ function createTargetAdmin(overrides: Partial<MockUser> = {}): MockUser {
         role: "school_admin",
         schoolId: "school-1",
         isPrimary: false,
+        deletedAt: null,
         ...overrides,
     };
 }
@@ -73,8 +80,10 @@ describe("togglePrimaryStatus", () => {
     beforeEach(() => {
         vi.resetAllMocks();
         mocks.requirePrimaryAdmin.mockResolvedValue(createPrimaryAdminSession());
+        mocks.requireAuth.mockResolvedValue(createPrimaryAdminSession());
+        mocks.userFindMany.mockResolvedValue([]);
         mocks.userFindUnique.mockResolvedValue(createTargetAdmin());
-        mocks.userUpdate.mockResolvedValue(createTargetAdmin({ isPrimary: true }));
+        mocks.userUpdateMany.mockResolvedValue({ count: 1 });
         mocks.invalidateUserSessionCaches.mockResolvedValue(undefined);
     });
 
@@ -85,13 +94,41 @@ describe("togglePrimaryStatus", () => {
             success: true,
             message: "เพิ่มสิทธิ์ Primary Admin สำเร็จ",
         });
-        expect(mocks.userUpdate).toHaveBeenCalledWith({
-            where: { id: "target-admin-1" },
+        expect(mocks.userUpdateMany).toHaveBeenCalledWith({
+            where: { id: "target-admin-1", deletedAt: null },
             data: { isPrimary: true },
         });
         expect(mocks.invalidateUserSessionCaches).toHaveBeenCalledWith(
             "target-admin-1",
         );
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/school/classes");
+    });
+
+    it("does not return closed accounts as Primary Admin candidates", async () => {
+        await getSchoolAdmins();
+
+        expect(mocks.userFindMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {
+                    schoolId: "school-1",
+                    role: "school_admin",
+                    deletedAt: null,
+                },
+            }),
+        );
+    });
+
+    it("rejects assigning Primary Admin to a closed account", async () => {
+        mocks.userFindUnique.mockResolvedValue(
+            createTargetAdmin({ deletedAt: new Date("2026-07-10T00:00:00.000Z") }),
+        );
+
+        const result = await togglePrimaryStatus("target-admin-1");
+
+        expect(result).toEqual({
+            success: false,
+            message: "ไม่สามารถเปลี่ยนสิทธิ์บัญชีที่ปิดใช้งานแล้ว",
+        });
+        expect(mocks.userUpdateMany).not.toHaveBeenCalled();
     });
 });

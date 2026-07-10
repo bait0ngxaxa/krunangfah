@@ -22,6 +22,7 @@ export async function getSchoolAdmins(): Promise<SchoolAdminItem[]> {
         where: {
             schoolId,
             role: "school_admin",
+            deletedAt: null,
         },
         select: {
             id: true,
@@ -79,6 +80,7 @@ export async function togglePrimaryStatus(
             role: true,
             schoolId: true,
             isPrimary: true,
+            deletedAt: true,
         },
     });
 
@@ -103,13 +105,27 @@ export async function togglePrimaryStatus(
         };
     }
 
+    if (targetUser.deletedAt) {
+        return {
+            success: false,
+            message: "ไม่สามารถเปลี่ยนสิทธิ์บัญชีที่ปิดใช้งานแล้ว",
+        };
+    }
+
     // Toggle isPrimary
     const newPrimaryStatus = !targetUser.isPrimary;
 
-    await prisma.user.update({
-        where: { id: targetUserId },
+    const updated = await prisma.user.updateMany({
+        where: { id: targetUserId, deletedAt: null },
         data: { isPrimary: newPrimaryStatus },
     });
+
+    if (updated.count === 0) {
+        return {
+            success: false,
+            message: "ไม่สามารถเปลี่ยนสิทธิ์บัญชีที่ปิดใช้งานแล้ว",
+        };
+    }
 
     await invalidateUserSessionCaches(targetUserId);
     revalidatePath("/school/classes");

@@ -325,15 +325,12 @@ export async function deleteUser(userId: string): Promise<MutationResponse> {
 
     await prisma.user.update({
         where: { id: userId },
-        data: {
-            deletedAt: new Date(),
-            password: null,
-        },
+        data: { deletedAt: new Date() },
     });
 
     await revokeUserSessions(userId);
     revalidateDashboardCache();
-    return { success: true, message: `ลบผู้ใช้ ${target.email} สำเร็จ` };
+    return { success: true, message: `ปิดบัญชี ${target.email} สำเร็จ` };
 }
 
 /**

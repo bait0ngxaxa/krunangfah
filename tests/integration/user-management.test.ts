@@ -156,7 +156,7 @@ describe("Integration: User Management", () => {
             });
             expect(deletedUser).not.toBeNull();
             expect(deletedUser!.deletedAt).toBeInstanceOf(Date);
-            expect(deletedUser!.password).toBeNull();
+            expect(deletedUser!.password).toBe("$2a$10$fakehash");
             expect(deletedUser!.teacher).not.toBeNull();
 
             const userList = await getUsers({ pageSize: 100 });
@@ -219,7 +219,7 @@ describe("Integration: User Management", () => {
                 select: { deletedAt: true, password: true },
             });
             expect(deletedUser!.deletedAt).toBeInstanceOf(Date);
-            expect(deletedUser!.password).toBeNull();
+            expect(deletedUser!.password).toBe("$2a$10$fakehash");
 
             await prisma.user.delete({ where: { id: disposable.id } });
         });

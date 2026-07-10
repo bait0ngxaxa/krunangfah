@@ -6,6 +6,11 @@ vi.mock("@/lib/actions/user-management.actions", () => ({
     deleteUser: vi.fn(),
 }));
 
+vi.mock("@/lib/actions/system-admin-staff-account.actions", () => ({
+    restoreSystemAdminStaffAccount: vi.fn(),
+    permanentlyDeleteSystemAdminStaffAccount: vi.fn(),
+}));
+
 vi.mock("@/components/teacher/forms/TeacherAdvisoryClassForm", () => ({
     TeacherAdvisoryClassForm: () => <div>ฟอร์มห้องที่ปรึกษา</div>,
 }));
@@ -79,5 +84,20 @@ describe("SystemStaffActions", () => {
         expect(html).not.toContain("ผู้ดูแลโรงเรียน");
         expect(html).toContain("ครูนางฟ้า");
         expect(html).toContain("ครูประจำชั้น");
+    });
+
+    it("offers restore and permanent delete for a closed teacher account", () => {
+        const html = renderToStaticMarkup(
+            <SystemStaffActions
+                entity={{ ...classTeacherStaff, deletedAt: new Date() }}
+                onEntityUpdated={() => undefined}
+                onEntityRemoved={() => undefined}
+                onRefreshSearch={async () => emptyResults}
+            />,
+        );
+
+        expect(html).toContain("กู้คืนบัญชี");
+        expect(html).toContain("ลบถาวร");
+        expect(html).not.toContain("ปิดบัญชีเพื่อหยุดการเข้าใช้");
     });
 });

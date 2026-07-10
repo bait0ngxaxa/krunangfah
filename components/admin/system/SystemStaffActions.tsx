@@ -1,15 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2, ShieldCheck, Trash2, UserCog } from "lucide-react";
+import { Loader2, ShieldCheck, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { TeacherAdvisoryClassForm } from "@/components/teacher/forms/TeacherAdvisoryClassForm";
-import {
-    changeUserRole,
-    deleteUser,
-} from "@/lib/actions/user-management.actions";
+import { changeUserRole } from "@/lib/actions/user-management.actions";
 import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
 import type {
     StaffRoleSelection,
@@ -20,6 +16,7 @@ import type {
     SystemEntityResult,
     SystemSearchResult,
 } from "@/lib/actions/system-admin/types";
+import { SystemStaffAccountActions } from "./SystemStaffAccountActions";
 
 interface RoleSelection {
     userId: string;
@@ -50,7 +47,6 @@ export function SystemStaffActions({
     onEntityRemoved,
     onRefreshSearch,
 }: SystemStaffActionsProps) {
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isPending, startTransition] = useTransition();
     const userId = getUserId(entity);
     const currentRole = getCurrentRole(entity);
@@ -89,19 +85,6 @@ export function SystemStaffActions({
             const nextResults = await onRefreshSearch();
             const refreshed = findEntity(nextResults, entity);
             if (refreshed) onEntityUpdated(refreshed);
-        });
-    };
-
-    const handleDelete = () => {
-        startTransition(async () => {
-            const result = await deleteUser(userId);
-            if (!result.success) {
-                toast.error(result.message);
-                return;
-            }
-            toast.success(result.message);
-            setShowDeleteDialog(false);
-            onEntityRemoved();
         });
     };
 
@@ -197,32 +180,11 @@ export function SystemStaffActions({
                 </p>
             ) : null}
 
-            {!isSystemAdmin ? (
-                <div className="mt-4 rounded-xl border border-red-100 bg-white p-3">
-                    <p className="text-xs leading-5 text-red-700">
-                        ลบบัญชีจะปิดการเข้าใช้งาน แต่ยังเก็บข้อมูลประวัติไว้
-                    </p>
-                    <Button
-                        type="button"
-                        className="mt-3"
-                        variant="danger"
-                        disabled={isPending || Boolean(entity.deletedAt)}
-                        onClick={() => setShowDeleteDialog(true)}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        ลบบัญชี
-                    </Button>
-                </div>
-            ) : null}
-
-            <ConfirmDialog
-                isOpen={showDeleteDialog}
-                title="ลบบัญชีบุคลากร"
-                message={`ต้องการลบ "${getDisplayName(entity)}" ออกจากระบบใช่หรือไม่? บัญชีนี้จะเข้าสู่ระบบไม่ได้อีก`}
-                confirmLabel="ยืนยันลบ"
-                isLoading={isPending}
-                onConfirm={handleDelete}
-                onCancel={() => setShowDeleteDialog(false)}
+            <SystemStaffAccountActions
+                entity={entity}
+                onEntityUpdated={onEntityUpdated}
+                onEntityRemoved={onEntityRemoved}
+                onRefreshSearch={onRefreshSearch}
             />
         </section>
     );
@@ -256,10 +218,6 @@ function hasTeacherProfile(entity: StaffEntityResult): boolean {
 
 function getAdvisoryClass(entity: StaffEntityResult): string | null {
     return entity.advisoryClass;
-}
-
-function getDisplayName(entity: StaffEntityResult): string {
-    return entity.teacherName ?? entity.name ?? entity.email;
 }
 
 function findEntity(

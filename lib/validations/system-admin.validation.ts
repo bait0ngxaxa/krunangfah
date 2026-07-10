@@ -95,6 +95,20 @@ export const systemTeacherProfileEditSchema = z.object({
     reason: reasonSchema,
 });
 
+export const systemStaffAccountActionSchema = z.object({
+    id: z.string().cuid("รหัสบัญชีบุคลากรไม่ถูกต้อง"),
+    reason: reasonSchema,
+});
+
+export const systemStaffAccountPermanentDeleteSchema =
+    systemStaffAccountActionSchema.extend({
+        confirmation: z
+            .string()
+            .trim()
+            .email("กรุณาพิมพ์อีเมลบัญชีให้ถูกต้อง")
+            .max(320),
+    });
+
 export const systemStudentCareRecordsSchema = z.object({
     studentId: z.string().cuid("รหัสนักเรียนไม่ถูกต้อง"),
 });
@@ -176,6 +190,12 @@ export type SystemSchoolEditInput = z.infer<typeof systemSchoolEditSchema>;
 export type SystemStudentEditInput = z.infer<typeof systemStudentEditSchema>;
 export type SystemTeacherProfileEditInput = z.infer<
     typeof systemTeacherProfileEditSchema
+>;
+export type SystemStaffAccountActionInput = z.infer<
+    typeof systemStaffAccountActionSchema
+>;
+export type SystemStaffAccountPermanentDeleteInput = z.infer<
+    typeof systemStaffAccountPermanentDeleteSchema
 >;
 export type SystemStudentCareRecordsInput = z.infer<
     typeof systemStudentCareRecordsSchema

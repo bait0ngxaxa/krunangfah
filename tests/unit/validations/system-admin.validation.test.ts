@@ -8,6 +8,8 @@ import {
     systemReferralEditSchema,
     systemSchoolEditSchema,
     systemSearchSchema,
+    systemStaffAccountActionSchema,
+    systemStaffAccountPermanentDeleteSchema,
     systemStudentEditSchema,
 } from "@/lib/validations/system-admin.validation";
 
@@ -184,6 +186,25 @@ describe("system edit schemas", () => {
             studentId: "ck12345678901234567890123",
             toTeacherUserId: "",
             reason: "แก้ครูผู้รับดูแล",
+        });
+
+        expect(parsed.success).toBe(false);
+    });
+
+    it("requires a reason before restoring a staff account", () => {
+        const parsed = systemStaffAccountActionSchema.safeParse({
+            id: "ck12345678901234567890123",
+            reason: "",
+        });
+
+        expect(parsed.success).toBe(false);
+    });
+
+    it("requires a valid email confirmation for permanent account deletion", () => {
+        const parsed = systemStaffAccountPermanentDeleteSchema.safeParse({
+            id: "ck12345678901234567890123",
+            reason: "ยืนยันว่าเป็นบัญชีทดสอบ",
+            confirmation: "teacher",
         });
 
         expect(parsed.success).toBe(false);
