@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+const unsafeEvalSource =
+    process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
+
 const nextConfig: NextConfig = {
     // 1. จับ bugs ใน development (double render check)
     reactStrictMode: true,
@@ -95,7 +98,7 @@ const nextConfig: NextConfig = {
                     },
                     {
                         key: "Content-Security-Policy",
-                        value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; frame-src 'self' https://www.youtube.com https://youtube.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';",
+                        value: `default-src 'self'; script-src 'self'${unsafeEvalSource} 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; frame-src 'self' https://www.youtube.com https://youtube.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';`,
                     },
                 ],
             },
