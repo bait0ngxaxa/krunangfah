@@ -74,6 +74,20 @@ export const RATE_LIMIT_PASSWORD_CHANGE_FLOOD: RateLimitConfig = {
     name: "password-change-flood",
 };
 
+/** จำกัดการบันทึกข้อมูลทั่วไปของโรงเรียนจากแหล่งคำขอเดียวกัน */
+export const RATE_LIMIT_SCHOOL_INFO_UPDATE: RateLimitConfig = {
+    maxRequests: 30,
+    windowMs: 5 * 60 * 1000,
+    name: "school-info-update",
+};
+
+/** จำกัดการบันทึกข้อมูลทั่วไปของครูจากแหล่งคำขอเดียวกัน */
+export const RATE_LIMIT_TEACHER_GENERAL_INFO_UPDATE: RateLimitConfig = {
+    maxRequests: 30,
+    windowMs: 5 * 60 * 1000,
+    name: "teacher-general-info-update",
+};
+
 /** Interval for cleaning up expired rate limit entries (ms) */
 export const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60 * 1000;
 

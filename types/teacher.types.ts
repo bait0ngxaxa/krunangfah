@@ -46,6 +46,20 @@ export interface CreateTeacherInput {
     projectRole: ProjectRole;
 }
 
+export interface TeacherGeneralInfo {
+    firstName: string;
+    lastName: string;
+    age: number;
+    schoolRole: string;
+    projectRole: ProjectRole;
+}
+
+export interface TeacherGeneralInfoActionResponse {
+    success: boolean;
+    message: string;
+    data?: TeacherGeneralInfo;
+}
+
 export interface TeacherResponse {
     success: boolean;
     message: string;

@@ -1,32 +1,9 @@
-import { z } from "zod";
 import { Building2, LayoutGrid, Users, ClipboardCheck } from "lucide-react";
-import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 
-/** Normalize school name: trim → remove space after "โรงเรียน" → add prefix if missing */
-function normalizeSchoolName(raw: string): string {
-    let name = raw.trim();
-    if (name.startsWith("โรงเรียน ")) {
-        name = "โรงเรียน" + name.slice("โรงเรียน ".length).trimStart();
-    }
-    if (!name.startsWith("โรงเรียน")) {
-        name = "โรงเรียน" + name;
-    }
-    return name;
-}
-
-export const schoolInfoSchema = z.object({
-    name: z
-        .string()
-        .min(1, "กรุณากรอกชื่อโรงเรียน")
-        .max(INPUT_LIMITS.school.name, "ชื่อโรงเรียนยาวเกินไป")
-        .transform(normalizeSchoolName),
-    province: z
-        .string()
-        .max(INPUT_LIMITS.school.province, "ชื่อจังหวัดยาวเกินไป")
-        .optional(),
-});
-
-export type SchoolInfoData = z.infer<typeof schoolInfoSchema>;
+export {
+    schoolInfoSchema,
+    type SchoolInfoData,
+} from "@/lib/validations/school.validation";
 
 export const STEPS = [
     { label: "ข้อมูลโรงเรียน", icon: Building2 },

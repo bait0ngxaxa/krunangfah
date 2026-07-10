@@ -6,7 +6,7 @@ import { requireAuth, requirePrimaryAdmin } from "@/lib/auth/session";
 import { revalidatePath } from "next/cache";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
-import { normalizeSchoolName, sanitizeText } from "@/lib/utils/text-sanitizer";
+import { schoolInfoSchema } from "@/lib/validations/school.validation";
 import { revalidateDashboardCache } from "./dashboard/cache";
 import { revalidateAnalyticsCache } from "./analytics/cache";
 import { handleActionError } from "./error-handler";
@@ -171,19 +171,6 @@ export async function ensureSchoolClassTermsForAcademicYear(
     return resolvedAcademicYearId;
 }
 
-const schoolSetupSchema = z.object({
-    name: z
-        .string()
-        .min(1, "กรุณากรอกชื่อโรงเรียน")
-        .max(INPUT_LIMITS.school.name, "ชื่อโรงเรียนยาวเกินไป")
-        .transform(normalizeSchoolName),
-    province: z
-        .string()
-        .max(INPUT_LIMITS.school.province, "ชื่อจังหวัดยาวเกินไป")
-        .transform(sanitizeText)
-        .optional(),
-});
-
 const classNameSchema = z
     .string()
     .min(1, "กรุณากรอกชื่อห้องเรียน")
@@ -215,7 +202,7 @@ export async function createSchoolAndLink(input: {
             };
         }
 
-        const parsed = schoolSetupSchema.safeParse(input);
+        const parsed = schoolInfoSchema.safeParse(input);
         if (!parsed.success) {
             return { success: false, message: parsed.error.issues[0].message };
         }
