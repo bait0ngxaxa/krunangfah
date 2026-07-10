@@ -33,10 +33,7 @@ interface DeleteResult extends DataManagementResponse {
 }
 
 type Tx = Prisma.TransactionClient;
-type SchoolUserForDelete = {
-    id: string;
-    email: string | null;
-};
+type SchoolUserForDelete = { id: string; email: string | null };
 
 export async function permanentlyDeleteStudent(
     input: DeleteInput,
@@ -173,11 +170,14 @@ async function deleteSchoolDependents(
     users: SchoolUserForDelete[],
 ): Promise<void> {
     const userIds = users.map((user) => user.id);
+    const emails = getUserEmails(users);
     await tx.teacherInvite.deleteMany({
         where: { OR: [{ schoolId }, { invitedById: { in: userIds } }] },
     });
     await tx.schoolAdminInvite.deleteMany({
-        where: { createdBy: { in: userIds } },
+        where: {
+            OR: [{ createdBy: { in: userIds } }, { email: { in: emails } }],
+        },
     });
     await deleteSchoolStudentDependents(tx, schoolId);
     await tx.student.deleteMany({ where: { schoolId } });
@@ -234,9 +234,7 @@ async function deleteSchoolUserDependents(
     const userIds = users.map((user) => user.id);
     if (userIds.length === 0) return;
 
-    const emails = users
-        .map((user) => user.email)
-        .filter((email): email is string => typeof email === "string");
+    const emails = getUserEmails(users);
 
     await tx.userSession.deleteMany({ where: { userId: { in: userIds } } });
     await tx.teacher.deleteMany({ where: { userId: { in: userIds } } });
@@ -245,6 +243,10 @@ async function deleteSchoolUserDependents(
             where: { email: { in: emails } },
         });
     }
+}
+
+function getUserEmails(users: SchoolUserForDelete[]): string[] {
+    return users.flatMap(({ email }) => (email ? [email] : []));
 }
 
 async function assertNoUserReferences(tx: Tx, userIds: string[]): Promise<void> {

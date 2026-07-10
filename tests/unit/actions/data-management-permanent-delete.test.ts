@@ -201,6 +201,14 @@ describe("data management permanent delete", () => {
                 ],
             },
         });
+        expect(prismaMocks.tx.schoolAdminInvite.deleteMany).toHaveBeenCalledWith({
+            where: {
+                OR: [
+                    { createdBy: { in: ["user-1", "user-2"] } },
+                    { email: { in: ["teacher@example.com"] } },
+                ],
+            },
+        });
         expect(prismaMocks.tx.worksheetUpload.deleteMany).toHaveBeenCalledWith({
             where: { activityProgress: { student: { schoolId: input.id } } },
         });

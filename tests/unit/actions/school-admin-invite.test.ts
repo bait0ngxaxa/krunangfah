@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { acceptSchoolAdminInvite } from "@/lib/actions/school-admin-invite.actions";
+import {
+    acceptSchoolAdminInvite,
+    createSchoolAdminInvite,
+} from "@/lib/actions/school-admin-invite.actions";
 
 type SchoolAdminInviteRecord = {
     id: string;
@@ -33,7 +36,11 @@ type TransactionClient = {
 const prismaMocks = vi.hoisted(() => ({
     mockTransaction: vi.fn(),
     mockUserCreate: vi.fn(),
+    mockUserFindUnique: vi.fn(),
     mockSystemAdminWhitelistUpsert: vi.fn(),
+    mockSchoolAdminInviteCreate: vi.fn(),
+    mockSchoolAdminInviteDeleteMany: vi.fn(),
+    mockSchoolAdminInviteFindFirst: vi.fn(),
     mockSchoolAdminInviteFindUnique: vi.fn(),
     mockSchoolAdminInviteUpdate: vi.fn(),
     mockSchoolAdminInviteUpdateMany: vi.fn(),
@@ -41,17 +48,22 @@ const prismaMocks = vi.hoisted(() => ({
 
 const authMocks = vi.hoisted(() => ({
     mockHashPassword: vi.fn(),
+    mockRequireAdmin: vi.fn(),
 }));
 
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         user: {
             create: prismaMocks.mockUserCreate,
+            findUnique: prismaMocks.mockUserFindUnique,
         },
         systemAdminWhitelist: {
             upsert: prismaMocks.mockSystemAdminWhitelistUpsert,
         },
         schoolAdminInvite: {
+            create: prismaMocks.mockSchoolAdminInviteCreate,
+            deleteMany: prismaMocks.mockSchoolAdminInviteDeleteMany,
+            findFirst: prismaMocks.mockSchoolAdminInviteFindFirst,
             findUnique: prismaMocks.mockSchoolAdminInviteFindUnique,
             update: prismaMocks.mockSchoolAdminInviteUpdate,
             updateMany: prismaMocks.mockSchoolAdminInviteUpdateMany,
@@ -62,6 +74,10 @@ vi.mock("@/lib/database/prisma", () => ({
 
 vi.mock("@/lib/auth/user", () => ({
     hashPassword: authMocks.mockHashPassword,
+}));
+
+vi.mock("@/lib/auth/session", () => ({
+    requireAdmin: authMocks.mockRequireAdmin,
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -175,6 +191,39 @@ describe("acceptSchoolAdminInvite", () => {
                 expiresAt: { gt: expect.any(Date) },
             }),
             data: { usedAt: expect.any(Date) },
+        });
+    });
+});
+
+describe("createSchoolAdminInvite", () => {
+    beforeEach(() => {
+        vi.resetAllMocks();
+        authMocks.mockRequireAdmin.mockResolvedValue({
+            user: { id: "system-admin-1", role: "system_admin" },
+        });
+        prismaMocks.mockUserFindUnique.mockResolvedValue(null);
+        prismaMocks.mockSchoolAdminInviteFindFirst.mockResolvedValue(null);
+        prismaMocks.mockSchoolAdminInviteCreate.mockResolvedValue(
+            createInviteRecord(),
+        );
+    });
+
+    it("allows re-inviting a deleted user with the same email", async () => {
+        const result = await createSchoolAdminInvite(
+            "ADMIN@EXAMPLE.TEST",
+            "school_admin",
+        );
+
+        expect(result.success).toBe(true);
+        expect(prismaMocks.mockSchoolAdminInviteDeleteMany).toHaveBeenCalledWith({
+            where: { email: "admin@example.test" },
+        });
+        expect(prismaMocks.mockSchoolAdminInviteCreate).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+                email: "admin@example.test",
+                role: "school_admin",
+                createdBy: "system-admin-1",
+            }),
         });
     });
 });
