@@ -197,7 +197,7 @@ export async function GET(
             headers: {
                 "Content-Type": contentType,
                 "Content-Disposition": `inline; filename="${safeFileName}"`,
-                "Cache-Control": "private, max-age=31536000, immutable",
+                "Cache-Control": "private, no-store",
                 "X-Content-Type-Options": "nosniff",
             },
         });
