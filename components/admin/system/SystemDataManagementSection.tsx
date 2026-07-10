@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useTransition } from "react";
 import {
-    ArchiveRestore,
     Check,
     DatabaseZap,
     Loader2,
@@ -149,38 +148,28 @@ export function SystemDataManagementSection({
     );
 }
 
-function DataActionButtons({
+export function DataActionButtons({
     preview,
     onAction,
 }: {
     preview: ManagedPreview;
     onAction: (action: ManagedActionKey) => void;
 }) {
-    const canRestore = Boolean(preview.disabledAt);
     return (
         <div className="space-y-3">
-            <div className="grid gap-2 sm:grid-cols-2">
-                <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() =>
-                        onAction(preview.isTestData ? "unmark-test" : "mark-test")
-                    }
-                >
-                    <Check className="h-4 w-4" />
-                    {preview.isTestData
-                        ? "ยกเลิกข้อมูลทดสอบ"
-                        : "ตั้งเป็นข้อมูลทดสอบ"}
-                </Button>
-                <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => onAction(canRestore ? "restore" : "disable")}
-                >
-                    <ArchiveRestore className="h-4 w-4" />
-                    {canRestore ? "กู้คืน" : "ปิดใช้งาน"}
-                </Button>
-            </div>
+            <Button
+                type="button"
+                variant="secondary"
+                fullWidth
+                onClick={() =>
+                    onAction(preview.isTestData ? "unmark-test" : "mark-test")
+                }
+            >
+                <Check className="h-4 w-4" />
+                {preview.isTestData
+                    ? "ยกเลิกข้อมูลทดสอบ"
+                    : "ตั้งเป็นข้อมูลทดสอบ"}
+            </Button>
             <div className="rounded-xl border border-red-100 bg-white p-3">
                 <div className="flex items-start gap-2 text-red-800">
                     <ShieldAlert className="mt-0.5 h-4 w-4" />
