@@ -199,6 +199,7 @@ export function AnalyticsFilters({
                 <AssessmentRoundFilter
                     availableRounds={safeAvailableRounds}
                     selectedRound={optimisticFilters.round}
+                    disabled={isPending}
                     onRoundChange={(roundValue) =>
                         updateParams({ round: roundValue })
                     }

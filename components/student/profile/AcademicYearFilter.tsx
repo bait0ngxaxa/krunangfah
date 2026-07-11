@@ -3,6 +3,8 @@
 import { useOptimistic, useState, useTransition } from "react";
 import { CalendarDays } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { ReactElement } from "react";
+import { FilterSelect } from "@/components/ui/FilterSelect";
 import { getCurrentAcademicYear } from "@/lib/utils/academic-year";
 
 interface AcademicYear {
@@ -10,64 +12,46 @@ interface AcademicYear {
     year: number;
     semester: number;
 }
-
 interface AcademicYearFilterProps {
     academicYears: AcademicYear[];
     currentYearId?: string;
 }
-
 const MAX_RECENT_YEARS = 3;
 
 export function AcademicYearFilter({
     academicYears,
     currentYearId,
-}: AcademicYearFilterProps) {
+}: AcademicYearFilterProps): ReactElement | null {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [showAllYears, setShowAllYears] = useState(false);
     const [isPending, startTransition] = useTransition();
-    const selectedYearValue = currentYearId || "all";
     const [optimisticYearId, setOptimisticYearId] = useOptimistic(
-        selectedYearValue,
-        (_currentValue: string, nextValue: string) => nextValue,
+        currentYearId ?? "all",
+        (_: string, value: string) => value,
     );
-
-    if (academicYears.length === 0) {
-        return null;
-    }
-
+    if (academicYears.length === 0) return null;
     const currentAcademicYear = getCurrentAcademicYear();
-
-    // Extract unique years for year-level filter (sorted newest first)
-    const uniqueYears = [...new Set(academicYears.map((y) => y.year))].sort(
-        (a, b) => b - a,
-    );
-
-    const hasOlderYears = uniqueYears.length > MAX_RECENT_YEARS;
+    const uniqueYears = [
+        ...new Set(academicYears.map((year) => year.year)),
+    ].sort((a, b) => b - a);
     const displayedYears = showAllYears
         ? uniqueYears
         : uniqueYears.slice(0, MAX_RECENT_YEARS);
-
-    // Filter per-semester options to only displayed years
-    const displayedAcademicYears = academicYears.filter((y) =>
-        displayedYears.includes(y.year),
+    const displayedAcademicYears = academicYears.filter((year) =>
+        displayedYears.includes(year.year),
     );
-
-    const handleYearChange = (value: string): void => {
+    function handleChange(value: string): void {
         if (value === "__show_all__") {
             setShowAllYears(true);
             return;
         }
-
         const params = new URLSearchParams(searchParams.toString());
-
-        if (value === "all") {
-            params.delete("year");
-        } else {
-            params.set("year", value);
-        }
-
+        if (value === "all") params.delete("year");
+        else params.set("year", value);
+        params.delete("round");
+        params.delete("phqPage");
         const queryString = params.toString();
         startTransition(() => {
             setOptimisticYearId(value);
@@ -75,61 +59,40 @@ export function AcademicYearFilter({
                 scroll: false,
             });
         });
-    };
-
-    const isCurrentSemester = (year: AcademicYear) =>
-        year.year === currentAcademicYear.year &&
-        year.semester === currentAcademicYear.semester;
-
+    }
     return (
-        <div
-            className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm"
-            aria-busy={isPending}
+        <FilterSelect
+            icon={CalendarDays}
+            label="ปีการศึกษา:"
+            id="year-filter-profile"
+            value={optimisticYearId}
+            onChange={handleChange}
+            disabled={isPending}
         >
-            <div className="pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-emerald-100/50 blur-2xl" />
-            <div className="relative flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                <label
-                    htmlFor="year-filter"
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-gray-700"
-                >
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-600 shadow-sm">
-                        <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                    </span>
-                    ปีการศึกษา:
-                </label>
-                <select
-                    id="year-filter"
-                    value={optimisticYearId}
-                    onChange={(e) => handleYearChange(e.target.value)}
-                    disabled={isPending}
-                    className="w-full min-w-0 truncate rounded-xl border border-emerald-200 bg-white px-4 py-2.5 shadow-sm outline-none transition-base hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:flex-1"
-                >
-                    <option value="all">ทุกปีการศึกษา</option>
-                    {uniqueYears.length > 1 &&
-                        displayedYears.map((year) => (
-                            <option key={`year:${year}`} value={`year:${year}`}>
-                                📅 ปี {year} (ทุกเทอม)
-                                {year === currentAcademicYear.year
-                                    ? " — ปัจจุบัน"
-                                    : ""}
-                            </option>
-                        ))}
-                    <optgroup label="แยกรายเทอม">
-                        {displayedAcademicYears.map((year) => (
-                            <option key={year.id} value={year.id}>
-                                {year.year} เทอม {year.semester}
-                                {isCurrentSemester(year) ? " (ปัจจุบัน)" : ""}
-                            </option>
-                        ))}
-                    </optgroup>
-                    {hasOlderYears && !showAllYears && (
-                        <option value="__show_all__">
-                            ── ดูปีก่อนหน้านี้ (
-                            {uniqueYears.length - MAX_RECENT_YEARS} ปี) ──
-                        </option>
-                    )}
-                </select>
-            </div>
-        </div>
+            <option value="all">ทุกปีการศึกษา</option>
+            {uniqueYears.length > 1 &&
+                displayedYears.map((year) => (
+                    <option key={`year:${year}`} value={`year:${year}`}>
+                        ปี {year} (ทุกเทอม)
+                        {year === currentAcademicYear.year ? " (ปัจจุบัน)" : ""}
+                    </option>
+                ))}
+            <optgroup label="แยกรายเทอม">
+                {displayedAcademicYears.map((year) => (
+                    <option key={year.id} value={year.id}>
+                        {year.year} เทอม {year.semester}
+                        {year.year === currentAcademicYear.year &&
+                        year.semester === currentAcademicYear.semester
+                            ? " (ปัจจุบัน)"
+                            : ""}
+                    </option>
+                ))}
+            </optgroup>
+            {uniqueYears.length > MAX_RECENT_YEARS && !showAllYears ? (
+                <option value="__show_all__">
+                    ดูปีก่อนหน้านี้ ({uniqueYears.length - MAX_RECENT_YEARS} ปี)
+                </option>
+            ) : null}
+        </FilterSelect>
     );
 }

@@ -11,6 +11,7 @@ import { PHQHistoryTable } from "@/components/student/phq/PHQHistoryTable";
 import { ActivityProgressTable } from "@/components/student/activity/ActivityProgressTable";
 import { CounselingLogTable } from "@/components/student/counseling/CounselingLogTable";
 import { AcademicYearFilter } from "@/components/student/profile/AcademicYearFilter";
+import { AssessmentRoundFilter } from "@/components/student/profile/AssessmentRoundFilter";
 import { HomeVisitTab } from "@/components/student/home-visit/HomeVisitTab";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -40,6 +41,7 @@ import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import type { OffsetPagination } from "@/types/pagination.types";
 import {
     filterByAcademicYearSelection,
+    filterByAssessmentRoundSelection,
     getUniqueAcademicYears,
     resolveAcademicYearDateRange,
 } from "@/lib/utils/student-detail-filters";
@@ -79,6 +81,7 @@ interface StudentDetailPageProps {
     params: Promise<{ id: string }>;
     searchParams: Promise<{
         year?: string;
+        round?: string;
         phqPage?: string;
         counselingPage?: string;
         homeVisitPage?: string;
@@ -92,10 +95,12 @@ export default async function StudentDetailPage({
     const { id } = await params;
     const {
         year: selectedYearId,
+        round,
         phqPage,
         counselingPage,
         homeVisitPage,
     } = await searchParams;
+    const selectedRound = round === "1" || round === "2" ? round : undefined;
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-linear-to-br from-slate-50 via-white to-emerald-50/40 py-6 px-4">
@@ -113,6 +118,7 @@ export default async function StudentDetailPage({
                     <StudentDetailContent
                         studentId={id}
                         selectedYearId={selectedYearId}
+                        selectedRound={selectedRound}
                         phqPage={parsePositiveInt(phqPage)}
                         counselingPage={parsePositiveInt(counselingPage)}
                         homeVisitPage={parsePositiveInt(homeVisitPage)}
@@ -126,12 +132,14 @@ export default async function StudentDetailPage({
 async function StudentDetailContent({
     studentId,
     selectedYearId,
+    selectedRound,
     phqPage,
     counselingPage,
     homeVisitPage,
 }: {
     studentId: string;
     selectedYearId?: string;
+    selectedRound?: string;
     phqPage: number;
     counselingPage: number;
     homeVisitPage: number;
@@ -159,9 +167,20 @@ async function StudentDetailContent({
         uniqueYears,
         selectedYearId,
     );
-    const filteredPhqResults = filterByAcademicYearSelection(
+    const academicYearFilteredPhqResults = filterByAcademicYearSelection(
         student.phqResults,
         selectedYearId,
+    );
+    const availableRounds = Array.from(
+        new Set(
+            academicYearFilteredPhqResults.map(
+                (result) => result.assessmentRound,
+            ),
+        ),
+    ).sort((a, b) => a - b);
+    const filteredPhqResults = filterByAssessmentRoundSelection(
+        academicYearFilteredPhqResults,
+        selectedRound,
     );
     const latestResult = filteredPhqResults[0] || null;
     const recordAcademicYearId = latestResult?.academicYear?.id;
@@ -336,6 +355,11 @@ async function StudentDetailContent({
                         currentYearId={selectedYearId}
                     />
                 )}
+
+                <AssessmentRoundFilter
+                    availableRounds={availableRounds}
+                    currentRound={selectedRound}
+                />
 
                 <Tabs tabs={tabs} defaultTab="phq-results" syncWithUrl />
             </div>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    filterByAssessmentRoundSelection,
     filterByAcademicYearSelection,
     getUniqueAcademicYears,
     resolveAcademicYearDateRange,
@@ -70,6 +71,25 @@ describe("filterByAcademicYearSelection", () => {
         expect(filterByAcademicYearSelection(results, "year:invalid")).toEqual(
             results,
         );
+    });
+});
+
+describe("filterByAssessmentRoundSelection", () => {
+    const results = [
+        { id: "phq-1", assessmentRound: 1 },
+        { id: "phq-2", assessmentRound: 2 },
+        { id: "phq-3", assessmentRound: 1 },
+    ];
+
+    it("filters results to the selected assessment round", () => {
+        const result = filterByAssessmentRoundSelection(results, "2");
+
+        expect(result.map((item) => item.id)).toEqual(["phq-2"]);
+    });
+
+    it("returns all results when no round is selected or the value is invalid", () => {
+        expect(filterByAssessmentRoundSelection(results)).toEqual(results);
+        expect(filterByAssessmentRoundSelection(results, "3")).toEqual(results);
     });
 });
 

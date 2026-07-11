@@ -12,6 +12,10 @@ interface ItemWithAcademicYear {
     academicYear?: Pick<AcademicYearFilterOption, "id" | "year"> | null;
 }
 
+interface ItemWithAssessmentRound {
+    assessmentRound: number;
+}
+
 export interface AcademicYearDateRange {
     startDate: Date;
     endDate: Date;
@@ -53,6 +57,18 @@ export function filterByAcademicYearSelection<T extends ItemWithAcademicYear>(
     }
 
     return items.filter((item) => item.academicYear?.id === selectedYearId);
+}
+
+export function filterByAssessmentRoundSelection<T extends ItemWithAssessmentRound>(
+    items: readonly T[],
+    selectedRound?: string,
+): T[] {
+    if (selectedRound !== "1" && selectedRound !== "2") {
+        return [...items];
+    }
+
+    const assessmentRound = Number.parseInt(selectedRound, 10);
+    return items.filter((item) => item.assessmentRound === assessmentRound);
 }
 
 export function resolveAcademicYearDateRange(
