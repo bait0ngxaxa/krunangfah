@@ -90,7 +90,10 @@ function setCookieToken(token: string | null): void {
     } as never);
 }
 
-function createDbUser() {
+function createDbUser(overrides: {
+    deletedAt?: Date | null;
+    schoolDisabledAt?: Date | null;
+} = {}) {
     return {
         id: "user-1",
         email: "teacher@example.com",
@@ -100,11 +103,11 @@ function createDbUser() {
         role: "school_admin",
         isPrimary: true,
         schoolId: "school-1",
-        deletedAt: null,
+        deletedAt: overrides.deletedAt ?? null,
         emailVerified: null,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
         updatedAt: new Date("2026-01-02T00:00:00.000Z"),
-        school: { disabledAt: null },
+        school: { disabledAt: overrides.schoolDisabledAt ?? null },
     };
 }
 
@@ -123,6 +126,29 @@ function createCachedUser() {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
     };
+}
+
+async function expectRequestSessionRevoked(
+    user: ReturnType<typeof createDbUser>,
+): Promise<void> {
+    setCookieToken("disabled-account-token");
+    mocks.userSessionFindUnique.mockResolvedValue({
+        id: "session-1",
+        expiresAt: new Date("2026-06-01T20:00:00.000Z"),
+        revokedAt: null,
+        lastActivityAt: new Date("2026-06-01T07:59:30.000Z"),
+        user,
+    });
+
+    await expect(getRequestSession()).resolves.toBeNull();
+    expect(mocks.userSessionUpdateMany).toHaveBeenCalledWith({
+        where: {
+            sessionTokenHash: expect.any(String),
+            revokedAt: null,
+        },
+        data: { revokedAt: new Date("2026-06-01T08:00:00.000Z") },
+    });
+    expect(mocks.deleteCachedSession).toHaveBeenCalledWith(expect.any(String));
 }
 
 describe("lib/auth/session-store", () => {
@@ -265,6 +291,18 @@ describe("lib/auth/session-store", () => {
                 activityPersistedAt: "2026-06-01T07:59:30.000Z",
             }),
         );
+    });
+
+    it("revokes sessions when the user account was deleted", async () => {
+        await expectRequestSessionRevoked(createDbUser({
+            deletedAt: new Date("2026-06-01T07:00:00.000Z"),
+        }));
+    });
+
+    it("revokes sessions when the user's school was disabled", async () => {
+        await expectRequestSessionRevoked(createDbUser({
+            schoolDisabledAt: new Date("2026-06-01T07:00:00.000Z"),
+        }));
     });
 
     it("returns cached sessions without reading the database", async () => {
