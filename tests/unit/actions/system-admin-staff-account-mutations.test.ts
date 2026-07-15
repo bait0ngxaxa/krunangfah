@@ -100,6 +100,29 @@ describe("system admin staff account mutations", () => {
         expect(cacheMocks.deleteUserSessionCaches).toHaveBeenCalledWith(target.id);
     });
 
+    it("rejects restoring a staff account while its school is disabled", async () => {
+        prismaMocks.tx.user.findUnique.mockResolvedValue({
+            ...target,
+            school: { disabledAt: new Date("2026-07-10T00:00:00.000Z") },
+        });
+
+        const result = await restoreSystemStaffAccount(
+            {
+                id: target.id,
+                reason: "ต้องการเปิดบัญชีครูอีกครั้ง",
+            },
+            actor,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "ต้องกู้คืนโรงเรียนก่อนจึงจะกู้คืนบัญชีบุคลากรได้",
+        });
+        expect(prismaMocks.tx.user.update).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.systemAdminEvent.create).not.toHaveBeenCalled();
+        expect(cacheMocks.deleteUserSessionCaches).not.toHaveBeenCalled();
+    });
+
     it("deletes every database record tied to a closed teacher account", async () => {
         const result = await permanentlyDeleteSystemStaffAccount(
             {

@@ -48,6 +48,7 @@ async function searchSchools(query: string): Promise<SchoolEntityResult[]> {
         },
         select: {
             id: true,
+            updatedAt: true,
             name: true,
             province: true,
             disabledAt: true,
@@ -61,6 +62,7 @@ async function searchSchools(query: string): Promise<SchoolEntityResult[]> {
     return schools.map((school) => ({
         type: "school",
         id: school.id,
+        updatedAt: school.updatedAt,
         name: school.name,
         province: school.province,
         disabledAt: school.disabledAt,
@@ -85,6 +87,7 @@ async function searchStaffs(query: string): Promise<StaffEntityResult[]> {
             teacher: {
                 select: {
                     id: true,
+                    updatedAt: true,
                     firstName: true,
                     lastName: true,
                     age: true,
@@ -101,6 +104,7 @@ async function searchStaffs(query: string): Promise<StaffEntityResult[]> {
     return users.map((user) => ({
         type: "staff",
         id: user.id,
+        updatedAt: user.teacher?.updatedAt ?? null,
         email: user.email,
         name: user.name,
         role: user.role,

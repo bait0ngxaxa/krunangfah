@@ -68,11 +68,16 @@ export async function updateSystemSchool(
     }
 
     const updated = await prisma.$transaction(async (tx) => {
-        const next = await tx.school.update({
-            where: { id: input.id },
+        const updateResult = await tx.school.updateMany({
+            where: { id: input.id, updatedAt: input.expectedUpdatedAt },
             data: { name: input.name, province: input.province || null },
+        });
+        if (updateResult.count !== 1) return null;
+        const next = await tx.school.findUnique({
+            where: { id: input.id },
             select: schoolEntitySelect,
         });
+        if (!next) return null;
         await createSystemAdminEditEvent({
             tx,
             targetType: "school",
@@ -84,6 +89,12 @@ export async function updateSystemSchool(
         });
         return toSchoolEntityResult(next);
     });
+    if (!updated) {
+        return {
+            success: false,
+            message: "ข้อมูลโรงเรียนถูกแก้ไขโดยผู้ใช้อื่น กรุณาโหลดข้อมูลล่าสุดแล้วลองใหม่",
+        };
+    }
 
     revalidateDashboardCache();
     revalidatePath("/admin/system");
@@ -251,6 +262,7 @@ async function updateStudentAndCounts(
 
 const schoolEntitySelect = {
     id: true,
+    updatedAt: true,
     name: true,
     province: true,
     disabledAt: true,
@@ -302,6 +314,7 @@ function toSchoolEntityResult(school: SchoolForEdit): SchoolEntityResult {
     return {
         type: "school",
         id: school.id,
+        updatedAt: school.updatedAt,
         name: school.name,
         province: school.province,
         disabledAt: school.disabledAt,

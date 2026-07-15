@@ -44,6 +44,7 @@ const reasonSchema = z
 
 export const systemSchoolEditSchema = z.object({
     id: z.string().cuid("รหัสโรงเรียนไม่ถูกต้อง"),
+    expectedUpdatedAt: z.coerce.date(),
     name: z.string().trim().min(1, "กรุณาระบุชื่อโรงเรียน").max(200),
     province: z.string().trim().max(100).optional(),
     reason: reasonSchema,
@@ -70,6 +71,7 @@ export const systemStudentEditSchema = z.object({
 
 export const systemTeacherProfileEditSchema = z.object({
     id: z.string().cuid("รหัสบัญชีครูไม่ถูกต้อง"),
+    expectedUpdatedAt: z.coerce.date(),
     firstName: z
         .string()
         .min(1, "กรุณากรอกชื่อ")

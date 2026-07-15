@@ -60,6 +60,7 @@ function SchoolEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
         startTransition(async () => {
             const result = await updateSystemAdminSchool({
                 id: school.id,
+                expectedUpdatedAt: school.updatedAt.toISOString(),
                 name,
                 province,
                 reason,

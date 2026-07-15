@@ -29,8 +29,11 @@ export async function updateSystemTeacherProfile(
     }
 
     const updated = await prisma.$transaction(async (tx) => {
-        const next = await tx.teacher.update({
-            where: { userId: input.id },
+        const updateResult = await tx.teacher.updateMany({
+            where: {
+                userId: input.id,
+                updatedAt: input.expectedUpdatedAt,
+            },
             data: {
                 firstName: input.firstName,
                 lastName: input.lastName,
@@ -38,8 +41,13 @@ export async function updateSystemTeacherProfile(
                 schoolRole: input.schoolRole,
                 projectRole: input.projectRole,
             },
+        });
+        if (updateResult.count !== 1) return null;
+        const next = await tx.teacher.findUnique({
+            where: { userId: input.id },
             select: teacherEntitySelect,
         });
+        if (!next) return null;
         await createSystemAdminEditEvent({
             tx,
             targetType: "teacher",
@@ -51,6 +59,12 @@ export async function updateSystemTeacherProfile(
         });
         return toStaffEntityResult(next);
     });
+    if (!updated) {
+        return {
+            success: false,
+            message: "ข้อมูลครูถูกแก้ไขโดยผู้ใช้อื่น กรุณาโหลดข้อมูลล่าสุดแล้วลองใหม่",
+        };
+    }
 
     revalidateDashboardCache();
     revalidatePath("/admin/system");
@@ -59,6 +73,7 @@ export async function updateSystemTeacherProfile(
 
 const teacherEntitySelect = {
     id: true,
+    updatedAt: true,
     firstName: true,
     lastName: true,
     age: true,
@@ -113,6 +128,7 @@ function toStaffEntityResult(teacher: TeacherForEdit): StaffEntityResult {
     return {
         type: "staff",
         id: teacher.user.id,
+        updatedAt: teacher.updatedAt,
         email: teacher.user.email,
         name: teacher.user.name,
         role: teacher.user.role,

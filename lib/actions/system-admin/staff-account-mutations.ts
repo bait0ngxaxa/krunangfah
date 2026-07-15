@@ -77,6 +77,7 @@ function getStaffAccountTarget(tx: Tx, id: string) {
             isPrimary: true,
             deletedAt: true,
             password: true,
+            school: { select: { disabledAt: true } },
             teacher: { select: { id: true } },
         },
     });
@@ -87,6 +88,9 @@ function validateRestoreTarget(
 ): MutationResponse | null {
     if (target.role === "system_admin") return failure("ไม่สามารถกู้คืน System Admin");
     if (!target.deletedAt) return failure("บัญชีนี้ยังเปิดใช้งานอยู่");
+    if (target.school?.disabledAt) {
+        return failure("ต้องกู้คืนโรงเรียนก่อนจึงจะกู้คืนบัญชีบุคลากรได้");
+    }
     return null;
 }
 

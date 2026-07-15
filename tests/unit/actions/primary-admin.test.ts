@@ -27,6 +27,8 @@ const mocks = vi.hoisted(() => ({
     userFindMany: vi.fn(),
     userFindUnique: vi.fn(),
     userUpdateMany: vi.fn(),
+    userCount: vi.fn(),
+    transaction: vi.fn(),
     revalidatePath: vi.fn(),
     invalidateUserSessionCaches: vi.fn(),
 }));
@@ -38,10 +40,12 @@ vi.mock("@/lib/auth/session", () => ({
 
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
+        $transaction: mocks.transaction,
         user: {
             findMany: mocks.userFindMany,
             findUnique: mocks.userFindUnique,
             updateMany: mocks.userUpdateMany,
+            count: mocks.userCount,
         },
     },
 }));
@@ -84,6 +88,16 @@ describe("togglePrimaryStatus", () => {
         mocks.userFindMany.mockResolvedValue([]);
         mocks.userFindUnique.mockResolvedValue(createTargetAdmin());
         mocks.userUpdateMany.mockResolvedValue({ count: 1 });
+        mocks.userCount.mockResolvedValue(2);
+        mocks.transaction.mockImplementation(async (callback) =>
+            callback({
+                user: {
+                    findUnique: mocks.userFindUnique,
+                    updateMany: mocks.userUpdateMany,
+                    count: mocks.userCount,
+                },
+            }),
+        );
         mocks.invalidateUserSessionCaches.mockResolvedValue(undefined);
     });
 
@@ -95,7 +109,11 @@ describe("togglePrimaryStatus", () => {
             message: "เพิ่มสิทธิ์ Primary Admin สำเร็จ",
         });
         expect(mocks.userUpdateMany).toHaveBeenCalledWith({
-            where: { id: "target-admin-1", deletedAt: null },
+            where: {
+                id: "target-admin-1",
+                deletedAt: null,
+                isPrimary: false,
+            },
             data: { isPrimary: true },
         });
         expect(mocks.invalidateUserSessionCaches).toHaveBeenCalledWith(
@@ -130,5 +148,57 @@ describe("togglePrimaryStatus", () => {
             message: "ไม่สามารถเปลี่ยนสิทธิ์บัญชีที่ปิดใช้งานแล้ว",
         });
         expect(mocks.userUpdateMany).not.toHaveBeenCalled();
+    });
+
+    it("keeps at least one Primary Admin during concurrent demotions", async () => {
+        const primaryState = new Map([
+            ["primary-admin-1", true],
+            ["primary-admin-2", true],
+        ]);
+        mocks.requirePrimaryAdmin
+            .mockResolvedValueOnce(createPrimaryAdminSession())
+            .mockResolvedValueOnce({
+                user: {
+                    id: "primary-admin-2",
+                    role: "school_admin",
+                    isPrimary: true,
+                    schoolId: "school-1",
+                },
+            });
+        mocks.userFindUnique.mockImplementation(({ where }) =>
+            Promise.resolve(createTargetAdmin({
+                id: where.id,
+                isPrimary: primaryState.get(where.id) ?? false,
+            })),
+        );
+        mocks.userCount.mockImplementation(() =>
+            Promise.resolve(
+                [...primaryState.values()].filter(Boolean).length,
+            ),
+        );
+        mocks.userUpdateMany.mockImplementation(({ where, data }) => {
+            primaryState.set(where.id, data.isPrimary);
+            return Promise.resolve({ count: 1 });
+        });
+        let serialized = Promise.resolve();
+        mocks.transaction.mockImplementation((callback) => {
+            const result = serialized.then(() => callback({
+                user: {
+                    findUnique: mocks.userFindUnique,
+                    updateMany: mocks.userUpdateMany,
+                    count: mocks.userCount,
+                },
+            }));
+            serialized = result.then(() => undefined);
+            return result;
+        });
+
+        const results = await Promise.all([
+            togglePrimaryStatus("primary-admin-2"),
+            togglePrimaryStatus("primary-admin-1"),
+        ]);
+
+        expect(results.filter((result) => result.success)).toHaveLength(1);
+        expect([...primaryState.values()].filter(Boolean)).toHaveLength(1);
     });
 });

@@ -4,7 +4,7 @@ import { updateSystemTeacherProfile } from "@/lib/actions/system-admin/staff-mut
 
 const prismaMocks = vi.hoisted(() => {
     const tx = {
-        teacher: { update: vi.fn() },
+        teacher: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
         systemAdminEvent: { create: vi.fn() },
     };
     return {
@@ -51,12 +51,21 @@ describe("updateSystemTeacherProfile", () => {
                 projectRole: "lead",
             }),
         );
+        prismaMocks.tx.teacher.updateMany.mockResolvedValue({ count: 1 });
+        prismaMocks.tx.teacher.findUnique.mockResolvedValue(
+            createTeacherRow({
+                firstName: "สมพร",
+                schoolRole: "หัวหน้างานแนะแนว",
+                projectRole: "lead",
+            }),
+        );
     });
 
     it("updates general teacher profile fields and records an audit event", async () => {
         const result = await updateSystemTeacherProfile(
             {
                 id: "cmuser000000000000000001",
+                expectedUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
                 firstName: "สมพร",
                 lastName: "ใจดี",
                 age: 42,
@@ -69,8 +78,11 @@ describe("updateSystemTeacherProfile", () => {
 
         expect(result.success).toBe(true);
         expect(result.updated?.firstName).toBe("สมพร");
-        expect(prismaMocks.tx.teacher.update).toHaveBeenCalledWith({
-            where: { userId: "cmuser000000000000000001" },
+        expect(prismaMocks.tx.teacher.updateMany).toHaveBeenCalledWith({
+            where: {
+                userId: "cmuser000000000000000001",
+                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+            },
             data: {
                 firstName: "สมพร",
                 lastName: "ใจดี",
@@ -78,7 +90,6 @@ describe("updateSystemTeacherProfile", () => {
                 schoolRole: "หัวหน้างานแนะแนว",
                 projectRole: "lead",
             },
-            select: expect.any(Object),
         });
         expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalledWith({
             data: expect.objectContaining({
@@ -97,6 +108,7 @@ describe("updateSystemTeacherProfile", () => {
         const result = await updateSystemTeacherProfile(
             {
                 id: "cmuser000000000000000001",
+                expectedUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
                 firstName: "สมชาย",
                 lastName: "ใจดี",
                 age: 40,
@@ -112,6 +124,30 @@ describe("updateSystemTeacherProfile", () => {
             message: "ไม่มีข้อมูลเปลี่ยนแปลง",
         });
         expect(prismaMocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("returns a conflict when the teacher was updated after the form loaded", async () => {
+        prismaMocks.tx.teacher.updateMany.mockResolvedValue({ count: 0 });
+
+        const result = await updateSystemTeacherProfile(
+            {
+                id: "cmuser000000000000000001",
+                expectedUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
+                firstName: "สมพร",
+                lastName: "ใจดี",
+                age: 42,
+                schoolRole: "หัวหน้างานแนะแนว",
+                projectRole: "lead",
+                reason: "แก้ข้อมูลครูจากเอกสารโรงเรียน",
+            },
+            actor,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "ข้อมูลครูถูกแก้ไขโดยผู้ใช้อื่น กรุณาโหลดข้อมูลล่าสุดแล้วลองใหม่",
+        });
+        expect(prismaMocks.tx.systemAdminEvent.create).not.toHaveBeenCalled();
     });
 });
 
@@ -130,6 +166,7 @@ function createTeacherRow(
         advisoryClass: "ม.1/1",
         schoolRole: overrides.schoolRole ?? "ครูแนะแนว",
         projectRole: overrides.projectRole ?? "care",
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
         user: {
             id: "cmuser000000000000000001",
             email: "teacher@example.com",

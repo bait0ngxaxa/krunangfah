@@ -15,6 +15,7 @@ export type SystemAdminEventTargetKind = SystemAdminEventTargetType;
 export interface SchoolEntityResult {
     type: "school";
     id: string;
+    updatedAt: Date;
     name: string;
     province: string | null;
     disabledAt: Date | null;
@@ -26,6 +27,7 @@ export interface SchoolEntityResult {
 export interface StaffEntityResult {
     type: "staff";
     id: string;
+    updatedAt: Date | null;
     email: string;
     name: string | null;
     role: UserRole;
