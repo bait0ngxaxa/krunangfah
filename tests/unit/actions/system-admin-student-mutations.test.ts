@@ -11,7 +11,9 @@ const prismaMocks = vi.hoisted(() => ({
     studentUpdateMany: vi.fn(),
     schoolClassFindUnique: vi.fn(),
     schoolClassUpdate: vi.fn(),
+    schoolClassUpdateMany: vi.fn(),
     schoolClassTermUpsert: vi.fn(),
+    schoolClassTermUpdateMany: vi.fn(),
     academicYearFindFirst: vi.fn(),
 }));
 
@@ -137,8 +139,12 @@ function configureTransaction(
         schoolClass: {
             findUnique: prismaMocks.schoolClassFindUnique,
             update: prismaMocks.schoolClassUpdate,
+            updateMany: prismaMocks.schoolClassUpdateMany,
         },
-        schoolClassTerm: { upsert: prismaMocks.schoolClassTermUpsert },
+        schoolClassTerm: {
+            upsert: prismaMocks.schoolClassTermUpsert,
+            updateMany: prismaMocks.schoolClassTermUpdateMany,
+        },
         academicYear: { findFirst: prismaMocks.academicYearFindFirst },
     };
 
@@ -148,8 +154,17 @@ function configureTransaction(
         Promise.resolve(createClassRecord(where.schoolId_name.name)),
     );
     prismaMocks.academicYearFindFirst.mockResolvedValue({ id: "ay-1" });
-    prismaMocks.schoolClassUpdate.mockResolvedValue({});
-    prismaMocks.schoolClassTermUpsert.mockResolvedValue({});
+    prismaMocks.schoolClassUpdate.mockImplementation(({ where }) =>
+        Promise.resolve({
+            id: where.id,
+            expectedStudentCount: where.id === "class-a" ? 30 : 24,
+        }),
+    );
+    prismaMocks.schoolClassUpdateMany.mockResolvedValue({ count: 1 });
+    prismaMocks.schoolClassTermUpsert.mockImplementation(({ where }) =>
+        Promise.resolve({ id: `term-${where.schoolClassId_academicYearId.schoolClassId}` }),
+    );
+    prismaMocks.schoolClassTermUpdateMany.mockResolvedValue({ count: 1 });
     prismaMocks.transaction.mockImplementation(async (callback) => callback(tx));
 }
 
@@ -190,15 +205,22 @@ describe("updateSystemStudent", () => {
         expect(updateData.status).toBe("GRADUATED");
         expect(updateData.leftAt).toBeInstanceOf(Date);
         expect(updateData.statusChangedAt).toBeInstanceOf(Date);
-        expect(prismaMocks.schoolClassUpdate).toHaveBeenCalledWith({
-            where: { id: "class-a" },
-            data: { expectedStudentCount: 29 },
+        expect(prismaMocks.schoolClassUpdateMany).toHaveBeenCalledWith({
+            where: {
+                id: "class-a",
+                expectedStudentCount: { gte: 1 },
+            },
+            data: { expectedStudentCount: { decrement: 1 } },
         });
         expect(prismaMocks.schoolClassTermUpsert).toHaveBeenCalledWith(
             expect.objectContaining({
-                update: { expectedStudentCount: 29 },
+                update: { expectedStudentCount: { increment: 0 } },
             }),
         );
+        expect(prismaMocks.schoolClassTermUpdateMany).toHaveBeenCalledWith({
+            where: { id: "term-class-a", expectedStudentCount: { gte: 1 } },
+            data: { expectedStudentCount: { decrement: 1 } },
+        });
         expect(eventMocks.createSystemAdminEditEvent).toHaveBeenCalledOnce();
         expect(
             eventMocks.createSystemAdminEditEvent.mock.calls[0][0].changes.map(
@@ -222,9 +244,9 @@ describe("updateSystemStudent", () => {
         const updateData = prismaMocks.studentUpdateMany.mock.calls[0][0].data;
         expect(updateData.leftAt).toBeNull();
         expect(updateData.statusChangedAt).toBeInstanceOf(Date);
-        expect(prismaMocks.schoolClassUpdate).toHaveBeenCalledWith({
+        expect(prismaMocks.schoolClassUpdateMany).toHaveBeenCalledWith({
             where: { id: "class-a" },
-            data: { expectedStudentCount: 31 },
+            data: { expectedStudentCount: { increment: 1 } },
         });
     });
 
@@ -254,13 +276,16 @@ describe("updateSystemStudent", () => {
         );
 
         expect(result.success).toBe(true);
-        expect(prismaMocks.schoolClassUpdate).toHaveBeenCalledWith({
-            where: { id: "class-a" },
-            data: { expectedStudentCount: 29 },
+        expect(prismaMocks.schoolClassUpdateMany).toHaveBeenCalledWith({
+            where: {
+                id: "class-a",
+                expectedStudentCount: { gte: 1 },
+            },
+            data: { expectedStudentCount: { decrement: 1 } },
         });
-        expect(prismaMocks.schoolClassUpdate).toHaveBeenCalledWith({
+        expect(prismaMocks.schoolClassUpdateMany).toHaveBeenCalledWith({
             where: { id: "class-b" },
-            data: { expectedStudentCount: 25 },
+            data: { expectedStudentCount: { increment: 1 } },
         });
     });
 
@@ -272,9 +297,12 @@ describe("updateSystemStudent", () => {
 
         expect(result.success).toBe(true);
         expect(prismaMocks.schoolClassUpdate).toHaveBeenCalledTimes(1);
-        expect(prismaMocks.schoolClassUpdate).toHaveBeenCalledWith({
-            where: { id: "class-a" },
-            data: { expectedStudentCount: 29 },
+        expect(prismaMocks.schoolClassUpdateMany).toHaveBeenCalledWith({
+            where: {
+                id: "class-a",
+                expectedStudentCount: { gte: 1 },
+            },
+            data: { expectedStudentCount: { decrement: 1 } },
         });
     });
 
@@ -288,9 +316,9 @@ describe("updateSystemStudent", () => {
 
         expect(result.success).toBe(true);
         expect(prismaMocks.schoolClassUpdate).toHaveBeenCalledTimes(1);
-        expect(prismaMocks.schoolClassUpdate).toHaveBeenCalledWith({
+        expect(prismaMocks.schoolClassUpdateMany).toHaveBeenCalledWith({
             where: { id: "class-b" },
-            data: { expectedStudentCount: 25 },
+            data: { expectedStudentCount: { increment: 1 } },
         });
     });
 

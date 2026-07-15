@@ -22,6 +22,7 @@ const impact: ManagedPreview["impact"] = {
     homeVisitCount: 0,
     worksheetUploadCount: 0,
     homeVisitPhotoCount: 0,
+    studentReferralCount: 0,
     pendingTeacherInviteCount: 0,
     pendingSchoolAdminInviteCount: 0,
     fileCount: 0,
@@ -34,6 +35,7 @@ const preview: ManagedPreview = {
     province: "เชียงใหม่",
     disabledAt: new Date("2026-07-14T00:00:00.000Z"),
     updatedAt: new Date("2026-07-15T00:00:00.000Z"),
+    impactFingerprint: "a".repeat(64),
     disabledReason: null,
     isTestData: false,
     testDataReason: null,
@@ -80,13 +82,13 @@ describe("ActionDialog", () => {
             .split("<button")
             .find((button) => button.includes(">ปิดใช้งาน</button>"));
         expect(testDataDisableButton).toContain('disabled=""');
-        expect(activeHtml).toContain("ต้องปิดใช้งานข้อมูลก่อน");
+        expect(activeHtml).toContain("ต้องปิดใช้งานโรงเรียนก่อนลบถาวร");
         expect(testDataHtml).toContain(
             "ข้อมูลทดสอบไม่สามารถปิดใช้งานหรือลบถาวรได้",
         );
         expect(testDataDisabledHtml).toContain(">กู้คืน</button>");
         expect(testDataDisabledHtml).toContain(
-            "ต้องยกเลิกการตั้งเป็นข้อมูลทดสอบก่อนลบถาวร",
+            "ต้องยกเลิกการตั้งโรงเรียนเป็นข้อมูลทดสอบก่อนลบถาวร",
         );
         expect(testDataDisabledHtml).toContain('disabled=""');
         const disabledProductionMarkButton = eligibleHtml

@@ -13,10 +13,13 @@ const prismaMock = vi.hoisted(() => ({
     schoolClass: {
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
     },
     schoolClassTerm: {
         upsert: vi.fn(),
+        updateMany: vi.fn(),
     },
+    academicYear: { findFirst: vi.fn() },
     phqResult: {
         findFirst: vi.fn(),
         update: vi.fn(),
@@ -119,7 +122,15 @@ describe("updateStudentProfile", () => {
             schoolId: "school-1",
             status: "ACTIVE",
         });
-        prismaMock.student.findUnique.mockResolvedValue(null);
+        prismaMock.student.findUnique.mockResolvedValue({
+            id: "student-1",
+            class: "ม.1/1",
+            schoolId: "school-1",
+            status: "ACTIVE",
+            statusChangedAt: null,
+            leftAt: null,
+            disabledAt: null,
+        });
         prismaMock.student.update.mockResolvedValue(updatedStudentProfile());
         prismaMock.phqResult.findFirst.mockResolvedValue({ id: "phq-latest" });
         prismaMock.schoolClass.findUnique.mockResolvedValue({ id: "class-2" });

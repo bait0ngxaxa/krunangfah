@@ -4,6 +4,13 @@ const prismaMocks = vi.hoisted(() => {
     const tx = {
         school: { findUnique: vi.fn(), update: vi.fn() },
         student: { findUnique: vi.fn(), update: vi.fn() },
+        schoolClass: {
+            findUnique: vi.fn(),
+            update: vi.fn(),
+            updateMany: vi.fn(),
+        },
+        schoolClassTerm: { upsert: vi.fn(), updateMany: vi.fn() },
+        academicYear: { findFirst: vi.fn() },
         user: { findMany: vi.fn() },
         teacherInvite: { deleteMany: vi.fn() },
         schoolAdminInvite: { deleteMany: vi.fn() },
@@ -61,6 +68,7 @@ import {
     disableStudent,
     markSchoolAsTestData,
     markStudentAsTestData,
+    restoreStudent,
 } from "@/lib/actions/data-management/mutations";
 import {
     getSchoolImpact,
@@ -89,6 +97,7 @@ const impact: ImpactSummary = {
     homeVisitCount: 0,
     worksheetUploadCount: 0,
     homeVisitPhotoCount: 0,
+    studentReferralCount: 0,
     pendingTeacherInviteCount: 0,
     pendingSchoolAdminInviteCount: 0,
     fileCount: 0,
@@ -104,6 +113,18 @@ describe("data management mutations", () => {
         prismaMocks.tx.dataManagementEvent.create.mockResolvedValue({
             id: "event-1",
         });
+        prismaMocks.tx.academicYear.findFirst.mockResolvedValue({ id: "ay-1" });
+        prismaMocks.tx.schoolClass.findUnique.mockResolvedValue({
+            id: "class-1",
+            expectedStudentCount: 30,
+        });
+        prismaMocks.tx.schoolClass.update.mockResolvedValue({
+            id: "class-1",
+            expectedStudentCount: 30,
+        });
+        prismaMocks.tx.schoolClass.updateMany.mockResolvedValue({ count: 1 });
+        prismaMocks.tx.schoolClassTerm.upsert.mockResolvedValue({ id: "term-1" });
+        prismaMocks.tx.schoolClassTerm.updateMany.mockResolvedValue({ count: 1 });
         vi.mocked(getSchoolImpact).mockResolvedValue(impact);
         vi.mocked(getStudentImpact).mockResolvedValue(impact);
     });
@@ -224,4 +245,147 @@ describe("data management mutations", () => {
         expect(prismaMocks.tx.student.update).not.toHaveBeenCalled();
         expect(prismaMocks.tx.dataManagementEvent.create).not.toHaveBeenCalled();
     });
+
+    it("disables an active student and decrements class and term counts", async () => {
+        prismaMocks.tx.student.findUnique.mockResolvedValue(createStudent());
+
+        const result = await disableStudent(input);
+
+        expect(result).toEqual({
+            success: true,
+            message: "ปิดใช้งานนักเรียนสำเร็จ",
+        });
+        expect(prismaMocks.tx.student.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { id: input.id },
+                data: expect.objectContaining({ disabledAt: expect.any(Date) }),
+            }),
+        );
+        expect(prismaMocks.tx.schoolClass.updateMany).toHaveBeenCalledWith({
+            where: { id: "class-1", expectedStudentCount: { gte: 1 } },
+            data: { expectedStudentCount: { decrement: 1 } },
+        });
+        expect(prismaMocks.tx.schoolClassTerm.updateMany).toHaveBeenCalledWith({
+            where: { id: "term-1", expectedStudentCount: { gte: 1 } },
+            data: { expectedStudentCount: { decrement: 1 } },
+        });
+        expect(prismaMocks.tx.dataManagementEvent.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                data: expect.objectContaining({
+                    action: "DISABLE",
+                    impactSnapshot: expect.objectContaining({
+                        lifecycle: expect.objectContaining({ classCountDelta: -1 }),
+                    }),
+                }),
+            }),
+        );
+        expect(cacheMocks.revalidateStudentsCache).toHaveBeenCalledWith(
+            "cmschool0000000000000001",
+            input.id,
+        );
+    });
+
+    it.each(["GRADUATED", "RESIGNED", "TRANSFERRED"] as const)(
+        "disables excluded status %s without changing counts",
+        async (status) => {
+        prismaMocks.tx.student.findUnique.mockResolvedValue(
+            createStudent({ status, disabledAt: null }),
+        );
+
+        const result = await disableStudent(input);
+
+        expect(result.success).toBe(true);
+        expect(prismaMocks.tx.student.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                data: expect.objectContaining({ disabledAt: expect.any(Date) }),
+            }),
+        );
+        expect(prismaMocks.tx.schoolClass.updateMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.schoolClassTerm.updateMany).not.toHaveBeenCalled();
+        },
+    );
+
+    it("restores an active-status disabled student and increments class and term counts", async () => {
+        prismaMocks.tx.student.findUnique.mockResolvedValue(
+            createStudent({ disabledAt: new Date("2026-07-14T00:00:00.000Z") }),
+        );
+
+        const result = await restoreStudent(input);
+
+        expect(result).toEqual({ success: true, message: "กู้คืนนักเรียนสำเร็จ" });
+        expect(prismaMocks.tx.schoolClass.updateMany).toHaveBeenCalledWith({
+            where: { id: "class-1" },
+            data: { expectedStudentCount: { increment: 1 } },
+        });
+        expect(prismaMocks.tx.schoolClassTerm.updateMany).toHaveBeenCalledWith({
+            where: { id: "term-1" },
+            data: { expectedStudentCount: { increment: 1 } },
+        });
+    });
+
+    it("restores excluded status without changing counts", async () => {
+        prismaMocks.tx.student.findUnique.mockResolvedValue(
+            createStudent({
+                status: "GRADUATED",
+                disabledAt: new Date("2026-07-14T00:00:00.000Z"),
+            }),
+        );
+
+        const result = await restoreStudent(input);
+
+        expect(result.success).toBe(true);
+        expect(prismaMocks.tx.schoolClass.updateMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.schoolClassTerm.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("returns an integrity failure without cache invalidation when decrement is guarded out", async () => {
+        prismaMocks.tx.student.findUnique.mockResolvedValue(createStudent());
+        prismaMocks.tx.schoolClass.updateMany.mockResolvedValue({ count: 0 });
+
+        const result = await disableStudent(input);
+
+        expect(result).toEqual({
+            success: false,
+            message:
+                "จำนวนคาดการณ์ของห้องไม่สอดคล้องกับข้อมูลนักเรียน กรุณาตรวจสอบข้อมูลห้องเรียน",
+        });
+        expect(prismaMocks.tx.dataManagementEvent.create).not.toHaveBeenCalled();
+        expect(cacheMocks.revalidateStudentsCache).not.toHaveBeenCalled();
+    });
+
+    it("does not revalidate when audit creation fails after count adjustment", async () => {
+        prismaMocks.tx.student.findUnique.mockResolvedValue(createStudent());
+        prismaMocks.tx.dataManagementEvent.create.mockRejectedValue(
+            new Error("audit failed"),
+        );
+
+        await expect(disableStudent(input)).rejects.toThrow("audit failed");
+        expect(cacheMocks.revalidateStudentsCache).not.toHaveBeenCalled();
+    });
 });
+
+function createStudent(
+    overrides: Partial<{
+        status: "ACTIVE" | "RESIGNED" | "TRANSFERRED" | "GRADUATED";
+        disabledAt: Date | null;
+    }> = {},
+) {
+    return {
+        id: input.id,
+        studentId: "1001",
+        firstName: "สมชาย",
+        lastName: "ใจดี",
+        schoolId: "cmschool0000000000000001",
+        class: "ป.6/1",
+        status: overrides.status ?? "ACTIVE",
+        disabledAt: overrides.disabledAt ?? null,
+        isTestData: false,
+        updatedAt: new Date("2026-07-14T00:00:00.000Z"),
+        school: {
+            id: "cmschool0000000000000001",
+            name: "โรงเรียนทดสอบ",
+            isTestData: false,
+            disabledAt: null,
+        },
+    };
+}

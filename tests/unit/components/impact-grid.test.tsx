@@ -13,6 +13,7 @@ const impact: ManagedPreview["impact"] = {
     homeVisitCount: 6,
     worksheetUploadCount: 7,
     homeVisitPhotoCount: 8,
+    studentReferralCount: 2,
     pendingTeacherInviteCount: 9,
     pendingSchoolAdminInviteCount: 10,
     fileCount: 15,

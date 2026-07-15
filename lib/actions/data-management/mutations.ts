@@ -13,12 +13,19 @@ import {
     revalidateAfterSchool,
     revalidateAfterStudent,
     schoolSnapshot,
+    studentLifecycleImpactSnapshot,
     studentSnapshot,
     success,
 } from "./mutation-helpers";
 import { getSchoolImpact, getStudentImpact } from "./preview";
 import type { DataManagementResponse } from "./types";
 import type { MutationInput } from "./mutation-helpers";
+import {
+    applyStudentClassCountAdjustments,
+    calculateStudentContributionAdjustments,
+    getCurrentAcademicYearId,
+    StudentClassCountIntegrityError,
+} from "@/lib/actions/student/student-class-count";
 
 export async function markSchoolAsTestData(
     input: MutationInput,
@@ -130,79 +137,143 @@ export async function disableStudent(
     input: MutationInput,
 ): Promise<DataManagementResponse> {
     const now = new Date();
-    const result = await prisma.$transaction(async (tx) => {
-        const student = await getStudentForUpdate(tx, input.id);
-        if (!student) return notFound("ไม่พบนักเรียน");
-        if (student.disabledAt) return failure("นักเรียนนี้ถูกปิดใช้งานอยู่แล้ว");
-        if (student.isTestData) {
-            return failure("ไม่สามารถปิดใช้งานนักเรียนที่เป็นข้อมูลทดสอบได้");
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            const student = await getStudentForUpdate(tx, input.id);
+            if (!student) return notFound("ไม่พบนักเรียน");
+            if (student.disabledAt) {
+                return failure("นักเรียนนี้ถูกปิดใช้งานอยู่แล้ว");
+            }
+            if (student.isTestData) {
+                return failure("ไม่สามารถปิดใช้งานนักเรียนที่เป็นข้อมูลทดสอบได้");
+            }
+
+            const before = {
+                className: student.class,
+                status: student.status,
+                disabledAt: student.disabledAt,
+            };
+            const after = { ...before, disabledAt: now };
+            const adjustments = calculateStudentContributionAdjustments({
+                before,
+                after,
+            });
+            const academicYearId = await getCurrentAcademicYearId(tx);
+            const impact = await getStudentImpact(tx, input.id);
+            await tx.student.update({
+                where: { id: input.id },
+                data: {
+                    disabledAt: now,
+                    disabledById: input.actor.id,
+                    disabledReason: input.reason,
+                    restoredAt: null,
+                    restoredById: null,
+                    restoreReason: null,
+                },
+            });
+            await applyStudentClassCountAdjustments(tx, {
+                schoolId: student.schoolId,
+                academicYearId,
+                adjustments,
+            });
+            await createEvent(tx, {
+                input,
+                targetType: "student",
+                action: "DISABLE",
+                targetId: student.id,
+                targetSnapshot: studentSnapshot(student),
+                impactSnapshot: studentLifecycleImpactSnapshot(
+                    impact,
+                    before,
+                    after,
+                    adjustments[0]?.delta ?? 0,
+                ),
+            });
+            return {
+                ...success("ปิดใช้งานนักเรียนสำเร็จ"),
+                schoolId: student.schoolId,
+            };
+        });
+
+        if (result.success && "schoolId" in result) {
+            await revalidateAfterStudent(result.schoolId, input.id);
         }
-
-        const impact = await getStudentImpact(tx, input.id);
-        await tx.student.update({
-            where: { id: input.id },
-            data: {
-                disabledAt: now,
-                disabledById: input.actor.id,
-                disabledReason: input.reason,
-                restoredAt: null,
-                restoredById: null,
-                restoreReason: null,
-            },
-        });
-        await createEvent(tx, {
-            input,
-            targetType: "student",
-            action: "DISABLE",
-            targetId: student.id,
-            targetSnapshot: studentSnapshot(student),
-            impactSnapshot: impactToJsonObject(impact),
-        });
-        return success("ปิดใช้งานนักเรียนสำเร็จ");
-    });
-
-    if (result.success) {
-        await revalidateAfterStudent(input.id);
+        return { success: result.success, message: result.message };
+    } catch (error) {
+        if (error instanceof StudentClassCountIntegrityError) {
+            return failure(error.message);
+        }
+        throw error;
     }
-    return result;
 }
 
 export async function restoreStudent(
     input: MutationInput,
 ): Promise<DataManagementResponse> {
     const now = new Date();
-    const result = await prisma.$transaction(async (tx) => {
-        const student = await getStudentForUpdate(tx, input.id);
-        if (!student) return notFound("ไม่พบนักเรียน");
-        if (!student.disabledAt) return failure("นักเรียนนี้ใช้งานอยู่แล้ว");
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            const student = await getStudentForUpdate(tx, input.id);
+            if (!student) return notFound("ไม่พบนักเรียน");
+            if (!student.disabledAt) return failure("นักเรียนนี้ใช้งานอยู่แล้ว");
 
-        const impact = await getStudentImpact(tx, input.id);
-        await tx.student.update({
-            where: { id: input.id },
-            data: {
-                disabledAt: null,
-                disabledById: null,
-                disabledReason: null,
-                restoredAt: now,
-                restoredById: input.actor.id,
-                restoreReason: input.reason,
-            },
+            const before = {
+                className: student.class,
+                status: student.status,
+                disabledAt: student.disabledAt,
+            };
+            const after = { ...before, disabledAt: null };
+            const adjustments = calculateStudentContributionAdjustments({
+                before,
+                after,
+            });
+            const academicYearId = await getCurrentAcademicYearId(tx);
+            const impact = await getStudentImpact(tx, input.id);
+            await tx.student.update({
+                where: { id: input.id },
+                data: {
+                    disabledAt: null,
+                    disabledById: null,
+                    disabledReason: null,
+                    restoredAt: now,
+                    restoredById: input.actor.id,
+                    restoreReason: input.reason,
+                },
+            });
+            await applyStudentClassCountAdjustments(tx, {
+                schoolId: student.schoolId,
+                academicYearId,
+                adjustments,
+            });
+            await createEvent(tx, {
+                input,
+                targetType: "student",
+                action: "RESTORE",
+                targetId: student.id,
+                targetSnapshot: studentSnapshot(student),
+                impactSnapshot: studentLifecycleImpactSnapshot(
+                    impact,
+                    before,
+                    after,
+                    adjustments[0]?.delta ?? 0,
+                ),
+            });
+            return {
+                ...success("กู้คืนนักเรียนสำเร็จ"),
+                schoolId: student.schoolId,
+            };
         });
-        await createEvent(tx, {
-            input,
-            targetType: "student",
-            action: "RESTORE",
-            targetId: student.id,
-            targetSnapshot: studentSnapshot(student),
-            impactSnapshot: impactToJsonObject(impact),
-        });
-        return success("กู้คืนนักเรียนสำเร็จ");
-    });
 
-    if (result.success) {
-        await revalidateAfterStudent(input.id);
+        if (result.success && "schoolId" in result) {
+            await revalidateAfterStudent(result.schoolId, input.id);
+        }
+        return { success: result.success, message: result.message };
+    } catch (error) {
+        if (error instanceof StudentClassCountIntegrityError) {
+            return failure(error.message);
+        }
+        throw error;
     }
-    return result;
 }
 
 export async function markStudentAsTestData(
@@ -292,11 +363,18 @@ async function updateStudentTestState(
             targetSnapshot: studentSnapshot(student),
             impactSnapshot: impactToJsonObject(impact),
         });
-        return success(isTestData ? "ตั้งเป็นข้อมูลทดสอบสำเร็จ" : "ยกเลิกข้อมูลทดสอบสำเร็จ");
+        return {
+            ...success(
+                isTestData
+                    ? "ตั้งเป็นข้อมูลทดสอบสำเร็จ"
+                    : "ยกเลิกข้อมูลทดสอบสำเร็จ",
+            ),
+            schoolId: student.schoolId,
+        };
     });
 
-    if (result.success) {
-        await revalidateAfterStudent(input.id);
+    if (result.success && "schoolId" in result) {
+        await revalidateAfterStudent(result.schoolId, input.id);
     }
-    return result;
+    return { success: result.success, message: result.message };
 }

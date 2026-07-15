@@ -1,14 +1,15 @@
 import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/database/prisma";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateDashboardCache } from "@/lib/actions/dashboard/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import {
     DATA_MANAGEMENT_PATH,
     createActorSnapshot,
+    impactToJsonObject,
 } from "./helpers";
-import type { DataManagementResponse } from "./types";
+import type { DataManagementResponse, ImpactSummary } from "./types";
+import type { StudentClassContributionState } from "@/lib/actions/student/student-class-count";
 
 export interface Actor {
     id: string;
@@ -69,7 +70,17 @@ export async function getSchoolForUpdate(
 export async function getStudentForUpdate(tx: Tx, id: string) {
     return tx.student.findUnique({
         where: { id },
-        include: {
+        select: {
+            id: true,
+            studentId: true,
+            firstName: true,
+            lastName: true,
+            schoolId: true,
+            class: true,
+            status: true,
+            disabledAt: true,
+            isTestData: true,
+            updatedAt: true,
             school: {
                 select: {
                     id: true,
@@ -115,6 +126,30 @@ export function studentSnapshot(
         lastName: student.lastName,
         schoolId: student.schoolId,
         schoolName: student.school.name,
+        class: student.class,
+        status: student.status,
+        disabledAt: student.disabledAt?.toISOString() ?? null,
+        isTestData: student.isTestData,
+        updatedAt: student.updatedAt.toISOString(),
+    };
+}
+
+export function studentLifecycleImpactSnapshot(
+    impact: ImpactSummary,
+    before: StudentClassContributionState,
+    after: StudentClassContributionState,
+    classCountDelta: number,
+): Prisma.InputJsonObject {
+    return {
+        ...impactToJsonObject(impact),
+        lifecycle: {
+            class: before.className,
+            status: before.status,
+            disabledAtBefore: before.disabledAt?.toISOString() ?? null,
+            disabledAtAfter: after.disabledAt?.toISOString() ?? null,
+            classCountDelta,
+            classTermCountDelta: classCountDelta,
+        },
     };
 }
 
@@ -155,13 +190,16 @@ export async function revalidateAfterSchool(schoolId: string): Promise<void> {
     revalidatePath("/admin/users");
 }
 
-export async function revalidateAfterStudent(studentId: string): Promise<void> {
-    const student = await prisma.student.findUnique({
-        where: { id: studentId },
-        select: { schoolId: true },
-    });
+export async function revalidateAfterStudent(
+    schoolId: string,
+    studentId: string,
+): Promise<void> {
     revalidateDashboardCache();
-    revalidateStudentsCache(student?.schoolId, studentId);
-    await revalidateAnalyticsCache(student?.schoolId);
+    revalidateStudentsCache(schoolId, studentId);
+    await revalidateAnalyticsCache(schoolId);
+    revalidatePath("/dashboard");
+    revalidatePath("/analytics");
+    revalidatePath("/school/classes");
     revalidatePath(DATA_MANAGEMENT_PATH);
+    revalidatePath("/admin/system");
 }

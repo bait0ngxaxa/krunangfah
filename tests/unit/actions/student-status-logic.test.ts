@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
+    calculateStudentContributionAdjustments,
     calculateStudentClassCountAdjustments,
     calculateStudentStatusState,
+    getStudentClassContribution,
 } from "@/lib/actions/student/student-class-count";
 import {
     canStudentPerformActions,
@@ -93,6 +95,78 @@ describe("calculateStudentClassCountAdjustments", () => {
                 newStatus,
             }),
         ).toEqual(expected);
+    });
+});
+
+describe("student class contribution", () => {
+    it.each([
+        [STUDENT_STATUS.ACTIVE, null, 1],
+        [STUDENT_STATUS.ACTIVE, new Date("2026-07-14T00:00:00.000Z"), 0],
+        [STUDENT_STATUS.GRADUATED, null, 0],
+        [STUDENT_STATUS.RESIGNED, null, 0],
+        [STUDENT_STATUS.TRANSFERRED, null, 0],
+    ] as const)("returns %s with disabledAt=%s as %s", (status, disabledAt, expected) => {
+        expect(
+            getStudentClassContribution({
+                className: "ม.1/1",
+                status,
+                disabledAt,
+            }),
+        ).toBe(expected);
+    });
+
+    it("adjusts a same-class disable transition", () => {
+        expect(
+            calculateStudentContributionAdjustments({
+                before: {
+                    className: "ม.1/1",
+                    status: STUDENT_STATUS.ACTIVE,
+                    disabledAt: null,
+                },
+                after: {
+                    className: "ม.1/1",
+                    status: STUDENT_STATUS.ACTIVE,
+                    disabledAt: new Date("2026-07-14T00:00:00.000Z"),
+                },
+            }),
+        ).toEqual([{ className: "ม.1/1", delta: -1 }]);
+    });
+
+    it("adjusts a same-class restore transition", () => {
+        expect(
+            calculateStudentContributionAdjustments({
+                before: {
+                    className: "ม.1/1",
+                    status: STUDENT_STATUS.ACTIVE,
+                    disabledAt: new Date("2026-07-14T00:00:00.000Z"),
+                },
+                after: {
+                    className: "ม.1/1",
+                    status: STUDENT_STATUS.ACTIVE,
+                    disabledAt: null,
+                },
+            }),
+        ).toEqual([{ className: "ม.1/1", delta: 1 }]);
+    });
+
+    it("moves contribution between classes while status and disabledAt change", () => {
+        expect(
+            calculateStudentContributionAdjustments({
+                before: {
+                    className: "ม.1/1",
+                    status: STUDENT_STATUS.ACTIVE,
+                    disabledAt: null,
+                },
+                after: {
+                    className: "ม.1/2",
+                    status: STUDENT_STATUS.ACTIVE,
+                    disabledAt: null,
+                },
+            }),
+        ).toEqual([
+            { className: "ม.1/1", delta: -1 },
+            { className: "ม.1/2", delta: 1 },
+        ]);
     });
 });
 

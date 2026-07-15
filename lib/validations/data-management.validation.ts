@@ -25,6 +25,9 @@ export const dataManagementPermanentDeleteSchema = z.object({
     id: z.string().cuid("รหัสข้อมูลไม่ถูกต้อง"),
     reason: reasonSchema,
     expectedUpdatedAt: z.coerce.date(),
+    expectedImpactFingerprint: z
+        .string({ error: "ไม่พบรหัสตรวจสอบผลกระทบล่าสุด" })
+        .regex(/^[a-f0-9]{64}$/, "รหัสตรวจสอบผลกระทบไม่ถูกต้อง"),
 });
 
 export const dataManagementTargetSchema = z.enum(["school", "student"]);

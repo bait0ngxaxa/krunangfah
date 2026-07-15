@@ -41,6 +41,10 @@ const cacheMocks = vi.hoisted(() => ({
     revalidateStudentsCache: vi.fn(),
 }));
 
+const fingerprintMocks = vi.hoisted(() => ({
+    createPermanentDeleteImpactFingerprint: vi.fn(),
+}));
+
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         $transaction: prismaMocks.transaction,
@@ -71,6 +75,7 @@ vi.mock("@/lib/actions/data-management/helpers", () => ({
         homeVisitCount: 0,
         worksheetUploadCount: 0,
         homeVisitPhotoCount: 0,
+        studentReferralCount: 0,
         pendingTeacherInviteCount: 0,
         pendingSchoolAdminInviteCount: 0,
         fileCount: 0,
@@ -79,6 +84,10 @@ vi.mock("@/lib/actions/data-management/helpers", () => ({
 }));
 vi.mock("@/lib/actions/data-management/file-storage", () => ({
     deleteFilesByUrl: cacheMocks.deleteFilesByUrl,
+}));
+vi.mock("@/lib/actions/data-management/permanent-delete-fingerprint", () => ({
+    createPermanentDeleteImpactFingerprint:
+        fingerprintMocks.createPermanentDeleteImpactFingerprint,
 }));
 vi.mock("@/lib/utils/logging", () => ({ logError: vi.fn() }));
 
@@ -91,6 +100,7 @@ const input = {
     id: "cmtarget000000000000001",
     reason: "ลบข้อมูลทดสอบ",
     expectedUpdatedAt: new Date("2026-07-15T00:00:00.000Z"),
+    expectedImpactFingerprint: "a".repeat(64),
     actor: {
         id: "cmadmin00000000000000001",
         email: "admin@example.com",
@@ -102,6 +112,9 @@ const input = {
 describe("data management permanent delete", () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        fingerprintMocks.createPermanentDeleteImpactFingerprint.mockReturnValue(
+            "a".repeat(64),
+        );
         prismaMocks.transaction.mockImplementation(
             async (callback: (tx: typeof prismaMocks.tx) => Promise<unknown>) =>
                 callback(prismaMocks.tx),
@@ -117,7 +130,7 @@ describe("data management permanent delete", () => {
 
     it("rejects an active student before deleting any data", async () => {
         prismaMocks.tx.student.findUnique.mockResolvedValue(
-            createStudent({ disabledAt: null, isTestData: true }),
+            createStudent({ disabledAt: null, isTestData: false }),
         );
 
         const result = await permanentlyDeleteStudent(input);
@@ -169,7 +182,26 @@ describe("data management permanent delete", () => {
 
         const result = await permanentlyDeleteStudent(input);
 
-        expect(result.message).toContain("มีการเปลี่ยนแปลงหลังจากเปิดหน้าตรวจสอบ");
+        expect(result.message).toContain("ผลกระทบของข้อมูลมีการเปลี่ยนแปลง");
+        expect(prismaMocks.tx.worksheetUpload.deleteMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.student.delete).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.dataManagementEvent.create).not.toHaveBeenCalled();
+    });
+
+    it("rejects a changed dependent impact before deleting anything", async () => {
+        prismaMocks.tx.student.findUnique.mockResolvedValue(createStudent());
+        fingerprintMocks.createPermanentDeleteImpactFingerprint.mockReturnValue(
+            "b".repeat(64),
+        );
+
+        const result = await permanentlyDeleteStudent(input);
+
+        expect(result).toEqual({
+            success: false,
+            code: "STALE_PREVIEW",
+            message:
+                "ผลกระทบของข้อมูลมีการเปลี่ยนแปลง กรุณาตรวจสอบรายการล่าสุดแล้วลองใหม่",
+        });
         expect(prismaMocks.tx.worksheetUpload.deleteMany).not.toHaveBeenCalled();
         expect(prismaMocks.tx.student.delete).not.toHaveBeenCalled();
         expect(prismaMocks.tx.dataManagementEvent.create).not.toHaveBeenCalled();
@@ -259,7 +291,7 @@ describe("data management permanent delete", () => {
 
     it("rejects an active school before deletion", async () => {
         prismaMocks.tx.school.findUnique.mockResolvedValue(
-            createSchool({ disabledAt: null, isTestData: true }),
+            createSchool({ disabledAt: null, isTestData: false }),
         );
 
         const result = await permanentlyDeleteSchool(input);
@@ -291,7 +323,7 @@ describe("data management permanent delete", () => {
 
         const result = await permanentlyDeleteSchool(input);
 
-        expect(result.message).toContain("มีการเปลี่ยนแปลงหลังจากเปิดหน้าตรวจสอบ");
+        expect(result.message).toContain("ผลกระทบของข้อมูลมีการเปลี่ยนแปลง");
         expect(prismaMocks.tx.school.delete).not.toHaveBeenCalled();
     });
 

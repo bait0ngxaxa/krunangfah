@@ -18,6 +18,7 @@ export function ImpactGrid({
         ["กิจกรรมดูแล", impact.activityProgressCount],
         ["บันทึกปรึกษา", impact.counselingSessionCount],
         ["บันทึกเยี่ยมบ้าน", impact.homeVisitCount],
+        ["การส่งต่อนักเรียน", impact.studentReferralCount],
         ["ไฟล์แนบ", impact.fileCount],
         ["คำเชิญที่ยังไม่ตอบรับ", inviteCount],
     ];
@@ -26,6 +27,7 @@ export function ImpactGrid({
         ["กิจกรรมดูแล", impact.activityProgressCount],
         ["บันทึกปรึกษา", impact.counselingSessionCount],
         ["บันทึกเยี่ยมบ้าน", impact.homeVisitCount],
+        ["การส่งต่อนักเรียน", impact.studentReferralCount],
         ["ไฟล์แนบ", impact.fileCount],
     ];
     const items = targetType === "student" ? studentItems : schoolItems;

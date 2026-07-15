@@ -15,16 +15,22 @@ import {
     getSchoolImpact,
     getStudentImpact,
 } from "./preview";
-import type { DataManagementResponse } from "./types";
+import {
+    STALE_PREVIEW_CODE,
+    STALE_PREVIEW_MESSAGE,
+    type DataManagementResponse,
+} from "./types";
 import type { Actor } from "./mutation-helpers";
 import { dataManagementPermanentDeleteSchema } from "@/lib/validations/data-management.validation";
 import {
     isTransactionConflict,
     schoolTargetSnapshot,
     studentTargetSnapshot,
+    validatePermanentDeleteImpactFingerprint,
     validateSchoolPermanentDeleteTarget,
     validateStudentPermanentDeleteTarget,
 } from "./permanent-delete-guards";
+import { createPermanentDeleteImpactFingerprint } from "./permanent-delete-fingerprint";
 import type {
     SchoolPermanentDeleteTarget,
     StudentPermanentDeleteTarget,
@@ -45,6 +51,7 @@ export interface PermanentDeleteInput {
     id: string;
     reason: string;
     expectedUpdatedAt: Date;
+    expectedImpactFingerprint: string;
     actor: Actor;
 }
 
@@ -113,6 +120,17 @@ async function deleteStudentInTransaction(
         getStudentImpact(tx, student.id),
         getStudentFileUrls(tx, student.id),
     ]);
+    const fingerprint = createPermanentDeleteImpactFingerprint({
+        targetId: student.id,
+        targetUpdatedAt: student.updatedAt,
+        impact,
+        fileUrls,
+    });
+    const impactFailure = validatePermanentDeleteImpactFingerprint(
+        input.expectedImpactFingerprint,
+        fingerprint,
+    );
+    if (impactFailure) return impactFailure;
     await deleteStudentDependents(tx, student.id);
     const event = await tx.dataManagementEvent.create({
         data: {
@@ -123,7 +141,10 @@ async function deleteStudentInTransaction(
             actorUserId: input.actor.id,
             actorSnapshot: createActorSnapshot(input.actor),
             targetSnapshot: studentTargetSnapshot(student),
-            impactSnapshot: impactToJsonObject(impact),
+            impactSnapshot: {
+                ...impactToJsonObject(impact),
+                impactFingerprint: fingerprint,
+            },
         },
         select: { id: true },
     });
@@ -162,6 +183,17 @@ async function deleteSchoolInTransaction(
         getSchoolFileUrls(tx, school.id),
         getSchoolUsers(tx, school.id),
     ]);
+    const fingerprint = createPermanentDeleteImpactFingerprint({
+        targetId: school.id,
+        targetUpdatedAt: school.updatedAt,
+        impact,
+        fileUrls,
+    });
+    const impactFailure = validatePermanentDeleteImpactFingerprint(
+        input.expectedImpactFingerprint,
+        fingerprint,
+    );
+    if (impactFailure) return impactFailure;
     const userIds = users.map((user) => user.id);
     await deleteSchoolDependents(tx, school.id, users);
     await assertNoUserReferences(tx, userIds);
@@ -175,7 +207,10 @@ async function deleteSchoolInTransaction(
             actorUserId: input.actor.id,
             actorSnapshot: createActorSnapshot(input.actor),
             targetSnapshot: schoolTargetSnapshot(school),
-            impactSnapshot: impactToJsonObject(impact),
+            impactSnapshot: {
+                ...impactToJsonObject(impact),
+                impactFingerprint: fingerprint,
+            },
         },
         select: { id: true },
     });
@@ -244,7 +279,11 @@ async function runDeleteTransaction(
             return failure(error.message);
         }
         if (isTransactionConflict(error)) {
-            return failure("ข้อมูลมีการเปลี่ยนแปลง กรุณาโหลดผลกระทบล่าสุดแล้วลองใหม่");
+            return {
+                success: false,
+                code: STALE_PREVIEW_CODE,
+                message: STALE_PREVIEW_MESSAGE,
+            };
         }
         return failure("เกิดข้อผิดพลาดในการลบถาวร");
     }
@@ -284,6 +323,7 @@ function validatePermanentDeleteInput(
         id: input.id,
         reason: input.reason,
         expectedUpdatedAt: input.expectedUpdatedAt,
+        expectedImpactFingerprint: input.expectedImpactFingerprint,
     });
     if (parsed.success) return null;
     return failure(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");

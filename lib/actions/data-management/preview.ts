@@ -1,6 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { createEmptyImpact, listRecentEvents } from "./helpers";
+import { getSchoolFileUrls, getStudentFileUrls } from "./permanent-delete-dependents";
+import { createPermanentDeleteImpactFingerprint } from "./permanent-delete-fingerprint";
 import type {
     ImpactSummary,
     SchoolDataManagementPreview,
@@ -12,65 +14,89 @@ export type DataManagementDb = typeof prisma | Prisma.TransactionClient;
 export async function getSchoolDataManagementPreview(
     schoolId: string,
 ): Promise<SchoolDataManagementPreview | null> {
-    const school = await prisma.school.findUnique({
-        where: { id: schoolId },
-        select: {
-            id: true,
-            name: true,
-            province: true,
-            disabledAt: true,
-            updatedAt: true,
-            disabledReason: true,
-            isTestData: true,
-            testDataReason: true,
-        },
+    const snapshot = await prisma.$transaction(async (tx) => {
+        const school = await tx.school.findUnique({
+            where: { id: schoolId },
+            select: {
+                id: true,
+                name: true,
+                province: true,
+                disabledAt: true,
+                updatedAt: true,
+                disabledReason: true,
+                isTestData: true,
+                testDataReason: true,
+            },
+        });
+        if (!school) return null;
+        const [impact, fileUrls] = await Promise.all([
+            getSchoolImpact(tx, school.id),
+            getSchoolFileUrls(tx, school.id),
+        ]);
+        return {
+            ...school,
+            impact,
+            impactFingerprint: createPermanentDeleteImpactFingerprint({
+                targetId: school.id,
+                targetUpdatedAt: school.updatedAt,
+                impact,
+                fileUrls,
+            }),
+        };
     });
-    if (!school) return null;
-
-    const [impact, recentEvents] = await Promise.all([
-        getSchoolImpact(prisma, school.id),
-        listRecentEvents("school", school.id),
-    ]);
-
-    return { type: "school", ...school, impact, recentEvents };
+    if (!snapshot) return null;
+    const recentEvents = await listRecentEvents("school", snapshot.id);
+    return { type: "school", ...snapshot, recentEvents };
 }
 
 export async function getStudentDataManagementPreview(
     studentId: string,
 ): Promise<StudentDataManagementPreview | null> {
-    const student = await prisma.student.findUnique({
-        where: { id: studentId },
-        select: {
-            id: true,
-            studentId: true,
-            firstName: true,
-            lastName: true,
-            nationalId: true,
-            class: true,
-            status: true,
-            disabledAt: true,
-            updatedAt: true,
-            disabledReason: true,
-            isTestData: true,
-            testDataReason: true,
-            school: {
-                select: {
-                    id: true,
-                    name: true,
-                    disabledAt: true,
-                    isTestData: true,
+    const snapshot = await prisma.$transaction(async (tx) => {
+        const student = await tx.student.findUnique({
+            where: { id: studentId },
+            select: {
+                id: true,
+                studentId: true,
+                firstName: true,
+                lastName: true,
+                nationalId: true,
+                class: true,
+                status: true,
+                disabledAt: true,
+                updatedAt: true,
+                disabledReason: true,
+                isTestData: true,
+                testDataReason: true,
+                school: {
+                    select: {
+                        id: true,
+                        name: true,
+                        disabledAt: true,
+                        isTestData: true,
+                    },
                 },
             },
-        },
+        });
+        if (!student) return null;
+        const [impact, fileUrls] = await Promise.all([
+            getStudentImpact(tx, student.id),
+            getStudentFileUrls(tx, student.id),
+        ]);
+        return {
+            ...student,
+            impact,
+            impactFingerprint: createPermanentDeleteImpactFingerprint({
+                targetId: student.id,
+                targetUpdatedAt: student.updatedAt,
+                impact,
+                fileUrls,
+            }),
+        };
     });
-    if (!student) return null;
-
-    const [impact, recentEvents] = await Promise.all([
-        getStudentImpact(prisma, student.id),
-        listRecentEvents("student", student.id),
-    ]);
-
-    return { type: "student", ...student, impact, recentEvents };
+    if (!snapshot) return null;
+    const recentEvents = await listRecentEvents("student", snapshot.id);
+    return { type: "student", ...snapshot, recentEvents };
 }
 
 export async function getSchoolImpact(
@@ -94,6 +120,7 @@ export async function getSchoolImpact(
         homeVisitCount,
         worksheetUploadCount,
         homeVisitPhotoCount,
+        studentReferralCount,
         pendingTeacherInviteCount,
         pendingSchoolAdminInviteCount,
     ] = await Promise.all([
@@ -112,6 +139,7 @@ export async function getSchoolImpact(
         db.homeVisitPhoto.count({
             where: { homeVisit: { student: { schoolId } } },
         }),
+        db.studentReferral.count({ where: { student: { schoolId } } }),
         db.teacherInvite.count({
             where: { schoolId, acceptedAt: null, expiresAt: { gt: now } },
         }),
@@ -137,6 +165,7 @@ export async function getSchoolImpact(
         homeVisitCount,
         worksheetUploadCount,
         homeVisitPhotoCount,
+        studentReferralCount,
         pendingTeacherInviteCount,
         pendingSchoolAdminInviteCount,
         fileCount: worksheetUploadCount + homeVisitPhotoCount,
@@ -154,6 +183,7 @@ export async function getStudentImpact(
         homeVisitCount,
         worksheetUploadCount,
         homeVisitPhotoCount,
+        studentReferralCount,
     ] = await Promise.all([
         db.phqResult.count({ where: { studentId } }),
         db.activityProgress.count({ where: { studentId } }),
@@ -163,6 +193,7 @@ export async function getStudentImpact(
             where: { activityProgress: { studentId } },
         }),
         db.homeVisitPhoto.count({ where: { homeVisit: { studentId } } }),
+        db.studentReferral.count({ where: { studentId } }),
     ]);
 
     return {
@@ -174,6 +205,7 @@ export async function getStudentImpact(
         homeVisitCount,
         worksheetUploadCount,
         homeVisitPhotoCount,
+        studentReferralCount,
         fileCount: worksheetUploadCount + homeVisitPhotoCount,
     };
 }

@@ -33,6 +33,7 @@ const { updateStudentStatus } = await import(
 describe("Integration: updateStudentStatus", () => {
     let schoolId: string;
     let studentId: string;
+    let secondStudentId: string;
     let academicYearId: string;
     let schoolClassId: string;
 
@@ -70,6 +71,10 @@ describe("Integration: updateStudentStatus", () => {
             class: STUDENT_CLASS,
         });
         studentId = student.id;
+        const secondStudent = await createTestStudent(schoolId, {
+            class: STUDENT_CLASS,
+        });
+        secondStudentId = secondStudent.id;
 
         // Create SchoolClass + SchoolClassTerm for count adjustment tests
         const schoolClass = await prisma.schoolClass.create({
@@ -335,6 +340,52 @@ describe("Integration: updateStudentStatus", () => {
                 where: { id: studentId },
                 data: { status: "ACTIVE", leftAt: null },
             });
+        });
+
+        it("should preserve both decrements during concurrent mutations", async () => {
+            mockSession(USERS.schoolAdmin);
+            await prisma.student.updateMany({
+                where: { id: { in: [studentId, secondStudentId] } },
+                data: { status: "ACTIVE", leftAt: null },
+            });
+            await prisma.schoolClassTerm.update({
+                where: {
+                    schoolClassId_academicYearId: {
+                        schoolClassId,
+                        academicYearId,
+                    },
+                },
+                data: { expectedStudentCount: INITIAL_EXPECTED_COUNT },
+            });
+            await prisma.schoolClass.update({
+                where: { id: schoolClassId },
+                data: { expectedStudentCount: INITIAL_EXPECTED_COUNT },
+            });
+
+            const results = await Promise.all([
+                updateStudentStatus(studentId, "RESIGNED"),
+                updateStudentStatus(secondStudentId, "RESIGNED"),
+            ]);
+
+            expect(results.every((result) => result.success)).toBe(true);
+            const [schoolClass, term] = await Promise.all([
+                prisma.schoolClass.findUnique({
+                    where: { id: schoolClassId },
+                    select: { expectedStudentCount: true },
+                }),
+                prisma.schoolClassTerm.findUnique({
+                    where: {
+                        schoolClassId_academicYearId: {
+                            schoolClassId,
+                            academicYearId,
+                        },
+                    },
+                    select: { expectedStudentCount: true },
+                }),
+            ]);
+
+            expect(schoolClass?.expectedStudentCount).toBe(28);
+            expect(term?.expectedStudentCount).toBe(28);
         });
     });
 

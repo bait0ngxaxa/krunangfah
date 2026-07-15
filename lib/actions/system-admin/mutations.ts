@@ -17,7 +17,7 @@ import type {
 import { createSystemAdminEditEvent } from "./events";
 import {
     applyStudentClassCountAdjustments,
-    calculateStudentClassCountAdjustments,
+    calculateStudentContributionAdjustments,
     calculateStudentStatusState,
     getCurrentAcademicYearId,
     type StudentStatusState,
@@ -233,11 +233,17 @@ async function updateStudentAndCounts(
     await applyStudentClassCountAdjustments(tx, {
         schoolId: student.schoolId,
         academicYearId,
-        adjustments: calculateStudentClassCountAdjustments({
-            oldClassName: student.class,
-            newClassName: normalized.class,
-            oldStatus: student.status,
-            newStatus: normalized.status,
+        adjustments: calculateStudentContributionAdjustments({
+            before: {
+                className: student.class,
+                status: student.status,
+                disabledAt: student.disabledAt,
+            },
+            after: {
+                className: normalized.class,
+                status: normalized.status,
+                disabledAt: student.disabledAt,
+            },
         }),
     });
     return next;

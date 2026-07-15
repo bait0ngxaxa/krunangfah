@@ -7,13 +7,18 @@ import type {
 export type DataManagementTargetKind = DataManagementTargetType;
 export type DataManagementActionKind = DataManagementAction;
 
+export type DataManagementResponseCode = "STALE_PREVIEW";
+
 export interface DataManagementResponse {
     success: boolean;
     message: string;
+    code?: DataManagementResponseCode;
 }
 
 export const STALE_PREVIEW_MESSAGE =
-    "ข้อมูลนี้มีการเปลี่ยนแปลงหลังจากเปิดหน้าตรวจสอบ กรุณาโหลดผลกระทบล่าสุดแล้วลองใหม่";
+    "ผลกระทบของข้อมูลมีการเปลี่ยนแปลง กรุณาตรวจสอบรายการล่าสุดแล้วลองใหม่";
+
+export const STALE_PREVIEW_CODE: DataManagementResponseCode = "STALE_PREVIEW";
 
 export interface SearchDataManagementTargetsInput {
     query?: string;
@@ -72,6 +77,7 @@ export interface ImpactSummary {
     homeVisitCount: number;
     worksheetUploadCount: number;
     homeVisitPhotoCount: number;
+    studentReferralCount: number;
     pendingTeacherInviteCount: number;
     pendingSchoolAdminInviteCount: number;
     fileCount: number;
@@ -97,6 +103,7 @@ export interface SchoolDataManagementPreview {
     province: string | null;
     disabledAt: Date | null;
     updatedAt: Date;
+    impactFingerprint: string;
     disabledReason: string | null;
     isTestData: boolean;
     testDataReason: string | null;
@@ -115,6 +122,7 @@ export interface StudentDataManagementPreview {
     status: StudentStatus;
     disabledAt: Date | null;
     updatedAt: Date;
+    impactFingerprint: string;
     disabledReason: string | null;
     isTestData: boolean;
     testDataReason: string | null;

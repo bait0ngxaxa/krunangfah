@@ -29,7 +29,7 @@ import {
     getDataManagementPreview,
     runDataManagementAction,
 } from "@/lib/actions/data-management.actions";
-import { STALE_PREVIEW_MESSAGE } from "@/lib/actions/data-management/types";
+import { STALE_PREVIEW_CODE } from "@/lib/actions/data-management/types";
 import type {
     SchoolEntityResult,
     StudentEntityResult,
@@ -124,7 +124,7 @@ export function SystemDataManagementSection({
             if (activeEntityKey.current !== entityKey) return;
             if (!result.success) {
                 toast.error(result.message);
-                if (result.message === STALE_PREVIEW_MESSAGE) {
+                if (result.code === STALE_PREVIEW_CODE) {
                     setPendingAction(null);
                     setReason("");
                     const nextPreview = await getDataManagementPreview(

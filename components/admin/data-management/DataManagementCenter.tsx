@@ -11,7 +11,7 @@ import {
 } from "@/lib/actions/data-management.actions";
 import { hasDataManagementSearchIntent } from "@/lib/actions/data-management/search-intent";
 import {
-    STALE_PREVIEW_MESSAGE,
+    STALE_PREVIEW_CODE,
 } from "@/lib/actions/data-management/types";
 import type { DataManagementSearchResult } from "@/lib/actions/data-management/types";
 import { ActionDialog } from "./ActionDialog";
@@ -146,7 +146,12 @@ export function DataManagementCenter() {
     );
 
     const runAction = useCallback(() => {
-        if (!pendingAction || !preview || pendingAction.targetId !== preview.id) {
+        if (
+            !pendingAction ||
+            !preview ||
+            pendingAction.targetId !== preview.id ||
+            pendingAction.targetType !== preview.type
+        ) {
             return;
         }
         const action = pendingAction;
@@ -165,7 +170,7 @@ export function DataManagementCenter() {
             if (requestId !== previewRequestId.current) return;
             if (!result.success) {
                 toast.error(result.message);
-                if (result.message === STALE_PREVIEW_MESSAGE) {
+                if (result.code === STALE_PREVIEW_CODE) {
                     setPendingAction(null);
                     setReason("");
                     const nextPreview = await getDataManagementPreview(

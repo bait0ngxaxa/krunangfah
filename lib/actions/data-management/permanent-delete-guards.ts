@@ -1,5 +1,15 @@
 import type { Prisma } from "@prisma/client";
-import { STALE_PREVIEW_MESSAGE } from "./types";
+import {
+    STALE_PREVIEW_CODE,
+    STALE_PREVIEW_MESSAGE,
+} from "./types";
+import { getPermanentDeleteLifecycleMessage } from "./lifecycle-policy";
+
+type PermanentDeleteGuardFailure = {
+    success: false;
+    message: string;
+    code?: typeof STALE_PREVIEW_CODE;
+};
 
 export interface StudentPermanentDeleteTarget {
     id: string;
@@ -27,18 +37,11 @@ export interface SchoolPermanentDeleteTarget {
 export function validateStudentPermanentDeleteTarget(
     target: StudentPermanentDeleteTarget,
     expectedUpdatedAt: Date,
-): { success: false; message: string } | null {
-    if (!target.disabledAt) {
-        return { success: false, message: "ต้องปิดใช้งานนักเรียนก่อนลบถาวร" };
-    }
-    if (target.isTestData) {
-        return {
-            success: false,
-            message: "ต้องยกเลิกการตั้งนักเรียนเป็นข้อมูลทดสอบก่อนลบถาวร",
-        };
-    }
+): PermanentDeleteGuardFailure | null {
+    const lifecycleMessage = getPermanentDeleteLifecycleMessage("student", target);
+    if (lifecycleMessage) return { success: false, message: lifecycleMessage };
     if (!isSameTimestamp(target.updatedAt, expectedUpdatedAt)) {
-        return { success: false, message: STALE_PREVIEW_MESSAGE };
+        return stalePreviewFailure();
     }
     return null;
 }
@@ -46,20 +49,21 @@ export function validateStudentPermanentDeleteTarget(
 export function validateSchoolPermanentDeleteTarget(
     target: SchoolPermanentDeleteTarget,
     expectedUpdatedAt: Date,
-): { success: false; message: string } | null {
-    if (!target.disabledAt) {
-        return { success: false, message: "ต้องปิดใช้งานโรงเรียนก่อนลบถาวร" };
-    }
-    if (target.isTestData) {
-        return {
-            success: false,
-            message: "ต้องยกเลิกการตั้งโรงเรียนเป็นข้อมูลทดสอบก่อนลบถาวร",
-        };
-    }
+): PermanentDeleteGuardFailure | null {
+    const lifecycleMessage = getPermanentDeleteLifecycleMessage("school", target);
+    if (lifecycleMessage) return { success: false, message: lifecycleMessage };
     if (!isSameTimestamp(target.updatedAt, expectedUpdatedAt)) {
-        return { success: false, message: STALE_PREVIEW_MESSAGE };
+        return stalePreviewFailure();
     }
     return null;
+}
+
+export function validatePermanentDeleteImpactFingerprint(
+    expectedImpactFingerprint: string,
+    actualImpactFingerprint: string,
+): PermanentDeleteGuardFailure | null {
+    if (expectedImpactFingerprint === actualImpactFingerprint) return null;
+    return stalePreviewFailure();
 }
 
 export function studentTargetSnapshot(
@@ -106,4 +110,16 @@ export function isTransactionConflict(error: unknown): boolean {
 
 function isSameTimestamp(left: Date, right: Date): boolean {
     return Number.isFinite(right.getTime()) && left.getTime() === right.getTime();
+}
+
+function stalePreviewFailure(): {
+    success: false;
+    message: string;
+    code: typeof STALE_PREVIEW_CODE;
+} {
+    return {
+        success: false,
+        message: STALE_PREVIEW_MESSAGE,
+        code: STALE_PREVIEW_CODE,
+    };
 }

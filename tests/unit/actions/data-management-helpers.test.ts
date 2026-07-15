@@ -66,10 +66,11 @@ describe("data management helpers", () => {
             expectedUpdatedAt: "ไม่ใช่วันที่",
         });
         const valid = dataManagementPermanentDeleteSchema.safeParse({
-            id,
-            reason: "ลบข้อมูลทดสอบ",
-            expectedUpdatedAt,
-        });
+        id,
+        reason: "ลบข้อมูลทดสอบ",
+        expectedUpdatedAt,
+        expectedImpactFingerprint: "a".repeat(64),
+    });
 
         expect(missingReason.success).toBe(false);
         expect(shortReason.success).toBe(false);

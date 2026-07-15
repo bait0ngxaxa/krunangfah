@@ -5,6 +5,10 @@ import type {
     StudentDataManagementPreview,
     StudentSearchResult,
 } from "@/lib/actions/data-management/types";
+import {
+    getPermanentDeleteLifecycleMessage,
+    isPermanentDeleteEligible as isLifecycleDeleteEligible,
+} from "@/lib/actions/data-management/lifecycle-policy";
 
 export type ManagedTarget = SchoolSearchResult | StudentSearchResult;
 export type ManagedPreview =
@@ -27,23 +31,27 @@ export interface PendingDataManagementAction {
 
 export type DataManagementActionRequest =
     | { id: string; reason: string }
-    | { id: string; reason: string; expectedUpdatedAt: Date };
+    | {
+          id: string;
+          reason: string;
+          expectedUpdatedAt: Date;
+          expectedImpactFingerprint: string;
+      };
 
 export function isPermanentDeleteEligible(
-    preview: Pick<ManagedPreview, "disabledAt" | "isTestData">,
+    preview: Pick<ManagedPreview, "type" | "disabledAt" | "isTestData">,
 ): boolean {
-    return preview.disabledAt !== null && !preview.isTestData;
+    return isLifecycleDeleteEligible(preview.type, preview);
 }
 
 export function getPermanentDeleteEligibilityMessage(
-    preview: Pick<ManagedPreview, "disabledAt" | "isTestData">,
+    preview: Pick<ManagedPreview, "type" | "disabledAt" | "isTestData">,
 ): string {
-    if (!preview.disabledAt) {
-        return "ต้องปิดใช้งานข้อมูลก่อน จึงจะลบถาวรได้";
-    }
-    if (preview.isTestData) {
-        return "ต้องยกเลิกการตั้งเป็นข้อมูลทดสอบก่อนลบถาวร";
-    }
+    const lifecycleMessage = getPermanentDeleteLifecycleMessage(
+        preview.type,
+        preview,
+    );
+    if (lifecycleMessage) return lifecycleMessage;
     return "ข้อมูลถูกปิดใช้งานและไม่ใช่ข้อมูลทดสอบแล้ว สามารถตรวจผลกระทบและลบถาวรได้";
 }
 
@@ -57,6 +65,7 @@ export function createDataManagementActionInput(
             id: pendingAction.targetId,
             reason,
             expectedUpdatedAt: preview.updatedAt,
+            expectedImpactFingerprint: preview.impactFingerprint,
         };
     }
     return { id: pendingAction.targetId, reason };

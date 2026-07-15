@@ -119,6 +119,24 @@ describe("runDataManagementAction", () => {
         expect(actionMocks.permanentlyDeleteStudent).not.toHaveBeenCalled();
     });
 
+    it("rejects permanent delete without an impact fingerprint", async () => {
+        const result = await runDataManagementAction(
+            "student",
+            "permanent-delete",
+            {
+                id: "cmpjfvisu001bjx2mezlfvfdl",
+                reason: "ลบข้อมูลทดสอบ",
+                expectedUpdatedAt: new Date("2026-07-15T00:00:00.000Z"),
+            },
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "ไม่พบรหัสตรวจสอบผลกระทบล่าสุด",
+        });
+        expect(actionMocks.permanentlyDeleteStudent).not.toHaveBeenCalled();
+    });
+
     it("rejects an invalid expectedUpdatedAt", async () => {
         const result = await runDataManagementAction(
             "student",
@@ -140,6 +158,7 @@ describe("runDataManagementAction", () => {
             message: "ลบถาวรนักเรียนสำเร็จ",
         });
         const expectedUpdatedAt = new Date("2026-07-15T00:00:00.000Z");
+        const expectedImpactFingerprint = "a".repeat(64);
 
         const result = await runDataManagementAction(
             "student",
@@ -148,6 +167,7 @@ describe("runDataManagementAction", () => {
                 id: "cmpjfvisu001bjx2mezlfvfdl",
                 reason: "ลบข้อมูลทดสอบ",
                 expectedUpdatedAt,
+                expectedImpactFingerprint,
             },
         );
 
@@ -156,6 +176,7 @@ describe("runDataManagementAction", () => {
             id: "cmpjfvisu001bjx2mezlfvfdl",
             reason: "ลบข้อมูลทดสอบ",
             expectedUpdatedAt,
+            expectedImpactFingerprint,
             actor: expect.objectContaining({ role: "system_admin" }),
         });
         expect(cacheMocks.revalidatePath).toHaveBeenCalled();

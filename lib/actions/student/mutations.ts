@@ -33,7 +33,7 @@ import {
 import { revalidateStudentsCache } from "./cache";
 import {
     applyStudentClassCountAdjustments,
-    calculateStudentClassCountAdjustments,
+    calculateStudentContributionAdjustments,
     calculateStudentStatusState,
     getCurrentAcademicYearId,
 } from "./student-class-count";
@@ -81,7 +81,9 @@ interface EditableStudentProfileRecord {
     class: string;
     schoolId: string;
     status: StudentStatusValue;
+    statusChangedAt: Date | null;
     leftAt: Date | null;
+    disabledAt: Date | null;
 }
 
 function createImportStudentSummary(
@@ -734,38 +736,36 @@ export async function updateStudentStatus(
         if (!user?.schoolId) {
             return { success: false, message: "ไม่พบโรงเรียนของคุณ" };
         }
+        const schoolId = user.schoolId;
 
-        const student = await prisma.student.findFirst({
-            where: {
-                id: studentId,
-                schoolId: user.schoolId,
-                ...(userRole === "class_teacher"
-                    ? { class: user.teacher?.advisoryClass ?? "" }
-                    : {}),
-            },
-            select: {
-                id: true,
-                class: true,
-                status: true,
-                leftAt: true,
-                schoolId: true,
-            },
-        });
-
-        if (!student) {
-            return { success: false, message: "ไม่พบนักเรียนที่ต้องการแก้ไข" };
-        }
-
-        if (student.status === parsedStatus) {
-            return { success: true, message: "สถานะนักเรียนเป็นค่านี้อยู่แล้ว" };
-        }
-
-        await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
+            const student = await tx.student.findFirst({
+                where: {
+                    id: studentId,
+                    schoolId,
+                    ...(userRole === "class_teacher"
+                        ? { class: user.teacher?.advisoryClass ?? "" }
+                        : {}),
+                },
+                select: {
+                    id: true,
+                    class: true,
+                    status: true,
+                    statusChangedAt: true,
+                    leftAt: true,
+                    disabledAt: true,
+                    schoolId: true,
+                },
+            });
+            if (!student) return { kind: "not-found" as const };
+            if (student.status === parsedStatus) {
+                return { kind: "no-change" as const };
+            }
             const academicYearId = await getCurrentAcademicYearId(tx);
             const statusState = calculateStudentStatusState({
                 oldStatus: student.status,
                 newStatus: parsedStatus,
-                statusChangedAt: null,
+                statusChangedAt: student.statusChangedAt,
                 leftAt: student.leftAt,
             });
             await tx.student.update({
@@ -780,22 +780,36 @@ export async function updateStudentStatus(
             await applyStudentClassCountAdjustments(tx, {
                 academicYearId,
                 schoolId: student.schoolId,
-                adjustments: calculateStudentClassCountAdjustments({
-                    oldClassName: student.class,
-                    newClassName: student.class,
-                    oldStatus: student.status,
-                    newStatus: parsedStatus,
+                adjustments: calculateStudentContributionAdjustments({
+                    before: {
+                        className: student.class,
+                        status: student.status,
+                        disabledAt: student.disabledAt,
+                    },
+                    after: {
+                        className: student.class,
+                        status: parsedStatus,
+                        disabledAt: student.disabledAt,
+                    },
                 }),
             });
+            return { kind: "updated" as const, schoolId: student.schoolId };
         });
+
+        if (result.kind === "not-found") {
+            return { success: false, message: "ไม่พบนักเรียนที่ต้องการแก้ไข" };
+        }
+        if (result.kind === "no-change") {
+            return { success: true, message: "สถานะนักเรียนเป็นค่านี้อยู่แล้ว" };
+        }
 
         revalidatePath("/dashboard");
         revalidatePath("/students");
-        revalidatePath(`/students/${student.id}`);
+        revalidatePath(`/students/${studentId}`);
         revalidatePath("/analytics");
         revalidatePath("/school/classes");
-        revalidateStudentsCache(student.schoolId, student.id);
-        await revalidateAnalyticsCache(student.schoolId);
+        revalidateStudentsCache(result.schoolId, studentId);
+        await revalidateAnalyticsCache(result.schoolId);
 
         return { success: true, message: "อัปเดตสถานะนักเรียนสำเร็จ" };
     } catch (error) {
@@ -869,7 +883,9 @@ async function getEditableStudentProfile(
             class: true,
             schoolId: true,
             status: true,
+            statusChangedAt: true,
             leftAt: true,
+            disabledAt: true,
         },
     });
 
@@ -938,17 +954,30 @@ async function saveStudentProfileUpdate(
     student: EditableStudentProfileRecord,
     input: StudentProfileUpdateInput,
 ): Promise<UpdatedStudentProfile> {
-    const statusChanged = student.status !== input.status;
-
     return prisma.$transaction(async (tx) => {
+        const currentStudent = await tx.student.findUnique({
+            where: { id: student.id },
+            select: {
+                id: true,
+                class: true,
+                schoolId: true,
+                status: true,
+                statusChangedAt: true,
+                leftAt: true,
+                disabledAt: true,
+            },
+        });
+        if (!currentStudent) throw new Error("ไม่พบนักเรียนที่ต้องการแก้ไข");
+
+        const statusChanged = currentStudent.status !== input.status;
         const academicYearId = statusChanged
             ? await getCurrentAcademicYearId(tx)
             : null;
         const statusState = calculateStudentStatusState({
-            oldStatus: student.status,
+            oldStatus: currentStudent.status,
             newStatus: input.status,
-            statusChangedAt: null,
-            leftAt: student.leftAt,
+            statusChangedAt: currentStudent.statusChangedAt,
+            leftAt: currentStudent.leftAt,
         });
         const updatedStudent = await tx.student.update({
             where: { id: student.id },
@@ -959,7 +988,7 @@ async function saveStudentProfileUpdate(
                 lastName: input.lastName,
                 gender: input.gender,
                 age: input.age,
-                class: student.class,
+                class: currentStudent.class,
                 status: input.status,
                 ...(statusChanged
                     ? {
@@ -984,11 +1013,17 @@ async function saveStudentProfileUpdate(
         await applyStudentClassCountAdjustments(tx, {
             schoolId: student.schoolId,
             academicYearId,
-            adjustments: calculateStudentClassCountAdjustments({
-                oldClassName: student.class,
-                newClassName: student.class,
-                oldStatus: student.status,
-                newStatus: input.status,
+            adjustments: calculateStudentContributionAdjustments({
+                before: {
+                    className: currentStudent.class,
+                    status: currentStudent.status,
+                    disabledAt: currentStudent.disabledAt,
+                },
+                after: {
+                    className: currentStudent.class,
+                    status: input.status,
+                    disabledAt: currentStudent.disabledAt,
+                },
             }),
         });
 
