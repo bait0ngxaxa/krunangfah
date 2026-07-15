@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const reasonSchema = z
-    .string()
+    .string({ error: "กรุณาระบุเหตุผลอย่างน้อย 3 ตัวอักษร" })
     .trim()
     .min(3, "กรุณาระบุเหตุผลอย่างน้อย 3 ตัวอักษร")
     .max(1000, "เหตุผลยาวเกินไป");
@@ -21,6 +21,12 @@ export const dataManagementReasonSchema = z.object({
     reason: reasonSchema,
 });
 
+export const dataManagementPermanentDeleteSchema = z.object({
+    id: z.string().cuid("รหัสข้อมูลไม่ถูกต้อง"),
+    reason: reasonSchema,
+    expectedUpdatedAt: z.coerce.date(),
+});
+
 export const dataManagementTargetSchema = z.enum(["school", "student"]);
 
 export const dataManagementActionSchema = z.enum([
@@ -36,6 +42,9 @@ export type DataManagementSearchInput = z.infer<
 >;
 export type DataManagementReasonInput = z.infer<
     typeof dataManagementReasonSchema
+>;
+export type DataManagementPermanentDeleteInput = z.infer<
+    typeof dataManagementPermanentDeleteSchema
 >;
 export type DataManagementTargetInput = z.infer<
     typeof dataManagementTargetSchema

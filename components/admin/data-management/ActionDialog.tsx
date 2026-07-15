@@ -1,6 +1,10 @@
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ImpactGrid } from "./ImpactGrid";
+import {
+    getManagedPreviewTitle,
+    isPermanentDeleteEligible,
+} from "./types";
 import type { ManagedPreview, PendingDataManagementAction } from "./types";
 
 export function ActionDialog({
@@ -20,17 +24,35 @@ export function ActionDialog({
     onCancel: () => void;
     onConfirm: () => void;
 }) {
-    if (!pendingAction || !preview) return null;
+    if (
+        !pendingAction ||
+        !preview ||
+        pendingAction.targetId !== preview.id ||
+        pendingAction.targetType !== preview.type
+    ) {
+        return null;
+    }
+
     const isDelete = pendingAction.action === "permanent-delete";
-    const disabled = reason.trim().length < 3 || isPending;
+    const isEligible = !isDelete || isPermanentDeleteEligible(preview);
+    const disabled =
+        reason.trim().length < 3 ||
+        isPending ||
+        !isEligible ||
+        !preview;
     const reasonLabel = isDelete
         ? "เหตุผลการลบถาวร"
         : "เหตุผลการจัดการข้อมูล";
     const reasonPlaceholder = isDelete
-        ? "เช่น ลบข้อมูลทดสอบที่สร้างเพื่อทดลองระบบ หรือข้อมูลผิดที่ยืนยันแล้ว"
+        ? "เช่น ลบข้อมูลซ้ำหรือข้อมูลผิดที่ยืนยันแล้ว"
         : "ระบุเหตุผลเพื่อให้ตรวจสอบย้อนหลังได้";
     const titleId = "data-management-action-title";
     const descriptionId = "data-management-action-description";
+    const targetTitle = getManagedPreviewTitle(preview);
+    const targetDetails =
+        preview.type === "school"
+            ? preview.province ?? "ไม่ระบุจังหวัด"
+            : preview.school.name + " · " + preview.class + " · รหัส " + preview.studentId;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
@@ -57,12 +79,23 @@ export function ActionDialog({
                             {pendingAction.title}
                         </h2>
                         <p id={descriptionId} className="mt-1 text-sm text-gray-600">
+                            {targetTitle} · {targetDetails}
+                        </p>
+                        <p className="mt-1 text-sm text-gray-600">
                             ตรวจผลกระทบ ใส่เหตุผล แล้วกดยืนยัน
                         </p>
                     </div>
                 </div>
                 {isDelete ? (
-                    <ImpactGrid impact={preview.impact} targetType={preview.type} />
+                    <div className="mt-4 space-y-3">
+                        <p className="text-sm font-semibold text-gray-900">
+                            ผลกระทบล่าสุดจากฐานข้อมูล
+                        </p>
+                        <ImpactGrid impact={preview.impact} targetType={preview.type} />
+                        <p className="rounded-xl bg-red-50 p-3 text-sm leading-6 text-red-800">
+                            การดำเนินการนี้จะลบข้อมูลและรายการที่เกี่ยวข้องออกจากฐานข้อมูลอย่างถาวร ไม่สามารถกู้คืนได้
+                        </p>
+                    </div>
                 ) : null}
                 <label className="mt-4 block">
                     <span className="text-sm font-bold text-gray-800">
@@ -70,6 +103,8 @@ export function ActionDialog({
                     </span>
                     <textarea
                         value={reason}
+                        required
+                        maxLength={1000}
                         onChange={(event) => onReasonChange(event.target.value)}
                         placeholder={reasonPlaceholder}
                         className="mt-2 min-h-28 w-full resize-none rounded-xl border border-emerald-100 p-3 text-sm text-gray-900 outline-none transition-base placeholder:text-gray-500 hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"

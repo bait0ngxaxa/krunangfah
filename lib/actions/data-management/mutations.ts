@@ -40,8 +40,11 @@ export async function disableSchool(
         const school = await getSchoolForUpdate(tx, input.id);
         if (!school) return notFound("ไม่พบโรงเรียน");
         if (school.disabledAt) return failure("โรงเรียนนี้ถูกปิดใช้งานอยู่แล้ว");
+        if (school.isTestData) {
+            return failure("ไม่สามารถปิดใช้งานโรงเรียนที่เป็นข้อมูลทดสอบได้");
+        }
 
-        const impact = await getSchoolImpact(input.id);
+        const impact = await getSchoolImpact(tx, input.id);
         const userIds = await getSchoolUserIds(tx, input.id);
         await tx.teacherInvite.deleteMany({
             where: { schoolId: input.id, acceptedAt: null },
@@ -94,7 +97,7 @@ export async function restoreSchool(
         if (!school) return notFound("ไม่พบโรงเรียน");
         if (!school.disabledAt) return failure("โรงเรียนนี้ใช้งานอยู่แล้ว");
 
-        const impact = await getSchoolImpact(input.id);
+        const impact = await getSchoolImpact(tx, input.id);
         await tx.school.update({
             where: { id: input.id },
             data: {
@@ -131,8 +134,11 @@ export async function disableStudent(
         const student = await getStudentForUpdate(tx, input.id);
         if (!student) return notFound("ไม่พบนักเรียน");
         if (student.disabledAt) return failure("นักเรียนนี้ถูกปิดใช้งานอยู่แล้ว");
+        if (student.isTestData) {
+            return failure("ไม่สามารถปิดใช้งานนักเรียนที่เป็นข้อมูลทดสอบได้");
+        }
 
-        const impact = await getStudentImpact(input.id);
+        const impact = await getStudentImpact(tx, input.id);
         await tx.student.update({
             where: { id: input.id },
             data: {
@@ -170,7 +176,7 @@ export async function restoreStudent(
         if (!student) return notFound("ไม่พบนักเรียน");
         if (!student.disabledAt) return failure("นักเรียนนี้ใช้งานอยู่แล้ว");
 
-        const impact = await getStudentImpact(input.id);
+        const impact = await getStudentImpact(tx, input.id);
         await tx.student.update({
             where: { id: input.id },
             data: {
@@ -222,8 +228,11 @@ async function updateSchoolTestState(
         if (school.isTestData === isTestData) {
             return failure(isTestData ? "โรงเรียนนี้เป็นข้อมูลทดสอบอยู่แล้ว" : "โรงเรียนนี้ไม่ได้เป็นข้อมูลทดสอบ");
         }
+        if (isTestData && school.disabledAt) {
+            return failure("ต้องเปิดใช้งานโรงเรียนก่อนจึงจะตั้งเป็นข้อมูลทดสอบได้");
+        }
 
-        const impact = await getSchoolImpact(input.id);
+        const impact = await getSchoolImpact(tx, input.id);
         await tx.school.update({
             where: { id: input.id },
             data: {
@@ -261,8 +270,11 @@ async function updateStudentTestState(
         if (student.isTestData === isTestData) {
             return failure(isTestData ? "นักเรียนนี้เป็นข้อมูลทดสอบอยู่แล้ว" : "นักเรียนนี้ไม่ได้เป็นข้อมูลทดสอบ");
         }
+        if (isTestData && student.disabledAt) {
+            return failure("ต้องเปิดใช้งานนักเรียนก่อนจึงจะตั้งเป็นข้อมูลทดสอบได้");
+        }
 
-        const impact = await getStudentImpact(input.id);
+        const impact = await getStudentImpact(tx, input.id);
         await tx.student.update({
             where: { id: input.id },
             data: {

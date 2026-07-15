@@ -12,6 +12,9 @@ export interface DataManagementResponse {
     message: string;
 }
 
+export const STALE_PREVIEW_MESSAGE =
+    "ข้อมูลนี้มีการเปลี่ยนแปลงหลังจากเปิดหน้าตรวจสอบ กรุณาโหลดผลกระทบล่าสุดแล้วลองใหม่";
+
 export interface SearchDataManagementTargetsInput {
     query?: string;
     targetType?: "all" | DataManagementTargetKind;
@@ -93,6 +96,7 @@ export interface SchoolDataManagementPreview {
     name: string;
     province: string | null;
     disabledAt: Date | null;
+    updatedAt: Date;
     disabledReason: string | null;
     isTestData: boolean;
     testDataReason: string | null;
@@ -110,6 +114,7 @@ export interface StudentDataManagementPreview {
     class: string;
     status: StudentStatus;
     disabledAt: Date | null;
+    updatedAt: Date;
     disabledReason: string | null;
     isTestData: boolean;
     testDataReason: string | null;

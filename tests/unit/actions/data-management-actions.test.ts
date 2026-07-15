@@ -89,4 +89,116 @@ describe("runDataManagementAction", () => {
         expect(result).toEqual({ success: false, message: "ไม่พบโรงเรียน" });
         expect(cacheMocks.revalidatePath).not.toHaveBeenCalled();
     });
+
+    it("rejects permanent delete without reason before calling the mutation", async () => {
+        const result = await runDataManagementAction(
+            "student",
+            "permanent-delete",
+            {
+                id: "cmpjfvisu001bjx2mezlfvfdl",
+                expectedUpdatedAt: new Date("2026-07-15T00:00:00.000Z"),
+            },
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.message).toContain("เหตุผลอย่างน้อย 3 ตัวอักษร");
+        expect(actionMocks.permanentlyDeleteStudent).not.toHaveBeenCalled();
+    });
+
+    it("rejects permanent delete without expectedUpdatedAt", async () => {
+        const result = await runDataManagementAction(
+            "student",
+            "permanent-delete",
+            {
+                id: "cmpjfvisu001bjx2mezlfvfdl",
+                reason: "ลบข้อมูลทดสอบ",
+            },
+        );
+
+        expect(result.success).toBe(false);
+        expect(actionMocks.permanentlyDeleteStudent).not.toHaveBeenCalled();
+    });
+
+    it("rejects an invalid expectedUpdatedAt", async () => {
+        const result = await runDataManagementAction(
+            "student",
+            "permanent-delete",
+            {
+                id: "cmpjfvisu001bjx2mezlfvfdl",
+                reason: "ลบข้อมูลทดสอบ",
+                expectedUpdatedAt: "ไม่ใช่วันที่",
+            },
+        );
+
+        expect(result.success).toBe(false);
+        expect(actionMocks.permanentlyDeleteStudent).not.toHaveBeenCalled();
+    });
+
+    it("passes the required permanent-delete input and actor to the mutation", async () => {
+        actionMocks.permanentlyDeleteStudent.mockResolvedValue({
+            success: true,
+            message: "ลบถาวรนักเรียนสำเร็จ",
+        });
+        const expectedUpdatedAt = new Date("2026-07-15T00:00:00.000Z");
+
+        const result = await runDataManagementAction(
+            "student",
+            "permanent-delete",
+            {
+                id: "cmpjfvisu001bjx2mezlfvfdl",
+                reason: "ลบข้อมูลทดสอบ",
+                expectedUpdatedAt,
+            },
+        );
+
+        expect(result.success).toBe(true);
+        expect(actionMocks.permanentlyDeleteStudent).toHaveBeenCalledWith({
+            id: "cmpjfvisu001bjx2mezlfvfdl",
+            reason: "ลบข้อมูลทดสอบ",
+            expectedUpdatedAt,
+            actor: expect.objectContaining({ role: "system_admin" }),
+        });
+        expect(cacheMocks.revalidatePath).toHaveBeenCalled();
+    });
+
+    it("keeps non-destructive actions on the existing input shape", async () => {
+        actionMocks.disableSchool.mockResolvedValue({
+            success: true,
+            message: "ปิดใช้งานโรงเรียนสำเร็จ",
+        });
+
+        await runDataManagementAction("school", "disable", {
+            id: "cmpjfvisu001bjx2mezlfvfdl",
+            reason: "ปิดใช้งานข้อมูล",
+        });
+
+        expect(actionMocks.disableSchool).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: "cmpjfvisu001bjx2mezlfvfdl",
+                reason: "ปิดใช้งานข้อมูล",
+            }),
+        );
+        expect(actionMocks.disableSchool.mock.calls[0]?.[0]).not.toHaveProperty(
+            "expectedUpdatedAt",
+        );
+    });
+
+    it("blocks non-system-admin callers before any mutation", async () => {
+        authMocks.requireAdmin.mockRejectedValue(
+            new Error("Forbidden: Admin access required"),
+        );
+
+        const result = await runDataManagementAction(
+            "school",
+            "permanent-delete",
+            {
+                id: "cmpjfvisu001bjx2mezlfvfdl",
+                reason: "ลบข้อมูลทดสอบ",
+                expectedUpdatedAt: new Date("2026-07-15T00:00:00.000Z"),
+            },
+        );
+
+        expect(result).toEqual({ success: false, message: "ไม่มีสิทธิ์ดำเนินการ" });
+        expect(actionMocks.permanentlyDeleteSchool).not.toHaveBeenCalled();
+    });
 });

@@ -11,6 +11,7 @@ import {
 import { fileUrlToLocalPath } from "@/lib/actions/data-management/file-storage";
 import { hasDataManagementSearchIntent } from "@/lib/actions/data-management/search-intent";
 import {
+    dataManagementPermanentDeleteSchema,
     dataManagementReasonSchema,
     dataManagementSearchSchema,
 } from "@/lib/validations/data-management.validation";
@@ -41,6 +42,53 @@ describe("data management helpers", () => {
 
         expect(invalid.success).toBe(false);
         expect(valid.success).toBe(true);
+    });
+
+    it("requires reason and the preview timestamp for permanent delete", () => {
+        const id = "cmpjfvisu001bjx2mezlfvfdl";
+        const expectedUpdatedAt = new Date("2026-07-15T00:00:00.000Z");
+        const missingReason = dataManagementPermanentDeleteSchema.safeParse({
+            id,
+            expectedUpdatedAt,
+        });
+        const shortReason = dataManagementPermanentDeleteSchema.safeParse({
+            id,
+            reason: "ab",
+            expectedUpdatedAt,
+        });
+        const missingTimestamp = dataManagementPermanentDeleteSchema.safeParse({
+            id,
+            reason: "ลบข้อมูลทดสอบ",
+        });
+        const invalidTimestamp = dataManagementPermanentDeleteSchema.safeParse({
+            id,
+            reason: "ลบข้อมูลทดสอบ",
+            expectedUpdatedAt: "ไม่ใช่วันที่",
+        });
+        const valid = dataManagementPermanentDeleteSchema.safeParse({
+            id,
+            reason: "ลบข้อมูลทดสอบ",
+            expectedUpdatedAt,
+        });
+
+        expect(missingReason.success).toBe(false);
+        expect(shortReason.success).toBe(false);
+        expect(missingTimestamp.success).toBe(false);
+        expect(invalidTimestamp.success).toBe(false);
+        expect(valid.success).toBe(true);
+        if (valid.success) {
+            expect("confirmation" in valid.data).toBe(false);
+            expect("typedTargetName" in valid.data).toBe(false);
+        }
+    });
+
+    it("keeps non-destructive actions on the existing reason schema", () => {
+        const result = dataManagementReasonSchema.safeParse({
+            id: "cmpjfvisu001bjx2mezlfvfdl",
+            reason: "ปิดใช้งานข้อมูล",
+        });
+
+        expect(result.success).toBe(true);
     });
 
     it("requires a focused search intent before querying data management targets", () => {

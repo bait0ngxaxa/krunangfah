@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
+    ArchiveRestore,
     Check,
     DatabaseZap,
     Loader2,
@@ -14,6 +15,11 @@ import { ActionDialog } from "@/components/admin/data-management/ActionDialog";
 import { EventRow } from "@/components/admin/data-management/EventRow";
 import { ImpactGrid } from "@/components/admin/data-management/ImpactGrid";
 import { getActionLabel } from "@/components/admin/data-management/labels";
+import {
+    createDataManagementActionInput,
+    getPermanentDeleteEligibilityMessage,
+    isPermanentDeleteEligible,
+} from "@/components/admin/data-management/types";
 import type {
     ManagedActionKey,
     ManagedPreview,
@@ -23,6 +29,7 @@ import {
     getDataManagementPreview,
     runDataManagementAction,
 } from "@/lib/actions/data-management.actions";
+import { STALE_PREVIEW_MESSAGE } from "@/lib/actions/data-management/types";
 import type {
     SchoolEntityResult,
     StudentEntityResult,
@@ -48,19 +55,42 @@ export function SystemDataManagementSection({
         useState<PendingDataManagementAction | null>(null);
     const [reason, setReason] = useState("");
     const [isPending, startTransition] = useTransition();
+    const entityKey = entity.type + ":" + entity.id;
+    const targetType = entity.type;
+    const targetId = entity.id;
+    const activeEntityKey = useRef(entityKey);
+    const currentPreview =
+        preview?.type === entity.type && preview.id === entity.id
+            ? preview
+            : null;
 
     useEffect(() => {
+        activeEntityKey.current = entityKey;
         let active = true;
         startTransition(async () => {
-            const next = await getDataManagementPreview(entity.type, entity.id);
-            if (active) setPreview(next);
+            if (!active || activeEntityKey.current !== entityKey) return;
+            setPreview(null);
+            setPendingAction(null);
+            setReason("");
+            const next = await getDataManagementPreview(targetType, targetId);
+            if (active && activeEntityKey.current === entityKey) {
+                setPreview(next);
+            }
         });
         return () => {
             active = false;
         };
-    }, [entity.id, entity.type]);
+    }, [entityKey, targetId, targetType]);
 
     const openAction = (action: ManagedActionKey) => {
+        if (action === "permanent-delete" && !currentPreview) return;
+        if (
+            action === "permanent-delete" &&
+            currentPreview &&
+            !isPermanentDeleteEligible(currentPreview)
+        ) {
+            return;
+        }
         setReason("");
         setPendingAction({
             action,
@@ -71,15 +101,40 @@ export function SystemDataManagementSection({
     };
 
     const runAction = () => {
-        if (!pendingAction) return;
+        if (
+            !pendingAction ||
+            !currentPreview ||
+            pendingAction.targetId !== currentPreview.id ||
+            pendingAction.targetType !== currentPreview.type
+        ) {
+            return;
+        }
+        const action = pendingAction;
+        const actionInput = createDataManagementActionInput(
+            action,
+            currentPreview,
+            reason,
+        );
         startTransition(async () => {
             const result = await runDataManagementAction(
-                pendingAction.targetType,
-                pendingAction.action,
-                { id: pendingAction.targetId, reason },
+                action.targetType,
+                action.action,
+                actionInput,
             );
+            if (activeEntityKey.current !== entityKey) return;
             if (!result.success) {
                 toast.error(result.message);
+                if (result.message === STALE_PREVIEW_MESSAGE) {
+                    setPendingAction(null);
+                    setReason("");
+                    const nextPreview = await getDataManagementPreview(
+                        action.targetType,
+                        action.targetId,
+                    );
+                    if (activeEntityKey.current === entityKey) {
+                        setPreview(nextPreview);
+                    }
+                }
                 return;
             }
 
@@ -87,20 +142,20 @@ export function SystemDataManagementSection({
             setPendingAction(null);
             setReason("");
 
-            if (pendingAction.action === "permanent-delete") {
+            if (action.action === "permanent-delete") {
                 onEntityRemoved();
                 return;
             }
 
             const nextResults = await onRefreshSearch();
+            if (activeEntityKey.current !== entityKey) return;
             const refreshed = findEntity(nextResults, entity);
             if (refreshed) onEntityUpdated(refreshed);
-            setPreview(
-                await getDataManagementPreview(
-                    pendingAction.targetType,
-                    pendingAction.targetId,
-                ),
+            const nextPreview = await getDataManagementPreview(
+                action.targetType,
+                action.targetId,
             );
+            if (activeEntityKey.current === entityKey) setPreview(nextPreview);
         });
     };
 
@@ -120,28 +175,34 @@ export function SystemDataManagementSection({
                 </div>
             </div>
 
-            {isPending && !preview ? (
+            {isPending && !currentPreview ? (
                 <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     กำลังโหลดผลกระทบ
                 </div>
             ) : null}
 
-            {preview ? (
+            {currentPreview ? (
                 <div className="mt-5 space-y-5">
-                    <ImpactGrid impact={preview.impact} targetType={preview.type} />
-                    <DataActionButtons preview={preview} onAction={openAction} />
-                    <RecentEvents preview={preview} />
+                    <ImpactGrid
+                        impact={currentPreview.impact}
+                        targetType={currentPreview.type}
+                    />
+                    <DataActionButtons preview={currentPreview} onAction={openAction} />
+                    <RecentEvents preview={currentPreview} />
                 </div>
             ) : null}
 
             <ActionDialog
                 pendingAction={pendingAction}
-                preview={preview}
+                preview={currentPreview}
                 reason={reason}
                 isPending={isPending}
                 onReasonChange={setReason}
-                onCancel={() => setPendingAction(null)}
+                onCancel={() => {
+                    setPendingAction(null);
+                    setReason("");
+                }}
                 onConfirm={runAction}
             />
         </section>
@@ -155,26 +216,56 @@ export function DataActionButtons({
     preview: ManagedPreview;
     onAction: (action: ManagedActionKey) => void;
 }) {
+    const eligible = isPermanentDeleteEligible(preview);
+    const eligibilityMessage = getPermanentDeleteEligibilityMessage(preview);
+    const isDisableBlocked = !preview.disabledAt && preview.isTestData;
+    const isMarkTestBlocked = Boolean(preview.disabledAt) && !preview.isTestData;
+
     return (
         <div className="space-y-3">
-            <Button
-                type="button"
-                variant="secondary"
-                fullWidth
-                onClick={() =>
-                    onAction(preview.isTestData ? "unmark-test" : "mark-test")
-                }
-            >
-                <Check className="h-4 w-4" />
-                {preview.isTestData
-                    ? "ยกเลิกข้อมูลทดสอบ"
-                    : "ตั้งเป็นข้อมูลทดสอบ"}
-            </Button>
+            <div className="grid gap-2 sm:grid-cols-2">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    fullWidth
+                    onClick={() =>
+                        onAction(preview.isTestData ? "unmark-test" : "mark-test")
+                    }
+                    disabled={isMarkTestBlocked}
+                >
+                    <Check className="h-4 w-4" />
+                    {preview.isTestData
+                        ? "ยกเลิกข้อมูลทดสอบ"
+                        : "ตั้งเป็นข้อมูลทดสอบ"}
+                </Button>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    fullWidth
+                    onClick={() =>
+                        onAction(preview.disabledAt ? "restore" : "disable")
+                    }
+                    disabled={isDisableBlocked}
+                >
+                    <ArchiveRestore className="h-4 w-4" />
+                    {preview.disabledAt ? "กู้คืน" : "ปิดใช้งาน"}
+                </Button>
+            </div>
+            {isDisableBlocked ? (
+                <p className="text-xs leading-5 text-amber-800" role="status">
+                    ข้อมูลทดสอบไม่สามารถปิดใช้งานหรือลบถาวรได้
+                    กรุณายกเลิกสถานะข้อมูลทดสอบก่อน
+                </p>
+            ) : isMarkTestBlocked ? (
+                <p className="text-xs leading-5 text-amber-800" role="status">
+                    ต้องเปิดใช้งานข้อมูลก่อน จึงจะตั้งเป็นข้อมูลทดสอบได้
+                </p>
+            ) : null}
             <div className="rounded-xl border border-red-100 bg-white p-3">
                 <div className="flex items-start gap-2 text-red-800">
                     <ShieldAlert className="mt-0.5 h-4 w-4" />
                     <p className="text-xs leading-5">
-                        ลบถาวรใช้เฉพาะข้อมูลทดสอบหรือข้อมูลผิดจริง
+                        ลบถาวรใช้เฉพาะข้อมูลที่ปิดใช้งานแล้วและไม่ใช่ข้อมูลทดสอบ
                     </p>
                 </div>
                 <Button
@@ -182,11 +273,15 @@ export function DataActionButtons({
                     className="mt-3"
                     variant="danger"
                     fullWidth
+                    disabled={!eligible}
                     onClick={() => onAction("permanent-delete")}
                 >
                     <Trash2 className="h-4 w-4" />
                     ลบถาวร
                 </Button>
+                <p className="mt-2 text-xs leading-5 text-red-700" role="status">
+                    {eligibilityMessage}
+                </p>
             </div>
         </div>
     );

@@ -1,13 +1,13 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
-import {
-    createEmptyImpact,
-    listRecentEvents,
-} from "./helpers";
+import { createEmptyImpact, listRecentEvents } from "./helpers";
 import type {
     ImpactSummary,
     SchoolDataManagementPreview,
     StudentDataManagementPreview,
 } from "./types";
+
+export type DataManagementDb = typeof prisma | Prisma.TransactionClient;
 
 export async function getSchoolDataManagementPreview(
     schoolId: string,
@@ -19,6 +19,7 @@ export async function getSchoolDataManagementPreview(
             name: true,
             province: true,
             disabledAt: true,
+            updatedAt: true,
             disabledReason: true,
             isTestData: true,
             testDataReason: true,
@@ -27,7 +28,7 @@ export async function getSchoolDataManagementPreview(
     if (!school) return null;
 
     const [impact, recentEvents] = await Promise.all([
-        getSchoolImpact(school.id),
+        getSchoolImpact(prisma, school.id),
         listRecentEvents("school", school.id),
     ]);
 
@@ -48,6 +49,7 @@ export async function getStudentDataManagementPreview(
             class: true,
             status: true,
             disabledAt: true,
+            updatedAt: true,
             disabledReason: true,
             isTestData: true,
             testDataReason: true,
@@ -64,19 +66,23 @@ export async function getStudentDataManagementPreview(
     if (!student) return null;
 
     const [impact, recentEvents] = await Promise.all([
-        getStudentImpact(student.id),
+        getStudentImpact(prisma, student.id),
         listRecentEvents("student", student.id),
     ]);
 
     return { type: "student", ...student, impact, recentEvents };
 }
 
-export async function getSchoolImpact(schoolId: string): Promise<ImpactSummary> {
-    const userIds = await prisma.user.findMany({
+export async function getSchoolImpact(
+    db: DataManagementDb,
+    schoolId: string,
+): Promise<ImpactSummary> {
+    const users = await db.user.findMany({
         where: { schoolId },
         select: { id: true },
     });
-    const schoolUserIds = userIds.map((user) => user.id);
+    const schoolUserIds = users.map((user) => user.id);
+    const now = new Date();
 
     const [
         userCount,
@@ -91,29 +97,31 @@ export async function getSchoolImpact(schoolId: string): Promise<ImpactSummary> 
         pendingTeacherInviteCount,
         pendingSchoolAdminInviteCount,
     ] = await Promise.all([
-        prisma.user.count({ where: { schoolId } }),
-        prisma.student.count({ where: { schoolId } }),
-        prisma.student.count({ where: { schoolId, disabledAt: null, status: "ACTIVE" } }),
-        prisma.phqResult.count({ where: { student: { schoolId } } }),
-        prisma.activityProgress.count({ where: { student: { schoolId } } }),
-        prisma.counselingSession.count({ where: { student: { schoolId } } }),
-        prisma.homeVisit.count({ where: { student: { schoolId } } }),
-        prisma.worksheetUpload.count({
+        db.user.count({ where: { schoolId } }),
+        db.student.count({ where: { schoolId } }),
+        db.student.count({
+            where: { schoolId, disabledAt: null, status: "ACTIVE" },
+        }),
+        db.phqResult.count({ where: { student: { schoolId } } }),
+        db.activityProgress.count({ where: { student: { schoolId } } }),
+        db.counselingSession.count({ where: { student: { schoolId } } }),
+        db.homeVisit.count({ where: { student: { schoolId } } }),
+        db.worksheetUpload.count({
             where: { activityProgress: { student: { schoolId } } },
         }),
-        prisma.homeVisitPhoto.count({
+        db.homeVisitPhoto.count({
             where: { homeVisit: { student: { schoolId } } },
         }),
-        prisma.teacherInvite.count({
-            where: { schoolId, acceptedAt: null, expiresAt: { gt: new Date() } },
+        db.teacherInvite.count({
+            where: { schoolId, acceptedAt: null, expiresAt: { gt: now } },
         }),
         schoolUserIds.length === 0
             ? Promise.resolve(0)
-            : prisma.schoolAdminInvite.count({
+            : db.schoolAdminInvite.count({
                   where: {
                       createdBy: { in: schoolUserIds },
                       usedAt: null,
-                      expiresAt: { gt: new Date() },
+                      expiresAt: { gt: now },
                   },
               }),
     ]);
@@ -135,7 +143,10 @@ export async function getSchoolImpact(schoolId: string): Promise<ImpactSummary> 
     };
 }
 
-export async function getStudentImpact(studentId: string): Promise<ImpactSummary> {
+export async function getStudentImpact(
+    db: DataManagementDb,
+    studentId: string,
+): Promise<ImpactSummary> {
     const [
         phqResultCount,
         activityProgressCount,
@@ -144,16 +155,14 @@ export async function getStudentImpact(studentId: string): Promise<ImpactSummary
         worksheetUploadCount,
         homeVisitPhotoCount,
     ] = await Promise.all([
-        prisma.phqResult.count({ where: { studentId } }),
-        prisma.activityProgress.count({ where: { studentId } }),
-        prisma.counselingSession.count({ where: { studentId } }),
-        prisma.homeVisit.count({ where: { studentId } }),
-        prisma.worksheetUpload.count({
+        db.phqResult.count({ where: { studentId } }),
+        db.activityProgress.count({ where: { studentId } }),
+        db.counselingSession.count({ where: { studentId } }),
+        db.homeVisit.count({ where: { studentId } }),
+        db.worksheetUpload.count({
             where: { activityProgress: { studentId } },
         }),
-        prisma.homeVisitPhoto.count({
-            where: { homeVisit: { studentId } },
-        }),
+        db.homeVisitPhoto.count({ where: { homeVisit: { studentId } } }),
     ]);
 
     return {

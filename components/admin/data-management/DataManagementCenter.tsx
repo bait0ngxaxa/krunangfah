@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
-import { DatabaseZap } from "lucide-react";
+import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import {
@@ -11,8 +10,16 @@ import {
     searchDataManagement,
 } from "@/lib/actions/data-management.actions";
 import { hasDataManagementSearchIntent } from "@/lib/actions/data-management/search-intent";
+import {
+    STALE_PREVIEW_MESSAGE,
+} from "@/lib/actions/data-management/types";
 import type { DataManagementSearchResult } from "@/lib/actions/data-management/types";
 import { ActionDialog } from "./ActionDialog";
+import {
+    EmptySelection,
+    getNextTargetType,
+    mergeSearchResults,
+} from "./DataManagementCenterHelpers";
 import { DetailPanel } from "./DetailPanel";
 import { getActionLabel } from "./labels";
 import { HistoryPanel } from "./HistoryPanel";
@@ -26,6 +33,10 @@ import type {
     ManagedTarget,
     ManagedTargetType,
     PendingDataManagementAction,
+} from "./types";
+import {
+    createDataManagementActionInput,
+    isPermanentDeleteEligible,
 } from "./types";
 
 const EMPTY_RESULTS: DataManagementSearchResult = {
@@ -52,6 +63,7 @@ export function DataManagementCenter() {
         useState<PendingDataManagementAction | null>(null);
     const [reason, setReason] = useState("");
     const [isPending, startTransition] = useTransition();
+    const previewRequestId = useRef(0);
 
     const targets = useMemo<ManagedTarget[]>(
         () => [...results.schools, ...results.students],
@@ -61,6 +73,10 @@ export function DataManagementCenter() {
     const hasMore = results.schoolHasMore || results.studentHasMore;
 
     const refreshSearch = useCallback(() => {
+        const requestId = ++previewRequestId.current;
+        setPendingAction(null);
+        setReason("");
+        setPreview(null);
         if (!canSearch) {
             setHasSearched(false);
             setResults(EMPTY_RESULTS);
@@ -70,8 +86,8 @@ export function DataManagementCenter() {
         }
         startTransition(async () => {
             const next = await searchDataManagement({ query, targetType, dataState });
+            if (requestId !== previewRequestId.current) return;
             setHasSearched(true);
-            setPreview(null);
             setResults(next);
         });
     }, [canSearch, dataState, query, targetType]);
@@ -96,9 +112,14 @@ export function DataManagementCenter() {
     }, [canSearch, dataState, hasMore, query, results, targetType]);
 
     const loadPreview = useCallback((target: ManagedTarget) => {
+        const requestId = ++previewRequestId.current;
+        setPendingAction(null);
+        setReason("");
+        setPreview(null);
         startTransition(async () => {
             const next = await getDataManagementPreview(target.type, target.id);
             const history = await listDataManagementEvents();
+            if (requestId !== previewRequestId.current) return;
             setPreview(next);
             setEvents(history.events);
         });
@@ -107,6 +128,12 @@ export function DataManagementCenter() {
     const openAction = useCallback(
         (action: ManagedActionKey) => {
             if (!preview) return;
+            if (
+                action === "permanent-delete" &&
+                !isPermanentDeleteEligible(preview)
+            ) {
+                return;
+            }
             setReason("");
             setPendingAction({
                 action,
@@ -119,15 +146,36 @@ export function DataManagementCenter() {
     );
 
     const runAction = useCallback(() => {
-        if (!pendingAction) return;
+        if (!pendingAction || !preview || pendingAction.targetId !== preview.id) {
+            return;
+        }
+        const action = pendingAction;
+        const actionInput = createDataManagementActionInput(
+            action,
+            preview,
+            reason,
+        );
+        const requestId = previewRequestId.current;
         startTransition(async () => {
             const result = await runDataManagementAction(
-                pendingAction.targetType,
-                pendingAction.action,
-                { id: pendingAction.targetId, reason },
+                action.targetType,
+                action.action,
+                actionInput,
             );
+            if (requestId !== previewRequestId.current) return;
             if (!result.success) {
                 toast.error(result.message);
+                if (result.message === STALE_PREVIEW_MESSAGE) {
+                    setPendingAction(null);
+                    setReason("");
+                    const nextPreview = await getDataManagementPreview(
+                        action.targetType,
+                        action.targetId,
+                    );
+                    if (requestId === previewRequestId.current) {
+                        setPreview(nextPreview);
+                    }
+                }
                 return;
             }
 
@@ -135,21 +183,28 @@ export function DataManagementCenter() {
             setPendingAction(null);
             setReason("");
             if (canSearch) {
-                setResults(await searchDataManagement({ query, targetType, dataState }));
+                const nextResults = await searchDataManagement({
+                    query,
+                    targetType,
+                    dataState,
+                });
+                if (requestId !== previewRequestId.current) return;
+                setResults(nextResults);
             }
-            setEvents((await listDataManagementEvents()).events);
-            if (pendingAction.action === "permanent-delete") {
+            const nextEvents = await listDataManagementEvents();
+            if (requestId !== previewRequestId.current) return;
+            setEvents(nextEvents.events);
+            if (action.action === "permanent-delete") {
                 setPreview(null);
                 return;
             }
-            setPreview(
-                await getDataManagementPreview(
-                    pendingAction.targetType,
-                    pendingAction.targetId,
-                ),
+            const nextPreview = await getDataManagementPreview(
+                action.targetType,
+                action.targetId,
             );
+            if (requestId === previewRequestId.current) setPreview(nextPreview);
         });
-    }, [canSearch, dataState, pendingAction, query, reason, targetType]);
+    }, [canSearch, dataState, pendingAction, preview, query, reason, targetType]);
 
     return (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
@@ -219,65 +274,12 @@ export function DataManagementCenter() {
                 reason={reason}
                 isPending={isPending}
                 onReasonChange={setReason}
-                onCancel={() => setPendingAction(null)}
+                onCancel={() => {
+                    setPendingAction(null);
+                    setReason("");
+                }}
                 onConfirm={runAction}
             />
-        </div>
-    );
-}
-
-function getNextTargetType(
-    results: DataManagementSearchResult,
-    currentTargetType: "all" | ManagedTargetType,
-): "all" | ManagedTargetType {
-    if (currentTargetType !== "all") return currentTargetType;
-    if (results.schoolHasMore && results.studentHasMore) return "all";
-    return results.schoolHasMore ? "school" : "student";
-}
-
-function mergeSearchResults(
-    current: DataManagementSearchResult,
-    next: DataManagementSearchResult,
-    loadedTargetType: "all" | ManagedTargetType,
-): DataManagementSearchResult {
-    return {
-        schools:
-            loadedTargetType === "student"
-                ? current.schools
-                : [...current.schools, ...next.schools],
-        students:
-            loadedTargetType === "school"
-                ? current.students
-                : [...current.students, ...next.students],
-        schoolNextCursor:
-            loadedTargetType === "student"
-                ? current.schoolNextCursor
-                : next.schoolNextCursor,
-        studentNextCursor:
-            loadedTargetType === "school"
-                ? current.studentNextCursor
-                : next.studentNextCursor,
-        schoolHasMore:
-            loadedTargetType === "student"
-                ? current.schoolHasMore
-                : next.schoolHasMore,
-        studentHasMore:
-            loadedTargetType === "school"
-                ? current.studentHasMore
-                : next.studentHasMore,
-    };
-}
-
-function EmptySelection() {
-    return (
-        <div className="flex h-full min-h-[420px] flex-col items-center justify-center text-center">
-            <DatabaseZap className="h-10 w-10 text-emerald-500" />
-            <h2 className="mt-3 text-lg font-bold text-gray-800">
-                เลือกข้อมูลเพื่อจัดการ
-            </h2>
-            <p className="mt-1 max-w-xs text-sm text-gray-600">
-                ค้นหาแล้วเลือกโรงเรียนหรือนักเรียนเพื่อดูผลกระทบและ action ที่ทำได้
-            </p>
         </div>
     );
 }

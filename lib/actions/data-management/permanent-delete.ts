@@ -1,28 +1,50 @@
-import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/database/prisma";
+import { Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateDashboardCache } from "@/lib/actions/dashboard/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
+import { prisma } from "@/lib/database/prisma";
+import { logError } from "@/lib/utils/logging";
 import {
     DATA_MANAGEMENT_PATH,
     createActorSnapshot,
     impactToJsonObject,
 } from "./helpers";
 import { deleteFilesByUrl } from "./file-storage";
-import { getSchoolImpact, getStudentImpact } from "./preview";
+import {
+    getSchoolImpact,
+    getStudentImpact,
+} from "./preview";
 import type { DataManagementResponse } from "./types";
-import { revalidatePath } from "next/cache";
+import type { Actor } from "./mutation-helpers";
+import { dataManagementPermanentDeleteSchema } from "@/lib/validations/data-management.validation";
+import {
+    isTransactionConflict,
+    schoolTargetSnapshot,
+    studentTargetSnapshot,
+    validateSchoolPermanentDeleteTarget,
+    validateStudentPermanentDeleteTarget,
+} from "./permanent-delete-guards";
+import type {
+    SchoolPermanentDeleteTarget,
+    StudentPermanentDeleteTarget,
+} from "./permanent-delete-guards";
+import {
+    assertNoUserReferences,
+    deleteSchoolDependents,
+    deleteStudentDependents,
+    getSchoolFileUrls,
+    getSchoolUsers,
+    getStudentFileUrls,
+    UserReferencesRemainError,
+} from "./permanent-delete-dependents";
 
-interface Actor {
-    id: string;
-    email?: string | null;
-    name?: string | null;
-    role: string;
-}
+type Tx = Prisma.TransactionClient;
 
-interface DeleteInput {
+export interface PermanentDeleteInput {
     id: string;
     reason: string;
+    expectedUpdatedAt: Date;
     actor: Actor;
 }
 
@@ -32,294 +54,239 @@ interface DeleteResult extends DataManagementResponse {
     schoolId?: string;
 }
 
-type Tx = Prisma.TransactionClient;
-type SchoolUserForDelete = { id: string; email: string | null };
+const TRANSACTION_OPTIONS = {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+};
 
 export async function permanentlyDeleteStudent(
-    input: DeleteInput,
+    input: PermanentDeleteInput,
 ): Promise<DataManagementResponse> {
-    const result = await prisma.$transaction(async (tx) => {
-        const student = await tx.student.findUnique({
-            where: { id: input.id },
-            include: { school: { select: { id: true, name: true } } },
-        });
-        if (!student) return failure("ไม่พบนักเรียน");
+    const inputFailure = validatePermanentDeleteInput(input);
+    if (inputFailure) return inputFailure;
+    if (!isSystemAdmin(input.actor)) return failure("ไม่มีสิทธิ์ดำเนินการลบถาวร");
+    const result = await runDeleteTransaction((tx) =>
+        deleteStudentInTransaction(tx, input),
+    );
+    if (!result.success) return result;
 
-        const [impact, fileUrls] = await Promise.all([
-            getStudentImpact(student.id),
-            getStudentFileUrls(student.id),
-        ]);
-        const event = await tx.dataManagementEvent.create({
-            data: {
-                targetType: "student",
-                targetId: student.id,
-                action: "PERMANENT_DELETE",
-                reason: input.reason,
-                actorUserId: input.actor.id,
-                actorSnapshot: createActorSnapshot(input.actor),
-                targetSnapshot: {
-                    id: student.id,
-                    label: `${student.firstName} ${student.lastName} (${student.studentId})`,
-                    studentId: student.studentId,
-                    firstName: student.firstName,
-                    lastName: student.lastName,
-                    schoolId: student.schoolId,
-                    schoolName: student.school.name,
-                },
-                impactSnapshot: impactToJsonObject(impact),
-            },
-            select: { id: true },
-        });
-
-        await deleteStudentDependents(tx, student.id);
-        await tx.student.delete({ where: { id: student.id } });
-        return {
-            success: true,
-            message: "ลบถาวรนักเรียนสำเร็จ",
-            eventId: event.id,
-            fileUrls,
-            schoolId: student.schoolId,
-        } satisfies DeleteResult;
-    });
-
-    if (!result.success) {
-        return { success: false, message: result.message };
-    }
-    if (result.success && result.eventId && result.fileUrls) {
-        await recordFileWarnings(result.eventId, result.fileUrls);
-    }
+    await recordFileWarnings(result.eventId, result.fileUrls);
     revalidateStudentsCache(result.schoolId, input.id);
     await revalidateAnalyticsCache(result.schoolId);
     revalidatePath(DATA_MANAGEMENT_PATH);
-    return { success: result.success, message: result.message };
+    return { success: true, message: result.message };
 }
 
 export async function permanentlyDeleteSchool(
-    input: DeleteInput,
+    input: PermanentDeleteInput,
 ): Promise<DataManagementResponse> {
-    const result = await prisma.$transaction(async (tx) => {
-        const school = await tx.school.findUnique({
-            where: { id: input.id },
-            select: { id: true, name: true, province: true },
-        });
-        if (!school) return failure("ไม่พบโรงเรียน");
+    const inputFailure = validatePermanentDeleteInput(input);
+    if (inputFailure) return inputFailure;
+    if (!isSystemAdmin(input.actor)) return failure("ไม่มีสิทธิ์ดำเนินการลบถาวร");
+    const result = await runDeleteTransaction((tx) =>
+        deleteSchoolInTransaction(tx, input),
+    );
+    if (!result.success) return result;
 
-        const systemAdminCount = await tx.user.count({
-            where: { schoolId: school.id, role: "system_admin" },
-        });
-        if (systemAdminCount > 0) {
-            return failure("ไม่สามารถลบโรงเรียนที่มี System Admin ผูกอยู่");
-        }
-
-        const [impact, fileUrls, users] = await Promise.all([
-            getSchoolImpact(school.id),
-            getSchoolFileUrls(school.id),
-            getSchoolUsers(tx, school.id),
-        ]);
-        const userIds = users.map((user) => user.id);
-        await deleteSchoolDependents(tx, school.id, users);
-        await assertNoUserReferences(tx, userIds);
-
-        const event = await tx.dataManagementEvent.create({
-            data: {
-                targetType: "school",
-                targetId: school.id,
-                action: "PERMANENT_DELETE",
-                reason: input.reason,
-                actorUserId: input.actor.id,
-                actorSnapshot: createActorSnapshot(input.actor),
-                targetSnapshot: {
-                    id: school.id,
-                    label: school.name,
-                    name: school.name,
-                    province: school.province,
-                },
-                impactSnapshot: impactToJsonObject(impact),
-            },
-            select: { id: true },
-        });
-
-        await tx.user.deleteMany({ where: { id: { in: userIds } } });
-        await tx.school.delete({ where: { id: school.id } });
-        return {
-            success: true,
-            message: "ลบถาวรโรงเรียนสำเร็จ",
-            eventId: event.id,
-            fileUrls,
-            schoolId: school.id,
-        } satisfies DeleteResult;
-    });
-
-    if (!result.success) {
-        return { success: false, message: result.message };
-    }
-    if (result.success && result.eventId && result.fileUrls) {
-        await recordFileWarnings(result.eventId, result.fileUrls);
-    }
+    await recordFileWarnings(result.eventId, result.fileUrls);
     revalidateDashboardCache();
     revalidateStudentsCache(result.schoolId);
     await revalidateAnalyticsCache(result.schoolId);
     revalidatePath(DATA_MANAGEMENT_PATH);
     revalidatePath("/admin/users");
-    return { success: result.success, message: result.message };
+    return { success: true, message: result.message };
 }
 
-async function deleteSchoolDependents(
+async function deleteStudentInTransaction(
     tx: Tx,
-    schoolId: string,
-    users: SchoolUserForDelete[],
-): Promise<void> {
-    const userIds = users.map((user) => user.id);
-    const emails = getUserEmails(users);
-    await tx.teacherInvite.deleteMany({
-        where: { OR: [{ schoolId }, { invitedById: { in: userIds } }] },
+    input: PermanentDeleteInput,
+): Promise<DeleteResult> {
+    const student = await getStudentTarget(tx, input.id);
+    if (!student) return failure("ไม่พบนักเรียน");
+
+    const guardFailure = validateStudentPermanentDeleteTarget(
+        student,
+        input.expectedUpdatedAt,
+    );
+    if (guardFailure) return guardFailure;
+
+    const [impact, fileUrls] = await Promise.all([
+        getStudentImpact(tx, student.id),
+        getStudentFileUrls(tx, student.id),
+    ]);
+    await deleteStudentDependents(tx, student.id);
+    const event = await tx.dataManagementEvent.create({
+        data: {
+            targetType: "student",
+            targetId: student.id,
+            action: "PERMANENT_DELETE",
+            reason: input.reason,
+            actorUserId: input.actor.id,
+            actorSnapshot: createActorSnapshot(input.actor),
+            targetSnapshot: studentTargetSnapshot(student),
+            impactSnapshot: impactToJsonObject(impact),
+        },
+        select: { id: true },
     });
-    await tx.schoolAdminInvite.deleteMany({
-        where: {
-            OR: [{ createdBy: { in: userIds } }, { email: { in: emails } }],
+    await tx.student.delete({ where: { id: student.id } });
+    return {
+        success: true,
+        message: "ลบถาวรนักเรียนสำเร็จ",
+        eventId: event.id,
+        fileUrls,
+        schoolId: student.schoolId,
+    };
+}
+
+async function deleteSchoolInTransaction(
+    tx: Tx,
+    input: PermanentDeleteInput,
+): Promise<DeleteResult> {
+    const school = await getSchoolTarget(tx, input.id);
+    if (!school) return failure("ไม่พบโรงเรียน");
+
+    const guardFailure = validateSchoolPermanentDeleteTarget(
+        school,
+        input.expectedUpdatedAt,
+    );
+    if (guardFailure) return guardFailure;
+
+    const systemAdminCount = await tx.user.count({
+        where: { schoolId: school.id, role: "system_admin" },
+    });
+    if (systemAdminCount > 0) {
+        return failure("ไม่สามารถลบโรงเรียนที่มี System Admin ผูกอยู่");
+    }
+
+    const [impact, fileUrls, users] = await Promise.all([
+        getSchoolImpact(tx, school.id),
+        getSchoolFileUrls(tx, school.id),
+        getSchoolUsers(tx, school.id),
+    ]);
+    const userIds = users.map((user) => user.id);
+    await deleteSchoolDependents(tx, school.id, users);
+    await assertNoUserReferences(tx, userIds);
+
+    const event = await tx.dataManagementEvent.create({
+        data: {
+            targetType: "school",
+            targetId: school.id,
+            action: "PERMANENT_DELETE",
+            reason: input.reason,
+            actorUserId: input.actor.id,
+            actorSnapshot: createActorSnapshot(input.actor),
+            targetSnapshot: schoolTargetSnapshot(school),
+            impactSnapshot: impactToJsonObject(impact),
+        },
+        select: { id: true },
+    });
+    await tx.user.deleteMany({ where: { id: { in: userIds } } });
+    await tx.school.delete({ where: { id: school.id } });
+    return {
+        success: true,
+        message: "ลบถาวรโรงเรียนสำเร็จ",
+        eventId: event.id,
+        fileUrls,
+        schoolId: school.id,
+    };
+}
+
+async function getStudentTarget(
+    tx: Tx,
+    id: string,
+): Promise<StudentPermanentDeleteTarget | null> {
+    return tx.student.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            studentId: true,
+            firstName: true,
+            lastName: true,
+            schoolId: true,
+            class: true,
+            status: true,
+            disabledAt: true,
+            isTestData: true,
+            updatedAt: true,
+            school: { select: { name: true } },
+        },
+    }).then((student) =>
+        student
+            ? { ...student, schoolName: student.school.name, status: student.status }
+            : null,
+    );
+}
+
+async function getSchoolTarget(
+    tx: Tx,
+    id: string,
+): Promise<SchoolPermanentDeleteTarget | null> {
+    return tx.school.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            name: true,
+            province: true,
+            disabledAt: true,
+            isTestData: true,
+            updatedAt: true,
         },
     });
-    await deleteSchoolStudentDependents(tx, schoolId);
-    await tx.student.deleteMany({ where: { schoolId } });
-    await tx.schoolTeacherRoster.deleteMany({ where: { schoolId } });
-    await tx.schoolClass.deleteMany({ where: { schoolId } });
-    await deleteSchoolUserDependents(tx, users);
 }
 
-async function deleteStudentDependents(tx: Tx, studentId: string): Promise<void> {
-    await tx.worksheetUpload.deleteMany({
-        where: { activityProgress: { studentId } },
-    });
-    await tx.homeVisitPhoto.deleteMany({
-        where: { homeVisit: { studentId } },
-    });
-    await tx.studentReferral.deleteMany({ where: { studentId } });
-    await tx.activityProgress.deleteMany({ where: { studentId } });
-    await tx.phqResult.deleteMany({ where: { studentId } });
-    await tx.counselingSession.deleteMany({ where: { studentId } });
-    await tx.homeVisit.deleteMany({ where: { studentId } });
-}
-
-async function deleteSchoolStudentDependents(
-    tx: Tx,
-    schoolId: string,
-): Promise<void> {
-    await tx.worksheetUpload.deleteMany({
-        where: { activityProgress: { student: { schoolId } } },
-    });
-    await tx.homeVisitPhoto.deleteMany({
-        where: { homeVisit: { student: { schoolId } } },
-    });
-    await tx.studentReferral.deleteMany({
-        where: { student: { schoolId } },
-    });
-    await tx.activityProgress.deleteMany({
-        where: { student: { schoolId } },
-    });
-    await tx.phqResult.deleteMany({
-        where: { student: { schoolId } },
-    });
-    await tx.counselingSession.deleteMany({
-        where: { student: { schoolId } },
-    });
-    await tx.homeVisit.deleteMany({
-        where: { student: { schoolId } },
-    });
-}
-
-async function deleteSchoolUserDependents(
-    tx: Tx,
-    users: SchoolUserForDelete[],
-): Promise<void> {
-    const userIds = users.map((user) => user.id);
-    if (userIds.length === 0) return;
-
-    const emails = getUserEmails(users);
-
-    await tx.userSession.deleteMany({ where: { userId: { in: userIds } } });
-    await tx.teacher.deleteMany({ where: { userId: { in: userIds } } });
-    if (emails.length > 0) {
-        await tx.passwordResetToken.deleteMany({
-            where: { email: { in: emails } },
-        });
+async function runDeleteTransaction(
+    operation: (tx: Tx) => Promise<DeleteResult>,
+): Promise<DeleteResult> {
+    try {
+        return await prisma.$transaction(operation, TRANSACTION_OPTIONS);
+    } catch (error) {
+        logError("Permanent data deletion transaction failed:", error);
+        if (error instanceof UserReferencesRemainError) {
+            return failure(error.message);
+        }
+        if (isTransactionConflict(error)) {
+            return failure("ข้อมูลมีการเปลี่ยนแปลง กรุณาโหลดผลกระทบล่าสุดแล้วลองใหม่");
+        }
+        return failure("เกิดข้อผิดพลาดในการลบถาวร");
     }
-}
-
-function getUserEmails(users: SchoolUserForDelete[]): string[] {
-    return users.flatMap(({ email }) => (email ? [email] : []));
-}
-
-async function assertNoUserReferences(tx: Tx, userIds: string[]): Promise<void> {
-    if (userIds.length === 0) return;
-    const checks = await Promise.all([
-        tx.phqResult.count({ where: { importedById: { in: userIds } } }),
-        tx.activityProgress.count({ where: { teacherId: { in: userIds } } }),
-        tx.worksheetUpload.count({ where: { uploadedById: { in: userIds } } }),
-        tx.counselingSession.count({ where: { createdById: { in: userIds } } }),
-        tx.studentReferral.count({
-            where: {
-                OR: [
-                    { fromTeacherUserId: { in: userIds } },
-                    { toTeacherUserId: { in: userIds } },
-                ],
-            },
-        }),
-        tx.homeVisit.count({ where: { createdById: { in: userIds } } }),
-    ]);
-
-    if (checks.some((count) => count > 0)) {
-        throw new Error("ยังมีข้อมูลที่อ้างถึงผู้ใช้ของโรงเรียนนี้ ควรตรวจสอบก่อนลบถาวร");
-    }
-}
-
-async function getSchoolUsers(
-    tx: Tx,
-    schoolId: string,
-): Promise<SchoolUserForDelete[]> {
-    return tx.user.findMany({
-        where: { schoolId },
-        select: { id: true, email: true },
-    });
-}
-
-async function getStudentFileUrls(studentId: string): Promise<string[]> {
-    const [worksheets, photos] = await Promise.all([
-        prisma.worksheetUpload.findMany({
-            where: { activityProgress: { studentId } },
-            select: { fileUrl: true },
-        }),
-        prisma.homeVisitPhoto.findMany({
-            where: { homeVisit: { studentId } },
-            select: { fileUrl: true },
-        }),
-    ]);
-    return [...worksheets, ...photos].map((file) => file.fileUrl);
-}
-
-async function getSchoolFileUrls(schoolId: string): Promise<string[]> {
-    const [worksheets, photos] = await Promise.all([
-        prisma.worksheetUpload.findMany({
-            where: { activityProgress: { student: { schoolId } } },
-            select: { fileUrl: true },
-        }),
-        prisma.homeVisitPhoto.findMany({
-            where: { homeVisit: { student: { schoolId } } },
-            select: { fileUrl: true },
-        }),
-    ]);
-    return [...worksheets, ...photos].map((file) => file.fileUrl);
 }
 
 async function recordFileWarnings(
-    eventId: string,
-    fileUrls: string[],
+    eventId: string | undefined,
+    fileUrls: string[] | undefined,
 ): Promise<void> {
-    const warnings = await deleteFilesByUrl(fileUrls);
+    if (!eventId || !fileUrls) return;
+    let warnings: string[];
+    try {
+        warnings = await deleteFilesByUrl(fileUrls);
+    } catch (error) {
+        logError("Delete managed files error:", error);
+        warnings = ["ลบไฟล์ไม่สำเร็จ"];
+    }
     if (warnings.length === 0) return;
-    await prisma.dataManagementEvent.update({
-        where: { id: eventId },
-        data: { warnings },
+    try {
+        await prisma.dataManagementEvent.update({
+            where: { id: eventId },
+            data: { warnings },
+        });
+    } catch (error) {
+        logError("Record managed file warnings error:", error);
+    }
+}
+
+function isSystemAdmin(actor: Actor): boolean {
+    return actor.role === "system_admin";
+}
+
+function validatePermanentDeleteInput(
+    input: PermanentDeleteInput,
+): DataManagementResponse | null {
+    const parsed = dataManagementPermanentDeleteSchema.safeParse({
+        id: input.id,
+        reason: input.reason,
+        expectedUpdatedAt: input.expectedUpdatedAt,
     });
+    if (parsed.success) return null;
+    return failure(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
 }
 
 function failure(message: string): DeleteResult {

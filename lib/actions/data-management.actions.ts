@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { prisma } from "@/lib/database/prisma";
 import {
     dataManagementActionSchema,
+    dataManagementPermanentDeleteSchema,
     dataManagementReasonSchema,
     dataManagementSearchSchema,
     dataManagementTargetSchema,
@@ -38,6 +39,8 @@ import type {
     DataManagementActionInput,
     DataManagementTargetInput,
 } from "@/lib/validations/data-management.validation";
+import type { Actor, MutationInput } from "./data-management/mutation-helpers";
+import type { PermanentDeleteInput } from "./data-management/permanent-delete";
 
 const EMPTY_SEARCH_RESULT: DataManagementSearchResult = {
     schools: [],
@@ -47,6 +50,19 @@ const EMPTY_SEARCH_RESULT: DataManagementSearchResult = {
     schoolHasMore: false,
     studentHasMore: false,
 };
+
+type NonPermanentAction = Exclude<
+    DataManagementActionInput,
+    "permanent-delete"
+>;
+
+type ActionCommand =
+    | { action: NonPermanentAction; input: MutationInput }
+    | { action: "permanent-delete"; input: PermanentDeleteInput };
+
+type ParsedActionCommand =
+    | { command: ActionCommand }
+    | { message: string };
 
 export async function searchDataManagement(
     input: unknown,
@@ -89,33 +105,29 @@ export async function runDataManagementAction(
             };
         }
 
-        const parsed = dataManagementReasonSchema.safeParse(input);
-        if (!parsed.success) {
-            return {
-                success: false,
-                message: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง",
-            };
+        const actor: Actor = {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+            role: session.user.role,
+        };
+        const parsedCommand = parseActionCommand(parsedAction.data, input, actor);
+        if ("message" in parsedCommand) {
+            return { success: false, message: parsedCommand.message };
         }
 
-        const mutationInput = {
-            ...parsed.data,
-            actor: {
-                id: session.user.id,
-                email: session.user.email,
-                name: session.user.name,
-                role: session.user.role,
-            },
-        };
         const result = await dispatchAction(
             parsedTargetType.data,
-            parsedAction.data,
-            mutationInput,
+            parsedCommand.command,
         );
         if (result.success) {
             revalidatePath(DATA_MANAGEMENT_PATH);
         }
         return result;
     } catch (error) {
+        if (isForbiddenError(error)) {
+            return { success: false, message: "ไม่มีสิทธิ์ดำเนินการ" };
+        }
         return handleActionError({
             context: "runDataManagementAction error:",
             error,
@@ -138,36 +150,97 @@ export async function listDataManagementEvents(): Promise<DataManagementEventLis
 
 async function dispatchAction(
     targetType: DataManagementTargetInput,
-    action: DataManagementActionInput,
-    input: Parameters<typeof disableSchool>[0],
+    command: ActionCommand,
 ): Promise<DataManagementResponse> {
     if (targetType === "school") {
-        if (action === "mark-test") return markSchoolAsTestData(input);
-        if (action === "unmark-test") return unmarkSchoolTestData(input);
-        if (action === "disable") return disableSchool(input);
-        if (action === "restore") return restoreSchool(input);
-        if (action === "permanent-delete") {
+        if (command.action === "permanent-delete") {
             const { permanentlyDeleteSchool } = await import(
                 "./data-management/permanent-delete"
             );
-            return permanentlyDeleteSchool(input);
+            return permanentlyDeleteSchool(command.input);
         }
-        return assertNever(action);
+        return dispatchSchoolAction(command.action, command.input);
     }
 
-    if (action === "mark-test") return markStudentAsTestData(input);
-    if (action === "unmark-test") return unmarkStudentTestData(input);
-    if (action === "disable") return disableStudent(input);
-    if (action === "restore") return restoreStudent(input);
-    if (action === "permanent-delete") {
+    if (command.action === "permanent-delete") {
         const { permanentlyDeleteStudent } = await import(
             "./data-management/permanent-delete"
         );
-        return permanentlyDeleteStudent(input);
+        return permanentlyDeleteStudent(command.input);
     }
-    return assertNever(action);
+    return dispatchStudentAction(command.action, command.input);
+}
+
+function dispatchSchoolAction(
+    action: NonPermanentAction,
+    input: MutationInput,
+): Promise<DataManagementResponse> {
+    switch (action) {
+        case "mark-test":
+            return markSchoolAsTestData(input);
+        case "unmark-test":
+            return unmarkSchoolTestData(input);
+        case "disable":
+            return disableSchool(input);
+        case "restore":
+            return restoreSchool(input);
+        default:
+            return assertNever(action);
+    }
+}
+
+function dispatchStudentAction(
+    action: NonPermanentAction,
+    input: MutationInput,
+): Promise<DataManagementResponse> {
+    switch (action) {
+        case "mark-test":
+            return markStudentAsTestData(input);
+        case "unmark-test":
+            return unmarkStudentTestData(input);
+        case "disable":
+            return disableStudent(input);
+        case "restore":
+            return restoreStudent(input);
+        default:
+            return assertNever(action);
+    }
+}
+
+function parseActionCommand(
+    action: DataManagementActionInput,
+    input: unknown,
+    actor: Actor,
+): ParsedActionCommand {
+    if (action === "permanent-delete") {
+        const parsed = dataManagementPermanentDeleteSchema.safeParse(input);
+        if (!parsed.success) return { message: getValidationMessage(parsed.error) };
+        return {
+            command: {
+                action,
+                input: { ...parsed.data, actor },
+            },
+        };
+    }
+
+    const parsed = dataManagementReasonSchema.safeParse(input);
+    if (!parsed.success) return { message: getValidationMessage(parsed.error) };
+    return {
+        command: {
+            action,
+            input: { ...parsed.data, actor },
+        },
+    };
+}
+
+function getValidationMessage(error: { issues: { message: string }[] }): string {
+    return error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง";
+}
+
+function isForbiddenError(error: unknown): boolean {
+    return error instanceof Error && error.message.startsWith("Forbidden:");
 }
 
 function assertNever(value: never): never {
-    throw new Error(`Unsupported data management action: ${String(value)}`);
+    throw new Error("Unsupported data management action: " + String(value));
 }
