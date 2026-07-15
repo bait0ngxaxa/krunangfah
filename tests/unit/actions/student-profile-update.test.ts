@@ -9,6 +9,7 @@ const prismaMock = vi.hoisted(() => ({
         findFirst: vi.fn(),
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
     },
     schoolClass: {
         findUnique: vi.fn(),
@@ -122,7 +123,7 @@ describe("updateStudentProfile", () => {
             schoolId: "school-1",
             status: "ACTIVE",
         });
-        prismaMock.student.findUnique.mockResolvedValue({
+        prismaMock.student.findUnique.mockResolvedValueOnce({
             id: "student-1",
             class: "ม.1/1",
             schoolId: "school-1",
@@ -130,8 +131,9 @@ describe("updateStudentProfile", () => {
             statusChangedAt: null,
             leftAt: null,
             disabledAt: null,
-        });
-        prismaMock.student.update.mockResolvedValue(updatedStudentProfile());
+            updatedAt: new Date("2026-07-15T00:00:00.000Z"),
+        }).mockResolvedValue(updatedStudentProfile());
+        prismaMock.student.updateMany.mockResolvedValue({ count: 1 });
         prismaMock.phqResult.findFirst.mockResolvedValue({ id: "phq-latest" });
         prismaMock.schoolClass.findUnique.mockResolvedValue({ id: "class-2" });
         prismaMock.$transaction.mockImplementation(async (callback) =>
@@ -150,7 +152,7 @@ describe("updateStudentProfile", () => {
         const result = await updateStudentProfile("student-1", validInput());
 
         expect(result.success).toBe(false);
-        expect(prismaMock.student.update).not.toHaveBeenCalled();
+        expect(prismaMock.student.updateMany).not.toHaveBeenCalled();
     });
 
     it("blocks profile class changes for every editable role", async () => {
@@ -165,7 +167,7 @@ describe("updateStudentProfile", () => {
             "ห้องเรียนแก้ไขได้จากการนำเข้าข้อมูลเท่านั้น",
         );
         expect(prismaMock.schoolClass.findUnique).not.toHaveBeenCalled();
-        expect(prismaMock.student.update).not.toHaveBeenCalled();
+        expect(prismaMock.student.updateMany).not.toHaveBeenCalled();
     });
 
     it("blocks stale profile updates from historical filters", async () => {
@@ -179,7 +181,7 @@ describe("updateStudentProfile", () => {
         expect(result.message).toBe(
             "กำลังดูข้อมูลย้อนหลัง กรุณากลับไปที่ปีการศึกษาล่าสุดก่อนแก้ไขข้อมูลนักเรียน",
         );
-        expect(prismaMock.student.update).not.toHaveBeenCalled();
+        expect(prismaMock.student.updateMany).not.toHaveBeenCalled();
     });
 
     it("updates only the student record for valid profile data", async () => {
@@ -190,8 +192,11 @@ describe("updateStudentProfile", () => {
         );
 
         expect(result.success).toBe(true);
-        expect(prismaMock.student.update).toHaveBeenCalledWith({
-            where: { id: "student-1" },
+        expect(prismaMock.student.updateMany).toHaveBeenCalledWith({
+            where: {
+                id: "student-1",
+                updatedAt: new Date("2026-07-15T00:00:00.000Z"),
+            },
             data: {
                 studentId: "ST-001",
                 nationalId: "1103700000011",
@@ -201,17 +206,6 @@ describe("updateStudentProfile", () => {
                 age: 13,
                 class: "ม.1/1",
                 status: "ACTIVE",
-            },
-            select: {
-                id: true,
-                studentId: true,
-                nationalId: true,
-                firstName: true,
-                lastName: true,
-                gender: true,
-                age: true,
-                class: true,
-                status: true,
             },
         });
         expect(result.student).toEqual(updatedStudentProfile());

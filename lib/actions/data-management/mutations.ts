@@ -160,8 +160,12 @@ export async function disableStudent(
             });
             const academicYearId = await getCurrentAcademicYearId(tx);
             const impact = await getStudentImpact(tx, input.id);
-            await tx.student.update({
-                where: { id: input.id },
+            const updateResult = await tx.student.updateMany({
+                where: {
+                    id: input.id,
+                    updatedAt: student.updatedAt,
+                    disabledAt: null,
+                },
                 data: {
                     disabledAt: now,
                     disabledById: input.actor.id,
@@ -171,6 +175,9 @@ export async function disableStudent(
                     restoreReason: null,
                 },
             });
+            if (updateResult.count !== 1) {
+                return failure("ข้อมูลนักเรียนมีการเปลี่ยนแปลง กรุณาลองใหม่อีกครั้ง");
+            }
             await applyStudentClassCountAdjustments(tx, {
                 schoolId: student.schoolId,
                 academicYearId,
@@ -229,8 +236,12 @@ export async function restoreStudent(
             });
             const academicYearId = await getCurrentAcademicYearId(tx);
             const impact = await getStudentImpact(tx, input.id);
-            await tx.student.update({
-                where: { id: input.id },
+            const updateResult = await tx.student.updateMany({
+                where: {
+                    id: input.id,
+                    updatedAt: student.updatedAt,
+                    disabledAt: student.disabledAt,
+                },
                 data: {
                     disabledAt: null,
                     disabledById: null,
@@ -240,6 +251,9 @@ export async function restoreStudent(
                     restoreReason: input.reason,
                 },
             });
+            if (updateResult.count !== 1) {
+                return failure("ข้อมูลนักเรียนมีการเปลี่ยนแปลง กรุณาลองใหม่อีกครั้ง");
+            }
             await applyStudentClassCountAdjustments(tx, {
                 schoolId: student.schoolId,
                 academicYearId,

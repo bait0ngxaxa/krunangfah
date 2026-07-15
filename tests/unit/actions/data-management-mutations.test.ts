@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const prismaMocks = vi.hoisted(() => {
     const tx = {
         school: { findUnique: vi.fn(), update: vi.fn() },
-        student: { findUnique: vi.fn(), update: vi.fn() },
+        student: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
         schoolClass: {
             findUnique: vi.fn(),
             update: vi.fn(),
@@ -125,6 +125,7 @@ describe("data management mutations", () => {
         prismaMocks.tx.schoolClass.updateMany.mockResolvedValue({ count: 1 });
         prismaMocks.tx.schoolClassTerm.upsert.mockResolvedValue({ id: "term-1" });
         prismaMocks.tx.schoolClassTerm.updateMany.mockResolvedValue({ count: 1 });
+        prismaMocks.tx.student.updateMany.mockResolvedValue({ count: 1 });
         vi.mocked(getSchoolImpact).mockResolvedValue(impact);
         vi.mocked(getStudentImpact).mockResolvedValue(impact);
     });
@@ -195,7 +196,7 @@ describe("data management mutations", () => {
             success: false,
             message: "ไม่สามารถปิดใช้งานนักเรียนที่เป็นข้อมูลทดสอบได้",
         });
-        expect(prismaMocks.tx.student.update).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.student.updateMany).not.toHaveBeenCalled();
         expect(prismaMocks.tx.dataManagementEvent.create).not.toHaveBeenCalled();
     });
 
@@ -242,7 +243,7 @@ describe("data management mutations", () => {
             success: false,
             message: "ต้องเปิดใช้งานนักเรียนก่อนจึงจะตั้งเป็นข้อมูลทดสอบได้",
         });
-        expect(prismaMocks.tx.student.update).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.student.updateMany).not.toHaveBeenCalled();
         expect(prismaMocks.tx.dataManagementEvent.create).not.toHaveBeenCalled();
     });
 
@@ -255,9 +256,13 @@ describe("data management mutations", () => {
             success: true,
             message: "ปิดใช้งานนักเรียนสำเร็จ",
         });
-        expect(prismaMocks.tx.student.update).toHaveBeenCalledWith(
+        expect(prismaMocks.tx.student.updateMany).toHaveBeenCalledWith(
             expect.objectContaining({
-                where: { id: input.id },
+                where: {
+                    id: input.id,
+                    updatedAt: new Date("2026-07-14T00:00:00.000Z"),
+                    disabledAt: null,
+                },
                 data: expect.objectContaining({ disabledAt: expect.any(Date) }),
             }),
         );
@@ -285,6 +290,26 @@ describe("data management mutations", () => {
         );
     });
 
+    it("decrements counts only once when the same student is disabled concurrently", async () => {
+        prismaMocks.tx.student.findUnique.mockResolvedValue(createStudent());
+        let stateWasClaimed = false;
+        prismaMocks.tx.student.updateMany.mockImplementation(async () => {
+            if (stateWasClaimed) return { count: 0 };
+            stateWasClaimed = true;
+            return { count: 1 };
+        });
+
+        const results = await Promise.all([
+            disableStudent(input),
+            disableStudent(input),
+        ]);
+
+        expect(results.filter((result) => result.success)).toHaveLength(1);
+        expect(prismaMocks.tx.schoolClass.updateMany).toHaveBeenCalledTimes(1);
+        expect(prismaMocks.tx.schoolClassTerm.updateMany).toHaveBeenCalledTimes(1);
+        expect(prismaMocks.tx.dataManagementEvent.create).toHaveBeenCalledTimes(1);
+    });
+
     it.each(["GRADUATED", "RESIGNED", "TRANSFERRED"] as const)(
         "disables excluded status %s without changing counts",
         async (status) => {
@@ -295,7 +320,7 @@ describe("data management mutations", () => {
         const result = await disableStudent(input);
 
         expect(result.success).toBe(true);
-        expect(prismaMocks.tx.student.update).toHaveBeenCalledWith(
+        expect(prismaMocks.tx.student.updateMany).toHaveBeenCalledWith(
             expect.objectContaining({
                 data: expect.objectContaining({ disabledAt: expect.any(Date) }),
             }),

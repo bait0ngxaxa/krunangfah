@@ -755,6 +755,7 @@ export async function updateStudentStatus(
                     leftAt: true,
                     disabledAt: true,
                     schoolId: true,
+                    updatedAt: true,
                 },
             });
             if (!student) return { kind: "not-found" as const };
@@ -768,14 +769,20 @@ export async function updateStudentStatus(
                 statusChangedAt: student.statusChangedAt,
                 leftAt: student.leftAt,
             });
-            await tx.student.update({
-                where: { id: student.id },
+            const updateResult = await tx.student.updateMany({
+                where: {
+                    id: student.id,
+                    updatedAt: student.updatedAt,
+                },
                 data: {
                     status: parsedStatus,
                     statusChangedAt: statusState.statusChangedAt,
                     leftAt: statusState.leftAt,
                 },
             });
+            if (updateResult.count !== 1) {
+                return { kind: "conflict" as const };
+            }
 
             await applyStudentClassCountAdjustments(tx, {
                 academicYearId,
@@ -801,6 +808,12 @@ export async function updateStudentStatus(
         }
         if (result.kind === "no-change") {
             return { success: true, message: "สถานะนักเรียนเป็นค่านี้อยู่แล้ว" };
+        }
+        if (result.kind === "conflict") {
+            return {
+                success: false,
+                message: "ข้อมูลนักเรียนมีการเปลี่ยนแปลง กรุณาลองใหม่อีกครั้ง",
+            };
         }
 
         revalidatePath("/dashboard");
@@ -965,6 +978,7 @@ async function saveStudentProfileUpdate(
                 statusChangedAt: true,
                 leftAt: true,
                 disabledAt: true,
+                updatedAt: true,
             },
         });
         if (!currentStudent) throw new Error("ไม่พบนักเรียนที่ต้องการแก้ไข");
@@ -979,8 +993,11 @@ async function saveStudentProfileUpdate(
             statusChangedAt: currentStudent.statusChangedAt,
             leftAt: currentStudent.leftAt,
         });
-        const updatedStudent = await tx.student.update({
-            where: { id: student.id },
+        const updateResult = await tx.student.updateMany({
+            where: {
+                id: student.id,
+                updatedAt: currentStudent.updatedAt,
+            },
             data: {
                 studentId: input.studentId,
                 nationalId: input.nationalId,
@@ -997,6 +1014,13 @@ async function saveStudentProfileUpdate(
                       }
                     : {}),
             },
+        });
+        if (updateResult.count !== 1) {
+            throw new Error("ข้อมูลนักเรียนมีการเปลี่ยนแปลง");
+        }
+
+        const updatedStudent = await tx.student.findUnique({
+            where: { id: student.id },
             select: {
                 id: true,
                 studentId: true,
@@ -1009,6 +1033,7 @@ async function saveStudentProfileUpdate(
                 status: true,
             },
         });
+        if (!updatedStudent) throw new Error("ไม่พบนักเรียนที่ต้องการแก้ไข");
 
         await applyStudentClassCountAdjustments(tx, {
             schoolId: student.schoolId,
