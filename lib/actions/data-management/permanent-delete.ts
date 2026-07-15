@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateDashboardCache } from "@/lib/actions/dashboard/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
+import { invalidateUserSessionCaches } from "@/lib/auth/session-store";
 import { prisma } from "@/lib/database/prisma";
 import { logError } from "@/lib/utils/logging";
 import {
@@ -59,6 +60,7 @@ interface DeleteResult extends DataManagementResponse {
     eventId?: string;
     fileUrls?: string[];
     schoolId?: string;
+    userIds?: string[];
 }
 
 const TRANSACTION_OPTIONS = {
@@ -94,6 +96,11 @@ export async function permanentlyDeleteSchool(
     );
     if (!result.success) return result;
 
+    await Promise.all(
+        (result.userIds ?? []).map((userId) =>
+            invalidateUserSessionCaches(userId),
+        ),
+    );
     await recordFileWarnings(result.eventId, result.fileUrls);
     revalidateDashboardCache();
     revalidateStudentsCache(result.schoolId);
@@ -222,6 +229,7 @@ async function deleteSchoolInTransaction(
         eventId: event.id,
         fileUrls,
         schoolId: school.id,
+        userIds,
     };
 }
 

@@ -35,6 +35,7 @@ const prismaMocks = vi.hoisted(() => {
 
 const cacheMocks = vi.hoisted(() => ({
     deleteFilesByUrl: vi.fn(),
+    invalidateUserSessionCaches: vi.fn(),
     revalidateAnalyticsCache: vi.fn(),
     revalidateDashboardCache: vi.fn(),
     revalidatePath: vi.fn(),
@@ -61,6 +62,9 @@ vi.mock("@/lib/actions/dashboard/cache", () => ({
 }));
 vi.mock("@/lib/actions/student/cache", () => ({
     revalidateStudentsCache: cacheMocks.revalidateStudentsCache,
+}));
+vi.mock("@/lib/auth/session-store", () => ({
+    invalidateUserSessionCaches: cacheMocks.invalidateUserSessionCaches,
 }));
 vi.mock("@/lib/actions/data-management/helpers", () => ({
     DATA_MANAGEMENT_PATH: "/admin/data-management",
@@ -346,6 +350,7 @@ describe("data management permanent delete", () => {
         prismaMocks.tx.user.count.mockResolvedValue(0);
         prismaMocks.tx.user.findMany.mockResolvedValue([
             { id: "user-1", email: "teacher@example.com" },
+            { id: "user-2", email: "admin@example.com" },
         ]);
 
         const result = await permanentlyDeleteSchool(input);
@@ -364,11 +369,20 @@ describe("data management permanent delete", () => {
             }),
         );
         expect(prismaMocks.tx.user.deleteMany).toHaveBeenCalledWith({
-            where: { id: { in: ["user-1"] } },
+            where: { id: { in: ["user-1", "user-2"] } },
         });
         expect(prismaMocks.tx.school.delete).toHaveBeenCalledWith({
             where: { id: input.id },
         });
+        expect(cacheMocks.invalidateUserSessionCaches).toHaveBeenCalledWith(
+            "user-1",
+        );
+        expect(cacheMocks.invalidateUserSessionCaches).toHaveBeenCalledWith(
+            "user-2",
+        );
+        expect(
+            cacheMocks.invalidateUserSessionCaches.mock.invocationCallOrder[0],
+        ).toBeGreaterThan(prismaMocks.transaction.mock.invocationCallOrder[0]);
         expect(cacheMocks.deleteFilesByUrl).toHaveBeenCalled();
     });
 
@@ -389,6 +403,7 @@ describe("data management permanent delete", () => {
         expect(prismaMocks.tx.dataManagementEvent.create).not.toHaveBeenCalled();
         expect(prismaMocks.tx.school.delete).not.toHaveBeenCalled();
         expect(cacheMocks.deleteFilesByUrl).not.toHaveBeenCalled();
+        expect(cacheMocks.invalidateUserSessionCaches).not.toHaveBeenCalled();
     });
 });
 
