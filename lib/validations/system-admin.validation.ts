@@ -51,6 +51,7 @@ export const systemSchoolEditSchema = z.object({
 
 export const systemStudentEditSchema = z.object({
     id: z.string().cuid("รหัสนักเรียนไม่ถูกต้อง"),
+    expectedUpdatedAt: z.coerce.date(),
     studentId: z.string().trim().min(1, "กรุณาระบุรหัสนักเรียน").max(50),
     nationalId: z
         .string()

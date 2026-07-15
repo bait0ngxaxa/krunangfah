@@ -110,6 +110,7 @@ function StudentEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
         startTransition(async () => {
             const result = await updateSystemAdminStudent({
                 id: student.id,
+                expectedUpdatedAt: student.updatedAt.toISOString(),
                 ...form,
             });
             if (!result.success || !result.updated) {

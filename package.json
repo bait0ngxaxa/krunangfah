@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
+    "test:integration": "vitest --run --config vitest.integration.config.ts",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui"
   },

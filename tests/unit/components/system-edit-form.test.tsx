@@ -19,6 +19,7 @@ function createStudentEntity(): StudentEntityResult {
     return {
         type: "student",
         id: "student-1",
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
         studentId: "1001",
         firstName: "สมชาย",
         lastName: "ใจดี",

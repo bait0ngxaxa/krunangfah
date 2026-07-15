@@ -47,6 +47,7 @@ export interface StaffEntityResult {
 export interface StudentEntityResult {
     type: "student";
     id: string;
+    updatedAt: Date;
     studentId: string;
     firstName: string;
     lastName: string;

@@ -293,7 +293,7 @@ describe("Integration: updateStudentStatus", () => {
             expect(student?.leftAt).toBeNull();
         });
 
-        it("should NOT change count for ACTIVE → GRADUATED (both non-inactive)", async () => {
+        it("should decrement count for ACTIVE → GRADUATED (inactive)", async () => {
             mockSession(USERS.schoolAdmin);
 
             const termBefore = await prisma.schoolClassTerm.findUnique({
@@ -319,10 +319,16 @@ describe("Integration: updateStudentStatus", () => {
                 select: { expectedStudentCount: true },
             });
 
-            // No change: both ACTIVE and GRADUATED are non-inactive
             expect(termAfter?.expectedStudentCount).toBe(
-                termBefore?.expectedStudentCount,
+                (termBefore?.expectedStudentCount ?? 0) - 1,
             );
+
+            const student = await prisma.student.findUnique({
+                where: { id: studentId },
+                select: { leftAt: true, status: true },
+            });
+            expect(student?.status).toBe("GRADUATED");
+            expect(student?.leftAt).not.toBeNull();
 
             // Reset
             await prisma.student.update({

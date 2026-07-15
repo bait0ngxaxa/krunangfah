@@ -29,6 +29,7 @@ const STUDENT_STATUS_SET: ReadonlySet<string> = new Set(STUDENT_STATUS_VALUES);
 const COUNT_EXCLUDED_STUDENT_STATUSES: ReadonlySet<StudentStatusValue> = new Set([
     STUDENT_STATUS.RESIGNED,
     STUDENT_STATUS.TRANSFERRED,
+    STUDENT_STATUS.GRADUATED,
 ]);
 
 const ACTION_BLOCKED_STUDENT_STATUSES: ReadonlySet<StudentStatusValue> = new Set([

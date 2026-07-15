@@ -54,6 +54,7 @@ describe("system edit schemas", () => {
     it("accepts valid student profile edits", () => {
         const parsed = systemStudentEditSchema.safeParse({
             id: "ck12345678901234567890123",
+            expectedUpdatedAt: "2026-01-01T00:00:00.000Z",
             studentId: "1001",
             nationalId: "1234567890123",
             firstName: "สมชาย",

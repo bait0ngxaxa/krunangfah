@@ -18,7 +18,6 @@ import {
     type StudentProfileUpdateInput,
 } from "@/lib/validations/student-profile.validation";
 import {
-    isStudentCountExcludedStatus,
     parseStudentStatusValue,
     type StudentStatusValue,
 } from "@/lib/constants/student-status";
@@ -32,6 +31,12 @@ import {
     isImportResult,
 } from "./import-idempotency";
 import { revalidateStudentsCache } from "./cache";
+import {
+    applyStudentClassCountAdjustments,
+    calculateStudentClassCountAdjustments,
+    calculateStudentStatusState,
+    getCurrentAcademicYearId,
+} from "./student-class-count";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
 const IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS = 30 * 60;
@@ -76,13 +81,7 @@ interface EditableStudentProfileRecord {
     class: string;
     schoolId: string;
     status: StudentStatusValue;
-}
-
-interface AdjustSchoolClassCountParams {
-    academicYearId: string | null;
-    schoolId: string;
-    className: string;
-    delta: number;
+    leftAt: Date | null;
 }
 
 function createImportStudentSummary(
@@ -106,23 +105,6 @@ function getActivityNumbersByRiskLevel(riskLevel: RiskLevel): number[] {
         return [];
     }
     return ACTIVITY_INDICES[riskLevel as keyof typeof ACTIVITY_INDICES];
-}
-
-async function getCurrentAcademicYearId(): Promise<string | null> {
-    const currentAcademicYear = await prisma.academicYear.findFirst({
-        where: { isCurrent: true },
-        orderBy: [{ year: "desc" }, { semester: "desc" }],
-        select: { id: true },
-    });
-
-    if (currentAcademicYear) return currentAcademicYear.id;
-
-    const latestAcademicYear = await prisma.academicYear.findFirst({
-        orderBy: [{ year: "desc" }, { semester: "desc" }],
-        select: { id: true },
-    });
-
-    return latestAcademicYear?.id ?? null;
 }
 
 /**
@@ -765,6 +747,7 @@ export async function updateStudentStatus(
                 id: true,
                 class: true,
                 status: true,
+                leftAt: true,
                 schoolId: true,
             },
         });
@@ -777,70 +760,32 @@ export async function updateStudentStatus(
             return { success: true, message: "สถานะนักเรียนเป็นค่านี้อยู่แล้ว" };
         }
 
-        const academicYearId = await getCurrentAcademicYearId();
-        const oldStatusInactive = isStudentCountExcludedStatus(student.status);
-        const newStatusInactive = isStudentCountExcludedStatus(parsedStatus);
-        const expectedCountDelta =
-            oldStatusInactive === newStatusInactive
-                ? 0
-                : newStatusInactive
-                  ? -1
-                  : 1;
-
         await prisma.$transaction(async (tx) => {
+            const academicYearId = await getCurrentAcademicYearId(tx);
+            const statusState = calculateStudentStatusState({
+                oldStatus: student.status,
+                newStatus: parsedStatus,
+                statusChangedAt: null,
+                leftAt: student.leftAt,
+            });
             await tx.student.update({
                 where: { id: student.id },
                 data: {
                     status: parsedStatus,
-                    statusChangedAt: new Date(),
-                    leftAt: newStatusInactive ? new Date() : null,
+                    statusChangedAt: statusState.statusChangedAt,
+                    leftAt: statusState.leftAt,
                 },
             });
 
-            if (!academicYearId || expectedCountDelta === 0) return;
-
-            const schoolClass = await tx.schoolClass.findUnique({
-                where: {
-                    schoolId_name: {
-                        schoolId: student.schoolId,
-                        name: student.class,
-                    },
-                },
-                select: {
-                    id: true,
-                    expectedStudentCount: true,
-                    terms: {
-                        where: { academicYearId },
-                        select: { expectedStudentCount: true },
-                        take: 1,
-                    },
-                },
-            });
-
-            if (!schoolClass) return;
-
-            const baseCount =
-                schoolClass.terms[0]?.expectedStudentCount ??
-                schoolClass.expectedStudentCount;
-            const nextCount = Math.max(1, baseCount + expectedCountDelta);
-
-            await tx.schoolClass.update({
-                where: { id: schoolClass.id },
-                data: { expectedStudentCount: nextCount },
-            });
-            await tx.schoolClassTerm.upsert({
-                where: {
-                    schoolClassId_academicYearId: {
-                        schoolClassId: schoolClass.id,
-                        academicYearId,
-                    },
-                },
-                create: {
-                    schoolClassId: schoolClass.id,
-                    academicYearId,
-                    expectedStudentCount: nextCount,
-                },
-                update: { expectedStudentCount: nextCount },
+            await applyStudentClassCountAdjustments(tx, {
+                academicYearId,
+                schoolId: student.schoolId,
+                adjustments: calculateStudentClassCountAdjustments({
+                    oldClassName: student.class,
+                    newClassName: student.class,
+                    oldStatus: student.status,
+                    newStatus: parsedStatus,
+                }),
             });
         });
 
@@ -924,6 +869,7 @@ async function getEditableStudentProfile(
             class: true,
             schoolId: true,
             status: true,
+            leftAt: true,
         },
     });
 
@@ -947,57 +893,6 @@ async function validateLatestImportedProfileContext(
     return latestPhqResult.id === context.activePhqResultId
         ? null
         : "กำลังดูข้อมูลย้อนหลัง กรุณากลับไปที่ปีการศึกษาล่าสุดก่อนแก้ไขข้อมูลนักเรียน";
-}
-
-async function adjustSchoolClassExpectedCount(
-    tx: Prisma.TransactionClient,
-    params: AdjustSchoolClassCountParams,
-): Promise<void> {
-    if (!params.academicYearId || params.delta === 0) return;
-
-    const schoolClass = await tx.schoolClass.findUnique({
-        where: {
-            schoolId_name: {
-                schoolId: params.schoolId,
-                name: params.className,
-            },
-        },
-        select: {
-            id: true,
-            expectedStudentCount: true,
-            terms: {
-                where: { academicYearId: params.academicYearId },
-                select: { expectedStudentCount: true },
-                take: 1,
-            },
-        },
-    });
-
-    if (!schoolClass) return;
-
-    const baseCount =
-        schoolClass.terms[0]?.expectedStudentCount ??
-        schoolClass.expectedStudentCount;
-    const nextCount = Math.max(1, baseCount + params.delta);
-
-    await tx.schoolClass.update({
-        where: { id: schoolClass.id },
-        data: { expectedStudentCount: nextCount },
-    });
-    await tx.schoolClassTerm.upsert({
-        where: {
-            schoolClassId_academicYearId: {
-                schoolClassId: schoolClass.id,
-                academicYearId: params.academicYearId,
-            },
-        },
-        create: {
-            schoolClassId: schoolClass.id,
-            academicYearId: params.academicYearId,
-            expectedStudentCount: nextCount,
-        },
-        update: { expectedStudentCount: nextCount },
-    });
 }
 
 async function validateStudentProfileUpdateRules(
@@ -1044,17 +939,17 @@ async function saveStudentProfileUpdate(
     input: StudentProfileUpdateInput,
 ): Promise<UpdatedStudentProfile> {
     const statusChanged = student.status !== input.status;
-    const academicYearId = statusChanged ? await getCurrentAcademicYearId() : null;
-    const oldStatusInactive = isStudentCountExcludedStatus(student.status);
-    const newStatusInactive = isStudentCountExcludedStatus(input.status);
-    const expectedCountDelta =
-        !statusChanged || oldStatusInactive === newStatusInactive
-            ? 0
-            : newStatusInactive
-              ? -1
-              : 1;
 
     return prisma.$transaction(async (tx) => {
+        const academicYearId = statusChanged
+            ? await getCurrentAcademicYearId(tx)
+            : null;
+        const statusState = calculateStudentStatusState({
+            oldStatus: student.status,
+            newStatus: input.status,
+            statusChangedAt: null,
+            leftAt: student.leftAt,
+        });
         const updatedStudent = await tx.student.update({
             where: { id: student.id },
             data: {
@@ -1068,8 +963,8 @@ async function saveStudentProfileUpdate(
                 status: input.status,
                 ...(statusChanged
                     ? {
-                          statusChangedAt: new Date(),
-                          leftAt: newStatusInactive ? new Date() : null,
+                          statusChangedAt: statusState.statusChangedAt,
+                          leftAt: statusState.leftAt,
                       }
                     : {}),
             },
@@ -1086,11 +981,15 @@ async function saveStudentProfileUpdate(
             },
         });
 
-        await adjustSchoolClassExpectedCount(tx, {
-            academicYearId,
+        await applyStudentClassCountAdjustments(tx, {
             schoolId: student.schoolId,
-            className: student.class,
-            delta: expectedCountDelta,
+            academicYearId,
+            adjustments: calculateStudentClassCountAdjustments({
+                oldClassName: student.class,
+                newClassName: student.class,
+                oldStatus: student.status,
+                newStatus: input.status,
+            }),
         });
 
         return updatedStudent;

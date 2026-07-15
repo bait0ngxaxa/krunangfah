@@ -15,6 +15,13 @@ import type {
     SystemStudentEditInput,
 } from "@/lib/validations/system-admin.validation";
 import { createSystemAdminEditEvent } from "./events";
+import {
+    applyStudentClassCountAdjustments,
+    calculateStudentClassCountAdjustments,
+    calculateStudentStatusState,
+    getCurrentAcademicYearId,
+    type StudentStatusState,
+} from "@/lib/actions/student/student-class-count";
 
 export interface Actor {
     id: string;
@@ -23,8 +30,30 @@ export interface Actor {
     role: string;
 }
 
+const STUDENT_UPDATE_CONFLICT_MESSAGE =
+    "ข้อมูลนักเรียนถูกแก้ไขโดยผู้ใช้อื่น กรุณาโหลดข้อมูลล่าสุดแล้วลองใหม่";
+
+class StudentUpdateConflictError extends Error {
+    constructor() {
+        super(STUDENT_UPDATE_CONFLICT_MESSAGE);
+        this.name = "StudentUpdateConflictError";
+    }
+}
+
 type SchoolForEdit = NonNullable<Awaited<ReturnType<typeof getSchoolForEdit>>>;
-type StudentForEdit = NonNullable<Awaited<ReturnType<typeof getStudentForEdit>>>;
+
+type SystemStudentMutationResult =
+    | { kind: "not-found" }
+    | { kind: "no-change" }
+    | { kind: "class-not-found" }
+    | { kind: "updated"; updated: StudentEntityResult };
+
+interface SystemStudentUpdateContext {
+    student: StudentForEdit;
+    input: SystemStudentEditInput;
+    normalized: NormalizedStudentInput;
+    actor: Actor;
+}
 
 export async function updateSystemSchool(
     input: SystemSchoolEditInput,
@@ -66,71 +95,152 @@ export async function updateSystemStudent(
     input: SystemStudentEditInput,
     actor: Actor,
 ): Promise<SystemEditResponse<StudentEntityResult>> {
-    const student = await getStudentForEdit(input.id);
-    if (!student) return { success: false, message: "ไม่พบนักเรียน" };
-
     const normalized = normalizeStudentInput(input);
-    const changes = getStudentChanges(student, normalized);
-    if (changes.length === 0) {
-        return { success: false, message: "ไม่มีข้อมูลเปลี่ยนแปลง" };
-    }
-
-    const classExists = await prisma.schoolClass.findUnique({
-        where: {
-            schoolId_name: {
-                schoolId: student.schoolId,
-                name: normalized.class,
-            },
-        },
-        select: { id: true },
-    });
-    if (!classExists) {
-        return { success: false, message: "ไม่พบห้องเรียนนี้ในโรงเรียน" };
-    }
 
     try {
-        const updated = await prisma.$transaction(async (tx) => {
-            const next = await tx.student.update({
-                where: { id: input.id },
-                data: {
-                    studentId: normalized.studentId,
-                    nationalId: normalized.nationalId,
-                    firstName: normalized.firstName,
-                    lastName: normalized.lastName,
-                    gender: normalized.gender,
-                    age: normalized.age,
-                    class: normalized.class,
-                    status: normalized.status,
-                    statusChangedAt:
-                        student.status === normalized.status
-                            ? student.statusChangedAt
-                            : new Date(),
-                },
-                select: studentEntitySelect,
-            });
-            await createSystemAdminEditEvent({
-                tx,
-                targetType: "student",
-                targetId: student.id,
-                targetLabel: `${student.firstName} ${student.lastName}`,
-                reason: input.reason,
-                actor,
-                changes,
-            });
-            return toStudentEntityResult(next);
-        });
+        const result = await runSystemStudentTransaction(
+            input,
+            normalized,
+            actor,
+        );
 
-        revalidateStudentsCache(student.schoolId, student.id);
-        await revalidateAnalyticsCache(student.schoolId);
+        if (result.kind === "not-found") {
+            return { success: false, message: "ไม่พบนักเรียน" };
+        }
+        if (result.kind === "no-change") {
+            return { success: false, message: "ไม่มีข้อมูลเปลี่ยนแปลง" };
+        }
+        if (result.kind === "class-not-found") {
+            return { success: false, message: "ไม่พบห้องเรียนนี้ในโรงเรียน" };
+        }
+
+        const updated = result.updated;
+        revalidateStudentsCache(updated.schoolId, updated.id);
+        revalidateDashboardCache();
+        await revalidateAnalyticsCache(updated.schoolId);
+        revalidatePath("/school/classes");
         revalidatePath("/admin/system");
         revalidatePath("/admin/data-management");
         return { success: true, message: "แก้ไขนักเรียนสำเร็จ", updated };
     } catch (error) {
-        if (isUniqueConstraintError(error)) {
-            return { success: false, message: "รหัสนักเรียนหรือเลขบัตรซ้ำในระบบ" };
+        if (error instanceof StudentUpdateConflictError) {
+            return { success: false, message: STUDENT_UPDATE_CONFLICT_MESSAGE };
+        }
+        const uniqueMessage = getUniqueConstraintMessage(error);
+        if (uniqueMessage) {
+            return { success: false, message: uniqueMessage };
         }
         throw error;
     }
+}
+
+async function runSystemStudentTransaction(
+    input: SystemStudentEditInput,
+    normalized: NormalizedStudentInput,
+    actor: Actor,
+): Promise<SystemStudentMutationResult> {
+    return prisma.$transaction(async (tx) => {
+        const student = await tx.student.findUnique({
+            where: { id: input.id },
+            select: studentEntitySelect,
+        });
+        if (!student) return { kind: "not-found" };
+
+        return applySystemStudentUpdate(tx, {
+            student,
+            input,
+            normalized,
+            actor,
+        });
+    });
+}
+
+async function applySystemStudentUpdate(
+    tx: Prisma.TransactionClient,
+    context: SystemStudentUpdateContext,
+): Promise<SystemStudentMutationResult> {
+    const { student, input, normalized, actor } = context;
+    const statusState = calculateStudentStatusState({
+        oldStatus: student.status,
+        newStatus: normalized.status,
+        statusChangedAt: student.statusChangedAt,
+        leftAt: student.leftAt,
+    });
+    const changes = getStudentChanges(student, normalized, statusState);
+    if (changes.length === 0) return { kind: "no-change" };
+    if (!(await systemStudentClassExists(tx, student.schoolId, normalized.class))) {
+        return { kind: "class-not-found" };
+    }
+
+    const academicYearId = await getCurrentAcademicYearId(tx);
+    const next = await updateStudentAndCounts(tx, context, statusState, academicYearId);
+    await createSystemAdminEditEvent({
+        tx,
+        targetType: "student",
+        targetId: student.id,
+        targetLabel: `${student.firstName} ${student.lastName}`,
+        reason: input.reason,
+        actor,
+        changes,
+    });
+    return { kind: "updated", updated: toStudentEntityResult(next) };
+}
+
+async function systemStudentClassExists(
+    tx: Prisma.TransactionClient,
+    schoolId: string,
+    className: string,
+): Promise<boolean> {
+    const schoolClass = await tx.schoolClass.findUnique({
+        where: { schoolId_name: { schoolId, name: className } },
+        select: { id: true },
+    });
+    return schoolClass !== null;
+}
+
+async function updateStudentAndCounts(
+    tx: Prisma.TransactionClient,
+    context: SystemStudentUpdateContext,
+    statusState: StudentStatusState,
+    academicYearId: string | null,
+): Promise<StudentForEdit> {
+    const { student, normalized } = context;
+    const updateResult = await tx.student.updateMany({
+        where: {
+            id: student.id,
+            updatedAt: context.input.expectedUpdatedAt,
+        },
+        data: {
+            studentId: normalized.studentId,
+            nationalId: normalized.nationalId,
+            firstName: normalized.firstName,
+            lastName: normalized.lastName,
+            gender: normalized.gender,
+            age: normalized.age,
+            class: normalized.class,
+            status: normalized.status,
+            statusChangedAt: statusState.statusChangedAt,
+            leftAt: statusState.leftAt,
+        },
+    });
+    if (updateResult.count !== 1) throw new StudentUpdateConflictError();
+
+    const next = await tx.student.findUnique({
+        where: { id: student.id },
+        select: studentEntitySelect,
+    });
+    if (!next) throw new StudentUpdateConflictError();
+    await applyStudentClassCountAdjustments(tx, {
+        schoolId: student.schoolId,
+        academicYearId,
+        adjustments: calculateStudentClassCountAdjustments({
+            oldClassName: student.class,
+            newClassName: normalized.class,
+            oldStatus: student.status,
+            newStatus: normalized.status,
+        }),
+    });
+    return next;
 }
 
 const schoolEntitySelect = {
@@ -144,6 +254,7 @@ const schoolEntitySelect = {
 
 const studentEntitySelect = {
     id: true,
+    updatedAt: true,
     studentId: true,
     firstName: true,
     lastName: true,
@@ -153,6 +264,7 @@ const studentEntitySelect = {
     class: true,
     status: true,
     statusChangedAt: true,
+    leftAt: true,
     disabledAt: true,
     isTestData: true,
     schoolId: true,
@@ -169,17 +281,14 @@ const studentEntitySelect = {
     },
 } satisfies Prisma.StudentSelect;
 
+type StudentForEdit = Prisma.StudentGetPayload<{
+    select: typeof studentEntitySelect;
+}>;
+
 function getSchoolForEdit(id: string) {
     return prisma.school.findUnique({
         where: { id },
         select: schoolEntitySelect,
-    });
-}
-
-function getStudentForEdit(id: string) {
-    return prisma.student.findUnique({
-        where: { id },
-        select: studentEntitySelect,
     });
 }
 
@@ -200,6 +309,7 @@ function toStudentEntityResult(student: StudentForEdit): StudentEntityResult {
     return {
         type: "student",
         id: student.id,
+        updatedAt: student.updatedAt,
         studentId: student.studentId,
         firstName: student.firstName,
         lastName: student.lastName,
@@ -258,6 +368,7 @@ function normalizeStudentInput(
 function getStudentChanges(
     student: StudentForEdit,
     input: NormalizedStudentInput,
+    statusState: StudentStatusState,
 ): SystemAdminEditChange[] {
     return [
         createChange("studentId", "รหัสนักเรียน", student.studentId, input.studentId),
@@ -268,7 +379,23 @@ function getStudentChanges(
         createChange("age", "อายุ", student.age, input.age),
         createChange("class", "ห้อง", student.class, input.class),
         createChange("status", "สถานะนักเรียน", student.status, input.status),
+        createChange(
+            "statusChangedAt",
+            "เวลาที่เปลี่ยนสถานะ",
+            formatAuditDate(student.statusChangedAt),
+            formatAuditDate(statusState.statusChangedAt),
+        ),
+        createChange(
+            "leftAt",
+            "วันที่ออกจากโรงเรียน",
+            formatAuditDate(student.leftAt),
+            formatAuditDate(statusState.leftAt),
+        ),
     ].filter((change): change is SystemAdminEditChange => change !== null);
+}
+
+function formatAuditDate(value: Date | null): string | null {
+    return value?.toISOString() ?? null;
 }
 
 function createChange(
@@ -286,9 +413,21 @@ function maskNationalId(nationalId: string | null): string | null {
     return `*********${nationalId.slice(-4)}`;
 }
 
-function isUniqueConstraintError(error: unknown): boolean {
-    return (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2002"
-    );
+function getUniqueConstraintMessage(error: unknown): string | null {
+    if (
+        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+        error.code !== "P2002"
+    ) {
+        return null;
+    }
+
+    const target = error.meta?.target;
+    const fields = Array.isArray(target) ? target : [target];
+    if (fields.includes("nationalId")) {
+        return "เลขบัตรประชาชนนี้มีอยู่ในระบบแล้ว";
+    }
+    if (fields.includes("studentId") || fields.includes("schoolId")) {
+        return "รหัสนักเรียนนี้มีอยู่ในโรงเรียนแล้ว";
+    }
+    return "รหัสนักเรียนหรือเลขบัตรซ้ำในระบบ";
 }

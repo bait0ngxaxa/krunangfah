@@ -137,6 +137,7 @@ async function searchStudents(query: string): Promise<StudentEntityResult[]> {
         },
         select: {
             id: true,
+            updatedAt: true,
             studentId: true,
             firstName: true,
             lastName: true,
@@ -167,6 +168,7 @@ async function searchStudents(query: string): Promise<StudentEntityResult[]> {
     return students.map((student) => ({
         type: "student",
         id: student.id,
+        updatedAt: student.updatedAt,
         studentId: student.studentId,
         firstName: student.firstName,
         lastName: student.lastName,
