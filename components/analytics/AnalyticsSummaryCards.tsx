@@ -13,8 +13,9 @@ import type { ActivityCompletionSummary } from "@/lib/actions/analytics/types";
 import { toSafeCount } from "./utils";
 
 interface AnalyticsSummaryCardsProps {
-    totalStudents: number;
+    totalStudents: number | null;
     studentsWithAssessment: number;
+    screeningCoveragePercent: number | null;
     activityCompletionSummary?: ActivityCompletionSummary;
     currentClass?: string;
 }
@@ -29,7 +30,7 @@ function MainStudentCard({
     totalStudents,
     currentClass,
 }: {
-    totalStudents: number;
+    totalStudents: number | null;
     currentClass?: string;
 }) {
     const label = currentClass
@@ -55,11 +56,13 @@ function MainStudentCard({
                 </div>
                 <div className="flex items-end gap-2">
                     <p className="text-6xl font-black leading-none tracking-tight text-slate-900">
-                        {totalStudents}
+                        {totalStudents ?? "ไม่มีข้อมูล"}
                     </p>
-                    <p className="pb-1.5 text-base font-extrabold text-cyan-600">
-                        คน
-                    </p>
+                    {totalStudents === null ? null : (
+                        <p className="pb-1.5 text-base font-extrabold text-cyan-600">
+                            คน
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
@@ -208,16 +211,16 @@ function PercentageBar({ value }: { value: number }) {
 export function AnalyticsSummaryCards({
     totalStudents,
     studentsWithAssessment,
+    screeningCoveragePercent,
     activityCompletionSummary,
     currentClass,
 }: AnalyticsSummaryCardsProps) {
     const safeActivityCompletionSummary =
         activityCompletionSummary ?? EMPTY_ACTIVITY_COMPLETION_SUMMARY;
-    const safeTotalStudents = toSafeCount(totalStudents);
-    const safeStudentsWithAssessment = Math.min(
-        toSafeCount(studentsWithAssessment),
-        safeTotalStudents,
-    );
+    const safeTotalStudents = totalStudents === null
+        ? null
+        : toSafeCount(totalStudents);
+    const safeStudentsWithAssessment = toSafeCount(studentsWithAssessment);
     const safeNotStartedStudents = toSafeCount(
         safeActivityCompletionSummary.notStartedStudents,
     );
@@ -233,13 +236,7 @@ export function AnalyticsSummaryCards({
         0,
         safeStudentsWithAssessment - studentsRequiringActivity,
     );
-    const coveragePercent =
-        safeTotalStudents > 0
-            ? Math.min(
-                  100,
-                  Math.round((safeStudentsWithAssessment / safeTotalStudents) * 100),
-              )
-            : 0;
+    const coveragePercent = screeningCoveragePercent;
 
     return (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.6fr)]">
@@ -259,11 +256,13 @@ export function AnalyticsSummaryCards({
                     <MetricRow
                         icon={Gauge}
                         label="ความครอบคลุมการคัดกรอง"
-                        value={coveragePercent}
-                        unit="%"
+                        value={coveragePercent ?? 0}
+                        unit={coveragePercent === null ? "คำนวณไม่ได้" : "%"}
                         accentColor="text-violet-600"
                     />
-                    <PercentageBar value={coveragePercent} />
+                    {coveragePercent === null ? null : (
+                        <PercentageBar value={coveragePercent} />
+                    )}
                 </MetricBlock>
 
                 <MetricBlock title="ผลกิจกรรม">

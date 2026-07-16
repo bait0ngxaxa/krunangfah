@@ -70,6 +70,22 @@ function parseRoundFilter(roundValue?: string): number | undefined {
     return Number.parseInt(roundValue, 10);
 }
 
+function buildCanonicalFilterUrl(
+    params: Awaited<AnalyticsPageProps["searchParams"]>,
+    invalidKeys: ReadonlySet<keyof Awaited<AnalyticsPageProps["searchParams"]>>,
+): string {
+    const canonicalParams = new URLSearchParams();
+    const entries = Object.entries(params) as Array<[string, string | undefined]>;
+
+    for (const [key, value] of entries) {
+        if (!value || invalidKeys.has(key as keyof typeof params)) continue;
+        canonicalParams.set(key, value);
+    }
+
+    const query = canonicalParams.toString();
+    return query ? `/analytics?${query}` : "/analytics";
+}
+
 export default async function AnalyticsPage({
     searchParams,
 }: AnalyticsPageProps) {
@@ -86,19 +102,17 @@ export default async function AnalyticsPage({
     const parsedSemester = parseSemesterFilter(params.semester);
     const parsedRound = parseRoundFilter(params.round);
 
-    if (params.year && parsedYear === undefined) {
-        warnings.push(`ค่า year ไม่ถูกต้อง ("${formatWarningValue(params.year)}") ระบบจึงใช้ "ทุกปีการศึกษา"`);
+    const invalidKeys = new Set<keyof typeof params>();
+    if (params.year && parsedYear === undefined) invalidKeys.add("year");
+    if (params.semester && parsedSemester === undefined) invalidKeys.add("semester");
+    if (params.round && parsedRound === undefined) invalidKeys.add("round");
+    if (parsedSemester !== undefined && parsedYear === undefined) {
+        invalidKeys.add("semester");
     }
-    if (params.semester && parsedSemester === undefined) {
-        warnings.push(
-            `ค่า semester ไม่ถูกต้อง ("${formatWarningValue(params.semester)}") ระบบจึงใช้ "ทุกเทอม"`,
-        );
+    if (invalidKeys.size > 0) {
+        redirect(buildCanonicalFilterUrl(params, invalidKeys));
     }
-    if (params.round && parsedRound === undefined) {
-        warnings.push(
-            `ค่า round ไม่ถูกต้อง ("${formatWarningValue(params.round)}") ระบบจึงใช้ "ทุกครั้ง"`,
-        );
-    }
+
     if (userRole === "class_teacher" && params.class && params.class !== "all") {
         warnings.push("ผู้ใช้บทบาทครูประจำชั้นถูกล็อกห้องอัตโนมัติ จึงไม่ใช้ค่า class จาก URL");
     }
@@ -107,10 +121,10 @@ export default async function AnalyticsPage({
     }
 
     let selectedSchoolId = isSystemAdmin ? (params.school ?? "") : "all";
-    let selectedClass = userRole === "class_teacher" ? "all" : (params.class ?? "all");
+    const selectedClass = userRole === "class_teacher" ? "all" : (params.class ?? "all");
     let selectedAcademicYear = parsedYear === undefined ? "all" : params.year ?? "all";
     let selectedSemester = parsedSemester === undefined ? "all" : params.semester ?? "all";
-    let selectedRound = parsedRound === undefined ? "all" : params.round ?? "all";
+    const selectedRound = parsedRound === undefined ? "all" : params.round ?? "all";
 
     // ── Phase 2: Validate schoolId against DB before main fetch ──
     // Fetch schools first (lightweight) to validate schoolId before the heavy analytics query
@@ -179,32 +193,57 @@ export default async function AnalyticsPage({
         redirect("/dashboard");
     }
 
-    // ── Phase 4: Post-fetch validation (reset filter labels only, no refetch needed) ──
-    // When a class/year/semester doesn't exist in the result set, the query already
-    // returned an empty filtered result — resetting to "all" only affects the UI label
+    if (!params.year && analyticsData.currentAcademicYear !== undefined) {
+        selectedAcademicYear = analyticsData.currentAcademicYear.toString();
+    }
+    if (!params.semester && analyticsData.currentSemester !== undefined) {
+        selectedSemester = analyticsData.currentSemester.toString();
+    }
+
+    // ── Phase 4: Post-fetch validation ──
+    // Keep the queried filter visible when its scope has no data. Relabeling it as
+    // "all" would make the UI disagree with the already-filtered result.
     if (selectedClass !== "all" && !analyticsData.availableClasses.includes(selectedClass)) {
-        warnings.push(`ไม่พบห้องเรียน "${selectedClass}" ในขอบเขตข้อมูล ระบบจึงใช้ "แสดงทั้งหมด"`);
-        selectedClass = "all";
+        warnings.push(`ไม่พบห้องเรียน "${selectedClass}" ในขอบเขตข้อมูล`);
     }
 
-    if (
+    const selectedYearHasNoScreening =
         selectedAcademicYear !== "all" &&
-        !analyticsData.availableAcademicYears.includes(Number(selectedAcademicYear))
-    ) {
+        !analyticsData.availableAcademicYears.includes(Number(selectedAcademicYear));
+    const selectedSemesterHasNoScreening =
+        selectedSemester !== "all" &&
+        !analyticsData.availableSemesters.includes(Number(selectedSemester));
+    const selectedTermHasNoScreening =
+        analyticsData.selectedAcademicTermExists &&
+        (selectedYearHasNoScreening || selectedSemesterHasNoScreening);
+
+    if (selectedTermHasNoScreening) {
+        const semesterLabel = selectedSemester === "all"
+            ? ""
+            : ` เทอม ${selectedSemester}`;
         warnings.push(
-            `ไม่พบปีการศึกษา "${selectedAcademicYear}" ในขอบเขตข้อมูล ระบบจึงใช้ "ทุกปีการศึกษา"`,
+            `ยังไม่มีผลคัดกรองในปีการศึกษา ${selectedAcademicYear}${semesterLabel}`,
         );
-        selectedAcademicYear = "all";
     }
 
     if (
-        selectedSemester !== "all" &&
-        !analyticsData.availableSemesters.includes(Number(selectedSemester))
+        !selectedTermHasNoScreening &&
+        selectedAcademicYear !== "all" &&
+        selectedYearHasNoScreening
     ) {
         warnings.push(
-            `ไม่พบเทอม "${selectedSemester}" ในขอบเขตข้อมูล ระบบจึงใช้ "ทุกเทอม"`,
+            `ไม่พบปีการศึกษา "${selectedAcademicYear}" ในขอบเขตข้อมูล`,
         );
-        selectedSemester = "all";
+    }
+
+    if (
+        !selectedTermHasNoScreening &&
+        selectedSemester !== "all" &&
+        selectedSemesterHasNoScreening
+    ) {
+        warnings.push(
+            `ไม่พบเทอม "${selectedSemester}" ในขอบเขตข้อมูล`,
+        );
     }
 
     if (
@@ -212,9 +251,8 @@ export default async function AnalyticsPage({
         !analyticsData.availableRounds.includes(Number(selectedRound))
     ) {
         warnings.push(
-            `ไม่พบครั้งที่ "${selectedRound}" ในขอบเขตข้อมูล ระบบจึงใช้ "ทุกครั้ง"`,
+            `ไม่พบครั้งที่ "${selectedRound}" ในขอบเขตข้อมูล`,
         );
-        selectedRound = "all";
     }
 
     return (

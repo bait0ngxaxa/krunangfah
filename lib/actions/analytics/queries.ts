@@ -88,8 +88,7 @@ export interface CombinedAnalyticsResult {
 export async function getCombinedAnalytics(
     schoolId: string | undefined,
     classFilter?: string,
-    academicYear?: number,
-    semester?: number,
+    academicYearIds?: readonly string[],
     assessmentRound?: number,
 ): Promise<CombinedAnalyticsResult> {
     const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
@@ -98,18 +97,10 @@ export async function getCombinedAnalytics(
         ? Prisma.sql`AND s.class = ${classFilter}`
         : Prisma.empty;
 
-    const shouldJoinAcademicYear = academicYear !== undefined || semester !== undefined;
-
-    const yearJoin = shouldJoinAcademicYear
-        ? Prisma.sql`JOIN academic_years ay ON pr."academicYearId" = ay.id`
-        : Prisma.empty;
-
-    const yearCondition = academicYear !== undefined
-        ? Prisma.sql`AND ay.year = ${academicYear}`
-        : Prisma.empty;
-
-    const semesterCondition = semester !== undefined
-        ? Prisma.sql`AND ay.semester = ${semester}`
+    const academicYearCondition = academicYearIds
+        ? academicYearIds.length > 0
+            ? Prisma.sql`AND pr."academicYearId" IN (${Prisma.join(academicYearIds)})`
+            : Prisma.sql`AND false`
         : Prisma.empty;
 
     const roundCondition = assessmentRound !== undefined
@@ -138,11 +129,9 @@ export async function getCombinedAnalytics(
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN schools sch ON s."schoolId" = sch.id
-            ${yearJoin}
             ${schoolCondition}
               ${classCondition}
-              ${yearCondition}
-              ${semesterCondition}
+              ${academicYearCondition}
               ${roundCondition}
         ),
         latest_phq AS (
@@ -230,8 +219,7 @@ export async function getCombinedAnalytics(
 export async function getTrendData(
     schoolId: string | undefined,
     classFilter?: string,
-    academicYear?: number,
-    semester?: number,
+    academicYearIds?: readonly string[],
     assessmentRound?: number,
 ): Promise<TrendDataResult[]> {
     const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
@@ -240,12 +228,10 @@ export async function getTrendData(
         ? Prisma.sql`AND s.class = ${classFilter}`
         : Prisma.empty;
 
-    const yearCondition = academicYear !== undefined
-        ? Prisma.sql`AND ay.year = ${academicYear}`
-        : Prisma.empty;
-
-    const semesterCondition = semester !== undefined
-        ? Prisma.sql`AND ay.semester = ${semester}`
+    const academicYearCondition = academicYearIds
+        ? academicYearIds.length > 0
+            ? Prisma.sql`AND pr."academicYearId" IN (${Prisma.join(academicYearIds)})`
+            : Prisma.sql`AND false`
         : Prisma.empty;
 
     const roundCondition = assessmentRound !== undefined
@@ -269,8 +255,7 @@ export async function getTrendData(
             JOIN academic_years ay ON pr."academicYearId" = ay.id
             ${schoolCondition}
               ${classCondition}
-              ${yearCondition}
-              ${semesterCondition}
+              ${academicYearCondition}
               ${roundCondition}
         )
         SELECT
@@ -297,8 +282,7 @@ export async function getTrendData(
 export async function getActivityProgressByRisk(
     schoolId: string | undefined,
     classFilter?: string,
-    academicYear?: number,
-    semester?: number,
+    academicYearIds?: readonly string[],
     assessmentRound?: number,
 ): Promise<ActivityProgressResult[]> {
     const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
@@ -307,18 +291,10 @@ export async function getActivityProgressByRisk(
         ? Prisma.sql`AND s.class = ${classFilter}`
         : Prisma.empty;
 
-    const shouldJoinAcademicYear = academicYear !== undefined || semester !== undefined;
-
-    const yearJoin = shouldJoinAcademicYear
-        ? Prisma.sql`JOIN academic_years ay ON pr."academicYearId" = ay.id`
-        : Prisma.empty;
-
-    const yearCondition = academicYear !== undefined
-        ? Prisma.sql`AND ay.year = ${academicYear}`
-        : Prisma.empty;
-
-    const semesterCondition = semester !== undefined
-        ? Prisma.sql`AND ay.semester = ${semester}`
+    const academicYearCondition = academicYearIds
+        ? academicYearIds.length > 0
+            ? Prisma.sql`AND pr."academicYearId" IN (${Prisma.join(academicYearIds)})`
+            : Prisma.sql`AND false`
         : Prisma.empty;
 
     const roundCondition = assessmentRound !== undefined
@@ -338,11 +314,9 @@ export async function getActivityProgressByRisk(
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN schools sch ON s."schoolId" = sch.id
-            ${yearJoin}
             ${schoolCondition}
               ${classCondition}
-              ${yearCondition}
-              ${semesterCondition}
+              ${academicYearCondition}
               ${roundCondition}
         ),
         latest_phq AS (
@@ -379,8 +353,7 @@ export async function getActivityProgressByRisk(
 export async function getActivityCompletionSummary(
     schoolId: string | undefined,
     classFilter?: string,
-    academicYear?: number,
-    semester?: number,
+    academicYearIds?: readonly string[],
     assessmentRound?: number,
 ): Promise<ActivityCompletionSummaryResult> {
     const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
@@ -389,18 +362,10 @@ export async function getActivityCompletionSummary(
         ? Prisma.sql`AND s.class = ${classFilter}`
         : Prisma.empty;
 
-    const shouldJoinAcademicYear = academicYear !== undefined || semester !== undefined;
-
-    const yearJoin = shouldJoinAcademicYear
-        ? Prisma.sql`JOIN academic_years ay ON pr."academicYearId" = ay.id`
-        : Prisma.empty;
-
-    const yearCondition = academicYear !== undefined
-        ? Prisma.sql`AND ay.year = ${academicYear}`
-        : Prisma.empty;
-
-    const semesterCondition = semester !== undefined
-        ? Prisma.sql`AND ay.semester = ${semester}`
+    const academicYearCondition = academicYearIds
+        ? academicYearIds.length > 0
+            ? Prisma.sql`AND pr."academicYearId" IN (${Prisma.join(academicYearIds)})`
+            : Prisma.sql`AND false`
         : Prisma.empty;
 
     const roundCondition = assessmentRound !== undefined
@@ -430,11 +395,9 @@ export async function getActivityCompletionSummary(
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN schools sch ON s."schoolId" = sch.id
-            ${yearJoin}
             ${schoolCondition}
               ${classCondition}
-              ${yearCondition}
-              ${semesterCondition}
+              ${academicYearCondition}
               ${roundCondition}
         ),
         required_students AS (

@@ -40,6 +40,8 @@ function createAnalyticsData(): AnalyticsData {
         ],
         studentsWithAssessment: 8,
         studentsWithoutAssessment: 2,
+        screeningCoveragePercent: 80,
+        selectedAcademicTermExists: true,
         availableClasses: ["ม.1/1"],
         availableAcademicYears: [2569],
         availableSemesters: [1],

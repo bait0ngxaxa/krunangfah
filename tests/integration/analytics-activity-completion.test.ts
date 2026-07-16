@@ -107,8 +107,7 @@ describe("Integration: analytics activity completion summary", () => {
         const summary = await getActivityCompletionSummary(
             school.id,
             undefined,
-            academicYear.year,
-            academicYear.semester,
+            [academicYear.id],
         );
 
         expect(Number(summary.not_started_students)).toBe(1);

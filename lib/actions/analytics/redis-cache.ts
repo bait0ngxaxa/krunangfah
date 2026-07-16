@@ -62,7 +62,7 @@ function isActivityProgressByRisk(value: unknown): boolean {
         typeof value.riskLevel === "string" &&
         typeof value.label === "string" &&
         typeof value.color === "string" &&
-        typeof value.totalStudents === "number" &&
+        (value.totalStudents === null || typeof value.totalStudents === "number") &&
         typeof value.noActivity === "number" &&
         typeof value.activity1 === "number" &&
         typeof value.activity2 === "number" &&
@@ -109,7 +109,11 @@ function isAnalyticsData(value: unknown): value is AnalyticsData {
         Array.isArray(value.riskLevelSummary) &&
         value.riskLevelSummary.every(isRiskLevelSummary) &&
         typeof value.studentsWithAssessment === "number" &&
-        typeof value.studentsWithoutAssessment === "number" &&
+        (value.studentsWithoutAssessment === null ||
+            typeof value.studentsWithoutAssessment === "number") &&
+        (value.screeningCoveragePercent === null ||
+            typeof value.screeningCoveragePercent === "number") &&
+        typeof value.selectedAcademicTermExists === "boolean" &&
         isStringArray(value.availableClasses) &&
         isNumberArray(value.availableAcademicYears) &&
         isNumberArray(value.availableSemesters) &&

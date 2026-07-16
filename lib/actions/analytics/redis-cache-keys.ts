@@ -4,7 +4,7 @@ export const ANALYTICS_REDIS_TTL_SECONDS = 5 * 60;
 export const ANALYTICS_REDIS_GLOBAL_TAG = "analytics:tag:global";
 export const ANALYTICS_REDIS_OVERVIEW_TAG = "analytics:tag:overview";
 
-const ANALYTICS_REDIS_KEY_PREFIX = "analytics:cache";
+const ANALYTICS_REDIS_KEY_PREFIX = "analytics:cache:v2";
 const ANALYTICS_REDIS_TAG_PREFIX = "analytics:tag";
 const ANALYTICS_REDIS_TAG_VERSION_PREFIX = "analytics:tag-version";
 

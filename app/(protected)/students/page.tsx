@@ -151,17 +151,14 @@ async function StudentsContent({
     isAdmin: boolean;
 }) {
     const isClassTeacher = userRole === "class_teacher";
-    const shouldLoadDashboardData = !isAdmin || Boolean(filters.school);
     const [dashboardResult, schools, referredOutStudents] = await Promise.all([
-        shouldLoadDashboardData
-            ? getStudentDashboardData({
-                  schoolId: filters.school,
-                  classFilter: filters.class,
-                  page: filters.page,
-                  riskFilter: filters.risk,
-                  referredOnly: filters.referred === "true",
-              })
-            : Promise.resolve({ status: "forbidden" as const }),
+        getStudentDashboardData({
+            schoolId: filters.school,
+            classFilter: filters.class,
+            page: filters.page,
+            riskFilter: filters.risk,
+            referredOnly: filters.referred === "true",
+        }),
         isAdmin ? getSchools() : Promise.resolve([]),
         isClassTeacher ? getReferredOutStudents() : Promise.resolve([]),
     ]);

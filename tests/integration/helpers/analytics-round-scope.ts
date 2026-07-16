@@ -29,6 +29,7 @@ interface ActivityAnalyticsResult {
 
 export interface RoundScopeScenario {
     schoolId: string;
+    academicYearId: string;
     academicYear: number;
     semester: number;
     focusedClass: string;
@@ -167,6 +168,7 @@ export async function createRoundScopeScenario(): Promise<RoundScopeScenario> {
     await createRoundScopeProgress(students, phqs);
     return {
         schoolId: base.schoolId,
+        academicYearId: base.academicYearId,
         academicYear: base.academicYear,
         semester: base.semester,
         focusedClass: FOCUSED_CLASS,
@@ -181,14 +183,12 @@ export async function readActivityAnalytics(
         getActivityCompletionSummary(
             scenario.schoolId,
             classFilter,
-            scenario.academicYear,
-            scenario.semester,
+            [scenario.academicYearId],
         ),
         getActivityProgressByRisk(
             scenario.schoolId,
             classFilter,
-            scenario.academicYear,
-            scenario.semester,
+            [scenario.academicYearId],
         ),
     ]);
     return { summary, progress };

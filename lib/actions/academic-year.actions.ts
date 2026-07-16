@@ -2,12 +2,10 @@
 
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
-import {
-    getCurrentAcademicYear,
-    type AcademicYearInfo,
-} from "@/lib/utils/academic-year";
+import { getCurrentAcademicYear } from "@/lib/utils/academic-year";
 import type { AcademicYear } from "@/types/teacher.types";
 import { handleActionError } from "./error-handler";
+import { ensureCurrentAcademicYearLifecycle } from "@/lib/services/academic-year-lifecycle";
 
 /**
  * ดึงรายการปีการศึกษาทั้งหมด พร้อม auto-create ถ้าปีปัจจุบันยังไม่มี
@@ -16,9 +14,7 @@ export async function getAcademicYears(): Promise<AcademicYear[]> {
     try {
         await requireAuth();
 
-        const current = getCurrentAcademicYear();
-
-        await activateCurrentAcademicYear(current);
+        await ensureCurrentAcademicYearLifecycle();
 
         const academicYears = await prisma.academicYear.findMany({
             orderBy: [{ year: "desc" }, { semester: "desc" }],
@@ -33,7 +29,6 @@ export async function getAcademicYears(): Promise<AcademicYear[]> {
         });
     }
 }
-
 /**
  * ดึงเฉพาะเทอมของปีการศึกษาปัจจุบัน สำหรับ workflow ที่ไม่ควรเลือกปีย้อนหลัง
  */
@@ -43,7 +38,7 @@ export async function getCurrentAcademicYearTerms(): Promise<AcademicYear[]> {
 
         const current = getCurrentAcademicYear();
 
-        await activateCurrentAcademicYear(current);
+        await ensureCurrentAcademicYearLifecycle();
 
         return prisma.academicYear.findMany({
             where: { year: current.year },
@@ -65,8 +60,7 @@ export async function getCurrentAcademicYearRecord(): Promise<AcademicYear | nul
     try {
         await requireAuth();
 
-        const current = getCurrentAcademicYear();
-        const record = await activateCurrentAcademicYear(current);
+        const record = await ensureCurrentAcademicYearLifecycle();
 
         return record;
     } catch (error) {
@@ -76,42 +70,4 @@ export async function getCurrentAcademicYearRecord(): Promise<AcademicYear | nul
             fallback: null,
         });
     }
-}
-
-/**
- * เปิดใช้ปีการศึกษา/เทอมปัจจุบันเท่านั้น ไม่สร้างเทอมล่วงหน้า
- */
-async function activateCurrentAcademicYear(
-    current: AcademicYearInfo,
-): Promise<AcademicYear> {
-    const [_, record] = await prisma.$transaction([
-        prisma.academicYear.updateMany({
-            where: {
-                isCurrent: true,
-                NOT: {
-                    year: current.year,
-                    semester: current.semester,
-                },
-            },
-            data: { isCurrent: false },
-        }),
-        prisma.academicYear.upsert({
-            where: {
-                year_semester: {
-                    year: current.year,
-                    semester: current.semester,
-                },
-            },
-            update: { isCurrent: true },
-            create: {
-                year: current.year,
-                semester: current.semester,
-                startDate: current.startDate,
-                endDate: current.endDate,
-                isCurrent: true,
-            },
-        }),
-    ]);
-
-    return record;
 }

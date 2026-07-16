@@ -1,12 +1,24 @@
 import { describe, it, expect } from "vitest";
 import { RISK_LEVEL_CONFIG } from "@/lib/constants/risk-levels";
 import {
+    calculateScreeningCoveragePercent,
     transformRiskLevelCounts,
     transformTrendData,
     transformGradeRiskData,
     transformActivityProgress,
     transformHospitalReferrals,
 } from "@/lib/actions/analytics/transforms";
+
+describe("calculateScreeningCoveragePercent", () => {
+    it("changes with numerator and denominator from the selected term", () => {
+        expect(calculateScreeningCoveragePercent(10, 20)).toBe(50);
+        expect(calculateScreeningCoveragePercent(30, 40)).toBe(75);
+    });
+
+    it("reports an unavailable denominator instead of silently calculating", () => {
+        expect(calculateScreeningCoveragePercent(10, null)).toBeNull();
+    });
+});
 
 describe("transformRiskLevelCounts", () => {
     it("should transform raw results to RiskLevelSummary", () => {

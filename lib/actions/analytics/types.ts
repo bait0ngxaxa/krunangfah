@@ -56,10 +56,12 @@ export interface HospitalReferralByGrade {
 }
 
 export interface AnalyticsData {
-    totalStudents: number;
+    totalStudents: number | null;
     riskLevelSummary: RiskLevelSummary[];
     studentsWithAssessment: number;
-    studentsWithoutAssessment: number;
+    studentsWithoutAssessment: number | null;
+    screeningCoveragePercent: number | null;
+    selectedAcademicTermExists: boolean;
     availableClasses: string[];
     availableAcademicYears: number[];
     availableSemesters: number[];

@@ -185,6 +185,7 @@ export function AnalyticsContent({
             <AnalyticsSummaryCards
                 totalStudents={data.totalStudents}
                 studentsWithAssessment={data.studentsWithAssessment}
+                screeningCoveragePercent={data.screeningCoveragePercent}
                 activityCompletionSummary={data.activityCompletionSummary}
                 currentClass={data.currentClass}
             />

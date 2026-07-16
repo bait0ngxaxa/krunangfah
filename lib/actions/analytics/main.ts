@@ -15,6 +15,7 @@ import {
     transformGradeRiskData,
     transformActivityProgress,
     transformHospitalReferrals,
+    calculateScreeningCoveragePercent,
 } from "./transforms";
 import {
     ANALYTICS_OVERVIEW_TAG,
@@ -30,6 +31,7 @@ import {
 } from "./redis-cache";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
 import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
+import { ensureCurrentAcademicYearLifecycle } from "@/lib/services/academic-year-lifecycle";
 
 import type { AnalyticsData, SystemAnalyticsOverview } from "./types";
 import { handleActionError } from "@/lib/actions/error-handler";
@@ -45,7 +47,7 @@ function buildAnalyticsCacheKey(input: {
     return createAnalyticsRedisKeyParts(input);
 }
 
-async function fetchAnalyticsData(
+export async function fetchAnalyticsData(
     schoolId: string | undefined,
     targetClass: string,
     role: string,
@@ -55,20 +57,37 @@ async function fetchAnalyticsData(
 ): Promise<AnalyticsData> {
     const classFilter = targetClass || undefined;
     let academicYear = academicYearStr ? parseInt(academicYearStr, 10) : undefined;
-    const semester = semesterStr ? parseInt(semesterStr, 10) : undefined;
+    let semester = semesterStr ? parseInt(semesterStr, 10) : undefined;
     const assessmentRound = roundStr ? parseInt(roundStr, 10) : undefined;
 
-    if (!schoolId && !academicYear && !semester) {
-        const latestYear = await prisma.academicYear.findFirst({
-            orderBy: { year: "desc" },
-            select: { year: true },
-        });
-        if (latestYear) {
-            academicYear = latestYear.year;
-        }
+    if (academicYear === undefined && semester === undefined) {
+        const currentTerm = await ensureCurrentAcademicYearLifecycle();
+        academicYear = currentTerm.year;
+        semester = currentTerm.semester;
     }
 
     const showClassFilter = role === "school_admin" || role === "system_admin";
+    const selectedAcademicYears = academicYear !== undefined
+        ? await prisma.academicYear.findMany({
+              where: {
+                  year: academicYear,
+                  ...(semester !== undefined ? { semester } : {}),
+              },
+              select: { id: true, isCurrent: true },
+          })
+        : undefined;
+    const academicYearIds = selectedAcademicYears?.map((term) => term.id);
+    const selectedAcademicTermExists = (academicYearIds?.length ?? 0) > 0;
+
+    const selectedCurrentTerm = selectedAcademicYears?.find(
+        (term) => term.isCurrent,
+    );
+    if (schoolId && selectedCurrentTerm) {
+        await ensureSchoolClassTermsForAcademicYear(
+            schoolId,
+            selectedCurrentTerm.id,
+        );
+    }
 
     const [
         expectedStudentCount,
@@ -79,7 +98,7 @@ async function fetchAnalyticsData(
         activityProgressRaw,
         activityCompletionRaw,
     ] = await Promise.all([
-        getExpectedStudentCount(schoolId, classFilter, academicYear, semester),
+        getExpectedStudentCount(schoolId, classFilter, academicYearIds),
         showClassFilter
             ? prisma.schoolClass
                   .findMany({
@@ -113,14 +132,13 @@ async function fetchAnalyticsData(
             distinct: ["year", "semester"],
             orderBy: [{ year: "desc" }, { semester: "asc" }],
         }),
-        getCombinedAnalytics(schoolId, classFilter, academicYear, semester, assessmentRound),
-        getTrendData(schoolId, classFilter, academicYear, semester, assessmentRound),
-        getActivityProgressByRisk(schoolId, classFilter, academicYear, semester, assessmentRound),
+        getCombinedAnalytics(schoolId, classFilter, academicYearIds, assessmentRound),
+        getTrendData(schoolId, classFilter, academicYearIds, assessmentRound),
+        getActivityProgressByRisk(schoolId, classFilter, academicYearIds, assessmentRound),
         getActivityCompletionSummary(
             schoolId,
             classFilter,
-            academicYear,
-            semester,
+            academicYearIds,
             assessmentRound,
         ),
     ]);
@@ -171,9 +189,12 @@ async function fetchAnalyticsData(
         (sum, r) => sum + Number(r.count),
         0,
     );
-    const studentsWithoutAssessment = Math.max(
-        0,
-        expectedStudentCount - studentsWithAssessment,
+    const studentsWithoutAssessment = expectedStudentCount === null
+        ? null
+        : Math.max(0, expectedStudentCount - studentsWithAssessment);
+    const screeningCoveragePercent = calculateScreeningCoveragePercent(
+        studentsWithAssessment,
+        expectedStudentCount,
     );
     const totalReferrals = riskLevelCountsRaw.reduce(
         (sum, r) => sum + Number(r.referral_count),
@@ -200,6 +221,8 @@ async function fetchAnalyticsData(
         riskLevelSummary,
         studentsWithAssessment,
         studentsWithoutAssessment,
+        screeningCoveragePercent,
+        selectedAcademicTermExists,
         availableClasses,
         availableAcademicYears,
         availableSemesters,
@@ -217,55 +240,26 @@ async function fetchAnalyticsData(
     };
 }
 
-async function getExpectedStudentCount(
+export async function getExpectedStudentCount(
     schoolId: string | undefined,
     classFilter?: string,
-    academicYear?: number,
-    semester?: number,
-): Promise<number> {
-    const academicYearRecord = academicYear
-        ? await prisma.academicYear.findFirst({
-              where: {
-                  year: academicYear,
-                  ...(semester !== undefined ? { semester } : {}),
-              },
-              orderBy: [{ semester: "desc" }],
-              select: { id: true },
-          })
-        : await prisma.academicYear.findFirst({
-              where: { isCurrent: true },
-              orderBy: [{ year: "desc" }, { semester: "desc" }],
-              select: { id: true },
-          });
+    academicYearIds?: readonly string[],
+): Promise<number | null> {
+    if (!academicYearIds || academicYearIds.length !== 1) return null;
 
-    if (academicYearRecord) {
-        const termResult = await prisma.schoolClassTerm.aggregate({
-            where: {
-                academicYearId: academicYearRecord.id,
-                schoolClass: {
-                    ...(schoolId ? { schoolId } : {}),
-                    ...(classFilter ? { name: classFilter } : {}),
-                    school: { disabledAt: null, isTestData: false },
-                },
-            },
-            _sum: { expectedStudentCount: true },
-        });
-
-        if (termResult._sum.expectedStudentCount !== null) {
-            return termResult._sum.expectedStudentCount;
-        }
-    }
-
-    const result = await prisma.schoolClass.aggregate({
+    const result = await prisma.schoolClassTerm.aggregate({
         where: {
-            ...(schoolId ? { schoolId } : {}),
-            ...(classFilter ? { name: classFilter } : {}),
-            school: { disabledAt: null, isTestData: false },
+            academicYearId: academicYearIds[0],
+            schoolClass: {
+                ...(schoolId ? { schoolId } : {}),
+                ...(classFilter ? { name: classFilter } : {}),
+                school: { disabledAt: null, isTestData: false },
+            },
         },
         _sum: { expectedStudentCount: true },
     });
 
-    return result._sum.expectedStudentCount ?? 0;
+    return result._sum.expectedStudentCount;
 }
 
 async function getOverviewAcademicYearOptions(): Promise<{
@@ -436,9 +430,9 @@ async function fetchSystemAnalyticsOverview(
     const totalStudents = await getExpectedStudentCount(
         undefined,
         undefined,
-        resolvedAcademicYear.year,
-        resolvedAcademicYear.semester,
+        [resolvedAcademicYear.id],
     );
+    const resolvedTotalStudents = totalStudents ?? 0;
 
     const assessedStudentsRaw = await prisma.$queryRaw<Array<{ count: bigint }>>`
         SELECT COUNT(DISTINCT pr."studentId")::bigint as count
@@ -455,16 +449,16 @@ async function fetchSystemAnalyticsOverview(
         assessedStudentsRaw[0]?.count ?? BigInt(0),
     );
     const screeningCoveragePercent =
-        totalStudents > 0
+        resolvedTotalStudents > 0
             ? Math.min(
                   100,
-                  Math.round((studentsWithAssessment / totalStudents) * 100),
+                  Math.round((studentsWithAssessment / resolvedTotalStudents) * 100),
               )
             : 0;
 
     return {
         totalSchools,
-        totalStudents,
+        totalStudents: resolvedTotalStudents,
         studentsWithAssessment,
         screeningCoveragePercent,
         academicYearLabel: `ปีการศึกษา ${resolvedAcademicYear.year} เทอม ${resolvedAcademicYear.semester}`,
