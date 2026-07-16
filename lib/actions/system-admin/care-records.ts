@@ -52,8 +52,12 @@ export async function saveSystemCounselingRecord(
     });
     if (!result) return staleCareRecordResponse();
 
-    revalidateCareRecordPaths(input.studentId);
-    return { success: true, message: "บันทึกการให้คำปรึกษาสำเร็จ", updated: result };
+    revalidateCareRecordPaths(result.student.schoolId, result.studentId);
+    return {
+        success: true,
+        message: "บันทึกการให้คำปรึกษาสำเร็จ",
+        updated: toCounselingRecord(result),
+    };
 }
 
 export async function saveSystemHomeVisitRecord(
@@ -77,8 +81,12 @@ export async function saveSystemHomeVisitRecord(
     });
     if (!result) return staleCareRecordResponse();
 
-    revalidateCareRecordPaths(input.studentId);
-    return { success: true, message: "บันทึกการเยี่ยมบ้านสำเร็จ", updated: result };
+    revalidateCareRecordPaths(result.student.schoolId, result.studentId);
+    return {
+        success: true,
+        message: "บันทึกการเยี่ยมบ้านสำเร็จ",
+        updated: toHomeVisitRecord(result),
+    };
 }
 
 async function updateCounseling(
@@ -86,13 +94,13 @@ async function updateCounseling(
     existing: CounselingRow,
     input: SystemCounselingEditInput,
     actor: Actor,
-): Promise<SystemCounselingRecord | null> {
+): Promise<CounselingRow | null> {
     const changes = [
         createChange("sessionDate", "วันที่", existing.sessionDate, input.sessionDate),
         createChange("counselorName", "ผู้ให้คำปรึกษา", existing.counselorName, input.counselorName),
         createChange("summary", "สรุป", existing.summary, input.summary),
     ].filter(isChange);
-    if (changes.length === 0) return toCounselingRecord(existing);
+    if (changes.length === 0) return existing;
 
     const write = await tx.counselingSession.updateMany({
         where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
@@ -116,14 +124,14 @@ async function updateCounseling(
         actor,
         changes,
     });
-    return toCounselingRecord(updated);
+    return updated;
 }
 
 async function createCounseling(
     tx: Prisma.TransactionClient,
     input: SystemCounselingEditInput,
     actor: Actor,
-): Promise<SystemCounselingRecord> {
+): Promise<CounselingRow> {
     const sessionNumber = await getNextCounselingNumber(tx, input.studentId);
     const created = await tx.counselingSession.create({
         data: {
@@ -146,7 +154,7 @@ async function createCounseling(
         actor,
         changes: [{ field: "record", label: "เพิ่มบันทึก", before: null, after: "created" }],
     });
-    return toCounselingRecord(created);
+    return created;
 }
 
 async function updateHomeVisit(
@@ -154,7 +162,7 @@ async function updateHomeVisit(
     existing: HomeVisitRow,
     input: SystemHomeVisitEditInput,
     actor: Actor,
-): Promise<SystemHomeVisitRecord | null> {
+): Promise<HomeVisitRow | null> {
     const nextScheduledDate = input.nextScheduledDate || null;
     const changes = [
         createChange("visitDate", "วันที่เยี่ยมบ้าน", existing.visitDate, input.visitDate),
@@ -163,7 +171,7 @@ async function updateHomeVisit(
         createChange("teacherName", "ครูเจ้าของรายการ", existing.teacherName, input.teacherName),
         createChange("teacherRole", "บทบาทครู", existing.teacherRole, input.teacherRole),
     ].filter(isChange);
-    if (changes.length === 0) return toHomeVisitRecord(existing);
+    if (changes.length === 0) return existing;
 
     const write = await tx.homeVisit.updateMany({
         where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
@@ -189,14 +197,14 @@ async function updateHomeVisit(
         actor,
         changes,
     });
-    return toHomeVisitRecord(updated);
+    return updated;
 }
 
 async function createHomeVisit(
     tx: Prisma.TransactionClient,
     input: SystemHomeVisitEditInput,
     actor: Actor,
-): Promise<SystemHomeVisitRecord> {
+): Promise<HomeVisitRow> {
     const visitNumber = await getNextHomeVisitNumber(tx, input.studentId);
     const created = await tx.homeVisit.create({
         data: {
@@ -221,7 +229,7 @@ async function createHomeVisit(
         actor,
         changes: [{ field: "record", label: "เพิ่มบันทึก", before: null, after: "created" }],
     });
-    return toHomeVisitRecord(created);
+    return created;
 }
 
 async function getNextCounselingNumber(
@@ -248,8 +256,8 @@ async function getNextHomeVisitNumber(
     return (last?.visitNumber ?? 0) + 1;
 }
 
-function revalidateCareRecordPaths(studentId: string): void {
-    revalidateStudentsCache(studentId);
+function revalidateCareRecordPaths(schoolId: string, studentId: string): void {
+    revalidateStudentsCache(schoolId, studentId);
     revalidatePath(`/students/${studentId}`);
     revalidatePath("/admin/system");
 }

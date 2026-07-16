@@ -3,7 +3,6 @@ import type { Prisma } from "@prisma/client";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import { prisma } from "@/lib/database/prisma";
-import { deleteFilesByUrl } from "@/lib/actions/data-management/file-storage";
 import type {
     SystemEditResponse,
     SystemPhqRollbackResult,
@@ -16,6 +15,10 @@ import {
     type PhqRow,
 } from "./care-records-selects";
 import { staleCareRecordResponse } from "./care-records-concurrency";
+import {
+    CARE_RECORD_FILE_CLEANUP_WARNING_MESSAGE,
+    cleanupSystemCareRecordFiles,
+} from "./care-record-file-cleanup";
 
 export async function resetSystemPhqResult(
     input: SystemCareRecordDeleteInput,
@@ -50,11 +53,13 @@ export async function resetSystemPhqResult(
     });
     if (!fileUrls) return staleCareRecordResponse();
 
-    await deleteFilesByUrl(fileUrls);
+    const hasFileCleanupWarnings = await cleanupSystemCareRecordFiles(fileUrls);
     await revalidateCarePaths(existing.student.schoolId, existing.studentId);
     return {
         success: true,
-        message: "ล้างผล PHQ เพื่อให้ครูทำใหม่แล้ว",
+        message: hasFileCleanupWarnings
+            ? CARE_RECORD_FILE_CLEANUP_WARNING_MESSAGE
+            : "ล้างผล PHQ เพื่อให้ครูทำใหม่แล้ว",
         updated: { deletedPhqIds },
     };
 }

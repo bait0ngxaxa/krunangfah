@@ -16,6 +16,7 @@ export const COUNSELING_SELECT = {
     summary: true,
     createdAt: true,
     updatedAt: true,
+    student: { select: { schoolId: true } },
 } satisfies Prisma.CounselingSessionSelect;
 
 export const HOME_VISIT_SELECT = {
@@ -30,6 +31,7 @@ export const HOME_VISIT_SELECT = {
     createdAt: true,
     updatedAt: true,
     _count: { select: { photos: true } },
+    student: { select: { schoolId: true } },
 } satisfies Prisma.HomeVisitSelect;
 
 export const PHQ_SELECT = {
@@ -104,7 +106,15 @@ export function toCounselingRecord(row: {
     createdAt: Date;
     updatedAt: Date;
 }): SystemCounselingRecord {
-    return { ...row };
+    return {
+        id: row.id,
+        sessionNumber: row.sessionNumber,
+        sessionDate: row.sessionDate,
+        counselorName: row.counselorName,
+        summary: row.summary,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+    };
 }
 
 export function toHomeVisitRecord(row: {
@@ -119,7 +129,18 @@ export function toHomeVisitRecord(row: {
     updatedAt: Date;
     _count: { photos: number };
 }): SystemHomeVisitRecord {
-    return { ...row, photoCount: row._count.photos };
+    return {
+        id: row.id,
+        visitNumber: row.visitNumber,
+        visitDate: row.visitDate,
+        description: row.description,
+        nextScheduledDate: row.nextScheduledDate,
+        teacherName: row.teacherName,
+        teacherRole: row.teacherRole,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        photoCount: row._count.photos,
+    };
 }
 
 export function toPhqRecord(row: PhqRow): SystemPhqRecord {

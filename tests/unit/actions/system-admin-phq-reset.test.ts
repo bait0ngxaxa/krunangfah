@@ -17,6 +17,10 @@ const prismaMocks = vi.hoisted(() => {
     };
 });
 
+const logMocks = vi.hoisted(() => ({
+    logError: vi.fn(),
+}));
+
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         phqResult: {
@@ -43,6 +47,10 @@ vi.mock("@/lib/actions/student/cache", () => ({
 
 vi.mock("@/lib/actions/data-management/file-storage", () => ({
     deleteFilesByUrl: prismaMocks.deleteFilesByUrl,
+}));
+
+vi.mock("@/lib/utils/logging", () => ({
+    logError: logMocks.logError,
 }));
 
 import { resetSystemPhqResult } from "@/lib/actions/system-admin/care-records-phq-reset";
@@ -116,6 +124,30 @@ describe("resetSystemPhqResult", () => {
                 reason: "ครูนำเข้าคะแนน PHQ ผิดรอบ",
             }),
         });
+    });
+
+    it("reports worksheet cleanup warnings after a successful reset", async () => {
+        const warnings = ["ลบไฟล์ไม่สำเร็จ: /api/uploads/worksheets/phq-round-1.png"];
+        prismaMocks.deleteFilesByUrl.mockResolvedValue(warnings);
+
+        const result = await resetSystemPhqResult(
+            { id: phqRound1Id, expectedUpdatedAt, reason: "ทดสอบไฟล์ค้าง" },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result).toEqual(expect.objectContaining({
+            success: true,
+            message: "สำเร็จ แต่มีไฟล์บางรายการลบไม่สำเร็จ",
+        }));
+        expect(logMocks.logError).toHaveBeenCalledWith(
+            "System admin care record file cleanup warnings:",
+            warnings,
+        );
     });
 
     it("rejects rollback for an old term when a newer PHQ term exists", async () => {

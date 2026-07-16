@@ -51,7 +51,7 @@ async function softDeleteCounseling(
     });
     if (!deleted) return staleCareRecordResponse();
 
-    revalidateCareRecordPaths(existing.studentId);
+    revalidateCareRecordPaths(existing.student.schoolId, existing.studentId);
     return { success: true, message: "ลบบันทึกการให้คำปรึกษาแล้ว" };
 }
 
@@ -83,7 +83,7 @@ async function softDeleteHomeVisit(
     });
     if (!deleted) return staleCareRecordResponse();
 
-    revalidateCareRecordPaths(existing.studentId);
+    revalidateCareRecordPaths(existing.student.schoolId, existing.studentId);
     return { success: true, message: "ลบบันทึกเยี่ยมบ้านแล้ว" };
 }
 
@@ -122,8 +122,8 @@ function getDeleteData(actor: Actor, reason: string) {
     };
 }
 
-function revalidateCareRecordPaths(studentId: string): void {
-    revalidateStudentsCache(studentId);
+function revalidateCareRecordPaths(schoolId: string, studentId: string): void {
+    revalidateStudentsCache(schoolId, studentId);
     revalidatePath(`/students/${studentId}`);
     revalidatePath("/admin/system");
 }

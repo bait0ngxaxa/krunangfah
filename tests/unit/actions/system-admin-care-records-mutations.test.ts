@@ -24,6 +24,10 @@ const prismaMocks = vi.hoisted(() => {
     };
 });
 
+const cacheMocks = vi.hoisted(() => ({
+    revalidateStudentsCache: vi.fn(),
+}));
+
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         $transaction: prismaMocks.transaction,
@@ -37,7 +41,7 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("@/lib/actions/student/cache", () => ({
-    revalidateStudentsCache: vi.fn(),
+    revalidateStudentsCache: cacheMocks.revalidateStudentsCache,
 }));
 
 import type { Actor } from "@/lib/actions/system-admin/mutations";
@@ -55,6 +59,7 @@ const actor: Actor = {
 };
 
 const studentId = "cmstudent0000000000000001";
+const schoolId = "cmschool0000000000000001";
 
 describe("system admin care record mutations", () => {
     beforeEach(() => {
@@ -101,7 +106,9 @@ describe("system admin care record mutations", () => {
                 sessionNumber: 3,
                 createdById: actor.id,
             }),
-            select: expect.any(Object),
+            select: expect.objectContaining({
+                student: { select: { schoolId: true } },
+            }),
         });
         expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalledWith({
             data: expect.objectContaining({
@@ -111,6 +118,10 @@ describe("system admin care record mutations", () => {
                 reason: "เพิ่มรายการใหม่หลังลบแบบกู้คืนได้",
             }),
         });
+        expect(cacheMocks.revalidateStudentsCache).toHaveBeenCalledWith(
+            schoolId,
+            studentId,
+        );
     });
 
     it("does not reuse a soft-deleted home visit number", async () => {
@@ -147,7 +158,9 @@ describe("system admin care record mutations", () => {
                 visitNumber: 3,
                 createdById: actor.id,
             }),
-            select: expect.any(Object),
+            select: expect.objectContaining({
+                student: { select: { schoolId: true } },
+            }),
         });
         expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalledWith({
             data: expect.objectContaining({
@@ -157,6 +170,10 @@ describe("system admin care record mutations", () => {
                 reason: "เพิ่มรายการใหม่หลังลบแบบกู้คืนได้",
             }),
         });
+        expect(cacheMocks.revalidateStudentsCache).toHaveBeenCalledWith(
+            schoolId,
+            studentId,
+        );
     });
 
     it("retries counseling creation after a concurrent number conflict", async () => {
@@ -292,6 +309,30 @@ describe("system admin care record mutations", () => {
                 reason: "ลบรายการซ้ำจากเอกสารเดิม",
             }),
         });
+        expect(cacheMocks.revalidateStudentsCache).toHaveBeenCalledWith(
+            schoolId,
+            studentId,
+        );
+    });
+
+    it("invalidates scoped caches when soft deleting a home visit", async () => {
+        prismaMocks.homeVisitFindFirst.mockResolvedValue(createHomeVisitRow(1));
+
+        const result = await softDeleteSystemCareRecord(
+            "homeVisit",
+            {
+                id: "cmhomevisit000000000001",
+                expectedUpdatedAt,
+                reason: "ลบรายการเยี่ยมบ้านซ้ำ",
+            },
+            actor,
+        );
+
+        expect(result.success).toBe(true);
+        expect(cacheMocks.revalidateStudentsCache).toHaveBeenCalledWith(
+            schoolId,
+            studentId,
+        );
     });
 });
 
@@ -305,6 +346,7 @@ function createCounselingRow(sessionNumber: number) {
         summary: "บันทึกใหม่หลังลบรายการเดิม",
         createdAt: new Date("2026-07-07T00:00:00.000Z"),
         updatedAt: expectedUpdatedAt,
+        student: { schoolId },
     };
 }
 
@@ -321,6 +363,7 @@ function createHomeVisitRow(visitNumber: number) {
         createdAt: new Date("2026-07-07T00:00:00.000Z"),
         updatedAt: expectedUpdatedAt,
         _count: { photos: 0 },
+        student: { schoolId },
     };
 }
 

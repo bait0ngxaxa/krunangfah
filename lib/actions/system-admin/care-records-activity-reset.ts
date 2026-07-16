@@ -3,7 +3,6 @@ import type { Prisma } from "@prisma/client";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import { prisma } from "@/lib/database/prisma";
-import { deleteFilesByUrl } from "@/lib/actions/data-management/file-storage";
 import type {
     SystemActivityRecord,
     SystemEditResponse,
@@ -17,6 +16,10 @@ import {
     toActivityRecord,
 } from "./care-records-selects";
 import { staleCareRecordResponse } from "./care-records-concurrency";
+import {
+    CARE_RECORD_FILE_CLEANUP_WARNING_MESSAGE,
+    cleanupSystemCareRecordFiles,
+} from "./care-record-file-cleanup";
 
 export async function resetSystemActivityProgress(
     input: SystemCareRecordDeleteInput,
@@ -58,11 +61,13 @@ export async function resetSystemActivityProgress(
     });
     if (!updated) return staleCareRecordResponse();
 
-    await deleteFilesByUrl(fileUrls);
+    const hasFileCleanupWarnings = await cleanupSystemCareRecordFiles(fileUrls);
     await revalidateCarePaths(updated.student.schoolId, updated.studentId);
     return {
         success: true,
-        message: "ล้างผลกิจกรรมและถอยกลับเป็นกำลังดำเนินการแล้ว",
+        message: hasFileCleanupWarnings
+            ? CARE_RECORD_FILE_CLEANUP_WARNING_MESSAGE
+            : "ล้างผลกิจกรรมและถอยกลับเป็นกำลังดำเนินการแล้ว",
         updated: toActivityRecord(updated),
     };
 }

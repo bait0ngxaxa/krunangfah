@@ -14,6 +14,10 @@ const prismaMocks = vi.hoisted(() => {
     };
 });
 
+const logMocks = vi.hoisted(() => ({
+    logError: vi.fn(),
+}));
+
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         activityProgress: { findUnique: prismaMocks.activityProgressFindUnique },
@@ -36,6 +40,10 @@ vi.mock("@/lib/actions/student/cache", () => ({
 
 vi.mock("@/lib/actions/data-management/file-storage", () => ({
     deleteFilesByUrl: prismaMocks.deleteFilesByUrl,
+}));
+
+vi.mock("@/lib/utils/logging", () => ({
+    logError: logMocks.logError,
 }));
 
 import { resetSystemActivityProgress } from "@/lib/actions/system-admin/care-records-activity-reset";
@@ -129,6 +137,30 @@ describe("resetSystemActivityProgress", () => {
                 reason: "ครูบันทึกกิจกรรมเกิน",
             }),
         });
+    });
+
+    it("reports worksheet cleanup warnings after a successful reset", async () => {
+        const warnings = ["ลบไฟล์ไม่สำเร็จ: /api/uploads/worksheets/activity-2.png"];
+        prismaMocks.deleteFilesByUrl.mockResolvedValue(warnings);
+
+        const result = await resetSystemActivityProgress(
+            { id: activityId, expectedUpdatedAt, reason: "ทดสอบไฟล์ค้าง" },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result).toEqual(expect.objectContaining({
+            success: true,
+            message: "สำเร็จ แต่มีไฟล์บางรายการลบไม่สำเร็จ",
+        }));
+        expect(logMocks.logError).toHaveBeenCalledWith(
+            "System admin care record file cleanup warnings:",
+            warnings,
+        );
     });
 
     it.each(["locked", "in_progress"] as const)(
