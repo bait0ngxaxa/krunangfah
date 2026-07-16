@@ -36,6 +36,8 @@ const MAX_TRANSACTION_RETRIES = 3;
 const TRANSACTION_CONFLICT_MESSAGE =
     "ข้อมูลผู้ใช้ถูกแก้ไขโดยผู้ใช้อื่น กรุณาโหลดข้อมูลล่าสุดแล้วลองใหม่";
 
+class StaffAssignmentConflictError extends Error {}
+
 export interface StaffAssignmentCommand {
     userId: string;
     roleSelection?: ChangeableRole;
@@ -106,6 +108,9 @@ async function runStaffAssignmentTransaction(
                 },
             );
         } catch (error) {
+            if (error instanceof StaffAssignmentConflictError) {
+                return unchanged(TRANSACTION_CONFLICT_MESSAGE);
+            }
             if (!isTransactionConflict(error)) throw error;
             if (attempt === MAX_TRANSACTION_RETRIES - 1) {
                 return {
@@ -165,10 +170,10 @@ async function applyStaffAssignment(
     }
 
     if (userChanged && !(await compareAndSwapUser(tx, target, desired))) {
-        return unchanged(TRANSACTION_CONFLICT_MESSAGE);
+        throw new StaffAssignmentConflictError(TRANSACTION_CONFLICT_MESSAGE);
     }
     if (teacherChanged && !(await compareAndSwapTeacher(tx, target, desired))) {
-        return unchanged(TRANSACTION_CONFLICT_MESSAGE);
+        throw new StaffAssignmentConflictError(TRANSACTION_CONFLICT_MESSAGE);
     }
 
     await createSystemAdminEditEvent({

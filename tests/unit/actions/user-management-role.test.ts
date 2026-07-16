@@ -280,4 +280,45 @@ describe("changeUserRole primary assignment", () => {
         expect(results.filter((result) => result.success)).toHaveLength(1);
         expect([...state.values()].filter((user) => user.isPrimary)).toHaveLength(1);
     });
+
+    it("rolls back the user change when the teacher compare-and-swap conflicts", async () => {
+        const state = configureConcurrentPrimaryState();
+        const initial = { ...state.get("primary-admin-1")! };
+        mocks.teacherUpdateMany.mockResolvedValue({ count: 0 });
+        mocks.transaction.mockImplementation(async (operation: unknown) => {
+            if (typeof operation !== "function") {
+                throw new Error("Unexpected transaction shape");
+            }
+            const snapshot = new Map(
+                [...state].map(([id, value]) => [id, { ...value }]),
+            );
+            try {
+                return await operation({
+                    user: {
+                        findUnique: mocks.userFindUnique,
+                        updateMany: mocks.userUpdateMany,
+                        count: mocks.userCount,
+                    },
+                    teacher: {
+                        findUnique: mocks.teacherFindUnique,
+                        updateMany: mocks.teacherUpdateMany,
+                    },
+                    schoolClass: { findFirst: mocks.schoolClassFindFirst },
+                    systemAdminEvent: { create: mocks.systemAdminEventCreate },
+                });
+            } catch (error) {
+                state.clear();
+                snapshot.forEach((value, id) => state.set(id, value));
+                throw error;
+            }
+        });
+
+        const result = await updateTeacherProfile("primary-admin-1", {
+            advisoryClass: "ม.1/1",
+        });
+
+        expect(result.message).toContain("ถูกแก้ไขโดยผู้ใช้อื่น");
+        expect(state.get("primary-admin-1")).toEqual(initial);
+        expect(mocks.systemAdminEventCreate).not.toHaveBeenCalled();
+    });
 });
