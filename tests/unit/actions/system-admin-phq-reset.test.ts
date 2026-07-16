@@ -4,7 +4,11 @@ const prismaMocks = vi.hoisted(() => {
     const tx = {
         worksheetUpload: { deleteMany: vi.fn(), findMany: vi.fn() },
         activityProgress: { deleteMany: vi.fn() },
-        phqResult: { deleteMany: vi.fn(), updateMany: vi.fn() },
+        phqResult: {
+            deleteMany: vi.fn(),
+            findFirst: vi.fn(),
+            updateMany: vi.fn(),
+        },
         systemAdminEvent: { create: vi.fn() },
     };
     return {
@@ -71,6 +75,9 @@ describe("resetSystemPhqResult", () => {
         );
         prismaMocks.phqResultFindUnique.mockResolvedValue(createPhqRow(phqRound1Id, 1));
         prismaMocks.phqResultFindFirst.mockResolvedValue(createPhqRow(phqRound2Id, 2));
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue(
+            createPhqRow(phqRound2Id, 2),
+        );
         prismaMocks.tx.worksheetUpload.findMany.mockResolvedValue([
             { fileUrl: "/api/uploads/worksheets/phq-round-1.png" },
         ]);
@@ -154,7 +161,7 @@ describe("resetSystemPhqResult", () => {
         prismaMocks.phqResultFindUnique.mockResolvedValue(
             createPhqRow(phqRound1Id, 1, { year: 2569, semester: 1 }),
         );
-        prismaMocks.phqResultFindFirst.mockResolvedValue(
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue(
             createPhqRow(phqNextTermId, 1, {
                 academicYearId: nextAcademicYearId,
                 year: 2569,
@@ -177,8 +184,38 @@ describe("resetSystemPhqResult", () => {
             message: "ล้างผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
         });
         expect(prismaMocks.phqResultFindMany).not.toHaveBeenCalled();
-        expect(prismaMocks.transaction).not.toHaveBeenCalled();
+        expect(prismaMocks.transaction).toHaveBeenCalledOnce();
         expect(prismaMocks.deleteFilesByUrl).not.toHaveBeenCalled();
+    });
+
+    it("rejects reset when a newer PHQ term appears before the transaction", async () => {
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue(
+            createPhqRow(phqNextTermId, 1, {
+                academicYearId: nextAcademicYearId,
+                year: 2569,
+                semester: 2,
+            }),
+        );
+
+        const result = await resetSystemPhqResult(
+            { id: phqRound1Id, expectedUpdatedAt, reason: "ไม่ควรล้างผลเดิมหลังมีเทอมใหม่" },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "ล้างผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
+        });
+        expect(prismaMocks.tx.phqResult.updateMany).not.toHaveBeenCalled();
+        expect(prismaMocks.transaction).toHaveBeenCalledWith(
+            expect.any(Function),
+            expect.objectContaining({ isolationLevel: "Serializable" }),
+        );
     });
 
     it("does not delete worksheet files when the transaction rolls back", async () => {

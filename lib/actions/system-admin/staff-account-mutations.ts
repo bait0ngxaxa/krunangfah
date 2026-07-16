@@ -204,7 +204,7 @@ async function applyStaffDeleteImpact(impact: StaffDeleteImpact): Promise<void> 
     } catch (error) {
         logError("Staff delete file cleanup failed:", error);
     }
-    await deleteUserSessionCaches(impact.userId);
+    await invalidateUserSessionCaches(impact.userId);
     for (const studentId of impact.studentIds) {
         revalidateStudentsCache(impact.schoolId ?? undefined, studentId);
     }

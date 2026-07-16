@@ -362,6 +362,10 @@ describe("system admin staff account mutations", () => {
         expect(cacheMocks.revalidateAnalyticsCache).toHaveBeenCalledWith(
             target.schoolId,
         );
+        expect(cacheMocks.invalidateUserSessionCaches).toHaveBeenCalledWith(
+            target.id,
+        );
+        expect(cacheMocks.deleteUserSessionCaches).not.toHaveBeenCalled();
         expect(lifecycle.events).toEqual(["commit", "files"]);
     });
 

@@ -26,6 +26,7 @@ import {
     toReferralRecord,
 } from "./care-records-selects";
 import { staleCareRecordResponse } from "./care-records-concurrency";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 export async function saveSystemPhqResult(
     input: SystemPhqEditInput,
@@ -36,14 +37,6 @@ export async function saveSystemPhqResult(
         select: PHQ_SELECT,
     });
     if (!existing) return { success: false, message: "ไม่พบผลคัดกรอง" };
-
-    const latestPhq = await findLatestPhqForStudent(existing.studentId);
-    if (latestPhq && isNewerTerm(latestPhq, existing)) {
-        return {
-            success: false,
-            message: "แก้ไขผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
-        };
-    }
 
     const scores = toScores(input);
     const calculated = calculateRiskLevel(scores);
@@ -76,9 +69,12 @@ export async function saveSystemPhqResult(
         ["referredToHospital", "ส่งต่อโรงพยาบาล", existing.referredToHospital, referredToHospital],
         ["hospitalName", "โรงพยาบาล", existing.hospitalName, hospitalName],
     ]);
-    if (changes.length === 0) return { success: true, message: "ไม่มีข้อมูลเปลี่ยนแปลง", updated: toPhqRecord(existing) };
-
-    const updated = await prisma.$transaction(async (tx) => {
+    const transactionResult = await runSerializableTransaction(async (tx) => {
+        const latestPhq = await findLatestPhqForStudent(tx, existing.studentId);
+        if (latestPhq && isNewerTerm(latestPhq, existing)) {
+            return { status: "not-latest" } as const;
+        }
+        if (changes.length === 0) return { status: "unchanged", row: existing } as const;
         const write = await tx.phqResult.updateMany({
             where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
             data: {
@@ -89,7 +85,7 @@ export async function saveSystemPhqResult(
                 hospitalName,
             },
         });
-        if (write.count !== 1) return null;
+        if (write.count !== 1) return { status: "stale" } as const;
         const row = await tx.phqResult.findUniqueOrThrow({
             where: { id: existing.id },
             select: PHQ_SELECT,
@@ -103,10 +99,21 @@ export async function saveSystemPhqResult(
             actor,
             changes,
         });
-        return row;
+        return { status: "updated", row } as const;
     });
-    if (!updated) return staleCareRecordResponse();
+    if (transactionResult.status === "not-latest") {
+        return { success: false, message: "แก้ไขผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน" };
+    }
+    if (transactionResult.status === "stale") return staleCareRecordResponse();
+    if (transactionResult.status === "unchanged") {
+        return {
+            success: true,
+            message: "ไม่มีข้อมูลเปลี่ยนแปลง",
+            updated: toPhqRecord(transactionResult.row),
+        };
+    }
 
+    const updated = transactionResult.row;
     await revalidateCarePaths(updated.student.schoolId, updated.studentId);
     return { success: true, message: "แก้ไขผลคัดกรองสำเร็จ", updated: toPhqRecord(updated) };
 }
@@ -219,8 +226,8 @@ async function findTeacherInSchool(userId: string, schoolId: string) {
     });
 }
 
-async function findLatestPhqForStudent(studentId: string) {
-    return prisma.phqResult.findFirst({
+async function findLatestPhqForStudent(tx: Prisma.TransactionClient, studentId: string) {
+    return tx.phqResult.findFirst({
         where: { studentId },
         select: PHQ_SELECT,
         orderBy: [

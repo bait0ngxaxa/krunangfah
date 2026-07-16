@@ -19,6 +19,7 @@ import {
     CARE_RECORD_FILE_CLEANUP_WARNING_MESSAGE,
     cleanupSystemCareRecordFiles,
 } from "./care-record-file-cleanup";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 export async function resetSystemPhqResult(
     input: SystemCareRecordDeleteInput,
@@ -30,29 +31,32 @@ export async function resetSystemPhqResult(
     });
     if (!existing) return { success: false, message: "ไม่พบผลคัดกรอง PHQ" };
 
-    const latestPhq = await findLatestPhqForStudent(existing.studentId);
-    if (latestPhq && isNewerTerm(latestPhq, existing)) {
+    const deletedPhqIds = [existing.id];
+
+    const transactionResult = await runSerializableTransaction(async (tx) => {
+        const latestPhq = await findLatestPhqForStudent(tx, existing.studentId);
+        if (latestPhq && isNewerTerm(latestPhq, existing)) {
+            return { status: "not-latest" } as const;
+        }
+        const claim = await tx.phqResult.updateMany({
+            where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
+            data: { updatedAt: new Date() },
+        });
+        if (claim.count !== 1) return { status: "stale" } as const;
+        const fileUrls = await deleteRelatedActivities(tx, deletedPhqIds);
+        await logRollbackEvent(tx, existing, input.reason, actor, deletedPhqIds);
+        await tx.phqResult.deleteMany({ where: { id: { in: deletedPhqIds } } });
+        return { status: "deleted", fileUrls } as const;
+    });
+    if (transactionResult.status === "not-latest") {
         return {
             success: false,
             message: "ล้างผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
         };
     }
+    if (transactionResult.status === "stale") return staleCareRecordResponse();
 
-    const deletedPhqIds = [existing.id];
-
-    const fileUrls = await prisma.$transaction(async (tx) => {
-        const claim = await tx.phqResult.updateMany({
-            where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
-            data: { updatedAt: new Date() },
-        });
-        if (claim.count !== 1) return null;
-        const fileUrls = await deleteRelatedActivities(tx, deletedPhqIds);
-        await logRollbackEvent(tx, existing, input.reason, actor, deletedPhqIds);
-        await tx.phqResult.deleteMany({ where: { id: { in: deletedPhqIds } } });
-        return fileUrls;
-    });
-    if (!fileUrls) return staleCareRecordResponse();
-
+    const { fileUrls } = transactionResult;
     const hasFileCleanupWarnings = await cleanupSystemCareRecordFiles(fileUrls);
     await revalidateCarePaths(existing.student.schoolId, existing.studentId);
     return {
@@ -66,8 +70,11 @@ export async function resetSystemPhqResult(
 
 type Tx = Prisma.TransactionClient;
 
-async function findLatestPhqForStudent(studentId: string): Promise<PhqRow | null> {
-    return prisma.phqResult.findFirst({
+async function findLatestPhqForStudent(
+    tx: Tx,
+    studentId: string,
+): Promise<PhqRow | null> {
+    return tx.phqResult.findFirst({
         where: { studentId },
         select: PHQ_SELECT,
         orderBy: [

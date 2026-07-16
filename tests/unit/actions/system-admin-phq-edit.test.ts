@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prismaMocks = vi.hoisted(() => {
     const tx = {
-        phqResult: { updateMany: vi.fn(), findUniqueOrThrow: vi.fn() },
+        phqResult: {
+            updateMany: vi.fn(),
+            findFirst: vi.fn(),
+            findUniqueOrThrow: vi.fn(),
+        },
         systemAdminEvent: { create: vi.fn() },
     };
     return {
@@ -58,6 +62,7 @@ describe("saveSystemPhqResult", () => {
         );
         prismaMocks.phqResultFindUnique.mockResolvedValue(createPhqRow(phqId));
         prismaMocks.phqResultFindFirst.mockResolvedValue(createPhqRow(phqId));
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue(createPhqRow(phqId));
         prismaMocks.tx.phqResult.updateMany.mockResolvedValue({ count: 1 });
         prismaMocks.tx.phqResult.findUniqueOrThrow.mockResolvedValue(
             createPhqRow(phqId, {
@@ -91,7 +96,7 @@ describe("saveSystemPhqResult", () => {
         prismaMocks.phqResultFindUnique.mockResolvedValue(
             createPhqRow(phqId, { year: 2569, semester: 1 }),
         );
-        prismaMocks.phqResultFindFirst.mockResolvedValue(
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue(
             createPhqRow(newerTermPhqId, { year: 2569, semester: 2 }),
         );
 
@@ -104,8 +109,29 @@ describe("saveSystemPhqResult", () => {
             success: false,
             message: "แก้ไขผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
         });
-        expect(prismaMocks.transaction).not.toHaveBeenCalled();
+        expect(prismaMocks.transaction).toHaveBeenCalledOnce();
         expect(prismaMocks.tx.phqResult.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("rejects editing when a newer PHQ term appears before the transaction", async () => {
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue(
+            createPhqRow(newerTermPhqId, { year: 2569, semester: 2 }),
+        );
+
+        const result = await saveSystemPhqResult(
+            createInput("ไม่ควรแก้ผลเดิมหลังมีข้อมูลเทอมใหม่"),
+            actor,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "แก้ไขผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
+        });
+        expect(prismaMocks.tx.phqResult.updateMany).not.toHaveBeenCalled();
+        expect(prismaMocks.transaction).toHaveBeenCalledWith(
+            expect.any(Function),
+            expect.objectContaining({ isolationLevel: "Serializable" }),
+        );
     });
 
     it("rejects hospital referral edits when the edited PHQ score is not red", async () => {
