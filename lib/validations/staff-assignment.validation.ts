@@ -14,6 +14,7 @@ export const staffAssignmentCommandSchema = z
         advisoryClass: z.string().trim().min(1).max(100).optional(),
         togglePrimary: z.boolean().optional(),
         reason: z.string().trim().min(3).max(1000).optional(),
+        expectedUserUpdatedAt: z.coerce.date().optional(),
     })
     .refine(
         (input) =>

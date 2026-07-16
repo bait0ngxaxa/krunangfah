@@ -122,7 +122,10 @@ export async function changeUserRole(
  * System admin can delete non-system users.
  * Primary school admin can delete teachers in their own school.
  */
-export async function deleteUser(userId: string): Promise<MutationResponse> {
+export async function deleteUser(
+    userId: string,
+    expectedUpdatedAt?: Date,
+): Promise<MutationResponse> {
     const session = await requireAuth();
     const isSystemAdmin = session.user.role === "system_admin";
     const isPrimaryAdmin =
@@ -145,6 +148,7 @@ export async function deleteUser(userId: string): Promise<MutationResponse> {
             isPrimary: true,
             schoolId: true,
             deletedAt: true,
+            updatedAt: true,
             teacher: { select: { id: true } },
         },
     });
@@ -175,10 +179,20 @@ export async function deleteUser(userId: string): Promise<MutationResponse> {
         }
     }
 
-    await prisma.user.update({
-        where: { id: userId },
+    const updated = await prisma.user.updateMany({
+        where: {
+            id: userId,
+            updatedAt: expectedUpdatedAt ?? target.updatedAt,
+            deletedAt: null,
+        },
         data: { deletedAt: new Date() },
     });
+    if (updated.count !== 1) {
+        return {
+            success: false,
+            message: "ข้อมูลบัญชีถูกแก้ไขแล้ว กรุณาโหลดข้อมูลล่าสุดแล้วลองใหม่",
+        };
+    }
 
     await revokeUserSessions(userId);
     revalidateDashboardCache();

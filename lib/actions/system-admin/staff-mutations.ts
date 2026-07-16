@@ -88,6 +88,7 @@ const teacherEntitySelect = {
             role: true,
             isPrimary: true,
             deletedAt: true,
+            updatedAt: true,
             schoolId: true,
             school: { select: { name: true } },
         },
@@ -128,7 +129,8 @@ function toStaffEntityResult(teacher: TeacherForEdit): StaffEntityResult {
     return {
         type: "staff",
         id: teacher.user.id,
-        updatedAt: teacher.updatedAt,
+        userUpdatedAt: teacher.user.updatedAt,
+        teacherUpdatedAt: teacher.updatedAt,
         email: teacher.user.email,
         name: teacher.user.name,
         role: teacher.user.role,

@@ -80,6 +80,7 @@ export function SystemStaffActions({
                 userId,
                 roleSelection: selectedRole,
                 reason: "เปลี่ยนบทบาทและสิทธิ์บุคลากรจากศูนย์ดูแลระบบ",
+                expectedUserUpdatedAt: entity.userUpdatedAt,
             });
             if (!result.success) {
                 toast.error(result.message);

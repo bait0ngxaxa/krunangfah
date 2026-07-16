@@ -82,6 +82,7 @@ async function searchStaffs(query: string): Promise<StaffEntityResult[]> {
             role: true,
             isPrimary: true,
             deletedAt: true,
+            updatedAt: true,
             schoolId: true,
             school: { select: { name: true } },
             teacher: {
@@ -104,7 +105,8 @@ async function searchStaffs(query: string): Promise<StaffEntityResult[]> {
     return users.map((user) => ({
         type: "staff",
         id: user.id,
-        updatedAt: user.teacher?.updatedAt ?? null,
+        userUpdatedAt: user.updatedAt,
+        teacherUpdatedAt: user.teacher?.updatedAt ?? null,
         email: user.email,
         name: user.name,
         role: user.role,

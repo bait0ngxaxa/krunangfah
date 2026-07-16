@@ -264,7 +264,7 @@ export async function createCounselingSession(data: {
                   sessionDate: Date;
                   counselorName: string;
                   summary: string;
-                  createdById: string;
+                  createdById: string | null;
                   createdAt: Date;
                   updatedAt: Date;
               }

@@ -42,6 +42,7 @@ export interface StaffAssignmentCommand {
     advisoryClass?: string;
     togglePrimary?: boolean;
     reason?: string;
+    expectedUserUpdatedAt?: Date;
 }
 
 export interface StaffAssignmentActor {
@@ -136,6 +137,12 @@ async function applyStaffAssignment(
     const validationError = validateTarget(target, actor, input);
     if (validationError) return unchanged(validationError);
     if (!target) return unchanged("ไม่พบผู้ใช้งาน");
+    if (
+        input.expectedUserUpdatedAt &&
+        target.updatedAt.getTime() !== input.expectedUserUpdatedAt.getTime()
+    ) {
+        return unchanged(TRANSACTION_CONFLICT_MESSAGE);
+    }
 
     const decision = getDesiredAssignment(target, input);
     if ("message" in decision) return unchanged(decision.message);

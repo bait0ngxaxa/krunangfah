@@ -37,7 +37,7 @@ export function SystemTeacherProfileForm({
         startTransition(async () => {
             const result = await updateSystemAdminTeacherProfile({
                 id: entity.id,
-                expectedUpdatedAt: entity.updatedAt?.toISOString(),
+                expectedUpdatedAt: entity.teacherUpdatedAt?.toISOString(),
                 ...form,
             });
             if (!result.success || !result.updated) {

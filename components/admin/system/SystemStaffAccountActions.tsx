@@ -76,7 +76,11 @@ function useStaffAccountLifecycle(props: SystemStaffAccountActionsProps) {
         setDialog({ ...EMPTY_DIALOG, action });
     const closeActionDialog = () => setDialog(EMPTY_DIALOG);
     const handleDisable = () => startTransition(async () => {
-        await disableStaffAccount(props.entity.id, refreshEntity);
+        await disableStaffAccount(
+            props.entity.id,
+            props.entity.userUpdatedAt,
+            refreshEntity,
+        );
         setShowDisableDialog(false);
     });
     const handleLifecycleAction = () => {
@@ -103,9 +107,10 @@ function useStaffAccountLifecycle(props: SystemStaffAccountActionsProps) {
 
 async function disableStaffAccount(
     userId: string,
+    expectedUpdatedAt: Date,
     refreshEntity: () => Promise<void>,
 ): Promise<void> {
-    const result = await deleteUser(userId);
+    const result = await deleteUser(userId, expectedUpdatedAt);
     if (!result.success) {
         toast.error(result.message);
         return;
@@ -124,11 +129,13 @@ async function runLifecycleAction(
         ? await restoreSystemAdminStaffAccount({
               id: props.entity.id,
               reason: dialog.reason,
+              expectedUpdatedAt: props.entity.userUpdatedAt,
           })
         : await permanentlyDeleteSystemAdminStaffAccount({
               id: props.entity.id,
               reason: dialog.reason,
               confirmation: dialog.confirmation,
+              expectedUpdatedAt: props.entity.userUpdatedAt,
           });
     if (!result.success) {
         toast.error(result.message);

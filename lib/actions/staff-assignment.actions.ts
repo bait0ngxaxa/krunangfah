@@ -33,5 +33,6 @@ function toCommand(input: StaffAssignmentCommandInput): StaffAssignmentCommand {
         advisoryClass: input.advisoryClass,
         togglePrimary: input.togglePrimary,
         reason: input.reason,
+        expectedUserUpdatedAt: input.expectedUserUpdatedAt,
     };
 }

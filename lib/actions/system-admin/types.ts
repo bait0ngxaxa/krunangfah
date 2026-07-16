@@ -27,7 +27,8 @@ export interface SchoolEntityResult {
 export interface StaffEntityResult {
     type: "staff";
     id: string;
-    updatedAt: Date | null;
+    userUpdatedAt: Date;
+    teacherUpdatedAt: Date | null;
     email: string;
     name: string | null;
     role: UserRole;

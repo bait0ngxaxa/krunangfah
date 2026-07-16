@@ -101,6 +101,7 @@ export const systemTeacherProfileEditSchema = z.object({
 export const systemStaffAccountActionSchema = z.object({
     id: z.string().cuid("รหัสบัญชีบุคลากรไม่ถูกต้อง"),
     reason: reasonSchema,
+    expectedUpdatedAt: z.coerce.date(),
 });
 
 export const systemStaffAccountPermanentDeleteSchema =

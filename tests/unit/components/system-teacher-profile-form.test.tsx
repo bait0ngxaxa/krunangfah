@@ -11,7 +11,8 @@ import type { StaffEntityResult } from "@/lib/actions/system-admin/types";
 const staff: StaffEntityResult = {
     type: "staff",
     id: "cmuser000000000000000001",
-    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    userUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    teacherUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
     email: "teacher@example.com",
     name: "สมชาย ใจดี",
     role: "class_teacher",

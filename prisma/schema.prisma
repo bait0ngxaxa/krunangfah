@@ -361,7 +361,8 @@ model PhqResult {
   id              String   @id @default(cuid())
   studentId       String   // FK to Student
   academicYearId  String   // FK to AcademicYear
-  importedById    String   // FK to User (ครูที่ import)
+  importedById    String?  // FK to User (ครูที่ import); nullable เมื่อบัญชีถูกลบถาวร
+  importedBySnapshot Json? // snapshot ผู้ import สำหรับรักษาประวัติ
   assessmentRound Int      @default(1) // ครั้งที่ 1 หรือ 2
   
   // คะแนนแต่ละข้อ (0-3)
@@ -389,7 +390,7 @@ model PhqResult {
 
   student         Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
   academicYear    AcademicYear       @relation(fields: [academicYearId], references: [id])
-  importedBy      User               @relation(fields: [importedById], references: [id])
+  importedBy      User?              @relation(fields: [importedById], references: [id], onDelete: SetNull)
   activityProgress ActivityProgress[]
 
   @@unique([studentId, academicYearId, assessmentRound]) // ป้องกันซ้ำ
@@ -417,6 +418,7 @@ model ActivityProgress {
   // ข้อมูลครู
   scheduledDate   DateTime? // วันที่นัดหมาย
   teacherId       String?   // FK to User (ครูผู้ทำกิจกรรม)
+  teacherSnapshot Json?     // snapshot ครูผู้ทำกิจกรรมเมื่อบัญชีถูกลบถาวร
   teacherNotes    String?   // บันทึกของครู
   
   // แบบประเมินจากใบงาน
@@ -430,7 +432,7 @@ model ActivityProgress {
 
   student          Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
   phqResult        PhqResult         @relation(fields: [phqResultId], references: [id])
-  teacher          User?             @relation("TeacherActivities", fields: [teacherId], references: [id])
+  teacher          User?             @relation("TeacherActivities", fields: [teacherId], references: [id], onDelete: SetNull)
   worksheetUploads WorksheetUpload[]
 
   @@unique([studentId, phqResultId, activityNumber])
@@ -449,12 +451,13 @@ model WorksheetUpload {
   fileType            String   // image/jpeg, image/png, application/pdf
   fileSize            Int      // ขนาดไฟล์ (bytes)
   
-  uploadedById        String   // FK to User (ครูที่อัปโหลด)
+  uploadedById        String?  // FK to User (ครูที่อัปโหลด); nullable เมื่อบัญชีถูกลบถาวร
+  uploadedBySnapshot  Json?    // snapshot ผู้อัปโหลดสำหรับรักษาประวัติ
   idempotencyKey      String?  @unique @db.Uuid
   uploadedAt          DateTime @default(now())
 
   activityProgress    ActivityProgress @relation(fields: [activityProgressId], references: [id], onDelete: Cascade)
-  uploadedBy          User             @relation(fields: [uploadedById], references: [id])
+  uploadedBy          User?            @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
 
   @@unique([activityProgressId, worksheetNumber])
   @@map("worksheet_uploads")
@@ -469,7 +472,8 @@ model CounselingSession {
   sessionDate     DateTime  // วันที่
   counselorName   String    // ครูที่ปรึกษา
   summary         String    @db.Text // สรุปประเด็นที่ปรึกษา
-  createdById     String    // FK to User (ครูที่บันทึก)
+  createdById     String?   // FK to User (ครูที่บันทึก); nullable เมื่อบัญชีถูกลบถาวร
+  createdBySnapshot Json?   // snapshot ผู้บันทึกสำหรับรักษาประวัติ
   deletedAt       DateTime?
   deletedById     String?
   deleteReason    String?   @db.Text
@@ -478,7 +482,7 @@ model CounselingSession {
 
   student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   academicYear    AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
-  createdBy       User      @relation("CounselingSessions", fields: [createdById], references: [id])
+  createdBy       User?     @relation("CounselingSessions", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@unique([studentId, sessionNumber])
   @@index([academicYearId])
@@ -576,7 +580,8 @@ model HomeVisit {
   nextScheduledDate DateTime?
   teacherName       String    // snapshot ชื่อครู
   teacherRole       String    // snapshot บทบาทครู
-  createdById       String
+  createdById       String?
+  createdBySnapshot Json?   // snapshot ผู้บันทึกสำหรับรักษาประวัติ
   deletedAt         DateTime?
   deletedById       String?
   deleteReason      String?   @db.Text
@@ -585,7 +590,7 @@ model HomeVisit {
 
   student   Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
   academicYear AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
-  createdBy User            @relation("HomeVisits", fields: [createdById], references: [id])
+  createdBy User?           @relation("HomeVisits", fields: [createdById], references: [id], onDelete: SetNull)
   photos    HomeVisitPhoto[]
 
   @@unique([studentId, visitNumber])
