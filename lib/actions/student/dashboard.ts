@@ -2,7 +2,8 @@
 
 import { getViewerContext } from "@/lib/auth/viewer-context";
 import { isSystemAdmin } from "@/lib/auth/session";
-import { handleActionError } from "@/lib/actions/error-handler";
+import { handleQueryError } from "@/lib/actions/error-handler";
+import { queryEmpty, querySuccess, type QueryResult } from "@/lib/actions/query-result";
 import { isRiskLevel } from "@/lib/constants/risk-levels";
 import {
     getClassCountsQuery,
@@ -85,12 +86,12 @@ function buildClassOptions(
 
 export async function getStudentDashboardData(
     options?: StudentDashboardQueryOptions,
-): Promise<StudentDashboardDataResponse> {
+): Promise<QueryResult<StudentDashboardDataResponse>> {
     try {
         const viewer = await getViewerContext();
 
         if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
-            return createEmptyDashboardData();
+            return { status: "forbidden" };
         }
 
         const scopeSchoolId = isSystemAdmin(viewer.role)
@@ -98,7 +99,7 @@ export async function getStudentDashboardData(
             : viewer.schoolId;
 
         if (isSystemAdmin(viewer.role) && !scopeSchoolId) {
-            return createEmptyDashboardData();
+            return queryEmpty(createEmptyDashboardData());
         }
 
         const classFilter = normalizeClassFilter(options?.classFilter);
@@ -173,7 +174,7 @@ export async function getStudentDashboardData(
                   },
               };
 
-        return {
+        const data: StudentDashboardDataResponse = {
             students: studentListResponse.students,
             classes,
             classOptions,
@@ -195,11 +196,8 @@ export async function getStudentDashboardData(
                 hasPreviousPage: studentListResponse.pagination.page > 1,
             },
         };
+        return data.totalStudents === 0 ? queryEmpty(data) : querySuccess(data);
     } catch (error) {
-        return handleActionError({
-            context: "Get student dashboard data error:",
-            error,
-            fallback: createEmptyDashboardData(),
-        });
+        return handleQueryError("Get student dashboard data error:", error);
     }
 }

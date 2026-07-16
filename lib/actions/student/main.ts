@@ -19,6 +19,8 @@ import {
 } from "./queries";
 import { transformRiskCounts } from "./transforms";
 import { handleActionError } from "@/lib/actions/error-handler";
+import { handleQueryError } from "@/lib/actions/error-handler";
+import { querySuccess, type QueryResult } from "@/lib/actions/query-result";
 import type {
     StudentListResponse,
     RiskCountsResponse,
@@ -335,24 +337,34 @@ async function getCachedStudentDetail(
 }
 
 export async function getStudentDetail(studentId: string) {
+    const result = await getStudentDetailResult(studentId);
+    if (result.status === "success") return result.data;
+    if (result.status === "transient_error") {
+        throw new Error(`Student detail query failed (${result.requestId})`);
+    }
+    return null;
+}
+
+export async function getStudentDetailResult(
+    studentId: string,
+): Promise<QueryResult<NonNullable<Awaited<ReturnType<typeof getCachedStudentDetail>>>>> {
     try {
         const viewer = await getViewerContext();
 
-        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return null;
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
+            return { status: "forbidden" };
+        }
 
-        return getCachedStudentDetail(
+        const student = await getCachedStudentDetail(
             viewer.schoolId,
             viewer.advisoryClass,
             viewer.role,
             viewer.userId,
             studentId,
         );
+        return student ? querySuccess(student) : { status: "not_found" };
     } catch (error) {
-        return handleActionError({
-            context: "Get student detail error:",
-            error,
-            fallback: null,
-        });
+        return handleQueryError("Get student detail error:", error);
     }
 }
 

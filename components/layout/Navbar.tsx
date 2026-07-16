@@ -17,9 +17,10 @@ import { NavbarGreenBar } from "./NavbarGreenBar";
 
 interface NavbarProps {
     hasStudents: boolean;
+    hasQueryError?: boolean;
 }
 
-export function Navbar({ hasStudents }: NavbarProps) {
+export function Navbar({ hasStudents, hasQueryError = false }: NavbarProps) {
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
@@ -74,6 +75,11 @@ export function Navbar({ hasStudents }: NavbarProps) {
     return (
         <>
             <NavbarGreenBar logoHref="/dashboard" fixed>
+                {hasQueryError && (
+                    <span className="hidden rounded-lg bg-red-50 px-2 py-1 text-xs font-semibold text-red-800 sm:inline">
+                        โหลดสถานะข้อมูลไม่สำเร็จ
+                    </span>
+                )}
                 {/* Desktop Nav Links - moved to left next to logo */}
                 <div className="ml-4 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:ml-8 md:flex [scrollbar-width:none]">
                     {navLinks.map((link) => (

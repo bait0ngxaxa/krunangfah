@@ -22,6 +22,8 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { logError } from "@/lib/utils/logging";
 import { handleActionError } from "./error-handler";
+import { handleQueryError } from "./error-handler";
+import { queryEmpty, querySuccess, type QueryResult } from "./query-result";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import { verifyStudentAccessForUser } from "@/lib/security/student-access";
 import type { OffsetPagination } from "@/types/pagination.types";
@@ -54,17 +56,6 @@ export interface HomeVisitData {
 export interface HomeVisitListResponse {
     visits: HomeVisitData[];
     pagination: OffsetPagination;
-}
-
-function buildEmptyPagination(pageSize: number): OffsetPagination {
-    return {
-        page: 1,
-        pageSize,
-        total: 0,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPreviousPage: false,
-    };
 }
 
 function normalizePaginationParams(
@@ -148,7 +139,7 @@ export async function getHomeVisits(
         academicYearId?: string;
         dateRange?: AcademicYearDateRange;
     },
-): Promise<HomeVisitListResponse> {
+): Promise<QueryResult<HomeVisitListResponse>> {
     const { page: requestedPage, pageSize } = normalizePaginationParams(
         options?.page,
         options?.pageSize,
@@ -164,10 +155,7 @@ export async function getHomeVisits(
 
         if (!allowed) {
             logError("Access denied:", error);
-            return {
-                visits: [],
-                pagination: buildEmptyPagination(pageSize),
-            };
+            return { status: "forbidden" };
         }
 
         const whereClause: Prisma.HomeVisitWhereInput = {
@@ -214,7 +202,7 @@ export async function getHomeVisits(
                       },
                   });
 
-        return {
+        const data: HomeVisitListResponse = {
             visits,
             pagination: {
                 page,
@@ -225,15 +213,9 @@ export async function getHomeVisits(
                 hasPreviousPage: page > 1,
             },
         };
+        return total === 0 ? queryEmpty(data) : querySuccess(data);
     } catch (error) {
-        return handleActionError({
-            context: "Error fetching home visits:",
-            error,
-            fallback: {
-                visits: [],
-                pagination: buildEmptyPagination(pageSize),
-            },
-        });
+        return handleQueryError("Error fetching home visits:", error);
     }
 }
 

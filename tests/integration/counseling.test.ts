@@ -20,6 +20,12 @@ import {
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
+import type { QueryResult } from "@/lib/actions/query-result";
+
+function getQueryData<T>(result: QueryResult<T>): T {
+    if (result.status === "success" || result.status === "empty") return result.data;
+    throw new Error(`Expected query data, received ${result.status}`);
+}
 
 setupAuthMocks();
 
@@ -103,7 +109,7 @@ describe("Integration: Counseling Sessions", () => {
     describe("Session List", () => {
         it("should return all sessions for a student", async () => {
             mockSession(USERS.classTeacher);
-            const result = await getCounselingSessions(studentId);
+            const result = getQueryData(await getCounselingSessions(studentId));
             expect(Array.isArray(result.sessions)).toBe(true);
             expect(result.sessions.length).toBeGreaterThanOrEqual(3);
             expect(result.pagination.total).toBeGreaterThanOrEqual(3);
@@ -123,13 +129,15 @@ describe("Integration: Counseling Sessions", () => {
                 },
             });
 
-            const result = await getCounselingSessions(studentId, {
-                academicYearId,
-                dateRange: {
-                    startDate: new Date("2026-06-01"),
-                    endDate: new Date("2026-06-30"),
-                },
-            });
+            const result = getQueryData(
+                await getCounselingSessions(studentId, {
+                    academicYearId,
+                    dateRange: {
+                        startDate: new Date("2026-06-01"),
+                        endDate: new Date("2026-06-30"),
+                    },
+                }),
+            );
 
             expect(
                 result.sessions.some(

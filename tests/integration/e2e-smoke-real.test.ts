@@ -14,6 +14,12 @@ import {
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 import type { ParsedStudent } from "@/lib/utils/excel-parser";
+import type { QueryResult } from "@/lib/actions/query-result";
+
+function getQueryData<T>(result: QueryResult<T>): T {
+    if (result.status === "success" || result.status === "empty") return result.data;
+    throw new Error(`Expected query data, received ${result.status}`);
+}
 
 setupAuthMocks();
 
@@ -236,7 +242,9 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
             select: { id: true },
         });
         mockSession(USERS.classTeacher);
-        const before = await getStudentDashboardData({ classFilter: "class-1" });
+        const before = getQueryData(
+            await getStudentDashboardData({ classFilter: "class-1" }),
+        );
 
         await prisma.studentReferral.createMany({
             data: [
@@ -254,7 +262,7 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         });
 
         try {
-            const [after, list, search, detail, referred] = await Promise.all([
+            const [afterResult, list, search, detail, referredResult] = await Promise.all([
                 getStudentDashboardData({ classFilter: "class-1" }),
                 getStudents({ page: 1, limit: 50 }),
                 searchStudents(class1StudentCode),
@@ -264,6 +272,8 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
                     referredOnly: true,
                 }),
             ]);
+            const after = getQueryData(afterResult);
+            const referred = getQueryData(referredResult);
             const outsideSearch = await searchStudents(class2StudentCode);
             const outsideDetail = await getStudentDetail(class2Student.id);
 

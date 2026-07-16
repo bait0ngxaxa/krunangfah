@@ -2,18 +2,19 @@
 
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/database/prisma";
-import { handleActionError } from "./error-handler";
+import { handleQueryError } from "./error-handler";
+import { queryEmpty, querySuccess, type QueryResult } from "./query-result";
 
 /**
  * Check if the current user has any students
  * class_teacher: checks students in their advisoryClass
  * school_admin/system_admin: checks students in their school
  */
-export async function hasStudents(): Promise<boolean> {
+export async function hasStudents(): Promise<QueryResult<boolean>> {
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return false;
+            return { status: "forbidden" };
         }
 
         const dbUser = await prisma.user.findUnique({
@@ -24,11 +25,11 @@ export async function hasStudents(): Promise<boolean> {
                 teacher: { select: { advisoryClass: true } },
             },
         });
-        if (!dbUser) return false;
+        if (!dbUser) return { status: "not_found" };
 
         if (dbUser.role === "class_teacher") {
             const advisoryClass = dbUser.teacher?.advisoryClass;
-            if (!advisoryClass) return false;
+            if (!advisoryClass) return queryEmpty(false);
 
             const count = await prisma.student.count({
                 where: {
@@ -37,7 +38,7 @@ export async function hasStudents(): Promise<boolean> {
                 },
             });
 
-            return count > 0;
+            return count > 0 ? querySuccess(true) : queryEmpty(false);
         }
 
         // school_admin / system_admin
@@ -47,12 +48,8 @@ export async function hasStudents(): Promise<boolean> {
         }
 
         const studentCount = await prisma.student.count({ where });
-        return studentCount > 0;
+        return studentCount > 0 ? querySuccess(true) : queryEmpty(false);
     } catch (error) {
-        return handleActionError({
-            context: "Error checking students:",
-            error,
-            fallback: false,
-        });
+        return handleQueryError("Error checking students:", error);
     }
 }

@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
 import { BarChart3, Target, Home } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
-import { getStudentDetail } from "@/lib/actions/student/main";
+import { getStudentDetailResult } from "@/lib/actions/student/main";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { StudentProfileSection } from "@/components/student/profile/StudentProfileSection";
 import { StudentStatusProvider } from "@/components/student/profile/StudentStatusContext";
 import { StudentDetailScrollTop } from "@/components/student/profile/StudentDetailScrollTop";
@@ -144,9 +145,9 @@ async function StudentDetailContent({
     counselingPage: number;
     homeVisitPage: number;
 }) {
-    const [session, student] = await Promise.all([
+    const [session, studentResult] = await Promise.all([
         requireAuth(),
-        getStudentDetail(studentId),
+        getStudentDetailResult(studentId),
     ]);
     const currentUserId = session.user.id;
     const isSystemAdmin = session.user.role === "system_admin";
@@ -154,9 +155,16 @@ async function StudentDetailContent({
         session.user.role === "school_admin" ||
         session.user.role === "class_teacher";
 
-    if (!student) {
+    if (studentResult.status === "transient_error") {
+        return <QueryErrorState requestId={studentResult.requestId} />;
+    }
+    if (studentResult.status === "not_found") {
         notFound();
     }
+    if (studentResult.status === "forbidden") {
+        return <p className="py-10 text-center text-slate-700">ไม่มีสิทธิ์เข้าถึงข้อมูลนักเรียนนี้</p>;
+    }
+    const student = studentResult.data;
 
     const uniqueYears = getUniqueAcademicYears(
         student.phqResults.flatMap((result) =>
@@ -184,7 +192,7 @@ async function StudentDetailContent({
     );
     const latestResult = filteredPhqResults[0] || null;
     const recordAcademicYearId = latestResult?.academicYear?.id;
-    const [counselingSessionData, homeVisitData] = await Promise.all([
+    const [counselingResult, homeVisitResult] = await Promise.all([
         getCounselingSessions(studentId, {
             page: counselingPage,
             pageSize: COUNSELING_PAGE_SIZE,
@@ -198,6 +206,26 @@ async function StudentDetailContent({
             dateRange: selectedDateRange ?? undefined,
         }),
     ]);
+    if (counselingResult.status === "transient_error") {
+        return <QueryErrorState requestId={counselingResult.requestId} />;
+    }
+    if (homeVisitResult.status === "transient_error") {
+        return <QueryErrorState requestId={homeVisitResult.requestId} />;
+    }
+    if (
+        counselingResult.status === "forbidden" ||
+        homeVisitResult.status === "forbidden"
+    ) {
+        return <p className="py-10 text-center text-slate-700">ไม่มีสิทธิ์เข้าถึงบันทึกการดูแลนี้</p>;
+    }
+    if (
+        counselingResult.status === "not_found" ||
+        homeVisitResult.status === "not_found"
+    ) {
+        notFound();
+    }
+    const counselingSessionData = counselingResult.data;
+    const homeVisitData = homeVisitResult.data;
 
     const activePhqResult = getLatestPhqResult(student.phqResults);
     const visibleStudent = student;

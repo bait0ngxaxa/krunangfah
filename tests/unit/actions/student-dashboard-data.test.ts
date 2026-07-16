@@ -28,6 +28,12 @@ import {
 } from "@/lib/actions/student/queries";
 import { getStudentDashboardData } from "@/lib/actions/student/dashboard";
 import type { ViewerContext } from "@/lib/auth/viewer-context";
+import type { QueryResult } from "@/lib/actions/query-result";
+
+function getQueryData<T>(result: QueryResult<T>): T {
+    if (result.status === "success" || result.status === "empty") return result.data;
+    throw new Error(`Expected query data, received ${result.status}`);
+}
 
 const baseViewer: ViewerContext = {
     advisoryClass: "ม.1/1",
@@ -84,9 +90,10 @@ describe("getStudentDashboardData", () => {
         });
 
         const result = await getStudentDashboardData();
+        const data = getQueryData(result);
 
-        expect(result.students).toEqual([]);
-        expect(result.totalStudents).toBe(0);
+        expect(data.students).toEqual([]);
+        expect(data.totalStudents).toBe(0);
         expect(getClassCountsQuery).not.toHaveBeenCalled();
         expect(getStudentsForDashboardQuery).not.toHaveBeenCalled();
     });
@@ -95,6 +102,7 @@ describe("getStudentDashboardData", () => {
         const result = await getStudentDashboardData({
             schoolId: "school-1",
         });
+        const data = getQueryData(result);
 
         expect(getClassCountsQuery).toHaveBeenCalledTimes(2);
         expect(getClassCountsQuery).toHaveBeenNthCalledWith(
@@ -114,9 +122,9 @@ describe("getStudentDashboardData", () => {
             { referredOnly: false, riskFilter: undefined },
         );
         expect(getStudentsForDashboardQuery).not.toHaveBeenCalled();
-        expect(result.students).toEqual([]);
-        expect(result.pagination.total).toBe(0);
-        expect(result.totalStudents).toBe(58);
+        expect(data.students).toEqual([]);
+        expect(data.pagination.total).toBe(0);
+        expect(data.totalStudents).toBe(58);
     });
 
     it("loads paginated students when a class filter is selected", async () => {
@@ -127,6 +135,7 @@ describe("getStudentDashboardData", () => {
             riskFilter: "green",
             schoolId: "school-1",
         });
+        const data = getQueryData(result);
 
         expect(getRiskLevelCountsQuery).toHaveBeenCalledWith(
             "school-1",
@@ -182,10 +191,10 @@ describe("getStudentDashboardData", () => {
                 limit: 50,
             },
         );
-        expect(result.filteredStudentCount).toBe(2);
-        expect(result.pagination.page).toBe(1);
-        expect(result.pagination.hasNextPage).toBe(false);
-        expect(result.pagination.hasPreviousPage).toBe(false);
+        expect(data.filteredStudentCount).toBe(2);
+        expect(data.pagination.page).toBe(1);
+        expect(data.pagination.hasNextPage).toBe(false);
+        expect(data.pagination.hasPreviousPage).toBe(false);
     });
 
     it("keeps class filters available when selected risk has zero matching students", async () => {
@@ -214,14 +223,15 @@ describe("getStudentDashboardData", () => {
             riskFilter: "red",
             schoolId: "school-1",
         });
+        const data = getQueryData(result);
 
-        expect(result.classes).toEqual(["ม.1/1", "ม.1/2"]);
-        expect(result.classOptions).toEqual([
+        expect(data.classes).toEqual(["ม.1/1", "ม.1/2"]);
+        expect(data.classOptions).toEqual([
             { name: "ม.1/1", count: 0 },
             { name: "ม.1/2", count: 0 },
         ]);
-        expect(result.students).toEqual([]);
-        expect(result.filteredStudentCount).toBe(0);
+        expect(data.students).toEqual([]);
+        expect(data.filteredStudentCount).toBe(0);
         expect(getStudentsForDashboardQuery).toHaveBeenCalledWith(
             "school-1",
             "ม.1/1",
@@ -286,5 +296,19 @@ describe("getStudentDashboardData", () => {
                 limit: 50,
             },
         );
+    });
+
+    it("returns transient_error instead of empty dashboard data when a query fails", async () => {
+        vi.mocked(getRiskLevelCountsQuery).mockRejectedValue(
+            new Error("database unavailable"),
+        );
+
+        const result = await getStudentDashboardData({ schoolId: "school-1" });
+
+        expect(result).toEqual({
+            status: "transient_error",
+            requestId: expect.any(String),
+        });
+        expect(result).not.toHaveProperty("students");
     });
 });

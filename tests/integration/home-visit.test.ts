@@ -20,6 +20,12 @@ import {
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
+import type { QueryResult } from "@/lib/actions/query-result";
+
+function getQueryData<T>(result: QueryResult<T>): T {
+    if (result.status === "success" || result.status === "empty") return result.data;
+    throw new Error(`Expected query data, received ${result.status}`);
+}
 
 setupAuthMocks();
 
@@ -101,13 +107,15 @@ describe("Integration: Home Visits", () => {
             },
         });
 
-        const result = await getHomeVisits(studentId, {
-            academicYearId,
-            dateRange: {
-                startDate: new Date("2026-06-01"),
-                endDate: new Date("2026-06-30"),
-            },
-        });
+        const result = getQueryData(
+            await getHomeVisits(studentId, {
+                academicYearId,
+                dateRange: {
+                    startDate: new Date("2026-06-01"),
+                    endDate: new Date("2026-06-30"),
+                },
+            }),
+        );
 
         expect(result.visits.some((visit) => visit.visitNumber === 999)).toBe(
             true,

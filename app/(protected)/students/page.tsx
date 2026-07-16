@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { FileUp, ClipboardList, Users } from "lucide-react";
 import { getStudentDashboardData } from "@/lib/actions/student/dashboard";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { getReferredOutStudents } from "@/lib/actions/referral.actions";
 import { requireAuth } from "@/lib/auth/session";
@@ -151,7 +152,7 @@ async function StudentsContent({
 }) {
     const isClassTeacher = userRole === "class_teacher";
     const shouldLoadDashboardData = !isAdmin || Boolean(filters.school);
-    const [dashboardData, schools, referredOutStudents] = await Promise.all([
+    const [dashboardResult, schools, referredOutStudents] = await Promise.all([
         shouldLoadDashboardData
             ? getStudentDashboardData({
                   schoolId: filters.school,
@@ -160,32 +161,20 @@ async function StudentsContent({
                   riskFilter: filters.risk,
                   referredOnly: filters.referred === "true",
               })
-            : Promise.resolve({
-                  students: [],
-                  classes: [],
-                  classOptions: [],
-                  riskCounts: {
-                      red: 0,
-                      orange: 0,
-                      yellow: 0,
-                      green: 0,
-                      blue: 0,
-                  },
-                  referredCount: 0,
-                  totalStudents: 0,
-                  filteredStudentCount: 0,
-                  pagination: {
-                      page: 1,
-                      limit: 24,
-                      total: 0,
-                      totalPages: 1,
-                      hasNextPage: false,
-                      hasPreviousPage: false,
-                  },
-              }),
+            : Promise.resolve({ status: "forbidden" as const }),
         isAdmin ? getSchools() : Promise.resolve([]),
         isClassTeacher ? getReferredOutStudents() : Promise.resolve([]),
     ]);
+    if (dashboardResult.status === "transient_error") {
+        return <QueryErrorState requestId={dashboardResult.requestId} />;
+    }
+    if (
+        dashboardResult.status === "forbidden" ||
+        dashboardResult.status === "not_found"
+    ) {
+        return null;
+    }
+    const dashboardData = dashboardResult.data;
     const students = dashboardData.students;
     const shouldShowImportEmptyState = shouldShowStudentsImportEmptyState({
         classFilter: filters.class,

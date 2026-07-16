@@ -37,11 +37,14 @@ import { getViewerContext } from "@/lib/auth/viewer-context";
 import {
     getDistinctClassesQuery,
     getRiskLevelCountsQuery,
+    getStudentDetailQuery,
     getStudentsForDashboardQuery,
     searchStudentsQuery,
 } from "@/lib/actions/student/queries";
 import {
     getStudentRiskCounts,
+    getStudentDetail,
+    getStudentDetailResult,
     getStudentsForDashboard,
     searchStudents,
 } from "@/lib/actions/student/main";
@@ -207,5 +210,21 @@ describe("student main actions compatibility", () => {
             true,
         );
         expect(result[0]?.nationalId).toBe("1103700000011");
+    });
+
+    it("distinguishes detail query failures from not_found", async () => {
+        vi.mocked(getStudentDetailQuery).mockRejectedValue(
+            new Error("database unavailable"),
+        );
+
+        const result = await getStudentDetailResult("student-1");
+
+        expect(result).toEqual({
+            status: "transient_error",
+            requestId: expect.any(String),
+        });
+        await expect(getStudentDetail("student-1")).rejects.toThrow(
+            "Student detail query failed",
+        );
     });
 });

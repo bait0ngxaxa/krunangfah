@@ -15,6 +15,8 @@ import { requireAuth } from "@/lib/auth/session";
 import { revalidatePath } from "next/cache";
 import { logError } from "@/lib/utils/logging";
 import { handleActionError } from "./error-handler";
+import { handleQueryError } from "./error-handler";
+import { queryEmpty, querySuccess, type QueryResult } from "./query-result";
 import { verifyStudentAccessForUser } from "@/lib/security/student-access";
 import {
     counselingSessionSchema,
@@ -35,17 +37,6 @@ export interface CounselingSession {
 const MAX_SESSION_NUMBER_RETRIES = 3;
 const DEFAULT_COUNSELING_PAGE_SIZE = 10;
 const MAX_COUNSELING_PAGE_SIZE = 50;
-
-function buildEmptyPagination(pageSize: number): OffsetPagination {
-    return {
-        page: 1,
-        pageSize,
-        total: 0,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPreviousPage: false,
-    };
-}
 
 function normalizePaginationParams(
     page?: number,
@@ -133,7 +124,7 @@ export async function getCounselingSessions(
         academicYearId?: string;
         dateRange?: AcademicYearDateRange;
     },
-): Promise<CounselingSessionListResponse> {
+): Promise<QueryResult<CounselingSessionListResponse>> {
     const { page: requestedPage, pageSize } = normalizePaginationParams(
         options?.page,
         options?.pageSize,
@@ -149,10 +140,7 @@ export async function getCounselingSessions(
 
         if (!allowed) {
             logError("Access denied:", error);
-            return {
-                sessions: [],
-                pagination: buildEmptyPagination(pageSize),
-            };
+            return { status: "forbidden" };
         }
 
         const whereClause: Prisma.CounselingSessionWhereInput = {
@@ -187,7 +175,7 @@ export async function getCounselingSessions(
                       },
                   });
 
-        return {
+        const data: CounselingSessionListResponse = {
             sessions,
             pagination: {
                 page,
@@ -198,15 +186,9 @@ export async function getCounselingSessions(
                 hasPreviousPage: page > 1,
             },
         };
+        return total === 0 ? queryEmpty(data) : querySuccess(data);
     } catch (error) {
-        return handleActionError({
-            context: "Error fetching counseling sessions:",
-            error,
-            fallback: {
-                sessions: [],
-                pagination: buildEmptyPagination(pageSize),
-            },
-        });
+        return handleQueryError("Error fetching counseling sessions:", error);
     }
 }
 
