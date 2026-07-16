@@ -11,6 +11,7 @@ vi.mock("@/lib/actions/staff-assignment.actions", () => ({
 }));
 
 vi.mock("@/lib/actions/system-admin-staff-account.actions", () => ({
+    closeSystemAdminStaffAccount: vi.fn(),
     restoreSystemAdminStaffAccount: vi.fn(),
     permanentlyDeleteSystemAdminStaffAccount: vi.fn(),
 }));

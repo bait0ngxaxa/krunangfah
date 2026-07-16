@@ -1,7 +1,10 @@
 import { ArchiveRestore, Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
-export type StaffAccountDialogAction = "restore" | "permanent-delete";
+export type StaffAccountDialogAction =
+    | "disable"
+    | "restore"
+    | "permanent-delete";
 
 interface StaffAccountActionDialogProps {
     action: StaffAccountDialogAction | null;
@@ -20,6 +23,7 @@ export function StaffAccountActionDialog(
 ) {
     if (!props.action) return null;
     const isPermanentDelete = props.action === "permanent-delete";
+    const isDisable = props.action === "disable";
     const disabled = isConfirmDisabled(props, isPermanentDelete);
 
     return (
@@ -31,7 +35,10 @@ export function StaffAccountActionDialog(
                 aria-labelledby="staff-account-action-title"
                 aria-describedby="staff-account-action-description"
             >
-                <DialogHeader isPermanentDelete={isPermanentDelete} />
+                <DialogHeader
+                    isDisable={isDisable}
+                    isPermanentDelete={isPermanentDelete}
+                />
                 <ReasonField
                     reason={props.reason}
                     onChange={props.onReasonChange}
@@ -44,6 +51,7 @@ export function StaffAccountActionDialog(
                     />
                 ) : null}
                 <DialogButtons
+                    isDisable={isDisable}
                     isPermanentDelete={isPermanentDelete}
                     isPending={props.isPending}
                     disabled={disabled}
@@ -55,10 +63,26 @@ export function StaffAccountActionDialog(
     );
 }
 
-function DialogHeader({ isPermanentDelete }: { isPermanentDelete: boolean }) {
+function DialogHeader({
+    isDisable,
+    isPermanentDelete,
+}: {
+    isDisable: boolean;
+    isPermanentDelete: boolean;
+}) {
+    const title = isDisable
+        ? "ปิดบัญชีบุคลากร"
+        : isPermanentDelete
+          ? "ลบถาวรบัญชี"
+          : "กู้คืนบัญชี";
+    const description = isDisable
+        ? "บัญชีจะเข้าสู่สถานะปิดใช้งานและ session ที่กำลังใช้งานจะถูกเพิกถอน"
+        : isPermanentDelete
+          ? "ข้อมูลบัญชีและข้อมูลการทำงานที่เกี่ยวข้องจะถูกลบจากฐานข้อมูลและกู้คืนไม่ได้"
+          : "บัญชีจะกลับเข้าสู่ระบบและใช้งานตามสิทธิ์เดิมได้";
     return (
         <div className="flex items-start gap-3">
-            {isPermanentDelete ? (
+            {isDisable || isPermanentDelete ? (
                 <ShieldAlert className="h-6 w-6 shrink-0 text-red-600" />
             ) : (
                 <ArchiveRestore className="h-6 w-6 shrink-0 text-emerald-600" />
@@ -68,15 +92,13 @@ function DialogHeader({ isPermanentDelete }: { isPermanentDelete: boolean }) {
                     id="staff-account-action-title"
                     className="text-lg font-bold text-gray-900"
                 >
-                    {isPermanentDelete ? "ลบถาวรบัญชี" : "กู้คืนบัญชี"}
+                    {title}
                 </h2>
                 <p
                     id="staff-account-action-description"
                     className="mt-1 text-sm text-gray-600"
                 >
-                    {isPermanentDelete
-                        ? "ข้อมูลบัญชีและข้อมูลการทำงานที่เกี่ยวข้องจะถูกลบจากฐานข้อมูลและกู้คืนไม่ได้"
-                        : "บัญชีจะกลับเข้าสู่ระบบและใช้งานตามสิทธิ์เดิมได้"}
+                    {description}
                 </p>
             </div>
         </div>
@@ -131,12 +153,14 @@ function ConfirmationField({
 }
 
 function DialogButtons({
+    isDisable,
     isPermanentDelete,
     isPending,
     disabled,
     onCancel,
     onConfirm,
 }: {
+    isDisable: boolean;
     isPermanentDelete: boolean;
     isPending: boolean;
     disabled: boolean;
@@ -149,10 +173,10 @@ function DialogButtons({
                 onClick={onCancel}>
                 ยกเลิก
             </Button>
-            <Button type="button" variant={isPermanentDelete ? "danger" : "primary"}
+            <Button type="button" variant={isDisable || isPermanentDelete ? "danger" : "primary"}
                 disabled={disabled} onClick={onConfirm}>
                 {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                {isPermanentDelete ? "ลบถาวร" : "กู้คืนบัญชี"}
+                {isDisable ? "ปิดบัญชี" : isPermanentDelete ? "ลบถาวร" : "กู้คืนบัญชี"}
             </Button>
         </div>
     );

@@ -5,6 +5,7 @@ import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { deleteFilesByUrl } from "@/lib/actions/data-management/file-storage";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import { deleteUserSessionCaches } from "@/lib/auth/session-cache";
+import { invalidateUserSessionCaches } from "@/lib/auth/session-store";
 import { prisma } from "@/lib/database/prisma";
 import { logError } from "@/lib/utils/logging";
 import type {
@@ -12,20 +13,17 @@ import type {
     SystemStaffAccountPermanentDeleteInput,
 } from "@/lib/validations/system-admin.validation";
 import type { MutationResponse } from "@/types/user-management.types";
-import { createSystemAdminEditEvent } from "./events";
 import type { Actor } from "./mutations";
+import { createStaffAccountEvent } from "./staff-account-audit";
+import {
+    preserveCareHistoryAndDeleteAccountData,
+    type StaffDeleteImpact,
+} from "./staff-account-impact";
 
 type Tx = Prisma.TransactionClient;
 type StaffAccountTarget = NonNullable<
     Awaited<ReturnType<typeof getStaffAccountTarget>>
 >;
-
-interface StaffDeleteImpact {
-    userId: string;
-    schoolId: string | null;
-    studentIds: string[];
-    fileUrls: string[];
-}
 
 const STAFF_STALE_MESSAGE =
     "ข้อมูลบัญชีถูกแก้ไขแล้ว กรุณาโหลดข้อมูลล่าสุดแล้วลองใหม่";
@@ -47,7 +45,13 @@ export async function restoreSystemStaffAccount(
             data: { deletedAt: null },
         });
         if (update.count !== 1) return failure(STAFF_STALE_MESSAGE);
-        await createAccountEvent(tx, target, input.reason, actor, "restore");
+        await createStaffAccountEvent({
+            tx,
+            target,
+            reason: input.reason,
+            actor,
+            operation: "restore",
+        });
         return {
             success: true,
             message: target.password
@@ -72,9 +76,15 @@ export async function permanentlyDeleteSystemStaffAccount(
             const error = validatePermanentDeleteTarget(target, input.confirmation);
             if (error) return { response: error };
 
-            const impact = await createStaffDeleteImpact(tx, target);
-            await preserveCareHistoryAndDeleteAccountData(tx, target);
-            await createAccountEvent(tx, target, input.reason, actor, "permanent-delete");
+            const impact = await preserveCareHistoryAndDeleteAccountData(tx, target);
+            await createStaffAccountEvent({
+                tx,
+                target,
+                reason: input.reason,
+                actor,
+                operation: "permanent-delete",
+                impact: impact.counts,
+            });
             const deleted = await tx.user.deleteMany({
                 where: { id: target.id, updatedAt: input.expectedUpdatedAt },
             });
@@ -99,6 +109,49 @@ export async function permanentlyDeleteSystemStaffAccount(
     }
     await applyStaffDeleteImpact(transactionResult.impact);
     return transactionResult.response;
+}
+
+export async function closeSystemStaffAccount(
+    input: SystemStaffAccountActionInput,
+    actor: Actor,
+): Promise<MutationResponse> {
+    const deletedAt = new Date();
+    const result = await prisma.$transaction(async (tx) => {
+        const target = await getStaffAccountTarget(tx, input.id);
+        if (!target) return failure("ไม่พบบัญชีบุคลากร");
+        const error = validateCloseTarget(target);
+        if (error) return error;
+
+        const update = await tx.user.updateMany({
+            where: {
+                id: target.id,
+                updatedAt: input.expectedUpdatedAt,
+                deletedAt: null,
+            },
+            data: { deletedAt },
+        });
+        if (update.count !== 1) return failure(STAFF_STALE_MESSAGE);
+        const sessions = await tx.userSession.updateMany({
+            where: { userId: target.id, revokedAt: null },
+            data: { revokedAt: deletedAt },
+        });
+        await createStaffAccountEvent({
+            tx,
+            target,
+            reason: input.reason,
+            actor,
+            operation: "close",
+            deletedAtAfter: deletedAt,
+            sessionRevokedCount: sessions.count,
+        });
+        return {
+            success: true,
+            message: `ปิดบัญชี ${target.email} สำเร็จ`,
+        } satisfies MutationResponse;
+    });
+
+    if (result.success) await revalidateClosedStaffAccount(input.id);
+    return result;
 }
 
 function getStaffAccountTarget(tx: Tx, id: string) {
@@ -144,59 +197,6 @@ function validatePermanentDeleteTarget(
     return null;
 }
 
-async function preserveCareHistoryAndDeleteAccountData(
-    tx: Tx,
-    target: StaffAccountTarget,
-): Promise<void> {
-    const actorSnapshot = createStaffSnapshot(target);
-    await Promise.all([
-        tx.activityProgress.updateMany({
-            where: { teacherId: target.id },
-            data: { teacherId: null, teacherSnapshot: actorSnapshot },
-        }),
-        tx.phqResult.updateMany({
-            where: { importedById: target.id },
-            data: { importedById: null, importedBySnapshot: actorSnapshot },
-        }),
-        tx.worksheetUpload.updateMany({
-            where: { uploadedById: target.id },
-            data: { uploadedById: null, uploadedBySnapshot: actorSnapshot },
-        }),
-        tx.counselingSession.updateMany({
-            where: { createdById: target.id },
-            data: { createdById: null, createdBySnapshot: actorSnapshot },
-        }),
-        tx.homeVisit.updateMany({
-            where: { createdById: target.id },
-            data: { createdById: null, createdBySnapshot: actorSnapshot },
-        }),
-    ]);
-    await deleteStaffAccountData(tx, target);
-    await tx.teacher.deleteMany({ where: { userId: target.id } });
-}
-
-async function createStaffDeleteImpact(
-    tx: Tx,
-    target: StaffAccountTarget,
-): Promise<StaffDeleteImpact> {
-    const where = { OR: [{ fromTeacherUserId: target.id }, { toTeacherUserId: target.id }] };
-    const [phqRows, activityRows, worksheetRows, counselingRows, homeVisitRows, referralRows] = await Promise.all([
-        tx.phqResult.findMany({ where: { importedById: target.id }, select: { studentId: true } }),
-        tx.activityProgress.findMany({ where: { teacherId: target.id }, select: { studentId: true } }),
-        tx.worksheetUpload.findMany({
-            where: { uploadedById: target.id },
-            select: { activityProgress: { select: { studentId: true } } },
-        }),
-        tx.counselingSession.findMany({ where: { createdById: target.id }, select: { studentId: true } }),
-        tx.homeVisit.findMany({ where: { createdById: target.id }, select: { studentId: true } }),
-        tx.studentReferral.findMany({ where, select: { studentId: true } }),
-    ]);
-    const directIds = [phqRows, activityRows, counselingRows, homeVisitRows, referralRows]
-        .flatMap((rows) => rows.map((row) => row.studentId));
-    const worksheetIds = worksheetRows.map((row) => row.activityProgress.studentId);
-    return { userId: target.id, schoolId: target.schoolId, studentIds: [...new Set([...directIds, ...worksheetIds])], fileUrls: [] };
-}
-
 async function applyStaffDeleteImpact(impact: StaffDeleteImpact): Promise<void> {
     try {
         const warnings = await deleteFilesByUrl(impact.fileUrls);
@@ -214,83 +214,27 @@ async function applyStaffDeleteImpact(impact: StaffDeleteImpact): Promise<void> 
     revalidatePath("/admin/users");
 }
 
-async function deleteStaffAccountData(
-    tx: Tx,
-    target: StaffAccountTarget,
-): Promise<void> {
-    await Promise.all([
-        deleteStaffInvites(tx, target),
-        tx.userSession.deleteMany({ where: { userId: target.id } }),
-        tx.passwordResetToken.deleteMany({ where: { email: target.email } }),
-        tx.schoolTeacherRoster.deleteMany({ where: { email: target.email } }),
-        tx.studentReferral.deleteMany({
-            where: {
-                OR: [
-                    { fromTeacherUserId: target.id },
-                    { toTeacherUserId: target.id },
-                ],
-            },
-        }),
-    ]);
-}
-
-function createStaffSnapshot(target: StaffAccountTarget): Prisma.InputJsonObject {
-    return {
-        id: target.id,
-        email: target.email,
-        name: target.name,
-        role: target.role,
-    };
-}
-
-async function deleteStaffInvites(
-    tx: Tx,
-    target: StaffAccountTarget,
-): Promise<void> {
-    await Promise.all([
-        tx.teacherInvite.deleteMany({
-            where: {
-                OR: [{ invitedById: target.id }, { email: target.email }],
-            },
-        }),
-        tx.schoolAdminInvite.deleteMany({
-            where: {
-                OR: [{ createdBy: target.id }, { email: target.email }],
-            },
-        }),
-    ]);
-}
-
-async function createAccountEvent(
-    tx: Tx,
-    target: StaffAccountTarget,
-    reason: string,
-    actor: Actor,
-    operation: "restore" | "permanent-delete",
-): Promise<void> {
-    const isRestore = operation === "restore";
-    await createSystemAdminEditEvent({
-        tx,
-        targetType: "user",
-        targetId: target.id,
-        targetLabel: target.name ?? target.email,
-        action: isRestore ? "EDIT" : "DELETE",
-        reason,
-        actor,
-        changes: [{
-            field: "accountStatus",
-            label: "สถานะบัญชี",
-            before: "ปิดใช้งาน",
-            after: isRestore ? "เปิดใช้งาน" : "ลบถาวร",
-        }],
-    });
-}
-
 async function revalidateStaffAccount(userId: string): Promise<void> {
     await deleteUserSessionCaches(userId);
     revalidateDashboardCache();
     revalidatePath("/admin/system");
     revalidatePath("/admin/users");
+}
+
+async function revalidateClosedStaffAccount(userId: string): Promise<void> {
+    await invalidateUserSessionCaches(userId);
+    revalidateDashboardCache();
+    revalidatePath("/admin/system");
+    revalidatePath("/admin/users");
+}
+
+function validateCloseTarget(
+    target: StaffAccountTarget,
+): MutationResponse | null {
+    if (target.role === "system_admin") return failure("ไม่สามารถปิดบัญชี System Admin");
+    if (target.isPrimary) return failure("ไม่สามารถปิดบัญชี Primary Admin");
+    if (target.deletedAt) return failure("ผู้ใช้นี้ถูกลบแล้ว");
+    return null;
 }
 
 function failure(message: string): MutationResponse {

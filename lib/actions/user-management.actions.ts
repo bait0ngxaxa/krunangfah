@@ -101,11 +101,13 @@ export async function getUsers(
 export async function changeUserRole(
     userId: string,
     newRole: ChangeableRole,
+    reason?: string,
 ): Promise<MutationResponse> {
     const session = await requireAdmin();
     const parsed = staffAssignmentCommandSchema.safeParse({
         userId,
         roleSelection: newRole,
+        reason,
     });
     if (!parsed.success) {
         return { success: false, message: "บทบาทไม่ถูกต้อง" };
@@ -113,6 +115,7 @@ export async function changeUserRole(
     const command: StaffAssignmentCommand = {
         userId: parsed.data.userId,
         roleSelection: parsed.data.roleSelection,
+        reason: parsed.data.reason,
     };
     return executeStaffAssignmentCommand(command, session.user);
 }
@@ -221,12 +224,13 @@ export async function getClassesBySchool(
  */
 export async function updateTeacherProfile(
     userId: string,
-    data: { advisoryClass: string },
+    data: { advisoryClass: string; reason?: string },
 ): Promise<MutationResponse> {
     const session = await requireAuth();
     const parsed = staffAssignmentCommandSchema.safeParse({
         userId,
         advisoryClass: data.advisoryClass,
+        reason: data.reason,
     });
     if (!parsed.success) {
         return { success: false, message: "กรุณาเลือกห้องที่ปรึกษา" };
@@ -234,6 +238,7 @@ export async function updateTeacherProfile(
     const command: StaffAssignmentCommand = {
         userId: parsed.data.userId,
         advisoryClass: parsed.data.advisoryClass,
+        reason: parsed.data.reason,
     };
     return executeStaffAssignmentCommand(command, session.user);
 }

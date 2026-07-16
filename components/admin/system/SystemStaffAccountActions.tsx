@@ -4,12 +4,11 @@ import { useState, useTransition } from "react";
 import { ArchiveRestore, ShieldAlert, Trash2, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
+    closeSystemAdminStaffAccount,
     permanentlyDeleteSystemAdminStaffAccount,
     restoreSystemAdminStaffAccount,
 } from "@/lib/actions/system-admin-staff-account.actions";
-import { deleteUser } from "@/lib/actions/user-management.actions";
 import type {
     StaffEntityResult,
     SystemEntityResult,
@@ -26,7 +25,6 @@ interface SystemStaffAccountActionsProps {
     onEntityRemoved: () => void;
     onRefreshSearch: () => Promise<SystemSearchResult>;
 }
-
 interface DialogState {
     action: StaffAccountDialogAction | null;
     reason: string;
@@ -47,17 +45,8 @@ export function SystemStaffAccountActions(
             <AccountActionButtons
                 entity={props.entity}
                 isPending={controller.isPending}
-                onDisable={() => controller.setShowDisableDialog(true)}
+                onDisable={() => controller.openActionDialog("disable")}
                 onOpenAction={controller.openActionDialog}
-            />
-            <ConfirmDialog
-                isOpen={controller.showDisableDialog}
-                title="ปิดบัญชีบุคลากร"
-                message={`ต้องการปิดบัญชี "${getDisplayName(props.entity)}" ใช่หรือไม่? ข้อมูลจะยังอยู่และ System Admin สามารถกู้คืนได้`}
-                confirmLabel="ยืนยันปิดบัญชี"
-                isLoading={controller.isPending}
-                onConfirm={controller.handleDisable}
-                onCancel={() => controller.setShowDisableDialog(false)}
             />
             <LifecycleDialog
                 entity={props.entity}
@@ -68,21 +57,12 @@ export function SystemStaffAccountActions(
 }
 
 function useStaffAccountLifecycle(props: SystemStaffAccountActionsProps) {
-    const [showDisableDialog, setShowDisableDialog] = useState(false);
     const [dialog, setDialog] = useState<DialogState>(EMPTY_DIALOG);
     const [isPending, startTransition] = useTransition();
     const refreshEntity = () => refreshStaffEntity(props);
     const openActionDialog = (action: StaffAccountDialogAction) =>
         setDialog({ ...EMPTY_DIALOG, action });
     const closeActionDialog = () => setDialog(EMPTY_DIALOG);
-    const handleDisable = () => startTransition(async () => {
-        await disableStaffAccount(
-            props.entity.id,
-            props.entity.userUpdatedAt,
-            refreshEntity,
-        );
-        setShowDisableDialog(false);
-    });
     const handleLifecycleAction = () => {
         if (!dialog.action) return;
         startTransition(() => runLifecycleAction(
@@ -95,28 +75,11 @@ function useStaffAccountLifecycle(props: SystemStaffAccountActionsProps) {
     return {
         dialog,
         setDialog,
-        showDisableDialog,
-        setShowDisableDialog,
         isPending,
         openActionDialog,
         closeActionDialog,
-        handleDisable,
         handleLifecycleAction,
     };
-}
-
-async function disableStaffAccount(
-    userId: string,
-    expectedUpdatedAt: Date,
-    refreshEntity: () => Promise<void>,
-): Promise<void> {
-    const result = await deleteUser(userId, expectedUpdatedAt);
-    if (!result.success) {
-        toast.error(result.message);
-        return;
-    }
-    toast.success(result.message);
-    await refreshEntity();
 }
 
 async function runLifecycleAction(
@@ -125,13 +88,19 @@ async function runLifecycleAction(
     closeDialog: () => void,
     refreshEntity: () => Promise<void>,
 ): Promise<void> {
-    const result = dialog.action === "restore"
-        ? await restoreSystemAdminStaffAccount({
+    const result = dialog.action === "disable"
+        ? await closeSystemAdminStaffAccount({
               id: props.entity.id,
               reason: dialog.reason,
               expectedUpdatedAt: props.entity.userUpdatedAt,
           })
-        : await permanentlyDeleteSystemAdminStaffAccount({
+        : dialog.action === "restore"
+          ? await restoreSystemAdminStaffAccount({
+              id: props.entity.id,
+              reason: dialog.reason,
+              expectedUpdatedAt: props.entity.userUpdatedAt,
+          })
+          : await permanentlyDeleteSystemAdminStaffAccount({
               id: props.entity.id,
               reason: dialog.reason,
               confirmation: dialog.confirmation,
@@ -236,8 +205,4 @@ function LifecycleDialog({
             onConfirm={controller.handleLifecycleAction}
         />
     );
-}
-
-function getDisplayName(entity: StaffEntityResult): string {
-    return entity.teacherName ?? entity.name ?? entity.email;
 }

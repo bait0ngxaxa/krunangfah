@@ -2,6 +2,7 @@
 
 import { handleActionError } from "@/lib/actions/error-handler";
 import {
+    closeSystemStaffAccount,
     permanentlyDeleteSystemStaffAccount,
     restoreSystemStaffAccount,
 } from "@/lib/actions/system-admin/staff-account-mutations";
@@ -27,6 +28,23 @@ export async function restoreSystemAdminStaffAccount(
             context: "restoreSystemAdminStaffAccount error:",
             error,
             fallback: { success: false, message: "กู้คืนบัญชีไม่สำเร็จ" },
+        });
+    }
+}
+
+export async function closeSystemAdminStaffAccount(
+    input: unknown,
+): Promise<MutationResponse> {
+    try {
+        const parsed = systemStaffAccountActionSchema.safeParse(input);
+        if (!parsed.success) return invalidInput(parsed.error);
+        const session = await requireAdmin();
+        return closeSystemStaffAccount(parsed.data, toActor(session));
+    } catch (error) {
+        return handleActionError({
+            context: "closeSystemAdminStaffAccount error:",
+            error,
+            fallback: { success: false, message: "ปิดบัญชีไม่สำเร็จ" },
         });
     }
 }

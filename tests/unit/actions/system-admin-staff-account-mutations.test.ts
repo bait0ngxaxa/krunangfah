@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Actor } from "@/lib/actions/system-admin/mutations";
 import {
+    closeSystemStaffAccount,
     permanentlyDeleteSystemStaffAccount,
     restoreSystemStaffAccount,
 } from "@/lib/actions/system-admin/staff-account-mutations";
@@ -8,7 +9,7 @@ import {
 const prismaMocks = vi.hoisted(() => {
     const tx = {
         user: { findUnique: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
-        userSession: { deleteMany: vi.fn() },
+        userSession: { deleteMany: vi.fn(), updateMany: vi.fn() },
         teacherInvite: { deleteMany: vi.fn() },
         schoolAdminInvite: { deleteMany: vi.fn() },
         schoolTeacherRoster: { deleteMany: vi.fn() },
@@ -27,6 +28,7 @@ const prismaMocks = vi.hoisted(() => {
 
 const cacheMocks = vi.hoisted(() => ({
     deleteUserSessionCaches: vi.fn(),
+    invalidateUserSessionCaches: vi.fn(),
     deleteFilesByUrl: vi.fn(),
     revalidateDashboardCache: vi.fn(),
     revalidateAnalyticsCache: vi.fn(),
@@ -40,6 +42,10 @@ vi.mock("@/lib/database/prisma", () => ({
 
 vi.mock("@/lib/auth/session-cache", () => ({
     deleteUserSessionCaches: cacheMocks.deleteUserSessionCaches,
+}));
+
+vi.mock("@/lib/auth/session-store", () => ({
+    invalidateUserSessionCaches: cacheMocks.invalidateUserSessionCaches,
 }));
 
 vi.mock("@/lib/actions/dashboard/cache", () => ({
@@ -107,6 +113,92 @@ describe("system admin staff account mutations", () => {
         });
         prismaMocks.tx.user.updateMany.mockResolvedValue({ count: 1 });
         prismaMocks.tx.user.deleteMany.mockResolvedValue({ count: 1 });
+        prismaMocks.tx.userSession.updateMany.mockResolvedValue({ count: 2 });
+        prismaMocks.tx.userSession.deleteMany.mockResolvedValue({ count: 0 });
+        prismaMocks.tx.teacherInvite.deleteMany.mockResolvedValue({ count: 0 });
+        prismaMocks.tx.schoolAdminInvite.deleteMany.mockResolvedValue({ count: 0 });
+        prismaMocks.tx.passwordResetToken.deleteMany.mockResolvedValue({ count: 0 });
+        prismaMocks.tx.schoolTeacherRoster.deleteMany.mockResolvedValue({ count: 0 });
+        prismaMocks.tx.studentReferral.deleteMany.mockResolvedValue({ count: 0 });
+        prismaMocks.tx.teacher.deleteMany.mockResolvedValue({ count: 1 });
+        prismaMocks.tx.activityProgress.updateMany.mockResolvedValue({ count: 0 });
+        prismaMocks.tx.phqResult.updateMany.mockResolvedValue({ count: 1 });
+        prismaMocks.tx.worksheetUpload.updateMany.mockResolvedValue({ count: 0 });
+        prismaMocks.tx.counselingSession.updateMany.mockResolvedValue({ count: 0 });
+        prismaMocks.tx.homeVisit.updateMany.mockResolvedValue({ count: 0 });
+    });
+
+    it("closes the account, revokes sessions, and records deletedAt changes", async () => {
+        prismaMocks.tx.user.findUnique.mockResolvedValue({
+            ...target,
+            deletedAt: null,
+        });
+
+        const result = await closeSystemStaffAccount(
+            {
+                id: target.id,
+                reason: "บัญชีบุคลากรพ้นสภาพการทำงาน",
+                expectedUpdatedAt: target.updatedAt,
+            },
+            actor,
+        );
+
+        expect(result.success).toBe(true);
+        expect(prismaMocks.tx.user.updateMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {
+                    id: target.id,
+                    updatedAt: target.updatedAt,
+                    deletedAt: null,
+                },
+                data: expect.objectContaining({ deletedAt: expect.any(Date) }),
+            }),
+        );
+        expect(prismaMocks.tx.userSession.updateMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { userId: target.id, revokedAt: null },
+                data: expect.objectContaining({ revokedAt: expect.any(Date) }),
+            }),
+        );
+        expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+                reason: "บัญชีบุคลากรพ้นสภาพการทำงาน",
+                changes: expect.arrayContaining([
+                    expect.objectContaining({ field: "deletedAt", before: null }),
+                    expect.objectContaining({
+                        field: "sessionRevocation",
+                        before: 0,
+                        after: 2,
+                    }),
+                ]),
+            }),
+        });
+        expect(cacheMocks.invalidateUserSessionCaches).toHaveBeenCalledWith(target.id);
+    });
+
+    it("does not record a close event when the account is stale", async () => {
+        prismaMocks.tx.user.findUnique.mockResolvedValue({
+            ...target,
+            deletedAt: null,
+        });
+        prismaMocks.tx.user.updateMany.mockResolvedValue({ count: 0 });
+
+        const result = await closeSystemStaffAccount(
+            {
+                id: target.id,
+                reason: "ปิดบัญชีจากข้อมูลล่าสุด",
+                expectedUpdatedAt: target.updatedAt,
+            },
+            actor,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "ข้อมูลบัญชีถูกแก้ไขแล้ว กรุณาโหลดข้อมูลล่าสุดแล้วลองใหม่",
+        });
+        expect(prismaMocks.tx.userSession.updateMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.systemAdminEvent.create).not.toHaveBeenCalled();
+        expect(cacheMocks.invalidateUserSessionCaches).not.toHaveBeenCalled();
     });
 
     it("restores a soft-deleted teacher account and records the reason", async () => {
@@ -230,6 +322,37 @@ describe("system admin staff account mutations", () => {
         });
         expect(prismaMocks.tx.user.deleteMany).toHaveBeenCalledWith({
             where: { id: target.id, updatedAt: target.updatedAt },
+        });
+        expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+                changes: expect.arrayContaining([
+                    expect.objectContaining({
+                        field: "deletedAt",
+                        before: target.deletedAt.toISOString(),
+                        after: null,
+                    }),
+                    expect.objectContaining({
+                        field: "accountStatus",
+                        before: "ปิดใช้งาน",
+                        after: "ลบถาวร",
+                    }),
+                    expect.objectContaining({
+                        field: "impact.studentCount",
+                        before: 0,
+                        after: 1,
+                    }),
+                    expect.objectContaining({
+                        field: "impact.phqResultCount",
+                        before: 0,
+                        after: 1,
+                    }),
+                    expect.objectContaining({
+                        field: "impact.teacherProfileCount",
+                        before: 0,
+                        after: 1,
+                    }),
+                ]),
+            }),
         });
         expect(cacheMocks.deleteFilesByUrl).toHaveBeenCalledWith([]);
         expect(cacheMocks.revalidateStudentsCache).toHaveBeenCalledWith(
