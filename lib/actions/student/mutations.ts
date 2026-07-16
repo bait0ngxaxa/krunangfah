@@ -109,6 +109,26 @@ function getActivityNumbersByRiskLevel(riskLevel: RiskLevel): number[] {
     return ACTIVITY_INDICES[riskLevel as keyof typeof ACTIVITY_INDICES];
 }
 
+interface ImportIdentityRecord {
+    id: string;
+    schoolId: string;
+}
+
+function resolveImportIdentity(
+    studentIdOwner: ImportIdentityRecord | undefined,
+    nationalIdOwner: ImportIdentityRecord | undefined,
+): { kind: "new" } | { kind: "existing"; studentId: string } | { kind: "conflict" } {
+    if (!studentIdOwner && !nationalIdOwner) return { kind: "new" };
+    if (
+        studentIdOwner &&
+        nationalIdOwner &&
+        studentIdOwner.id === nationalIdOwner.id
+    ) {
+        return { kind: "existing", studentId: studentIdOwner.id };
+    }
+    return { kind: "conflict" };
+}
+
 /**
  * Import students with PHQ-A results
  *
@@ -401,6 +421,18 @@ export async function importStudents(
                     return false;
                 }
 
+                if (
+                    resolveImportIdentity(studentIdOwner, nationalIdOwner).kind ===
+                    "conflict"
+                ) {
+                    identityConflictCount++;
+                    const reason =
+                        "รหัสนักเรียนและเลขบัตรประชาชนไม่ตรงกับนักเรียนคนเดียวกัน กรุณาตรวจสอบข้อมูลก่อนนำเข้า";
+                    errors.push(formatImportStudentError(row, reason));
+                    failedStudents.push(createImportStudentSummary(row, reason));
+                    return false;
+                }
+
                 return true;
             });
 
@@ -415,10 +447,13 @@ export async function importStudents(
                 };
             }
 
-            const resolveExistingStudentId = (row: ParsedStudent): string | null =>
-                existingStudentByStudentId.get(row.studentId)?.id ??
-                studentByNationalId.get(row.nationalId)?.id ??
-                null;
+            const resolveExistingStudentId = (row: ParsedStudent): string | null => {
+                const identity = resolveImportIdentity(
+                    existingStudentByStudentId.get(row.studentId),
+                    studentByNationalId.get(row.nationalId),
+                );
+                return identity.kind === "existing" ? identity.studentId : null;
+            };
             const existingCandidateIds = [
                 ...new Set(
                     rowsSafeToImport
@@ -554,7 +589,10 @@ export async function importStudents(
 
                 const updates: {
                     age?: number;
+                    class?: string;
+                    firstName?: string;
                     gender?: ParsedStudent["gender"];
+                    lastName?: string;
                     nationalId?: string;
                 } = {};
                 if (student.nationalId !== row.nationalId) {
@@ -565,6 +603,15 @@ export async function importStudents(
                 }
                 if (typeof row.age === "number" && student.age !== row.age) {
                     updates.age = row.age;
+                }
+                if (student.firstName !== row.firstName) {
+                    updates.firstName = row.firstName;
+                }
+                if (student.lastName !== row.lastName) {
+                    updates.lastName = row.lastName;
+                }
+                if (student.class !== row.class) {
+                    updates.class = row.class;
                 }
 
                 if (Object.keys(updates).length > 0) {
