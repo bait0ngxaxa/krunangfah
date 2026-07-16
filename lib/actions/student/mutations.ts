@@ -268,6 +268,7 @@ export async function importStudents(
         const errors: string[] = [];
         const failedStudents: ImportStudentSummary[] = [];
         let skippedCount = 0;
+        let identityConflictCount = 0;
         const seenStudentIds = new Set<string>();
         const seenNationalIds = new Set<string>();
         const eligibleRows: ParsedStudent[] = [];
@@ -326,6 +327,8 @@ export async function importStudents(
                     duplicateRoundErrors: [] as string[],
                     duplicateRoundFailures: [] as ImportStudentSummary[],
                     importedStudents: [] as ImportStudentSummary[],
+                    createdStudentCount: 0,
+                    updatedStudentCount: 0,
                 };
             }
 
@@ -379,6 +382,7 @@ export async function importStudents(
                 );
 
                 if (nationalIdOwner && nationalIdOwner.schoolId !== schoolId) {
+                    identityConflictCount++;
                     const reason = "เลขบัตรประชาชนซ้ำกับข้อมูลที่มีในระบบ";
                     errors.push(formatImportStudentError(row, reason));
                     failedStudents.push(createImportStudentSummary(row, reason));
@@ -390,6 +394,7 @@ export async function importStudents(
                     studentIdOwner &&
                     nationalIdOwner.id !== studentIdOwner.id
                 ) {
+                    identityConflictCount++;
                     const reason = "เลขบัตรประชาชนซ้ำกับนักเรียนคนอื่นในระบบ";
                     errors.push(formatImportStudentError(row, reason));
                     failedStudents.push(createImportStudentSummary(row, reason));
@@ -405,11 +410,95 @@ export async function importStudents(
                     duplicateRoundErrors: [] as string[],
                     duplicateRoundFailures: [] as ImportStudentSummary[],
                     importedStudents: [] as ImportStudentSummary[],
+                    createdStudentCount: 0,
+                    updatedStudentCount: 0,
                 };
             }
 
+            const resolveExistingStudentId = (row: ParsedStudent): string | null =>
+                existingStudentByStudentId.get(row.studentId)?.id ??
+                studentByNationalId.get(row.nationalId)?.id ??
+                null;
+            const existingCandidateIds = [
+                ...new Set(
+                    rowsSafeToImport
+                        .map(resolveExistingStudentId)
+                        .filter((id): id is string => id !== null),
+                ),
+            ];
+            const existingPhqResults = await tx.phqResult.findMany({
+                where: {
+                    studentId: { in: existingCandidateIds },
+                    academicYearId: resolvedAcademicYearId,
+                    assessmentRound,
+                },
+                select: { studentId: true },
+            });
+            const hasExistingResultSet = new Set(
+                existingPhqResults.map((result) => result.studentId),
+            );
+            const round1StudentSet =
+                assessmentRound === 2
+                    ? new Set(
+                          (
+                              await tx.phqResult.findMany({
+                                  where: {
+                                      studentId: { in: existingCandidateIds },
+                                      academicYearId: resolvedAcademicYearId,
+                                      assessmentRound: 1,
+                                  },
+                                  select: { studentId: true },
+                              })
+                          ).map((result) => result.studentId),
+                      )
+                    : null;
+            const duplicateRoundErrors: string[] = [];
+            const duplicateRoundFailures: ImportStudentSummary[] = [];
+            const rowsToMutate = rowsSafeToImport.filter((row) => {
+                const existingStudentId = resolveExistingStudentId(row);
+                if (
+                    assessmentRound === 2 &&
+                    (!existingStudentId || !round1StudentSet?.has(existingStudentId))
+                ) {
+                    const reason =
+                        "ยังไม่มีข้อมูลการประเมินครั้งที่ 1 สำหรับปีการศึกษานี้";
+                    duplicateRoundErrors.push(formatImportStudentError(row, reason));
+                    duplicateRoundFailures.push(
+                        createImportStudentSummary(row, reason),
+                    );
+                    return false;
+                }
+                if (
+                    existingStudentId &&
+                    hasExistingResultSet.has(existingStudentId)
+                ) {
+                    const reason = `มีข้อมูลการประเมินครั้งที่ ${assessmentRound} อยู่แล้ว`;
+                    duplicateRoundErrors.push(formatImportStudentError(row, reason));
+                    duplicateRoundFailures.push(
+                        createImportStudentSummary(row, reason),
+                    );
+                    return false;
+                }
+                return true;
+            });
+
+            if (rowsToMutate.length === 0) {
+                return {
+                    importedCount: 0,
+                    duplicateRoundErrors,
+                    duplicateRoundFailures,
+                    importedStudents: [] as ImportStudentSummary[],
+                    createdStudentCount: 0,
+                    updatedStudentCount: 0,
+                };
+            }
+
+            const createdStudentCount = rowsToMutate.filter(
+                (row) => resolveExistingStudentId(row) === null,
+            ).length;
+
             await tx.student.createMany({
-                data: rowsSafeToImport.map((row) => ({
+                data: rowsToMutate.map((row) => ({
                     studentId: row.studentId,
                     nationalId: row.nationalId,
                     firstName: row.firstName,
@@ -428,12 +517,12 @@ export async function importStudents(
                     OR: [
                         {
                             studentId: {
-                                in: rowsSafeToImport.map((row) => row.studentId),
+                                in: rowsToMutate.map((row) => row.studentId),
                             },
                         },
                         {
                             nationalId: {
-                                in: rowsSafeToImport.map((row) => row.nationalId),
+                                in: rowsToMutate.map((row) => row.nationalId),
                             },
                         },
                     ],
@@ -455,7 +544,7 @@ export async function importStudents(
             );
 
             const studentUpdates: Promise<unknown>[] = [];
-            for (const row of rowsSafeToImport) {
+            for (const row of rowsToMutate) {
                 const student =
                     studentByStudentId.get(row.studentId) ??
                     scopedStudentByNationalId.get(row.nationalId);
@@ -492,71 +581,16 @@ export async function importStudents(
                 await Promise.all(studentUpdates);
             }
 
-            const existingPhqResults = await tx.phqResult.findMany({
-                where: {
-                    studentId: { in: scopedStudents.map((student) => student.id) },
-                    academicYearId: resolvedAcademicYearId,
-                    assessmentRound,
-                },
-                select: { studentId: true },
-            });
-
-            const hasExistingResultSet = new Set(
-                existingPhqResults.map((result) => result.studentId),
-            );
-            const round1StudentSet =
-                assessmentRound === 2
-                    ? new Set(
-                          (
-                              await tx.phqResult.findMany({
-                                  where: {
-                                      studentId: {
-                                          in: scopedStudents.map(
-                                              (student) => student.id,
-                                          ),
-                                      },
-                                      academicYearId: resolvedAcademicYearId,
-                                      assessmentRound: 1,
-                                  },
-                                  select: { studentId: true },
-                              })
-                          ).map((result) => result.studentId),
-                      )
-                    : null;
-            const duplicateRoundErrors: string[] = [];
-            const duplicateRoundFailures: ImportStudentSummary[] = [];
             const importedStudents: ImportStudentSummary[] = [];
             const phqResultsToCreate: Prisma.PhqResultCreateManyInput[] = [];
 
-            for (const row of rowsSafeToImport) {
+            for (const row of rowsToMutate) {
                 const student =
                     studentByStudentId.get(row.studentId) ??
                     scopedStudentByNationalId.get(row.nationalId);
                 if (!student) {
                     continue;
                 }
-                if (
-                    assessmentRound === 2 &&
-                    round1StudentSet &&
-                    !round1StudentSet.has(student.id)
-                ) {
-                    const reason =
-                        "ยังไม่มีข้อมูลการประเมินครั้งที่ 1 สำหรับปีการศึกษานี้";
-                    duplicateRoundErrors.push(formatImportStudentError(row, reason));
-                    duplicateRoundFailures.push(
-                        createImportStudentSummary(row, reason),
-                    );
-                    continue;
-                }
-                if (hasExistingResultSet.has(student.id)) {
-                    const reason = `มีข้อมูลการประเมินครั้งที่ ${assessmentRound} อยู่แล้ว`;
-                    duplicateRoundErrors.push(formatImportStudentError(row, reason));
-                    duplicateRoundFailures.push(
-                        createImportStudentSummary(row, reason),
-                    );
-                    continue;
-                }
-
                 const { totalScore, riskLevel } = calculateRiskLevel(row.scores);
                 phqResultsToCreate.push({
                     studentId: student.id,
@@ -634,6 +668,8 @@ export async function importStudents(
                 duplicateRoundErrors,
                 duplicateRoundFailures,
                 importedStudents,
+                createdStudentCount,
+                updatedStudentCount: studentUpdates.length,
             };
         });
 
@@ -682,6 +718,11 @@ export async function importStudents(
             message,
             imported: importedCount,
             skipped: skippedCount,
+            createdStudents: txResult.createdStudentCount,
+            updatedStudents: txResult.updatedStudentCount,
+            phqCreated: importedCount,
+            duplicateRoundsSkipped: txResult.duplicateRoundFailures.length,
+            identityConflicts: identityConflictCount,
             errors: failedCount > 0 ? errors : undefined,
             importedStudents: txResult.importedStudents,
             failedStudents:

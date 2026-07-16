@@ -103,6 +103,11 @@ export interface ImportResult {
     message: string;
     imported?: number;
     skipped?: number;
+    createdStudents?: number;
+    updatedStudents?: number;
+    phqCreated?: number;
+    duplicateRoundsSkipped?: number;
+    identityConflicts?: number;
     errors?: string[];
     importedStudents?: ImportStudentSummary[];
     failedStudents?: ImportStudentSummary[];

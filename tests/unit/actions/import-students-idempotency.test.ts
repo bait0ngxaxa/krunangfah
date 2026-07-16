@@ -10,6 +10,12 @@ const mocks = vi.hoisted(() => ({
     startIdempotentOperation: vi.fn(),
     completeIdempotentOperation: vi.fn(),
     clearIdempotentOperation: vi.fn(),
+    studentFindMany: vi.fn(),
+    studentCreateMany: vi.fn(),
+    studentUpdate: vi.fn(),
+    phqResultFindMany: vi.fn(),
+    phqResultCreateMany: vi.fn(),
+    activityProgressCreateMany: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/session", () => ({
@@ -210,5 +216,60 @@ describe("importStudents idempotency", () => {
             expect.stringMatching(/^idem:import-students:user-1:school-1:ay-1:1:/),
         );
         expect(mocks.completeIdempotentOperation).not.toHaveBeenCalled();
+    });
+
+    it("does not update an existing student when the PHQ round is duplicated", async () => {
+        const existingStudent = {
+            id: "student-db-1",
+            schoolId: "school-1",
+            studentId: "1001",
+            nationalId: "1234567890123",
+            firstName: "สมชาย",
+            lastName: "ใจดี",
+            gender: "FEMALE",
+            age: 12,
+            class: "ม.1/1",
+        };
+        mocks.schoolClassFindMany.mockResolvedValue([{ name: "ม.1/1" }]);
+        mocks.studentFindMany
+            .mockResolvedValueOnce([existingStudent])
+            .mockResolvedValueOnce([existingStudent])
+            .mockResolvedValueOnce([existingStudent]);
+        mocks.phqResultFindMany.mockResolvedValueOnce([
+            { studentId: existingStudent.id },
+        ]);
+        mocks.transaction.mockImplementation(async (callback) =>
+            callback({
+                student: {
+                    findMany: mocks.studentFindMany,
+                    createMany: mocks.studentCreateMany,
+                    update: mocks.studentUpdate,
+                },
+                phqResult: {
+                    findMany: mocks.phqResultFindMany,
+                    createMany: mocks.phqResultCreateMany,
+                },
+                activityProgress: {
+                    createMany: mocks.activityProgressCreateMany,
+                },
+            }),
+        );
+
+        const result = await importStudents([createParsedStudent()], "ay-input", 1);
+
+        expect(result.success).toBe(false);
+        expect(result.errors).toContain(
+            "สมชาย ใจดี (1001): มีข้อมูลการประเมินครั้งที่ 1 อยู่แล้ว",
+        );
+        expect(result).toMatchObject({
+            createdStudents: 0,
+            updatedStudents: 0,
+            phqCreated: 0,
+            duplicateRoundsSkipped: 1,
+            identityConflicts: 0,
+        });
+        expect(mocks.studentCreateMany).not.toHaveBeenCalled();
+        expect(mocks.studentUpdate).not.toHaveBeenCalled();
+        expect(mocks.phqResultCreateMany).not.toHaveBeenCalled();
     });
 });

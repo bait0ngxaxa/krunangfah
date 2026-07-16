@@ -80,6 +80,15 @@ export function isImportResult(value: unknown): value is ImportResult {
         typeof record.message === "string" &&
         (record.imported === undefined || typeof record.imported === "number") &&
         (record.skipped === undefined || typeof record.skipped === "number") &&
+        (record.createdStudents === undefined ||
+            typeof record.createdStudents === "number") &&
+        (record.updatedStudents === undefined ||
+            typeof record.updatedStudents === "number") &&
+        (record.phqCreated === undefined || typeof record.phqCreated === "number") &&
+        (record.duplicateRoundsSkipped === undefined ||
+            typeof record.duplicateRoundsSkipped === "number") &&
+        (record.identityConflicts === undefined ||
+            typeof record.identityConflicts === "number") &&
         (record.errors === undefined ||
             (Array.isArray(record.errors) &&
                 record.errors.every((item) => typeof item === "string"))) &&

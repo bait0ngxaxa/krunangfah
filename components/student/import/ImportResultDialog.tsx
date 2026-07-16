@@ -127,21 +127,45 @@ export function ImportResultDialog({
                 </div>
                 <div className="min-h-0 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
                     <div className="grid gap-4">
-                        <div className="grid grid-cols-1 gap-3 rounded-xl border border-amber-100 bg-amber-50/60 p-3 text-sm sm:grid-cols-2">
+                        <div className="grid grid-cols-2 gap-3 rounded-xl border border-amber-100 bg-amber-50/60 p-3 text-sm sm:grid-cols-5">
                             <div>
                                 <span className="block text-xs text-amber-700">
-                                    นำเข้าสำเร็จ
+                                    สร้างนักเรียนใหม่
                                 </span>
                                 <span className="font-bold text-gray-800">
-                                    {result.imported ?? 0} คน
+                                    {result.createdStudents ?? 0} คน
                                 </span>
                             </div>
                             <div>
                                 <span className="block text-xs text-amber-700">
-                                    ไม่ได้นำเข้า
+                                    อัปเดตนักเรียนเดิม
                                 </span>
                                 <span className="font-bold text-gray-800">
-                                    {failedStudents.length} คน
+                                    {result.updatedStudents ?? 0} คน
+                                </span>
+                            </div>
+                            <div>
+                                <span className="block text-xs text-amber-700">
+                                    เพิ่มผล PHQ
+                                </span>
+                                <span className="font-bold text-gray-800">
+                                    {result.phqCreated ?? result.imported ?? 0} คน
+                                </span>
+                            </div>
+                            <div>
+                                <span className="block text-xs text-amber-700">
+                                    ข้ามเพราะรอบซ้ำ
+                                </span>
+                                <span className="font-bold text-gray-800">
+                                    {result.duplicateRoundsSkipped ?? 0} คน
+                                </span>
+                            </div>
+                            <div>
+                                <span className="block text-xs text-amber-700">
+                                    ข้อมูลระบุตัวตนขัดแย้ง
+                                </span>
+                                <span className="font-bold text-gray-800">
+                                    {result.identityConflicts ?? 0} คน
                                 </span>
                             </div>
                         </div>
