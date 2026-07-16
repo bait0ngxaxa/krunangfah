@@ -387,6 +387,7 @@ model PhqResult {
   hospitalName       String?                // ชื่อโรงพยาบาลที่ส่งต่อ
   
   createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   student         Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
   academicYear    AcademicYear       @relation(fields: [academicYearId], references: [id])
@@ -559,6 +560,7 @@ model StudentReferral {
   fromTeacherUserId String   // userId ครูที่ส่งต่อ
   toTeacherUserId   String   // userId ครูที่รับดูแล
   createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   fromTeacher User    @relation("ReferralsFrom", fields: [fromTeacherUserId], references: [id])

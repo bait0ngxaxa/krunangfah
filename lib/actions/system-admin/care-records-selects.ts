@@ -15,6 +15,7 @@ export const COUNSELING_SELECT = {
     counselorName: true,
     summary: true,
     createdAt: true,
+    updatedAt: true,
 } satisfies Prisma.CounselingSessionSelect;
 
 export const HOME_VISIT_SELECT = {
@@ -27,6 +28,7 @@ export const HOME_VISIT_SELECT = {
     teacherName: true,
     teacherRole: true,
     createdAt: true,
+    updatedAt: true,
     _count: { select: { photos: true } },
 } satisfies Prisma.HomeVisitSelect;
 
@@ -51,6 +53,7 @@ export const PHQ_SELECT = {
     referredToHospital: true,
     hospitalName: true,
     createdAt: true,
+    updatedAt: true,
     academicYear: { select: { year: true, semester: true } },
     student: { select: { schoolId: true } },
 } satisfies Prisma.PhqResultSelect;
@@ -69,6 +72,7 @@ export const ACTIVITY_SELECT = {
     internalProblems: true,
     externalProblems: true,
     problemType: true,
+    updatedAt: true,
     student: { select: { schoolId: true } },
     teacher: { select: { teacher: { select: { firstName: true, lastName: true } } } },
     phqResult: {
@@ -85,6 +89,7 @@ export const REFERRAL_SELECT = {
     fromTeacherUserId: true,
     toTeacherUserId: true,
     createdAt: true,
+    updatedAt: true,
     student: { select: { schoolId: true } },
     fromTeacher: { select: { teacher: { select: { firstName: true, lastName: true } } } },
     toTeacher: { select: { teacher: { select: { firstName: true, lastName: true } } } },
@@ -97,6 +102,7 @@ export function toCounselingRecord(row: {
     counselorName: string;
     summary: string;
     createdAt: Date;
+    updatedAt: Date;
 }): SystemCounselingRecord {
     return { ...row };
 }
@@ -110,6 +116,7 @@ export function toHomeVisitRecord(row: {
     teacherName: string;
     teacherRole: string;
     createdAt: Date;
+    updatedAt: Date;
     _count: { photos: number };
 }): SystemHomeVisitRecord {
     return { ...row, photoCount: row._count.photos };
@@ -142,6 +149,7 @@ export function toReferralRecord(row: ReferralRow): SystemReferralRecord {
         fromTeacherName: formatTeacherName(row.fromTeacher.teacher),
         toTeacherName: formatTeacherName(row.toTeacher.teacher),
         createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
     };
 }
 

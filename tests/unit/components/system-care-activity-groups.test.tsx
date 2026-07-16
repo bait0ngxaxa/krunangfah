@@ -25,6 +25,7 @@ function createActivity(
         internalProblems: null,
         externalProblems: null,
         problemType: null,
+        updatedAt: new Date("2026-07-08T09:00:00.000Z"),
     };
 }
 

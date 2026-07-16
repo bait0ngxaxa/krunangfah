@@ -64,6 +64,7 @@ async function getPhqSummaries(studentId: string) {
             referredToHospital: true,
             hospitalName: true,
             createdAt: true,
+            updatedAt: true,
             academicYear: { select: { year: true, semester: true } },
         },
         orderBy: [
@@ -99,6 +100,7 @@ async function getPhqSummaries(studentId: string) {
         referredToHospital: row.referredToHospital,
         hospitalName: row.hospitalName,
         createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
     }));
 }
 
@@ -117,6 +119,7 @@ async function getActivitySummaries(studentId: string) {
             internalProblems: true,
             externalProblems: true,
             problemType: true,
+            updatedAt: true,
             teacher: { select: { teacher: { select: { firstName: true, lastName: true } } } },
             phqResult: {
                 select: {
@@ -149,6 +152,7 @@ async function getActivitySummaries(studentId: string) {
         internalProblems: row.internalProblems,
         externalProblems: row.externalProblems,
         problemType: row.problemType,
+        updatedAt: row.updatedAt,
     }));
 }
 
@@ -160,6 +164,7 @@ async function getReferralSummary(studentId: string) {
             fromTeacherUserId: true,
             toTeacherUserId: true,
             createdAt: true,
+            updatedAt: true,
             fromTeacher: { select: { teacher: { select: { firstName: true, lastName: true } } } },
             toTeacher: { select: { teacher: { select: { firstName: true, lastName: true } } } },
         },
@@ -172,6 +177,7 @@ async function getReferralSummary(studentId: string) {
         fromTeacherName: formatTeacherName(row.fromTeacher.teacher),
         toTeacherName: formatTeacherName(row.toTeacher.teacher),
         createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
     };
 }
 

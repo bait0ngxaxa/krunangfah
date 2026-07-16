@@ -10,6 +10,7 @@ import {
     COUNSELING_SELECT,
     HOME_VISIT_SELECT,
 } from "./care-records-selects";
+import { staleCareRecordResponse } from "./care-records-concurrency";
 
 export async function softDeleteSystemCareRecord(
     type: "counselingSession" | "homeVisit",
@@ -32,11 +33,12 @@ async function softDeleteCounseling(
     });
     if (!existing) return { success: false, message: "ไม่พบบันทึก" };
 
-    await prisma.$transaction(async (tx) => {
-        await tx.counselingSession.update({
-            where: { id: existing.id },
+    const deleted = await prisma.$transaction(async (tx) => {
+        const write = await tx.counselingSession.updateMany({
+            where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
             data: getDeleteData(actor, input.reason),
         });
+        if (write.count !== 1) return false;
         await logDeleteEvent(
             tx,
             "counselingSession",
@@ -45,7 +47,9 @@ async function softDeleteCounseling(
             input.reason,
             actor,
         );
+        return true;
     });
+    if (!deleted) return staleCareRecordResponse();
 
     revalidateCareRecordPaths(existing.studentId);
     return { success: true, message: "ลบบันทึกการให้คำปรึกษาแล้ว" };
@@ -61,11 +65,12 @@ async function softDeleteHomeVisit(
     });
     if (!existing) return { success: false, message: "ไม่พบบันทึก" };
 
-    await prisma.$transaction(async (tx) => {
-        await tx.homeVisit.update({
-            where: { id: existing.id },
+    const deleted = await prisma.$transaction(async (tx) => {
+        const write = await tx.homeVisit.updateMany({
+            where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
             data: getDeleteData(actor, input.reason),
         });
+        if (write.count !== 1) return false;
         await logDeleteEvent(
             tx,
             "homeVisit",
@@ -74,7 +79,9 @@ async function softDeleteHomeVisit(
             input.reason,
             actor,
         );
+        return true;
     });
+    if (!deleted) return staleCareRecordResponse();
 
     revalidateCareRecordPaths(existing.studentId);
     return { success: true, message: "ลบบันทึกเยี่ยมบ้านแล้ว" };

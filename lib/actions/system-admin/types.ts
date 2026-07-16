@@ -160,6 +160,7 @@ export interface SystemPhqRecord {
     referredToHospital: boolean;
     hospitalName: string | null;
     createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface SystemPhqRollbackResult {
@@ -181,6 +182,7 @@ export interface SystemActivityRecord {
     internalProblems: string | null;
     externalProblems: string | null;
     problemType: string | null;
+    updatedAt: Date;
 }
 
 export interface SystemReferralRecord {
@@ -190,6 +192,7 @@ export interface SystemReferralRecord {
     fromTeacherName: string | null;
     toTeacherName: string | null;
     createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface SystemTeacherOption {
@@ -206,6 +209,7 @@ export interface SystemCounselingRecord {
     counselorName: string;
     summary: string;
     createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface SystemHomeVisitRecord {
@@ -218,4 +222,5 @@ export interface SystemHomeVisitRecord {
     teacherRole: string;
     photoCount: number;
     createdAt: Date;
+    updatedAt: Date;
 }

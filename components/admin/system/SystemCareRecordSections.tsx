@@ -12,6 +12,7 @@ import {
 export type DeleteTarget = {
     type: "counselingSession" | "homeVisit";
     id: string;
+    expectedUpdatedAt: Date;
     label: string;
 } | null;
 
@@ -64,6 +65,7 @@ function CounselingSection(props: SectionProps) {
                     onDelete={() => onStartDelete({
                         type: "counselingSession",
                         id: record.id,
+                        expectedUpdatedAt: record.updatedAt,
                         label: `การให้คำปรึกษาครั้งที่ ${record.sessionNumber}`,
                     })}
                 >
@@ -93,6 +95,7 @@ function HomeVisitSection(props: SectionProps) {
                     onDelete={() => onStartDelete({
                         type: "homeVisit",
                         id: record.id,
+                        expectedUpdatedAt: record.updatedAt,
                         label: `เยี่ยมบ้านครั้งที่ ${record.visitNumber}`,
                     })}
                 >

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const prismaMocks = vi.hoisted(() => {
     const tx = {
         worksheetUpload: { deleteMany: vi.fn(), findMany: vi.fn() },
-        activityProgress: { updateMany: vi.fn(), update: vi.fn() },
+        activityProgress: { updateMany: vi.fn(), findUniqueOrThrow: vi.fn() },
         systemAdminEvent: { create: vi.fn() },
     };
     return {
@@ -43,6 +43,7 @@ import { resetSystemActivityProgress } from "@/lib/actions/system-admin/care-rec
 const activityId = "cmactivity000000000000001";
 const studentId = "cmstudent0000000000000001";
 const phqResultId = "cmphq000000000000000001";
+const expectedUpdatedAt = new Date("2026-07-07T00:00:00.000Z");
 
 describe("resetSystemActivityProgress", () => {
     beforeEach(() => {
@@ -58,7 +59,8 @@ describe("resetSystemActivityProgress", () => {
             { fileUrl: "/api/uploads/worksheets/activity-2.png" },
             { fileUrl: "/api/uploads/worksheets/activity-3.png" },
         ]);
-        prismaMocks.tx.activityProgress.update.mockResolvedValue(
+        prismaMocks.tx.activityProgress.updateMany.mockResolvedValue({ count: 1 });
+        prismaMocks.tx.activityProgress.findUniqueOrThrow.mockResolvedValue(
             createActivityRow("in_progress"),
         );
         prismaMocks.deleteFilesByUrl.mockResolvedValue([]);
@@ -66,7 +68,7 @@ describe("resetSystemActivityProgress", () => {
 
     it("clears selected and later activity data, then returns selected activity to in_progress", async () => {
         const result = await resetSystemActivityProgress(
-            { id: activityId, reason: "ครูบันทึกกิจกรรมเกิน" },
+            { id: activityId, expectedUpdatedAt, reason: "ครูบันทึกกิจกรรมเกิน" },
             {
                 id: "cmadmin00000000000000001",
                 email: "admin@example.com",
@@ -103,8 +105,8 @@ describe("resetSystemActivityProgress", () => {
             },
             data: expect.objectContaining({ status: "locked" }),
         });
-        expect(prismaMocks.tx.activityProgress.update).toHaveBeenCalledWith({
-            where: { id: activityId },
+        expect(prismaMocks.tx.activityProgress.updateMany).toHaveBeenCalledWith({
+            where: { id: activityId, updatedAt: expectedUpdatedAt },
             data: expect.objectContaining({
                 status: "in_progress",
                 scheduledDate: null,
@@ -114,7 +116,6 @@ describe("resetSystemActivityProgress", () => {
                 externalProblems: null,
                 problemType: null,
             }),
-            select: expect.any(Object),
         });
         expect(prismaMocks.deleteFilesByUrl).toHaveBeenCalledWith([
             "/api/uploads/worksheets/activity-2.png",
@@ -138,7 +139,7 @@ describe("resetSystemActivityProgress", () => {
             );
 
             const result = await resetSystemActivityProgress(
-                { id: activityId, reason: "ไม่ควรถอยกิจกรรมที่ยังไม่เสร็จ" },
+                { id: activityId, expectedUpdatedAt, reason: "ไม่ควรถอยกิจกรรมที่ยังไม่เสร็จ" },
                 {
                     id: "cmadmin00000000000000001",
                     email: "admin@example.com",
@@ -163,7 +164,7 @@ describe("resetSystemActivityProgress", () => {
 
         await expect(
             resetSystemActivityProgress(
-                { id: activityId, reason: "ทดสอบ rollback เมื่อ audit ล้ม" },
+                { id: activityId, expectedUpdatedAt, reason: "ทดสอบ rollback เมื่อ audit ล้ม" },
                 {
                     id: "cmadmin00000000000000001",
                     email: "admin@example.com",
@@ -173,6 +174,32 @@ describe("resetSystemActivityProgress", () => {
             ),
         ).rejects.toThrow("audit failed");
 
+        expect(prismaMocks.deleteFilesByUrl).not.toHaveBeenCalled();
+    });
+
+    it("rejects a stale reset without clearing newer activity data or writing an audit event", async () => {
+        prismaMocks.tx.activityProgress.updateMany.mockResolvedValue({ count: 0 });
+
+        const result = await resetSystemActivityProgress(
+            {
+                id: activityId,
+                expectedUpdatedAt: new Date("2026-07-07T00:00:00.000Z"),
+                reason: "ข้อมูลบนหน้าจอล้าสมัย",
+            },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "ข้อมูลถูกแก้ไขแล้ว กรุณาโหลดข้อมูลล่าสุดและลองใหม่",
+        });
+        expect(prismaMocks.tx.worksheetUpload.deleteMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.systemAdminEvent.create).not.toHaveBeenCalled();
         expect(prismaMocks.deleteFilesByUrl).not.toHaveBeenCalled();
     });
 });
@@ -196,6 +223,7 @@ function createActivityRow(status: "locked" | "completed" | "in_progress") {
         internalProblems: status === "completed" ? "กังวล" : null,
         externalProblems: null,
         problemType: status === "completed" ? "internal" : null,
+        updatedAt: expectedUpdatedAt,
         student: { schoolId: "cmschool0000000000000001" },
         teacher: null,
         phqResult: {

@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { revalidateStudentsCache } from "@/lib/actions/student/cache";
 import { prisma } from "@/lib/database/prisma";
@@ -24,6 +25,7 @@ import {
     toPhqRecord,
     toReferralRecord,
 } from "./care-records-selects";
+import { staleCareRecordResponse } from "./care-records-concurrency";
 
 export async function saveSystemPhqResult(
     input: SystemPhqEditInput,
@@ -77,8 +79,8 @@ export async function saveSystemPhqResult(
     if (changes.length === 0) return { success: true, message: "ไม่มีข้อมูลเปลี่ยนแปลง", updated: toPhqRecord(existing) };
 
     const updated = await prisma.$transaction(async (tx) => {
-        const row = await tx.phqResult.update({
-            where: { id: existing.id },
+        const write = await tx.phqResult.updateMany({
+            where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
             data: {
                 ...scores,
                 totalScore: calculated.totalScore,
@@ -86,6 +88,10 @@ export async function saveSystemPhqResult(
                 referredToHospital,
                 hospitalName,
             },
+        });
+        if (write.count !== 1) return null;
+        const row = await tx.phqResult.findUniqueOrThrow({
+            where: { id: existing.id },
             select: PHQ_SELECT,
         });
         await createSystemAdminEditEvent({
@@ -99,6 +105,7 @@ export async function saveSystemPhqResult(
         });
         return row;
     });
+    if (!updated) return staleCareRecordResponse();
 
     await revalidateCarePaths(updated.student.schoolId, updated.studentId);
     return { success: true, message: "แก้ไขผลคัดกรองสำเร็จ", updated: toPhqRecord(updated) };
@@ -127,12 +134,13 @@ export async function saveSystemReferral(
     ]);
 
     const updated = await prisma.$transaction(async (tx) => {
-        const row = await tx.studentReferral.upsert({
-            where: { studentId: student.id },
-            update: { fromTeacherUserId: actor.id, toTeacherUserId: input.toTeacherUserId },
-            create: { studentId: student.id, fromTeacherUserId: actor.id, toTeacherUserId: input.toTeacherUserId },
-            select: REFERRAL_SELECT,
-        });
+        const row = existing
+            ? await updateReferral(tx, existing.id, input, actor)
+            : await tx.studentReferral.create({
+                  data: { studentId: student.id, fromTeacherUserId: actor.id, toTeacherUserId: input.toTeacherUserId },
+                  select: REFERRAL_SELECT,
+              });
+        if (!row) return null;
         await createSystemAdminEditEvent({
             tx,
             targetType: "studentReferral",
@@ -145,6 +153,7 @@ export async function saveSystemReferral(
         });
         return row;
     });
+    if (!updated) return staleCareRecordResponse();
 
     await revalidateCarePaths(student.schoolId, student.id);
     return { success: true, message: "บันทึกการส่งต่อสำเร็จ", updated: toReferralRecord(updated) };
@@ -160,8 +169,11 @@ export async function deleteSystemReferral(
     });
     if (!existing) return { success: false, message: "ไม่พบการส่งต่อ" };
 
-    await prisma.$transaction(async (tx) => {
-        await tx.studentReferral.delete({ where: { id: existing.id } });
+    const deleted = await prisma.$transaction(async (tx) => {
+        const write = await tx.studentReferral.deleteMany({
+            where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
+        });
+        if (write.count !== 1) return false;
         await createSystemAdminEditEvent({
             tx,
             targetType: "studentReferral",
@@ -172,7 +184,9 @@ export async function deleteSystemReferral(
             actor,
             changes: [{ field: "record", label: "ลบการส่งต่อ", before: "active", after: null }],
         });
+        return true;
     });
+    if (!deleted) return staleCareRecordResponse();
 
     await revalidateCarePaths(existing.student.schoolId, existing.studentId);
     return { success: true, message: "ลบการส่งต่อแล้ว" };
@@ -181,6 +195,21 @@ export async function deleteSystemReferral(
 function toScores(input: SystemPhqEditInput) {
     const { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b } = input;
     return { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b };
+}
+
+async function updateReferral(
+    tx: Prisma.TransactionClient,
+    id: string,
+    input: SystemReferralEditInput,
+    actor: Actor,
+) {
+    if (!input.expectedUpdatedAt) return null;
+    const write = await tx.studentReferral.updateMany({
+        where: { id, updatedAt: input.expectedUpdatedAt },
+        data: { fromTeacherUserId: actor.id, toTeacherUserId: input.toTeacherUserId },
+    });
+    if (write.count !== 1) return null;
+    return tx.studentReferral.findUniqueOrThrow({ where: { id }, select: REFERRAL_SELECT });
 }
 
 async function findTeacherInSchool(userId: string, schoolId: string) {

@@ -15,6 +15,7 @@ import {
     PHQ_SELECT,
     type PhqRow,
 } from "./care-records-selects";
+import { staleCareRecordResponse } from "./care-records-concurrency";
 
 export async function resetSystemPhqResult(
     input: SystemCareRecordDeleteInput,
@@ -37,11 +38,17 @@ export async function resetSystemPhqResult(
     const deletedPhqIds = [existing.id];
 
     const fileUrls = await prisma.$transaction(async (tx) => {
+        const claim = await tx.phqResult.updateMany({
+            where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
+            data: { updatedAt: new Date() },
+        });
+        if (claim.count !== 1) return null;
         const fileUrls = await deleteRelatedActivities(tx, deletedPhqIds);
         await logRollbackEvent(tx, existing, input.reason, actor, deletedPhqIds);
         await tx.phqResult.deleteMany({ where: { id: { in: deletedPhqIds } } });
         return fileUrls;
     });
+    if (!fileUrls) return staleCareRecordResponse();
 
     await deleteFilesByUrl(fileUrls);
     await revalidateCarePaths(existing.student.schoolId, existing.studentId);

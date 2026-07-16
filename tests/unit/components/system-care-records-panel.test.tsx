@@ -14,6 +14,7 @@ describe("CareRecordSections", () => {
         const html = render({
             type: "counselingSession",
             id: counselingId,
+            expectedUpdatedAt: new Date("2026-07-08T09:00:00.000Z"),
             label: "การให้คำปรึกษาครั้งที่ 1",
         });
 
@@ -55,6 +56,7 @@ function createCareRecords(): SystemCareRecordResponse {
             counselorName: "ครูแนะแนว",
             summary: "บันทึกการให้คำปรึกษา",
             createdAt: new Date("2026-07-08T09:00:00.000Z"),
+            updatedAt: new Date("2026-07-08T09:00:00.000Z"),
         }],
         homeVisits: [{
             id: homeVisitId,
@@ -66,6 +68,7 @@ function createCareRecords(): SystemCareRecordResponse {
             teacherRole: "ครูที่ปรึกษา",
             photoCount: 0,
             createdAt: new Date("2026-07-08T09:00:00.000Z"),
+            updatedAt: new Date("2026-07-08T09:00:00.000Z"),
         }],
     };
 }

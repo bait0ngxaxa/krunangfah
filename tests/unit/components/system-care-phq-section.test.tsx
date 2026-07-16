@@ -28,6 +28,7 @@ const roundOne: SystemPhqRecord = {
     referredToHospital: false,
     hospitalName: null,
     createdAt: new Date("2026-07-08T09:00:00.000Z"),
+    updatedAt: new Date("2026-07-08T09:00:00.000Z"),
 };
 
 describe("SystemCarePhqSection", () => {

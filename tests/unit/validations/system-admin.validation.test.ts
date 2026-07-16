@@ -115,6 +115,7 @@ describe("system edit schemas", () => {
     it("requires a reason before deleting care records", () => {
         const parsed = systemCareRecordDeleteSchema.safeParse({
             id: "ck12345678901234567890123",
+            expectedUpdatedAt: new Date("2026-07-08T09:00:00.000Z"),
             reason: "",
         });
 
@@ -124,6 +125,7 @@ describe("system edit schemas", () => {
     it("returns the concrete validation message instead of a generic fallback", () => {
         const parsed = systemCareRecordDeleteSchema.safeParse({
             id: "ck12345678901234567890123",
+            expectedUpdatedAt: new Date("2026-07-08T09:00:00.000Z"),
             reason: "",
         });
 
@@ -141,6 +143,7 @@ describe("system edit schemas", () => {
     it("accepts valid PHQ edits and recalculation inputs", () => {
         const parsed = systemPhqEditSchema.safeParse({
             id: "ck12345678901234567890123",
+            expectedUpdatedAt: new Date("2026-07-08T09:00:00.000Z"),
             q1: "0",
             q2: "1",
             q3: "2",

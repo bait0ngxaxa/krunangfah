@@ -16,6 +16,7 @@ import {
     type ActivityRow,
     toActivityRecord,
 } from "./care-records-selects";
+import { staleCareRecordResponse } from "./care-records-concurrency";
 
 export async function resetSystemActivityProgress(
     input: SystemCareRecordDeleteInput,
@@ -34,9 +35,10 @@ export async function resetSystemActivityProgress(
     }
 
     const { updated, fileUrls } = await prisma.$transaction(async (tx) => {
+        const row = await resetSelectedActivity(tx, existing, input.expectedUpdatedAt);
+        if (!row) return { updated: null, fileUrls: [] };
         const fileUrls = await resetWorksheets(tx, existing);
         await lockLaterActivities(tx, existing);
-        const row = await resetSelectedActivity(tx, existing);
         await createSystemAdminEditEvent({
             tx,
             targetType: "activityProgress",
@@ -54,6 +56,7 @@ export async function resetSystemActivityProgress(
         });
         return { updated: row, fileUrls };
     });
+    if (!updated) return staleCareRecordResponse();
 
     await deleteFilesByUrl(fileUrls);
     await revalidateCarePaths(updated.student.schoolId, updated.studentId);
@@ -106,9 +109,13 @@ async function lockLaterActivities(tx: Tx, activity: ActivityRow): Promise<void>
     });
 }
 
-async function resetSelectedActivity(tx: Tx, activity: ActivityRow) {
-    return tx.activityProgress.update({
-        where: { id: activity.id },
+async function resetSelectedActivity(
+    tx: Tx,
+    activity: ActivityRow,
+    expectedUpdatedAt: Date,
+): Promise<ActivityRow | null> {
+    const write = await tx.activityProgress.updateMany({
+        where: { id: activity.id, updatedAt: expectedUpdatedAt },
         data: {
             status: "in_progress",
             unlockedAt: activity.unlockedAt ?? new Date(),
@@ -121,6 +128,10 @@ async function resetSelectedActivity(tx: Tx, activity: ActivityRow) {
             problemType: null,
             assessedAt: null,
         },
+    });
+    if (write.count !== 1) return null;
+    return tx.activityProgress.findUniqueOrThrow({
+        where: { id: activity.id },
         select: ACTIVITY_SELECT,
     });
 }

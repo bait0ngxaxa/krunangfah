@@ -5,12 +5,14 @@ const prismaMocks = vi.hoisted(() => {
         counselingSession: {
             findFirst: vi.fn(),
             create: vi.fn(),
-            update: vi.fn(),
+            updateMany: vi.fn(),
+            findUniqueOrThrow: vi.fn(),
         },
         homeVisit: {
             findFirst: vi.fn(),
             create: vi.fn(),
-            update: vi.fn(),
+            updateMany: vi.fn(),
+            findUniqueOrThrow: vi.fn(),
         },
         systemAdminEvent: { create: vi.fn() },
     };
@@ -61,6 +63,8 @@ describe("system admin care record mutations", () => {
             async (callback: (tx: typeof prismaMocks.tx) => Promise<unknown>) =>
                 callback(prismaMocks.tx),
         );
+        prismaMocks.tx.counselingSession.updateMany.mockResolvedValue({ count: 1 });
+        prismaMocks.tx.homeVisit.updateMany.mockResolvedValue({ count: 1 });
     });
 
     it("does not reuse a soft-deleted counseling session number", async () => {
@@ -155,14 +159,125 @@ describe("system admin care record mutations", () => {
         });
     });
 
+    it("retries counseling creation after a concurrent number conflict", async () => {
+        let attempts = 0;
+        prismaMocks.transaction.mockImplementation(async (callback, options) => {
+            attempts += 1;
+            expect(options).toEqual({ isolationLevel: "Serializable" });
+            if (attempts === 1) throw createRetryableError("P2002");
+            return callback(prismaMocks.tx);
+        });
+        prismaMocks.tx.counselingSession.findFirst.mockResolvedValue(null);
+        prismaMocks.tx.counselingSession.create.mockResolvedValue(createCounselingRow(1));
+
+        const result = await saveSystemCounselingRecord(
+            {
+                studentId,
+                sessionDate: new Date("2026-07-07T00:00:00.000Z"),
+                counselorName: "ครูแนะแนว",
+                summary: "บันทึกพร้อม retry",
+                reason: "ทดสอบการชนเลขรายการ",
+            },
+            actor,
+        );
+
+        expect(result.success).toBe(true);
+        expect(attempts).toBe(2);
+    });
+
+    it("retries home visit creation after a serialization conflict", async () => {
+        let attempts = 0;
+        prismaMocks.transaction.mockImplementation(async (callback, options) => {
+            attempts += 1;
+            expect(options).toEqual({ isolationLevel: "Serializable" });
+            if (attempts === 1) throw createRetryableError("P2034");
+            return callback(prismaMocks.tx);
+        });
+        prismaMocks.tx.homeVisit.findFirst.mockResolvedValue(null);
+        prismaMocks.tx.homeVisit.create.mockResolvedValue(createHomeVisitRow(1));
+
+        const result = await saveSystemHomeVisitRecord(
+            {
+                studentId,
+                visitDate: new Date("2026-07-07T00:00:00.000Z"),
+                description: "เยี่ยมบ้านพร้อม retry",
+                nextScheduledDate: "",
+                teacherName: "ครูประจำชั้น",
+                teacherRole: "ครูที่ปรึกษา",
+                reason: "ทดสอบการชนเลขรายการ",
+            },
+            actor,
+        );
+
+        expect(result.success).toBe(true);
+        expect(attempts).toBe(2);
+    });
+
+    it("rejects counseling edit when the active record does not belong to the student", async () => {
+        prismaMocks.counselingFindFirst.mockResolvedValue(null);
+
+        const result = await saveSystemCounselingRecord(
+            {
+                id: "cmcounseling000000000099",
+                studentId,
+                sessionDate: new Date("2026-07-07T00:00:00.000Z"),
+                counselorName: "ครูแนะแนว",
+                summary: "แก้ไขบันทึกเดิม",
+                reason: "แก้ไขรายละเอียดการให้คำปรึกษา",
+            },
+            actor,
+        );
+        expect(prismaMocks.counselingFindFirst).toHaveBeenCalledWith({
+            where: {
+                id: "cmcounseling000000000099",
+                studentId,
+                deletedAt: null,
+            },
+            select: expect.any(Object),
+        });
+        expect(result).toEqual({ success: false, message: "ไม่พบบันทึกการให้คำปรึกษา" });
+        expect(prismaMocks.transaction).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.counselingSession.create).not.toHaveBeenCalled();
+    });
+
+    it("rejects home visit edit when the active record does not belong to the student", async () => {
+        prismaMocks.homeVisitFindFirst.mockResolvedValue(null);
+
+        const result = await saveSystemHomeVisitRecord(
+            {
+                id: "cmhomevisit000000000099",
+                studentId,
+                visitDate: new Date("2026-07-07T00:00:00.000Z"),
+                description: "แก้ไขบันทึกเดิม",
+                nextScheduledDate: "",
+                teacherName: "ครูประจำชั้น",
+                teacherRole: "ครูที่ปรึกษา",
+                reason: "แก้ไขรายละเอียดการเยี่ยมบ้าน",
+            },
+            actor,
+        );
+
+        expect(prismaMocks.homeVisitFindFirst).toHaveBeenCalledWith({
+            where: {
+                id: "cmhomevisit000000000099",
+                studentId,
+                deletedAt: null,
+            },
+            select: expect.any(Object),
+        });
+        expect(result).toEqual({ success: false, message: "ไม่พบบันทึกการเยี่ยมบ้าน" });
+        expect(prismaMocks.transaction).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.homeVisit.create).not.toHaveBeenCalled();
+    });
+
     it("records a DELETE audit event when soft deleting a counseling session", async () => {
         prismaMocks.counselingFindFirst.mockResolvedValue(createCounselingRow(1));
-        prismaMocks.tx.counselingSession.update.mockResolvedValue(createCounselingRow(1));
 
         const result = await softDeleteSystemCareRecord(
             "counselingSession",
             {
                 id: "cmcounseling000000000001",
+                expectedUpdatedAt,
                 reason: "ลบรายการซ้ำจากเอกสารเดิม",
             },
             actor,
@@ -189,6 +304,7 @@ function createCounselingRow(sessionNumber: number) {
         counselorName: "ครูแนะแนว",
         summary: "บันทึกใหม่หลังลบรายการเดิม",
         createdAt: new Date("2026-07-07T00:00:00.000Z"),
+        updatedAt: expectedUpdatedAt,
     };
 }
 
@@ -203,6 +319,13 @@ function createHomeVisitRow(visitNumber: number) {
         teacherName: "ครูประจำชั้น",
         teacherRole: "ครูที่ปรึกษา",
         createdAt: new Date("2026-07-07T00:00:00.000Z"),
+        updatedAt: expectedUpdatedAt,
         _count: { photos: 0 },
     };
 }
+
+function createRetryableError(code: "P2002" | "P2034"): Error & { code: string } {
+    return Object.assign(new Error(code), { code });
+}
+
+const expectedUpdatedAt = new Date("2026-07-07T00:00:00.000Z");

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prismaMocks = vi.hoisted(() => {
     const tx = {
-        phqResult: { update: vi.fn() },
+        phqResult: { updateMany: vi.fn(), findUniqueOrThrow: vi.fn() },
         systemAdminEvent: { create: vi.fn() },
     };
     return {
@@ -58,7 +58,8 @@ describe("saveSystemPhqResult", () => {
         );
         prismaMocks.phqResultFindUnique.mockResolvedValue(createPhqRow(phqId));
         prismaMocks.phqResultFindFirst.mockResolvedValue(createPhqRow(phqId));
-        prismaMocks.tx.phqResult.update.mockResolvedValue(
+        prismaMocks.tx.phqResult.updateMany.mockResolvedValue({ count: 1 });
+        prismaMocks.tx.phqResult.findUniqueOrThrow.mockResolvedValue(
             createPhqRow(phqId, {
                 q1: 2,
                 totalScore: 10,
@@ -75,14 +76,13 @@ describe("saveSystemPhqResult", () => {
 
         expect(result.success).toBe(true);
         expect(result.updated?.id).toBe(phqId);
-        expect(prismaMocks.tx.phqResult.update).toHaveBeenCalledWith({
-            where: { id: phqId },
+        expect(prismaMocks.tx.phqResult.updateMany).toHaveBeenCalledWith({
+            where: { id: phqId, updatedAt: expectedUpdatedAt },
             data: expect.objectContaining({
                 q1: 2,
                 totalScore: 10,
                 riskLevel: "yellow",
             }),
-            select: expect.any(Object),
         });
         expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalled();
     });
@@ -105,7 +105,7 @@ describe("saveSystemPhqResult", () => {
             message: "แก้ไขผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
         });
         expect(prismaMocks.transaction).not.toHaveBeenCalled();
-        expect(prismaMocks.tx.phqResult.update).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.phqResult.updateMany).not.toHaveBeenCalled();
     });
 
     it("rejects hospital referral edits when the edited PHQ score is not red", async () => {
@@ -122,11 +122,11 @@ describe("saveSystemPhqResult", () => {
             message: "แก้ไขการส่งต่อโรงพยาบาลได้เฉพาะ PHQ สีแดง (เสี่ยงสูงมาก)",
         });
         expect(prismaMocks.transaction).not.toHaveBeenCalled();
-        expect(prismaMocks.tx.phqResult.update).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.phqResult.updateMany).not.toHaveBeenCalled();
     });
 
     it("allows hospital referral edits when the edited PHQ score is red", async () => {
-        prismaMocks.tx.phqResult.update.mockResolvedValue(
+        prismaMocks.tx.phqResult.findUniqueOrThrow.mockResolvedValue(
             createPhqRow(phqId, {
                 q1: 3,
                 totalScore: 20,
@@ -152,15 +152,14 @@ describe("saveSystemPhqResult", () => {
         );
 
         expect(result.success).toBe(true);
-        expect(prismaMocks.tx.phqResult.update).toHaveBeenCalledWith({
-            where: { id: phqId },
+        expect(prismaMocks.tx.phqResult.updateMany).toHaveBeenCalledWith({
+            where: { id: phqId, updatedAt: expectedUpdatedAt },
             data: expect.objectContaining({
                 totalScore: 20,
                 riskLevel: "red",
                 referredToHospital: true,
                 hospitalName: "โรงพยาบาลทดสอบ",
             }),
-            select: expect.any(Object),
         });
     });
 });
@@ -175,6 +174,7 @@ function createInput(
 function createBaseInput(reason: string) {
     return {
         id: phqId,
+        expectedUpdatedAt,
         q1: 2,
         q2: 1,
         q3: 1,
@@ -225,6 +225,7 @@ function createPhqRow(
         referredToHospital: overrides.referredToHospital ?? false,
         hospitalName: overrides.hospitalName ?? null,
         createdAt: new Date("2026-07-07T00:00:00.000Z"),
+        updatedAt: expectedUpdatedAt,
         academicYear: {
             year: overrides.year ?? 2569,
             semester: overrides.semester ?? 1,
@@ -232,3 +233,5 @@ function createPhqRow(
         student: { schoolId: "cmschool0000000000000001" },
     };
 }
+
+const expectedUpdatedAt = new Date("2026-07-07T00:00:00.000Z");

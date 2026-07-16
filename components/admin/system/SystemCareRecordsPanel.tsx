@@ -39,6 +39,7 @@ export function SystemCareRecordsPanel({ studentId }: { studentId: string }) {
         startTransition(async () => {
             const result = await deleteSystemAdminCareRecord(deleteTarget.type, {
                 id: deleteTarget.id,
+                expectedUpdatedAt: deleteTarget.expectedUpdatedAt,
                 reason: deleteReason,
             });
             if (!result.success) {

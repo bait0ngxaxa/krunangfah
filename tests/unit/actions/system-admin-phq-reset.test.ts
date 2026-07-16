@@ -4,7 +4,7 @@ const prismaMocks = vi.hoisted(() => {
     const tx = {
         worksheetUpload: { deleteMany: vi.fn(), findMany: vi.fn() },
         activityProgress: { deleteMany: vi.fn() },
-        phqResult: { deleteMany: vi.fn() },
+        phqResult: { deleteMany: vi.fn(), updateMany: vi.fn() },
         systemAdminEvent: { create: vi.fn() },
     };
     return {
@@ -67,11 +67,12 @@ describe("resetSystemPhqResult", () => {
             { fileUrl: "/api/uploads/worksheets/phq-round-1.png" },
         ]);
         prismaMocks.deleteFilesByUrl.mockResolvedValue([]);
+        prismaMocks.tx.phqResult.updateMany.mockResolvedValue({ count: 1 });
     });
 
     it("deletes only the selected PHQ round so teachers can redo that round", async () => {
         const result = await resetSystemPhqResult(
-            { id: phqRound1Id, reason: "ครูนำเข้าคะแนน PHQ ผิดรอบ" },
+            { id: phqRound1Id, expectedUpdatedAt, reason: "ครูนำเข้าคะแนน PHQ ผิดรอบ" },
             {
                 id: "cmadmin00000000000000001",
                 email: "admin@example.com",
@@ -130,7 +131,7 @@ describe("resetSystemPhqResult", () => {
         );
 
         const result = await resetSystemPhqResult(
-            { id: phqRound1Id, reason: "ไม่ควรล้างผลย้อนหลังข้ามเทอม" },
+            { id: phqRound1Id, expectedUpdatedAt, reason: "ไม่ควรล้างผลย้อนหลังข้ามเทอม" },
             {
                 id: "cmadmin00000000000000001",
                 email: "admin@example.com",
@@ -155,7 +156,7 @@ describe("resetSystemPhqResult", () => {
 
         await expect(
             resetSystemPhqResult(
-                { id: phqRound1Id, reason: "ทดสอบ rollback เมื่อ audit ล้ม" },
+                { id: phqRound1Id, expectedUpdatedAt, reason: "ทดสอบ rollback เมื่อ audit ล้ม" },
                 {
                     id: "cmadmin00000000000000001",
                     email: "admin@example.com",
@@ -200,6 +201,7 @@ function createPhqRow(
         referredToHospital: false,
         hospitalName: null,
         createdAt: new Date("2026-07-07T00:00:00.000Z"),
+        updatedAt: expectedUpdatedAt,
         academicYear: {
             year: overrides.year ?? 2569,
             semester: overrides.semester ?? 1,
@@ -207,3 +209,5 @@ function createPhqRow(
         student: { schoolId: "cmschool0000000000000001" },
     };
 }
+
+const expectedUpdatedAt = new Date("2026-07-07T00:00:00.000Z");

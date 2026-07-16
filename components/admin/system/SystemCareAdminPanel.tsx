@@ -49,6 +49,7 @@ export function SystemCareAdminPanel({
         startTransition(async () => {
             const result = await updateSystemAdminPhq({
                 id: phqEditTarget.id,
+                expectedUpdatedAt: phqEditTarget.updatedAt,
                 ...phqEditForm,
             });
             const updated = result.updated;
@@ -68,6 +69,7 @@ export function SystemCareAdminPanel({
         startTransition(async () => {
             const result = await resetSystemAdminActivity({
                 id: activityResetTarget.id,
+                expectedUpdatedAt: activityResetTarget.updatedAt,
                 reason: activityResetReason,
             });
             const updated = result.updated;
@@ -88,6 +90,7 @@ export function SystemCareAdminPanel({
         startTransition(async () => {
             const result = await deleteSystemAdminReferral({
                 id: referral.id,
+                expectedUpdatedAt: referral.updatedAt,
                 reason: deleteReason,
             });
             if (!result.success) {

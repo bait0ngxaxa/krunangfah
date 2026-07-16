@@ -119,6 +119,7 @@ export const systemStudentCareRecordsSchema = z.object({
 
 export const systemCounselingEditSchema = z.object({
     id: z.string().cuid("รหัสบันทึกไม่ถูกต้อง").optional(),
+    expectedUpdatedAt: z.coerce.date().optional(),
     studentId: z.string().cuid("รหัสนักเรียนไม่ถูกต้อง"),
     sessionDate: z.coerce.date(),
     counselorName: z.string().trim().min(1).max(100),
@@ -128,6 +129,7 @@ export const systemCounselingEditSchema = z.object({
 
 export const systemHomeVisitEditSchema = z.object({
     id: z.string().cuid("รหัสบันทึกไม่ถูกต้อง").optional(),
+    expectedUpdatedAt: z.coerce.date().optional(),
     studentId: z.string().cuid("รหัสนักเรียนไม่ถูกต้อง"),
     visitDate: z.coerce.date(),
     description: z.string().trim().min(1).max(5000),
@@ -142,6 +144,7 @@ const phqScoreSchema = z.coerce.number().int().min(0).max(3);
 export const systemPhqEditSchema = z
     .object({
         id: z.string().cuid("รหัส PHQ ไม่ถูกต้อง"),
+        expectedUpdatedAt: z.coerce.date(),
         q1: phqScoreSchema,
         q2: phqScoreSchema,
         q3: phqScoreSchema,
@@ -169,12 +172,14 @@ export const systemPhqEditSchema = z
 
 export const systemReferralEditSchema = z.object({
     studentId: z.string().cuid("รหัสนักเรียนไม่ถูกต้อง"),
+    expectedUpdatedAt: z.coerce.date().optional(),
     toTeacherUserId: z.string().cuid("รหัสครูปลายทางไม่ถูกต้อง"),
     reason: reasonSchema,
 });
 
 export const systemCareRecordDeleteSchema = z.object({
     id: z.string().cuid("รหัสบันทึกไม่ถูกต้อง"),
+    expectedUpdatedAt: z.coerce.date(),
     reason: reasonSchema,
 });
 
