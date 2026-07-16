@@ -19,6 +19,7 @@ import {
     revokeReferralSchema,
 } from "@/lib/validations/referral.validation";
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
+import { getViewerContext } from "@/lib/auth/viewer-context";
 import type {
     ReferralActionResponse,
     TeacherPickerOption,
@@ -256,11 +257,22 @@ export async function revokeStudentReferral(input: {
  */
 export async function getReferredOutStudents(): Promise<ReferredOutStudent[]> {
     try {
-        const session = await requireAuth();
-        const userId = session.user.id;
+        const viewer = await getViewerContext();
+        if (viewer.role === "class_teacher" && !viewer.advisoryClass) return [];
 
         const referrals = await prisma.studentReferral.findMany({
-            where: { fromTeacherUserId: userId },
+            where: {
+                fromTeacherUserId: viewer.userId,
+                ...(viewer.role === "class_teacher"
+                    ? {
+                          student: {
+                              class: viewer.advisoryClass,
+                              disabledAt: null,
+                              isTestData: false,
+                          },
+                      }
+                    : {}),
+            },
             include: {
                 student: {
                     select: {

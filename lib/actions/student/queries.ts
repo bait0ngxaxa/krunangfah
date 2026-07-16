@@ -9,6 +9,12 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import type { RiskCountRaw, StudentListResponse } from "./types";
+import {
+    buildClassTeacherScopeSql,
+    buildReferredStudentSql,
+    buildReferredStudentWhere,
+    buildStudentVisibilityWhere,
+} from "./student-scope";
 
 interface ClassCountRow {
     class: string;
@@ -67,15 +73,15 @@ function applyClassFilter(
 
 function applyReferredOnlyFilter(
     whereClause: Prisma.StudentWhereInput,
+    userRole: string,
+    userId: string | undefined,
     referredOnly?: boolean,
 ): void {
     if (!referredOnly) {
         return;
     }
 
-    const referredCondition: Prisma.StudentWhereInput = {
-        referral: { isNot: null },
-    };
+    const referredCondition = buildReferredStudentWhere(userRole, userId);
 
     if (whereClause.AND) {
         whereClause.AND = [
@@ -95,7 +101,7 @@ function applyReferredOnlyFilter(
         return;
     }
 
-    whereClause.referral = { isNot: null };
+    Object.assign(whereClause, referredCondition);
 }
 
 async function getStudentIdsByLatestRiskQuery(
@@ -108,19 +114,13 @@ async function getStudentIdsByLatestRiskQuery(
     referredOnly?: boolean,
 ): Promise<string[]> {
     const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
-    const teacherCondition =
-        userRole === "class_teacher" && advisoryClass && userId
-            ? Prisma.sql`AND s."class" = ${advisoryClass}`
-            : Prisma.empty;
+    const teacherCondition = buildClassTeacherScopeSql(advisoryClass, userRole);
     const classCondition =
         classFilter && classFilter !== "all"
             ? Prisma.sql`AND s.class = ${classFilter}`
             : Prisma.empty;
     const referredCondition = referredOnly
-        ? Prisma.sql`AND EXISTS (
-            SELECT 1 FROM student_referrals sr
-            WHERE sr."studentId" = s.id
-          )`
+        ? buildReferredStudentSql(userRole, userId)
         : Prisma.empty;
 
     const rows = await prisma.$queryRaw<Array<{ student_id: string }>>`
@@ -203,29 +203,14 @@ export async function getRiskLevelCountsQuery(
     // Build base visibility scope from role + school context.
     const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
 
-    // class_teacher can see own advisory class plus students referred to them.
-    const teacherCondition =
-        userRole === "class_teacher" && advisoryClass && userId
-            ? Prisma.sql`AND (
-                (s."class" = ${advisoryClass} AND NOT EXISTS (
-                    SELECT 1 FROM student_referrals sr WHERE sr."studentId" = s.id
-                ))
-                OR EXISTS (
-                    SELECT 1 FROM student_referrals sr
-                    WHERE sr."studentId" = s.id AND sr."toTeacherUserId" = ${userId}
-                )
-              )`
-            : Prisma.empty;
+    const teacherCondition = buildClassTeacherScopeSql(advisoryClass, userRole);
 
     const classCondition =
         options?.classFilter && options.classFilter !== "all"
             ? Prisma.sql`AND s.class = ${options.classFilter}`
             : Prisma.empty;
     const referredCondition = options?.referredOnly
-        ? Prisma.sql`AND EXISTS (
-            SELECT 1 FROM student_referrals sr
-            WHERE sr."studentId" = s.id
-          )`
+        ? buildReferredStudentSql(userRole, userId)
         : Prisma.empty;
 
     return prisma.$queryRaw<RiskCountRaw[]>`
@@ -255,26 +240,6 @@ export async function getRiskLevelCountsQuery(
 /**
  * Build Prisma where clause for class_teacher visibility
  */
-function buildReferralAwareWhere(
-    schoolId: string | undefined,
-    advisoryClass: string | undefined,
-    userRole: string,
-    _userId: string | undefined,
-): Prisma.StudentWhereInput {
-    const where: Prisma.StudentWhereInput = {
-        ...(schoolId ? { schoolId } : {}),
-        disabledAt: null,
-        isTestData: false,
-        school: { disabledAt: null, isTestData: false },
-    };
-
-    if (userRole === "class_teacher" && advisoryClass) {
-        where.class = advisoryClass;
-    }
-
-    return where;
-}
-
 /**
  * Get distinct classes for a school
  * Used for class filter dropdown
@@ -283,9 +248,9 @@ export async function getDistinctClassesQuery(
     schoolId: string | undefined,
     advisoryClass: string | undefined,
     userRole: string,
-    userId: string | undefined,
+    _userId: string | undefined,
 ): Promise<string[]> {
-    const where = buildReferralAwareWhere(schoolId, advisoryClass, userRole, userId);
+    const where = buildStudentVisibilityWhere(schoolId, advisoryClass, userRole);
 
     const classesResult = await prisma.student.findMany({
         where,
@@ -313,7 +278,11 @@ export async function getStudentsQuery(
 ) {
     const { classFilter, page, limit } = options;
 
-    const whereClause = buildReferralAwareWhere(schoolId, advisoryClass, userRole, userId);
+    const whereClause = buildStudentVisibilityWhere(
+        schoolId,
+        advisoryClass,
+        userRole,
+    );
 
     applyClassFilter(whereClause, classFilter);
 
@@ -360,11 +329,10 @@ export async function getStudentsForDashboardQuery(
         limit?: number;
     },
 ): Promise<StudentListResponse> {
-    const whereClause = buildReferralAwareWhere(
+    const whereClause = buildStudentVisibilityWhere(
         schoolId,
         advisoryClass,
         userRole,
-        userId,
     );
     const classFilter = options?.classFilter;
     const riskFilter = options?.riskFilter;
@@ -373,7 +341,7 @@ export async function getStudentsForDashboardQuery(
     const limit = Math.max(1, options?.limit ?? 50);
 
     applyClassFilter(whereClause, classFilter);
-    applyReferredOnlyFilter(whereClause, referredOnly);
+    applyReferredOnlyFilter(whereClause, userRole, userId, referredOnly);
 
     const hasMatchingRiskStudents = await applyRiskFilterToWhereClause(
         whereClause,
@@ -441,14 +409,18 @@ export async function getClassCountsQuery(
     userId: string | undefined,
     options?: DashboardSummaryFilterOptions,
 ): Promise<ClassCountRow[]> {
-    const whereClause = buildReferralAwareWhere(
+    const whereClause = buildStudentVisibilityWhere(
         schoolId,
         advisoryClass,
         userRole,
-        userId,
     );
 
-    applyReferredOnlyFilter(whereClause, options?.referredOnly);
+    applyReferredOnlyFilter(
+        whereClause,
+        userRole,
+        userId,
+        options?.referredOnly,
+    );
 
     const hasMatchingRiskStudents = await applyRiskFilterToWhereClause(
         whereClause,
@@ -486,11 +458,10 @@ export async function getReferredStudentCountQuery(
     userId: string | undefined,
     options?: DashboardSummaryFilterOptions,
 ): Promise<number> {
-    const whereClause = buildReferralAwareWhere(
+    const whereClause = buildStudentVisibilityWhere(
         schoolId,
         advisoryClass,
         userRole,
-        userId,
     );
 
     applyClassFilter(whereClause, options?.classFilter);
@@ -509,7 +480,7 @@ export async function getReferredStudentCountQuery(
         return 0;
     }
 
-    applyReferredOnlyFilter(whereClause, true);
+    applyReferredOnlyFilter(whereClause, userRole, userId, true);
 
     return prisma.student.count({
         where: whereClause,
@@ -527,7 +498,11 @@ export async function searchStudentsQuery(
     query: string,
     allowNationalIdSearch: boolean,
 ) {
-    const baseWhere = buildReferralAwareWhere(schoolId, advisoryClass, userRole, userId);
+    const baseWhere = buildStudentVisibilityWhere(
+        schoolId,
+        advisoryClass,
+        userRole,
+    );
 
     const searchOR: Prisma.StudentWhereInput[] = [
         { firstName: { contains: query, mode: "insensitive" } },
@@ -592,7 +567,11 @@ export async function getStudentDetailQuery(
     userId: string | undefined,
     studentId: string,
 ) {
-    const baseWhere = buildReferralAwareWhere(schoolId, advisoryClass, userRole, userId);
+    const baseWhere = buildStudentVisibilityWhere(
+        schoolId,
+        advisoryClass,
+        userRole,
+    );
 
     const whereClause: Prisma.StudentWhereInput = {
         id: studentId,

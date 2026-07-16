@@ -20,7 +20,10 @@ setupAuthMocks();
 const USERS = createMockUsers("e2e-smoke-real");
 
 const { importStudents } = await import("@/lib/actions/student/mutations");
-const { getStudents, searchStudents } = await import("@/lib/actions/student/main");
+const { getStudentDetail, getStudents, searchStudents } = await import(
+    "@/lib/actions/student/main"
+);
+const { getStudentDashboardData } = await import("@/lib/actions/student/dashboard");
 const { deleteWorksheetUpload } = await import("@/lib/actions/activity/file-utils");
 
 describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
@@ -161,6 +164,9 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         const importedStudentIds = importedStudents.map((s) => s.id);
 
         if (importedStudentIds.length > 0) {
+            await prisma.studentReferral
+                .deleteMany({ where: { studentId: { in: importedStudentIds } } })
+                .catch(() => {});
             const progress = await prisma.activityProgress.findMany({
                 where: { studentId: { in: importedStudentIds } },
                 select: { id: true },
@@ -224,6 +230,66 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         expect(result.students.some((s) => s.id === class1StudentDbId)).toBe(false);
     });
 
+    it("class_teacher scope stays advisory-only after outgoing and incoming referrals", async () => {
+        const class2Student = await prisma.student.findFirstOrThrow({
+            where: { schoolId, studentId: class2StudentCode },
+            select: { id: true },
+        });
+        mockSession(USERS.classTeacher);
+        const before = await getStudentDashboardData({ classFilter: "class-1" });
+
+        await prisma.studentReferral.createMany({
+            data: [
+                {
+                    studentId: class1StudentDbId,
+                    fromTeacherUserId: USERS.classTeacher.id,
+                    toTeacherUserId: USERS.schoolAdmin.id,
+                },
+                {
+                    studentId: class2Student.id,
+                    fromTeacherUserId: USERS.schoolAdmin.id,
+                    toTeacherUserId: USERS.classTeacher.id,
+                },
+            ],
+        });
+
+        try {
+            const [after, list, search, detail, referred] = await Promise.all([
+                getStudentDashboardData({ classFilter: "class-1" }),
+                getStudents({ page: 1, limit: 50 }),
+                searchStudents(class1StudentCode),
+                getStudentDetail(class1StudentDbId),
+                getStudentDashboardData({
+                    classFilter: "class-1",
+                    referredOnly: true,
+                }),
+            ]);
+            const outsideSearch = await searchStudents(class2StudentCode);
+            const outsideDetail = await getStudentDetail(class2Student.id);
+
+            expect(after.totalStudents).toBe(before.totalStudents);
+            expect(after.riskCounts).toEqual(before.riskCounts);
+            expect(
+                list.students.some((student) => student.id === class1StudentDbId),
+            ).toBe(true);
+            expect(search.some((student) => student.id === class1StudentDbId)).toBe(
+                true,
+            );
+            expect(detail?.id).toBe(class1StudentDbId);
+            expect(referred.students.map((student) => student.id)).toEqual([
+                class1StudentDbId,
+            ]);
+            expect(outsideSearch).toEqual([]);
+            expect(outsideDetail).toBeNull();
+        } finally {
+            await prisma.studentReferral.deleteMany({
+                where: {
+                    studentId: { in: [class1StudentDbId, class2Student.id] },
+                },
+            });
+        }
+    });
+
     it("system_admin can search students by national ID", async () => {
         mockSession(USERS.systemAdmin);
         const result = await searchStudents(class1NationalId);
@@ -243,7 +309,7 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         expect(result).toEqual([]);
     });
 
-    it("duplicate screening is reported separately from national ID conflict", async () => {
+    it("partial identity match is reported as an identity conflict", async () => {
         mockSession(USERS.schoolAdmin);
 
         const result = await importStudents(
@@ -274,8 +340,10 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         );
 
         expect(result.imported).toBe(0);
-        expect(result.errors?.[0]).toContain("มีข้อมูลการประเมินครั้งที่ 1 อยู่แล้ว");
-        expect(result.errors?.[0]).not.toContain("เลขบัตรประชาชนซ้ำ");
+        expect(result.errors?.[0]).toContain(
+            "รหัสนักเรียนและเลขบัตรประชาชนไม่ตรงกับนักเรียนคนเดียวกัน",
+        );
+        expect(result.identityConflicts).toBe(1);
     });
 
     it("role action scope: owner can delete worksheet, non-owner cannot", async () => {

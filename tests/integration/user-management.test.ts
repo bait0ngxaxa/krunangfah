@@ -303,14 +303,13 @@ describe("Integration: User Management", () => {
         });
 
         it("cannot change system_admin role (self)", async () => {
-            // system_admin role guard fires before self-check
             mockSession(USERS.systemAdmin);
             const result = await changeUserRole(
                 USERS.systemAdmin.id,
                 "school_admin",
             );
             expect(result.success).toBe(false);
-            expect(result.message).toContain("System Admin");
+            expect(result.message).toBe("ไม่สามารถเปลี่ยนข้อมูลตัวเอง");
         });
 
         it("cannot demote the only primary school admin", async () => {

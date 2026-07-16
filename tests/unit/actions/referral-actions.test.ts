@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     createStudentReferral,
+    getReferredOutStudents,
     getTeachersForReferral,
 } from "@/lib/actions/referral.actions";
 
@@ -16,6 +17,7 @@ vi.mock("@/lib/database/prisma", () => ({
             findUnique: vi.fn(),
         },
         studentReferral: {
+            findMany: vi.fn(),
             upsert: vi.fn(),
         },
     },
@@ -24,6 +26,10 @@ vi.mock("@/lib/database/prisma", () => ({
 vi.mock("@/lib/auth/session", () => ({
     isSystemAdmin: vi.fn((role: string) => role === "system_admin"),
     requireAuth: vi.fn(),
+}));
+
+vi.mock("@/lib/auth/viewer-context", () => ({
+    getViewerContext: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
@@ -38,6 +44,7 @@ vi.mock("@/lib/actions/error-handler", () => ({
 
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
+import { getViewerContext } from "@/lib/auth/viewer-context";
 
 const validStudentId = "cmaaaaaaa0000000000000001";
 const validSchoolAdminUserId = "cmaaaaaaa0000000000000002";
@@ -277,6 +284,34 @@ describe("referral actions business rules", () => {
                     advisoryClass: "ทุกห้อง",
                 },
             ]);
+        });
+    });
+
+    describe("getReferredOutStudents", () => {
+        it("keeps class_teacher referred filter inside advisoryClass", async () => {
+            vi.mocked(getViewerContext).mockResolvedValue({
+                userId: validClassTeacherUserId,
+                role: "class_teacher",
+                schoolId: "school-1",
+                advisoryClass: "ม.1/1",
+                isPrimary: false,
+            });
+            vi.mocked(prisma.studentReferral.findMany).mockResolvedValue([]);
+
+            await getReferredOutStudents();
+
+            expect(prisma.studentReferral.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: {
+                        fromTeacherUserId: validClassTeacherUserId,
+                        student: {
+                            class: "ม.1/1",
+                            disabledAt: null,
+                            isTestData: false,
+                        },
+                    },
+                }),
+            );
         });
     });
 });
