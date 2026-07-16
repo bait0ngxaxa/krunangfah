@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import { Check, GraduationCap, X } from "lucide-react";
 import { toast } from "sonner";
-import {
-    getClassesBySchool,
-    updateTeacherProfile,
-} from "@/lib/actions/user-management.actions";
+import { getClassesBySchool } from "@/lib/actions/user-management.actions";
+import { updateStaffAssignment } from "@/lib/actions/staff-assignment.actions";
 import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
 import { cn } from "@/lib/utils/cn";
 
@@ -156,8 +154,10 @@ export function TeacherAdvisoryClassForm({
         setErrorMessage(null);
         setIsSaving(true);
         try {
-            const result = await updateTeacherProfile(teacherId, {
+            const result = await updateStaffAssignment({
+                userId: teacherId,
                 advisoryClass: selectedClass,
+                reason: "แก้ไขห้องที่ปรึกษาและบทบาทอัตโนมัติของบุคลากร",
             });
 
             if (!result.success) {

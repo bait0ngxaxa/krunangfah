@@ -6,6 +6,10 @@ vi.mock("@/lib/actions/user-management.actions", () => ({
     deleteUser: vi.fn(),
 }));
 
+vi.mock("@/lib/actions/staff-assignment.actions", () => ({
+    updateStaffAssignment: vi.fn(),
+}));
+
 vi.mock("@/lib/actions/system-admin-staff-account.actions", () => ({
     restoreSystemAdminStaffAccount: vi.fn(),
     permanentlyDeleteSystemAdminStaffAccount: vi.fn(),

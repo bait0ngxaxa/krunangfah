@@ -31,6 +31,8 @@ const mocks = vi.hoisted(() => ({
     transaction: vi.fn(),
     revalidatePath: vi.fn(),
     invalidateUserSessionCaches: vi.fn(),
+    createSystemAdminEditEvent: vi.fn(),
+    revalidateDashboardCache: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/session", () => ({
@@ -54,8 +56,16 @@ vi.mock("next/cache", () => ({
     revalidatePath: mocks.revalidatePath,
 }));
 
+vi.mock("@/lib/actions/dashboard/cache", () => ({
+    revalidateDashboardCache: mocks.revalidateDashboardCache,
+}));
+
 vi.mock("@/lib/auth/session-store", () => ({
     invalidateUserSessionCaches: mocks.invalidateUserSessionCaches,
+}));
+
+vi.mock("@/lib/actions/system-admin/events", () => ({
+    createSystemAdminEditEvent: mocks.createSystemAdminEditEvent,
 }));
 
 function createPrimaryAdminSession(): MockSession {
@@ -99,6 +109,8 @@ describe("togglePrimaryStatus", () => {
             }),
         );
         mocks.invalidateUserSessionCaches.mockResolvedValue(undefined);
+        mocks.createSystemAdminEditEvent.mockResolvedValue(undefined);
+        mocks.revalidateDashboardCache.mockImplementation(() => undefined);
     });
 
     it("invalidates target user session cache after toggling isPrimary", async () => {
@@ -108,16 +120,36 @@ describe("togglePrimaryStatus", () => {
             success: true,
             message: "เพิ่มสิทธิ์ Primary Admin สำเร็จ",
         });
-        expect(mocks.userUpdateMany).toHaveBeenCalledWith({
-            where: {
-                id: "target-admin-1",
-                deletedAt: null,
-                isPrimary: false,
-            },
-            data: { isPrimary: true },
-        });
+        expect(mocks.userUpdateMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({
+                    id: "target-admin-1",
+                    deletedAt: null,
+                    isPrimary: false,
+                    role: "school_admin",
+                }),
+                data: { role: "school_admin", isPrimary: true },
+            }),
+        );
         expect(mocks.invalidateUserSessionCaches).toHaveBeenCalledWith(
             "target-admin-1",
+        );
+        expect(mocks.transaction).toHaveBeenCalledWith(
+            expect.any(Function),
+            { isolationLevel: "Serializable" },
+        );
+        expect(mocks.createSystemAdminEditEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+                targetType: "user",
+                targetId: "target-admin-1",
+                changes: [
+                    expect.objectContaining({
+                        field: "isPrimary",
+                        before: false,
+                        after: true,
+                    }),
+                ],
+            }),
         );
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/school/classes");
     });

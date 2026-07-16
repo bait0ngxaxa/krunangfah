@@ -5,7 +5,7 @@ import { Loader2, ShieldCheck, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { TeacherAdvisoryClassForm } from "@/components/teacher/forms/TeacherAdvisoryClassForm";
-import { changeUserRole } from "@/lib/actions/user-management.actions";
+import { updateStaffAssignment } from "@/lib/actions/staff-assignment.actions";
 import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
 import type {
     StaffRoleSelection,
@@ -76,7 +76,11 @@ export function SystemStaffActions({
             return;
         }
         startTransition(async () => {
-            const result = await changeUserRole(userId, selectedRole);
+            const result = await updateStaffAssignment({
+                userId,
+                roleSelection: selectedRole,
+                reason: "เปลี่ยนบทบาทและสิทธิ์บุคลากรจากศูนย์ดูแลระบบ",
+            });
             if (!result.success) {
                 toast.error(result.message);
                 return;
