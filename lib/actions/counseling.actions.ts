@@ -256,16 +256,14 @@ export async function createCounselingSession(data: {
             try {
                 counselingSession = await prisma.$transaction(
                     async (tx) => {
-                        const lastSession = await tx.counselingSession.findFirst({
-                            where: {
-                                studentId: validated.studentId,
-                                deletedAt: null,
-                            },
-                            orderBy: { sessionNumber: "desc" },
-                            select: { sessionNumber: true },
-                        });
+                        const sessionNumbers =
+                            await tx.counselingSession.aggregate({
+                                where: { studentId: validated.studentId },
+                                _max: { sessionNumber: true },
+                            });
 
-                        const sessionNumber = (lastSession?.sessionNumber || 0) + 1;
+                        const sessionNumber =
+                            (sessionNumbers._max.sessionNumber ?? 0) + 1;
 
                         return tx.counselingSession.create({
                             data: {

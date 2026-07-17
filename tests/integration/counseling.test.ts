@@ -104,6 +104,25 @@ describe("Integration: Counseling Sessions", () => {
             expect(result.success).toBe(true);
             expect(result.session?.sessionNumber).toBe(3);
         });
+
+        it("should not reuse the latest soft-deleted session number", async () => {
+            mockSession(USERS.classTeacher);
+            await prisma.counselingSession.updateMany({
+                where: { studentId, sessionNumber: 3 },
+                data: { deletedAt: new Date() },
+            });
+
+            const result = await createCounselingSession({
+                studentId,
+                academicYearId,
+                sessionDate: new Date(),
+                counselorName: "ครูทดสอบ",
+                summary: "Session after soft delete",
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.session?.sessionNumber).toBe(4);
+        });
     });
 
     describe("Session List", () => {

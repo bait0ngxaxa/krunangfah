@@ -290,16 +290,13 @@ export async function createHomeVisit(data: {
             try {
                 visit = await prisma.$transaction(
                     async (tx) => {
-                        const lastVisit = await tx.homeVisit.findFirst({
-                            where: {
-                                studentId: validated.studentId,
-                                deletedAt: null,
-                            },
-                            orderBy: { visitNumber: "desc" },
-                            select: { visitNumber: true },
+                        const visitNumbers = await tx.homeVisit.aggregate({
+                            where: { studentId: validated.studentId },
+                            _max: { visitNumber: true },
                         });
 
-                        const visitNumber = (lastVisit?.visitNumber || 0) + 1;
+                        const visitNumber =
+                            (visitNumbers._max.visitNumber ?? 0) + 1;
 
                         return tx.homeVisit.create({
                             data: {

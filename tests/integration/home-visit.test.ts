@@ -92,6 +92,30 @@ describe("Integration: Home Visits", () => {
         expect(allVisits[1]?.academicYearId).toBe(academicYearId);
     });
 
+    it("should not reuse the latest soft-deleted visit number", async () => {
+        mockSession(USERS.classTeacher);
+        await prisma.homeVisit.updateMany({
+            where: { studentId, visitNumber: 2 },
+            data: { deletedAt: new Date() },
+        });
+
+        const result = await createHomeVisit({
+            studentId,
+            academicYearId,
+            visitDate: new Date("2026-06-12"),
+            description: "Visit after soft delete",
+        });
+
+        expect(result.success).toBe(true);
+        const createdVisit = await prisma.homeVisit.findUnique({
+            where: {
+                studentId_visitNumber: { studentId, visitNumber: 3 },
+            },
+            select: { visitNumber: true },
+        });
+        expect(createdVisit?.visitNumber).toBe(3);
+    });
+
     it("should include legacy visits without academicYearId via date-range fallback", async () => {
         mockSession(USERS.classTeacher);
 
