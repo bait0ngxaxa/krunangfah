@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AnalyticsContent } from "@/components/analytics/AnalyticsContent";
 import { PageBanner } from "@/components/ui/PageBanner";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import {
     getAnalyticsSummary,
     getSystemAnalyticsOverview,
@@ -143,10 +144,27 @@ export default async function AnalyticsPage({
     const shouldRequireSchoolSelection = isSystemAdmin && !selectedSchoolId;
 
     if (shouldRequireSchoolSelection) {
-        const systemOverview = await getSystemAnalyticsOverview(
+        const systemOverviewResult = await getSystemAnalyticsOverview(
             parsedYear,
             parsedSemester,
         );
+        if (systemOverviewResult.status === "transient_error") {
+            return <QueryErrorState requestId={systemOverviewResult.requestId} />;
+        }
+        if (
+            systemOverviewResult.status === "forbidden" ||
+            systemOverviewResult.status === "not_found"
+        ) {
+            redirect("/dashboard");
+        }
+        const systemOverview = systemOverviewResult.data;
+        if (systemOverview.currentAcademicYear !== undefined) {
+            selectedAcademicYear =
+                systemOverview.currentAcademicYear.toString();
+        }
+        if (systemOverview.currentSemester !== undefined) {
+            selectedSemester = systemOverview.currentSemester.toString();
+        }
 
         return (
             <div className="min-h-screen bg-slate-50 relative overflow-hidden">
@@ -181,7 +199,7 @@ export default async function AnalyticsPage({
     }
 
     // ── Phase 3: Single analytics fetch with validated params ──
-    const analyticsData = await getAnalyticsSummary(
+    const analyticsResult = await getAnalyticsSummary(
         selectedClass !== "all" ? selectedClass : undefined,
         selectedSchoolId,
         parsedYear,
@@ -189,9 +207,16 @@ export default async function AnalyticsPage({
         parsedRound,
     );
 
-    if (!analyticsData) {
+    if (analyticsResult.status === "transient_error") {
+        return <QueryErrorState requestId={analyticsResult.requestId} />;
+    }
+    if (
+        analyticsResult.status === "forbidden" ||
+        analyticsResult.status === "not_found"
+    ) {
         redirect("/dashboard");
     }
+    const analyticsData = analyticsResult.data;
 
     if (!params.year && analyticsData.currentAcademicYear !== undefined) {
         selectedAcademicYear = analyticsData.currentAcademicYear.toString();

@@ -34,7 +34,11 @@ import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.action
 import { ensureCurrentAcademicYearLifecycle } from "@/lib/services/academic-year-lifecycle";
 
 import type { AnalyticsData, SystemAnalyticsOverview } from "./types";
-import { handleActionError } from "@/lib/actions/error-handler";
+import { handleQueryError } from "@/lib/actions/error-handler";
+import {
+    querySuccess,
+    type QueryResult,
+} from "@/lib/actions/query-result";
 
 function buildAnalyticsCacheKey(input: {
     role: string;
@@ -333,23 +337,23 @@ export async function getAnalyticsSummary(
     academicYear?: number,
     semester?: number,
     assessmentRound?: number,
-): Promise<AnalyticsData | null> {
+): Promise<QueryResult<AnalyticsData>> {
     try {
         const viewer = await getViewerContext();
 
         if (!viewer.schoolId && viewer.role !== "system_admin") {
-            return null;
+            return { status: "not_found" };
         }
 
         if (viewer.role === "system_admin" && !schoolFilter) {
-            return null;
+            return { status: "not_found" };
         }
 
         let targetClass: string | undefined;
         if (viewer.role === "class_teacher") {
             targetClass = viewer.advisoryClass;
             if (!targetClass) {
-                return null;
+                return { status: "not_found" };
             }
         } else {
             targetClass = classFilter;
@@ -360,20 +364,18 @@ export async function getAnalyticsSummary(
                 ? schoolFilter
                 : viewer.schoolId;
 
-        return getCachedAnalyticsData(
-            schoolId,
-            targetClass ?? "",
-            viewer.role,
-            academicYear?.toString() ?? "",
-            semester?.toString() ?? "",
-            assessmentRound?.toString() ?? "",
+        return querySuccess(
+            await getCachedAnalyticsData(
+                schoolId,
+                targetClass ?? "",
+                viewer.role,
+                academicYear?.toString() ?? "",
+                semester?.toString() ?? "",
+                assessmentRound?.toString() ?? "",
+            ),
         );
     } catch (error) {
-        return handleActionError({
-            context: "Get analytics summary error:",
-            error,
-            fallback: null,
-        });
+        return handleQueryError("Get analytics summary error:", error);
     }
 }
 
@@ -472,11 +474,11 @@ async function fetchSystemAnalyticsOverview(
 export async function getSystemAnalyticsOverview(
     academicYear?: number,
     semester?: number,
-): Promise<SystemAnalyticsOverview | null> {
+): Promise<QueryResult<SystemAnalyticsOverview>> {
     try {
         const viewer = await getViewerContext();
         if (viewer.role !== "system_admin") {
-            return null;
+            return { status: "forbidden" };
         }
 
         const overviewCacheKey = createSystemOverviewRedisKeyParts({
@@ -485,7 +487,7 @@ export async function getSystemAnalyticsOverview(
         });
         const redisCached = await readRedisCachedSystemOverview(overviewCacheKey);
         if (redisCached.data) {
-            return redisCached.data;
+            return querySuccess(redisCached.data);
         }
 
         const cachedOverviewFetcher = unstable_cache(
@@ -500,12 +502,8 @@ export async function getSystemAnalyticsOverview(
             data,
             redisCached.versionedKeyParts,
         );
-        return data;
+        return querySuccess(data);
     } catch (error) {
-        return handleActionError({
-            context: "Get system analytics overview error:",
-            error,
-            fallback: null,
-        });
+        return handleQueryError("Get system analytics overview error:", error);
     }
 }
