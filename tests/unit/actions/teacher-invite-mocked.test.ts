@@ -29,6 +29,10 @@ const prismaMocks = vi.hoisted(() => ({
     mockRosterUpdate: vi.fn(),
 }));
 
+const rateLimitMocks = vi.hoisted(() => ({
+    check: vi.fn(),
+}));
+
 // Mock external dependencies
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
@@ -81,6 +85,16 @@ vi.mock("@/lib/auth/user", () => ({
     hashPassword: vi.fn(),
 }));
 
+vi.mock("@/lib/rate-limit", () => ({
+    createRateLimiter: () => ({ check: rateLimitMocks.check }),
+    extractRateLimitKey: () => "request-key",
+    TRUSTED_PROXY_HEADERS: { trustProxyHeaders: true },
+}));
+
+vi.mock("next/headers", () => ({
+    headers: async () => ({ get: () => "127.0.0.1" }),
+}));
+
 vi.mock("next/cache", () => ({
     revalidatePath: vi.fn(),
     updateTag: vi.fn(),
@@ -101,6 +115,13 @@ const baseInput: TeacherInviteFormData = {
 describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        rateLimitMocks.check.mockResolvedValue({
+            allowed: true,
+            limit: 8,
+            remaining: 7,
+            resetAt: Date.now() + 60_000,
+            retryAfterSeconds: 0,
+        });
     });
 
     describe("createTeacherInvite", () => {
@@ -224,6 +245,48 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
     });
 
     describe("acceptTeacherInvite", () => {
+        it("rejects an invalid password before hashing", async () => {
+            const res = await acceptTeacherInvite("token", "short");
+
+            expect(res.success).toBe(false);
+            expect(hashPassword).not.toHaveBeenCalled();
+            expect(prismaMocks.mockTeacherInviteUpdateMany).not.toHaveBeenCalled();
+        });
+
+        it("rejects an invalid token before hashing", async () => {
+            prismaMocks.mockTeacherInviteFindUnique.mockResolvedValue(null);
+
+            const res = await acceptTeacherInvite(
+                "invalid-token",
+                "StrongPassword123!",
+            );
+
+            expect(res.success).toBe(false);
+            expect(hashPassword).not.toHaveBeenCalled();
+        });
+
+        it("rejects rate-limited requests before hashing", async () => {
+            rateLimitMocks.check.mockResolvedValue({
+                allowed: false,
+                limit: 8,
+                remaining: 0,
+                resetAt: Date.now() + 60_000,
+                retryAfterSeconds: 60,
+            });
+
+            const res = await acceptTeacherInvite(
+                "token",
+                "StrongPassword123!",
+            );
+
+            expect(res.success).toBe(false);
+            expect(hashPassword).not.toHaveBeenCalled();
+            expect(prismaMocks.mockTeacherInviteFindUnique).not.toHaveBeenCalled();
+            expect(rateLimitMocks.check).toHaveBeenCalledWith(
+                expect.stringMatching(/^request-key:token:[a-f0-9]{32}$/),
+            );
+        });
+
         it("fails if invite not found", async () => {
             vi.mocked(hashPassword).mockResolvedValue("hashed");
             vi.mocked(prisma.teacherInvite.updateMany).mockResolvedValue({
@@ -232,7 +295,10 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
             vi.mocked(prisma.teacherInvite.findUnique).mockResolvedValue(
                 null as any,
             );
-            const res = await acceptTeacherInvite("token", "pass");
+            const res = await acceptTeacherInvite(
+                "token",
+                "StrongPassword123!",
+            );
             expect(res.success).toBe(false);
             expect(res.message).toBe("ไม่พบคำเชิญ");
         });
@@ -245,7 +311,10 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
             vi.mocked(prisma.teacherInvite.findUnique).mockResolvedValue({
                 acceptedAt: new Date(),
             } as any);
-            const res = await acceptTeacherInvite("token", "pass");
+            const res = await acceptTeacherInvite(
+                "token",
+                "StrongPassword123!",
+            );
             expect(res.success).toBe(false);
             expect(res.message).toBe("คำเชิญนี้ถูกใช้งานแล้ว");
         });
@@ -258,7 +327,10 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
             vi.mocked(prisma.teacherInvite.findUnique).mockResolvedValue({
                 expiresAt: new Date(Date.now() - 10000), // past
             } as any);
-            const res = await acceptTeacherInvite("token", "pass");
+            const res = await acceptTeacherInvite(
+                "token",
+                "StrongPassword123!",
+            );
             expect(res.success).toBe(false);
             expect(res.message).toBe("คำเชิญหมดอายุแล้ว");
         });
@@ -281,17 +353,27 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
                 acceptedAt: null,
                 expiresAt: new Date(Date.now() + 10000), // future
             } as any);
-            const res = await acceptTeacherInvite("token", "pass");
+            const res = await acceptTeacherInvite(
+                "token",
+                "StrongPassword123!",
+            );
             expect(res.success).toBe(true);
             expect(res.message).toBe("ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ");
         });
 
         it("catches errors and returns false", async () => {
             vi.mocked(hashPassword).mockResolvedValue("hashed");
+            vi.mocked(prisma.teacherInvite.findUnique).mockResolvedValue({
+                acceptedAt: null,
+                expiresAt: new Date(Date.now() + 10000),
+            } as any);
             vi.mocked(prisma.teacherInvite.updateMany).mockRejectedValue(
                 new Error("DB error"),
             );
-            const res = await acceptTeacherInvite("tok", "pass");
+            const res = await acceptTeacherInvite(
+                "tok",
+                "StrongPassword123!",
+            );
             expect(res.success).toBe(false);
             expect(res.message).toBe("เกิดข้อผิดพลาดในการลงทะเบียน");
         });

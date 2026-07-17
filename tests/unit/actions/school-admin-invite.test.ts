@@ -160,6 +160,19 @@ describe("acceptSchoolAdminInvite", () => {
         );
     });
 
+    it("rejects an invalid token before hashing", async () => {
+        prismaMocks.mockSchoolAdminInviteFindUnique.mockResolvedValue(null);
+
+        const result = await acceptSchoolAdminInvite(
+            "invalid-token",
+            "StrongPassword123!",
+        );
+
+        expect(result.success).toBe(false);
+        expect(authMocks.mockHashPassword).not.toHaveBeenCalled();
+        expect(prismaMocks.mockTransaction).not.toHaveBeenCalled();
+    });
+
     it("claims an invite token once when the same token is accepted concurrently", async () => {
         let claimAttempts = 0;
         const pendingInvite = createInviteRecord();

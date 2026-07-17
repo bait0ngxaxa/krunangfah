@@ -19,6 +19,11 @@ export const inviteRegisterSchema = z
 
 export type InviteRegisterFormData = z.infer<typeof inviteRegisterSchema>;
 
+export const inviteAcceptanceSchema = z.object({
+    token: z.string().trim().min(1, "ไม่พบ token"),
+    password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
+});
+
 export const forgotPasswordSchema = z.object({
     email: z.string().trim().email("อีเมลไม่ถูกต้อง").max(254, "อีเมลยาวเกินไป"),
 });

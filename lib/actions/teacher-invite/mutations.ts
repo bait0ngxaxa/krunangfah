@@ -3,7 +3,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
-import { hashPassword } from "@/lib/auth/user";
 import { generateInviteToken, hashToken } from "@/lib/auth/token";
 import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
@@ -12,6 +11,11 @@ import { teacherInviteSchema } from "@/lib/validations/teacher-invite.validation
 import type { InviteResponse } from "./types";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 import { handleActionError } from "../error-handler";
+import {
+    acceptInvite,
+    type AcceptedInviteContext,
+    type InviteAcceptanceResponse,
+} from "@/lib/services/invite-acceptance.service";
 
 /**
  * สร้าง invite สำหรับครูผู้ดูแล
@@ -165,22 +169,31 @@ export async function createTeacherInvite(
     }
 }
 
-/**
- * ยอมรับคำเชิญและสร้าง account
- */
-export async function acceptTeacherInvite(
-    token: string,
-    password: string,
-): Promise<InviteResponse> {
-    try {
-        // Password is stored hashed only.
-        const hashedPassword = await hashPassword(password);
-        const tokenHash = hashToken(token);
+async function checkTeacherInviteToken(
+    tokenHash: string,
+    now: Date,
+): Promise<InviteAcceptanceResponse | null> {
+    const invite = await prisma.teacherInvite.findUnique({
+        where: { token: tokenHash },
+        select: { acceptedAt: true, expiresAt: true },
+    });
+    if (!invite) return { success: false, message: "ไม่พบคำเชิญ" };
+    if (invite.acceptedAt) {
+        return { success: false, message: "คำเชิญนี้ถูกใช้งานแล้ว" };
+    }
+    if (invite.expiresAt <= now) {
+        return { success: false, message: "คำเชิญหมดอายุแล้ว" };
+    }
+    return null;
+}
 
-        return await runSerializableTransaction(async (tx) => {
+async function acceptClaimedTeacherInvite(
+    context: AcceptedInviteContext,
+): Promise<InviteResponse> {
+    return runSerializableTransaction(async (tx) => {
             const claimResult = await tx.teacherInvite.updateMany({
                 where: {
-                    token: tokenHash,
+                    token: context.tokenHash,
                     acceptedAt: null,
                     expiresAt: { gt: new Date() },
                 },
@@ -189,7 +202,7 @@ export async function acceptTeacherInvite(
 
             if (claimResult.count === 0) {
                 const inviteState = await tx.teacherInvite.findUnique({
-                    where: { token: tokenHash },
+                    where: { token: context.tokenHash },
                     select: {
                         id: true,
                         acceptedAt: true,
@@ -209,7 +222,7 @@ export async function acceptTeacherInvite(
             }
 
             const invite = await tx.teacherInvite.findUnique({
-                where: { token: tokenHash },
+                where: { token: context.tokenHash },
             });
 
             if (!invite) {
@@ -220,7 +233,7 @@ export async function acceptTeacherInvite(
                 data: {
                     email: invite.email,
                     name: `${invite.firstName} ${invite.lastName}`,
-                    password: hashedPassword,
+                    password: context.hashedPassword,
                     role: invite.userRole,
                     schoolId: invite.schoolId,
                 },
@@ -242,6 +255,22 @@ export async function acceptTeacherInvite(
                 success: true,
                 message: "ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ",
             };
+        });
+}
+
+/**
+ * ยอมรับคำเชิญและสร้าง account
+ */
+export async function acceptTeacherInvite(
+    token: string,
+    password: string,
+): Promise<InviteResponse> {
+    try {
+        return await acceptInvite({
+            token,
+            password,
+            checkToken: checkTeacherInviteToken,
+            accept: acceptClaimedTeacherInvite,
         });
     } catch (error) {
         if (

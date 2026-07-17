@@ -34,6 +34,13 @@ export const RATE_LIMIT_AUTH_FLOOD: RateLimitConfig = {
     name: "auth-flood",
 };
 
+/** จำกัดการยอมรับคำเชิญด้วยแหล่งคำขอและ token เดียวกัน */
+export const RATE_LIMIT_INVITE_ACCEPT: RateLimitConfig = {
+    maxRequests: 8,
+    windowMs: 15 * 60 * 1000,
+    name: "invite-accept",
+};
+
 /**
  * Rate limit for forgot-password requests
  * 3 attempts per hour per trusted request source and email

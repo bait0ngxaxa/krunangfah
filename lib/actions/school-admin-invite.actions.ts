@@ -1,37 +1,26 @@
 "use server";
 
-import { headers } from "next/headers";
 import { prisma } from "@/lib/database/prisma";
 import { requireAdmin } from "@/lib/auth/session";
-import { hashPassword } from "@/lib/auth/user";
 import { generateInviteToken, hashToken } from "@/lib/auth/token";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import {
-    inviteRegisterSchema,
-    inviteRoleSchema,
-} from "@/lib/validations/auth.validation";
-import {
-    createRateLimiter,
-    extractRateLimitKey,
-    TRUSTED_PROXY_HEADERS,
-} from "@/lib/rate-limit";
-import { createTokenRateLimitKey } from "@/lib/rate-limit/keys";
-import { RATE_LIMIT_AUTH_SIGNIN } from "@/lib/constants/rate-limit";
+import { inviteRoleSchema } from "@/lib/validations/auth.validation";
 import type {
     SchoolAdminInvite,
     InviteActionResponse,
     InviteRole,
 } from "@/types/school-admin-invite.types";
 import type { AuthResponse } from "@/types/auth.types";
-import { createRateLimitErrorPayload } from "@/lib/rate-limit/errors";
 import { handleActionError } from "./error-handler";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
+import {
+    acceptInvite,
+    type AcceptedInviteContext,
+    type InviteAcceptanceResponse,
+} from "@/lib/services/invite-acceptance.service";
 
 const INVITES_PATH = "/admin/invites";
-
-// Rate limiter: 8 invite-accept attempts per 15min per key (reuse signin config)
-const inviteAcceptLimiter = createRateLimiter(RATE_LIMIT_AUTH_SIGNIN);
 
 const emailSchema = z.string().email("อีเมลไม่ถูกต้อง");
 
@@ -226,51 +215,34 @@ export async function validateInviteToken(
     return { email: invite.email, role: invite.role as InviteRole };
 }
 
-/**
- * รับคำเชิญและสร้างบัญชี school_admin (rate limited)
- */
-export async function acceptSchoolAdminInvite(
-    token: string,
-    password: string,
-): Promise<AuthResponse> {
-    // Rate limiting
-    const headerStore = await headers();
-    const requestKey = extractRateLimitKey(
-        (name) => headerStore.get(name),
-        TRUSTED_PROXY_HEADERS,
-    );
-    const rawToken = typeof token === "string" ? token : "";
-    const rateLimitKey = `${requestKey}:${createTokenRateLimitKey(rawToken)}`;
-    const rateLimitResult = await inviteAcceptLimiter.check(rateLimitKey);
-
-    if (!rateLimitResult.allowed) {
-        const rateLimitError = createRateLimitErrorPayload(rateLimitResult);
-
-        return {
-            success: false,
-            message: rateLimitError.message,
-            error: rateLimitError,
-        };
-    }
-
-    // Validate password
-    const parsed = inviteRegisterSchema.safeParse({
-        password,
-        confirmPassword: password,
+async function checkSchoolAdminInviteToken(
+    tokenHash: string,
+    now: Date,
+): Promise<InviteAcceptanceResponse | null> {
+    const invite = await prisma.schoolAdminInvite.findUnique({
+        where: { token: tokenHash },
+        select: { usedAt: true, expiresAt: true },
     });
-    if (!parsed.success) {
-        return { success: false, message: parsed.error.issues[0].message };
+    if (!invite) {
+        return { success: false, message: "ไม่พบคำเชิญ หรือลิงก์ไม่ถูกต้อง" };
     }
+    if (invite.usedAt !== null) {
+        return { success: false, message: "คำเชิญนี้ถูกใช้งานแล้ว" };
+    }
+    if (invite.expiresAt <= now) {
+        return { success: false, message: "คำเชิญหมดอายุแล้ว" };
+    }
+    return null;
+}
 
-    try {
-        const hashedPassword = await hashPassword(password);
-        const tokenHash = hashToken(token);
-
-        const result = await runSerializableTransaction(async (tx) => {
+async function acceptClaimedSchoolAdminInvite(
+    context: AcceptedInviteContext,
+): Promise<AuthResponse> {
+    return runSerializableTransaction(async (tx) => {
             const usedAt = new Date();
             const claimResult = await tx.schoolAdminInvite.updateMany({
                 where: {
-                    token: tokenHash,
+                    token: context.tokenHash,
                     usedAt: null,
                     expiresAt: { gt: usedAt },
                 },
@@ -279,7 +251,7 @@ export async function acceptSchoolAdminInvite(
 
             if (claimResult.count === 0) {
                 const inviteState = await tx.schoolAdminInvite.findUnique({
-                    where: { token: tokenHash },
+                    where: { token: context.tokenHash },
                     select: {
                         id: true,
                         usedAt: true,
@@ -308,7 +280,7 @@ export async function acceptSchoolAdminInvite(
             }
 
             const invite = await tx.schoolAdminInvite.findUnique({
-                where: { token: tokenHash },
+                where: { token: context.tokenHash },
                 select: {
                     email: true,
                     role: true,
@@ -326,7 +298,7 @@ export async function acceptSchoolAdminInvite(
             await tx.user.create({
                 data: {
                     email: invite.email,
-                    password: hashedPassword,
+                    password: context.hashedPassword,
                     role: inviteRole,
                     isPrimary: inviteRole === "school_admin",
                 },
@@ -351,8 +323,22 @@ export async function acceptSchoolAdminInvite(
                 redirectTo,
             } satisfies AuthResponse;
         });
+}
 
-        return result;
+/**
+ * รับคำเชิญและสร้างบัญชี school_admin (rate limited)
+ */
+export async function acceptSchoolAdminInvite(
+    token: string,
+    password: string,
+): Promise<AuthResponse> {
+    try {
+        return await acceptInvite({
+            token,
+            password,
+            checkToken: checkSchoolAdminInviteToken,
+            accept: acceptClaimedSchoolAdminInvite,
+        });
     } catch (error) {
         return handleActionError({
             context: "acceptSchoolAdminInvite error:",

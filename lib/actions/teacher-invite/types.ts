@@ -1,3 +1,5 @@
+import type { RateLimitErrorPayload } from "@/types/rate-limit.types";
+
 // Teacher invite related type definitions
 
 export interface TeacherInvite {
@@ -26,6 +28,7 @@ export interface TeacherInviteWithRelations extends TeacherInvite {
 export interface InviteResponse {
     success: boolean;
     message: string;
+    error?: RateLimitErrorPayload;
     invite?: TeacherInviteWithRelations;
     inviteLink?: string;
 }
