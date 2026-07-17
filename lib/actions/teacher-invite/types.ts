@@ -15,6 +15,7 @@ export interface TeacherInvite {
     schoolRole: string;
     projectRole: string;
     invitedById: string;
+    rosterId: string | null;
     expiresAt: Date;
     acceptedAt: Date | null;
     createdAt: Date;

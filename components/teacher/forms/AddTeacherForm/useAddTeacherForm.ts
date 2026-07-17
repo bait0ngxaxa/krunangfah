@@ -10,7 +10,6 @@ import {
     type TeacherInviteFormData,
 } from "@/lib/validations/teacher-invite.validation";
 import { createTeacherInvite } from "@/lib/actions/teacher-invite";
-import { markRosterInviteSent } from "@/lib/actions/teacher-roster.actions";
 import { ADMIN_ADVISORY_CLASS } from "./constants";
 import type {
     TeacherRosterItem,
@@ -110,7 +109,10 @@ export function useAddTeacherForm(): UseAddTeacherFormReturn {
         setInviteLink("");
 
         try {
-            const result = await createTeacherInvite(data);
+            const result = await createTeacherInvite(
+                data,
+                selectedRosterId || undefined,
+            );
 
             if (!result.success) {
                 setError(result.message);
@@ -124,9 +126,7 @@ export function useAddTeacherForm(): UseAddTeacherFormReturn {
                 setInviteLink(result.inviteLink);
             }
 
-            // Mark roster entry as invited
             if (selectedRosterId) {
-                await markRosterInviteSent(selectedRosterId);
                 setSelectedRosterId("");
             }
 

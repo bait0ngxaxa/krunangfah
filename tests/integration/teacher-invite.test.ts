@@ -26,7 +26,7 @@ const USERS = createMockUsers("ti");
 
 const { acceptTeacherInvite } =
     await import("@/lib/actions/teacher-invite/mutations");
-const { createTeacherInvite } =
+const { createTeacherInvite, revokeTeacherInvite } =
     await import("@/lib/actions/teacher-invite/mutations");
 const { getMyTeacherInvites } =
     await import("@/lib/actions/teacher-invite/queries");
@@ -109,6 +109,20 @@ describe("Integration: Teacher Invite", () => {
             const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
             const inviteEmail = `test-invite-${uid}@test.local`;
             const plainToken = `test-valid-invite-${uid}`;
+            const roster = await prisma.schoolTeacherRoster.create({
+                data: {
+                    schoolId,
+                    firstName: "New",
+                    lastName: "Teacher",
+                    email: inviteEmail,
+                    age: 28,
+                    userRole: "class_teacher",
+                    advisoryClass: "ม.4/1",
+                    schoolRole: "ครูประจำชั้น",
+                    projectRole: "lead",
+                    inviteSent: true,
+                },
+            });
 
             const invite = await prisma.teacherInvite.create({
                 data: {
@@ -123,6 +137,7 @@ describe("Integration: Teacher Invite", () => {
                     schoolRole: "ครูประจำชั้น",
                     projectRole: "lead",
                     invitedById: USERS.schoolAdmin.id,
+                    rosterId: roster.id,
                     expiresAt: new Date(Date.now() + 86400000),
                 },
             });
@@ -157,6 +172,7 @@ describe("Integration: Teacher Invite", () => {
                 where: { id: invite.id },
             });
             expect(updatedInvite!.acceptedAt).not.toBeNull();
+            expect(updatedInvite!.rosterId).toBe(roster.id);
         });
 
         it("rejects already-accepted invite", async () => {
@@ -223,6 +239,104 @@ describe("Integration: Teacher Invite", () => {
     });
 
     describe("createTeacherInvite — Pending Invite Invariant", () => {
+        it("ครูชื่อซ้ำเชื่อมและ revoke ด้วย rosterId โดยไม่กระทบกัน", async () => {
+            mockSession(USERS.schoolAdmin);
+            const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const rosters = await Promise.all(
+                ["first", "second"].map((suffix, index) =>
+                    prisma.schoolTeacherRoster.create({
+                        data: {
+                            schoolId,
+                            firstName: "ชื่อซ้ำ",
+                            lastName: "นามสกุลซ้ำ",
+                            email: `same-name-${suffix}-${uid}@test.local`,
+                            age: 30 + index,
+                            userRole: "class_teacher",
+                            advisoryClass: `ม.1/${index + 1}`,
+                            schoolRole: "ครู",
+                            projectRole: "care",
+                        },
+                    }),
+                ),
+            );
+
+            const results = await Promise.all(
+                rosters.map((roster) =>
+                    createTeacherInvite(
+                        {
+                            email: roster.email!,
+                            firstName: roster.firstName,
+                            lastName: roster.lastName,
+                            age: String(roster.age),
+                            userRole: "class_teacher",
+                            advisoryClass: roster.advisoryClass,
+                            schoolRole: roster.schoolRole,
+                            projectRole: "care",
+                        },
+                        roster.id,
+                    ),
+                ),
+            );
+
+            expect(results.every((result) => result.success)).toBe(true);
+            expect(results.map((result) => result.invite?.rosterId)).toEqual(
+                rosters.map((roster) => roster.id),
+            );
+
+            await revokeTeacherInvite(results[0].invite!.id);
+            const updatedRosters = await prisma.schoolTeacherRoster.findMany({
+                where: { id: { in: rosters.map((roster) => roster.id) } },
+                orderBy: { email: "asc" },
+            });
+            const inviteSentById = new Map(
+                updatedRosters.map((roster) => [roster.id, roster.inviteSent]),
+            );
+            expect(inviteSentById.get(rosters[0].id)).toBe(false);
+            expect(inviteSentById.get(rosters[1].id)).toBe(true);
+        });
+
+        it("สร้าง invite และ mark roster เดียวกันใน transaction เดียว", async () => {
+            mockSession(USERS.schoolAdmin);
+            const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const roster = await prisma.schoolTeacherRoster.create({
+                data: {
+                    schoolId,
+                    firstName: "ชื่อซ้ำ",
+                    lastName: "นามสกุลซ้ำ",
+                    email: `linked-${uid}@test.local`,
+                    age: 30,
+                    userRole: "class_teacher",
+                    advisoryClass: "ม.1/1",
+                    schoolRole: "ครู",
+                    projectRole: "care",
+                },
+            });
+
+            const result = await createTeacherInvite(
+                {
+                    email: roster.email!,
+                    firstName: roster.firstName,
+                    lastName: roster.lastName,
+                    age: String(roster.age),
+                    userRole: "class_teacher",
+                    advisoryClass: roster.advisoryClass,
+                    schoolRole: roster.schoolRole,
+                    projectRole: "care",
+                },
+                roster.id,
+            );
+
+            expect(result.success).toBe(true);
+            const updatedRoster = await prisma.schoolTeacherRoster.findUnique({
+                where: { id: roster.id },
+            });
+            expect(updatedRoster?.inviteSent).toBe(true);
+
+            if (result.invite?.id) {
+                await revokeTeacherInvite(result.invite.id);
+            }
+        });
+
         it("rejects creating a second active pending invite for the same email", async () => {
             mockSession(USERS.schoolAdmin);
             const inviteEmail = `duplicate-${Date.now()}@test.local`;
@@ -277,6 +391,19 @@ describe("Integration: Teacher Invite", () => {
         it("reissues an expired pending invite without creating a duplicate row", async () => {
             mockSession(USERS.schoolAdmin);
             const inviteEmail = `expired-${Date.now()}@test.local`;
+            const roster = await prisma.schoolTeacherRoster.create({
+                data: {
+                    schoolId,
+                    firstName: "Expired",
+                    lastName: "Invite",
+                    email: inviteEmail,
+                    age: 30,
+                    userRole: "class_teacher",
+                    advisoryClass: "ม.2/1",
+                    schoolRole: "ครู",
+                    projectRole: "care",
+                },
+            });
 
             const expiredInvite = await prisma.teacherInvite.create({
                 data: {
@@ -291,20 +418,24 @@ describe("Integration: Teacher Invite", () => {
                     schoolRole: "ครู",
                     projectRole: "care",
                     invitedById: USERS.schoolAdmin.id,
+                    rosterId: roster.id,
                     expiresAt: new Date(Date.now() - 86400000),
                 },
             });
 
-            const result = await createTeacherInvite({
-                email: inviteEmail,
-                firstName: "Reissued",
-                lastName: "Invite",
-                age: "32",
-                userRole: "class_teacher",
-                advisoryClass: "ม.2/2",
-                schoolRole: "ครูประจำชั้น",
-                projectRole: "lead",
-            });
+            const result = await createTeacherInvite(
+                {
+                    email: inviteEmail,
+                    firstName: "Reissued",
+                    lastName: "Invite",
+                    age: "32",
+                    userRole: "class_teacher",
+                    advisoryClass: "ม.2/2",
+                    schoolRole: "ครูประจำชั้น",
+                    projectRole: "lead",
+                },
+                roster.id,
+            );
             expect(result.success).toBe(true);
 
             const invites = await prisma.teacherInvite.findMany({
@@ -315,6 +446,7 @@ describe("Integration: Teacher Invite", () => {
             expect(invites[0].id).toBe(expiredInvite.id);
             expect(invites[0].firstName).toBe("Reissued");
             expect(invites[0].acceptedAt).toBeNull();
+            expect(invites[0].rosterId).toBe(roster.id);
             expect(invites[0].expiresAt.getTime()).toBeGreaterThan(Date.now());
         });
     });

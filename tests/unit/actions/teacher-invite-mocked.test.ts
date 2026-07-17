@@ -27,6 +27,7 @@ const prismaMocks = vi.hoisted(() => ({
     mockTeacherCreate: vi.fn(),
     mockRosterFindFirst: vi.fn(),
     mockRosterUpdate: vi.fn(),
+    mockRosterUpdateMany: vi.fn(),
 }));
 
 const rateLimitMocks = vi.hoisted(() => ({
@@ -55,6 +56,7 @@ vi.mock("@/lib/database/prisma", () => ({
         schoolTeacherRoster: {
             findFirst: prismaMocks.mockRosterFindFirst,
             update: prismaMocks.mockRosterUpdate,
+            updateMany: prismaMocks.mockRosterUpdateMany,
         },
         $transaction: vi.fn(async (callback) =>
             callback({
@@ -71,6 +73,10 @@ vi.mock("@/lib/database/prisma", () => ({
                     create: prismaMocks.mockTeacherInviteCreate,
                     update: prismaMocks.mockTeacherInviteUpdate,
                     updateMany: prismaMocks.mockTeacherInviteUpdateMany,
+                    delete: prismaMocks.mockTeacherInviteDelete,
+                },
+                schoolTeacherRoster: {
+                    updateMany: prismaMocks.mockRosterUpdateMany,
                 },
             }),
         ),
@@ -411,7 +417,7 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
             expect(res.message).toBe("ไม่มีสิทธิ์ยกเลิกคำเชิญ");
         });
 
-        it("succeeds and resets roster match if found", async () => {
+        it("succeeds and resets only the linked rosterId", async () => {
             vi.mocked(requireAuth).mockResolvedValue({
                 user: { role: "system_admin" },
             } as any);
@@ -420,21 +426,19 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
                 acceptedAt: null,
                 schoolId: "s1",
                 email: "x@x.com",
+                rosterId: "roster-id",
             } as any);
             vi.mocked(prisma.teacherInvite.delete).mockResolvedValue(
                 true as any,
             );
-            vi.mocked(prisma.schoolTeacherRoster.findFirst).mockResolvedValue({
-                id: "roster-id",
-            } as any);
-
             const res = await revokeTeacherInvite("inv-id");
 
             expect(res.success).toBe(true);
-            expect(prisma.schoolTeacherRoster.update).toHaveBeenCalledWith({
-                where: { id: "roster-id" },
+            expect(prismaMocks.mockRosterUpdateMany).toHaveBeenCalledWith({
+                where: { id: "roster-id", schoolId: "s1" },
                 data: { inviteSent: false },
             });
+            expect(prismaMocks.mockRosterFindFirst).not.toHaveBeenCalled();
             expect(revalidatePath).toHaveBeenCalledWith("/teachers/add");
         });
 

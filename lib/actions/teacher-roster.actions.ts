@@ -4,7 +4,6 @@ import type { UserRole, ProjectRole } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import {
-    canCreateTeacherInvite,
     canManageTeacherRoster,
     canViewTeacherRoster,
 } from "@/lib/auth/teacher-management-policy";
@@ -68,84 +67,48 @@ function toRosterItem(
 // --- Status resolution helpers ---
 
 interface InviteMatch {
-    email: string;
-    firstName: string;
-    lastName: string;
+    rosterId: string | null;
     acceptedAt: Date | null;
     expiresAt: Date;
 }
-
-interface UserMatch {
-    email: string;
-    name: string | null;
-}
-
 /**
- * Resolve roster entry status by checking against invites and users.
- * Priority: accepted user > pending invite > draft
+ * Resolve roster status only from its explicit invite relation.
  */
-function resolveRosterStatus(
-    entry: { email: string | null; firstName: string; lastName: string },
+function buildRosterStatusMap(
     invites: InviteMatch[],
-    users: UserMatch[],
-): RosterEntryStatus {
+): ReadonlyMap<string, RosterEntryStatus> {
     const now = new Date();
+    const statuses = new Map<string, RosterEntryStatus>();
 
-    // Check if a user already exists (accepted invite)
-    const hasAcceptedUser = users.some(
-        (u) =>
-            (entry.email && u.email === entry.email) ||
-            u.name === `${entry.firstName} ${entry.lastName}`,
-    );
-    if (hasAcceptedUser) return "accepted";
+    for (const invite of invites) {
+        if (!invite.rosterId) continue;
+        if (invite.acceptedAt) {
+            statuses.set(invite.rosterId, "accepted");
+            continue;
+        }
+        if (
+            invite.expiresAt > now &&
+            statuses.get(invite.rosterId) !== "accepted"
+        ) {
+            statuses.set(invite.rosterId, "pending");
+        }
+    }
 
-    // Check for pending (non-expired, non-accepted) invite
-    const hasPendingInvite = invites.some(
-        (inv) =>
-            !inv.acceptedAt &&
-            inv.expiresAt > now &&
-            ((entry.email && inv.email === entry.email) ||
-                (inv.firstName === entry.firstName &&
-                    inv.lastName === entry.lastName)),
-    );
-    if (hasPendingInvite) return "pending";
-
-    return "draft";
+    return statuses;
 }
 
 /**
  * Check if a roster entry has a pending invite (for guards)
  */
-async function hasPendingInviteForEntry(
-    schoolId: string,
-    entry: { email: string | null; firstName: string; lastName: string },
-): Promise<boolean> {
-    const now = new Date();
-
-    // Check by email first (primary match)
-    if (entry.email) {
-        const byEmail = await prisma.teacherInvite.findFirst({
-            where: {
-                schoolId,
-                email: entry.email,
-                acceptedAt: null,
-                expiresAt: { gt: now },
-            },
-        });
-        if (byEmail) return true;
-    }
-
-    // Fallback: check by name
-    const byName = await prisma.teacherInvite.findFirst({
+async function hasPendingInviteForEntry(rosterId: string): Promise<boolean> {
+    const invite = await prisma.teacherInvite.findFirst({
         where: {
-            schoolId,
-            firstName: entry.firstName,
-            lastName: entry.lastName,
+            rosterId,
             acceptedAt: null,
-            expiresAt: { gt: now },
+            expiresAt: { gt: new Date() },
         },
     });
-    return !!byName;
+    return invite !== null;
 }
 
 async function validateRosterEmailAvailable(
@@ -296,7 +259,7 @@ export async function removeFromRoster(
         }
 
         // Guard: reject if entry has a pending invite
-        const isPending = await hasPendingInviteForEntry(schoolId, entry);
+        const isPending = await hasPendingInviteForEntry(entry.id);
         if (isPending) {
             return {
                 success: false,
@@ -336,8 +299,7 @@ export async function getSchoolRoster(): Promise<TeacherRosterItem[]> {
 
     if (!schoolId) return [];
 
-    // Parallel fetch: roster + invites + school users
-    const [rows, invites, users] = await Promise.all([
+    const [rows, invites] = await Promise.all([
         prisma.schoolTeacherRoster.findMany({
             where: { schoolId },
             orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
@@ -345,22 +307,17 @@ export async function getSchoolRoster(): Promise<TeacherRosterItem[]> {
         prisma.teacherInvite.findMany({
             where: { schoolId },
             select: {
-                email: true,
-                firstName: true,
-                lastName: true,
+                rosterId: true,
                 acceptedAt: true,
                 expiresAt: true,
             },
         }),
-        prisma.user.findMany({
-            where: { schoolId },
-            select: { email: true, name: true },
-        }),
     ]);
 
+    const statuses = buildRosterStatusMap(invites);
     return rows
         .map((row) => {
-            const status = resolveRosterStatus(row, invites, users);
+            const status = statuses.get(row.id) ?? "draft";
             return toRosterItem(row, status);
         })
         .filter((item) => item.status !== "accepted");
@@ -399,7 +356,7 @@ export async function updateRosterEntry(
         }
 
         // Guard: reject if entry has a pending invite
-        const isPending = await hasPendingInviteForEntry(schoolId, entry);
+        const isPending = await hasPendingInviteForEntry(entry.id);
         if (isPending) {
             return {
                 success: false,
@@ -461,49 +418,6 @@ export async function updateRosterEntry(
                 success: false,
                 message: "เกิดข้อผิดพลาดในการแก้ไข",
             },
-        });
-    }
-}
-
-/**
- * Mark roster entry as invite sent
- */
-export async function markRosterInviteSent(
-    id: string,
-): Promise<RosterActionResponse> {
-    try {
-        const session = await requireAuth();
-        if (!canCreateTeacherInvite(session.user)) {
-            return { success: false, message: "ไม่มีสิทธิ์สร้างคำเชิญ" };
-        }
-        const schoolId = await resolveSchoolId(
-            session.user.id,
-            session.user.schoolId,
-        );
-
-        if (!schoolId) {
-            return { success: false, message: "ไม่พบโรงเรียนของคุณ" };
-        }
-
-        const entry = await prisma.schoolTeacherRoster.findUnique({
-            where: { id },
-        });
-
-        if (!entry || entry.schoolId !== schoolId) {
-            return { success: false, message: "ไม่พบรายชื่อครูนี้" };
-        }
-
-        await prisma.schoolTeacherRoster.update({
-            where: { id },
-            data: { inviteSent: true },
-        });
-
-        return { success: true, message: "อัปเดตสถานะสำเร็จ" };
-    } catch (error) {
-        return handleActionError({
-            context: "markRosterInviteSent error:",
-            error,
-            fallback: { success: false, message: "เกิดข้อผิดพลาด" },
         });
     }
 }

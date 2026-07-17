@@ -26,6 +26,7 @@ import {
  */
 export async function createTeacherInvite(
     input: TeacherInviteFormData,
+    rosterId?: string,
 ): Promise<InviteResponse> {
     try {
         const session = await requireAuth();
@@ -68,6 +69,20 @@ export async function createTeacherInvite(
 
         // Invite expires in 7 days.
         const invite = await runSerializableTransaction(async (tx) => {
+            const roster = rosterId
+                ? await tx.schoolTeacherRoster.findFirst({
+                      where: { id: rosterId, schoolId },
+                      select: { id: true, email: true },
+                  })
+                : null;
+
+            if (rosterId && (!roster || roster.email !== data.email)) {
+                return {
+                    success: false,
+                    message: "ไม่พบรายชื่อครูที่ตรงกับคำเชิญ",
+                } satisfies InviteResponse;
+            }
+
             const existingUser = await tx.user.findUnique({
                 where: { email: data.email },
                 select: { id: true },
@@ -82,8 +97,10 @@ export async function createTeacherInvite(
 
             const existingInvite = await tx.teacherInvite.findFirst({
                 where: {
-                    email: data.email,
                     acceptedAt: null,
+                    ...(rosterId
+                        ? { rosterId }
+                        : { email: data.email }),
                 },
                 select: {
                     id: true,
@@ -113,6 +130,7 @@ export async function createTeacherInvite(
                 schoolRole: data.schoolRole,
                 projectRole: data.projectRole,
                 invitedById: userId,
+                rosterId: roster?.id ?? null,
                 expiresAt,
             };
 
@@ -130,6 +148,13 @@ export async function createTeacherInvite(
                           school: true,
                       },
                   });
+
+            if (roster) {
+                await tx.schoolTeacherRoster.update({
+                    where: { id: roster.id },
+                    data: { inviteSent: true },
+                });
+            }
 
             return {
                 success: true,
@@ -314,6 +339,7 @@ export async function revokeTeacherInvite(
                 lastName: true,
                 acceptedAt: true,
                 schoolId: true,
+                rosterId: true,
             },
         });
 
@@ -338,29 +364,15 @@ export async function revokeTeacherInvite(
             return { success: false, message: "ไม่มีสิทธิ์ยกเลิกคำเชิญ" };
         }
 
-        await prisma.teacherInvite.delete({
-            where: { id: inviteId },
-        });
+        await runSerializableTransaction(async (tx) => {
+            await tx.teacherInvite.delete({ where: { id: inviteId } });
+            if (!invite.rosterId) return;
 
-        // Keep roster status consistent when invite is revoked.
-        const rosterMatch = await prisma.schoolTeacherRoster.findFirst({
-            where: {
-                schoolId: invite.schoolId,
-                OR: [
-                    { email: invite.email },
-                    {
-                        firstName: invite.firstName,
-                        lastName: invite.lastName,
-                    },
-                ],
-            },
-        });
-        if (rosterMatch) {
-            await prisma.schoolTeacherRoster.update({
-                where: { id: rosterMatch.id },
+            await tx.schoolTeacherRoster.updateMany({
+                where: { id: invite.rosterId, schoolId: invite.schoolId },
                 data: { inviteSent: false },
             });
-        }
+        });
 
         revalidatePath("/teachers/add");
 

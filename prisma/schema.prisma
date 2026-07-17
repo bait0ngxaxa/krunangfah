@@ -251,13 +251,16 @@ model TeacherInvite {
   schoolRole      String
   projectRole     ProjectRole    // target project role after accept invite
   invitedById     String
+  rosterId        String?
   expiresAt       DateTime
   acceptedAt      DateTime?
   createdAt       DateTime  @default(now())
 
   school          School       @relation(fields: [schoolId], references: [id])
   invitedBy       User         @relation(fields: [invitedById], references: [id])
+  roster          SchoolTeacherRoster? @relation(fields: [rosterId], references: [id], onDelete: SetNull)
 
+  @@index([rosterId])
   @@map("teacher_invites")
 }
 
@@ -534,6 +537,7 @@ model SchoolTeacherRoster {
   updatedAt       DateTime     @updatedAt
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacherInvites TeacherInvite[]
 
   @@unique([schoolId, email])
   @@index([schoolId])
