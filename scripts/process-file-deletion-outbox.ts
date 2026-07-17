@@ -7,8 +7,15 @@ async function main(): Promise<void> {
     if (result.failed > 0) process.exitCode = 1;
 }
 
-try {
-    await main();
-} finally {
-    await prisma.$disconnect();
+async function run(): Promise<void> {
+    try {
+        await main();
+    } finally {
+        await prisma.$disconnect();
+    }
 }
+
+void run().catch((error: unknown) => {
+    console.error("File deletion cleanup failed:", error);
+    process.exitCode = 1;
+});
