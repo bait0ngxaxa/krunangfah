@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/database/prisma";
-import { requireAuth, requirePrimaryAdmin } from "@/lib/auth/session";
+import { requireAuth } from "@/lib/auth/session";
+import { canManageSchoolClasses } from "@/lib/auth/teacher-management-policy";
 import { revalidatePath } from "next/cache";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
@@ -269,7 +270,10 @@ export async function addSchoolClass(
     academicYearId?: string,
 ): Promise<ClassActionResponse> {
     try {
-        const session = await requirePrimaryAdmin();
+        const session = await requireAuth();
+        if (!canManageSchoolClasses(session.user)) {
+            return { success: false, message: "ไม่มีสิทธิ์จัดการห้องเรียน" };
+        }
         const schoolId = await resolveSchoolId(
             session.user.id,
             session.user.schoolId,
@@ -356,7 +360,10 @@ export async function updateSchoolClassStudentCount(
     academicYearId?: string,
 ): Promise<ClassActionResponse> {
     try {
-        const session = await requirePrimaryAdmin();
+        const session = await requireAuth();
+        if (!canManageSchoolClasses(session.user)) {
+            return { success: false, message: "ไม่มีสิทธิ์จัดการห้องเรียน" };
+        }
         const schoolId = await resolveSchoolId(
             session.user.id,
             session.user.schoolId,
@@ -417,7 +424,10 @@ export async function removeSchoolClass(
     id: string,
 ): Promise<ClassActionResponse> {
     try {
-        const session = await requirePrimaryAdmin();
+        const session = await requireAuth();
+        if (!canManageSchoolClasses(session.user)) {
+            return { success: false, message: "ไม่มีสิทธิ์จัดการห้องเรียน" };
+        }
         const schoolId = await resolveSchoolId(
             session.user.id,
             session.user.schoolId,

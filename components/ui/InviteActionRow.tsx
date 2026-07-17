@@ -18,6 +18,7 @@ interface InviteActionRowProps {
     revokeButtonLabel?: string;
     confirmLabel?: string;
     showCopyButton?: boolean;
+    showRevokeButton?: boolean;
 }
 
 export function InviteActionRow({
@@ -33,6 +34,7 @@ export function InviteActionRow({
     revokeButtonLabel = "ยกเลิก",
     confirmLabel = "ยืนยันยกเลิก",
     showCopyButton = true,
+    showRevokeButton = true,
 }: InviteActionRowProps) {
     const [showRevokeDialog, setShowRevokeDialog] = useState(false);
     const canCopy = showCopyButton && typeof onCopy === "function";
@@ -47,13 +49,14 @@ export function InviteActionRow({
 
     return (
         <>
-            <div
-                className={
-                    canCopy
-                        ? "grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-1.5"
-                        : "grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-1.5"
-                }
-            >
+            {(canCopy || showRevokeButton) && (
+                <div
+                    className={
+                        canCopy
+                            ? "grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-1.5"
+                            : "grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-1.5"
+                    }
+                >
                 {canCopy && (
                     <Button
                         type="button"
@@ -79,32 +82,40 @@ export function InviteActionRow({
                     </Button>
                 )}
 
-                <Button
-                    type="button"
-                    onClick={() => setShowRevokeDialog(true)}
-                    disabled={isRevoking}
-                    variant="danger"
-                    size="sm"
-                    className="justify-center px-2.5 py-1.5 text-xs"
-                    title="ยกเลิกคำเชิญ"
-                >
-                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                    {revokeButtonLabel}
-                </Button>
-            </div>
+                    {showRevokeButton && (
+                        <Button
+                            type="button"
+                            onClick={() => setShowRevokeDialog(true)}
+                            disabled={isRevoking}
+                            variant="danger"
+                            size="sm"
+                            className="justify-center px-2.5 py-1.5 text-xs"
+                            title="ยกเลิกคำเชิญ"
+                        >
+                            <Trash2
+                                className="w-3.5 h-3.5"
+                                aria-hidden="true"
+                            />
+                            {revokeButtonLabel}
+                        </Button>
+                    )}
+                </div>
+            )}
 
-            <ConfirmDialog
-                isOpen={showRevokeDialog}
-                title={revokeDialogTitle}
-                message={revokeDialogMessage}
-                confirmLabel={confirmLabel}
-                isLoading={isRevoking}
-                onConfirm={handleConfirmRevoke}
-                onCancel={() => {
-                    if (isRevoking) return;
-                    setShowRevokeDialog(false);
-                }}
-            />
+            {showRevokeButton && (
+                <ConfirmDialog
+                    isOpen={showRevokeDialog}
+                    title={revokeDialogTitle}
+                    message={revokeDialogMessage}
+                    confirmLabel={confirmLabel}
+                    isLoading={isRevoking}
+                    onConfirm={handleConfirmRevoke}
+                    onCancel={() => {
+                        if (isRevoking) return;
+                        setShowRevokeDialog(false);
+                    }}
+                />
+            )}
         </>
     );
 }

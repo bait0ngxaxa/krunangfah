@@ -3,6 +3,10 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
+import {
+    canCreateTeacherInvite,
+    canRevokeTeacherInvite,
+} from "@/lib/auth/teacher-management-policy";
 import { generateInviteToken, hashToken } from "@/lib/auth/token";
 import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
@@ -27,11 +31,7 @@ export async function createTeacherInvite(
         const session = await requireAuth();
         const userId = session.user.id;
 
-        // Allow only school_admin and system_admin to create invites.
-        if (
-            session.user.role !== "system_admin" &&
-            session.user.role !== "school_admin"
-        ) {
+        if (!canCreateTeacherInvite(session.user)) {
             return {
                 success: false,
                 message: "ไม่มีสิทธิ์สร้างคำเชิญ",
@@ -329,13 +329,12 @@ export async function revokeTeacherInvite(
         }
 
         // Access control: system_admin (any invite) OR primary school_admin (same school only).
-        const isSystemAdmin = session.user.role === "system_admin";
-        const isPrimaryOfSchool =
-            session.user.role === "school_admin" &&
-            session.user.isPrimary &&
-            session.user.schoolId === invite.schoolId;
+        const isSameSchool = session.user.schoolId === invite.schoolId;
+        const canRevoke = canRevokeTeacherInvite(session.user);
+        const hasInviteScope =
+            session.user.role === "system_admin" || isSameSchool;
 
-        if (!isSystemAdmin && !isPrimaryOfSchool) {
+        if (!canRevoke || !hasInviteScope) {
             return { success: false, message: "ไม่มีสิทธิ์ยกเลิกคำเชิญ" };
         }
 

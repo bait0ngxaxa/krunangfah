@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
+import { canViewTeacherInvites } from "@/lib/auth/teacher-management-policy";
 import { hashToken } from "@/lib/auth/token";
 import type { InviteResponse, InviteListResponse } from "./types";
 import { handleActionError } from "../error-handler";
@@ -51,6 +52,9 @@ export async function getTeacherInvite(token: string): Promise<InviteResponse> {
 export async function getMyTeacherInvites(): Promise<InviteListResponse> {
     try {
         const session = await requireAuth();
+        if (!canViewTeacherInvites(session.user)) {
+            return { success: false, invites: [] };
+        }
 
         // Fallback to DB when schoolId was just created in onboarding.
         const schoolId =

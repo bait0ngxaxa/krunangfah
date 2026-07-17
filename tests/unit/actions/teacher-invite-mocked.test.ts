@@ -496,7 +496,7 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
     describe("getMyTeacherInvites", () => {
         it("returns empty array if no schoolId", async () => {
             vi.mocked(requireAuth).mockResolvedValue({
-                user: { id: "u1" },
+                user: { id: "u1", role: "school_admin" },
             } as any);
             vi.mocked(prisma.user.findUnique).mockResolvedValue(null as any);
             const res = await getMyTeacherInvites();
@@ -506,7 +506,7 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
 
         it("returns invites if schoolId is found in session", async () => {
             vi.mocked(requireAuth).mockResolvedValue({
-                user: { id: "u1", schoolId: "s1" },
+                user: { id: "u1", role: "school_admin", schoolId: "s1" },
             } as any);
             vi.mocked(prisma.teacherInvite.findMany).mockResolvedValue([
                 { id: "i1" },

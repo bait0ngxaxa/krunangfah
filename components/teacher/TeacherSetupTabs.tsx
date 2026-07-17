@@ -16,13 +16,14 @@ import type { AcademicYearOption } from "@/components/school/classes";
 import type { SchoolClassItem } from "@/types/school-setup.types";
 import type { TeacherRosterItem } from "@/types/school-setup.types";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
+import type { TeacherManagementCapabilities } from "@/lib/auth/teacher-management-policy";
 
 interface TeacherSetupTabsProps {
     classes: SchoolClassItem[];
     academicYears: AcademicYearOption[];
     roster: TeacherRosterItem[];
     invites: TeacherInviteWithAcademicYear[];
-    isPrimary: boolean;
+    capabilities: TeacherManagementCapabilities;
 }
 
 type FlowSectionId = TeacherSetupSectionId;
@@ -76,7 +77,7 @@ export function TeacherSetupTabs({
     academicYears,
     roster,
     invites,
-    isPrimary,
+    capabilities,
 }: TeacherSetupTabsProps) {
     const [activeSection, setActiveSection] =
         useState<FlowSectionId>("classes");
@@ -92,7 +93,7 @@ export function TeacherSetupTabs({
         rosterDraft.source === roster ? rosterDraft.value : roster;
 
     useEffect(() => {
-        if (!isPrimary) return;
+        if (!capabilities.canManageTeacherRoster) return;
         if (!("IntersectionObserver" in window)) return;
 
         const observers: IntersectionObserver[] = [];
@@ -122,7 +123,7 @@ export function TeacherSetupTabs({
                 observer.disconnect();
             }
         };
-    }, [isPrimary]);
+    }, [capabilities.canManageTeacherRoster]);
 
     const handleJumpToSection = (sectionId: FlowSectionId): void => {
         const element = document.getElementById(sectionId);
@@ -139,7 +140,7 @@ export function TeacherSetupTabs({
         });
     };
 
-    if (!isPrimary) {
+    if (!capabilities.canManageTeacherRoster) {
         return (
             <div className="space-y-6">
                 <SectionCard
@@ -159,9 +160,16 @@ export function TeacherSetupTabs({
                             ให้ติดต่อผู้ดูแลหลักของโรงเรียน
                         </span>
                     </p>
-                    <AddTeacherForm roster={rosterItems} invites={invites} />
+                    {capabilities.canCreateTeacherInvite && (
+                        <AddTeacherForm roster={rosterItems} invites={invites} />
+                    )}
                 </SectionCard>
-                <TeacherInviteList invites={invites} />
+                {capabilities.canViewTeacherInvites && (
+                    <TeacherInviteList
+                        invites={invites}
+                        canRevoke={capabilities.canRevokeTeacherInvite}
+                    />
+                )}
             </div>
         );
     }
@@ -213,7 +221,7 @@ export function TeacherSetupTabs({
                 <ClassListEditor
                     initialClasses={classes}
                     academicYears={academicYears}
-                    readOnly={false}
+                    readOnly={!capabilities.canManageSchoolClasses}
                 />
             </SectionCard>
 
@@ -227,7 +235,7 @@ export function TeacherSetupTabs({
                     initialRoster={rosterItems}
                     schoolClasses={classes}
                     onUpdate={handleRosterUpdate}
-                    readOnly={false}
+                    readOnly={!capabilities.canManageTeacherRoster}
                 />
             </SectionCard>
 
@@ -237,10 +245,17 @@ export function TeacherSetupTabs({
                 title="ขั้นตอน 3: เชิญครูเข้าระบบ"
                 subtitle="เลือกครูจากรายชื่อเพื่อสร้างลิงก์เชิญ"
             >
-                <AddTeacherForm roster={rosterItems} invites={invites} />
+                {capabilities.canCreateTeacherInvite && (
+                    <AddTeacherForm roster={rosterItems} invites={invites} />
+                )}
             </SectionCard>
 
-            <TeacherInviteList invites={invites} />
+            {capabilities.canViewTeacherInvites && (
+                <TeacherInviteList
+                    invites={invites}
+                    canRevoke={capabilities.canRevokeTeacherInvite}
+                />
+            )}
         </div>
     );
 }

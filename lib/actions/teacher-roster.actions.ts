@@ -2,7 +2,12 @@
 
 import type { UserRole, ProjectRole } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
-import { requireAuth, requirePrimaryAdmin } from "@/lib/auth/session";
+import { requireAuth } from "@/lib/auth/session";
+import {
+    canCreateTeacherInvite,
+    canManageTeacherRoster,
+    canViewTeacherRoster,
+} from "@/lib/auth/teacher-management-policy";
 import { handleActionError } from "./error-handler";
 import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
 import {
@@ -193,7 +198,10 @@ export async function addTeacherToRoster(
     input: TeacherRosterFormData,
 ): Promise<RosterActionResponse> {
     try {
-        const session = await requirePrimaryAdmin();
+        const session = await requireAuth();
+        if (!canManageTeacherRoster(session.user)) {
+            return { success: false, message: "ไม่มีสิทธิ์จัดการรายชื่อครู" };
+        }
         const schoolId = await resolveSchoolId(
             session.user.id,
             session.user.schoolId,
@@ -266,7 +274,10 @@ export async function removeFromRoster(
     id: string,
 ): Promise<RosterActionResponse> {
     try {
-        const session = await requirePrimaryAdmin();
+        const session = await requireAuth();
+        if (!canManageTeacherRoster(session.user)) {
+            return { success: false, message: "ไม่มีสิทธิ์จัดการรายชื่อครู" };
+        }
         const schoolId = await resolveSchoolId(
             session.user.id,
             session.user.schoolId,
@@ -316,6 +327,8 @@ export async function removeFromRoster(
  */
 export async function getSchoolRoster(): Promise<TeacherRosterItem[]> {
     const session = await requireAuth();
+    if (!canViewTeacherRoster(session.user)) return [];
+
     const schoolId = await resolveSchoolId(
         session.user.id,
         session.user.schoolId,
@@ -361,7 +374,10 @@ export async function updateRosterEntry(
     input: TeacherRosterFormData,
 ): Promise<RosterActionResponse> {
     try {
-        const session = await requirePrimaryAdmin();
+        const session = await requireAuth();
+        if (!canManageTeacherRoster(session.user)) {
+            return { success: false, message: "ไม่มีสิทธิ์จัดการรายชื่อครู" };
+        }
         const schoolId = await resolveSchoolId(
             session.user.id,
             session.user.schoolId,
@@ -457,6 +473,9 @@ export async function markRosterInviteSent(
 ): Promise<RosterActionResponse> {
     try {
         const session = await requireAuth();
+        if (!canCreateTeacherInvite(session.user)) {
+            return { success: false, message: "ไม่มีสิทธิ์สร้างคำเชิญ" };
+        }
         const schoolId = await resolveSchoolId(
             session.user.id,
             session.user.schoolId,

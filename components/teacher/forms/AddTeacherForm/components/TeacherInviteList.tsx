@@ -29,14 +29,17 @@ const SCHOOL_ADMIN_LABEL = "ผู้ดูแลโรงเรียน";
 
 interface TeacherInviteListProps {
     invites: TeacherInviteWithAcademicYear[];
+    canRevoke: boolean;
     onRevoked?: () => void;
 }
 
 function InviteCard({
     invite,
+    canRevoke,
     onRevoked,
 }: {
     invite: TeacherInviteWithAcademicYear;
+    canRevoke: boolean;
     onRevoked?: () => void;
 }) {
     const [copied, setCopied] = useState(false);
@@ -113,6 +116,7 @@ function InviteCard({
                             revokeDialogTitle="ยกเลิกคำเชิญ"
                             revokeDialogMessage={`ต้องการยกเลิกคำเชิญของ "${invite.firstName} ${invite.lastName}" ใช่หรือไม่?`}
                             showCopyButton={invite.token.length > 0}
+                            showRevokeButton={canRevoke}
                         />
                     )}
                 </div>
@@ -179,6 +183,7 @@ function getSearchResultSummary({
 
 export function TeacherInviteList({
     invites,
+    canRevoke,
     onRevoked,
 }: TeacherInviteListProps) {
     const [page, setPage] = useState(1);
@@ -251,6 +256,7 @@ export function TeacherInviteList({
                             <InviteCard
                                 key={invite.id}
                                 invite={invite}
+                                canRevoke={canRevoke}
                                 onRevoked={onRevoked}
                             />
                         ))}
