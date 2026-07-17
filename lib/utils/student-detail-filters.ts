@@ -9,7 +9,7 @@ export interface AcademicYearFilterOption {
 }
 
 interface ItemWithAcademicYear {
-    academicYear?: Pick<AcademicYearFilterOption, "id" | "year"> | null;
+    academicYear?: AcademicYearFilterOption | null;
 }
 
 interface ItemWithAssessmentRound {
@@ -19,6 +19,27 @@ interface ItemWithAssessmentRound {
 export interface AcademicYearDateRange {
     startDate: Date;
     endDate: Date;
+}
+
+export type AcademicTermScope =
+    | { kind: "all" }
+    | {
+          kind: "year";
+          year: number;
+          dateRange: AcademicYearDateRange;
+      }
+    | {
+          kind: "term";
+          academicYearId: string;
+          year: number;
+          semester: number;
+          dateRange: AcademicYearDateRange;
+      }
+    | { kind: "invalid"; value: string };
+
+export interface CareRecordAcademicTermFilter {
+    academicYearId?: string;
+    dateRange?: AcademicYearDateRange;
 }
 
 function toStartOfDay(date: Date): Date {
@@ -44,19 +65,93 @@ export function getUniqueAcademicYears<T extends AcademicYearFilterOption>(
     });
 }
 
+export function resolveAcademicTermScope(
+    academicYears: readonly AcademicYearFilterOption[],
+    selectedYearId?: string,
+): AcademicTermScope {
+    if (!selectedYearId) return { kind: "all" };
+
+    if (selectedYearId.startsWith("year:")) {
+        const yearValue = selectedYearId.slice("year:".length);
+        const year = Number(yearValue);
+        const isKnownYear = academicYears.some((item) => item.year === year);
+        if (
+            !/^\d+$/.test(yearValue) ||
+            !Number.isSafeInteger(year) ||
+            !isKnownYear
+        ) {
+            return { kind: "invalid", value: selectedYearId };
+        }
+
+        const [firstSemester, secondSemester] = generateAcademicYearData(year);
+        return {
+            kind: "year",
+            year,
+            dateRange: {
+                startDate: toStartOfDay(firstSemester.startDate),
+                endDate: toEndOfDay(secondSemester.endDate),
+            },
+        };
+    }
+
+    const academicYear = academicYears.find((item) => item.id === selectedYearId);
+    if (!academicYear) {
+        return { kind: "invalid", value: selectedYearId };
+    }
+
+    return {
+        kind: "term",
+        academicYearId: academicYear.id,
+        year: academicYear.year,
+        semester: academicYear.semester,
+        dateRange: {
+            startDate: toStartOfDay(academicYear.startDate),
+            endDate: toEndOfDay(academicYear.endDate),
+        },
+    };
+}
+
+export function toCareRecordAcademicTermFilter(
+    scope: AcademicTermScope,
+): CareRecordAcademicTermFilter {
+    if (scope.kind === "year") {
+        return { dateRange: scope.dateRange };
+    }
+    if (scope.kind === "term") {
+        return {
+            academicYearId: scope.academicYearId,
+            dateRange: scope.dateRange,
+        };
+    }
+    if (scope.kind === "invalid") {
+        return { academicYearId: scope.value };
+    }
+    return {};
+}
+
+export function filterByAcademicTermScope<T extends ItemWithAcademicYear>(
+    items: readonly T[],
+    scope: AcademicTermScope,
+): T[] {
+    if (scope.kind === "all") return [...items];
+    if (scope.kind === "invalid") return [];
+    if (scope.kind === "year") {
+        return items.filter((item) => item.academicYear?.year === scope.year);
+    }
+    return items.filter(
+        (item) => item.academicYear?.id === scope.academicYearId,
+    );
+}
+
 export function filterByAcademicYearSelection<T extends ItemWithAcademicYear>(
     items: readonly T[],
     selectedYearId?: string,
 ): T[] {
-    if (!selectedYearId) return [...items];
-
-    if (selectedYearId.startsWith("year:")) {
-        const yearNum = Number.parseInt(selectedYearId.replace("year:", ""), 10);
-        if (Number.isNaN(yearNum)) return [...items];
-        return items.filter((item) => item.academicYear?.year === yearNum);
-    }
-
-    return items.filter((item) => item.academicYear?.id === selectedYearId);
+    const academicYears = items.flatMap((item) =>
+        item.academicYear ? [item.academicYear] : [],
+    );
+    const scope = resolveAcademicTermScope(academicYears, selectedYearId);
+    return filterByAcademicTermScope(items, scope);
 }
 
 export function filterByAssessmentRoundSelection<T extends ItemWithAssessmentRound>(
@@ -75,30 +170,9 @@ export function resolveAcademicYearDateRange(
     academicYears: readonly AcademicYearFilterOption[],
     selectedYearId?: string,
 ): AcademicYearDateRange | null {
-    if (!selectedYearId) {
-        return null;
+    const scope = resolveAcademicTermScope(academicYears, selectedYearId);
+    if (scope.kind === "year" || scope.kind === "term") {
+        return scope.dateRange;
     }
-
-    if (selectedYearId.startsWith("year:")) {
-        const yearNum = Number.parseInt(selectedYearId.replace("year:", ""), 10);
-        if (Number.isNaN(yearNum)) {
-            return null;
-        }
-
-        const [firstSemester, secondSemester] = generateAcademicYearData(yearNum);
-        return {
-            startDate: toStartOfDay(firstSemester.startDate),
-            endDate: toEndOfDay(secondSemester.endDate),
-        };
-    }
-
-    const academicYear = academicYears.find((item) => item.id === selectedYearId);
-    if (!academicYear) {
-        return null;
-    }
-
-    return {
-        startDate: toStartOfDay(academicYear.startDate),
-        endDate: toEndOfDay(academicYear.endDate),
-    };
+    return null;
 }

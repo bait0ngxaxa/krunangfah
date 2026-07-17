@@ -41,10 +41,11 @@ import { Tabs } from "@/components/ui/Tabs";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import type { OffsetPagination } from "@/types/pagination.types";
 import {
-    filterByAcademicYearSelection,
+    filterByAcademicTermScope,
     filterByAssessmentRoundSelection,
     getUniqueAcademicYears,
-    resolveAcademicYearDateRange,
+    resolveAcademicTermScope,
+    toCareRecordAcademicTermFilter,
 } from "@/lib/utils/student-detail-filters";
 import { getLatestPhqResult } from "@/lib/utils/phq-result-selection";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
@@ -171,13 +172,15 @@ async function StudentDetailContent({
             result.academicYear ? [result.academicYear] : [],
         ),
     );
-    const selectedDateRange = resolveAcademicYearDateRange(
+    const academicTermScope = resolveAcademicTermScope(
         uniqueYears,
         selectedYearId,
     );
-    const academicYearFilteredPhqResults = filterByAcademicYearSelection(
+    const careRecordFilter =
+        toCareRecordAcademicTermFilter(academicTermScope);
+    const academicYearFilteredPhqResults = filterByAcademicTermScope(
         student.phqResults,
-        selectedYearId,
+        academicTermScope,
     );
     const availableRounds = Array.from(
         new Set(
@@ -191,19 +194,20 @@ async function StudentDetailContent({
         selectedRound,
     );
     const latestResult = filteredPhqResults[0] || null;
-    const recordAcademicYearId = latestResult?.academicYear?.id;
+    const recordAcademicYearId =
+        academicTermScope.kind === "term"
+            ? academicTermScope.academicYearId
+            : undefined;
     const [counselingResult, homeVisitResult] = await Promise.all([
         getCounselingSessions(studentId, {
             page: counselingPage,
             pageSize: COUNSELING_PAGE_SIZE,
-            academicYearId: recordAcademicYearId,
-            dateRange: selectedDateRange ?? undefined,
+            ...careRecordFilter,
         }),
         getHomeVisits(studentId, {
             page: homeVisitPage,
             pageSize: HOME_VISITS_PAGE_SIZE,
-            academicYearId: recordAcademicYearId,
-            dateRange: selectedDateRange ?? undefined,
+            ...careRecordFilter,
         }),
     ]);
     if (counselingResult.status === "transient_error") {
