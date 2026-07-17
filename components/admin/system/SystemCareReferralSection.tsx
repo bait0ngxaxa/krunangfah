@@ -13,7 +13,7 @@ export function SystemCareReferralSection({
     onDelete,
 }: {
     referral: SystemReferralRecord | null;
-    onDelete: () => void;
+    onDelete?: () => void;
 }) {
     return (
         <RecordSection
@@ -37,7 +37,7 @@ function ReferralRow({
     onDelete,
 }: {
     referral: SystemReferralRecord;
-    onDelete: () => void;
+    onDelete?: () => void;
 }) {
     return (
         <RecordRow

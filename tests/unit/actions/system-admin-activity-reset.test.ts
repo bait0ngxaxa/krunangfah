@@ -8,6 +8,7 @@ const prismaMocks = vi.hoisted(() => {
     };
     return {
         activityProgressFindUnique: vi.fn(),
+        phqResultFindFirst: vi.fn(),
         deleteFilesByUrl: vi.fn(),
         transaction: vi.fn(),
         tx,
@@ -21,6 +22,7 @@ const logMocks = vi.hoisted(() => ({
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         activityProgress: { findUnique: prismaMocks.activityProgressFindUnique },
+        phqResult: { findFirst: prismaMocks.phqResultFindFirst },
         $transaction: prismaMocks.transaction,
     },
 }));
@@ -63,6 +65,7 @@ describe("resetSystemActivityProgress", () => {
         prismaMocks.activityProgressFindUnique.mockResolvedValue(
             createActivityRow("completed"),
         );
+        prismaMocks.phqResultFindFirst.mockResolvedValue({ id: phqResultId });
         prismaMocks.tx.worksheetUpload.findMany.mockResolvedValue([
             { fileUrl: "/api/uploads/worksheets/activity-2.png" },
             { fileUrl: "/api/uploads/worksheets/activity-3.png" },
@@ -137,6 +140,26 @@ describe("resetSystemActivityProgress", () => {
                 reason: "ครูบันทึกกิจกรรมเกิน",
             }),
         });
+    });
+
+    it("rejects resetting an activity from an older PHQ result", async () => {
+        prismaMocks.phqResultFindFirst.mockResolvedValue({ id: "newer-phq" });
+
+        const result = await resetSystemActivityProgress(
+            { id: activityId, expectedUpdatedAt, reason: "ไม่ควรแก้ย้อนหลัง" },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+        });
+        expect(prismaMocks.transaction).not.toHaveBeenCalled();
     });
 
     it("reports worksheet cleanup warnings after a successful reset", async () => {

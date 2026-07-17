@@ -10,6 +10,7 @@ import { getActivityStatusLabel } from "./labels";
 
 export function SystemCareActivityGroups({
     records,
+    allowMutations,
     resetTarget,
     resetReason,
     isPending,
@@ -19,6 +20,7 @@ export function SystemCareActivityGroups({
     onReset,
 }: {
     records: SystemActivityRecord[];
+    allowMutations: boolean;
     resetTarget: SystemActivityRecord | null;
     resetReason: string;
     isPending: boolean;
@@ -53,7 +55,7 @@ export function SystemCareActivityGroups({
                                 subtitle={`${getActivityStatusLabel(record.status)} · ${record.teacherName ?? "ไม่ระบุครู"}`}
                                 body={record.teacherNotes ?? "ยังไม่มีบันทึกครู"}
                                 deleteLabel={`ล้างผลกิจกรรมที่ ${record.activityNumber}`}
-                                onDelete={canResetActivity(record) ? () => onStartReset(record) : undefined}
+                                onDelete={allowMutations && canResetActivity(record) ? () => onStartReset(record) : undefined}
                             >
                                 {resetTarget?.id === record.id ? (
                                     <DeleteReasonBox

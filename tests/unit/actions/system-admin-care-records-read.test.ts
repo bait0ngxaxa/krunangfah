@@ -76,6 +76,7 @@ describe("getStudentCareRecords", () => {
 function createPhqRow(id: string, round: number, createdAt: Date) {
     return {
         id,
+        academicYearId: `year-${round}`,
         assessmentRound: round,
         q1: 0,
         q2: 0,

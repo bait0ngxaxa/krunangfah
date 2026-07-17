@@ -9,6 +9,7 @@ import type { SystemPhqRecord } from "@/lib/actions/system-admin/types";
 
 const roundOne: SystemPhqRecord = {
     id: "phq-round-1",
+    academicYearId: "academic-year-2569-1",
     academicYearLabel: "2569/1",
     isLatestTerm: true,
     assessmentRound: 1,
@@ -54,6 +55,7 @@ describe("SystemCarePhqSection", () => {
                     reason: "",
                 }}
                 isPending={false}
+                allowMutations
                 onStartEdit={vi.fn()}
                 onEditChange={vi.fn()}
                 onCancelEdit={vi.fn()}
@@ -66,6 +68,25 @@ describe("SystemCarePhqSection", () => {
         expect(html).toContain("มีมากกว่า 7 วัน");
         expect(html).toContain("บันทึกผล PHQ");
         expect(html).not.toContain("ล้างผล PHQ");
+    });
+
+    it("renders historical PHQ results as read-only", () => {
+        const html = renderToStaticMarkup(
+            <SystemCarePhqSection
+                records={[roundOne]}
+                editTarget={null}
+                editForm={null}
+                isPending={false}
+                allowMutations={false}
+                onStartEdit={vi.fn()}
+                onEditChange={vi.fn()}
+                onCancelEdit={vi.fn()}
+                onSaveEdit={vi.fn()}
+            />,
+        );
+
+        expect(html).toContain("ดูย้อนหลังได้อย่างเดียว");
+        expect(html).not.toContain("แก้ไขผล PHQ รอบ 1");
     });
 
     it("hides hospital referral controls when edited PHQ scores are not red", () => {

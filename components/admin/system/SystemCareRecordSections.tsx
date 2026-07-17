@@ -18,6 +18,7 @@ export type DeleteTarget = {
 
 export function CareRecordSections({
     data,
+    allowMutations,
     deleteTarget,
     deleteReason,
     isPending,
@@ -30,6 +31,7 @@ export function CareRecordSections({
         <>
             <CounselingSection
                 data={data}
+                allowMutations={allowMutations}
                 deleteTarget={deleteTarget}
                 deleteReason={deleteReason}
                 isPending={isPending}
@@ -40,6 +42,7 @@ export function CareRecordSections({
             />
             <HomeVisitSection
                 data={data}
+                allowMutations={allowMutations}
                 deleteTarget={deleteTarget}
                 deleteReason={deleteReason}
                 isPending={isPending}
@@ -62,12 +65,12 @@ function CounselingSection(props: SectionProps) {
                     title={`ครั้งที่ ${record.sessionNumber}`}
                     subtitle={`${formatDate(record.sessionDate)} · ${record.counselorName}`}
                     body={record.summary}
-                    onDelete={() => onStartDelete({
+                    onDelete={props.allowMutations ? () => onStartDelete({
                         type: "counselingSession",
                         id: record.id,
                         expectedUpdatedAt: record.updatedAt,
                         label: `การให้คำปรึกษาครั้งที่ ${record.sessionNumber}`,
-                    })}
+                    }) : undefined}
                 >
                     <InlineDeleteReason
                         {...props}
@@ -92,12 +95,12 @@ function HomeVisitSection(props: SectionProps) {
                     subtitle={`${formatDate(record.visitDate)} · ${record.teacherName}`}
                     body={record.description}
                     meta={`รูปภาพ ${record.photoCount} รูป`}
-                    onDelete={() => onStartDelete({
+                    onDelete={props.allowMutations ? () => onStartDelete({
                         type: "homeVisit",
                         id: record.id,
                         expectedUpdatedAt: record.updatedAt,
                         label: `เยี่ยมบ้านครั้งที่ ${record.visitNumber}`,
-                    })}
+                    }) : undefined}
                 >
                     <InlineDeleteReason
                         {...props}
@@ -156,6 +159,7 @@ function formatDate(value: Date | string | null): string {
 
 type SectionProps = {
     data: SystemCareRecordResponse;
+    allowMutations: boolean;
     deleteTarget: DeleteTarget;
     deleteReason: string;
     isPending: boolean;

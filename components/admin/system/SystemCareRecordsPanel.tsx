@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { CalendarRange, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
     deleteSystemAdminCareRecord,
@@ -10,6 +10,8 @@ import {
 import type {
     SystemCareRecordResponse,
 } from "@/lib/actions/system-admin/types";
+import { FilterSelect } from "@/components/ui/FilterSelect";
+import { filterSystemCareRecords } from "@/lib/utils/system-care-record-filter";
 import { SummaryGrid } from "./SystemCareRecordViews";
 import { SystemCareAdminPanel } from "./SystemCareAdminPanel";
 import {
@@ -19,6 +21,7 @@ import {
 
 export function SystemCareRecordsPanel({ studentId }: { studentId: string }) {
     const [data, setData] = useState<SystemCareRecordResponse | null>(null);
+    const [selectedPhqId, setSelectedPhqId] = useState("");
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
     const [deleteReason, setDeleteReason] = useState("");
     const [isPending, startTransition] = useTransition();
@@ -27,7 +30,10 @@ export function SystemCareRecordsPanel({ studentId }: { studentId: string }) {
         let isActive = true;
         startTransition(async () => {
             const result = await getSystemStudentCareRecords({ studentId });
-            if (isActive) setData(result);
+            if (isActive) {
+                setData(result);
+                setSelectedPhqId(result?.phqResults[0]?.id ?? "");
+            }
         });
         return () => {
             isActive = false;
@@ -64,15 +70,35 @@ export function SystemCareRecordsPanel({ studentId }: { studentId: string }) {
         );
     }
 
+    const filteredData = selectedPhqId
+        ? filterSystemCareRecords(data, selectedPhqId)
+        : data;
+    const allowMutations = selectedPhqId === data.phqResults[0]?.id;
+
     return (
         <section className="space-y-5">
-            <SummaryGrid data={data} />
+            {data.phqResults.length > 0 ? <FilterSelect
+                icon={CalendarRange}
+                label="รอบข้อมูล:"
+                id="system-care-phq-filter"
+                value={selectedPhqId}
+                onChange={setSelectedPhqId}
+            >
+                {data.phqResults.map((record) => (
+                    <option key={record.id} value={record.id}>
+                        {record.academicYearLabel} · ครั้งที่ {record.assessmentRound}
+                    </option>
+                ))}
+            </FilterSelect> : null}
+            <SummaryGrid data={filteredData} />
             <SystemCareAdminPanel
-                data={data}
+                data={filteredData}
                 setData={setData}
+                allowMutations={allowMutations}
             />
             <CareRecordSections
-                data={data}
+                data={filteredData}
+                allowMutations={allowMutations}
                 deleteTarget={deleteTarget}
                 deleteReason={deleteReason}
                 isPending={isPending}

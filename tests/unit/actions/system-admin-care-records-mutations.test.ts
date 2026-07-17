@@ -20,6 +20,7 @@ const prismaMocks = vi.hoisted(() => {
         transaction: vi.fn(),
         counselingFindFirst: vi.fn(),
         homeVisitFindFirst: vi.fn(),
+        phqResultFindFirst: vi.fn(),
         tx,
     };
 });
@@ -33,6 +34,7 @@ vi.mock("@/lib/database/prisma", () => ({
         $transaction: prismaMocks.transaction,
         counselingSession: { findFirst: prismaMocks.counselingFindFirst },
         homeVisit: { findFirst: prismaMocks.homeVisitFindFirst },
+        phqResult: { findFirst: prismaMocks.phqResultFindFirst },
     },
 }));
 
@@ -70,6 +72,9 @@ describe("system admin care record mutations", () => {
         );
         prismaMocks.tx.counselingSession.updateMany.mockResolvedValue({ count: 1 });
         prismaMocks.tx.homeVisit.updateMany.mockResolvedValue({ count: 1 });
+        prismaMocks.phqResultFindFirst.mockResolvedValue({
+            academicYearId: "cmacademicyear000000000001",
+        });
     });
 
     it("does not reuse a soft-deleted counseling session number", async () => {
@@ -340,6 +345,8 @@ function createCounselingRow(sessionNumber: number) {
     return {
         id: `cmcounseling00000000000${sessionNumber}`,
         studentId,
+        academicYearId: "cmacademicyear000000000001",
+        academicYear: { year: 2569, semester: 1 },
         sessionNumber,
         sessionDate: new Date("2026-07-07T00:00:00.000Z"),
         counselorName: "ครูแนะแนว",
@@ -354,6 +361,8 @@ function createHomeVisitRow(visitNumber: number) {
     return {
         id: `cmhomevisit00000000000${visitNumber}`,
         studentId,
+        academicYearId: "cmacademicyear000000000001",
+        academicYear: { year: 2569, semester: 1 },
         visitNumber,
         visitDate: new Date("2026-07-07T00:00:00.000Z"),
         description: "เยี่ยมบ้านหลังลบรายการเดิม",

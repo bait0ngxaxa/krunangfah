@@ -107,9 +107,29 @@ describe("saveSystemPhqResult", () => {
 
         expect(result).toEqual({
             success: false,
-            message: "แก้ไขผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
+            message: "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
         });
         expect(prismaMocks.transaction).toHaveBeenCalledOnce();
+        expect(prismaMocks.tx.phqResult.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("rejects editing an older PHQ round in the latest term", async () => {
+        prismaMocks.phqResultFindUnique.mockResolvedValue(
+            createPhqRow(phqId, { assessmentRound: 1 }),
+        );
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue(
+            createPhqRow(newerTermPhqId, { assessmentRound: 2 }),
+        );
+
+        const result = await saveSystemPhqResult(
+            createInput("ไม่ควรแก้ผลรอบก่อนหน้า"),
+            actor,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+        });
         expect(prismaMocks.tx.phqResult.updateMany).not.toHaveBeenCalled();
     });
 
@@ -125,7 +145,7 @@ describe("saveSystemPhqResult", () => {
 
         expect(result).toEqual({
             success: false,
-            message: "แก้ไขผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
+            message: "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
         });
         expect(prismaMocks.tx.phqResult.updateMany).not.toHaveBeenCalled();
         expect(prismaMocks.transaction).toHaveBeenCalledWith(
@@ -228,13 +248,14 @@ function createPhqRow(
         hospitalName?: string | null;
         year?: number;
         semester?: number;
+        assessmentRound?: number;
     } = {},
 ) {
     return {
         id,
         studentId,
         academicYearId: `cmacademic${overrides.semester ?? 1}000000000001`,
-        assessmentRound: 1,
+        assessmentRound: overrides.assessmentRound ?? 1,
         q1: overrides.q1 ?? 1,
         q2: 1,
         q3: 1,

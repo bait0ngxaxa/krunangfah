@@ -27,6 +27,10 @@ import {
 } from "./care-records-selects";
 import { staleCareRecordResponse } from "./care-records-concurrency";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
+import {
+    isLatestPhqResult,
+    LATEST_CARE_RECORD_ONLY_MESSAGE,
+} from "./care-record-current-policy";
 
 export async function saveSystemPhqResult(
     input: SystemPhqEditInput,
@@ -71,7 +75,7 @@ export async function saveSystemPhqResult(
     ]);
     const transactionResult = await runSerializableTransaction(async (tx) => {
         const latestPhq = await findLatestPhqForStudent(tx, existing.studentId);
-        if (latestPhq && isNewerTerm(latestPhq, existing)) {
+        if (!isLatestPhqResult(latestPhq?.id, existing.id)) {
             return { status: "not-latest" } as const;
         }
         if (changes.length === 0) return { status: "unchanged", row: existing } as const;
@@ -102,7 +106,7 @@ export async function saveSystemPhqResult(
         return { status: "updated", row } as const;
     });
     if (transactionResult.status === "not-latest") {
-        return { success: false, message: "แก้ไขผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน" };
+        return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
     }
     if (transactionResult.status === "stale") return staleCareRecordResponse();
     if (transactionResult.status === "unchanged") {
@@ -239,12 +243,6 @@ async function findLatestPhqForStudent(tx: Prisma.TransactionClient, studentId: 
     });
 }
 
-function isNewerTerm(latest: PhqTermRow, selected: PhqTermRow): boolean {
-    if (latest.academicYear.year !== selected.academicYear.year) {
-        return latest.academicYear.year > selected.academicYear.year;
-    }
-    return latest.academicYear.semester > selected.academicYear.semester;
-}
 
 async function revalidateCarePaths(schoolId: string, studentId: string): Promise<void> {
     revalidateStudentsCache(schoolId, studentId);
@@ -290,10 +288,3 @@ type ChangeTuple = [
     string | number | boolean | Date | null,
     string | number | boolean | Date | null,
 ];
-
-type PhqTermRow = {
-    academicYear: {
-        year: number;
-        semester: number;
-    };
-};

@@ -15,6 +15,7 @@ export function SystemCarePhqSection({
     editTarget,
     editForm,
     isPending,
+    allowMutations,
     onStartEdit,
     onEditChange,
     onCancelEdit,
@@ -24,6 +25,7 @@ export function SystemCarePhqSection({
     editTarget: SystemPhqRecord | null;
     editForm: SystemPhqEditFormState | null;
     isPending: boolean;
+    allowMutations: boolean;
     onStartEdit: (record: SystemPhqRecord) => void;
     onEditChange: (
         field: keyof SystemPhqEditFormState,
@@ -43,8 +45,8 @@ export function SystemCarePhqSection({
                     title={`${record.academicYearLabel} รอบ ${record.assessmentRound}`}
                     subtitle={`${record.totalScore} คะแนน · ${getPhqRiskLevelLabel(record.riskLevel)}`}
                     body={getPhqBody(record)}
-                    meta={record.isLatestTerm ? undefined : "แก้ไขได้เฉพาะเทอมล่าสุด"}
-                    actions={record.isLatestTerm ? (
+                    meta={allowMutations ? undefined : "ดูย้อนหลังได้อย่างเดียว"}
+                    actions={allowMutations ? (
                         <Button
                             type="button"
                             variant="ghost"

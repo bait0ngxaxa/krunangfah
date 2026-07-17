@@ -10,6 +10,7 @@ import type {
 export const COUNSELING_SELECT = {
     id: true,
     studentId: true,
+    academicYearId: true,
     sessionNumber: true,
     sessionDate: true,
     counselorName: true,
@@ -17,11 +18,13 @@ export const COUNSELING_SELECT = {
     createdAt: true,
     updatedAt: true,
     student: { select: { schoolId: true } },
+    academicYear: { select: { year: true, semester: true } },
 } satisfies Prisma.CounselingSessionSelect;
 
 export const HOME_VISIT_SELECT = {
     id: true,
     studentId: true,
+    academicYearId: true,
     visitNumber: true,
     visitDate: true,
     description: true,
@@ -32,6 +35,7 @@ export const HOME_VISIT_SELECT = {
     updatedAt: true,
     _count: { select: { photos: true } },
     student: { select: { schoolId: true } },
+    academicYear: { select: { year: true, semester: true } },
 } satisfies Prisma.HomeVisitSelect;
 
 export const PHQ_SELECT = {
@@ -99,6 +103,8 @@ export const REFERRAL_SELECT = {
 
 export function toCounselingRecord(row: {
     id: string;
+    academicYearId: string | null;
+    academicYear: { year: number; semester: number } | null;
     sessionNumber: number;
     sessionDate: Date;
     counselorName: string;
@@ -108,6 +114,8 @@ export function toCounselingRecord(row: {
 }): SystemCounselingRecord {
     return {
         id: row.id,
+        academicYearId: row.academicYearId,
+        academicYearLabel: formatAcademicYear(row.academicYear),
         sessionNumber: row.sessionNumber,
         sessionDate: row.sessionDate,
         counselorName: row.counselorName,
@@ -119,6 +127,8 @@ export function toCounselingRecord(row: {
 
 export function toHomeVisitRecord(row: {
     id: string;
+    academicYearId: string | null;
+    academicYear: { year: number; semester: number } | null;
     visitNumber: number;
     visitDate: Date;
     description: string;
@@ -131,6 +141,8 @@ export function toHomeVisitRecord(row: {
 }): SystemHomeVisitRecord {
     return {
         id: row.id,
+        academicYearId: row.academicYearId,
+        academicYearLabel: formatAcademicYear(row.academicYear),
         visitNumber: row.visitNumber,
         visitDate: row.visitDate,
         description: row.description,
@@ -178,6 +190,14 @@ function formatTeacherName(
     teacher: { firstName: string; lastName: string } | null,
 ): string | null {
     return teacher ? `${teacher.firstName} ${teacher.lastName}` : null;
+}
+
+function formatAcademicYear(
+    academicYear: { year: number; semester: number } | null,
+): string | null {
+    return academicYear
+        ? `${academicYear.year}/${academicYear.semester}`
+        : null;
 }
 
 export type PhqRow = Prisma.PhqResultGetPayload<{

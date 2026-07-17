@@ -30,9 +30,11 @@ import {
 export function SystemCareAdminPanel({
     data,
     setData,
+    allowMutations,
 }: {
     data: SystemCareRecordResponse;
     setData: Dispatch<SetStateAction<SystemCareRecordResponse | null>>;
+    allowMutations: boolean;
 }) {
     const [deleteReason, setDeleteReason] = useState("");
     const [isDeletingReferral, setIsDeletingReferral] = useState(false);
@@ -111,6 +113,7 @@ export function SystemCareAdminPanel({
                 editTarget={phqEditTarget}
                 editForm={phqEditForm}
                 isPending={isPending}
+                allowMutations={allowMutations}
                 onStartEdit={(record) => {
                     setPhqEditTarget(record);
                     setPhqEditForm(createPhqEditFormState(record));
@@ -135,6 +138,7 @@ export function SystemCareAdminPanel({
             >
                 <SystemCareActivityGroups
                     records={data.activityProgress}
+                    allowMutations={allowMutations}
                     resetTarget={activityResetTarget}
                     resetReason={activityResetReason}
                     isPending={isPending}
@@ -150,7 +154,7 @@ export function SystemCareAdminPanel({
 
             <SystemCareReferralSection
                 referral={data.referral}
-                onDelete={() => setIsDeletingReferral(true)}
+                onDelete={allowMutations ? () => setIsDeletingReferral(true) : undefined}
             />
             {isDeletingReferral ? (
                 <DeleteReasonBox

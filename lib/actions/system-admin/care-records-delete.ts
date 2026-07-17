@@ -11,6 +11,10 @@ import {
     HOME_VISIT_SELECT,
 } from "./care-records-selects";
 import { staleCareRecordResponse } from "./care-records-concurrency";
+import {
+    canMutateAcademicYearContext,
+    LATEST_CARE_RECORD_ONLY_MESSAGE,
+} from "./care-record-current-policy";
 
 export async function softDeleteSystemCareRecord(
     type: "counselingSession" | "homeVisit",
@@ -32,6 +36,12 @@ async function softDeleteCounseling(
         select: COUNSELING_SELECT,
     });
     if (!existing) return { success: false, message: "ไม่พบบันทึก" };
+    if (!await canMutateAcademicYearContext(
+        existing.studentId,
+        existing.academicYearId,
+    )) {
+        return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
+    }
 
     const deleted = await prisma.$transaction(async (tx) => {
         const write = await tx.counselingSession.updateMany({
@@ -64,6 +74,12 @@ async function softDeleteHomeVisit(
         select: HOME_VISIT_SELECT,
     });
     if (!existing) return { success: false, message: "ไม่พบบันทึก" };
+    if (!await canMutateAcademicYearContext(
+        existing.studentId,
+        existing.academicYearId,
+    )) {
+        return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
+    }
 
     const deleted = await prisma.$transaction(async (tx) => {
         const write = await tx.homeVisit.updateMany({

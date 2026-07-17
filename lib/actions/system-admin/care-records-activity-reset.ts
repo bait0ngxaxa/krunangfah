@@ -20,6 +20,10 @@ import {
     CARE_RECORD_FILE_CLEANUP_WARNING_MESSAGE,
     cleanupSystemCareRecordFiles,
 } from "./care-record-file-cleanup";
+import {
+    canMutatePhqContext,
+    LATEST_CARE_RECORD_ONLY_MESSAGE,
+} from "./care-record-current-policy";
 
 export async function resetSystemActivityProgress(
     input: SystemCareRecordDeleteInput,
@@ -30,6 +34,9 @@ export async function resetSystemActivityProgress(
         select: ACTIVITY_SELECT,
     });
     if (!existing) return { success: false, message: "ไม่พบกิจกรรม" };
+    if (!await canMutatePhqContext(existing.studentId, existing.phqResultId)) {
+        return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
+    }
     if (existing.status !== "completed") {
         return {
             success: false,

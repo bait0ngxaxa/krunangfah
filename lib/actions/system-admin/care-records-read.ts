@@ -47,6 +47,7 @@ async function getPhqSummaries(studentId: string) {
         where: { studentId },
         select: {
             id: true,
+            academicYearId: true,
             assessmentRound: true,
             q1: true,
             q2: true,
@@ -75,14 +76,12 @@ async function getPhqSummaries(studentId: string) {
         ],
         take: 10,
     });
-    const latestTerm = rows[0]?.academicYear ?? null;
+    const latestPhqId = rows[0]?.id;
     return rows.map((row) => ({
         id: row.id,
+        academicYearId: row.academicYearId,
         academicYearLabel: `${row.academicYear.year}/${row.academicYear.semester}`,
-        isLatestTerm: latestTerm
-            ? row.academicYear.year === latestTerm.year &&
-              row.academicYear.semester === latestTerm.semester
-            : false,
+        isLatestTerm: row.id === latestPhqId,
         assessmentRound: row.assessmentRound,
         q1: row.q1,
         q2: row.q2,

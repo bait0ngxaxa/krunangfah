@@ -20,6 +20,10 @@ import {
     toHomeVisitRecord,
 } from "./care-records-selects";
 import { staleCareRecordResponse } from "./care-records-concurrency";
+import {
+    canMutateAcademicYearContext,
+    LATEST_CARE_RECORD_ONLY_MESSAGE,
+} from "./care-record-current-policy";
 
 export { getStudentCareRecords } from "./care-records-read";
 export { softDeleteSystemCareRecord } from "./care-records-delete";
@@ -43,6 +47,12 @@ export async function saveSystemCounselingRecord(
         : null;
     if (input.id && !existing) {
         return { success: false, message: "ไม่พบบันทึกการให้คำปรึกษา" };
+    }
+    if (existing && !await canMutateAcademicYearContext(
+        existing.studentId,
+        existing.academicYearId,
+    )) {
+        return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
     }
     if (input.id && !input.expectedUpdatedAt) return staleCareRecordResponse();
 
@@ -72,6 +82,12 @@ export async function saveSystemHomeVisitRecord(
         : null;
     if (input.id && !existing) {
         return { success: false, message: "ไม่พบบันทึกการเยี่ยมบ้าน" };
+    }
+    if (existing && !await canMutateAcademicYearContext(
+        existing.studentId,
+        existing.academicYearId,
+    )) {
+        return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
     }
     if (input.id && !input.expectedUpdatedAt) return staleCareRecordResponse();
 

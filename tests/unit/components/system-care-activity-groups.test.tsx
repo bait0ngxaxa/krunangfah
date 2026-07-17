@@ -33,6 +33,7 @@ function render(records: SystemActivityRecord[]): string {
     return renderToStaticMarkup(
         <SystemCareActivityGroups
             records={records}
+            allowMutations
             resetTarget={null}
             resetReason=""
             isPending={false}

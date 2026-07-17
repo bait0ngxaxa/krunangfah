@@ -141,6 +141,7 @@ export interface SystemCareRecordResponse {
 
 export interface SystemPhqRecord {
     id: string;
+    academicYearId: string;
     academicYearLabel: string;
     isLatestTerm: boolean;
     assessmentRound: number;
@@ -204,6 +205,8 @@ export interface SystemTeacherOption {
 
 export interface SystemCounselingRecord {
     id: string;
+    academicYearId: string | null;
+    academicYearLabel: string | null;
     sessionNumber: number;
     sessionDate: Date;
     counselorName: string;
@@ -214,6 +217,8 @@ export interface SystemCounselingRecord {
 
 export interface SystemHomeVisitRecord {
     id: string;
+    academicYearId: string | null;
+    academicYearLabel: string | null;
     visitNumber: number;
     visitDate: Date;
     description: string;
