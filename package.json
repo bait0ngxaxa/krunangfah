@@ -10,7 +10,8 @@
     "test": "vitest",
     "test:integration": "vitest --run --config vitest.integration.config.ts",
     "test:coverage": "vitest --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "cleanup:files": "tsx scripts/process-file-deletion-outbox.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

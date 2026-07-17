@@ -616,3 +616,17 @@ model HomeVisitPhoto {
 
   @@map("home_visit_photos")
 }
+
+model FileDeletionOutbox {
+  id            String    @id @default(cuid())
+  fileUrl       String    @unique
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now())
+  processedAt   DateTime?
+  lastError     String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([processedAt, nextAttemptAt])
+  @@map("file_deletion_outbox")
+}

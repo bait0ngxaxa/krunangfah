@@ -18,8 +18,6 @@ import {
     createHomeVisitSchema,
     deleteHomeVisitSchema,
 } from "@/lib/validations/home-visit.validation";
-import { existsSync } from "fs";
-import { join } from "path";
 import { logError } from "@/lib/utils/logging";
 import { handleActionError } from "./error-handler";
 import { handleQueryError } from "./error-handler";
@@ -355,7 +353,7 @@ export async function createHomeVisit(data: {
 }
 
 /**
- * Delete a home visit and its photos from disk
+ * Soft delete a home visit and enqueue its photos for durable cleanup
  */
 export async function deleteHomeVisit(
     visitId: string,
@@ -372,7 +370,7 @@ export async function deleteHomeVisit(
         }
 
         const visit = await prisma.homeVisit.findUnique({
-            where: { id: validated.visitId },
+            where: { id: validated.visitId, deletedAt: null },
             select: {
                 studentId: true,
                 photos: { select: { fileUrl: true } },
@@ -394,26 +392,23 @@ export async function deleteHomeVisit(
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        // Delete photo files from disk
-        const { unlink } = await import("fs/promises");
-        for (const photo of visit.photos) {
-            const fileName = photo.fileUrl.replace("/api/uploads/home-visits/", "");
-            const filePath = join(
-                process.cwd(),
-                ".data",
-                "uploads",
-                "home-visits",
-                fileName,
-            );
-            // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB fileUrl, not user input
-            if (existsSync(filePath)) {
-                await unlink(filePath).catch(() => {});
+        await prisma.$transaction(async (tx) => {
+            await tx.homeVisit.update({
+                where: { id: validated.visitId },
+                data: {
+                    deletedAt: new Date(),
+                    deletedById: session.user.id,
+                    deleteReason: "ผู้ใช้ลบบันทึกเยี่ยมบ้าน",
+                },
+            });
+            if (visit.photos.length > 0) {
+                await tx.fileDeletionOutbox.createMany({
+                    data: visit.photos.map((photo) => ({
+                        fileUrl: photo.fileUrl,
+                    })),
+                    skipDuplicates: true,
+                });
             }
-        }
-
-        // Cascade delete will remove photos from DB
-        await prisma.homeVisit.delete({
-            where: { id: validated.visitId },
         });
 
         revalidatePath(`/students/${visit.studentId}`);
