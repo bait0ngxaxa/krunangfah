@@ -95,12 +95,16 @@ export async function createTeacherInvite(
                 } satisfies InviteResponse;
             }
 
-            const existingInvite = await tx.teacherInvite.findFirst({
+            const now = new Date();
+            const inviteIdentityWhere = rosterId
+                ? { OR: [{ rosterId }, { email: data.email }] }
+                : { email: data.email };
+
+            const activeInvite = await tx.teacherInvite.findFirst({
                 where: {
                     acceptedAt: null,
-                    ...(rosterId
-                        ? { rosterId }
-                        : { email: data.email }),
+                    expiresAt: { gt: now },
+                    ...inviteIdentityWhere,
                 },
                 select: {
                     id: true,
@@ -108,12 +112,25 @@ export async function createTeacherInvite(
                 },
             });
 
-            if (existingInvite && existingInvite.expiresAt > new Date()) {
+            if (activeInvite && activeInvite.expiresAt > now) {
                 return {
                     success: false,
                     message: "มีคำเชิญที่รอดำเนินการสำหรับอีเมลนี้แล้ว",
                 } satisfies InviteResponse;
             }
+
+            const existingInvite = await tx.teacherInvite.findFirst({
+                where: {
+                    acceptedAt: null,
+                    expiresAt: { lte: now },
+                    ...inviteIdentityWhere,
+                },
+                orderBy: { expiresAt: "desc" },
+                select: {
+                    id: true,
+                    expiresAt: true,
+                },
+            });
 
             const expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + 7);

@@ -76,6 +76,8 @@ vi.mock("@/lib/database/prisma", () => ({
                     delete: prismaMocks.mockTeacherInviteDelete,
                 },
                 schoolTeacherRoster: {
+                    findFirst: prismaMocks.mockRosterFindFirst,
+                    update: prismaMocks.mockRosterUpdate,
                     updateMany: prismaMocks.mockRosterUpdateMany,
                 },
             }),
@@ -188,6 +190,37 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
             expect(res.message).toBe(
                 "มีคำเชิญที่รอดำเนินการสำหรับอีเมลนี้แล้ว",
             );
+        });
+
+        it("rejects a roster invite when a legacy pending invite uses the same email", async () => {
+            vi.mocked(requireAuth).mockResolvedValue({
+                user: { id: "u1", role: "school_admin" },
+            } as any);
+            vi.mocked(prisma.user.findUnique)
+                .mockResolvedValueOnce({ schoolId: "s1" } as any)
+                .mockResolvedValueOnce(null as any);
+            prismaMocks.mockRosterFindFirst.mockResolvedValue({
+                id: "roster-1",
+                email: baseInput.email,
+            } as any);
+            prismaMocks.mockTeacherInviteFindFirst.mockImplementation(
+                ({ where }: { where: { rosterId?: string; email?: string } }) =>
+                    Promise.resolve(
+                        where.rosterId
+                            ? null
+                            : {
+                                  id: "legacy-pending",
+                                  rosterId: null,
+                                  email: baseInput.email,
+                                  expiresAt: new Date(Date.now() + 10_000),
+                              },
+                    ),
+            );
+
+            const res = await createTeacherInvite(baseInput, "roster-1");
+
+            expect(res.success).toBe(false);
+            expect(prismaMocks.mockTeacherInviteCreate).not.toHaveBeenCalled();
         });
 
         it("succeeds if everything is valid", async () => {
