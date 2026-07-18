@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
+import { ReferralConsistencyError } from "./referral-consistency";
 
 interface CreateActiveReferralInput {
     studentId: string;
@@ -66,12 +67,22 @@ export async function revokeActiveStudentReferral(
                 revokeReason: input.revokeReason?.trim() || null,
             },
         });
-        if (write.count !== 1) return false;
+        if (write.count === 0) return false;
+        if (write.count !== 1) {
+            throw new ReferralConsistencyError(
+                "Referral revoke affected an unexpected number of rows",
+            );
+        }
 
         const released = await tx.student.updateMany({
             where: { activeReferralId: input.referralId },
             data: { activeReferralId: null },
         });
-        return released.count === 1;
+        if (released.count !== 1) {
+            throw new ReferralConsistencyError(
+                "Active referral pointer could not be released",
+            );
+        }
+        return true;
     });
 }

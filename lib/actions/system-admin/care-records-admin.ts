@@ -26,6 +26,7 @@ import {
     toReferralRecord,
 } from "./care-records-selects";
 import { staleCareRecordResponse } from "./care-records-concurrency";
+import { ReferralConsistencyError } from "@/lib/services/referral-consistency";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 import {
     isLatestPhqResult,
@@ -195,7 +196,12 @@ export async function deleteSystemReferral(
                 revokeReason: input.reason,
             },
         });
-        if (write.count !== 1) return false;
+        if (write.count === 0) return false;
+        if (write.count !== 1) {
+            throw new ReferralConsistencyError(
+                "Referral delete affected an unexpected number of rows",
+            );
+        }
         const released = await tx.student.updateMany({
             where: {
                 id: existing.studentId,
@@ -203,7 +209,11 @@ export async function deleteSystemReferral(
             },
             data: { activeReferralId: null },
         });
-        if (released.count !== 1) return false;
+        if (released.count !== 1) {
+            throw new ReferralConsistencyError(
+                "Active referral pointer could not be released",
+            );
+        }
         await createSystemAdminEditEvent({
             tx,
             targetType: "studentReferral",
@@ -243,13 +253,22 @@ async function replaceReferral(
         },
         data: { closedAt: new Date() },
     });
-    if (closed.count !== 1) return null;
+    if (closed.count === 0) return null;
+    if (closed.count !== 1) {
+        throw new ReferralConsistencyError(
+            "Referral close affected an unexpected number of rows",
+        );
+    }
 
     const released = await tx.student.updateMany({
         where: { id: input.studentId, activeReferralId: id },
         data: { activeReferralId: null },
     });
-    if (released.count !== 1) return null;
+    if (released.count !== 1) {
+        throw new ReferralConsistencyError(
+            "Active referral pointer could not be released",
+        );
+    }
     return createReferral(tx, input, actor);
 }
 
@@ -270,7 +289,12 @@ async function createReferral(
         where: { id: input.studentId, activeReferralId: null },
         data: { activeReferralId: row.id },
     });
-    return claimed.count === 1 ? row : null;
+    if (claimed.count !== 1) {
+        throw new ReferralConsistencyError(
+            "Active referral pointer could not be claimed",
+        );
+    }
+    return row;
 }
 
 async function findTeacherInSchool(userId: string, schoolId: string) {
