@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useAddTeacherForm } from "./useAddTeacherForm";
 import type { TeacherRosterItem } from "./types";
+import { getAvailableTeacherRoster } from "./invite-availability";
 import type { TeacherInviteWithAcademicYear } from "@/lib/actions/teacher-invite";
 import { USER_ROLE_LABELS, PROJECT_ROLE_LABELS } from "@/lib/constants/roles";
 import { ErrorMessage, InviteLinkSection } from "./components";
@@ -61,31 +62,9 @@ export function AddTeacherForm({
         );
     }, [invites]);
 
-    const blockedEmailSet = useMemo(
-        () => new Set(blockedInvites.map((inv) => inv.email.toLowerCase())),
-        [blockedInvites],
-    );
-    const blockedNameSet = useMemo(
-        () =>
-            new Set(
-                blockedInvites.map((inv) => `${inv.firstName} ${inv.lastName}`),
-            ),
-        [blockedInvites],
-    );
     const availableRoster = useMemo(
-        () =>
-            roster.filter((t) => {
-                if (!t.email) return false;
-
-                const emailKey = t.email.toLowerCase();
-                const nameKey = `${t.firstName} ${t.lastName}`;
-
-                return (
-                    !blockedEmailSet.has(emailKey) &&
-                    !blockedNameSet.has(nameKey)
-                );
-            }),
-        [blockedEmailSet, blockedNameSet, roster],
+        () => getAvailableTeacherRoster(roster, blockedInvites),
+        [blockedInvites, roster],
     );
     const selectedTeacher = roster.find((t) => t.id === selectedRosterId);
     const blockedCount = blockedInvites.length;
