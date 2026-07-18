@@ -28,6 +28,56 @@ describe("navbar student query result", () => {
         });
     });
 
+    it("uses the shared active student scope for class teachers", async () => {
+        mocks.studentCount.mockResolvedValue(1);
+
+        const result = await hasStudents();
+
+        expect(result).toEqual({ status: "success", data: true });
+        expect(mocks.studentCount).toHaveBeenCalledWith({
+            where: {
+                schoolId: "school-1",
+                disabledAt: null,
+                isTestData: false,
+                school: { disabledAt: null, isTestData: false },
+                class: "ม.1/1",
+            },
+        });
+    });
+
+    it("excludes disabled and test schools for school admins", async () => {
+        mocks.userFindUnique.mockResolvedValue({
+            schoolId: "school-1",
+            role: "school_admin",
+            teacher: null,
+        });
+        mocks.studentCount.mockResolvedValue(1);
+
+        await hasStudents();
+
+        expect(mocks.studentCount).toHaveBeenCalledWith({
+            where: {
+                schoolId: "school-1",
+                disabledAt: null,
+                isTestData: false,
+                school: { disabledAt: null, isTestData: false },
+            },
+        });
+    });
+
+    it("does not count students outside a non-admin school scope", async () => {
+        mocks.userFindUnique.mockResolvedValue({
+            schoolId: null,
+            role: "school_admin",
+            teacher: null,
+        });
+
+        const result = await hasStudents();
+
+        expect(result).toEqual({ status: "empty", data: false });
+        expect(mocks.studentCount).not.toHaveBeenCalled();
+    });
+
     it("does not hide navigation when the student count query fails", async () => {
         mocks.studentCount.mockRejectedValue(new Error("database unavailable"));
 

@@ -4,11 +4,11 @@ import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/database/prisma";
 import { handleQueryError } from "./error-handler";
 import { queryEmpty, querySuccess, type QueryResult } from "./query-result";
+import { buildStudentVisibilityWhere } from "./student/student-scope";
 
 /**
- * Check if the current user has any students
- * class_teacher: checks students in their advisoryClass
- * school_admin/system_admin: checks students in their school
+ * Check if the current user has any visible students.
+ * Uses the same scope as the student list so navigation never points to an empty page.
  */
 export async function hasStudents(): Promise<QueryResult<boolean>> {
     try {
@@ -26,27 +26,15 @@ export async function hasStudents(): Promise<QueryResult<boolean>> {
             },
         });
         if (!dbUser) return { status: "not_found" };
-
-        if (dbUser.role === "class_teacher") {
-            const advisoryClass = dbUser.teacher?.advisoryClass;
-            if (!advisoryClass) return queryEmpty(false);
-
-            const count = await prisma.student.count({
-                where: {
-                    ...(dbUser.schoolId ? { schoolId: dbUser.schoolId } : {}),
-                    class: advisoryClass,
-                },
-            });
-
-            return count > 0 ? querySuccess(true) : queryEmpty(false);
+        if (!dbUser.schoolId && dbUser.role !== "system_admin") {
+            return queryEmpty(false);
         }
 
-        // school_admin / system_admin
-        const where: { schoolId?: string } = {};
-        if (dbUser.schoolId) {
-            where.schoolId = dbUser.schoolId;
-        }
-
+        const where = buildStudentVisibilityWhere(
+            dbUser.schoolId ?? undefined,
+            dbUser.teacher?.advisoryClass ?? undefined,
+            dbUser.role,
+        );
         const studentCount = await prisma.student.count({ where });
         return studentCount > 0 ? querySuccess(true) : queryEmpty(false);
     } catch (error) {
