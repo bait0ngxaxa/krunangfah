@@ -9,6 +9,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import type { RiskCountRaw, StudentListResponse } from "./types";
+import { getStudentReferralHistory } from "@/lib/services/student-referral-history";
 import {
     buildClassTeacherScopeSql,
     buildReferredStudentSql,
@@ -578,7 +579,7 @@ export async function getStudentDetailQuery(
         ...baseWhere,
     };
 
-    return prisma.student.findFirst({
+    const student = await prisma.student.findFirst({
         where: whereClause,
         include: {
             school: {
@@ -612,4 +613,8 @@ export async function getStudentDetailQuery(
             },
         },
     });
+    if (!student) return null;
+
+    const referralHistory = await getStudentReferralHistory(student.id, whereClause);
+    return { ...student, referralHistory };
 }

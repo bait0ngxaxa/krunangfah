@@ -7,6 +7,7 @@ import type {
     UserRole,
 } from "@prisma/client";
 import type { DataManagementEventItem } from "@/lib/actions/data-management/types";
+import type { ReferralHistoryRecord } from "@/types/referral.types";
 
 export type SystemEntityKind = "school" | "staff" | "student";
 export type SystemAdminEventActionKind = SystemAdminEventAction;
@@ -134,6 +135,7 @@ export interface SystemCareRecordResponse {
     phqResults: SystemPhqRecord[];
     activityProgress: SystemActivityRecord[];
     referral: SystemReferralRecord | null;
+    referralHistory: SystemReferralRecord[];
     teacherOptions: SystemTeacherOption[];
     counselingSessions: SystemCounselingRecord[];
     homeVisits: SystemHomeVisitRecord[];
@@ -186,15 +188,7 @@ export interface SystemActivityRecord {
     updatedAt: Date;
 }
 
-export interface SystemReferralRecord {
-    id: string;
-    fromTeacherUserId: string;
-    toTeacherUserId: string;
-    fromTeacherName: string | null;
-    toTeacherName: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-}
+export type SystemReferralRecord = ReferralHistoryRecord;
 
 export interface SystemTeacherOption {
     userId: string;

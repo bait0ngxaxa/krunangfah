@@ -79,6 +79,7 @@ function createCareRecords(): SystemCareRecordResponse {
         phqResults: [],
         activityProgress: [],
         referral: null,
+        referralHistory: [],
         teacherOptions: [],
         counselingSessions: [{
             id: counselingId,

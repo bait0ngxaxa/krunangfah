@@ -379,6 +379,7 @@ async function StudentDetailContent({
                     currentUserId={currentUserId}
                     currentUserRole={session.user.role}
                     referral={student.referral}
+                    referralHistory={student.referralHistory}
                 />
 
                 {uniqueYears.length > 1 && (

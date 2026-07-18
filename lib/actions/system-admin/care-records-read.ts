@@ -6,6 +6,7 @@ import {
     toCounselingRecord,
     toHomeVisitRecord,
 } from "./care-records-selects";
+import { getStudentReferralHistory } from "@/lib/services/student-referral-history";
 
 export async function getStudentCareRecords(
     studentId: string,
@@ -19,23 +20,28 @@ export async function getStudentCareRecords(
     const [
         phqResults,
         activityProgress,
-        referral,
+        referralHistory,
         teacherOptions,
         counselingSessions,
         homeVisits,
     ] = await Promise.all([
         getPhqSummaries(studentId),
         getActivitySummaries(studentId),
-        getReferralSummary(studentId),
+        getStudentReferralHistory(studentId, { id: studentId }),
         getTeacherOptions(student.schoolId),
         getCounselingRecords(studentId),
         getHomeVisitRecords(studentId),
     ]);
 
+    const referral = referralHistory.find(
+        (record) => record.status === "active",
+    ) ?? null;
+
     return {
         phqResults,
         activityProgress,
         referral,
+        referralHistory,
         teacherOptions,
         counselingSessions,
         homeVisits,
@@ -153,31 +159,6 @@ async function getActivitySummaries(studentId: string) {
         problemType: row.problemType,
         updatedAt: row.updatedAt,
     }));
-}
-
-async function getReferralSummary(studentId: string) {
-    const row = await prisma.studentReferral.findFirst({
-        where: { studentId, revokedAt: null, closedAt: null },
-        select: {
-            id: true,
-            fromTeacherUserId: true,
-            toTeacherUserId: true,
-            createdAt: true,
-            updatedAt: true,
-            fromTeacher: { select: { teacher: { select: { firstName: true, lastName: true } } } },
-            toTeacher: { select: { teacher: { select: { firstName: true, lastName: true } } } },
-        },
-    });
-    if (!row) return null;
-    return {
-        id: row.id,
-        fromTeacherUserId: row.fromTeacherUserId,
-        toTeacherUserId: row.toTeacherUserId,
-        fromTeacherName: formatTeacherName(row.fromTeacher.teacher),
-        toTeacherName: formatTeacherName(row.toTeacher.teacher),
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-    };
 }
 
 async function getTeacherOptions(schoolId: string) {

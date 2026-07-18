@@ -8,6 +8,8 @@ import {
 import { useStudentStatusContext } from "./StudentStatusContext";
 import { HospitalReferralButton } from "@/components/student/referral/HospitalReferralButton";
 import { ReferralButton } from "@/components/student/referral/ReferralButton";
+import { ReferralHistoryTimeline } from "@/components/student/referral/ReferralHistoryTimeline";
+import type { ReferralHistoryRecord } from "@/types/referral.types";
 import {
     StudentProfileCard,
     type StudentProfileLatestResult,
@@ -36,6 +38,7 @@ interface StudentProfileSectionProps {
     currentUserId: string;
     currentUserRole: string;
     referral?: ReferralData | null;
+    referralHistory?: ReferralHistoryRecord[];
 }
 
 function getBlockedMessage(status?: string | null): string | null {
@@ -54,6 +57,7 @@ export function StudentProfileSection({
     currentUserId,
     currentUserRole,
     referral,
+    referralHistory = [],
 }: StudentProfileSectionProps) {
     const [profileStudent, setProfileStudent] = useState(student);
     const studentStatus = useStudentStatusContext();
@@ -106,6 +110,26 @@ export function StudentProfileSection({
                     />
                 </div>
             )}
+
+            {referralHistory.length > 0 ? (
+                <section
+                    aria-labelledby="student-referral-history-title"
+                    className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                    <div>
+                        <h2
+                            id="student-referral-history-title"
+                            className="text-base font-semibold text-slate-950"
+                        >
+                            ประวัติการส่งต่อ
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-600">
+                            รายการเรียงจากล่าสุด และไม่สามารถแก้ไขประวัติเดิมได้
+                        </p>
+                    </div>
+                    <ReferralHistoryTimeline records={referralHistory} />
+                </section>
+            ) : null}
         </>
     );
 }

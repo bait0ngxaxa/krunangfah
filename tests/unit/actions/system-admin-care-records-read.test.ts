@@ -5,6 +5,8 @@ const prismaMocks = vi.hoisted(() => ({
     phqResultFindMany: vi.fn(),
     activityProgressFindMany: vi.fn(),
     studentReferralFindFirst: vi.fn(),
+    studentReferralFindMany: vi.fn(),
+    userFindMany: vi.fn(),
     teacherFindMany: vi.fn(),
     counselingSessionFindMany: vi.fn(),
     homeVisitFindMany: vi.fn(),
@@ -15,7 +17,11 @@ vi.mock("@/lib/database/prisma", () => ({
         student: { findUnique: prismaMocks.studentFindUnique },
         phqResult: { findMany: prismaMocks.phqResultFindMany },
         activityProgress: { findMany: prismaMocks.activityProgressFindMany },
-        studentReferral: { findFirst: prismaMocks.studentReferralFindFirst },
+        studentReferral: {
+            findFirst: prismaMocks.studentReferralFindFirst,
+            findMany: prismaMocks.studentReferralFindMany,
+        },
+        user: { findMany: prismaMocks.userFindMany },
         teacher: { findMany: prismaMocks.teacherFindMany },
         counselingSession: { findMany: prismaMocks.counselingSessionFindMany },
         homeVisit: { findMany: prismaMocks.homeVisitFindMany },
@@ -40,6 +46,8 @@ describe("getStudentCareRecords", () => {
             createPhqRow(oldPhqId, 1, new Date("2026-06-07T00:00:00.000Z")),
         ]);
         prismaMocks.studentReferralFindFirst.mockResolvedValue(null);
+        prismaMocks.studentReferralFindMany.mockResolvedValue([]);
+        prismaMocks.userFindMany.mockResolvedValue([]);
         prismaMocks.activityProgressFindMany.mockResolvedValue([]);
         prismaMocks.teacherFindMany.mockResolvedValue([]);
         prismaMocks.counselingSessionFindMany.mockResolvedValue([]);
@@ -63,6 +71,47 @@ describe("getStudentCareRecords", () => {
         expect(result?.activityProgress[1]?.assessmentRound).toBe(1);
     });
 
+    it("returns complete referral history with the active row highlighted", async () => {
+        prismaMocks.studentReferralFindMany.mockResolvedValue([
+            createReferralRow("active", "2026-07-03T00:00:00.000Z", {
+                toTeacherUserId: "receiver-new",
+            }),
+            createReferralRow("revoked", "2026-07-01T00:00:00.000Z", {
+                revokedAt: new Date("2026-07-02T00:00:00.000Z"),
+                revokedById: "revoker-1",
+                revokeReason: "ส่งต่อผิดคน",
+            }),
+            createReferralRow("closed", "2026-06-01T00:00:00.000Z", {
+                closedAt: new Date("2026-06-02T00:00:00.000Z"),
+            }),
+        ]);
+        prismaMocks.userFindMany.mockResolvedValue([
+            {
+                id: "revoker-1",
+                name: null,
+                email: "revoker@example.test",
+                teacher: { firstName: "ผู้เรียก", lastName: "คืน" },
+            },
+        ]);
+
+        const result = await getStudentCareRecords(studentId);
+
+        expect(result?.referralHistory.map((record) => record.id)).toEqual([
+            "active",
+            "revoked",
+            "closed",
+        ]);
+        expect(result?.referral?.id).toBe("active");
+        expect(result?.referralHistory[1]).toEqual(
+            expect.objectContaining({
+                status: "revoked",
+                revokedByName: "ผู้เรียก คืน",
+                revokeReason: "ส่งต่อผิดคน",
+            }),
+        );
+        expect(result?.referralHistory[2]?.status).toBe("closed");
+    });
+
     it("marks only PHQ results from the latest term as editable", async () => {
         const result = await getStudentCareRecords(studentId);
 
@@ -72,6 +121,28 @@ describe("getStudentCareRecords", () => {
         ]);
     });
 });
+
+function createReferralRow(
+    id: string,
+    createdAt: string,
+    overrides: Record<string, unknown> = {},
+) {
+    return {
+        id,
+        studentId,
+        fromTeacherUserId: "sender-1",
+        toTeacherUserId: "receiver-1",
+        createdAt: new Date(createdAt),
+        updatedAt: new Date(createdAt),
+        revokedAt: null,
+        revokedById: null,
+        revokeReason: null,
+        closedAt: null,
+        fromTeacher: { teacher: { firstName: "ผู้ส่ง", lastName: "หนึ่ง" } },
+        toTeacher: { teacher: { firstName: "ผู้รับ", lastName: "หนึ่ง" } },
+        ...overrides,
+    };
+}
 
 function createPhqRow(id: string, round: number, createdAt: Date) {
     return {

@@ -92,6 +92,7 @@ export function SystemCareRecordsPanel({ studentId }: { studentId: string }) {
             </FilterSelect> : null}
             <SummaryGrid data={filteredData} />
             <SystemCareAdminPanel
+                studentId={studentId}
                 data={filteredData}
                 setData={setData}
                 allowMutations={allowMutations}

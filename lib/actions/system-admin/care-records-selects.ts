@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { getReferralStatus } from "@/types/referral.types";
 import type {
     SystemActivityRecord,
     SystemCounselingRecord,
@@ -96,6 +97,10 @@ export const REFERRAL_SELECT = {
     toTeacherUserId: true,
     createdAt: true,
     updatedAt: true,
+    revokedAt: true,
+    revokedById: true,
+    revokeReason: true,
+    closedAt: true,
     student: { select: { schoolId: true } },
     fromTeacher: { select: { teacher: { select: { firstName: true, lastName: true } } } },
     toTeacher: { select: { teacher: { select: { firstName: true, lastName: true } } } },
@@ -177,12 +182,19 @@ export function toActivityRecord(row: ActivityRow): SystemActivityRecord {
 export function toReferralRecord(row: ReferralRow): SystemReferralRecord {
     return {
         id: row.id,
+        studentId: row.studentId,
         fromTeacherUserId: row.fromTeacherUserId,
         toTeacherUserId: row.toTeacherUserId,
         fromTeacherName: formatTeacherName(row.fromTeacher.teacher),
         toTeacherName: formatTeacherName(row.toTeacher.teacher),
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
+        revokedAt: row.revokedAt,
+        revokedById: row.revokedById,
+        revokedByName: row.revokedById,
+        revokeReason: row.revokeReason,
+        closedAt: row.closedAt,
+        status: getReferralStatus(row),
     };
 }
 

@@ -14,6 +14,33 @@ export interface ReferralInfo {
     createdAt: Date;
 }
 
+export type ReferralStatus = "active" | "revoked" | "closed";
+
+export interface ReferralHistoryRecord {
+    id: string;
+    studentId: string;
+    fromTeacherUserId: string;
+    toTeacherUserId: string;
+    fromTeacherName: string | null;
+    toTeacherName: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    revokedAt: Date | null;
+    revokedById: string | null;
+    revokedByName: string | null;
+    revokeReason: string | null;
+    closedAt: Date | null;
+    status: ReferralStatus;
+}
+
+export function getReferralStatus(
+    referral: Pick<ReferralHistoryRecord, "revokedAt" | "closedAt">,
+): ReferralStatus {
+    if (referral.revokedAt) return "revoked";
+    if (referral.closedAt) return "closed";
+    return "active";
+}
+
 /** Response from referral create/revoke actions */
 export interface ReferralActionResponse {
     success: boolean;

@@ -6,6 +6,7 @@ import { Activity } from "lucide-react";
 import { toast } from "sonner";
 import {
     deleteSystemAdminReferral,
+    getSystemStudentCareRecords,
     resetSystemAdminActivity,
     updateSystemAdminPhq,
 } from "@/lib/actions/system-admin.actions";
@@ -28,10 +29,12 @@ import {
 } from "./SystemCareRecordViews";
 
 export function SystemCareAdminPanel({
+    studentId,
     data,
     setData,
     allowMutations,
 }: {
+    studentId: string;
     data: SystemCareRecordResponse;
     setData: Dispatch<SetStateAction<SystemCareRecordResponse | null>>;
     allowMutations: boolean;
@@ -99,7 +102,14 @@ export function SystemCareAdminPanel({
                 toast.error(result.message);
                 return;
             }
-            setData((current) => current ? { ...current, referral: null } : current);
+            const refreshed = await getSystemStudentCareRecords({ studentId });
+            if (refreshed) {
+                setData(refreshed);
+            } else {
+                setData((current) =>
+                    markReferralRevoked(current, referral.id, deleteReason),
+                );
+            }
             setIsDeletingReferral(false);
             setDeleteReason("");
             toast.success(result.message);
@@ -154,6 +164,7 @@ export function SystemCareAdminPanel({
 
             <SystemCareReferralSection
                 referral={data.referral}
+                referralHistory={data.referralHistory}
                 onDelete={allowMutations ? () => setIsDeletingReferral(true) : undefined}
             />
             {isDeletingReferral ? (
@@ -169,6 +180,30 @@ export function SystemCareAdminPanel({
             ) : null}
         </>
     );
+}
+
+function markReferralRevoked(
+    current: SystemCareRecordResponse | null,
+    referralId: string,
+    reason: string,
+): SystemCareRecordResponse | null {
+    if (!current) return current;
+    return {
+        ...current,
+        referral: null,
+        referralHistory: current.referralHistory.map((record) =>
+            record.id === referralId
+                ? {
+                      ...record,
+                      status: "revoked",
+                      revokedAt: new Date(),
+                      revokedById: null,
+                      revokedByName: null,
+                      revokeReason: reason.trim() || record.revokeReason,
+                  }
+                : record,
+        ),
+    };
 }
 
 function updatePhqData(

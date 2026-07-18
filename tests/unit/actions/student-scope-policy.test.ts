@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
     studentCount: vi.fn(),
     studentFindMany: vi.fn(),
     studentFindFirst: vi.fn(),
+    studentReferralFindMany: vi.fn(),
+    userFindMany: vi.fn(),
     studentGroupBy: vi.fn(),
     queryRaw: vi.fn(),
 }));
@@ -16,6 +18,8 @@ vi.mock("@/lib/database/prisma", () => ({
             findFirst: mocks.studentFindFirst,
             groupBy: mocks.studentGroupBy,
         },
+        studentReferral: { findMany: mocks.studentReferralFindMany },
+        user: { findMany: mocks.userFindMany },
         $queryRaw: mocks.queryRaw,
     },
 }));
@@ -47,6 +51,8 @@ describe("class_teacher student scope policy", () => {
         mocks.studentCount.mockResolvedValue(0);
         mocks.studentFindMany.mockResolvedValue([]);
         mocks.studentFindFirst.mockResolvedValue(null);
+        mocks.studentReferralFindMany.mockResolvedValue([]);
+        mocks.userFindMany.mockResolvedValue([]);
         mocks.studentGroupBy.mockResolvedValue([]);
         mocks.queryRaw.mockResolvedValue([]);
     });
@@ -161,5 +167,6 @@ describe("class_teacher student scope policy", () => {
         );
         const where = mocks.studentFindFirst.mock.calls[0]?.[0]?.where;
         expect(collectSql(where)).not.toContain("toTeacherUserId");
+        expect(mocks.studentReferralFindMany).not.toHaveBeenCalled();
     });
 });
