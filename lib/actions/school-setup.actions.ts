@@ -186,6 +186,8 @@ const expectedStudentCountSchema = z
         `จำนวนนักเรียนต้องไม่เกิน ${INPUT_LIMITS.school.classStudentCount} คน`,
     );
 
+class SchoolClaimError extends Error {}
+
 /**
  * สร้างโรงเรียนและผูก schoolId เข้ากับ user ปัจจุบัน (school_admin only)
  */
@@ -196,10 +198,13 @@ export async function createSchoolAndLink(input: {
     try {
         const session = await requireAuth();
 
-        if (session.user.role === "system_admin") {
+        if (session.user.role !== "school_admin") {
             return {
                 success: false,
-                message: "system_admin ไม่ต้องตั้งค่าโรงเรียน",
+                message:
+                    session.user.role === "system_admin"
+                        ? "system_admin ไม่ต้องตั้งค่าโรงเรียน"
+                        : "ไม่มีสิทธิ์สร้างโรงเรียน",
             };
         }
 
@@ -208,19 +213,8 @@ export async function createSchoolAndLink(input: {
             return { success: false, message: parsed.error.issues[0].message };
         }
 
-        // Transaction prevents race condition (double-click creating duplicate schools)
         const school = await prisma.$transaction(
             async (tx) => {
-                // Re-check inside transaction to prevent concurrent double-create
-                const user = await tx.user.findUnique({
-                    where: { id: session.user.id },
-                    select: { schoolId: true },
-                });
-
-                if (user?.schoolId) {
-                    return null; // Already has a school
-                }
-
                 const newSchool = await tx.school.create({
                     data: {
                         name: parsed.data.name,
@@ -228,19 +222,27 @@ export async function createSchoolAndLink(input: {
                     },
                 });
 
-                await tx.user.update({
-                    where: { id: session.user.id },
-                    data: { schoolId: newSchool.id },
+                // The conditional write is the lock-free claim that prevents concurrent requests.
+                const claimedUser = await tx.user.updateMany({
+                    where: {
+                        id: session.user.id,
+                        role: "school_admin",
+                        schoolId: null,
+                    },
+                    data: {
+                        schoolId: newSchool.id,
+                        isPrimary: true,
+                    },
                 });
+
+                if (claimedUser.count !== 1) {
+                    throw new SchoolClaimError();
+                }
 
                 return newSchool;
             },
             { maxWait: 10000, timeout: 15000 },
         );
-
-        if (!school) {
-            return { success: false, message: "คุณมีโรงเรียนอยู่แล้ว" };
-        }
 
         revalidateDashboardCache();
 
@@ -250,6 +252,13 @@ export async function createSchoolAndLink(input: {
             data: { schoolId: school.id },
         };
     } catch (error) {
+        if (error instanceof SchoolClaimError) {
+            return {
+                success: false,
+                message: "คุณมีโรงเรียนอยู่แล้วหรือไม่มีสิทธิ์สร้างโรงเรียน",
+            };
+        }
+
         return handleActionError({
             context: "createSchoolAndLink error:",
             error,
