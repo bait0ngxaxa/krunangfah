@@ -4,7 +4,7 @@ const prismaMocks = vi.hoisted(() => ({
     studentFindUnique: vi.fn(),
     phqResultFindMany: vi.fn(),
     activityProgressFindMany: vi.fn(),
-    studentReferralFindUnique: vi.fn(),
+    studentReferralFindFirst: vi.fn(),
     teacherFindMany: vi.fn(),
     counselingSessionFindMany: vi.fn(),
     homeVisitFindMany: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock("@/lib/database/prisma", () => ({
         student: { findUnique: prismaMocks.studentFindUnique },
         phqResult: { findMany: prismaMocks.phqResultFindMany },
         activityProgress: { findMany: prismaMocks.activityProgressFindMany },
-        studentReferral: { findUnique: prismaMocks.studentReferralFindUnique },
+        studentReferral: { findFirst: prismaMocks.studentReferralFindFirst },
         teacher: { findMany: prismaMocks.teacherFindMany },
         counselingSession: { findMany: prismaMocks.counselingSessionFindMany },
         homeVisit: { findMany: prismaMocks.homeVisitFindMany },
@@ -39,7 +39,7 @@ describe("getStudentCareRecords", () => {
             createPhqRow(latestPhqId, 2, new Date("2026-07-07T00:00:00.000Z")),
             createPhqRow(oldPhqId, 1, new Date("2026-06-07T00:00:00.000Z")),
         ]);
-        prismaMocks.studentReferralFindUnique.mockResolvedValue(null);
+        prismaMocks.studentReferralFindFirst.mockResolvedValue(null);
         prismaMocks.activityProgressFindMany.mockResolvedValue([]);
         prismaMocks.teacherFindMany.mockResolvedValue([]);
         prismaMocks.counselingSessionFindMany.mockResolvedValue([]);

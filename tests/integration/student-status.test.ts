@@ -45,7 +45,7 @@ describe("Integration: updateStudentStatus", () => {
         schoolId = school.id;
 
         const academicYear = await createTestAcademicYear({
-            year: 2599,
+            year: 2699,
             semester: 1,
         });
         academicYearId = academicYear.id;

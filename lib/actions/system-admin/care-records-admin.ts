@@ -135,8 +135,12 @@ export async function saveSystemReferral(
     const toTeacher = await findTeacherInSchool(input.toTeacherUserId, student.schoolId);
     if (!toTeacher) return { success: false, message: "ไม่พบครูปลายทางในโรงเรียนเดียวกัน" };
 
-    const existing = await prisma.studentReferral.findUnique({
-        where: { studentId: student.id },
+    const existing = await prisma.studentReferral.findFirst({
+        where: {
+            studentId: student.id,
+            revokedAt: null,
+            closedAt: null,
+        },
         select: REFERRAL_SELECT,
     });
     const changes = createChanges([
@@ -146,11 +150,8 @@ export async function saveSystemReferral(
 
     const updated = await prisma.$transaction(async (tx) => {
         const row = existing
-            ? await updateReferral(tx, existing.id, input, actor)
-            : await tx.studentReferral.create({
-                  data: { studentId: student.id, fromTeacherUserId: actor.id, toTeacherUserId: input.toTeacherUserId },
-                  select: REFERRAL_SELECT,
-              });
+            ? await replaceReferral(tx, existing.id, input, actor)
+            : await createReferral(tx, input, actor);
         if (!row) return null;
         await createSystemAdminEditEvent({
             tx,
@@ -181,10 +182,28 @@ export async function deleteSystemReferral(
     if (!existing) return { success: false, message: "ไม่พบการส่งต่อ" };
 
     const deleted = await prisma.$transaction(async (tx) => {
-        const write = await tx.studentReferral.deleteMany({
-            where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
+        const write = await tx.studentReferral.updateMany({
+            where: {
+                id: existing.id,
+                updatedAt: input.expectedUpdatedAt,
+                revokedAt: null,
+                closedAt: null,
+            },
+            data: {
+                revokedAt: new Date(),
+                revokedById: actor.id,
+                revokeReason: input.reason,
+            },
         });
         if (write.count !== 1) return false;
+        const released = await tx.student.updateMany({
+            where: {
+                id: existing.studentId,
+                activeReferralId: existing.id,
+            },
+            data: { activeReferralId: null },
+        });
+        if (released.count !== 1) return false;
         await createSystemAdminEditEvent({
             tx,
             targetType: "studentReferral",
@@ -208,19 +227,50 @@ function toScores(input: SystemPhqEditInput) {
     return { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b };
 }
 
-async function updateReferral(
+async function replaceReferral(
     tx: Prisma.TransactionClient,
     id: string,
     input: SystemReferralEditInput,
     actor: Actor,
 ) {
     if (!input.expectedUpdatedAt) return null;
-    const write = await tx.studentReferral.updateMany({
-        where: { id, updatedAt: input.expectedUpdatedAt },
-        data: { fromTeacherUserId: actor.id, toTeacherUserId: input.toTeacherUserId },
+    const closed = await tx.studentReferral.updateMany({
+        where: {
+            id,
+            updatedAt: input.expectedUpdatedAt,
+            revokedAt: null,
+            closedAt: null,
+        },
+        data: { closedAt: new Date() },
     });
-    if (write.count !== 1) return null;
-    return tx.studentReferral.findUniqueOrThrow({ where: { id }, select: REFERRAL_SELECT });
+    if (closed.count !== 1) return null;
+
+    const released = await tx.student.updateMany({
+        where: { id: input.studentId, activeReferralId: id },
+        data: { activeReferralId: null },
+    });
+    if (released.count !== 1) return null;
+    return createReferral(tx, input, actor);
+}
+
+async function createReferral(
+    tx: Prisma.TransactionClient,
+    input: SystemReferralEditInput,
+    actor: Actor,
+) {
+    const row = await tx.studentReferral.create({
+        data: {
+            studentId: input.studentId,
+            fromTeacherUserId: actor.id,
+            toTeacherUserId: input.toTeacherUserId,
+        },
+        select: REFERRAL_SELECT,
+    });
+    const claimed = await tx.student.updateMany({
+        where: { id: input.studentId, activeReferralId: null },
+        data: { activeReferralId: row.id },
+    });
+    return claimed.count === 1 ? row : null;
 }
 
 async function findTeacherInSchool(userId: string, schoolId: string) {

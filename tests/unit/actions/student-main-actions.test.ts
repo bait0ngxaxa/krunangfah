@@ -82,6 +82,7 @@ function createSearchResult(nationalId: string) {
         testDataMarkedById: null,
         testDataReason: null,
         phqResults: [],
+        activeReferralId: null,
         referral: null,
     };
 }

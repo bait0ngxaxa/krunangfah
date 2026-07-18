@@ -140,12 +140,16 @@ describe("Integration: Worksheet Access Control", () => {
             { status: "in_progress" },
         );
 
-        await prisma.studentReferral.create({
+        const referral = await prisma.studentReferral.create({
             data: {
                 studentId: ownStudent.id,
                 fromTeacherUserId: USERS.classTeacher.id,
                 toTeacherUserId: USERS.schoolAdmin.id,
             },
+        });
+        await prisma.student.update({
+            where: { id: ownStudent.id },
+            data: { activeReferralId: referral.id },
         });
 
         const upload = await prisma.worksheetUpload.create({

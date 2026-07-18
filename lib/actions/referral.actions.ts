@@ -20,6 +20,10 @@ import {
 } from "@/lib/validations/referral.validation";
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 import { getViewerContext } from "@/lib/auth/viewer-context";
+import {
+    createActiveStudentReferral,
+    revokeActiveStudentReferral,
+} from "@/lib/services/student-referral-command";
 import type {
     ReferralActionResponse,
     TeacherPickerOption,
@@ -27,8 +31,8 @@ import type {
 } from "@/types/referral.types";
 
 /**
- * Create or replace a student referral
- * Upserts on studentId — one active referral per student
+ * Create a new active student referral.
+ * Previous revoked or closed rows remain immutable history.
  */
 export async function createStudentReferral(input: {
     studentId: string;
@@ -136,19 +140,17 @@ export async function createStudentReferral(input: {
             }
         }
 
-        // Upsert — one referral per student
-        const referral = await prisma.studentReferral.upsert({
-            where: { studentId: validated.studentId },
-            update: {
-                fromTeacherUserId: userId,
-                toTeacherUserId: validated.toTeacherUserId,
-            },
-            create: {
-                studentId: validated.studentId,
-                fromTeacherUserId: userId,
-                toTeacherUserId: validated.toTeacherUserId,
-            },
+        const referral = await createActiveStudentReferral({
+            studentId: validated.studentId,
+            fromTeacherUserId: userId,
+            toTeacherUserId: validated.toTeacherUserId,
         });
+        if (!referral) {
+            return {
+                success: false,
+                message: "นักเรียนมีการส่งต่อที่กำลังดำเนินการอยู่แล้ว",
+            };
+        }
 
         revalidateStudentsCache(student.schoolId, student.id);
 
@@ -233,9 +235,16 @@ export async function revokeStudentReferral(input: {
             }
         }
 
-        await prisma.studentReferral.delete({
-            where: { id: validated.referralId },
+        const revoked = await revokeActiveStudentReferral({
+            referralId: validated.referralId,
+            revokedById: userId,
         });
+        if (!revoked) {
+            return {
+                success: false,
+                message: "การส่งต่อนี้ถูกเรียกคืนหรือปิดแล้ว",
+            };
+        }
 
         revalidateStudentsCache(referral.student.schoolId, referral.studentId);
 
@@ -263,6 +272,8 @@ export async function getReferredOutStudents(): Promise<ReferredOutStudent[]> {
         const referrals = await prisma.studentReferral.findMany({
             where: {
                 fromTeacherUserId: viewer.userId,
+                revokedAt: null,
+                closedAt: null,
                 ...(viewer.role === "class_teacher"
                     ? {
                           student: {

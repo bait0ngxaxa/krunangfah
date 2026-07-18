@@ -309,7 +309,9 @@ model Student {
   phqResults       PhqResult[]
   activityProgress ActivityProgress[]
   counselingSessions CounselingSession[]
-  referral         StudentReferral?
+  activeReferralId String?            @unique
+  referral         StudentReferral?   @relation("ActiveStudentReferral", fields: [activeReferralId], references: [id], onDelete: SetNull)
+  referralHistory  StudentReferral[]  @relation("StudentReferralHistory")
   homeVisits       HomeVisit[]
 
   @@unique([studentId, schoolId]) // ป้องกันซ้ำ: รหัสนักเรียน + โรงเรียน
@@ -559,17 +561,23 @@ model PasswordResetToken {
 
 // Student Referral - ส่งต่อนักเรียนระหว่างครู
 model StudentReferral {
-  id                String   @id @default(cuid())
-  studentId         String   @unique  // 1 referral ต่อ 1 นักเรียน
-  fromTeacherUserId String   // userId ครูที่ส่งต่อ
-  toTeacherUserId   String   // userId ครูที่รับดูแล
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                String    @id @default(cuid())
+  studentId         String
+  fromTeacherUserId String
+  toTeacherUserId   String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  revokedAt         DateTime?
+  revokedById       String?
+  revokeReason      String?   @db.Text
+  closedAt          DateTime?
 
-  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  fromTeacher User    @relation("ReferralsFrom", fields: [fromTeacherUserId], references: [id])
-  toTeacher   User    @relation("ReferralsTo", fields: [toTeacherUserId], references: [id])
+  student          Student  @relation("StudentReferralHistory", fields: [studentId], references: [id], onDelete: Cascade)
+  activeForStudent Student? @relation("ActiveStudentReferral")
+  fromTeacher      User     @relation("ReferralsFrom", fields: [fromTeacherUserId], references: [id])
+  toTeacher        User     @relation("ReferralsTo", fields: [toTeacherUserId], references: [id])
 
+  @@index([studentId, createdAt(sort: Desc)])
   @@index([fromTeacherUserId])
   @@index([toTeacherUserId])
   @@map("student_referrals")

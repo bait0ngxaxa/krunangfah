@@ -47,11 +47,15 @@ export function buildReferredStudentSql(
             SELECT 1 FROM student_referrals sr
             WHERE sr."studentId" = s.id
               AND sr."fromTeacherUserId" = ${userId}
+              AND sr."revokedAt" IS NULL
+              AND sr."closedAt" IS NULL
         )`;
     }
 
     return Prisma.sql`AND EXISTS (
         SELECT 1 FROM student_referrals sr
         WHERE sr."studentId" = s.id
+          AND sr."revokedAt" IS NULL
+          AND sr."closedAt" IS NULL
     )`;
 }

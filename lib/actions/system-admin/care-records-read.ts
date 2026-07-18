@@ -156,8 +156,8 @@ async function getActivitySummaries(studentId: string) {
 }
 
 async function getReferralSummary(studentId: string) {
-    const row = await prisma.studentReferral.findUnique({
-        where: { studentId },
+    const row = await prisma.studentReferral.findFirst({
+        where: { studentId, revokedAt: null, closedAt: null },
         select: {
             id: true,
             fromTeacherUserId: true,

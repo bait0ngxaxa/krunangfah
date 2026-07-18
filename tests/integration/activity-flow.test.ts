@@ -210,12 +210,16 @@ describe("Integration: Activity Flow", () => {
 
     describe("referred student - class_teacher manage lock", () => {
         it("blocks class_teacher from submitting assessment after referral", async () => {
-            await prisma.studentReferral.create({
+            const referral = await prisma.studentReferral.create({
                 data: {
                     studentId,
                     fromTeacherUserId: USERS.classTeacher.id,
                     toTeacherUserId: USERS.schoolAdmin.id,
                 },
+            });
+            await prisma.student.update({
+                where: { id: studentId },
+                data: { activeReferralId: referral.id },
             });
 
             mockSession(USERS.classTeacher);
@@ -230,9 +234,11 @@ describe("Integration: Activity Flow", () => {
                 "นักเรียนคนนี้ถูกส่งต่อแล้ว ครูประจำชั้นไม่สามารถทำกิจกรรมต่อได้",
             );
 
-            await prisma.studentReferral.delete({
-                where: { studentId },
+            await prisma.student.update({
+                where: { id: studentId },
+                data: { activeReferralId: null },
             });
+            await prisma.studentReferral.deleteMany({ where: { studentId } });
         });
 
         it("blocks class_teacher from confirming activity after referral", async () => {
@@ -243,12 +249,16 @@ describe("Integration: Activity Flow", () => {
                 { status: "in_progress" },
             );
 
-            await prisma.studentReferral.create({
+            const referral = await prisma.studentReferral.create({
                 data: {
                     studentId,
                     fromTeacherUserId: USERS.classTeacher.id,
                     toTeacherUserId: USERS.schoolAdmin.id,
                 },
+            });
+            await prisma.student.update({
+                where: { id: studentId },
+                data: { activeReferralId: referral.id },
             });
 
             mockSession(USERS.classTeacher);
@@ -266,9 +276,11 @@ describe("Integration: Activity Flow", () => {
             expect(unchanged?.status).toBe("in_progress");
             expect(unchanged?.completedAt).toBeNull();
 
-            await prisma.studentReferral.delete({
-                where: { studentId },
+            await prisma.student.update({
+                where: { id: studentId },
+                data: { activeReferralId: null },
             });
+            await prisma.studentReferral.deleteMany({ where: { studentId } });
         });
     });
 

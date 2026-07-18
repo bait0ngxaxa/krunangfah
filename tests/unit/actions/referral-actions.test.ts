@@ -4,6 +4,7 @@ import {
     getReferredOutStudents,
     getTeachersForReferral,
 } from "@/lib/actions/referral.actions";
+import { createActiveStudentReferral } from "@/lib/services/student-referral-command";
 
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
@@ -21,6 +22,11 @@ vi.mock("@/lib/database/prisma", () => ({
             upsert: vi.fn(),
         },
     },
+}));
+
+vi.mock("@/lib/services/student-referral-command", () => ({
+    createActiveStudentReferral: vi.fn(),
+    revokeActiveStudentReferral: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/session", () => ({
@@ -90,7 +96,7 @@ describe("referral actions business rules", () => {
                     role: "school_admin",
                 } as never);
 
-            vi.mocked(prisma.studentReferral.upsert).mockResolvedValue({
+            vi.mocked(createActiveStudentReferral).mockResolvedValue({
                 id: "ref-1",
                 studentId: validStudentId,
                 fromTeacherUserId: validClassTeacherUserId,
@@ -104,7 +110,7 @@ describe("referral actions business rules", () => {
             });
 
             expect(result.success).toBe(true);
-            expect(prisma.studentReferral.upsert).toHaveBeenCalledOnce();
+            expect(createActiveStudentReferral).toHaveBeenCalledOnce();
         });
 
         it("rejects class_teacher when student is outside advisoryClass", async () => {
@@ -152,7 +158,7 @@ describe("referral actions business rules", () => {
             expect(result.message).toBe(
                 "คุณสามารถส่งต่อได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
             );
-            expect(prisma.studentReferral.upsert).not.toHaveBeenCalled();
+            expect(createActiveStudentReferral).not.toHaveBeenCalled();
         });
 
         it("rejects referral target that is not school_admin", async () => {
@@ -236,7 +242,7 @@ describe("referral actions business rules", () => {
 
             expect(result.success).toBe(false);
             expect(result.message).toContain("เรียนจบ");
-            expect(prisma.studentReferral.upsert).not.toHaveBeenCalled();
+            expect(createActiveStudentReferral).not.toHaveBeenCalled();
         });
     });
 
@@ -304,6 +310,8 @@ describe("referral actions business rules", () => {
                 expect.objectContaining({
                     where: {
                         fromTeacherUserId: validClassTeacherUserId,
+                        revokedAt: null,
+                        closedAt: null,
                         student: {
                             class: "ม.1/1",
                             disabledAt: null,

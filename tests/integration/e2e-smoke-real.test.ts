@@ -246,20 +246,32 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
             await getStudentDashboardData({ classFilter: "class-1" }),
         );
 
-        await prisma.studentReferral.createMany({
-            data: [
-                {
+        const [outgoing, incoming] = await Promise.all([
+            prisma.studentReferral.create({
+                data: {
                     studentId: class1StudentDbId,
                     fromTeacherUserId: USERS.classTeacher.id,
                     toTeacherUserId: USERS.schoolAdmin.id,
                 },
-                {
+            }),
+            prisma.studentReferral.create({
+                data: {
                     studentId: class2Student.id,
                     fromTeacherUserId: USERS.schoolAdmin.id,
                     toTeacherUserId: USERS.classTeacher.id,
                 },
-            ],
-        });
+            }),
+        ]);
+        await Promise.all([
+            prisma.student.update({
+                where: { id: class1StudentDbId },
+                data: { activeReferralId: outgoing.id },
+            }),
+            prisma.student.update({
+                where: { id: class2Student.id },
+                data: { activeReferralId: incoming.id },
+            }),
+        ]);
 
         try {
             const [afterResult, list, search, detail, referredResult] = await Promise.all([
