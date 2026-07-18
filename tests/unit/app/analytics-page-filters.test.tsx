@@ -36,8 +36,7 @@ const analyticsData: AnalyticsData = {
     selectedAcademicTermExists: true,
     riskLevelSummary: [],
     availableClasses: ["ม.1/1"],
-    availableAcademicYears: [2569],
-    availableSemesters: [1],
+    availableAcademicTerms: [{ id: "term-2569-1", year: 2569, semester: 1 }],
     availableRounds: [1],
     trendData: [],
     activityProgressByRisk: [],
@@ -59,8 +58,10 @@ const systemOverview: SystemAnalyticsOverview = {
     studentsWithAssessment: 80,
     screeningCoveragePercent: 80,
     academicYearLabel: "ปีการศึกษา 2569 เทอม 2",
-    availableAcademicYears: [2568, 2569],
-    availableSemesters: [1, 2],
+    availableAcademicTerms: [
+        { id: "term-2568-1", year: 2568, semester: 1 },
+        { id: "term-2569-2", year: 2569, semester: 2 },
+    ],
     currentAcademicYear: 2569,
     currentSemester: 2,
 };
@@ -83,6 +84,29 @@ describe("Analytics page filter validation", () => {
         ).rejects.toThrow("REDIRECT:/analytics");
 
         expect(mocks.getAnalyticsSummary).not.toHaveBeenCalled();
+    });
+
+    it("canonicalizes a year-semester pair that does not exist", async () => {
+        mocks.getAnalyticsSummary.mockResolvedValue({
+            status: "success",
+            data: { ...analyticsData, selectedAcademicTermExists: false },
+        });
+        await expect(
+            AnalyticsPage({
+                searchParams: Promise.resolve({
+                    year: "2569",
+                    semester: "2",
+                }),
+            }),
+        ).rejects.toThrow("REDIRECT:/analytics?year=2569");
+
+        expect(mocks.getAnalyticsSummary).toHaveBeenCalledWith(
+            undefined,
+            "all",
+            2569,
+            2,
+            undefined,
+        );
     });
 
     it("does not relabel a queried but unavailable year as all years", async () => {
@@ -134,8 +158,7 @@ describe("Analytics page filter validation", () => {
             status: "success",
             data: {
                 ...analyticsData,
-                availableAcademicYears: [],
-                availableSemesters: [],
+                availableAcademicTerms: [],
                 selectedAcademicTermExists: true,
             },
         });

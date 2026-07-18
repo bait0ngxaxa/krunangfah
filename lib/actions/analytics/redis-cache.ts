@@ -29,6 +29,20 @@ function isNumberArray(value: unknown): value is number[] {
     return Array.isArray(value) && value.every((item) => typeof item === "number");
 }
 
+function isAcademicTermArray(value: unknown): boolean {
+    return (
+        Array.isArray(value) &&
+        value.every((item) => {
+            if (!isRecord(item)) return false;
+            return (
+                typeof item.id === "string" &&
+                typeof item.year === "number" &&
+                typeof item.semester === "number"
+            );
+        })
+    );
+}
+
 function isRiskLevelSummary(value: unknown): boolean {
     if (!isRecord(value)) return false;
     return (
@@ -115,8 +129,7 @@ function isAnalyticsData(value: unknown): value is AnalyticsData {
             typeof value.screeningCoveragePercent === "number") &&
         typeof value.selectedAcademicTermExists === "boolean" &&
         isStringArray(value.availableClasses) &&
-        isNumberArray(value.availableAcademicYears) &&
-        isNumberArray(value.availableSemesters) &&
+        isAcademicTermArray(value.availableAcademicTerms) &&
         isNumberArray(value.availableRounds) &&
         (value.currentClass === undefined ||
             typeof value.currentClass === "string") &&
@@ -147,8 +160,7 @@ function isSystemAnalyticsOverview(value: unknown): value is SystemAnalyticsOver
         typeof value.studentsWithAssessment === "number" &&
         typeof value.screeningCoveragePercent === "number" &&
         typeof value.academicYearLabel === "string" &&
-        isNumberArray(value.availableAcademicYears) &&
-        isNumberArray(value.availableSemesters) &&
+        isAcademicTermArray(value.availableAcademicTerms) &&
         (value.currentAcademicYear === undefined ||
             typeof value.currentAcademicYear === "number") &&
         (value.currentSemester === undefined ||

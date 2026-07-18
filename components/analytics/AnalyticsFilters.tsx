@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useOptimistic, useRef, useTransition } from "react";
 import { RotateCcw } from "lucide-react";
 
+import type { AcademicTermOption } from "@/lib/actions/analytics/types";
 import { AcademicYearFilter } from "./filters/AcademicYearFilter";
 import { AssessmentRoundFilter } from "./filters/AssessmentRoundFilter";
 import { ClassFilter } from "./filters/ClassFilter";
@@ -28,8 +29,7 @@ interface SchoolOption {
 interface AnalyticsFiltersProps {
     schools?: SchoolOption[];
     availableClasses: string[];
-    availableYears: number[];
-    availableSemesters: number[];
+    availableAcademicTerms: AcademicTermOption[];
     availableRounds: number[];
     selectedSchoolId: string;
     selectedClass: string;
@@ -51,11 +51,22 @@ function uniqueNumbers(values: number[]): number[] {
     return Array.from(new Set(values));
 }
 
+export function getSemestersForYear(
+    terms: AcademicTermOption[],
+    selectedYear: string,
+): number[] {
+    const year = Number(selectedYear);
+    return uniqueNumbers(
+        terms
+            .filter((term) => selectedYear === "all" || term.year === year)
+            .map((term) => term.semester),
+    ).sort((left, right) => left - right);
+}
+
 export function AnalyticsFilters({
     schools,
     availableClasses,
-    availableYears,
-    availableSemesters,
+    availableAcademicTerms,
     availableRounds,
     selectedSchoolId,
     selectedClass,
@@ -110,8 +121,17 @@ export function AnalyticsFilters({
         optimisticFilters.semester !== "all" ||
         optimisticFilters.round !== "all";
     const safeAvailableClasses = uniqueStrings(availableClasses);
-    const safeAvailableYears = uniqueNumbers(availableYears);
-    const safeAvailableSemesters = uniqueNumbers(availableSemesters);
+    const safeAvailableTerms = availableAcademicTerms.filter(
+        (term, index, terms) =>
+            terms.findIndex((candidate) => candidate.id === term.id) === index,
+    );
+    const safeAvailableYears = uniqueNumbers(
+        safeAvailableTerms.map((term) => term.year),
+    ).sort((left, right) => right - left);
+    const safeAvailableSemesters = getSemestersForYear(
+        safeAvailableTerms,
+        optimisticFilters.year,
+    );
     const safeAvailableRounds = uniqueNumbers(availableRounds);
 
     const updateParams = (updates: FilterUpdates): void => {

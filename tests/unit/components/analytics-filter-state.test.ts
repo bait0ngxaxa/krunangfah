@@ -6,6 +6,7 @@ import {
     buildFilterUrl,
     type FilterState,
 } from "@/components/analytics/filter-state";
+import { getSemestersForYear } from "@/components/analytics/AnalyticsFilters";
 
 describe("analytics filter state", () => {
     it("applies rapid updates from the latest pending state", () => {
@@ -91,5 +92,20 @@ describe("analytics filter state", () => {
         expect(exportUrl).toBe(
             "/api/v1/exports/named-submission?school=cm9lt9j8f0000z1ntt9r2w0ab&class=%E0%B8%A1.2%2F5&year=2569&semester=1&round=2",
         );
+    });
+});
+
+
+
+describe("analytics academic term options", () => {
+    it("limits semester options to the selected academic year", () => {
+        const terms = [
+            { id: "term-2568-1", year: 2568, semester: 1 },
+            { id: "term-2568-2", year: 2568, semester: 2 },
+            { id: "term-2569-1", year: 2569, semester: 1 },
+        ];
+
+        expect(getSemestersForYear(terms, "2568")).toEqual([1, 2]);
+        expect(getSemestersForYear(terms, "2569")).toEqual([1]);
     });
 });

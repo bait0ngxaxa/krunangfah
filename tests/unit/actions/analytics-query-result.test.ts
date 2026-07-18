@@ -32,8 +32,7 @@ const analyticsData: AnalyticsData = {
     selectedAcademicTermExists: false,
     riskLevelSummary: [],
     availableClasses: [],
-    availableAcademicYears: [],
-    availableSemesters: [],
+    availableAcademicTerms: [],
     availableRounds: [],
     trendData: [],
     activityProgressByRisk: [],
@@ -53,8 +52,7 @@ const overviewData: SystemAnalyticsOverview = {
     studentsWithAssessment: 0,
     screeningCoveragePercent: 0,
     academicYearLabel: "ยังไม่มีข้อมูลปีการศึกษา",
-    availableAcademicYears: [],
-    availableSemesters: [],
+    availableAcademicTerms: [],
 };
 
 describe("analytics query results", () => {

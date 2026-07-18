@@ -11,6 +11,7 @@ import {
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { requireAuth } from "@/lib/auth/session";
 import type { Metadata } from "next";
+import type { AcademicTermOption } from "@/lib/actions/analytics/types";
 
 export const metadata: Metadata = {
     title: "สรุปข้อมูล | โครงการครูนางฟ้า",
@@ -87,6 +88,26 @@ function buildCanonicalFilterUrl(
     return query ? `/analytics?${query}` : "/analytics";
 }
 
+function getInvalidAcademicTermKeys(
+    params: Awaited<AnalyticsPageProps["searchParams"]>,
+    terms: readonly AcademicTermOption[],
+    termExists = false,
+): Set<"year" | "semester"> {
+    if (!params.year || !params.semester || termExists) return new Set();
+
+    const year = Number(params.year);
+    const semester = Number(params.semester);
+    const exactTermExists = terms.some(
+        (term) => term.year === year && term.semester === semester,
+    );
+    if (exactTermExists) return new Set();
+
+    const yearExists = terms.some((term) => term.year === year);
+    return yearExists
+        ? new Set(["semester"])
+        : new Set(["year", "semester"]);
+}
+
 export default async function AnalyticsPage({
     searchParams,
 }: AnalyticsPageProps) {
@@ -158,6 +179,13 @@ export default async function AnalyticsPage({
             redirect("/dashboard");
         }
         const systemOverview = systemOverviewResult.data;
+        const invalidTermKeys = getInvalidAcademicTermKeys(
+            params,
+            systemOverview.availableAcademicTerms,
+        );
+        if (invalidTermKeys.size > 0) {
+            redirect(buildCanonicalFilterUrl(params, invalidTermKeys));
+        }
         if (systemOverview.currentAcademicYear !== undefined) {
             selectedAcademicYear =
                 systemOverview.currentAcademicYear.toString();
@@ -217,6 +245,14 @@ export default async function AnalyticsPage({
         redirect("/dashboard");
     }
     const analyticsData = analyticsResult.data;
+    const invalidTermKeys = getInvalidAcademicTermKeys(
+        params,
+        analyticsData.availableAcademicTerms,
+        analyticsData.selectedAcademicTermExists,
+    );
+    if (invalidTermKeys.size > 0) {
+        redirect(buildCanonicalFilterUrl(params, invalidTermKeys));
+    }
 
     if (!params.year && analyticsData.currentAcademicYear !== undefined) {
         selectedAcademicYear = analyticsData.currentAcademicYear.toString();
@@ -232,12 +268,24 @@ export default async function AnalyticsPage({
         warnings.push(`ไม่พบห้องเรียน "${selectedClass}" ในขอบเขตข้อมูล`);
     }
 
+    const availableYears = new Set(
+        analyticsData.availableAcademicTerms.map((term) => term.year),
+    );
+    const availableSemesters = new Set(
+        analyticsData.availableAcademicTerms
+            .filter(
+                (term) =>
+                    selectedAcademicYear === "all" ||
+                    term.year === Number(selectedAcademicYear),
+            )
+            .map((term) => term.semester),
+    );
     const selectedYearHasNoScreening =
         selectedAcademicYear !== "all" &&
-        !analyticsData.availableAcademicYears.includes(Number(selectedAcademicYear));
+        !availableYears.has(Number(selectedAcademicYear));
     const selectedSemesterHasNoScreening =
         selectedSemester !== "all" &&
-        !analyticsData.availableSemesters.includes(Number(selectedSemester));
+        !availableSemesters.has(Number(selectedSemester));
     const selectedTermHasNoScreening =
         analyticsData.selectedAcademicTermExists &&
         (selectedYearHasNoScreening || selectedSemesterHasNoScreening);

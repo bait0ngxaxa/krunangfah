@@ -103,8 +103,9 @@ export function AnalyticsContent({
                 <StickyAnalyticsFilters
                     schools={schools}
                     availableClasses={[]}
-                    availableYears={systemOverview?.availableAcademicYears ?? []}
-                    availableSemesters={systemOverview?.availableSemesters ?? []}
+                    availableAcademicTerms={
+                        systemOverview?.availableAcademicTerms ?? []
+                    }
                     availableRounds={[]}
                     selectedSchoolId={selectedSchoolId}
                     selectedClass={selectedClass}
@@ -161,8 +162,7 @@ export function AnalyticsContent({
             <StickyAnalyticsFilters
                 schools={schools}
                 availableClasses={data.availableClasses}
-                availableYears={data.availableAcademicYears}
-                availableSemesters={data.availableSemesters}
+                availableAcademicTerms={data.availableAcademicTerms}
                 availableRounds={data.availableRounds}
                 selectedSchoolId={selectedSchoolId}
                 selectedClass={selectedClass}

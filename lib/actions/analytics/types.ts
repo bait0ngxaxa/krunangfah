@@ -55,6 +55,12 @@ export interface HospitalReferralByGrade {
     referralCount: number;
 }
 
+export interface AcademicTermOption {
+    id: string;
+    year: number;
+    semester: number;
+}
+
 export interface AnalyticsData {
     totalStudents: number | null;
     riskLevelSummary: RiskLevelSummary[];
@@ -63,8 +69,7 @@ export interface AnalyticsData {
     screeningCoveragePercent: number | null;
     selectedAcademicTermExists: boolean;
     availableClasses: string[];
-    availableAcademicYears: number[];
-    availableSemesters: number[];
+    availableAcademicTerms: AcademicTermOption[];
     availableRounds: number[];
     currentClass?: string;
     currentAcademicYear?: number;
@@ -84,8 +89,7 @@ export interface SystemAnalyticsOverview {
     studentsWithAssessment: number;
     screeningCoveragePercent: number;
     academicYearLabel: string;
-    availableAcademicYears: number[];
-    availableSemesters: number[];
+    availableAcademicTerms: AcademicTermOption[];
     currentAcademicYear?: number;
     currentSemester?: number;
 }

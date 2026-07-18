@@ -33,7 +33,7 @@ import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setu
 import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
 import { ensureCurrentAcademicYearLifecycle } from "@/lib/services/academic-year-lifecycle";
 
-import type { AnalyticsData, SystemAnalyticsOverview } from "./types";
+import type { AcademicTermOption, AnalyticsData, SystemAnalyticsOverview } from "./types";
 import { handleQueryError } from "@/lib/actions/error-handler";
 import {
     querySuccess,
@@ -130,6 +130,7 @@ export async function fetchAnalyticsData(
                 },
             },
             select: {
+                id: true,
                 year: true,
                 semester: true,
             },
@@ -147,12 +148,11 @@ export async function fetchAnalyticsData(
         ),
     ]);
 
-    const availableAcademicYears = Array.from(
-        new Set(availableAcademicTermsRaw.map((term) => term.year)),
-    );
-    const availableSemesters = Array.from(
-        new Set(availableAcademicTermsRaw.map((term) => term.semester)),
-    ).sort((a, b) => a - b);
+    const availableAcademicTerms = availableAcademicTermsRaw.map((term) => ({
+        id: term.id,
+        year: term.year,
+        semester: term.semester,
+    }));
 
     // Query distinct assessment rounds available for current filter scope
     const shouldFilterAcademicTerm =
@@ -228,8 +228,7 @@ export async function fetchAnalyticsData(
         screeningCoveragePercent,
         selectedAcademicTermExists,
         availableClasses,
-        availableAcademicYears,
-        availableSemesters,
+        availableAcademicTerms,
         availableRounds,
         currentClass: classFilter,
         currentAcademicYear: academicYear,
@@ -266,23 +265,21 @@ export async function getExpectedStudentCount(
     return result._sum.expectedStudentCount;
 }
 
-async function getOverviewAcademicYearOptions(): Promise<{
-    availableAcademicYears: number[];
-    availableSemesters: number[];
+async function getOverviewAcademicTermOptions(): Promise<{
+    availableAcademicTerms: AcademicTermOption[];
 }> {
     const terms = await prisma.academicYear.findMany({
-        select: { year: true, semester: true },
+        select: { id: true, year: true, semester: true },
         distinct: ["year", "semester"],
         orderBy: [{ year: "desc" }, { semester: "asc" }],
     });
 
     return {
-        availableAcademicYears: Array.from(
-            new Set(terms.map((term) => term.year)),
-        ),
-        availableSemesters: Array.from(
-            new Set(terms.map((term) => term.semester)),
-        ).sort((left, right) => left - right),
+        availableAcademicTerms: terms.map((term) => ({
+            id: term.id,
+            year: term.year,
+            semester: term.semester,
+        })),
     };
 }
 
@@ -386,7 +383,7 @@ async function fetchSystemAnalyticsOverview(
     const [totalSchools, currentAcademicYear, overviewOptions] = await Promise.all([
         prisma.school.count({ where: { disabledAt: null, isTestData: false } }),
         getCurrentAcademicYearRecord(),
-        getOverviewAcademicYearOptions(),
+        getOverviewAcademicTermOptions(),
     ]);
 
     const resolvedAcademicYear =
@@ -464,8 +461,7 @@ async function fetchSystemAnalyticsOverview(
         studentsWithAssessment,
         screeningCoveragePercent,
         academicYearLabel: `ปีการศึกษา ${resolvedAcademicYear.year} เทอม ${resolvedAcademicYear.semester}`,
-        availableAcademicYears: overviewOptions.availableAcademicYears,
-        availableSemesters: overviewOptions.availableSemesters,
+        availableAcademicTerms: overviewOptions.availableAcademicTerms,
         currentAcademicYear: resolvedAcademicYear.year,
         currentSemester: resolvedAcademicYear.semester,
     };
