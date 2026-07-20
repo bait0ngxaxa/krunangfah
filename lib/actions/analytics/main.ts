@@ -16,7 +16,7 @@ import {
     setRedisCachedAnalyticsData,
     setRedisCachedSystemOverview,
 } from "./redis-cache";
-import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
+import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
 import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
 
 import type { AcademicTermOption, AnalyticsData, SystemAnalyticsOverview } from "./types";

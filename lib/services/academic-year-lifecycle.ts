@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/database/prisma";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
-import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
+import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
 import { getCurrentAcademicYear } from "@/lib/utils/academic-year";
 import type { AcademicYear } from "@/types/teacher.types";
 

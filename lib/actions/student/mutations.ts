@@ -12,7 +12,7 @@ import { revalidatePath } from "next/cache";
 import type { ImportResult, ImportStudentSummary } from "./types";
 import { logError } from "@/lib/utils/logging";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
-import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
+import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
 import {
     studentProfileUpdateSchema,
     type StudentProfileUpdateInput,

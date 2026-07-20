@@ -27,7 +27,7 @@ vi.mock("@/lib/database/prisma", () => ({
         $transaction: mocks.transaction,
     },
 }));
-vi.mock("@/lib/actions/school-setup.actions", () => ({
+vi.mock("@/lib/services/school-class-term-service", () => ({
     ensureSchoolClassTermsForAcademicYear:
         mocks.ensureSchoolClassTermsForAcademicYear,
 }));

@@ -39,7 +39,7 @@ vi.mock("@/lib/utils/logging", () => ({
     logError: mocks.logError,
 }));
 
-vi.mock("@/lib/actions/school-setup.actions", () => ({
+vi.mock("@/lib/services/school-class-term-service", () => ({
     ensureSchoolClassTermsForAcademicYear: mocks.ensureSchoolClassTerms,
 }));
 

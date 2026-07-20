@@ -13,7 +13,7 @@ import {
     transformHospitalReferrals,
     calculateScreeningCoveragePercent,
 } from "./transforms";
-import { ensureSchoolClassTermsForAcademicYear } from "@/lib/actions/school-setup.actions";
+import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
 import { ensureCurrentAcademicYearLifecycle } from "@/lib/services/academic-year-lifecycle";
 
 import type { AnalyticsData } from "./types";

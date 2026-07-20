@@ -48,7 +48,7 @@ vi.mock("@/lib/actions/student/cache", () => ({
     revalidateStudentsCache: vi.fn(),
 }));
 
-vi.mock("@/lib/actions/school-setup.actions", () => ({
+vi.mock("@/lib/services/school-class-term-service", () => ({
     ensureSchoolClassTermsForAcademicYear: vi.fn(),
 }));
 
