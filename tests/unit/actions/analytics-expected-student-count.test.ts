@@ -7,7 +7,7 @@ const prismaMock = vi.hoisted(() => ({
 
 vi.mock("@/lib/database/prisma", () => ({ prisma: prismaMock }));
 
-import { getExpectedStudentCount } from "@/lib/actions/analytics/main";
+import { getExpectedStudentCount } from "@/lib/actions/analytics/data";
 
 describe("Analytics expected student count scope", () => {
     beforeEach(() => {

@@ -10,6 +10,12 @@ const STATUS_LABELS: Record<ReferralStatus, string> = {
     closed: "ปิดเมื่อเปลี่ยนผู้รับ",
 };
 
+function getStatusLabel(status: ReferralStatus): string {
+    if (status === "active") return STATUS_LABELS.active;
+    if (status === "revoked") return STATUS_LABELS.revoked;
+    return STATUS_LABELS.closed;
+}
+
 export function ReferralHistoryTimeline({
     records,
     renderActions,
@@ -78,7 +84,7 @@ function ReferralHistoryRow({
                                         : "rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 ring-1 ring-gray-200"
                                 }
                             >
-                                {STATUS_LABELS[status]}
+                                {getStatusLabel(status)}
                             </span>
                         </div>
                         <p className="mt-1 text-xs font-medium text-gray-600">

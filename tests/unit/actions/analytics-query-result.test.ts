@@ -21,8 +21,8 @@ vi.mock("@/lib/actions/analytics/redis-cache", () => ({
 }));
 vi.mock("@/lib/utils/logging", () => ({ logError: vi.fn() }));
 
-const { getAnalyticsSummary, getSystemAnalyticsOverview } =
-    await import("@/lib/actions/analytics/main");
+const analyticsActions = await import("@/lib/actions/analytics/main");
+const { getAnalyticsSummary, getSystemAnalyticsOverview } = analyticsActions;
 
 const analyticsData: AnalyticsData = {
     totalStudents: 0,
@@ -66,6 +66,13 @@ describe("analytics query results", () => {
             data: overviewData,
             versionedKeyParts: [],
         });
+    });
+
+    it("exports only viewer-authorized public Server Actions", () => {
+        expect(Object.keys(analyticsActions).sort()).toEqual([
+            "getAnalyticsSummary",
+            "getSystemAnalyticsOverview",
+        ]);
     });
 
     it("returns success when analytics data is available", async () => {
