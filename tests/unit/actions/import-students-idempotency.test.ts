@@ -117,6 +117,26 @@ describe("importStudents idempotency", () => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
+    it("uses the same idempotency key for lowercase and uppercase G", async () => {
+        mocks.startIdempotentOperation.mockResolvedValue({ status: "processing" });
+        const student = createParsedStudent();
+
+        await importStudents(
+            [{ ...student, nationalId: "g1234567890123" }],
+            "ay-input",
+            1,
+        );
+        await importStudents(
+            [{ ...student, nationalId: "G1234567890123" }],
+            "ay-input",
+            1,
+        );
+
+        const firstKey = mocks.startIdempotentOperation.mock.calls[0]?.[0];
+        const secondKey = mocks.startIdempotentOperation.mock.calls[1]?.[0];
+        expect(firstKey).toBe(secondKey);
+    });
+
     it("returns cached successful completed results without running the import again", async () => {
         const cachedResult = {
             success: true,

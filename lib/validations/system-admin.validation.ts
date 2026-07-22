@@ -2,6 +2,11 @@ import { z } from "zod";
 import { ProjectRole } from "@prisma/client";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { sanitizeName, sanitizeText } from "@/lib/utils/text-sanitizer";
+import {
+    isValidNationalId,
+    NATIONAL_ID_ERROR_MESSAGE,
+    normalizeOptionalNationalId,
+} from "@/lib/utils/national-id";
 
 export const systemEntityTypes = [
     "all",
@@ -56,10 +61,13 @@ export const systemStudentEditSchema = z.object({
     studentId: z.string().trim().min(1, "กรุณาระบุรหัสนักเรียน").max(50),
     nationalId: z
         .string()
-        .trim()
-        .regex(/^\d{13}$/, "เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก")
+        .nullable()
         .optional()
-        .or(z.literal("")),
+        .transform(normalizeOptionalNationalId)
+        .refine(
+            (value) => value === null || isValidNationalId(value),
+            NATIONAL_ID_ERROR_MESSAGE,
+        ),
     firstName: z.string().trim().min(1, "กรุณาระบุชื่อนักเรียน").max(100),
     lastName: z.string().trim().min(1, "กรุณาระบุนามสกุล").max(100),
     gender: z.enum(["MALE", "FEMALE"]).optional().or(z.literal("")),

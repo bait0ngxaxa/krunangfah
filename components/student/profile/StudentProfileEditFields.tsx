@@ -9,6 +9,7 @@ import {
     VenusAndMars,
 } from "lucide-react";
 import { STUDENT_STATUS_OPTIONS } from "@/lib/constants/student-status";
+import { normalizeNationalIdInput } from "@/lib/utils/national-id";
 
 const GENDER_OPTIONS = [
     { value: "", label: "ไม่ระบุ" },
@@ -72,6 +73,7 @@ interface TextFieldProps {
     value: string;
     disabled: boolean;
     onChange: (value: string) => void;
+    onPaste?: (value: string) => void;
     inputMode?: "numeric";
     max?: number;
     maxLength?: number;
@@ -81,7 +83,7 @@ interface TextFieldProps {
     type?: "number" | "text";
 }
 
-function TextField({ Icon, id, label, onChange, ...props }: TextFieldProps) {
+function TextField({ Icon, id, label, onChange, onPaste, ...props }: TextFieldProps) {
     return (
         <div className="min-w-0 space-y-1.5">
             <FieldLabel Icon={Icon} htmlFor={id} label={label} />
@@ -89,6 +91,11 @@ function TextField({ Icon, id, label, onChange, ...props }: TextFieldProps) {
                 id={id}
                 className={INPUT_CLASS}
                 onChange={(event) => onChange(event.target.value)}
+                onPaste={(event) => {
+                    if (!onPaste) return;
+                    event.preventDefault();
+                    onPaste(event.clipboardData.getData("text"));
+                }}
                 {...props}
             />
         </div>
@@ -219,15 +226,20 @@ function SchoolFieldControls({
                 id="student-national-id"
                 label="เลขบัตรประชาชน"
                 value={form.nationalId}
-                onChange={(value) =>
-                    updateField(
-                        "nationalId",
-                        value.replace(/\D/g, "").slice(0, 13),
-                    )
-                }
-                inputMode="numeric"
-                maxLength={13}
-                placeholder="ตัวเลข 13 หลัก"
+                onChange={(value) => {
+                    const normalized = normalizeNationalIdInput(value);
+                    if (normalized !== null) {
+                        updateField("nationalId", normalized);
+                    }
+                }}
+                onPaste={(value) => {
+                    const normalized = normalizeNationalIdInput(value);
+                    if (normalized !== null) {
+                        updateField("nationalId", normalized);
+                    }
+                }}
+                maxLength={14}
+                placeholder="ตัวเลข 13 หลัก หรือ G ตามด้วยตัวเลข 13 หลัก"
                 disabled={isSchoolInfoDisabled}
             />
             <SelectField

@@ -138,6 +138,24 @@ describe("importStudents identity reconciliation", () => {
         expectIdentityConflict(result);
     });
 
+    it("rejects a prefix change when the student ID already exists", async () => {
+        const numericOwner = {
+            ...existingStudent,
+            nationalId: "1234567890123",
+        };
+        mocks.studentFindMany
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([numericOwner]);
+
+        const result = await importStudents(
+            [{ ...importedRow, nationalId: "G1234567890123" }],
+            "ay-input",
+            1,
+        );
+
+        expectIdentityConflict(result);
+    });
+
     it("rejects when only the national ID matches an existing student", async () => {
         const nationalIdOwner = {
             ...existingStudent,
@@ -185,5 +203,112 @@ describe("importStudents identity reconciliation", () => {
             },
         });
         expect(mocks.phqResultCreateMany).toHaveBeenCalledOnce();
+    });
+
+    it("normalizes lowercase g before identity reconciliation and persistence", async () => {
+        const matchingStudent = {
+            ...existingStudent,
+            nationalId: "G1234567890123",
+        };
+        mocks.studentFindMany
+            .mockResolvedValueOnce([matchingStudent])
+            .mockResolvedValueOnce([matchingStudent])
+            .mockResolvedValueOnce([matchingStudent]);
+
+        const result = await importStudents(
+            [{ ...importedRow, nationalId: "g1234567890123" }],
+            "ay-input",
+            1,
+        );
+
+        expect(result).toMatchObject({ success: true, imported: 1 });
+        expect(mocks.studentCreateMany).toHaveBeenCalledWith({
+            data: [expect.objectContaining({ nationalId: "G1234567890123" })],
+            skipDuplicates: true,
+        });
+    });
+
+    it("allows the same 13-digit base with and without G for different student IDs", async () => {
+        const secondRow = {
+            ...importedRow,
+            studentId: "2002",
+            nationalId: "G1234567890123",
+        };
+        const createdStudents = [
+            { ...existingStudent, id: "student-db-1", nationalId: importedRow.nationalId },
+            {
+                ...existingStudent,
+                id: "student-db-2",
+                studentId: secondRow.studentId,
+                nationalId: secondRow.nationalId,
+            },
+        ];
+        mocks.studentFindMany
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce(createdStudents);
+
+        const result = await importStudents(
+            [importedRow, secondRow],
+            "ay-input",
+            1,
+        );
+
+        expect(result).toMatchObject({
+            success: true,
+            imported: 2,
+            createdStudents: 2,
+            identityConflicts: 0,
+        });
+        expect(mocks.studentCreateMany.mock.calls[0][0].data).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ nationalId: "1234567890123" }),
+                expect.objectContaining({ nationalId: "G1234567890123" }),
+            ]),
+        );
+    });
+
+    it("treats lowercase and uppercase G values as duplicates in the action", async () => {
+        const duplicateRow = {
+            ...importedRow,
+            studentId: "2002",
+            nationalId: "G1234567890123",
+        };
+        const normalizedFirstRow = {
+            ...existingStudent,
+            nationalId: "G1234567890123",
+        };
+        mocks.studentFindMany
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([normalizedFirstRow]);
+
+        const result = await importStudents(
+            [
+                { ...importedRow, nationalId: "g1234567890123" },
+                duplicateRow,
+            ],
+            "ay-input",
+            1,
+        );
+
+        expect(result.errors).toEqual(
+            expect.arrayContaining([
+                expect.stringContaining("พบเลขบัตรประชาชนซ้ำในไฟล์นำเข้า"),
+            ]),
+        );
+        expect(mocks.studentCreateMany.mock.calls[0][0].data).toHaveLength(1);
+    });
+
+    it("rejects invalid national IDs at the server action boundary", async () => {
+        const result = await importStudents(
+            [{ ...importedRow, nationalId: "A1234567890123" }],
+            "ay-input",
+            1,
+        );
+
+        expect(result).toMatchObject({ success: false, status: "error" });
+        expect(mocks.requireAuth).not.toHaveBeenCalled();
+        expect(mocks.transaction).not.toHaveBeenCalled();
     });
 });

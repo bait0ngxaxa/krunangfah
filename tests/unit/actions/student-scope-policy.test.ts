@@ -148,6 +148,35 @@ describe("class_teacher student scope policy", () => {
         }
     });
 
+    it.each(["g1234567890123", "456789"])(
+        "searches national IDs case-insensitively with query %s",
+        async (query) => {
+            await searchStudentsQuery(
+                undefined,
+                undefined,
+                "system_admin",
+                "admin-1",
+                query,
+                true,
+            );
+
+            expect(mocks.studentFindMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        OR: expect.arrayContaining([
+                            {
+                                nationalId: {
+                                    contains: query,
+                                    mode: "insensitive",
+                                },
+                            },
+                        ]),
+                    }),
+                }),
+            );
+        },
+    );
+
     it("does not grant class_teacher scope from an incoming referral", async () => {
         await getStudentDetailQuery(
             "school-1",

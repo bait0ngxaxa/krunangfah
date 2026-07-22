@@ -762,6 +762,7 @@ describe("Excel Parser - Resource Guards", () => {
 describe("Excel Parser - National ID Parsing", () => {
     async function createWorkbookBuffer(
         nationalIdValue: string,
+        secondNationalIdValue?: string,
     ): Promise<ArrayBuffer> {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
@@ -808,6 +809,29 @@ describe("Excel Parser - National ID Parsing", () => {
             "ไม่ใช่",
         ]);
 
+        if (secondNationalIdValue) {
+            worksheet.addRow([
+                "66002",
+                secondNationalIdValue,
+                "สมหญิง",
+                "ใจดี",
+                "หญิง",
+                13,
+                "ม.1/1",
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                "ไม่ใช่",
+                "ไม่ใช่",
+            ]);
+        }
+
         const output = Buffer.from(await workbook.xlsx.writeBuffer());
         return output.buffer.slice(
             output.byteOffset,
@@ -831,13 +855,37 @@ describe("Excel Parser - National ID Parsing", () => {
         expect(result.data[0]?.nationalId).toBe("1103700000011");
     });
 
+    it.each([
+        ["G1103700000011", "G1103700000011"],
+        ["g110-3700-0000-11", "G1103700000011"],
+    ])("parses and normalizes G national ID %s", async (input, expected) => {
+        const buffer = await createWorkbookBuffer(input);
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(true);
+        expect(result.data[0]?.nationalId).toBe(expected);
+    });
+
+    it("treats lowercase and uppercase G values as duplicates", async () => {
+        const buffer = await createWorkbookBuffer(
+            "g1103700000011",
+            "G1103700000011",
+        );
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(false);
+        expect(result.errors).toContain(
+            "พบเลขบัตรประชาชนซ้ำในไฟล์: G1103700000011",
+        );
+    });
+
     it("rejects national ID values that are not 13 digits", async () => {
         const buffer = await createWorkbookBuffer("123456789012");
         const result = await parseExcelBuffer(buffer);
 
         expect(result.success).toBe(false);
         expect(result.errors).toContain(
-            'แถว 2: เลขบัตรประชาชน ต้องเป็นตัวเลข 13 หลัก',
+            'แถว 2: เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก หรือ G ตามด้วยตัวเลข 13 หลัก',
         );
         expect(result.data).toHaveLength(0);
     });

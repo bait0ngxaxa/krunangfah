@@ -37,6 +37,11 @@ import {
     calculateStudentStatusState,
     getCurrentAcademicYearId,
 } from "./student-class-count";
+import {
+    isValidNationalId,
+    NATIONAL_ID_ERROR_MESSAGE,
+    normalizeNationalId,
+} from "@/lib/utils/national-id";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
 const IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS = 30 * 60;
@@ -102,6 +107,28 @@ function formatImportStudentError(student: ParsedStudent, reason: string): strin
     return `${student.firstName} ${student.lastName} (${student.studentId}): ${reason}`;
 }
 
+function normalizeImportStudentNationalIds(students: ParsedStudent[]): {
+    students: ParsedStudent[];
+    errors: string[];
+} {
+    const normalizedStudents: ParsedStudent[] = [];
+    const errors: string[] = [];
+
+    for (const student of students) {
+        const normalizedNationalId = normalizeNationalId(student.nationalId);
+        if (!isValidNationalId(normalizedNationalId)) {
+            errors.push(formatImportStudentError(student, NATIONAL_ID_ERROR_MESSAGE));
+            continue;
+        }
+        normalizedStudents.push({
+            ...student,
+            nationalId: normalizedNationalId,
+        });
+    }
+
+    return { students: normalizedStudents, errors };
+}
+
 function getActivityNumbersByRiskLevel(riskLevel: RiskLevel): number[] {
     if (!Object.hasOwn(ACTIVITY_INDICES, riskLevel)) {
         return [];
@@ -145,6 +172,17 @@ export async function importStudents(
     let shouldClearImportIdempotency = false;
 
     try {
+        const normalizedImport = normalizeImportStudentNationalIds(students);
+        if (normalizedImport.errors.length > 0) {
+            return {
+                success: false,
+                status: "error",
+                message: "ข้อมูลเลขบัตรประชาชนในไฟล์ไม่ถูกต้อง",
+                errors: normalizedImport.errors,
+            };
+        }
+        const normalizedStudents = normalizedImport.students;
+
         const session = await requireAuth();
         const userId = session.user.id;
         const userRole = session.user.role;
@@ -202,7 +240,7 @@ export async function importStudents(
             schoolId,
             academicYearId: resolvedAcademicYearId,
             assessmentRound,
-            students,
+            students: normalizedStudents,
         });
         const idempotencyResult = await startIdempotentOperation(
             importIdempotencyKey,
@@ -293,7 +331,7 @@ export async function importStudents(
         const seenNationalIds = new Set<string>();
         const eligibleRows: ParsedStudent[] = [];
 
-        for (const studentData of students) {
+        for (const studentData of normalizedStudents) {
             const studentClass = normalizeClassName(studentData.class);
             if (!validClassSet.has(studentClass)) {
                 failedStudents.push(

@@ -2,13 +2,9 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import type { DataManagementEventItem, ImpactSummary } from "./types";
 
-export const DATA_MANAGEMENT_PATH = "/admin/data-management";
+export { maskNationalId } from "@/lib/utils/national-id";
 
-export function maskNationalId(nationalId: string | null): string | null {
-    if (!nationalId) return null;
-    const suffix = nationalId.slice(-4);
-    return `*********${suffix}`;
-}
+export const DATA_MANAGEMENT_PATH = "/admin/data-management";
 
 export function createEmptyImpact(): ImpactSummary {
     return {

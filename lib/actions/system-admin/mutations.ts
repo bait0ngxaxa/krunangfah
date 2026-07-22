@@ -22,6 +22,7 @@ import {
     getCurrentAcademicYearId,
     type StudentStatusState,
 } from "@/lib/actions/student/student-class-count";
+import { maskNationalId } from "@/lib/utils/national-id";
 
 export interface Actor {
     id: string;
@@ -391,7 +392,7 @@ function getStudentChanges(
 ): SystemAdminEditChange[] {
     return [
         createChange("studentId", "รหัสนักเรียน", student.studentId, input.studentId),
-        createChange("nationalId", "เลขบัตรประชาชน", student.nationalId, input.nationalId),
+        createNationalIdChange(student.nationalId, input.nationalId),
         createChange("firstName", "ชื่อ", student.firstName, input.firstName),
         createChange("lastName", "นามสกุล", student.lastName, input.lastName),
         createChange("gender", "เพศ", student.gender, input.gender),
@@ -427,9 +428,17 @@ function createChange(
     return { field, label, before, after };
 }
 
-function maskNationalId(nationalId: string | null): string | null {
-    if (!nationalId) return null;
-    return `*********${nationalId.slice(-4)}`;
+function createNationalIdChange(
+    before: string | null,
+    after: string | null,
+): SystemAdminEditChange | null {
+    if (before === after) return null;
+    return {
+        field: "nationalId",
+        label: "เลขบัตรประชาชน",
+        before: maskNationalId(before),
+        after: maskNationalId(after),
+    };
 }
 
 function getUniqueConstraintMessage(error: unknown): string | null {

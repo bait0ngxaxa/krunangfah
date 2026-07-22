@@ -346,6 +346,28 @@ describe("updateSystemStudent", () => {
         expect(prismaMocks.schoolClassTermUpsert).not.toHaveBeenCalled();
     });
 
+    it("stores only masked national IDs in the audit change", async () => {
+        const result = await updateSystemStudent(
+            createInput({ nationalId: "G1234567890123" }),
+            actor,
+        );
+
+        expect(result.success).toBe(true);
+        const changes = eventMocks.createSystemAdminEditEvent.mock.calls[0][0]
+            .changes as Array<{
+            field: string;
+            before: string | null;
+            after: string | null;
+        }>;
+        expect(changes).toContainEqual({
+            field: "nationalId",
+            label: "เลขบัตรประชาชน",
+            before: "*********0123",
+            after: "G*********0123",
+        });
+        expect(JSON.stringify(changes)).not.toContain("1234567890123");
+    });
+
     it("rejects a class outside the student's school inside the transaction", async () => {
         prismaMocks.schoolClassFindUnique.mockResolvedValue(null);
 

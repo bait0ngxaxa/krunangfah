@@ -3,6 +3,11 @@ import { z } from "zod";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { STUDENT_STATUS_VALUES } from "@/lib/constants/student-status";
 import { sanitizeName, sanitizeText } from "@/lib/utils/text-sanitizer";
+import {
+    isValidNationalId,
+    NATIONAL_ID_ERROR_MESSAGE,
+    normalizeOptionalNationalId,
+} from "@/lib/utils/national-id";
 
 export const studentProfileUpdateSchema = z
     .object({
@@ -13,12 +18,12 @@ export const studentProfileUpdateSchema = z
             .transform(sanitizeText),
         nationalId: z
             .string()
-            .transform((value) => sanitizeText(value).replace(/\D/g, ""))
+            .nullable()
+            .transform(normalizeOptionalNationalId)
             .refine(
-                (value) => value === "" || /^\d{13}$/.test(value),
-                "เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก",
-            )
-            .transform((value) => (value === "" ? null : value)),
+                (value) => value === null || isValidNationalId(value),
+                NATIONAL_ID_ERROR_MESSAGE,
+            ),
         firstName: z
             .string()
             .min(1, "กรุณากรอกชื่อ")

@@ -19,6 +19,7 @@ import {
 describe("data management helpers", () => {
     it("masks national id in search results", () => {
         expect(maskNationalId("1103700000011")).toBe("*********0011");
+        expect(maskNationalId("G1103700000011")).toBe("G*********0011");
         expect(maskNationalId(null)).toBeNull();
     });
 

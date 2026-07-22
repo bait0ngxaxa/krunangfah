@@ -19,6 +19,7 @@ import {
     TextField,
     type SelectOption,
 } from "./SystemFormFields";
+import { normalizeNationalIdInput } from "@/lib/utils/national-id";
 
 interface SystemEditFormProps {
     entity: SchoolEntityResult | StudentEntityResult;
@@ -138,7 +139,16 @@ function StudentEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
             <TextField
                 label="เลขบัตรประชาชน"
                 value={form.nationalId}
-                onChange={(value) => update("nationalId", value)}
+                onChange={(value) => {
+                    const normalized = normalizeNationalIdInput(value);
+                    if (normalized !== null) update("nationalId", normalized);
+                }}
+                onPaste={(value) => {
+                    const normalized = normalizeNationalIdInput(value);
+                    if (normalized !== null) update("nationalId", normalized);
+                }}
+                maxLength={14}
+                placeholder="ตัวเลข 13 หลัก หรือ G ตามด้วยตัวเลข 13 หลัก"
             />
             <TextField
                 label="ชื่อ"

@@ -15,7 +15,9 @@ vi.mock("sonner", () => ({
     },
 }));
 
-function createStudentEntity(): StudentEntityResult {
+function createStudentEntity(
+    nationalId = "1234567890123",
+): StudentEntityResult {
     return {
         type: "student",
         id: "student-1",
@@ -23,8 +25,10 @@ function createStudentEntity(): StudentEntityResult {
         studentId: "1001",
         firstName: "สมชาย",
         lastName: "ใจดี",
-        nationalIdMasked: "*********0123",
-        nationalId: "1234567890123",
+        nationalIdMasked: nationalId.startsWith("G")
+            ? "G*********0123"
+            : "*********0123",
+        nationalId,
         gender: "MALE",
         age: 13,
         class: "ม.1/1",
@@ -54,5 +58,21 @@ describe("SystemEditForm", () => {
 
         expect(html).toMatch(/<span[^>]*>ห้อง<\/span><select/);
         expect(html).toContain('<option value="ม.1/2">ม.1/2</option>');
+    });
+
+    it("keeps a G national ID in a 14-character text input", () => {
+        const html = renderToStaticMarkup(
+            <SystemEditForm
+                entity={createStudentEntity("G1234567890123")}
+                onSaved={vi.fn()}
+                onCancel={vi.fn()}
+            />,
+        );
+
+        expect(html).toContain('value="G1234567890123"');
+        expect(html).toContain('maxLength="14"');
+        expect(html).toContain(
+            'placeholder="ตัวเลข 13 หลัก หรือ G ตามด้วยตัวเลข 13 หลัก"',
+        );
     });
 });

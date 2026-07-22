@@ -282,7 +282,7 @@ enum StudentStatus {
 model Student {
   id            String   @id @default(cuid())
   studentId     String   // รหัสนักเรียน (required)
-  nationalId    String?  @unique @db.VarChar(13) // เลขบัตรประชาชน 13 หลัก (required สำหรับข้อมูลใหม่)
+  nationalId    String?  @unique @db.VarChar(14) // ตัวเลข 13 หลัก หรือ G ตามด้วยตัวเลข 13 หลัก
   firstName     String   // ชื่อ
   lastName      String   // สกุล
   gender        Gender?  // เพศ (optional เพื่อรองรับข้อมูลเก่า)

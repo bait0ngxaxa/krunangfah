@@ -51,14 +51,20 @@ export function TextField({
     label,
     value,
     inputMode,
+    maxLength,
+    placeholder,
     type = "text",
     onChange,
+    onPaste,
 }: {
     label: string;
     value: string;
     type?: "text" | "date";
     inputMode?: HTMLAttributes<HTMLInputElement>["inputMode"];
+    maxLength?: number;
+    placeholder?: string;
     onChange: (value: string) => void;
+    onPaste?: (value: string) => void;
 }) {
     return (
         <label className="block">
@@ -69,7 +75,14 @@ export function TextField({
                 type={type}
                 value={value}
                 inputMode={inputMode}
+                maxLength={maxLength}
+                placeholder={placeholder}
                 onChange={(event) => onChange(event.target.value)}
+                onPaste={(event) => {
+                    if (!onPaste) return;
+                    event.preventDefault();
+                    onPaste(event.clipboardData.getData("text"));
+                }}
                 className="w-full rounded-xl border border-emerald-100 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 outline-none transition-base focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
             />
         </label>

@@ -82,6 +82,26 @@ describe("named submission export", () => {
         expect(worksheet?.columnCount).toBe(NAMED_SUBMISSION_COLUMNS.length);
     });
 
+    it("preserves a G national ID as text", async () => {
+        const record = {
+            ...sampleRecord,
+            student: {
+                ...sampleRecord.student,
+                nationalId: "G0123456789012",
+            },
+        };
+        const content = await createNamedSubmissionWorkbook([
+            mapNamedSubmissionRecord(record),
+        ]);
+        const workbook = new ExcelJS.Workbook();
+        // @ts-expect-error ExcelJS bundles an older Buffer declaration than Node 20.
+        await workbook.xlsx.load(Buffer.from(content));
+
+        const worksheet = workbook.getWorksheet("รายชื่อผลคัดกรอง");
+        expect(worksheet?.getRow(2).getCell(6).value).toBe("G0123456789012");
+        expect(worksheet?.getColumn(6).numFmt).toBe("@");
+    });
+
     it("creates a descriptive filename from the school and active filters", () => {
         const filename = createNamedSubmissionFilename([sampleRecord], {
             academicYear: 2569,

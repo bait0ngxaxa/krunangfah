@@ -69,6 +69,27 @@ describe("system edit schemas", () => {
         expect(parsed.success).toBe(true);
     });
 
+    it("normalizes lowercase and formatted G national IDs", () => {
+        const parsed = systemStudentEditSchema.safeParse({
+            id: "ck12345678901234567890123",
+            expectedUpdatedAt: "2026-01-01T00:00:00.000Z",
+            studentId: "1001",
+            nationalId: "g123-4567-89012-3",
+            firstName: "สมชาย",
+            lastName: "ใจดี",
+            gender: "MALE",
+            age: "13",
+            class: "ม.1/1",
+            status: "ACTIVE",
+            reason: "แก้ข้อมูลนำเข้าผิด",
+        });
+
+        expect(parsed.success).toBe(true);
+        if (parsed.success) {
+            expect(parsed.data.nationalId).toBe("G1234567890123");
+        }
+    });
+
     it("rejects invalid national id values", () => {
         const parsed = systemStudentEditSchema.safeParse({
             id: "ck12345678901234567890123",

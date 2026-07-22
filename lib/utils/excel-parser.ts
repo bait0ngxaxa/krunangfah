@@ -6,6 +6,11 @@ import {
 } from "@/lib/constants/import";
 import { PHQA_SCORE_LABELS } from "@/lib/constants/phq-score-labels";
 import { logError } from "@/lib/utils/logging";
+import {
+    isValidNationalId,
+    NATIONAL_ID_ERROR_MESSAGE,
+    normalizeNationalId,
+} from "@/lib/utils/national-id";
 
 export type ParsedGender = "MALE" | "FEMALE";
 const NATIONAL_ID_HEADER = "เลขบัตรประชาชน";
@@ -80,20 +85,6 @@ export interface ParseResult {
     success: boolean;
     data: ParsedStudent[];
     errors: string[];
-}
-
-function normalizeNationalId(value: string): string | undefined {
-    const trimmedValue = value.trim();
-    if (!trimmedValue) {
-        return undefined;
-    }
-
-    const normalizedValue = trimmedValue.replace(/[-\s]/g, "");
-    if (!/^\d{13}$/.test(normalizedValue)) {
-        return undefined;
-    }
-
-    return normalizedValue;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -416,9 +407,9 @@ export async function parseExcelBuffer(
                     errors.push(`แถว ${rowNumber}: ไม่มี${NATIONAL_ID_HEADER}`);
                     return;
                 }
-                if (!nationalId) {
+                if (!isValidNationalId(nationalId)) {
                     errors.push(
-                        `แถว ${rowNumber}: ${NATIONAL_ID_HEADER} ต้องเป็นตัวเลข 13 หลัก`,
+                        `แถว ${rowNumber}: ${NATIONAL_ID_ERROR_MESSAGE}`,
                     );
                     return;
                 }

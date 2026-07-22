@@ -52,6 +52,32 @@ describe("studentProfileUpdateSchema", () => {
         expect(result.success).toBe(false);
     });
 
+    it.each([
+        ["G1234567890123", "G1234567890123"],
+        ["g1234567890123", "G1234567890123"],
+        ["G123-4567-89012-3", "G1234567890123"],
+    ])("accepts and normalizes national ID %s", (nationalId, expected) => {
+        const result = studentProfileUpdateSchema.safeParse(
+            validStudentProfile({ nationalId }),
+        );
+
+        expect(result.success).toBe(true);
+        if (result.success) expect(result.data.nationalId).toBe(expected);
+    });
+
+    it.each([
+        "A1234567890123",
+        "G123456789012",
+        "123G4567890123",
+        "GG1234567890123",
+    ])("rejects unsupported national ID %s", (nationalId) => {
+        const result = studentProfileUpdateSchema.safeParse(
+            validStudentProfile({ nationalId }),
+        );
+
+        expect(result.success).toBe(false);
+    });
+
     it("allows blank national ID for legacy records", () => {
         const result = studentProfileUpdateSchema.safeParse(
             validStudentProfile({ nationalId: "" }),
