@@ -308,7 +308,45 @@ describe("importStudents identity reconciliation", () => {
         );
 
         expect(result).toMatchObject({ success: false, status: "error" });
-        expect(mocks.requireAuth).not.toHaveBeenCalled();
+        expect(mocks.requireAuth).toHaveBeenCalledOnce();
         expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("rejects oversized input after authentication and before database work", async () => {
+        const oversizedInput = Array.from(
+            { length: 1_001 },
+            (_, index) => ({
+                ...importedRow,
+                studentId: `student-${index}`,
+            }),
+        );
+
+        const result = await importStudents(oversizedInput, "ay-input", 1);
+
+        expect(result).toEqual({
+            success: false,
+            status: "error",
+            message: "จำนวนข้อมูลนำเข้าไม่ถูกต้อง",
+        });
+        expect(mocks.requireAuth).toHaveBeenCalledOnce();
+        expect(mocks.userFindUnique).not.toHaveBeenCalled();
+        expect(mocks.startIdempotentOperation).not.toHaveBeenCalled();
+        expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("rejects non-array input after authentication", async () => {
+        const result = await importStudents(
+            null as unknown as ParsedStudent[],
+            "ay-input",
+            1,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            status: "error",
+            message: "จำนวนข้อมูลนำเข้าไม่ถูกต้อง",
+        });
+        expect(mocks.requireAuth).toHaveBeenCalledOnce();
+        expect(mocks.userFindUnique).not.toHaveBeenCalled();
     });
 });

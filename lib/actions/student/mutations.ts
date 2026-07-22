@@ -42,6 +42,7 @@ import {
     NATIONAL_ID_ERROR_MESSAGE,
     normalizeNationalId,
 } from "@/lib/utils/national-id";
+import { MAX_IMPORT_ROW_COUNT } from "@/lib/constants/import";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
 const IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS = 30 * 60;
@@ -172,6 +173,26 @@ export async function importStudents(
     let shouldClearImportIdempotency = false;
 
     try {
+        const session = await requireAuth();
+        const userId = session.user.id;
+        const userRole = session.user.role;
+
+        if (!Array.isArray(students) || students.length > MAX_IMPORT_ROW_COUNT) {
+            return {
+                success: false,
+                status: "error",
+                message: "จำนวนข้อมูลนำเข้าไม่ถูกต้อง",
+            };
+        }
+
+        if (assessmentRound !== 1 && assessmentRound !== 2) {
+            return {
+                success: false,
+                status: "error",
+                message: "รอบการประเมินไม่ถูกต้อง",
+            };
+        }
+
         const normalizedImport = normalizeImportStudentNationalIds(students);
         if (normalizedImport.errors.length > 0) {
             return {
@@ -182,18 +203,6 @@ export async function importStudents(
             };
         }
         const normalizedStudents = normalizedImport.students;
-
-        const session = await requireAuth();
-        const userId = session.user.id;
-        const userRole = session.user.role;
-
-        if (assessmentRound !== 1 && assessmentRound !== 2) {
-            return {
-                success: false,
-                status: "error",
-                message: "รอบการประเมินไม่ถูกต้อง",
-            };
-        }
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
