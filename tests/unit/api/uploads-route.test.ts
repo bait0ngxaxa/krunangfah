@@ -46,6 +46,7 @@ describe("uploads route", () => {
         });
         mocks.homeVisitPhotoFindFirst.mockResolvedValue({
             homeVisit: {
+                deletedAt: null,
                 student: {
                     disabledAt: null,
                     schoolId: "school-1",
@@ -66,5 +67,27 @@ describe("uploads route", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+    });
+
+    it("denies a photo whose home visit was soft-deleted", async () => {
+        mocks.homeVisitPhotoFindFirst.mockResolvedValueOnce({
+            homeVisit: {
+                deletedAt: new Date("2026-07-17T03:00:00.000Z"),
+                student: {
+                    disabledAt: null,
+                    schoolId: "school-1",
+                    class: "ม.1/1",
+                    school: { disabledAt: null },
+                },
+            },
+        });
+
+        const response = await GET(
+            new NextRequest("http://localhost/api/uploads/home-visits/photo.png"),
+            { params: Promise.resolve({ path: ["home-visits", "photo.png"] }) },
+        );
+
+        expect(response.status).toBe(403);
+        expect(mocks.createReadStream).not.toHaveBeenCalled();
     });
 });

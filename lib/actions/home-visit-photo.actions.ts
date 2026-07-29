@@ -532,24 +532,14 @@ export async function deleteHomeVisitPhoto(
             return { success: false, message: statusError };
         }
 
-        // Delete file from disk
-        const fileName = photo.fileUrl.replace("/api/uploads/home-visits/", "");
-        const filePath = join(
-            process.cwd(),
-            ".data",
-            "uploads",
-            "home-visits",
-            fileName,
-        );
-        // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB fileUrl, not user input
-        if (existsSync(filePath)) {
-            const { unlink } = await import("fs/promises");
-            await unlink(filePath).catch(() => {});
-        }
-
-        // Delete DB record
-        await prisma.homeVisitPhoto.delete({
-            where: { id: photoId },
+        await prisma.$transaction(async (tx) => {
+            await tx.homeVisitPhoto.delete({
+                where: { id: photoId },
+            });
+            await tx.fileDeletionOutbox.createMany({
+                data: [{ fileUrl: photo.fileUrl }],
+                skipDuplicates: true,
+            });
         });
 
         revalidatePath(`/students/${photo.homeVisit.studentId}`);

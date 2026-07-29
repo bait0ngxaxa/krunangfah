@@ -55,6 +55,31 @@ describe("processFileDeletionOutbox", () => {
         });
     });
 
+    it("deletes queued worksheet files", async () => {
+        mocks.findMany.mockResolvedValue([
+            {
+                id: "job-worksheet",
+                fileUrl: "/api/uploads/worksheets/worksheet.png",
+                attempts: 0,
+            },
+        ]);
+        mocks.unlink.mockResolvedValue(undefined);
+
+        const result = await processFileDeletionOutbox();
+
+        expect(result).toEqual({ processed: 1, failed: 0 });
+        expect(mocks.unlink).toHaveBeenCalledWith(
+            expect.stringMatching(/[\\/]worksheets[\\/]worksheet\.png$/),
+        );
+        expect(mocks.update).toHaveBeenCalledWith({
+            where: { id: "job-worksheet" },
+            data: {
+                processedAt: new Date("2026-07-17T03:00:00.000Z"),
+                lastError: null,
+            },
+        });
+    });
+
     it("keeps a failed job pending and records a retry instead of swallowing the error", async () => {
         mocks.findMany.mockResolvedValue([
             {

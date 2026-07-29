@@ -514,42 +514,36 @@ export async function deleteWorksheetUpload(
             };
         }
 
-        // Delete file from disk
-        const fileName = extractWorksheetFileName(upload.fileUrl);
-        if (!fileName) {
+        if (!extractWorksheetFileName(upload.fileUrl)) {
             return { success: false, message: "ไม่พบไฟล์ที่ต้องการลบ" };
         }
 
-        const filePath = buildWorksheetFilePath(fileName);
-        // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB fileUrl, not user input
-        if (existsSync(filePath)) {
-            const { unlink } = await import("fs/promises");
-            await unlink(filePath).catch(() => {});
-        }
-
-        // Delete DB record
-        await prisma.worksheetUpload.delete({
-            where: { id: uploadId },
-        });
-
-        // If activity was completed but now doesn't meet required count, revert status
         const activityProgress = upload.activityProgress;
         const remainingCount = activityProgress.worksheetUploads.length - 1;
         const requiredCount =
             REQUIRED_WORKSHEETS[activityProgress.activityNumber] || 2;
 
-        if (
-            activityProgress.status === "completed" &&
-            remainingCount < requiredCount
-        ) {
-            await prisma.activityProgress.update({
-                where: { id: activityProgress.id },
-                data: {
-                    status: "in_progress",
-                    completedAt: null,
-                },
+        await prisma.$transaction(async (tx) => {
+            await tx.worksheetUpload.delete({
+                where: { id: uploadId },
             });
-        }
+            await tx.fileDeletionOutbox.createMany({
+                data: [{ fileUrl: upload.fileUrl }],
+                skipDuplicates: true,
+            });
+            if (
+                activityProgress.status === "completed" &&
+                remainingCount < requiredCount
+            ) {
+                await tx.activityProgress.update({
+                    where: { id: activityProgress.id },
+                    data: {
+                        status: "in_progress",
+                        completedAt: null,
+                    },
+                });
+            }
+        });
 
         await revalidateAnalyticsCache(upload.activityProgress.student.schoolId);
 

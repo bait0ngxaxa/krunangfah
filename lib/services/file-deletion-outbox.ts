@@ -3,7 +3,16 @@ import { join } from "path";
 import { prisma } from "@/lib/database/prisma";
 import { logError } from "@/lib/utils/logging";
 
-const HOME_VISIT_UPLOAD_PREFIX = "/api/uploads/home-visits/";
+const MANAGED_UPLOAD_LOCATIONS = [
+    {
+        prefix: "/api/uploads/home-visits/",
+        directory: "home-visits",
+    },
+    {
+        prefix: "/api/uploads/worksheets/",
+        directory: "worksheets",
+    },
+] as const;
 const DEFAULT_BATCH_SIZE = 50;
 const MAX_BATCH_SIZE = 100;
 const MAX_BACKOFF_MS = 24 * 60 * 60 * 1_000;
@@ -18,15 +27,25 @@ export interface FileDeletionCleanupResult {
     failed: number;
 }
 
-function getHomeVisitFilePath(fileUrl: string): string | null {
-    if (!fileUrl.startsWith(HOME_VISIT_UPLOAD_PREFIX)) return null;
+function getManagedFilePath(fileUrl: string): string | null {
+    const location = MANAGED_UPLOAD_LOCATIONS.find(({ prefix }) =>
+        fileUrl.startsWith(prefix),
+    );
+    if (!location) return null;
 
-    const fileName = fileUrl.slice(HOME_VISIT_UPLOAD_PREFIX.length);
-    if (!fileName || fileName.includes("/") || fileName.includes("\\")) {
+    const fileName = fileUrl.slice(location.prefix.length);
+    if (
+        !fileName ||
+        fileName === "." ||
+        fileName === ".." ||
+        fileName.includes("/") ||
+        fileName.includes("\\") ||
+        fileName.includes("\0")
+    ) {
         return null;
     }
 
-    return join(process.cwd(), ".data", "uploads", "home-visits", fileName);
+    return join(process.cwd(), ".data", "uploads", location.directory, fileName);
 }
 
 function isMissingFileError(error: unknown): boolean {
@@ -45,11 +64,11 @@ function getNextAttemptAt(attempts: number): Date {
 }
 
 async function deleteQueuedFile(fileUrl: string): Promise<void> {
-    const filePath = getHomeVisitFilePath(fileUrl);
+    const filePath = getManagedFilePath(fileUrl);
     if (!filePath) throw new Error("Unsupported file URL");
 
     try {
-        // eslint-disable-next-line security/detect-non-literal-fs-filename -- path is constrained to the home-visit upload directory
+        // eslint-disable-next-line security/detect-non-literal-fs-filename -- path is constrained to managed upload directories
         await unlink(filePath);
     } catch (error) {
         if (!isMissingFileError(error)) throw error;

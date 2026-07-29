@@ -10,6 +10,11 @@ const mocks = vi.hoisted(() => ({
     worksheetUploadDelete: vi.fn(),
     worksheetUploadCount: vi.fn(),
     activityProgressUpdate: vi.fn(),
+    transaction: vi.fn(),
+    transactionWorksheetUploadDelete: vi.fn(),
+    transactionActivityProgressUpdate: vi.fn(),
+    enqueueCleanup: vi.fn(),
+    unlink: vi.fn(),
     mkdir: vi.fn(),
     writeFile: vi.fn(),
     existsSync: vi.fn(),
@@ -40,12 +45,17 @@ vi.mock("@/lib/database/prisma", () => ({
             delete: mocks.worksheetUploadDelete,
             count: mocks.worksheetUploadCount,
         },
+        $transaction: mocks.transaction,
+        fileDeletionOutbox: {
+            createMany: mocks.enqueueCleanup,
+        },
     },
 }));
 
 vi.mock("fs/promises", () => ({
     mkdir: mocks.mkdir,
     writeFile: mocks.writeFile,
+    unlink: mocks.unlink,
 }));
 
 vi.mock("fs", () => ({
@@ -126,6 +136,25 @@ describe("uploadWorksheet lock", () => {
             mimeType: "image/png",
         });
         mocks.worksheetUploadDelete.mockResolvedValue({ id: "upload-1" });
+        mocks.transactionWorksheetUploadDelete.mockResolvedValue({
+            id: "upload-1",
+        });
+        mocks.transactionActivityProgressUpdate.mockResolvedValue({
+            id: "progress-1",
+        });
+        mocks.enqueueCleanup.mockResolvedValue({ count: 1 });
+        mocks.transaction.mockImplementation(
+            async (callback: (tx: unknown) => Promise<unknown>) =>
+                callback({
+                    worksheetUpload: {
+                        delete: mocks.transactionWorksheetUploadDelete,
+                    },
+                    activityProgress: {
+                        update: mocks.transactionActivityProgressUpdate,
+                    },
+                    fileDeletionOutbox: { createMany: mocks.enqueueCleanup },
+                }),
+        );
     });
 
     it("returns an in-progress error when another upload holds the lock", async () => {
@@ -306,5 +335,40 @@ describe("uploadWorksheet lock", () => {
             "manage",
         );
         expect(mocks.worksheetUploadDelete).not.toHaveBeenCalled();
+    });
+
+    it("deletes worksheet metadata and queues physical cleanup atomically", async () => {
+        mocks.worksheetUploadFindUnique.mockResolvedValue({
+            id: "upload-1",
+            fileUrl: "/api/uploads/worksheets/worksheet.png",
+            activityProgress: {
+                id: "progress-1",
+                activityNumber: 1,
+                status: "in_progress",
+                student: {
+                    id: "student-db-1",
+                    schoolId: "school-1",
+                    class: "ม.1/1",
+                },
+                worksheetUploads: [{ id: "upload-1" }],
+            },
+        });
+        mocks.verifyStudentActivityAccess.mockResolvedValue({ allowed: true });
+        mocks.existsSync.mockReturnValue(true);
+        mocks.unlink.mockResolvedValue(undefined);
+
+        const result = await deleteWorksheetUpload("upload-1");
+
+        expect(result).toEqual({ success: true, message: "ลบไฟล์สำเร็จ" });
+        expect(mocks.transaction).toHaveBeenCalledOnce();
+        expect(mocks.transactionWorksheetUploadDelete).toHaveBeenCalledWith({
+            where: { id: "upload-1" },
+        });
+        expect(mocks.enqueueCleanup).toHaveBeenCalledWith({
+            data: [{ fileUrl: "/api/uploads/worksheets/worksheet.png" }],
+            skipDuplicates: true,
+        });
+        expect(mocks.worksheetUploadDelete).not.toHaveBeenCalled();
+        expect(mocks.unlink).not.toHaveBeenCalled();
     });
 });

@@ -90,9 +90,10 @@ export async function GET(
 
             const photo = await prisma.homeVisitPhoto.findFirst({
                 where: { fileUrl },
-                include: {
+                select: {
                     homeVisit: {
-                        include: {
+                        select: {
+                            deletedAt: true,
                             student: {
                                 select: {
                                     disabledAt: true,
@@ -108,6 +109,9 @@ export async function GET(
 
             if (!photo) {
                 return new NextResponse("File not found", { status: 404 });
+            }
+            if (photo.homeVisit.deletedAt !== null) {
+                return new NextResponse("Forbidden", { status: 403 });
             }
             if (
                 photo.homeVisit.student.disabledAt ||
