@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
+import { canStudentPerformActions } from "@/lib/constants/student-status";
 import { ReferralConsistencyError } from "./referral-consistency";
 import { buildActiveReferralStaffScope } from "./student-referral-policy";
 
@@ -106,9 +107,26 @@ async function hasCreateReferralAccess(
 ): Promise<boolean> {
     const student = await tx.student.findUnique({
         where: { id: input.studentId },
-        select: { schoolId: true, class: true },
+        select: {
+            schoolId: true,
+            class: true,
+            status: true,
+            disabledAt: true,
+            school: {
+                select: {
+                    disabledAt: true,
+                },
+            },
+        },
     });
     if (!student) return false;
+    if (
+        student.disabledAt ||
+        student.school.disabledAt ||
+        !canStudentPerformActions(student.status)
+    ) {
+        return false;
+    }
 
     const actor = await tx.user.findUnique({
         where: { id: input.fromTeacherUserId },

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { mockSession, setupAuthMocks, type MockUser } from "./helpers/auth-mock";
 import { prisma } from "@/lib/database/prisma";
 
@@ -137,6 +137,48 @@ describe("Integration: append-only student referrals", () => {
         });
         await prisma.school.deleteMany({ where: { id: schoolId } });
         await prisma.school.deleteMany({ where: { id: otherSchoolId } });
+    });
+
+    it("rejects referral when student status changes after outer access check", async () => {
+        const outerStudent = await prisma.student.findUnique({
+            where: { id: studentId },
+        });
+        expect(outerStudent?.status).toBe("ACTIVE");
+        await prisma.student.update({
+            where: { id: studentId },
+            data: {
+                status: "TRANSFERRED",
+                statusChangedAt: new Date(),
+                leftAt: new Date(),
+            },
+        });
+        const studentReadSpy = vi
+            .spyOn(prisma.student, "findUnique")
+            .mockResolvedValueOnce(outerStudent);
+
+        try {
+            mockSession(sender);
+            const result = await createStudentReferral({
+                studentId,
+                toTeacherUserId: firstReceiverId,
+            });
+
+            expect(result.success).toBe(false);
+            expect(
+                await prisma.studentReferral.count({ where: { studentId } }),
+            ).toBe(0);
+        } finally {
+            studentReadSpy.mockRestore();
+            await prisma.studentReferral.deleteMany({ where: { studentId } });
+            await prisma.student.update({
+                where: { id: studentId },
+                data: {
+                    status: "ACTIVE",
+                    statusChangedAt: null,
+                    leftAt: null,
+                },
+            });
+        }
     });
 
     it("เก็บผู้รับเดิม createdAt และวันที่เรียกคืนเมื่อส่งต่อใหม่", async () => {

@@ -90,6 +90,9 @@ describe("student referral transaction invariants", () => {
             id: referral.studentId,
             schoolId: "school-1",
             class: "ม.1/1",
+            status: "ACTIVE",
+            disabledAt: null,
+            school: { disabledAt: null },
         });
         mocks.tx.user.findUnique.mockResolvedValue({
             role: "class_teacher",
@@ -118,6 +121,9 @@ describe("student referral transaction invariants", () => {
             id: "cmstudent0000000000000001",
             schoolId: "school-1",
             class: "ม.1/1",
+            status: "ACTIVE",
+            disabledAt: null,
+            school: { disabledAt: null },
         });
         mocks.tx.user.findUnique.mockResolvedValue({
             role: "class_teacher",
@@ -140,6 +146,33 @@ describe("student referral transaction invariants", () => {
         expect(mocks.tx.student.updateMany).not.toHaveBeenCalled();
         expect(mocks.commit).toHaveBeenCalledOnce();
     });
+
+    it.each([
+        ["a blocked status", "GRADUATED", null, null],
+        ["a disabled student", "ACTIVE", new Date("2026-07-01"), null],
+        ["a disabled school", "ACTIVE", null, new Date("2026-07-01")],
+    ] as const)(
+        "does not create a referral for %s during the transaction re-check",
+        async (_caseName, status, studentDisabledAt, schoolDisabledAt) => {
+            mocks.tx.student.findUnique.mockResolvedValue({
+                id: "cmstudent0000000000000001",
+                schoolId: "school-1",
+                class: "ม.1/1",
+                status,
+                disabledAt: studentDisabledAt,
+                school: { disabledAt: schoolDisabledAt },
+            });
+
+            const result = await createActiveStudentReferral({
+                studentId: "cmstudent0000000000000001",
+                fromTeacherUserId: "cmteacher000000000000001",
+                toTeacherUserId: "cmteacher0000000000000002",
+            });
+
+            expect(result).toBeNull();
+            expect(mocks.tx.studentReferral.create).not.toHaveBeenCalled();
+        },
+    );
 
     it("does not revoke when the original class_teacher moved schools", async () => {
         mocks.tx.studentReferral.findUnique.mockResolvedValue({
