@@ -24,6 +24,10 @@ import {
     createActiveStudentReferral,
     revokeActiveStudentReferral,
 } from "@/lib/services/student-referral-command";
+import {
+    buildActiveReferralStaffScope,
+    buildReferralStudentScope,
+} from "@/lib/services/student-referral-policy";
 import type {
     ReferralActionResponse,
     TeacherPickerOption,
@@ -76,6 +80,8 @@ export async function createStudentReferral(input: {
                 select: {
                     id: true,
                     schoolId: true,
+                    deletedAt: true,
+                    school: { select: { disabledAt: true } },
                     teacher: { select: { firstName: true, lastName: true } },
                 },
             }),
@@ -84,7 +90,12 @@ export async function createStudentReferral(input: {
         if (!student) {
             return { success: false, message: "ไม่พบข้อมูลนักเรียน" };
         }
-        if (!toUser || !toUser.teacher) {
+        if (
+            !toUser ||
+            !toUser.teacher ||
+            toUser.deletedAt ||
+            toUser.school?.disabledAt
+        ) {
             return { success: false, message: "ไม่พบข้อมูลครูปลายทาง" };
         }
         if (validated.toTeacherUserId === userId) {
@@ -221,17 +232,25 @@ export async function revokeStudentReferral(input: {
                 };
             }
 
-            if (userRole === "school_admin") {
-                const user = await prisma.user.findUnique({
-                    where: { id: userId },
-                    select: { schoolId: true },
-                });
-                if (user?.schoolId !== referral.student.schoolId) {
-                    return {
-                        success: false,
-                        message: "ไม่มีสิทธิ์เรียกคืนการส่งต่อนี้",
-                    };
-                }
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    role: true,
+                    schoolId: true,
+                    deletedAt: true,
+                    school: { select: { disabledAt: true } },
+                },
+            });
+            if (
+                user?.role !== userRole ||
+                user.deletedAt ||
+                user.school?.disabledAt ||
+                user.schoolId !== referral.student.schoolId
+            ) {
+                return {
+                    success: false,
+                    message: "ไม่มีสิทธิ์เรียกคืนการส่งต่อนี้",
+                };
             }
         }
 
@@ -268,21 +287,19 @@ export async function getReferredOutStudents(): Promise<ReferredOutStudent[]> {
     try {
         const viewer = await getViewerContext();
         if (viewer.role === "class_teacher" && !viewer.advisoryClass) return [];
+        if (!viewer.schoolId) return [];
+
+        const studentScope = buildReferralStudentScope(
+            viewer.schoolId,
+            viewer.role === "class_teacher" ? viewer.advisoryClass : undefined,
+        );
 
         const referrals = await prisma.studentReferral.findMany({
             where: {
                 fromTeacherUserId: viewer.userId,
                 revokedAt: null,
                 closedAt: null,
-                ...(viewer.role === "class_teacher"
-                    ? {
-                          student: {
-                              class: viewer.advisoryClass,
-                              disabledAt: null,
-                              isTestData: false,
-                          },
-                      }
-                    : {}),
+                student: studentScope,
             },
             include: {
                 student: {
@@ -346,15 +363,11 @@ export async function getTeachersForReferral(): Promise<TeacherPickerOption[]> {
 
         if (!currentUser?.schoolId) return [];
 
-        // ทั้ง school_admin และ class_teacher ส่งต่อได้เฉพาะ school_admin เท่านั้น
-        const roleFilter = { role: "school_admin" as const };
-
         const teachers = await prisma.teacher.findMany({
             where: {
                 user: {
-                    schoolId: currentUser.schoolId,
+                    ...buildActiveReferralStaffScope(currentUser.schoolId),
                     id: { not: userId },
-                    ...roleFilter,
                 },
             },
             select: {

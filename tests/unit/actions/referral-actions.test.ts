@@ -3,6 +3,7 @@ import {
     createStudentReferral,
     getReferredOutStudents,
     getTeachersForReferral,
+    revokeStudentReferral,
 } from "@/lib/actions/referral.actions";
 import { createActiveStudentReferral } from "@/lib/services/student-referral-command";
 
@@ -19,6 +20,7 @@ vi.mock("@/lib/database/prisma", () => ({
         },
         studentReferral: {
             findMany: vi.fn(),
+            findUnique: vi.fn(),
             upsert: vi.fn(),
         },
     },
@@ -204,6 +206,50 @@ describe("referral actions business rules", () => {
             expect(result.message).toBe("สามารถส่งต่อให้ครูนางฟ้าเท่านั้น");
         });
 
+        it("rejects a soft-deleted referral target", async () => {
+            vi.mocked(requireAuth).mockResolvedValue({
+                user: { id: validClassTeacherUserId, role: "class_teacher" },
+            } as never);
+
+            vi.mocked(prisma.student.findUnique).mockResolvedValue({
+                id: validStudentId,
+                class: "ม.1/1",
+                schoolId: "school-1",
+                status: "ACTIVE",
+                referral: null,
+            } as never);
+
+            vi.mocked(prisma.user.findUnique)
+                .mockResolvedValueOnce({
+                    schoolId: "school-1",
+                    teacher: {
+                        advisoryClass: "ม.1/1",
+                        firstName: "ครู",
+                        lastName: "ประจำชั้น",
+                    },
+                } as never)
+                .mockResolvedValueOnce({
+                    id: validSchoolAdminUserId,
+                    schoolId: "school-1",
+                    deletedAt: new Date("2026-07-01T00:00:00.000Z"),
+                    teacher: {
+                        firstName: "ครู",
+                        lastName: "นางฟ้า",
+                    },
+                } as never);
+
+            const result = await createStudentReferral({
+                studentId: validStudentId,
+                toTeacherUserId: validSchoolAdminUserId,
+            });
+
+            expect(result).toEqual({
+                success: false,
+                message: "ไม่พบข้อมูลครูปลายทาง",
+            });
+            expect(createActiveStudentReferral).not.toHaveBeenCalled();
+        });
+
         it("rejects referral when student has graduated", async () => {
             vi.mocked(requireAuth).mockResolvedValue({
                 user: { id: validClassTeacherUserId, role: "class_teacher" },
@@ -271,8 +317,11 @@ describe("referral actions business rules", () => {
                 where: {
                     user: {
                         schoolId: "school-1",
-                        id: { not: validClassTeacherUserId },
+                        deletedAt: null,
                         role: "school_admin",
+                        teacher: { isNot: null },
+                        school: { is: { disabledAt: null } },
+                        id: { not: validClassTeacherUserId },
                     },
                 },
                 select: {
@@ -313,13 +362,75 @@ describe("referral actions business rules", () => {
                         revokedAt: null,
                         closedAt: null,
                         student: {
+                            schoolId: "school-1",
                             class: "ม.1/1",
                             disabledAt: null,
                             isTestData: false,
+                            school: {
+                                disabledAt: null,
+                                isTestData: false,
+                            },
                         },
                     },
                 }),
             );
+        });
+
+        it("scopes school_admin results to the viewer's current school", async () => {
+            vi.mocked(getViewerContext).mockResolvedValue({
+                userId: validSchoolAdminUserId,
+                role: "school_admin",
+                schoolId: "school-2",
+                isPrimary: false,
+            });
+            vi.mocked(prisma.studentReferral.findMany).mockResolvedValue([]);
+
+            await getReferredOutStudents();
+
+            expect(prisma.studentReferral.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        student: {
+                            schoolId: "school-2",
+                            disabledAt: null,
+                            isTestData: false,
+                            school: {
+                                disabledAt: null,
+                                isTestData: false,
+                            },
+                        },
+                    }),
+                }),
+            );
+        });
+    });
+
+    describe("revokeStudentReferral", () => {
+        it("rejects a class_teacher who moved to another school", async () => {
+            vi.mocked(requireAuth).mockResolvedValue({
+                user: { id: validClassTeacherUserId, role: "class_teacher" },
+            } as never);
+            vi.mocked(prisma.studentReferral.findUnique).mockResolvedValue({
+                id: "cmreferral000000000000001",
+                studentId: validStudentId,
+                fromTeacherUserId: validClassTeacherUserId,
+                student: { schoolId: "school-1" },
+            } as never);
+            vi.mocked(prisma.user.findUnique).mockResolvedValue({
+                role: "class_teacher",
+                schoolId: "school-2",
+                deletedAt: null,
+                school: { disabledAt: null },
+            } as never);
+
+            const result = await revokeStudentReferral({
+                referralId: "cmreferral000000000000001",
+            });
+
+            expect(result).toEqual({
+                success: false,
+                message: "ไม่มีสิทธิ์เรียกคืนการส่งต่อนี้",
+            });
         });
     });
 });

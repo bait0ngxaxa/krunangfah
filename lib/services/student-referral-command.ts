@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/database/prisma";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 import { ReferralConsistencyError } from "./referral-consistency";
+import { buildActiveReferralStaffScope } from "./student-referral-policy";
 
 interface CreateActiveReferralInput {
     studentId: string;
@@ -25,7 +26,9 @@ export async function createActiveStudentReferral(
     input: CreateActiveReferralInput,
 ): Promise<Prisma.StudentReferralGetPayload<object> | null> {
     try {
-        return await prisma.$transaction(async (tx) => {
+        return await runSerializableTransaction(async (tx) => {
+            if (!(await hasCreateReferralAccess(tx, input))) return null;
+
             const referral = await tx.studentReferral.create({
                 data: input,
             });
@@ -53,7 +56,9 @@ export async function createActiveStudentReferral(
 export async function revokeActiveStudentReferral(
     input: RevokeActiveReferralInput,
 ): Promise<boolean> {
-    return prisma.$transaction(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
+        if (!(await hasRevokeReferralAccess(tx, input))) return false;
+
         const revokedAt = new Date();
         const write = await tx.studentReferral.updateMany({
             where: {
@@ -85,4 +90,117 @@ export async function revokeActiveStudentReferral(
         }
         return true;
     });
+}
+
+interface ReferralActor {
+    role: string;
+    schoolId: string | null;
+    deletedAt: Date | null;
+    school: { disabledAt: Date | null } | null;
+    teacher?: { advisoryClass: string } | null;
+}
+
+async function hasCreateReferralAccess(
+    tx: Prisma.TransactionClient,
+    input: CreateActiveReferralInput,
+): Promise<boolean> {
+    const student = await tx.student.findUnique({
+        where: { id: input.studentId },
+        select: { schoolId: true, class: true },
+    });
+    if (!student) return false;
+
+    const actor = await tx.user.findUnique({
+        where: { id: input.fromTeacherUserId },
+        select: {
+            role: true,
+            schoolId: true,
+            deletedAt: true,
+            school: { select: { disabledAt: true } },
+            teacher: { select: { advisoryClass: true } },
+        },
+    });
+    if (!canCreateReferral(actor, student.schoolId, student.class)) return false;
+
+    const target = await tx.user.findFirst({
+        where: buildActiveReferralStaffScope(
+            student.schoolId,
+            input.toTeacherUserId,
+        ),
+        select: { id: true },
+    });
+    return target !== null;
+}
+
+async function hasRevokeReferralAccess(
+    tx: Prisma.TransactionClient,
+    input: RevokeActiveReferralInput,
+): Promise<boolean> {
+    const referral = await tx.studentReferral.findUnique({
+        where: { id: input.referralId },
+        select: {
+            fromTeacherUserId: true,
+            student: { select: { schoolId: true } },
+        },
+    });
+    if (!referral) return false;
+
+    const actor = await tx.user.findUnique({
+        where: { id: input.revokedById },
+        select: {
+            role: true,
+            schoolId: true,
+            deletedAt: true,
+            school: { select: { disabledAt: true } },
+        },
+    });
+    return canRevokeReferral(
+        actor,
+        input.revokedById,
+        referral.fromTeacherUserId,
+        referral.student.schoolId,
+    );
+}
+
+function canCreateReferral(
+    actor: ReferralActor | null,
+    studentSchoolId: string,
+    studentClass: string,
+): boolean {
+    if (!actor || actor.deletedAt) return false;
+    if (actor.role === "system_admin") return true;
+    if (
+        !actor.schoolId ||
+        actor.schoolId !== studentSchoolId ||
+        !actor.school ||
+        actor.school.disabledAt
+    ) {
+        return false;
+    }
+    if (actor.role === "class_teacher") {
+        return actor.teacher?.advisoryClass === studentClass;
+    }
+    return actor.role === "school_admin";
+}
+
+function canRevokeReferral(
+    actor: ReferralActor | null,
+    actorId: string,
+    fromTeacherUserId: string,
+    studentSchoolId: string,
+): boolean {
+    if (!actor || actor.deletedAt) return false;
+    if (actor.role === "system_admin") return true;
+    if (
+        !actor.schoolId ||
+        actor.schoolId !== studentSchoolId ||
+        !actor.school ||
+        actor.school.disabledAt
+    ) {
+        return false;
+    }
+    if (actor.role === "class_teacher") {
+        return actorId === fromTeacherUserId;
+    }
+    return actor.role === "school_admin";
 }

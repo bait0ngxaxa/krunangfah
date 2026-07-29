@@ -4,9 +4,11 @@ import { prisma } from "@/lib/database/prisma";
 
 setupAuthMocks();
 
-const { createStudentReferral, revokeStudentReferral } = await import(
-    "@/lib/actions/referral.actions"
-);
+const {
+    createStudentReferral,
+    getReferredOutStudents,
+    revokeStudentReferral,
+} = await import("@/lib/actions/referral.actions");
 
 interface ReferralHistoryRow {
     id: string;
@@ -24,6 +26,7 @@ describe("Integration: append-only student referrals", () => {
     let sender: MockUser;
     let firstReceiverId: string;
     let secondReceiverId: string;
+    let otherSchoolId: string;
 
     beforeAll(async () => {
         const suffix = Date.now().toString(36);
@@ -31,6 +34,10 @@ describe("Integration: append-only student referrals", () => {
             data: { name: `โรงเรียนประวัติส่งต่อ-${suffix}` },
         });
         schoolId = school.id;
+        const otherSchool = await prisma.school.create({
+            data: { name: `โรงเรียนย้ายครู-${suffix}` },
+        });
+        otherSchoolId = otherSchool.id;
 
         const users = await Promise.all([
             prisma.user.create({
@@ -116,6 +123,10 @@ describe("Integration: append-only student referrals", () => {
     });
 
     afterAll(async () => {
+        await prisma.user.updateMany({
+            where: { id: { in: [sender.id, firstReceiverId, secondReceiverId] } },
+            data: { schoolId, deletedAt: null },
+        });
         await prisma.studentReferral.deleteMany({ where: { studentId } });
         await prisma.student.deleteMany({ where: { id: studentId } });
         await prisma.teacher.deleteMany({
@@ -125,6 +136,7 @@ describe("Integration: append-only student referrals", () => {
             where: { id: { in: [sender.id, firstReceiverId, secondReceiverId] } },
         });
         await prisma.school.deleteMany({ where: { id: schoolId } });
+        await prisma.school.deleteMany({ where: { id: otherSchoolId } });
     });
 
     it("เก็บผู้รับเดิม createdAt และวันที่เรียกคืนเมื่อส่งต่อใหม่", async () => {
@@ -173,6 +185,53 @@ describe("Integration: append-only student referrals", () => {
         expect(history[0].revokeReason).toBeNull();
         expect(history[1].revokedAt).toBeNull();
         expect(history[1].closedAt).toBeNull();
+    });
+
+    it("does not expose or revoke a referral after the sender changes schools", async () => {
+        const current = await prisma.studentReferral.findFirst({
+            where: { studentId, revokedAt: null, closedAt: null },
+            orderBy: { createdAt: "desc" },
+        });
+        expect(current).not.toBeNull();
+
+        await prisma.user.update({
+            where: { id: sender.id },
+            data: { schoolId: otherSchoolId },
+        });
+        mockSession(sender);
+
+        await expect(getReferredOutStudents()).resolves.toEqual([]);
+        await expect(
+            revokeStudentReferral({ referralId: current!.id }),
+        ).resolves.toMatchObject({ success: false });
+
+        await prisma.user.update({
+            where: { id: sender.id },
+            data: { schoolId },
+        });
+        mockSession(sender);
+        await expect(
+            revokeStudentReferral({ referralId: current!.id }),
+        ).resolves.toMatchObject({ success: true });
+    });
+
+    it("rejects referrals to a soft-deleted school admin", async () => {
+        await prisma.user.update({
+            where: { id: firstReceiverId },
+            data: { deletedAt: new Date() },
+        });
+        mockSession(sender);
+
+        const result = await createStudentReferral({
+            studentId,
+            toTeacherUserId: firstReceiverId,
+        });
+
+        expect(result).toMatchObject({ success: false });
+        await prisma.user.update({
+            where: { id: firstReceiverId },
+            data: { deletedAt: null },
+        });
     });
 
     it("concurrent referral สร้าง active row ได้สูงสุดหนึ่งรายการ", async () => {
