@@ -368,6 +368,17 @@ describe("Integration: Activity Flow", () => {
                         uploadedAt: uploadDate,
                     },
                 }),
+                prisma.worksheetUpload.create({
+                    data: {
+                        activityProgressId: current.id,
+                        worksheetNumber: 2,
+                        fileName: "worksheet-selected-date-2.jpg",
+                        fileUrl: "/api/uploads/worksheet-selected-date-2.jpg",
+                        fileType: "image/jpeg",
+                        fileSize: 1024,
+                        uploadedAt: uploadDate,
+                    },
+                }),
             ]);
 
             mockSession(USERS.classTeacher);
@@ -395,6 +406,17 @@ describe("Integration: Activity Flow", () => {
             );
             const next = await createTestActivityProgress(studentId, phqResultId, 5, {
                 status: "locked",
+            });
+            await prisma.worksheetUpload.createMany({
+                data: [1, 2].map((worksheetNumber) => ({
+                    activityProgressId: current.id,
+                    worksheetNumber,
+                    fileName: `activity-4-worksheet-${worksheetNumber}.jpg`,
+                    fileUrl: `/api/uploads/activity-4-worksheet-${worksheetNumber}.jpg`,
+                    fileType: "image/jpeg",
+                    fileSize: 1024,
+                    uploadedAt: new Date("2026-05-13T04:30:00.000Z"),
+                })),
             });
 
             mockSession(USERS.classTeacher);

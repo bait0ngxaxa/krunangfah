@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
     worksheetUploadCount: vi.fn(),
     activityProgressUpdate: vi.fn(),
     transaction: vi.fn(),
+    transactionActivityProgressFindUnique: vi.fn(),
     transactionWorksheetUploadDelete: vi.fn(),
     transactionWorksheetUploadCount: vi.fn(),
     transactionActivityProgressUpdate: vi.fn(),
@@ -142,6 +143,9 @@ describe("uploadWorksheet lock", () => {
             id: "upload-1",
         });
         mocks.transactionWorksheetUploadCount.mockResolvedValue(0);
+        mocks.transactionActivityProgressFindUnique.mockResolvedValue({
+            status: "in_progress",
+        });
         mocks.transactionActivityProgressUpdate.mockResolvedValue({
             id: "progress-1",
         });
@@ -157,6 +161,7 @@ describe("uploadWorksheet lock", () => {
                         count: mocks.transactionWorksheetUploadCount,
                     },
                     activityProgress: {
+                        findUnique: mocks.transactionActivityProgressFindUnique,
                         update: mocks.transactionActivityProgressUpdate,
                         updateMany: mocks.transactionActivityProgressUpdateMany,
                     },
@@ -379,4 +384,59 @@ describe("uploadWorksheet lock", () => {
         expect(mocks.worksheetUploadDelete).not.toHaveBeenCalled();
         expect(mocks.unlink).not.toHaveBeenCalled();
     });
+
+    it.each(["completed", "pending_assessment"] as const)(
+        "uses the transaction activity status when deleting below the worksheet requirement (%s)",
+        async (currentStatus) => {
+            mocks.worksheetUploadFindUnique.mockResolvedValue({
+                id: "upload-1",
+                fileUrl: "/api/uploads/worksheets/worksheet.png",
+                activityProgress: {
+                    id: "progress-1",
+                    activityNumber: 1,
+                    status: "in_progress",
+                    student: {
+                        id: "student-db-1",
+                        schoolId: "school-1",
+                        class: "ม.1/1",
+                    },
+                    worksheetUploads: [{ id: "upload-1" }],
+                },
+            });
+            mocks.verifyStudentActivityAccess.mockResolvedValue({
+                allowed: true,
+            });
+            mocks.transactionActivityProgressFindUnique.mockResolvedValue({
+                status: currentStatus,
+            });
+            mocks.transactionWorksheetUploadCount.mockResolvedValue(1);
+
+            const result = await deleteWorksheetUpload("upload-1");
+
+            expect(result).toEqual({
+                success: true,
+                message: "ลบไฟล์สำเร็จ",
+            });
+            expect(mocks.transactionActivityProgressFindUnique).toHaveBeenCalledWith(
+                {
+                    where: { id: "progress-1" },
+                    select: { status: true },
+                },
+            );
+            expect(mocks.transactionActivityProgressUpdateMany).toHaveBeenCalledWith(
+                {
+                    where: {
+                        id: "progress-1",
+                        status: {
+                            in: ["completed", "pending_assessment"],
+                        },
+                    },
+                    data: {
+                        status: "in_progress",
+                        completedAt: null,
+                    },
+                },
+            );
+        },
+    );
 });

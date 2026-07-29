@@ -61,6 +61,12 @@ export const REQUIRED_WORKSHEETS: Record<number, number> = {
     5: 1, // Activity 5 has only 1 worksheet
 };
 
+export function getRequiredWorksheetCount(activityNumber: number): number {
+    // activityNumber is constrained by the activity domain; unknown values use the default requirement.
+    // eslint-disable-next-line security/detect-object-injection -- lookup uses a validated activity domain value
+    return REQUIRED_WORKSHEETS[activityNumber] ?? 2;
+}
+
 // Allowed file extensions for worksheet uploads (images only)
 export const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
 

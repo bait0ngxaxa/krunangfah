@@ -7,9 +7,9 @@ import { Prisma } from "@prisma/client";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import {
-    REQUIRED_WORKSHEETS,
     ALLOWED_EXTENSIONS,
     MAX_FILE_SIZE,
+    getRequiredWorksheetCount,
 } from "./constants";
 import { validateFileSignature } from "@/lib/utils/file-signature";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
@@ -100,7 +100,9 @@ async function findIdempotentWorksheetUpload(
     const uploadedCount = await prisma.worksheetUpload.count({
         where: { activityProgressId },
     });
-    const requiredCount = REQUIRED_WORKSHEETS[upload.activityProgress.activityNumber] || 2;
+    const requiredCount = getRequiredWorksheetCount(
+        upload.activityProgress.activityNumber,
+    );
 
     return {
         success: true,
@@ -401,8 +403,9 @@ export async function uploadWorksheet(
         }
 
         // Check if all required worksheets are uploaded
-        const requiredCount =
-            REQUIRED_WORKSHEETS[activityProgress.activityNumber] || 2;
+        const requiredCount = getRequiredWorksheetCount(
+            activityProgress.activityNumber,
+        );
         let currentUploadCount = 0;
         let allUploaded = false;
         try {
@@ -519,8 +522,9 @@ export async function deleteWorksheetUpload(
         }
 
         const activityProgress = upload.activityProgress;
-        const requiredCount =
-            REQUIRED_WORKSHEETS[activityProgress.activityNumber] || 2;
+        const requiredCount = getRequiredWorksheetCount(
+            activityProgress.activityNumber,
+        );
 
         await runSerializableTransaction(async (tx) => {
             await tx.worksheetUpload.delete({
@@ -533,14 +537,21 @@ export async function deleteWorksheetUpload(
             const remainingCount = await tx.worksheetUpload.count({
                 where: { activityProgressId: activityProgress.id },
             });
+            const currentActivity = await tx.activityProgress.findUnique({
+                where: { id: activityProgress.id },
+                select: { status: true },
+            });
             if (
-                activityProgress.status === "completed" &&
-                remainingCount < requiredCount
+                remainingCount < requiredCount &&
+                (currentActivity?.status === "completed" ||
+                    currentActivity?.status === "pending_assessment")
             ) {
                 await tx.activityProgress.updateMany({
                     where: {
                         id: activityProgress.id,
-                        status: "completed",
+                        status: {
+                            in: ["completed", "pending_assessment"],
+                        },
                     },
                     data: {
                         status: "in_progress",

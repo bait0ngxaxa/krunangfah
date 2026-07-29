@@ -4,7 +4,10 @@ import { requireAuth } from "@/lib/auth/session";
 import { prisma } from "@/lib/database/prisma";
 import { ActivityStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
-import { getActivityIndices } from "./constants";
+import {
+    getActivityIndices,
+    getRequiredWorksheetCount,
+} from "./constants";
 import type { SubmitAssessmentData } from "./types";
 import { handleActionError } from "@/lib/actions/error-handler";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
@@ -47,6 +50,13 @@ function getCompletionScheduleDate(
     worksheetUploads: { uploadedAt: Date }[],
 ): Date | null {
     return scheduledDate ?? worksheetUploads[0]?.uploadedAt ?? null;
+}
+
+function getMissingWorksheetError(
+    requiredCount: number,
+    action: string,
+): string {
+    return `ต้องอัปโหลดใบงานให้ครบ ${requiredCount} ไฟล์ก่อน${action}`;
 }
 
 async function unlockNextActivity(
@@ -110,6 +120,22 @@ async function saveAssessmentAndCompleteActivity(
             return {
                 success: false,
                 error: "ไม่สามารถบันทึกแบบประเมินได้ในสถานะปัจจุบัน",
+            };
+        }
+
+        const requiredCount = getRequiredWorksheetCount(
+            currentActivity.activityNumber,
+        );
+        const worksheetCount = await tx.worksheetUpload.count({
+            where: { activityProgressId: currentActivity.id },
+        });
+        if (worksheetCount < requiredCount) {
+            return {
+                success: false,
+                error: getMissingWorksheetError(
+                    requiredCount,
+                    "บันทึกแบบประเมิน",
+                ),
             };
         }
 
@@ -452,6 +478,22 @@ export async function confirmActivityComplete(
                 return {
                     success: true,
                     activityNumber: currentActivity.activityNumber,
+                };
+            }
+
+            const requiredCount = getRequiredWorksheetCount(
+                currentActivity.activityNumber,
+            );
+            const worksheetCount = await tx.worksheetUpload.count({
+                where: { activityProgressId: currentActivity.id },
+            });
+            if (worksheetCount < requiredCount) {
+                return {
+                    success: false,
+                    error: getMissingWorksheetError(
+                        requiredCount,
+                        "ยืนยันจบกิจกรรม",
+                    ),
                 };
             }
 

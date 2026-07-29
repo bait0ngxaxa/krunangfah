@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
     txActivityProgressFindFirst: vi.fn(),
     txActivityProgressUpdate: vi.fn(),
     txActivityProgressUpdateMany: vi.fn(),
+    txWorksheetUploadCount: vi.fn(),
 }));
 
 const tx = {
@@ -19,6 +20,9 @@ const tx = {
         findFirst: mocks.txActivityProgressFindFirst,
         update: mocks.txActivityProgressUpdate,
         updateMany: mocks.txActivityProgressUpdateMany,
+    },
+    worksheetUpload: {
+        count: mocks.txWorksheetUploadCount,
     },
 };
 
@@ -82,6 +86,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             async (callback: SerializableCallback): Promise<unknown> =>
                 callback(tx),
         );
+        mocks.txWorksheetUploadCount.mockResolvedValue(2);
     });
 
     it("keeps activity 1 pending assessment and does not unlock activity 2 before teacher assessment is saved", async () => {
@@ -116,6 +121,36 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             },
         });
         expect(mocks.txActivityProgressFindFirst).not.toHaveBeenCalled();
+        expect(mocks.txActivityProgressUpdateMany).not.toHaveBeenCalled();
+    });
+
+    it("does not complete an activity before its required worksheets are uploaded", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "in_progress",
+            phqResultId: "phq-1",
+            activityNumber: 4,
+            student: { schoolId: "school-1" },
+        });
+        mocks.txActivityProgressFindUnique.mockResolvedValue({
+            id: "cprogress1",
+            status: "in_progress",
+            scheduledDate: null,
+            studentId: "student-1",
+            phqResultId: "phq-1",
+            activityNumber: 4,
+            assessedAt: new Date("2026-06-01T04:30:00.000Z"),
+            worksheetUploads: [],
+        });
+        mocks.txWorksheetUploadCount.mockResolvedValue(1);
+
+        const result = await confirmActivityComplete("cprogress1");
+
+        expect(result).toEqual({
+            success: false,
+            error: "ต้องอัปโหลดใบงานให้ครบ 2 ไฟล์ก่อนยืนยันจบกิจกรรม",
+        });
+        expect(mocks.txActivityProgressUpdate).not.toHaveBeenCalled();
         expect(mocks.txActivityProgressUpdateMany).not.toHaveBeenCalled();
     });
 
@@ -165,5 +200,39 @@ describe("confirmActivityComplete teacher assessment gate", () => {
                 unlockedAt: expect.any(Date),
             },
         });
+    });
+
+    it("does not complete teacher assessment before required worksheets are uploaded", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "pending_assessment",
+            phqResultId: "phq-1",
+            activityNumber: 1,
+        });
+        mocks.txActivityProgressFindUnique.mockResolvedValue({
+            id: "cprogress1",
+            status: "pending_assessment",
+            scheduledDate: null,
+            studentId: "student-1",
+            phqResultId: "phq-1",
+            activityNumber: 1,
+            worksheetUploads: [
+                { uploadedAt: new Date("2026-06-01T04:30:00.000Z") },
+            ],
+        });
+        mocks.txWorksheetUploadCount.mockResolvedValue(1);
+
+        const result = await submitTeacherAssessment("cprogress1", {
+            internalProblems: "ปัญหาภายใน",
+            externalProblems: "ปัญหาภายนอก",
+            problemType: "internal",
+        });
+
+        expect(result).toEqual({
+            success: false,
+            error: "ต้องอัปโหลดใบงานให้ครบ 2 ไฟล์ก่อนบันทึกแบบประเมิน",
+        });
+        expect(mocks.txActivityProgressUpdate).not.toHaveBeenCalled();
+        expect(mocks.txActivityProgressUpdateMany).not.toHaveBeenCalled();
     });
 });
