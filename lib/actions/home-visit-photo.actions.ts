@@ -467,8 +467,9 @@ export async function uploadHomeVisitPhoto(
                 await writeFile(filePath, buffer);
 
                 const fileUrl = `/api/uploads/home-visits/${fileName}`;
+                let transactionResult: HomeVisitPhotoTransactionResult;
                 try {
-                    const transactionResult = await createHomeVisitPhotoRecord({
+                    transactionResult = await createHomeVisitPhotoRecord({
                         homeVisitId,
                         idempotencyKey,
                         fileName: file.name,
@@ -476,35 +477,6 @@ export async function uploadHomeVisitPhoto(
                         fileType: outputMimeType,
                         fileSize: buffer.length,
                     });
-
-                    if (transactionResult.kind === "created") {
-                        revalidatePath(`/students/${homeVisit.studentId}`);
-
-                        return {
-                            success: true,
-                            message: "อัปโหลดรูปภาพสำเร็จ",
-                            photo: transactionResult.photo,
-                        };
-                    }
-
-                    const { unlink } = await import("fs/promises");
-                    await unlink(filePath).catch(() => {});
-
-                    if (transactionResult.kind === "existing") {
-                        return transactionResult.result;
-                    }
-                    if (transactionResult.kind === "not-found") {
-                        return {
-                            success: false,
-                            message: "ไม่พบข้อมูลการเยี่ยมบ้าน",
-                            error: "UPLOAD_NOT_FOUND",
-                        };
-                    }
-                    return {
-                        success: false,
-                        message: `อัปโหลดรูปภาพได้สูงสุด ${MAX_PHOTOS_PER_VISIT} รูปต่อครั้ง`,
-                        error: "UPLOAD_LIMIT_REACHED",
-                    };
                 } catch (dbError) {
                     const duplicatePhoto = await findIdempotentHomeVisitPhoto(
                         prisma,
@@ -522,7 +494,44 @@ export async function uploadHomeVisitPhoto(
                     if (attempt === MAX_HOME_VISIT_SLOT_RETRIES - 1) {
                         throw dbError;
                     }
+                    continue;
                 }
+
+                if (transactionResult.kind === "created") {
+                    try {
+                        revalidatePath(`/students/${homeVisit.studentId}`);
+                    } catch (error) {
+                        logError(
+                            "Failed to revalidate after home visit photo upload:",
+                            error,
+                        );
+                    }
+
+                    return {
+                        success: true,
+                        message: "อัปโหลดรูปภาพสำเร็จ",
+                        photo: transactionResult.photo,
+                    };
+                }
+
+                const { unlink } = await import("fs/promises");
+                await unlink(filePath).catch(() => {});
+
+                if (transactionResult.kind === "existing") {
+                    return transactionResult.result;
+                }
+                if (transactionResult.kind === "not-found") {
+                    return {
+                        success: false,
+                        message: "ไม่พบข้อมูลการเยี่ยมบ้าน",
+                        error: "UPLOAD_NOT_FOUND",
+                    };
+                }
+                return {
+                    success: false,
+                    message: `อัปโหลดรูปภาพได้สูงสุด ${MAX_PHOTOS_PER_VISIT} รูปต่อครั้ง`,
+                    error: "UPLOAD_LIMIT_REACHED",
+                };
             }
 
             throw new Error("ไม่สามารถกำหนดช่องรูปภาพได้");
