@@ -12,6 +12,8 @@
 
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/database/prisma";
+import { Prisma } from "@prisma/client";
+import { randomUUID } from "crypto";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
@@ -42,6 +44,7 @@ const MAX_FILE_SIZE = MAX_IMAGE_UPLOAD_SIZE;
 
 /** Maximum photos per home visit */
 const MAX_PHOTOS_PER_VISIT = 5;
+const MAX_HOME_VISIT_SLOT_RETRIES = MAX_PHOTOS_PER_VISIT + 1;
 const HOME_VISIT_UPLOAD_LOCK_TTL_SECONDS = 90;
 
 export interface HomeVisitPhotoUploadResult {
@@ -131,6 +134,31 @@ async function findIdempotentHomeVisitPhoto(
             fileUrl: photo.fileUrl,
         },
     };
+}
+
+async function findAvailableHomeVisitPhotoSlot(
+    homeVisitId: string,
+): Promise<number | null> {
+    const photos = await prisma.homeVisitPhoto.findMany({
+        where: { homeVisitId },
+        select: { slot: true },
+    });
+    const occupiedSlots = new Set(photos.map((photo) => photo.slot));
+
+    for (let slot = 1; slot <= MAX_PHOTOS_PER_VISIT; slot++) {
+        if (!occupiedSlots.has(slot)) {
+            return slot;
+        }
+    }
+
+    return null;
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+    return (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+    );
 }
 
 /**
@@ -324,10 +352,10 @@ export async function uploadHomeVisitPhoto(
                 return photoAfterLock;
             }
 
-            const photoCount = await prisma.homeVisitPhoto.count({
-                where: { homeVisitId },
-            });
-            if (photoCount >= MAX_PHOTOS_PER_VISIT) {
+            const firstAvailableSlot = await findAvailableHomeVisitPhotoSlot(
+                homeVisitId,
+            );
+            if (firstAvailableSlot === null) {
                 return {
                     success: false,
                     message: `อัปโหลดรูปภาพได้สูงสุด ${MAX_PHOTOS_PER_VISIT} รูปต่อครั้ง`,
@@ -346,54 +374,75 @@ export async function uploadHomeVisitPhoto(
                 await mkdir(uploadDir, { recursive: true });
             }
 
-            // Generate unique filename
-            const timestamp = Date.now();
-            const fileName = `${homeVisit.studentId}_visit_${timestamp}.${outputExt}`;
-            const filePath = join(uploadDir, fileName);
-
-            // Save file to disk
-            // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB UUID + timestamp + whitelist-validated extension
-            await writeFile(filePath, buffer);
-
-            // Save to database
-            const fileUrl = `/api/uploads/home-visits/${fileName}`;
-            let photo;
-
-            try {
-                photo = await prisma.homeVisitPhoto.create({
-                    data: {
-                        homeVisitId,
-                        fileName: file.name,
-                        fileUrl,
-                        fileType: outputMimeType,
-                        fileSize: buffer.length,
-                        idempotencyKey,
-                    },
-                });
-            } catch (dbError) {
-                const duplicatePhoto = await findIdempotentHomeVisitPhoto(
-                    idempotencyKey,
-                    homeVisitId,
-                );
-                const { unlink } = await import("fs/promises");
-                await unlink(filePath).catch(() => {});
-                if (duplicatePhoto) {
-                    return duplicatePhoto;
+            for (
+                let attempt = 0;
+                attempt < MAX_HOME_VISIT_SLOT_RETRIES;
+                attempt++
+            ) {
+                const slot =
+                    attempt === 0
+                        ? firstAvailableSlot
+                        : await findAvailableHomeVisitPhotoSlot(homeVisitId);
+                if (slot === null) {
+                    return {
+                        success: false,
+                        message: `อัปโหลดรูปภาพได้สูงสุด ${MAX_PHOTOS_PER_VISIT} รูปต่อครั้ง`,
+                        error: "UPLOAD_LIMIT_REACHED",
+                    };
                 }
-                throw dbError;
+
+                const fileName = `${randomUUID()}.${outputExt}`;
+                const filePath = join(uploadDir, fileName);
+
+                // Save file to disk
+                // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from random UUID + whitelist-validated extension
+                await writeFile(filePath, buffer);
+
+                const fileUrl = `/api/uploads/home-visits/${fileName}`;
+                try {
+                    const photo = await prisma.homeVisitPhoto.create({
+                        data: {
+                            homeVisitId,
+                            slot,
+                            fileName: file.name,
+                            fileUrl,
+                            fileType: outputMimeType,
+                            fileSize: buffer.length,
+                            idempotencyKey,
+                        },
+                    });
+
+                    revalidatePath(`/students/${homeVisit.studentId}`);
+
+                    return {
+                        success: true,
+                        message: "อัปโหลดรูปภาพสำเร็จ",
+                        photo: {
+                            id: photo.id,
+                            fileUrl: photo.fileUrl,
+                            fileName: photo.fileName,
+                        },
+                    };
+                } catch (dbError) {
+                    const duplicatePhoto = await findIdempotentHomeVisitPhoto(
+                        idempotencyKey,
+                        homeVisitId,
+                    );
+                    const { unlink } = await import("fs/promises");
+                    await unlink(filePath).catch(() => {});
+                    if (duplicatePhoto) {
+                        return duplicatePhoto;
+                    }
+                    if (!isUniqueConstraintError(dbError)) {
+                        throw dbError;
+                    }
+                    if (attempt === MAX_HOME_VISIT_SLOT_RETRIES - 1) {
+                        throw dbError;
+                    }
+                }
             }
 
-            revalidatePath(`/students/${homeVisit.studentId}`);
-
-            return {
-                success: true,
-                message: "อัปโหลดรูปภาพสำเร็จ",
-                photo: {
-                    id: photo.id,
-                    fileUrl: photo.fileUrl,
-                    fileName: photo.fileName,
-                },
-            };
+            throw new Error("ไม่สามารถกำหนดช่องรูปภาพได้");
         });
     } catch (error) {
         logError("Error uploading home visit photo:", error);

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/database/prisma";
 import {
     createMockUsers,
@@ -15,6 +15,19 @@ import {
     createTestUser,
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
+
+vi.mock("@/lib/cache/redis", () => ({
+    getRedisClient: vi.fn(async () => null),
+}));
+
+vi.mock("@/lib/utils/server-image-compression", () => ({
+    compressWorksheetImageBuffer: vi.fn(async (buffer: Buffer) => ({
+        buffer,
+        extension: "png" as const,
+        mimeType: "image/png" as const,
+    })),
+    isSupportedWorksheetImageExtension: vi.fn(() => true),
+}));
 
 setupAuthMocks();
 
@@ -123,6 +136,63 @@ describe("Integration: Worksheet Access Control", () => {
         expect(result.success).toBe(true);
     });
 
+    it("uses distinct physical files for parallel uploads with the same timestamp", async () => {
+        const student = await createTestStudent(USERS.schoolAdmin.schoolId!, {
+            class: "ม.2/6",
+        });
+        const ay = await createTestAcademicYear({ year: 2602, semester: 1 });
+        const phq = await createTestPhqResult(
+            student.id,
+            ay.id,
+            USERS.schoolAdmin.id,
+        );
+        const progress = await createTestActivityProgress(student.id, phq.id, 1, {
+            status: "in_progress",
+        });
+
+        mockSession(USERS.schoolAdmin);
+        const dateNow = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
+        let uploads: Array<{
+            id: string;
+            worksheetNumber: number;
+            fileUrl: string;
+        }> = [];
+        try {
+            const results = await Promise.all([
+                uploadWorksheet(
+                    progress.id,
+                    createWorksheetFormData("00000000-0000-4000-8000-000000000011"),
+                ),
+                uploadWorksheet(
+                    progress.id,
+                    createWorksheetFormData("00000000-0000-4000-8000-000000000012"),
+                ),
+            ]);
+
+            uploads = await prisma.worksheetUpload.findMany({
+                where: { activityProgressId: progress.id },
+                select: { id: true, worksheetNumber: true, fileUrl: true },
+            });
+
+            expect(results.every((result) => result.success)).toBe(true);
+            expect(uploads).toHaveLength(2);
+            expect(new Set(uploads.map((upload) => upload.fileUrl)).size).toBe(
+                uploads.length,
+            );
+            expect(
+                new Set(uploads.map((upload) => upload.worksheetNumber)).size,
+            ).toBe(uploads.length);
+        } finally {
+            dateNow.mockRestore();
+            mockSession(USERS.schoolAdmin);
+            const rows = await prisma.worksheetUpload.findMany({
+                where: { activityProgressId: progress.id },
+                select: { id: true },
+            });
+            await Promise.all(rows.map((row) => deleteWorksheetUpload(row.id)));
+        }
+    });
+
     it("class_teacher cannot delete worksheet for referred student in own advisory class", async () => {
         const ownStudent = await createTestStudent(USERS.classTeacher.schoolId!, {
             class: "ม.2/5",
@@ -172,4 +242,14 @@ describe("Integration: Worksheet Access Control", () => {
         );
     });
 });
+
+function createWorksheetFormData(uploadRequestId: string): FormData {
+    const pngBytes = new Uint8Array([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+    ]);
+    const formData = new FormData();
+    formData.set("file", new File([pngBytes], "worksheet.png", { type: "image/png" }));
+    formData.set("uploadRequestId", uploadRequestId);
+    return formData;
+}
 

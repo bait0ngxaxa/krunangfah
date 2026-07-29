@@ -453,7 +453,7 @@ model WorksheetUpload {
   worksheetNumber     Int      @default(1) // ลำดับใบงาน (1, 2) — fixed, ไม่เปลี่ยนเมื่อลบ
   
   fileName            String   // ชื่อไฟล์
-  fileUrl             String   // API path สำหรับไฟล์ (เสิร์ฟผ่าน /api/uploads)
+  fileUrl             String   @unique // API path สำหรับไฟล์ (เสิร์ฟผ่าน /api/uploads)
   fileType            String   // image/jpeg, image/png, application/pdf
   fileSize            Int      // ขนาดไฟล์ (bytes)
   
@@ -615,17 +615,19 @@ model HomeVisit {
 
 // Home Visit Photo - รูปภาพการเยี่ยมบ้าน
 model HomeVisitPhoto {
-  id          String   @id @default(cuid())
-  homeVisitId String
-  fileName    String
-  fileUrl     String
-  fileType    String
-  fileSize    Int
+  id            String   @id @default(cuid())
+  homeVisitId   String
+  slot          Int      // ช่องรูปภาพ 1–5 ต่อการเยี่ยมบ้าน
+  fileName      String
+  fileUrl       String   @unique
+  fileType      String
+  fileSize      Int
   idempotencyKey String? @unique @db.Uuid
-  uploadedAt  DateTime @default(now())
+  uploadedAt    DateTime @default(now())
 
   homeVisit HomeVisit @relation(fields: [homeVisitId], references: [id], onDelete: Cascade)
 
+  @@unique([homeVisitId, slot])
   @@map("home_visit_photos")
 }
 

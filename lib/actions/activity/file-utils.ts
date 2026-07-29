@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { requireAuth } from "@/lib/auth/session";
 import { prisma } from "@/lib/database/prisma";
 import { Prisma } from "@prisma/client";
@@ -306,14 +307,13 @@ export async function uploadWorksheet(
             await mkdir(uploadDir, { recursive: true });
         }
 
-        // Generate unique filename using validated extension
-        const timestamp = Date.now();
-        const fileName = `${activityProgress.studentId}_activity${activityProgress.activityNumber}_${timestamp}.${outputExt}`;
+        // Generate a collision-resistant physical filename using the validated extension.
+        const fileName = `${randomUUID()}.${outputExt}`;
         const filePath = buildWorksheetFilePath(fileName);
 
         // Save file to disk
         try {
-            // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from DB UUID + activityNumber + timestamp + whitelist-validated extension
+            // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from random UUID + whitelist-validated extension
             await writeFile(filePath, buffer);
         } catch (error) {
             throw new UploadWorksheetError(

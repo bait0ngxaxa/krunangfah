@@ -5,7 +5,9 @@
  * using real Prisma + mocked auth.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { unlink } from "fs/promises";
+import { basename, join } from "path";
 import {
     setupAuthMocks,
     mockSession,
@@ -22,6 +24,19 @@ import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
 import type { QueryResult } from "@/lib/actions/query-result";
 
+vi.mock("@/lib/cache/redis", () => ({
+    getRedisClient: vi.fn(async () => null),
+}));
+
+vi.mock("@/lib/utils/server-image-compression", () => ({
+    compressWorksheetImageBuffer: vi.fn(async (buffer: Buffer) => ({
+        buffer,
+        extension: "png" as const,
+        mimeType: "image/png" as const,
+    })),
+    isSupportedWorksheetImageExtension: vi.fn(() => true),
+}));
+
 function getQueryData<T>(result: QueryResult<T>): T {
     if (result.status === "success" || result.status === "empty") return result.data;
     throw new Error(`Expected query data, received ${result.status}`);
@@ -33,6 +48,8 @@ const USERS = createMockUsers("hv");
 
 const { createHomeVisit, getHomeVisits } =
     await import("@/lib/actions/home-visit.actions");
+const { uploadHomeVisitPhoto } =
+    await import("@/lib/actions/home-visit-photo.actions");
 
 describe("Integration: Home Visits", () => {
     let studentId: string;
@@ -58,6 +75,23 @@ describe("Integration: Home Visits", () => {
     });
 
     afterAll(async () => {
+        const photos = await prisma.homeVisitPhoto.findMany({
+            where: { homeVisit: { studentId } },
+            select: { fileUrl: true },
+        });
+        await Promise.all(
+            photos.map((photo) =>
+                unlink(
+                    join(
+                        process.cwd(),
+                        ".data",
+                        "uploads",
+                        "home-visits",
+                        basename(photo.fileUrl),
+                    ),
+                ).catch(() => {}),
+            ),
+        );
         await prisma.homeVisit.deleteMany({ where: { studentId } }).catch(() => {});
         await cleanupAll();
     });
@@ -145,4 +179,64 @@ describe("Integration: Home Visits", () => {
             true,
         );
     });
+
+    it("keeps concurrent photo uploads within five slots when Redis is unavailable", async () => {
+        const visit = await prisma.homeVisit.create({
+            data: {
+                studentId,
+                academicYearId,
+                visitNumber: 1000,
+                visitDate: new Date("2026-06-21"),
+                description: "การเยี่ยมบ้านสำหรับทดสอบอัปโหลดรูปภาพพร้อมกัน",
+                teacherName: "ครูทดสอบ",
+                teacherRole: "ครูประจำชั้น",
+                createdById: USERS.classTeacher.id,
+            },
+        });
+
+        mockSession(USERS.classTeacher);
+        const dateNow = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
+        try {
+            const results = await Promise.all(
+                Array.from({ length: 10 }, (_, index) =>
+                    uploadHomeVisitPhoto(
+                        visit.id,
+                        createHomeVisitPhotoFormData(index),
+                    ),
+                ),
+            );
+            const photos = await prisma.homeVisitPhoto.findMany({
+                where: { homeVisitId: visit.id },
+                select: { slot: true, fileUrl: true },
+            });
+            const successfulResults = results.filter((result) => result.success);
+
+            expect(successfulResults.length).toBeLessThanOrEqual(5);
+            expect(photos.length).toBe(successfulResults.length);
+            expect(new Set(photos.map((photo) => photo.slot)).size).toBe(
+                photos.length,
+            );
+            expect(new Set(photos.map((photo) => photo.fileUrl)).size).toBe(
+                photos.length,
+            );
+        } finally {
+            dateNow.mockRestore();
+        }
+    });
 });
+
+function createHomeVisitPhotoFormData(index: number): FormData {
+    const formData = new FormData();
+    const pngBytes = new Uint8Array([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+    ]);
+    formData.set(
+        "file",
+        new File([pngBytes], `photo-${index}.png`, { type: "image/png" }),
+    );
+    formData.set(
+        "uploadRequestId",
+        `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+    );
+    return formData;
+}
