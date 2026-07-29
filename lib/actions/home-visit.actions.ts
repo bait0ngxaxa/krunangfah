@@ -24,6 +24,7 @@ import { handleQueryError } from "./error-handler";
 import { queryEmpty, querySuccess, type QueryResult } from "./query-result";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import { verifyStudentAccessForUser } from "@/lib/security/student-access";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 import type { OffsetPagination } from "@/types/pagination.types";
 import type { AcademicYearDateRange } from "@/lib/utils/student-detail-filters";
 
@@ -89,6 +90,46 @@ async function resolveAcademicYearId(
         select: { id: true },
     });
     return currentYear?.id ?? null;
+}
+
+interface SoftDeleteHomeVisitInput {
+    visitId: string;
+    deletedById: string;
+}
+
+async function softDeleteHomeVisitAndEnqueueFiles(
+    input: SoftDeleteHomeVisitInput,
+): Promise<boolean> {
+    return runSerializableTransaction(async (tx) => {
+        const visitWithPhotos = await tx.homeVisit.findUnique({
+            where: { id: input.visitId, deletedAt: null },
+            select: {
+                photos: { select: { fileUrl: true } },
+            },
+        });
+        if (!visitWithPhotos) {
+            return false;
+        }
+
+        await tx.homeVisit.update({
+            where: { id: input.visitId },
+            data: {
+                deletedAt: new Date(),
+                deletedById: input.deletedById,
+                deleteReason: "ผู้ใช้ลบบันทึกเยี่ยมบ้าน",
+            },
+        });
+        if (visitWithPhotos.photos.length > 0) {
+            await tx.fileDeletionOutbox.createMany({
+                data: visitWithPhotos.photos.map((photo) => ({
+                    fileUrl: photo.fileUrl,
+                })),
+                skipDuplicates: true,
+            });
+        }
+
+        return true;
+    });
 }
 
 function buildAcademicYearRecordFilter(
@@ -368,10 +409,7 @@ export async function deleteHomeVisit(
 
         const visit = await prisma.homeVisit.findUnique({
             where: { id: validated.visitId, deletedAt: null },
-            select: {
-                studentId: true,
-                photos: { select: { fileUrl: true } },
-            },
+            select: { studentId: true },
         });
 
         if (!visit) {
@@ -389,24 +427,14 @@ export async function deleteHomeVisit(
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        await prisma.$transaction(async (tx) => {
-            await tx.homeVisit.update({
-                where: { id: validated.visitId },
-                data: {
-                    deletedAt: new Date(),
-                    deletedById: session.user.id,
-                    deleteReason: "ผู้ใช้ลบบันทึกเยี่ยมบ้าน",
-                },
-            });
-            if (visit.photos.length > 0) {
-                await tx.fileDeletionOutbox.createMany({
-                    data: visit.photos.map((photo) => ({
-                        fileUrl: photo.fileUrl,
-                    })),
-                    skipDuplicates: true,
-                });
-            }
+        const deleted = await softDeleteHomeVisitAndEnqueueFiles({
+            visitId: validated.visitId,
+            deletedById: session.user.id,
         });
+
+        if (!deleted) {
+            return { success: false, message: "ไม่พบข้อมูลที่ต้องการลบ" };
+        }
 
         revalidatePath(`/students/${visit.studentId}`);
 

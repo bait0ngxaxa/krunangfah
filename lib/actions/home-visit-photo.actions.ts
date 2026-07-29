@@ -105,11 +105,17 @@ async function withHomeVisitPhotoLock(
     }
 }
 
+type HomeVisitPhotoDbClient = Pick<
+    Prisma.TransactionClient,
+    "homeVisitPhoto"
+>;
+
 async function findIdempotentHomeVisitPhoto(
+    client: HomeVisitPhotoDbClient,
     idempotencyKey: string,
     homeVisitId: string,
 ): Promise<HomeVisitPhotoUploadResult | null> {
-    const photo = await prisma.homeVisitPhoto.findUnique({
+    const photo = await client.homeVisitPhoto.findUnique({
         where: { idempotencyKey },
         select: { id: true, homeVisitId: true, fileName: true, fileUrl: true },
     });
@@ -137,9 +143,10 @@ async function findIdempotentHomeVisitPhoto(
 }
 
 async function findAvailableHomeVisitPhotoSlot(
+    client: HomeVisitPhotoDbClient,
     homeVisitId: string,
 ): Promise<number | null> {
-    const photos = await prisma.homeVisitPhoto.findMany({
+    const photos = await client.homeVisitPhoto.findMany({
         where: { homeVisitId },
         select: { slot: true },
     });
@@ -154,10 +161,92 @@ async function findAvailableHomeVisitPhotoSlot(
     return null;
 }
 
-function isUniqueConstraintError(error: unknown): boolean {
+function isRetryablePhotoTransactionError(error: unknown): boolean {
     return (
         error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2002"
+        (error.code === "P2002" || error.code === "P2034")
+    );
+}
+
+interface CreateHomeVisitPhotoInput {
+    homeVisitId: string;
+    idempotencyKey: string;
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    fileSize: number;
+}
+
+type HomeVisitPhotoTransactionResult =
+    | {
+          kind: "created";
+          photo: { id: string; fileUrl: string; fileName: string };
+      }
+    | { kind: "existing"; result: HomeVisitPhotoUploadResult }
+    | { kind: "not-found" }
+    | { kind: "limit-reached" };
+
+type HomeVisitPhotoTransactionCheck =
+    | { kind: "ready"; slot: number }
+    | Exclude<HomeVisitPhotoTransactionResult, { kind: "created" }>;
+
+async function checkHomeVisitPhotoTransaction(
+    tx: Prisma.TransactionClient,
+    input: CreateHomeVisitPhotoInput,
+): Promise<HomeVisitPhotoTransactionCheck> {
+    const homeVisit = await tx.homeVisit.findFirst({
+        where: { id: input.homeVisitId, deletedAt: null },
+        select: { id: true, studentId: true },
+    });
+    if (!homeVisit) {
+        return { kind: "not-found" };
+    }
+
+    const existingPhoto = await findIdempotentHomeVisitPhoto(
+        tx,
+        input.idempotencyKey,
+        input.homeVisitId,
+    );
+    if (existingPhoto) {
+        return { kind: "existing", result: existingPhoto };
+    }
+
+    const slot = await findAvailableHomeVisitPhotoSlot(tx, input.homeVisitId);
+    return slot === null ? { kind: "limit-reached" } : { kind: "ready", slot };
+}
+
+async function createHomeVisitPhotoRecord(
+    input: CreateHomeVisitPhotoInput,
+): Promise<HomeVisitPhotoTransactionResult> {
+    return prisma.$transaction(
+        async (tx): Promise<HomeVisitPhotoTransactionResult> => {
+            const check = await checkHomeVisitPhotoTransaction(tx, input);
+            if (check.kind !== "ready") {
+                return check;
+            }
+
+            const photo = await tx.homeVisitPhoto.create({
+                data: {
+                    homeVisitId: input.homeVisitId,
+                    slot: check.slot,
+                    fileName: input.fileName,
+                    fileUrl: input.fileUrl,
+                    fileType: input.fileType,
+                    fileSize: input.fileSize,
+                    idempotencyKey: input.idempotencyKey,
+                },
+            });
+
+            return {
+                kind: "created",
+                photo: {
+                    id: photo.id,
+                    fileUrl: photo.fileUrl,
+                    fileName: photo.fileName,
+                },
+            };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
 }
 
@@ -268,8 +357,8 @@ export async function uploadHomeVisitPhoto(
         }
 
         // Get home visit with student info for authorization
-        const homeVisit = await prisma.homeVisit.findUnique({
-            where: { id: homeVisitId },
+        const homeVisit = await prisma.homeVisit.findFirst({
+            where: { id: homeVisitId, deletedAt: null },
             select: {
                 id: true,
                 studentId: true,
@@ -336,6 +425,7 @@ export async function uploadHomeVisitPhoto(
         }
 
         const existingPhoto = await findIdempotentHomeVisitPhoto(
+            prisma,
             idempotencyKey,
             homeVisitId,
         );
@@ -345,22 +435,12 @@ export async function uploadHomeVisitPhoto(
 
         return withHomeVisitPhotoLock(homeVisitId, async () => {
             const photoAfterLock = await findIdempotentHomeVisitPhoto(
+                prisma,
                 idempotencyKey,
                 homeVisitId,
             );
             if (photoAfterLock) {
                 return photoAfterLock;
-            }
-
-            const firstAvailableSlot = await findAvailableHomeVisitPhotoSlot(
-                homeVisitId,
-            );
-            if (firstAvailableSlot === null) {
-                return {
-                    success: false,
-                    message: `อัปโหลดรูปภาพได้สูงสุด ${MAX_PHOTOS_PER_VISIT} รูปต่อครั้ง`,
-                    error: "UPLOAD_LIMIT_REACHED",
-                };
             }
 
             // Create upload directory
@@ -379,18 +459,6 @@ export async function uploadHomeVisitPhoto(
                 attempt < MAX_HOME_VISIT_SLOT_RETRIES;
                 attempt++
             ) {
-                const slot =
-                    attempt === 0
-                        ? firstAvailableSlot
-                        : await findAvailableHomeVisitPhotoSlot(homeVisitId);
-                if (slot === null) {
-                    return {
-                        success: false,
-                        message: `อัปโหลดรูปภาพได้สูงสุด ${MAX_PHOTOS_PER_VISIT} รูปต่อครั้ง`,
-                        error: "UPLOAD_LIMIT_REACHED",
-                    };
-                }
-
                 const fileName = `${randomUUID()}.${outputExt}`;
                 const filePath = join(uploadDir, fileName);
 
@@ -400,31 +468,46 @@ export async function uploadHomeVisitPhoto(
 
                 const fileUrl = `/api/uploads/home-visits/${fileName}`;
                 try {
-                    const photo = await prisma.homeVisitPhoto.create({
-                        data: {
-                            homeVisitId,
-                            slot,
-                            fileName: file.name,
-                            fileUrl,
-                            fileType: outputMimeType,
-                            fileSize: buffer.length,
-                            idempotencyKey,
-                        },
+                    const transactionResult = await createHomeVisitPhotoRecord({
+                        homeVisitId,
+                        idempotencyKey,
+                        fileName: file.name,
+                        fileUrl,
+                        fileType: outputMimeType,
+                        fileSize: buffer.length,
                     });
 
-                    revalidatePath(`/students/${homeVisit.studentId}`);
+                    if (transactionResult.kind === "created") {
+                        revalidatePath(`/students/${homeVisit.studentId}`);
 
+                        return {
+                            success: true,
+                            message: "อัปโหลดรูปภาพสำเร็จ",
+                            photo: transactionResult.photo,
+                        };
+                    }
+
+                    const { unlink } = await import("fs/promises");
+                    await unlink(filePath).catch(() => {});
+
+                    if (transactionResult.kind === "existing") {
+                        return transactionResult.result;
+                    }
+                    if (transactionResult.kind === "not-found") {
+                        return {
+                            success: false,
+                            message: "ไม่พบข้อมูลการเยี่ยมบ้าน",
+                            error: "UPLOAD_NOT_FOUND",
+                        };
+                    }
                     return {
-                        success: true,
-                        message: "อัปโหลดรูปภาพสำเร็จ",
-                        photo: {
-                            id: photo.id,
-                            fileUrl: photo.fileUrl,
-                            fileName: photo.fileName,
-                        },
+                        success: false,
+                        message: `อัปโหลดรูปภาพได้สูงสุด ${MAX_PHOTOS_PER_VISIT} รูปต่อครั้ง`,
+                        error: "UPLOAD_LIMIT_REACHED",
                     };
                 } catch (dbError) {
                     const duplicatePhoto = await findIdempotentHomeVisitPhoto(
+                        prisma,
                         idempotencyKey,
                         homeVisitId,
                     );
@@ -433,7 +516,7 @@ export async function uploadHomeVisitPhoto(
                     if (duplicatePhoto) {
                         return duplicatePhoto;
                     }
-                    if (!isUniqueConstraintError(dbError)) {
+                    if (!isRetryablePhotoTransactionError(dbError)) {
                         throw dbError;
                     }
                     if (attempt === MAX_HOME_VISIT_SLOT_RETRIES - 1) {

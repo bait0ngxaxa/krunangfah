@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
-import { unlink } from "fs/promises";
+import { readdir, unlink } from "fs/promises";
 import { basename, join } from "path";
 import {
     setupAuthMocks,
@@ -46,7 +46,7 @@ setupAuthMocks();
 
 const USERS = createMockUsers("hv");
 
-const { createHomeVisit, getHomeVisits } =
+const { createHomeVisit, deleteHomeVisit, getHomeVisits } =
     await import("@/lib/actions/home-visit.actions");
 const { uploadHomeVisitPhoto } =
     await import("@/lib/actions/home-visit-photo.actions");
@@ -92,6 +92,11 @@ describe("Integration: Home Visits", () => {
                 ).catch(() => {}),
             ),
         );
+        await prisma.fileDeletionOutbox
+            .deleteMany({
+                where: { fileUrl: { in: photos.map((photo) => photo.fileUrl) } },
+            })
+            .catch(() => {});
         await prisma.homeVisit.deleteMany({ where: { studentId } }).catch(() => {});
         await cleanupAll();
     });
@@ -222,6 +227,101 @@ describe("Integration: Home Visits", () => {
         } finally {
             dateNow.mockRestore();
         }
+    });
+
+    it("rejects photo uploads after the home visit is soft-deleted", async () => {
+        const visit = await prisma.homeVisit.create({
+            data: {
+                studentId,
+                academicYearId,
+                visitNumber: 1001,
+                visitDate: new Date("2026-06-22"),
+                description: "การเยี่ยมบ้านสำหรับทดสอบการอัปโหลดหลังลบ",
+                teacherName: "ครูทดสอบ",
+                teacherRole: "ครูประจำชั้น",
+                createdById: USERS.classTeacher.id,
+            },
+        });
+
+        mockSession(USERS.classTeacher);
+        const deleteResult = await deleteHomeVisit(visit.id);
+        expect(deleteResult).toEqual({ success: true });
+        const uploadDir = join(
+            process.cwd(),
+            ".data",
+            "uploads",
+            "home-visits",
+        );
+        const filesBeforeUpload = new Set(
+            await readdir(uploadDir).catch(() => [] as string[]),
+        );
+
+        const uploadResult = await uploadHomeVisitPhoto(
+            visit.id,
+            createHomeVisitPhotoFormData(1001),
+        );
+
+        expect(uploadResult).toEqual({
+            success: false,
+            message: "ไม่พบข้อมูลการเยี่ยมบ้าน",
+            error: "UPLOAD_NOT_FOUND",
+        });
+        await expect(
+            prisma.homeVisitPhoto.count({ where: { homeVisitId: visit.id } }),
+        ).resolves.toBe(0);
+        const filesAfterUpload = new Set(
+            await readdir(uploadDir).catch(() => [] as string[]),
+        );
+        expect(
+            [...filesAfterUpload].filter(
+                (fileName) => !filesBeforeUpload.has(fileName),
+            ),
+        ).toHaveLength(0);
+    });
+
+    it("keeps photo cleanup consistent when deletion races an upload", async () => {
+        mockSession(USERS.classTeacher);
+
+        const visit = await prisma.homeVisit.create({
+            data: {
+                studentId,
+                academicYearId,
+                visitNumber: 1100,
+                visitDate: new Date("2026-06-23"),
+                description: "การเยี่ยมบ้านสำหรับทดสอบ race ระหว่างลบและอัปโหลด",
+                teacherName: "ครูทดสอบ",
+                teacherRole: "ครูประจำชั้น",
+                createdById: USERS.classTeacher.id,
+            },
+        });
+
+        const [deleteResult, uploadResult] = await Promise.all([
+            deleteHomeVisit(visit.id),
+            uploadHomeVisitPhoto(visit.id, createHomeVisitPhotoFormData(1100)),
+        ]);
+
+        expect(deleteResult.success).toBe(true);
+        if (!uploadResult.success) {
+            expect(uploadResult.error).toBe("UPLOAD_NOT_FOUND");
+        }
+
+        const deletedVisit = await prisma.homeVisit.findUnique({
+            where: { id: visit.id },
+            select: { deletedAt: true },
+        });
+        const photos = await prisma.homeVisitPhoto.findMany({
+            where: { homeVisitId: visit.id },
+            select: { fileUrl: true },
+        });
+        const queuedFiles = await prisma.fileDeletionOutbox.findMany({
+            where: { fileUrl: { in: photos.map((photo) => photo.fileUrl) } },
+            select: { fileUrl: true },
+        });
+
+        expect(deletedVisit?.deletedAt).not.toBeNull();
+        expect(queuedFiles.map((file) => file.fileUrl)).toEqual(
+            expect.arrayContaining(photos.map((photo) => photo.fileUrl)),
+        );
     });
 });
 

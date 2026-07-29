@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
     findUnique: vi.fn(),
     hardDelete: vi.fn(),
     softDelete: vi.fn(),
+    transactionHomeVisitFindUnique: vi.fn(),
     enqueueCleanup: vi.fn(),
     transaction: vi.fn(),
     requireAuth: vi.fn(),
@@ -48,11 +49,21 @@ describe("deleteHomeVisit", () => {
         mocks.transaction.mockImplementation(
             async (callback: (tx: unknown) => Promise<unknown>) =>
                 callback({
-                    homeVisit: { update: mocks.softDelete },
+                    homeVisit: {
+                        findUnique: mocks.transactionHomeVisitFindUnique,
+                        update: mocks.softDelete,
+                    },
                     fileDeletionOutbox: { createMany: mocks.enqueueCleanup },
                 }),
         );
         mocks.softDelete.mockResolvedValue({ id: "cvisit123" });
+        mocks.transactionHomeVisitFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            photos: [
+                { fileUrl: "/api/uploads/home-visits/photo-one.webp" },
+                { fileUrl: "/api/uploads/home-visits/photo-two.webp" },
+            ],
+        });
         mocks.enqueueCleanup.mockResolvedValue({ count: 2 });
     });
 
@@ -93,5 +104,26 @@ describe("deleteHomeVisit", () => {
         expect(mocks.enqueueCleanup).toHaveBeenCalledOnce();
         expect(mocks.hardDelete).not.toHaveBeenCalled();
         expect(mocks.unlink).not.toHaveBeenCalled();
+    });
+
+    it("reads the photo snapshot inside the deletion transaction", async () => {
+        mocks.findUnique.mockResolvedValue({ studentId: "student-1" });
+
+        const result = await deleteHomeVisit("cvisit123");
+
+        expect(result).toEqual({ success: true });
+        expect(mocks.transactionHomeVisitFindUnique).toHaveBeenCalledWith({
+            where: { id: "cvisit123", deletedAt: null },
+            select: {
+                photos: { select: { fileUrl: true } },
+            },
+        });
+        expect(mocks.enqueueCleanup).toHaveBeenCalledWith({
+            data: [
+                { fileUrl: "/api/uploads/home-visits/photo-one.webp" },
+                { fileUrl: "/api/uploads/home-visits/photo-two.webp" },
+            ],
+            skipDuplicates: true,
+        });
     });
 });
