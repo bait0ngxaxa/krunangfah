@@ -12,7 +12,9 @@ const mocks = vi.hoisted(() => ({
     activityProgressUpdate: vi.fn(),
     transaction: vi.fn(),
     transactionWorksheetUploadDelete: vi.fn(),
+    transactionWorksheetUploadCount: vi.fn(),
     transactionActivityProgressUpdate: vi.fn(),
+    transactionActivityProgressUpdateMany: vi.fn(),
     enqueueCleanup: vi.fn(),
     unlink: vi.fn(),
     mkdir: vi.fn(),
@@ -139,8 +141,12 @@ describe("uploadWorksheet lock", () => {
         mocks.transactionWorksheetUploadDelete.mockResolvedValue({
             id: "upload-1",
         });
+        mocks.transactionWorksheetUploadCount.mockResolvedValue(0);
         mocks.transactionActivityProgressUpdate.mockResolvedValue({
             id: "progress-1",
+        });
+        mocks.transactionActivityProgressUpdateMany.mockResolvedValue({
+            count: 1,
         });
         mocks.enqueueCleanup.mockResolvedValue({ count: 1 });
         mocks.transaction.mockImplementation(
@@ -148,9 +154,11 @@ describe("uploadWorksheet lock", () => {
                 callback({
                     worksheetUpload: {
                         delete: mocks.transactionWorksheetUploadDelete,
+                        count: mocks.transactionWorksheetUploadCount,
                     },
                     activityProgress: {
                         update: mocks.transactionActivityProgressUpdate,
+                        updateMany: mocks.transactionActivityProgressUpdateMany,
                     },
                     fileDeletionOutbox: { createMany: mocks.enqueueCleanup },
                 }),

@@ -33,6 +33,7 @@ import {
 } from "@/lib/utils/server-image-compression";
 import { verifyStudentActivityAccess } from "./access";
 import { acquireRedisLock, releaseRedisLock } from "@/lib/cache/redis-lock";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 import { getUploadRequestId } from "@/lib/validations/upload.validation";
 
 const MAX_WORKSHEET_NUMBER_RETRIES = 3;
@@ -490,7 +491,6 @@ export async function deleteWorksheetUpload(
                                 class: true,
                             },
                         },
-                        worksheetUploads: { select: { id: true } },
                     },
                 },
             },
@@ -519,11 +519,10 @@ export async function deleteWorksheetUpload(
         }
 
         const activityProgress = upload.activityProgress;
-        const remainingCount = activityProgress.worksheetUploads.length - 1;
         const requiredCount =
             REQUIRED_WORKSHEETS[activityProgress.activityNumber] || 2;
 
-        await prisma.$transaction(async (tx) => {
+        await runSerializableTransaction(async (tx) => {
             await tx.worksheetUpload.delete({
                 where: { id: uploadId },
             });
@@ -531,12 +530,18 @@ export async function deleteWorksheetUpload(
                 data: [{ fileUrl: upload.fileUrl }],
                 skipDuplicates: true,
             });
+            const remainingCount = await tx.worksheetUpload.count({
+                where: { activityProgressId: activityProgress.id },
+            });
             if (
                 activityProgress.status === "completed" &&
                 remainingCount < requiredCount
             ) {
-                await tx.activityProgress.update({
-                    where: { id: activityProgress.id },
+                await tx.activityProgress.updateMany({
+                    where: {
+                        id: activityProgress.id,
+                        status: "completed",
+                    },
                     data: {
                         status: "in_progress",
                         completedAt: null,

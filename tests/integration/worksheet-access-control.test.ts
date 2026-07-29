@@ -136,6 +136,56 @@ describe("Integration: Worksheet Access Control", () => {
         expect(result.success).toBe(true);
     });
 
+    it("reverts completed activity when concurrent deletes leave fewer worksheets than required", async () => {
+        const student = await createTestStudent(USERS.schoolAdmin.schoolId!, {
+            class: "ม.2/6",
+        });
+        const ay = await createTestAcademicYear({ year: 2603, semester: 1 });
+        const phq = await createTestPhqResult(
+            student.id,
+            ay.id,
+            USERS.schoolAdmin.id,
+        );
+        const progress = await createTestActivityProgress(
+            student.id,
+            phq.id,
+            1,
+            { status: "completed" },
+        );
+        const uploads = await prisma.worksheetUpload.createManyAndReturn({
+            data: [1, 2, 3].map((worksheetNumber) => ({
+                activityProgressId: progress.id,
+                worksheetNumber,
+                fileName: `concurrent-${worksheetNumber}.png`,
+                fileUrl: `/api/uploads/worksheets/concurrent-${worksheetNumber}.png`,
+                fileType: "image/png",
+                fileSize: 100,
+                uploadedById: USERS.schoolAdmin.id,
+            })),
+        });
+
+        mockSession(USERS.schoolAdmin);
+        const results = await Promise.all(
+            uploads
+                .slice(0, 2)
+                .map((upload) => deleteWorksheetUpload(upload.id)),
+        );
+
+        const [remainingCount, activity] = await Promise.all([
+            prisma.worksheetUpload.count({
+                where: { activityProgressId: progress.id },
+            }),
+            prisma.activityProgress.findUnique({
+                where: { id: progress.id },
+                select: { status: true },
+            }),
+        ]);
+
+        expect(results.every((result) => result.success)).toBe(true);
+        expect(remainingCount).toBe(1);
+        expect(activity?.status).toBe("in_progress");
+    });
+
     it("uses distinct physical files for parallel uploads with the same timestamp", async () => {
         const student = await createTestStudent(USERS.schoolAdmin.schoolId!, {
             class: "ม.2/6",
