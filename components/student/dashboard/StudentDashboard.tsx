@@ -193,6 +193,7 @@ export function StudentDashboard(props: StudentDashboardProps) {
                             groupedStudents={groupedStudents}
                             selectedClass={selectedClass}
                             classes={props.classes}
+                            riskCounts={props.riskCounts}
                             filters={props.filters}
                             pagination={props.pagination}
                             riskLevels={displayedRiskLevels}

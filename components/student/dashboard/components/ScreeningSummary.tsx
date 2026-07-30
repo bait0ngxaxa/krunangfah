@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { ClipboardCheck } from "lucide-react";
 import { RiskGroupSection } from "../../phq/RiskGroupSection";
-import type { Student, GroupedStudents, RiskLevel } from "../types";
+import type {
+    Student,
+    GroupedStudents,
+    RiskLevel,
+    StudentGroupCounts,
+} from "../types";
 
 function getStudentsByLevel(
     groupedStudents: GroupedStudents,
@@ -21,6 +26,21 @@ function getStudentsByLevel(
     }
 }
 
+function getRiskCount(riskCounts: StudentGroupCounts, level: RiskLevel): number {
+    switch (level) {
+        case "red":
+            return riskCounts.red;
+        case "orange":
+            return riskCounts.orange;
+        case "yellow":
+            return riskCounts.yellow;
+        case "green":
+            return riskCounts.green;
+        case "blue":
+            return riskCounts.blue;
+    }
+}
+
 interface ScreeningSummaryProps {
     displayedStudentCount: number;
     filteredStudentCount: number;
@@ -28,6 +48,7 @@ interface ScreeningSummaryProps {
     selectedClass: string;
     classes: string[];
     riskLevels: readonly RiskLevel[];
+    riskCounts: StudentGroupCounts;
     filters?: {
         schoolId?: string;
         className?: string;
@@ -83,6 +104,13 @@ function buildPageHref(
     return queryString ? `/students?${queryString}` : "/students";
 }
 
+function buildRiskGroupHref(
+    filters: ScreeningSummaryProps["filters"],
+    level: RiskLevel,
+): string {
+    return buildPageHref({ ...filters, riskLevel: level }, 1);
+}
+
 function buildStudentDetailQuery(
     filters: ScreeningSummaryProps["filters"],
 ): string {
@@ -123,6 +151,7 @@ export function ScreeningSummary({
     selectedClass,
     classes,
     riskLevels,
+    riskCounts,
     filters,
     pagination,
     readOnly = false,
@@ -167,6 +196,8 @@ export function ScreeningSummary({
                     key={level}
                     level={level}
                     students={getStudentsByLevel(groupedStudents, level)}
+                    totalCount={getRiskCount(riskCounts, level)}
+                    viewAllHref={buildRiskGroupHref(filters, level)}
                     readOnly={readOnly}
                     studentDetailQuery={studentDetailQuery}
                 />

@@ -1,16 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import type { ReactElement } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import {
     getRiskLevelConfig,
     type RiskLevel,
 } from "@/lib/constants/risk-levels";
 
-const MAX_VISIBLE_ROWS = 6;
-const ROW_HEIGHT_PX = 56;
-const MAX_LIST_HEIGHT = MAX_VISIBLE_ROWS * ROW_HEIGHT_PX;
+const MAX_PREVIEW_ROWS = 6;
 
 interface Student {
     id: string;
@@ -32,59 +31,55 @@ interface Student {
 interface RiskGroupSectionProps {
     level: RiskLevel;
     students: Student[];
+    totalCount: number;
+    viewAllHref?: string;
     readOnly?: boolean;
     studentDetailQuery?: string;
+}
+
+function formatCount(count: number): string {
+    if (!Number.isFinite(count) || count < 0) {
+        return "0";
+    }
+
+    return count.toLocaleString("th-TH");
 }
 
 export function RiskGroupSection({
     level,
     students,
+    totalCount,
+    viewAllHref,
     readOnly = false,
     studentDetailQuery = "",
-}: RiskGroupSectionProps) {
+}: RiskGroupSectionProps): ReactElement | null {
     const config = getRiskLevelConfig(level);
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const [scrolledToBottom, setScrolledToBottom] = useState(false);
+    const [showAllStudents, setShowAllStudents] = useState(false);
+    const resolvedTotalCount = Math.max(totalCount, students.length);
 
-    const isScrollable = students.length > MAX_VISIBLE_ROWS;
-    const showFade = isScrollable && !scrolledToBottom;
-
-    const checkScroll = useCallback(() => {
-        const element = scrollRef.current;
-        if (!element) return;
-        // Small threshold prevents flicker when browser reports sub-pixel scroll positions.
-        const distanceFromBottom =
-            element.scrollHeight - element.scrollTop - element.clientHeight;
-        setScrolledToBottom(distanceFromBottom <= 8);
-    }, []);
-
-    useEffect(() => {
-        if (!isScrollable) return;
-        const element = scrollRef.current;
-        if (!element) return;
-        const rafId = requestAnimationFrame(() => checkScroll());
-        element.addEventListener("scroll", checkScroll, { passive: true });
-        return () => {
-            cancelAnimationFrame(rafId);
-            element.removeEventListener("scroll", checkScroll);
-        };
-    }, [isScrollable, checkScroll]);
-
-    if (students.length === 0) {
+    if (resolvedTotalCount === 0) {
         return null;
     }
 
+    const previewStudents = students.slice(0, MAX_PREVIEW_ROWS);
+    const visibleStudents = showAllStudents ? students : previewStudents;
+    const canExpandLoadedStudents = students.length > MAX_PREVIEW_ROWS;
+    const hasMoreStudents = resolvedTotalCount > previewStudents.length;
+    const shouldShowViewAllAction =
+        !showAllStudents &&
+        hasMoreStudents &&
+        (canExpandLoadedStudents || Boolean(viewAllHref));
     const actionLabel =
         level === "red" || level === "blue"
             ? "หลักการพูดคุย"
             : "เข้าสู่ระบบใบงาน";
 
     return (
-        <div
-            className={`overflow-hidden rounded-2xl border shadow-lg ring-1 ${config.cardBorder} ${config.cardRing}`}
+        <details
+            className={`group overflow-hidden rounded-2xl border shadow-lg ring-1 ${config.cardBorder} ${config.cardRing}`}
         >
-            <div
-                className={`flex flex-col gap-2 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between ${config.headerGradient} ${config.headerTextColor}`}
+            <summary
+                className={`flex cursor-pointer list-none flex-col gap-2 px-5 py-3.5 outline-none transition-base hover:brightness-[0.99] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 sm:flex-row sm:items-center sm:justify-between [&::-webkit-details-marker]:hidden ${config.headerGradient} ${config.headerTextColor}`}
             >
                 <div className="flex min-w-0 items-center gap-2.5">
                     <span className="text-lg leading-none" aria-hidden="true">
@@ -94,25 +89,27 @@ export function RiskGroupSection({
                         {config.label}
                     </h3>
                 </div>
-                <span
-                    className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${config.countBg} ${config.countText}`}
-                >
-                    {students.length.toLocaleString("th-TH")} คน
-                </span>
-            </div>
+                <div className="flex items-center gap-2">
+                    <span
+                        className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${config.countBg} ${config.countText}`}
+                    >
+                        {formatCount(resolvedTotalCount)} คน
+                    </span>
+                    <ChevronDown
+                        className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180"
+                        aria-hidden="true"
+                    />
+                </div>
+            </summary>
 
-            <div className="relative">
-                <div
-                    ref={scrollRef}
-                    className={`${config.cardBg} ${isScrollable ? "overflow-y-auto" : ""}`}
-                    style={
-                        isScrollable
-                            ? { maxHeight: MAX_LIST_HEIGHT }
-                            : undefined
-                    }
-                >
-                    <div className="divide-y divide-gray-100/80" role="list">
-                        {students.map((student, index) => (
+            <div className={`${config.cardBg}`}>
+                {previewStudents.length > 0 ? (
+                    <div
+                        id={`risk-group-${level}-students`}
+                        className="divide-y divide-gray-100/80"
+                        role="list"
+                    >
+                        {visibleStudents.map((student, index) => (
                             <div
                                 key={student.id}
                                 className={`group flex flex-col gap-3 px-4 py-3 transition-base duration-200 sm:flex-row sm:items-center sm:justify-between sm:px-5 ${config.hoverBg}`}
@@ -157,15 +154,43 @@ export function RiskGroupSection({
                             </div>
                         ))}
                     </div>
-                </div>
+                ) : (
+                    <p className="px-5 py-4 text-sm text-slate-500">
+                        รายชื่อกลุ่มนี้อยู่ในหน้าอื่น
+                    </p>
+                )}
 
-                {isScrollable && showFade ? (
-                    <div
-                        className="absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-white to-transparent pointer-events-none"
-                        aria-hidden="true"
-                    />
+                {shouldShowViewAllAction ? (
+                    <div className="border-t border-slate-100 px-4 py-3.5 sm:px-5">
+                        {canExpandLoadedStudents ? (
+                            <button
+                                type="button"
+                                onClick={() => setShowAllStudents(true)}
+                                aria-expanded={showAllStudents}
+                                aria-controls={`risk-group-${level}-students`}
+                                className={`inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 ${config.btnBase} ${config.btnHover}`}
+                            >
+                                ดูทั้งหมด {formatCount(resolvedTotalCount)} คน
+                                <ChevronDown
+                                    className="h-4 w-4 shrink-0"
+                                    aria-hidden="true"
+                                />
+                            </button>
+                        ) : viewAllHref ? (
+                            <Link
+                                href={viewAllHref}
+                                className={`inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 ${config.btnBase} ${config.btnHover}`}
+                            >
+                                ดูทั้งหมด {formatCount(resolvedTotalCount)} คน
+                                <ChevronRight
+                                    className="h-4 w-4 shrink-0"
+                                    aria-hidden="true"
+                                />
+                            </Link>
+                        ) : null}
+                    </div>
                 ) : null}
             </div>
-        </div>
+        </details>
     );
 }
