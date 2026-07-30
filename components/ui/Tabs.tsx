@@ -7,7 +7,11 @@ import {
     type KeyboardEvent,
     type ReactNode,
 } from "react";
-import { useSearchParams, usePathname } from "next/navigation";
+import {
+    usePathname,
+    useRouter,
+    useSearchParams,
+} from "next/navigation";
 
 export interface Tab {
     id: string;
@@ -24,38 +28,32 @@ interface TabsProps {
 
 export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
     const instanceId = useId();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const fallbackTabId = defaultTab || tabs[0]?.id || "";
 
-    const resolveUrlTab = useCallback((): string => {
-        if (syncWithUrl) {
-            const urlTab = searchParams.get("tab");
-            if (urlTab && tabs.some((t) => t.id === urlTab)) {
-                return urlTab;
-            }
-        }
-        return fallbackTabId;
-    }, [syncWithUrl, searchParams, tabs, fallbackTabId]);
-
-    const [activeTab, setActiveTab] = useState(() => resolveUrlTab());
+    const [localActiveTab, setLocalActiveTab] = useState(fallbackTabId);
+    const urlTab = syncWithUrl ? searchParams.get("tab") : null;
+    const resolvedUrlTab =
+        urlTab && tabs.some((tab) => tab.id === urlTab) ? urlTab : null;
 
     const handleTabChange = useCallback(
         (tabId: string): void => {
-            setActiveTab(tabId);
-
-            if (syncWithUrl) {
-                const params = new URLSearchParams(searchParams.toString());
-                params.set("tab", tabId);
-                const queryString = params.toString();
-                window.history.replaceState(
-                    window.history.state,
-                    "",
-                    queryString ? `${pathname}?${queryString}` : pathname,
-                );
+            if (!syncWithUrl) {
+                setLocalActiveTab(tabId);
+                return;
             }
+
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("tab", tabId);
+            const queryString = params.toString();
+            router.replace(
+                queryString ? `${pathname}?${queryString}` : pathname,
+                { scroll: false },
+            );
         },
-        [syncWithUrl, searchParams, pathname],
+        [pathname, router, searchParams, syncWithUrl],
     );
 
     const handleTabKeyDown = useCallback(
@@ -95,8 +93,10 @@ export function Tabs({ tabs, defaultTab, syncWithUrl = false }: TabsProps) {
         [handleTabChange, instanceId, tabs],
     );
 
-    const resolvedActiveTab = tabs.some((tab) => tab.id === activeTab)
-        ? activeTab
+    const resolvedActiveTab = syncWithUrl
+        ? resolvedUrlTab ?? fallbackTabId
+        : tabs.some((tab) => tab.id === localActiveTab)
+        ? localActiveTab
         : fallbackTabId;
     const activeTabContent = tabs.find((tab) => tab.id === resolvedActiveTab)?.content;
     const activeTabButtonId = `${instanceId}-tab-${resolvedActiveTab}`;
