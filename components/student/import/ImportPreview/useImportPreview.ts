@@ -28,6 +28,7 @@ import {
     filterPreviewStudents,
     formatParseImportErrors,
     formatImportIssues,
+    getAcademicYearLabel,
     getImportedClasses,
 } from "./utils";
 
@@ -283,6 +284,14 @@ export function useImportPreview({
                         success: true,
                         status:
                             result.status === "success" ? "success" : "partial",
+                    }, {
+                        academicYearId: selectedYearId,
+                        academicYearLabel: getAcademicYearLabel(
+                            academicYears,
+                            selectedYearId,
+                        ),
+                        assessmentRound,
+                        classNames: getImportedClasses(previewData),
                     });
                 } else {
                     setErrorTitle("นำเข้าข้อมูลไม่สำเร็จ");

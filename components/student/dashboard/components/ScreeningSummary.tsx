@@ -33,6 +33,8 @@ interface ScreeningSummaryProps {
         className?: string;
         riskLevel?: string;
         referredOnly?: string;
+        academicYearId?: string;
+        assessmentRound?: number;
     };
     pagination: {
         page: number;
@@ -65,12 +67,45 @@ function buildPageHref(
         searchParams.set("referred", "true");
     }
 
+    if (filters?.academicYearId) {
+        searchParams.set("year", filters.academicYearId);
+    }
+
+    if (filters?.assessmentRound) {
+        searchParams.set("round", String(filters.assessmentRound));
+    }
+
     if (page > 1) {
         searchParams.set("page", String(page));
     }
 
     const queryString = searchParams.toString();
     return queryString ? `/students?${queryString}` : "/students";
+}
+
+function buildStudentDetailQuery(
+    filters: ScreeningSummaryProps["filters"],
+): string {
+    const searchParams = new URLSearchParams();
+
+    if (filters?.schoolId) {
+        searchParams.set("school", filters.schoolId);
+    }
+
+    if (filters?.className && filters.className !== "all") {
+        searchParams.set("class", filters.className);
+    }
+
+    if (filters?.academicYearId) {
+        searchParams.set("year", filters.academicYearId);
+    }
+
+    if (filters?.assessmentRound) {
+        searchParams.set("round", String(filters.assessmentRound));
+    }
+
+    const queryString = searchParams.toString();
+    return queryString ? `?${queryString}` : "";
 }
 
 function formatCount(count: number): string {
@@ -92,6 +127,8 @@ export function ScreeningSummary({
     pagination,
     readOnly = false,
 }: ScreeningSummaryProps) {
+    const studentDetailQuery = buildStudentDetailQuery(filters);
+
     return (
         <div className="space-y-5">
             <div className="relative overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 backdrop-blur-xl">
@@ -131,6 +168,7 @@ export function ScreeningSummary({
                     level={level}
                     students={getStudentsByLevel(groupedStudents, level)}
                     readOnly={readOnly}
+                    studentDetailQuery={studentDetailQuery}
                 />
             ))}
 

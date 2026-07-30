@@ -2,6 +2,7 @@ import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import type { RiskLevel } from "@/lib/constants/risk-levels";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 import type { ImportResult } from "@/lib/actions/student/types";
+import type { ImportCompletionContext } from "../completion";
 
 /**
  * Props for ImportPreview component
@@ -10,7 +11,10 @@ export interface ImportPreviewProps {
     data: ParsedStudent[];
     parseErrors?: string[];
     onCancel: () => void;
-    onSuccess: (result: ImportResult) => void;
+    onSuccess: (
+        result: ImportResult,
+        context: ImportCompletionContext,
+    ) => void;
     canViewNationalId: boolean;
 }
 

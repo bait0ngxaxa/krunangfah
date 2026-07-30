@@ -28,6 +28,73 @@ interface DashboardSummaryFilterOptions {
     classFilter?: string;
     riskFilter?: string;
     referredOnly?: boolean;
+    academicYearId?: string;
+    assessmentRound?: number;
+}
+
+interface PhqContextFilterOptions {
+    academicYearId?: string;
+    assessmentRound?: number;
+}
+
+function appendStudentWhereCondition(
+    whereClause: Prisma.StudentWhereInput,
+    condition: Prisma.StudentWhereInput,
+): void {
+    if (whereClause.AND) {
+        const existingAnd = Array.isArray(whereClause.AND)
+            ? whereClause.AND
+            : [whereClause.AND];
+        whereClause.AND = [...existingAnd, condition];
+        return;
+    }
+
+    if (whereClause.OR) {
+        const existingOr = whereClause.OR;
+        delete whereClause.OR;
+        whereClause.AND = [
+            { OR: Array.isArray(existingOr) ? existingOr : [existingOr] },
+            condition,
+        ];
+        return;
+    }
+
+    Object.assign(whereClause, condition);
+}
+
+function applyPhqContextFilter(
+    whereClause: Prisma.StudentWhereInput,
+    options?: PhqContextFilterOptions,
+): void {
+    if (!options?.academicYearId && !options?.assessmentRound) {
+        return;
+    }
+
+    appendStudentWhereCondition(whereClause, {
+        phqResults: {
+            some: {
+                ...(options.academicYearId
+                    ? { academicYearId: options.academicYearId }
+                    : {}),
+                ...(options.assessmentRound
+                    ? { assessmentRound: options.assessmentRound }
+                    : {}),
+            },
+        },
+    });
+}
+
+function buildPhqContextSql(
+    options?: PhqContextFilterOptions,
+): Prisma.Sql {
+    const academicYearCondition = options?.academicYearId
+        ? Prisma.sql`AND pr."academicYearId" = ${options.academicYearId}`
+        : Prisma.empty;
+    const assessmentRoundCondition = options?.assessmentRound
+        ? Prisma.sql`AND pr."assessmentRound" = ${options.assessmentRound}`
+        : Prisma.empty;
+
+    return Prisma.sql`${academicYearCondition} ${assessmentRoundCondition}`;
 }
 
 function buildActiveStudentSchoolCondition(
@@ -113,6 +180,8 @@ async function getStudentIdsByLatestRiskQuery(
     riskFilter: string,
     classFilter?: string,
     referredOnly?: boolean,
+    academicYearId?: string,
+    assessmentRound?: number,
 ): Promise<string[]> {
     const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
     const teacherCondition = buildClassTeacherScopeSql(advisoryClass, userRole);
@@ -123,6 +192,10 @@ async function getStudentIdsByLatestRiskQuery(
     const referredCondition = referredOnly
         ? buildReferredStudentSql(userRole, userId)
         : Prisma.empty;
+    const phqContextCondition = buildPhqContextSql({
+        academicYearId,
+        assessmentRound,
+    });
 
     const rows = await prisma.$queryRaw<Array<{ student_id: string }>>`
         WITH ranked_phq AS (
@@ -140,6 +213,7 @@ async function getStudentIdsByLatestRiskQuery(
               ${teacherCondition}
               ${classCondition}
               ${referredCondition}
+              ${phqContextCondition}
         )
         SELECT student_id
         FROM ranked_phq
@@ -158,6 +232,8 @@ async function applyRiskFilterToWhereClause(
     riskFilter?: string,
     classFilter?: string,
     referredOnly?: boolean,
+    academicYearId?: string,
+    assessmentRound?: number,
 ): Promise<boolean> {
     if (!riskFilter || riskFilter === "all") {
         return true;
@@ -171,6 +247,8 @@ async function applyRiskFilterToWhereClause(
         riskFilter,
         classFilter,
         referredOnly,
+        academicYearId,
+        assessmentRound,
     );
 
     if (studentIds.length === 0) {
@@ -213,6 +291,7 @@ export async function getRiskLevelCountsQuery(
     const referredCondition = options?.referredOnly
         ? buildReferredStudentSql(userRole, userId)
         : Prisma.empty;
+    const phqContextCondition = buildPhqContextSql(options);
 
     return prisma.$queryRaw<RiskCountRaw[]>`
         WITH ranked_phq AS (
@@ -230,6 +309,7 @@ export async function getRiskLevelCountsQuery(
               ${teacherCondition}
               ${classCondition}
               ${referredCondition}
+              ${phqContextCondition}
         )
         SELECT "riskLevel" as risk_level, COUNT(*)::bigint as count
         FROM ranked_phq
@@ -328,6 +408,8 @@ export async function getStudentsForDashboardQuery(
         referredOnly?: boolean;
         page?: number;
         limit?: number;
+        academicYearId?: string;
+        assessmentRound?: number;
     },
 ): Promise<StudentListResponse> {
     const whereClause = buildStudentVisibilityWhere(
@@ -338,11 +420,14 @@ export async function getStudentsForDashboardQuery(
     const classFilter = options?.classFilter;
     const riskFilter = options?.riskFilter;
     const referredOnly = options?.referredOnly;
+    const academicYearId = options?.academicYearId;
+    const assessmentRound = options?.assessmentRound;
     const requestedPage = Math.max(1, options?.page ?? 1);
     const limit = Math.max(1, options?.limit ?? 50);
 
     applyClassFilter(whereClause, classFilter);
     applyReferredOnlyFilter(whereClause, userRole, userId, referredOnly);
+    applyPhqContextFilter(whereClause, { academicYearId, assessmentRound });
 
     const hasMatchingRiskStudents = await applyRiskFilterToWhereClause(
         whereClause,
@@ -353,6 +438,8 @@ export async function getStudentsForDashboardQuery(
         riskFilter,
         classFilter,
         referredOnly,
+        academicYearId,
+        assessmentRound,
     );
 
     if (!hasMatchingRiskStudents) {
@@ -372,10 +459,18 @@ export async function getStudentsForDashboardQuery(
     });
     const totalPages = Math.max(1, Math.ceil(total / limit));
     const page = Math.min(requestedPage, totalPages);
+    const phqContextWhere =
+        academicYearId || assessmentRound
+            ? {
+                  ...(academicYearId ? { academicYearId } : {}),
+                  ...(assessmentRound ? { assessmentRound } : {}),
+              }
+            : undefined;
     const students = await prisma.student.findMany({
         where: whereClause,
         include: {
             phqResults: {
+                ...(phqContextWhere ? { where: phqContextWhere } : {}),
                 orderBy: { createdAt: "desc" },
                 take: 1,
             },
@@ -422,6 +517,7 @@ export async function getClassCountsQuery(
         userId,
         options?.referredOnly,
     );
+    applyPhqContextFilter(whereClause, options);
 
     const hasMatchingRiskStudents = await applyRiskFilterToWhereClause(
         whereClause,
@@ -432,6 +528,8 @@ export async function getClassCountsQuery(
         options?.riskFilter,
         undefined,
         options?.referredOnly,
+        options?.academicYearId,
+        options?.assessmentRound,
     );
 
     if (!hasMatchingRiskStudents) {
@@ -466,6 +564,7 @@ export async function getReferredStudentCountQuery(
     );
 
     applyClassFilter(whereClause, options?.classFilter);
+    applyPhqContextFilter(whereClause, options);
     const hasMatchingRiskStudents = await applyRiskFilterToWhereClause(
         whereClause,
         schoolId,
@@ -475,6 +574,8 @@ export async function getReferredStudentCountQuery(
         options?.riskFilter,
         options?.classFilter,
         undefined,
+        options?.academicYearId,
+        options?.assessmentRound,
     );
 
     if (!hasMatchingRiskStudents) {

@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ExcelUploader } from "@/components/student/import/ExcelUploader";
 import { ImportResultDialog } from "@/components/student/import/ImportResultDialog";
+import {
+    buildImportedStudentsHref,
+    type ImportCompletionContext,
+} from "@/components/student/import/completion";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import type { ImportResult } from "@/lib/actions/student/types";
-import { toast } from "sonner";
 
 const ImportPreview = dynamic(
     () =>
@@ -40,16 +43,10 @@ export function ImportClient({ canViewNationalId }: ImportClientProps) {
     const router = useRouter();
     const [parsedData, setParsedData] = useState<ParsedStudent[] | null>(null);
     const [parseErrors, setParseErrors] = useState<string[]>([]);
-    const [partialResult, setPartialResult] = useState<ImportResult | null>(null);
-    const redirectTimerRef = useRef<number | null>(null);
-
-    useEffect(() => {
-        return () => {
-            if (redirectTimerRef.current) {
-                window.clearTimeout(redirectTimerRef.current);
-            }
-        };
-    }, []);
+    const [completion, setCompletion] = useState<{
+        result: ImportResult;
+        context: ImportCompletionContext;
+    } | null>(null);
 
     const handleDataParsed = (data: ParsedStudent[], errors: string[] = []) => {
         setParseErrors(errors);
@@ -61,32 +58,34 @@ export function ImportClient({ canViewNationalId }: ImportClientProps) {
         setParsedData(null);
     };
 
-    const scheduleRedirect = () => {
-        if (redirectTimerRef.current) {
-            window.clearTimeout(redirectTimerRef.current);
-        }
-        redirectTimerRef.current = window.setTimeout(() => {
-            router.push("/dashboard");
-        }, 2000);
+    const handleSuccess = (
+        result: ImportResult,
+        context: ImportCompletionContext,
+    ) => {
+        setParsedData(null);
+        setParseErrors([]);
+        setCompletion({ result, context });
     };
 
-    const handleSuccess = (result: ImportResult) => {
+    const handleDismissCompletion = () => {
+        setCompletion(null);
+    };
+
+    const handleImportMore = () => {
+        setCompletion(null);
         setParsedData(null);
-        if (result.status === "partial") {
-            setParseErrors([]);
-            setPartialResult(result);
+        setParseErrors([]);
+    };
+
+    const handleViewImportedStudents = () => {
+        if (!completion) {
             return;
         }
 
-        setParseErrors([]);
-        toast.success("บันทึกข้อมูลสำเร็จ!", {
-            description: result.message,
-        });
-        scheduleRedirect();
+        router.push(buildImportedStudentsHref(completion.context));
     };
 
-    const handleClosePartialResult = () => {
-        setPartialResult(null);
+    const handleGoHome = () => {
         router.push("/dashboard");
     };
 
@@ -104,8 +103,12 @@ export function ImportClient({ canViewNationalId }: ImportClientProps) {
                 />
             )}
             <ImportResultDialog
-                result={partialResult}
-                onClose={handleClosePartialResult}
+                result={completion?.result ?? null}
+                context={completion?.context ?? null}
+                onClose={handleDismissCompletion}
+                onViewStudents={handleViewImportedStudents}
+                onImportMore={handleImportMore}
+                onGoHome={handleGoHome}
             />
         </div>
     );

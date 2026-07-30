@@ -33,12 +33,14 @@ interface RiskGroupSectionProps {
     level: RiskLevel;
     students: Student[];
     readOnly?: boolean;
+    studentDetailQuery?: string;
 }
 
 export function RiskGroupSection({
     level,
     students,
     readOnly = false,
+    studentDetailQuery = "",
 }: RiskGroupSectionProps) {
     const config = getRiskLevelConfig(level);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -117,7 +119,7 @@ export function RiskGroupSection({
                                 role="listitem"
                             >
                                 <Link
-                                    href={`/students/${student.id}`}
+                                    href={`/students/${student.id}${studentDetailQuery}`}
                                     className="flex min-w-0 flex-1 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
                                 >
                                     <span

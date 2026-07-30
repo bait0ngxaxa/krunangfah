@@ -58,6 +58,8 @@ export interface StudentDashboardQueryOptions {
     riskFilter?: string;
     referredOnly?: boolean;
     page?: number;
+    academicYearId?: string;
+    assessmentRound?: number;
 }
 
 export interface DashboardPagination {

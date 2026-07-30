@@ -197,6 +197,57 @@ describe("getStudentDashboardData", () => {
         expect(data.pagination.hasPreviousPage).toBe(false);
     });
 
+    it("passes the selected academic term to every dashboard query", async () => {
+        const academicYearId = "cm123456789012345678901234";
+
+        await getStudentDashboardData({
+            academicYearId,
+            assessmentRound: 2,
+            classFilter: "ม.1/1",
+            schoolId: "school-1",
+        });
+
+        expect(getClassCountsQuery).toHaveBeenNthCalledWith(
+            1,
+            "school-1",
+            "ม.1/1",
+            "school_admin",
+            "user-1",
+            {
+                academicYearId,
+                assessmentRound: 2,
+                referredOnly: false,
+            },
+        );
+        expect(getRiskLevelCountsQuery).toHaveBeenCalledWith(
+            "school-1",
+            "ม.1/1",
+            "school_admin",
+            "user-1",
+            {
+                academicYearId,
+                assessmentRound: 2,
+                classFilter: "ม.1/1",
+                referredOnly: false,
+            },
+        );
+        expect(getStudentsForDashboardQuery).toHaveBeenCalledWith(
+            "school-1",
+            "ม.1/1",
+            "school_admin",
+            "user-1",
+            {
+                academicYearId,
+                assessmentRound: 2,
+                classFilter: "ม.1/1",
+                limit: 50,
+                page: 1,
+                referredOnly: false,
+                riskFilter: undefined,
+            },
+        );
+    });
+
     it("keeps class filters available when selected risk has zero matching students", async () => {
         vi.mocked(getClassCountsQuery)
             .mockResolvedValueOnce([

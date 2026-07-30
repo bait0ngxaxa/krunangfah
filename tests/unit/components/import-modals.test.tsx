@@ -1,8 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ImportErrorModal } from "@/components/student/import/ImportErrorModal";
+import { ImportResultDialog } from "@/components/student/import/ImportResultDialog";
 import { FilteredStudentsWarning } from "@/components/student/import/ImportPreview/components/FilteredStudentsWarning";
 import type { PreviewStudent } from "@/components/student/import/ImportPreview/types";
+import type { ImportCompletionContext } from "@/components/student/import/completion";
 
 function createPreviewStudent(
     overrides: Partial<PreviewStudent> = {},
@@ -35,7 +37,87 @@ function createPreviewStudent(
     };
 }
 
+const completionContext: ImportCompletionContext = {
+    academicYearId: "cm123456789012345678901234",
+    academicYearLabel: "2569 เทอม 1",
+    assessmentRound: 1,
+    classNames: ["ม.1/1"],
+};
+
+const completionActions = {
+    onClose: () => undefined,
+    onViewStudents: () => undefined,
+    onImportMore: () => undefined,
+    onGoHome: () => undefined,
+};
+
 describe("student import modals", () => {
+    it("renders a completion state for a successful import", () => {
+        const html = renderToStaticMarkup(
+            <ImportResultDialog
+                result={{
+                    success: true,
+                    status: "success",
+                    message: "นำเข้าสำเร็จทั้งหมด 1 คน",
+                    imported: 1,
+                    importedStudents: [
+                        {
+                            studentId: "S001",
+                            fullName: "สมชาย ใจดี",
+                            class: "ม.1/1",
+                        },
+                    ],
+                }}
+                context={completionContext}
+                {...completionActions}
+            />,
+        );
+
+        expect(html).toContain("นำเข้าข้อมูลสำเร็จ");
+        expect(html).toContain("ดูรายชื่อนักเรียนที่นำเข้า");
+        expect(html).toContain("นำเข้าไฟล์เพิ่มเติม");
+        expect(html).toContain("กลับหน้าหลัก");
+        expect(html).toContain("2569 เทอม 1");
+        expect(html).toContain("ครั้งที่ 1");
+        expect(html).not.toContain("รับทราบ");
+    });
+
+    it("keeps the same choices for a partial import", () => {
+        const html = renderToStaticMarkup(
+            <ImportResultDialog
+                result={{
+                    success: true,
+                    status: "partial",
+                    message: "นำเข้าสำเร็จ 1 คน, ไม่สามารถนำเข้าได้ 1 คน",
+                    imported: 1,
+                    importedStudents: [
+                        {
+                            studentId: "S001",
+                            fullName: "สมชาย ใจดี",
+                            class: "ม.1/1",
+                        },
+                    ],
+                    failedStudents: [
+                        {
+                            studentId: "S002",
+                            fullName: "สุดา ใจดี",
+                            class: "ม.1/1",
+                            reason: "มีข้อมูลการประเมินครั้งที่ 1 อยู่แล้ว",
+                        },
+                    ],
+                }}
+                context={completionContext}
+                {...completionActions}
+            />,
+        );
+
+        expect(html).toContain("นำเข้าข้อมูลสำเร็จบางส่วน");
+        expect(html).toContain("รายการที่นำเข้าไม่ผ่าน");
+        expect(html).toContain("ดูรายชื่อนักเรียนที่นำเข้า");
+        expect(html).toContain("นำเข้าไฟล์เพิ่มเติม");
+        expect(html).toContain("กลับหน้าหลัก");
+    });
+
     it("renders import errors as an alertdialog modal", () => {
         const html = renderToStaticMarkup(
             <ImportErrorModal

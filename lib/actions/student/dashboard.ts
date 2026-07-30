@@ -16,6 +16,7 @@ import type {
     StudentDashboardDataResponse,
     StudentDashboardQueryOptions,
 } from "./types";
+import { z } from "zod";
 
 const DASHBOARD_PAGE_SIZE = 50;
 
@@ -70,6 +71,20 @@ function normalizePage(page?: number): number {
     return Math.max(1, Math.floor(page));
 }
 
+function normalizeAcademicYearId(value?: string): string | undefined {
+    const trimmed = value?.trim();
+    if (!trimmed) {
+        return undefined;
+    }
+
+    const parsed = z.string().cuid().safeParse(trimmed);
+    return parsed.success ? parsed.data : undefined;
+}
+
+function normalizeAssessmentRound(value?: number): number | undefined {
+    return value === 1 || value === 2 ? value : undefined;
+}
+
 function buildClassOptions(
     baseClassCounts: ClassCount[],
     filteredClassCounts: ClassCount[],
@@ -106,6 +121,16 @@ export async function getStudentDashboardData(
         const riskFilter = normalizeRiskFilter(options?.riskFilter);
         const page = normalizePage(options?.page);
         const referredOnly = options?.referredOnly === true;
+        const academicYearId = normalizeAcademicYearId(
+            options?.academicYearId,
+        );
+        const assessmentRound = normalizeAssessmentRound(
+            options?.assessmentRound,
+        );
+        const contextFilters = {
+            ...(academicYearId ? { academicYearId } : {}),
+            ...(assessmentRound ? { assessmentRound } : {}),
+        };
 
         const [
             baseClassCounts,
@@ -118,28 +143,28 @@ export async function getStudentDashboardData(
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                { referredOnly },
+                { referredOnly, ...contextFilters },
             ),
             getClassCountsQuery(
                 scopeSchoolId,
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                { referredOnly, riskFilter },
+                { referredOnly, riskFilter, ...contextFilters },
             ),
             getRiskLevelCountsQuery(
                 scopeSchoolId,
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                { classFilter, referredOnly },
+                { classFilter, referredOnly, ...contextFilters },
             ),
             getReferredStudentCountQuery(
                 scopeSchoolId,
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                { classFilter, riskFilter },
+                { classFilter, riskFilter, ...contextFilters },
             ),
         ]);
 
@@ -162,6 +187,7 @@ export async function getStudentDashboardData(
                       referredOnly,
                       page,
                       limit: DASHBOARD_PAGE_SIZE,
+                      ...contextFilters,
                   },
               )
             : {

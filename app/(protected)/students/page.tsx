@@ -13,6 +13,7 @@ import { buttonVariants } from "@/components/ui/Button";
 import { isRiskLevel } from "@/lib/constants/risk-levels";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { z } from "zod";
 
 export const metadata: Metadata = {
     title: "นักเรียนทั้งหมด | โครงการครูนางฟ้า",
@@ -26,6 +27,8 @@ interface StudentsPageProps {
         referred?: string;
         risk?: string;
         school?: string;
+        year?: string;
+        round?: string;
     }>;
 }
 
@@ -36,6 +39,8 @@ interface NormalizedStudentFilters {
     referred?: "true";
     risk?: string;
     school?: string;
+    academicYearId?: string;
+    assessmentRound?: number;
 }
 
 function normalizeOptionalParam(value: string | undefined): string | undefined {
@@ -59,12 +64,32 @@ function normalizePageParam(value: string | undefined): {
     return page > 1 ? { page, pageParam: String(page) } : { page: 1 };
 }
 
+function normalizeAcademicYearId(value: string | undefined): string | undefined {
+    const trimmed = value?.trim();
+    if (!trimmed) {
+        return undefined;
+    }
+
+    const parsed = z.string().cuid().safeParse(trimmed);
+    return parsed.success ? parsed.data : undefined;
+}
+
+function normalizeAssessmentRound(value: string | undefined): number | undefined {
+    if (value !== "1" && value !== "2") {
+        return undefined;
+    }
+
+    return Number(value);
+}
+
 function normalizeStudentsFilters(filters: {
     class?: string;
     page?: string;
     referred?: string;
     risk?: string;
     school?: string;
+    year?: string;
+    round?: string;
 }): NormalizedStudentFilters {
     const page = normalizePageParam(filters.page);
     const risk = isRiskLevel(filters.risk) ? filters.risk : undefined;
@@ -76,6 +101,8 @@ function normalizeStudentsFilters(filters: {
         referred: filters.referred === "true" ? "true" : undefined,
         risk,
         school: normalizeOptionalParam(filters.school),
+        academicYearId: normalizeAcademicYearId(filters.year),
+        assessmentRound: normalizeAssessmentRound(filters.round),
     };
 }
 
@@ -146,6 +173,8 @@ async function StudentsContent({
         referred?: "true";
         risk?: string;
         school?: string;
+        academicYearId?: string;
+        assessmentRound?: number;
     };
     userRole: string;
     isAdmin: boolean;
@@ -158,6 +187,12 @@ async function StudentsContent({
             page: filters.page,
             riskFilter: filters.risk,
             referredOnly: filters.referred === "true",
+            ...(filters.academicYearId
+                ? { academicYearId: filters.academicYearId }
+                : {}),
+            ...(filters.assessmentRound
+                ? { assessmentRound: filters.assessmentRound }
+                : {}),
         }),
         isAdmin ? getSchools() : Promise.resolve([]),
         isClassTeacher ? getReferredOutStudents() : Promise.resolve([]),
@@ -180,6 +215,8 @@ async function StudentsContent({
         page: filters.pageParam,
         referredFilter: filters.referred,
         riskFilter: filters.risk,
+        academicYearId: filters.academicYearId,
+        assessmentRound: filters.assessmentRound,
         totalStudents: dashboardData.totalStudents,
     });
 
@@ -238,6 +275,8 @@ async function StudentsContent({
                 page: filters.pageParam,
                 riskLevel: filters.risk,
                 referredOnly: filters.referred,
+                academicYearId: filters.academicYearId,
+                assessmentRound: filters.assessmentRound,
             }}
         />
     );

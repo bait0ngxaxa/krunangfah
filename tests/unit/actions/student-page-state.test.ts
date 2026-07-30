@@ -56,6 +56,18 @@ describe("student page state helpers", () => {
             ).toBe(false);
         });
 
+        it("does not show import empty state when an academic term is active", () => {
+            expect(
+                shouldShowStudentsImportEmptyState({
+                    academicYearId: "cm123456789012345678901234",
+                    assessmentRound: 2,
+                    hasClassOptions: false,
+                    isAdmin: false,
+                    totalStudents: 0,
+                }),
+            ).toBe(false);
+        });
+
         it("does not show import empty state when summary data exists even if current list is empty", () => {
             expect(
                 shouldShowStudentsImportEmptyState({

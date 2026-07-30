@@ -84,6 +84,8 @@ interface StudentDetailPageProps {
     searchParams: Promise<{
         year?: string;
         round?: string;
+        class?: string;
+        school?: string;
         phqPage?: string;
         counselingPage?: string;
         homeVisitPage?: string;
@@ -98,11 +100,27 @@ export default async function StudentDetailPage({
     const {
         year: selectedYearId,
         round,
+        class: selectedClass,
+        school: selectedSchoolId,
         phqPage,
         counselingPage,
         homeVisitPage,
     } = await searchParams;
     const selectedRound = round === "1" || round === "2" ? round : undefined;
+    const backParams = new URLSearchParams();
+    if (selectedSchoolId) {
+        backParams.set("school", selectedSchoolId);
+    }
+    if (selectedClass) {
+        backParams.set("class", selectedClass);
+    }
+    if (selectedYearId) {
+        backParams.set("year", selectedYearId);
+    }
+    if (selectedRound) {
+        backParams.set("round", selectedRound);
+    }
+    const backQuery = backParams.toString();
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-linear-to-br from-slate-50 via-white to-emerald-50/40 py-6 px-4">
@@ -113,7 +131,10 @@ export default async function StudentDetailPage({
             </div>
 
             <div className="relative z-10 mx-auto max-w-7xl">
-                <BackButton href="/students" label="กลับหน้านักเรียน" />
+                <BackButton
+                    href={backQuery ? `/students?${backQuery}` : "/students"}
+                    label="กลับหน้านักเรียน"
+                />
                 <StudentDetailScrollTop key={id} />
 
                 <Suspense fallback={<StudentDetailSkeleton />}>

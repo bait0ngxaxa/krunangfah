@@ -37,6 +37,8 @@ export interface StudentDashboardFilters {
     page?: string;
     riskLevel?: string;
     referredOnly?: string;
+    academicYearId?: string;
+    assessmentRound?: number;
 }
 
 export interface StudentDashboardProps {

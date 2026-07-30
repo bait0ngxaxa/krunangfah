@@ -5,20 +5,29 @@ interface StudentPageStateInput {
     page?: string;
     referredFilter?: string;
     riskFilter?: string;
+    academicYearId?: string;
+    assessmentRound?: number;
     totalStudents: number;
 }
 
 export function hasActiveStudentDashboardFilters(
     input: Pick<
         StudentPageStateInput,
-        "classFilter" | "page" | "referredFilter" | "riskFilter"
+        | "classFilter"
+        | "page"
+        | "referredFilter"
+        | "riskFilter"
+        | "academicYearId"
+        | "assessmentRound"
     >,
 ): boolean {
     return Boolean(
         input.classFilter ||
             input.page ||
             input.referredFilter ||
-            input.riskFilter,
+            input.riskFilter ||
+            input.academicYearId ||
+            input.assessmentRound,
     );
 }
 
