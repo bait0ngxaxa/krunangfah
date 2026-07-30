@@ -15,7 +15,7 @@ function NavbarFallback() {
         >
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
                 <Skeleton className="h-11 w-44 rounded-full" />
-                <div className="hidden items-center gap-3 sm:flex">
+                <div className="hidden items-center gap-3 lg:flex">
                     <Skeleton className="h-10 w-28 rounded-full" />
                     <Skeleton className="h-10 w-28 rounded-full" />
                     <Skeleton className="h-10 w-10 rounded-full" />

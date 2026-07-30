@@ -4,7 +4,7 @@ import { LogOut } from "lucide-react";
 import { useState } from "react";
 
 interface LogoutButtonProps {
-    variant?: "default" | "navbar";
+    variant?: "default" | "navbar" | "navbar-dropdown";
     tabIndex?: number;
 }
 
@@ -34,6 +34,22 @@ export function LogoutButton({ variant = "default", tabIndex }: LogoutButtonProp
                 tabIndex={tabIndex}
                 className="flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white/85 transition-colors duration-200 hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70"
             >
+                {isLoggingOut ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}
+            </button>
+        );
+    }
+
+    if (variant === "navbar-dropdown") {
+        return (
+            <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                aria-busy={isLoggingOut}
+                tabIndex={tabIndex}
+                className="flex min-h-11 w-full items-center justify-start gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-700 transition-colors duration-150 hover:bg-emerald-50 hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-1 disabled:cursor-wait disabled:opacity-70"
+            >
+                <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
                 {isLoggingOut ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}
             </button>
         );
