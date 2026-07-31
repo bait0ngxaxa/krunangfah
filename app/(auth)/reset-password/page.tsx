@@ -45,7 +45,11 @@ export default async function ResetPasswordPage({
             </NavbarGreenBar>
 
             {/* ─── Content ─── */}
-            <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-8 sm:py-10">
+            <main
+                id="main-content"
+                tabIndex={-1}
+                className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-8 sm:py-10"
+            >
                 {/* Logo badge */}
                 <div className="mb-5 sm:mb-6">
                     <div className="bg-white rounded-2xl shadow-md overflow-hidden inline-flex items-center">
@@ -92,7 +96,7 @@ export default async function ResetPasswordPage({
                         </div>
                     )}
                 </div>
-            </div>
+            </main>
         </div>
     );
 }

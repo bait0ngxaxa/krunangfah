@@ -30,7 +30,7 @@ export default function RootLayout({
                 <a href="#main-content" className="skip-link">
                     ข้ามไปเนื้อหาหลัก
                 </a>
-                <div id="main-content">{children}</div>
+                <div>{children}</div>
                 <ToasterProvider />
             </body>
         </html>

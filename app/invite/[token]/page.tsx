@@ -42,7 +42,11 @@ export default async function InvitePage({ params }: InvitePageProps) {
                     </div>
                 </NavbarGreenBar>
 
-                <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-8 sm:pt-12 pb-8">
+                <main
+                    id="main-content"
+                    tabIndex={-1}
+                    className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-8 sm:pt-12 pb-8"
+                >
                     <div className={AUTH_ERROR_CARD_CLASS}>
                         <div className="mb-4 flex justify-center">
                             <XCircle
@@ -63,7 +67,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
                             กลับหน้าหลัก
                         </Link>
                     </div>
-                </div>
+                </main>
             </div>
         );
     }
@@ -87,7 +91,11 @@ export default async function InvitePage({ params }: InvitePageProps) {
             </NavbarGreenBar>
 
             {/* ─── Content ─── */}
-            <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-8 sm:pt-12 pb-8">
+            <main
+                id="main-content"
+                tabIndex={-1}
+                className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-8 sm:pt-12 pb-8"
+            >
                 {/* Logo badge */}
                 <div className="mb-5 sm:mb-6">
                     <div className="bg-white rounded-2xl shadow-md overflow-hidden inline-flex items-center">
@@ -120,7 +128,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
                         inviteData={result.invite}
                     />
                 </div>
-            </div>
+            </main>
         </div>
     );
 }

@@ -27,7 +27,11 @@ export default async function Home() {
             <NavbarGreenBar />
 
             {/* ─── Main Hero Section ─── */}
-            <main className="relative z-10 flex-1 flex flex-col px-6 sm:px-10 lg:px-16 pt-8 sm:pt-10 lg:pt-8 pb-0 w-full">
+            <main
+                id="main-content"
+                tabIndex={-1}
+                className="relative z-10 flex-1 flex flex-col px-6 sm:px-10 lg:px-16 pt-8 sm:pt-10 lg:pt-8 pb-0 w-full"
+            >
                 {/* Mobile/Tablet: Login button at top right */}
                 <div className="flex justify-end lg:hidden w-full mb-6 animate-fade-in-down">
                     <Link
