@@ -196,7 +196,7 @@ describe("lib/auth/session-store", () => {
                 userId: "user-1",
                 userAgentLabel: "Chrome บนคอมพิวเตอร์",
                 userAgentHash: expect.any(String),
-                lastIpPrefix: "203.0.113.0/24",
+                lastIpPrefix: "203.0.113.42",
             }),
             include: {
                 user: {
@@ -534,7 +534,7 @@ describe("lib/auth/session-store", () => {
             data: {
                 userAgentLabel: "Firefox บนคอมพิวเตอร์",
                 userAgentHash: expect.any(String),
-                lastIpPrefix: "203.0.113.0/24",
+                lastIpPrefix: "203.0.113.42",
             },
         });
         expect(mocks.deleteCachedSession).toHaveBeenCalledWith(expect.any(String));

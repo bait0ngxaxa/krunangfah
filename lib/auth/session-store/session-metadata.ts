@@ -15,22 +15,6 @@ function hashText(value: string): string {
     return createHash("sha256").update(value).digest("hex");
 }
 
-function getIpPrefix(ip: string): string | null {
-    if (ip === "unknown") return null;
-
-    if (ip.includes(".")) {
-        const parts = ip.split(".");
-        return parts.length === 4 ? `${parts.slice(0, 3).join(".")}.0/24` : null;
-    }
-
-    if (ip.includes(":")) {
-        const groups = ip.split(":").filter(Boolean).slice(0, 4);
-        return groups.length > 0 ? `${groups.join(":")}::/64` : null;
-    }
-
-    return null;
-}
-
 function getBrowserName(userAgent: string): string {
     if (/Edg\//.test(userAgent)) return "Microsoft Edge";
     if (/Chrome\//.test(userAgent) && !/Chromium\//.test(userAgent)) {
@@ -56,11 +40,11 @@ function getUserAgentLabel(userAgent: string | null): string {
 
 export function getSessionMetadata(headerGetter: HeaderGetter): SessionMetadata {
     const userAgent = headerGetter("user-agent");
+    const clientIp = extractClientIp(headerGetter, TRUSTED_PROXY_HEADERS);
+
     return {
         userAgentLabel: getUserAgentLabel(userAgent),
         userAgentHash: userAgent ? hashText(userAgent) : null,
-        lastIpPrefix: getIpPrefix(
-            extractClientIp(headerGetter, TRUSTED_PROXY_HEADERS),
-        ),
+        lastIpPrefix: clientIp === "unknown" ? null : clientIp,
     };
 }

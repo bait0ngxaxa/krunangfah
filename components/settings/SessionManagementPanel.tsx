@@ -140,7 +140,7 @@ export function SessionManagementPanel({
                                     <p className="text-xs text-gray-500">
                                         หมดอายุ {formatDate(session.expiresAt)}
                                         {session.lastIpPrefix
-                                            ? ` · เครือข่าย ${session.lastIpPrefix}`
+                                            ? ` · ${session.lastIpPrefix.includes("/") ? "เครือข่าย" : "IP"} ${session.lastIpPrefix}`
                                             : ""}
                                     </p>
                                 </div>
