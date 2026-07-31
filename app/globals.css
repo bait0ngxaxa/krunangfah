@@ -50,18 +50,15 @@ body {
         sans-serif;
 }
 
-/* Global Typography Contract:
-   - Heading: single tone across app
+/* Typography tokens:
+   - .ui-heading provides the default heading tone
+   - Contextual heading colors remain on their component utilities
    - Body copy: single tone across app
-   - Risk-level colors remain on explicit utility classes (e.g. text-red-*, badges)
 */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    color: var(--ui-text-heading) !important;
+@layer components {
+    .ui-heading {
+        color: var(--ui-text-heading);
+    }
 }
 
 p:not([class*="text-"]),

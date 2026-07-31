@@ -85,7 +85,9 @@ export function RiskGroupSection({
                     <span className="text-lg leading-none" aria-hidden="true">
                         {config.emoji}
                     </span>
-                    <h3 className="min-w-0 break-words text-[15px] font-bold tracking-wide">
+                    <h3
+                        className={`ui-heading min-w-0 break-words text-[15px] font-bold tracking-wide ${config.headerTextColor}`}
+                    >
                         {config.label}
                     </h3>
                 </div>
