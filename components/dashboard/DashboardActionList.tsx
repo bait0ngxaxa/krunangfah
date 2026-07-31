@@ -49,51 +49,6 @@ export function DashboardActionList({
 
     return (
         <div className="space-y-3">
-            {!isSystemAdmin && (
-                <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <QuickActionCard
-                        href="/teachers/skill"
-                        icon={GraduationCap}
-                        title="อัพสกิลคุณครู"
-                        description="เรียนรู้เพิ่มเติม"
-                        imageSrc="/image/dashboard/teacherskills.png"
-                    />
-                    <QuickActionCard
-                        href="/students/import"
-                        icon={FileSpreadsheet}
-                        title="นำเข้าข้อมูลนักเรียน"
-                        description=""
-                        imageSrc="/image/dashboard/import.webp"
-                        imageClassName="w-[85px] sm:w-[95px]"
-                        actionButton={
-                            <div className="inline-flex max-w-full items-center gap-1.5 rounded-xl bg-[var(--brand-primary)] px-3.5 py-1.5 text-[11px] font-bold text-white shadow-sm transition-base hover:brightness-95 sm:text-xs">
-                                <Upload className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" />
-                                <span className="min-w-0 break-words">
-                                    นำเข้า Excel
-                                </span>
-                            </div>
-                        }
-                    />
-                </div>
-            )}
-
-            <HeroCard
-                href="/students"
-                icon={Users}
-                title="นักเรียนคัดกรองทั้งหมด"
-                badge={
-                    studentCount > 0
-                        ? `${studentCount.toLocaleString()} คน`
-                        : undefined
-                }
-                description="ดูรายชื่อและข้อมูลคัดกรอง"
-                imageSrc="/image/dashboard/students.webp"
-                theme="emerald"
-                isEmpty={!isSystemAdmin && studentCount === 0}
-                emptyTitle="ยังไม่มีข้อมูลนักเรียน"
-                emptyDescription="นำเข้าข้อมูลนักเรียนเพื่อเริ่มใช้งานระบบคัดกรอง"
-            />
-
             {(isSystemAdmin || isSchoolAdmin) && (
                 <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {isSystemAdmin && (
@@ -101,7 +56,7 @@ export function DashboardActionList({
                             href="/admin/system"
                             icon={ShieldCheck}
                             title="ศูนย์ดูแลระบบ"
-                            description="ค้นหาโรงเรียน ผู้ใช้ ครู และนักเรียนจากจุดเดียว"
+                            description="ค้นหาและจัดการข้อมูลโรงเรียน ผู้ใช้ ครู หรือนักเรียน"
                         />
                     )}
 
@@ -109,8 +64,8 @@ export function DashboardActionList({
                         <QuickActionCard
                             href="/admin/invites"
                             icon={LinkIcon}
-                            title="ลิงก์คำเชิญ"
-                            description="เชิญผู้ดูแลโรงเรียน"
+                            title="จัดการลิงก์คำเชิญ"
+                            description="สร้างและจัดการคำเชิญสำหรับแอดมินระบบและแอดมินโรงเรียน"
                         />
                     )}
 
@@ -118,8 +73,16 @@ export function DashboardActionList({
                         <QuickActionCard
                             href="/teachers/add"
                             icon={UserPlus}
-                            title="ส่งคำเชิญเข้าระบบ / จัดการข้อมูลครู โรงเรียน"
-                            description="ห้องเรียน / ข้อมูลครู / เชิญครู"
+                            title={
+                                isPrimary
+                                    ? "จัดการข้อมูลครู"
+                                    : "เชิญครูเข้าระบบ"
+                            }
+                            description={
+                                isPrimary
+                                    ? "ตั้งค่าห้องเรียน เพิ่มรายชื่อครู และสร้างลิงก์เชิญ"
+                                    : "เลือกครูจากรายชื่อเพื่อสร้างลิงก์เชิญ"
+                            }
                         />
                     )}
 
@@ -127,18 +90,66 @@ export function DashboardActionList({
                         <QuickActionCard
                             href="/school/classes"
                             icon={UsersRound}
-                            title="จัดการสิทธิ์การใช้งานครูในระบบ"
-                            description="แก้ไขห้อง / จัดการสิทธิ์"
+                            title="จัดการครูในระบบ"
+                            description="แก้ไขห้องที่ปรึกษาและจัดการสิทธิ์ผู้ดูแล"
                         />
                     )}
                 </div>
             )}
 
+            {!isSystemAdmin && (
+                <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <QuickActionCard
+                        href="/students/import"
+                        icon={FileSpreadsheet}
+                        title="นำเข้าข้อมูลนักเรียน"
+                        description="อัปโหลดไฟล์ Excel พร้อมข้อมูลนักเรียนและผลคัดกรอง"
+                        imageSrc="/image/dashboard/import.webp"
+                        imageClassName="w-[85px] sm:w-[95px]"
+                        actionButton={
+                            <div className="inline-flex max-w-full items-center gap-1.5 rounded-xl bg-[var(--brand-primary)] px-3.5 py-1.5 text-[11px] font-bold text-white shadow-sm transition-base hover:brightness-95 sm:text-xs">
+                                <Upload
+                                    className="h-3.5 w-3.5 shrink-0 stroke-[2.5]"
+                                    aria-hidden="true"
+                                />
+                                <span className="min-w-0 break-words">
+                                    นำเข้า Excel
+                                </span>
+                            </div>
+                        }
+                    />
+                    <QuickActionCard
+                        href="/teachers/skill"
+                        icon={GraduationCap}
+                        title="อัพสกิลคุณครู"
+                        description="เรียนรู้และพัฒนาทักษะในการดูแลสุขภาพจิตนักเรียน"
+                        imageSrc="/image/dashboard/teacherskills.png"
+                    />
+                </div>
+            )}
+
+            <HeroCard
+                href="/students"
+                icon={Users}
+                title="ดูนักเรียนทั้งหมด"
+                badge={
+                    studentCount > 0
+                        ? `${studentCount.toLocaleString()} คน`
+                        : undefined
+                }
+                description="ดูรายชื่อและผลคัดกรอง"
+                imageSrc="/image/dashboard/students.webp"
+                theme="emerald"
+                isEmpty={!isSystemAdmin && studentCount === 0}
+                emptyTitle="ยังไม่มีข้อมูลนักเรียน"
+                emptyDescription="นำเข้าข้อมูลนักเรียนเพื่อเริ่มใช้งานระบบคัดกรอง"
+            />
+
             <HeroCard
                 href="/analytics"
                 icon={BarChart3}
-                title="ดูสรุปข้อมูล"
-                description="สรุปภาพรวมผลคัดกรองและสถิติ"
+                title="ดูสรุปผลคัดกรอง"
+                description="ดูภาพรวมผลคัดกรอง PHQ-A และสถิติ"
                 imageSrc="/image/dashboard/analytics.png"
                 theme="teal"
             />
