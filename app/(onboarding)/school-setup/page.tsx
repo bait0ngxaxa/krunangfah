@@ -5,6 +5,13 @@ import { SchoolSetupWizard } from "@/components/school/setup/SchoolSetupWizard";
 import { School } from "lucide-react";
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
 import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
+import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
+import { getSchoolRoster } from "@/lib/actions/teacher-roster.actions";
+import { getInitialSchoolSetupStep } from "@/lib/onboarding/school-setup-resume";
+import type {
+    SchoolClassItem,
+    TeacherRosterItem,
+} from "@/types/school-setup.types";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -29,6 +36,9 @@ export default async function SchoolSetupPage() {
         where: { id: session.user.id },
         select: {
             schoolId: true,
+            isPrimary: true,
+            onboardingStatus: true,
+            school: { select: { name: true, province: true } },
             teacher: { select: { id: true } },
         },
     });
@@ -38,9 +48,24 @@ export default async function SchoolSetupPage() {
         redirect("/teacher-profile");
     }
 
-    // Keep user in wizard flow; client handles post-submit navigation.
     const hasSchool = !!dbUser?.schoolId;
+    if (
+        hasSchool &&
+        (!dbUser.isPrimary || dbUser.onboardingStatus === "COMPLETED")
+    ) {
+        redirect("/dashboard");
+    }
+
     const currentAcademicYear = await getCurrentAcademicYearRecord();
+    let initialClasses: SchoolClassItem[] = [];
+    let initialRoster: TeacherRosterItem[] = [];
+
+    if (hasSchool) {
+        [initialClasses, initialRoster] = await Promise.all([
+            getSchoolClasses(currentAcademicYear?.id),
+            getSchoolRoster(),
+        ]);
+    }
 
     return (
         <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50 py-6 px-4 relative overflow-hidden">
@@ -57,7 +82,21 @@ export default async function SchoolSetupPage() {
 
                 <div className="max-w-2xl mx-auto">
                     <SchoolSetupWizard
-                        initialHasSchool={hasSchool}
+                        initialStep={getInitialSchoolSetupStep(
+                            hasSchool,
+                            dbUser.onboardingStatus,
+                        )}
+                        initialClasses={initialClasses}
+                        initialRoster={initialRoster}
+                        initialSchoolInfo={
+                            dbUser.school
+                                ? {
+                                      name: dbUser.school.name,
+                                      province:
+                                          dbUser.school.province ?? undefined,
+                                  }
+                                : null
+                        }
                         currentAcademicYear={
                             currentAcademicYear
                                 ? {

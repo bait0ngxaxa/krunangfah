@@ -38,6 +38,8 @@ export default async function ProtectedLayout({
             where: { id: session.user.id },
             select: {
                 schoolId: true,
+                isPrimary: true,
+                onboardingStatus: true,
                 teacher: { select: { id: true } },
             },
         });
@@ -47,6 +49,14 @@ export default async function ProtectedLayout({
         }
 
         if (!dbUser?.schoolId) {
+            redirect("/school-setup");
+        }
+
+        if (
+            session.user.role === "school_admin" &&
+            dbUser.isPrimary &&
+            dbUser.onboardingStatus !== "COMPLETED"
+        ) {
             redirect("/school-setup");
         }
     }

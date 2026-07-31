@@ -37,6 +37,9 @@ const {
 } = await import("@/lib/actions/school-setup.actions");
 const { addTeacherToRoster, removeFromRoster, getSchoolRoster } =
     await import("@/lib/actions/teacher-roster.actions");
+const { saveOnboardingProgress, completeOnboarding } = await import(
+    "@/lib/actions/onboarding.actions"
+);
 
 describe("Integration: Onboarding Flow", () => {
     // ใช้ปีที่ unique มากเพื่อไม่ชนกับ test อื่นที่รัน parallel
@@ -260,10 +263,31 @@ describe("Integration: Onboarding Flow", () => {
         it("schoolId ถูก set บน user ใน DB", async () => {
             const user = await prisma.user.findUnique({
                 where: { id: USERS.schoolAdmin.id },
-                select: { schoolId: true },
+                select: { schoolId: true, onboardingStatus: true },
             });
 
             expect(user?.schoolId).toBe(createdSchoolId);
+            expect(user?.onboardingStatus).toBe("SCHOOL_CREATED");
+        });
+
+        it("บันทึกสถานะเพื่อ resume wizard ได้", async () => {
+            mockSession(USERS.schoolAdmin);
+
+            const classesPending = await saveOnboardingProgress({
+                status: "CLASSES_PENDING",
+            });
+            expect(classesPending.success).toBe(true);
+
+            const rosterPending = await saveOnboardingProgress({
+                status: "ROSTER_PENDING",
+            });
+            expect(rosterPending.success).toBe(true);
+
+            const user = await prisma.user.findUnique({
+                where: { id: USERS.schoolAdmin.id },
+                select: { onboardingStatus: true },
+            });
+            expect(user?.onboardingStatus).toBe("ROSTER_PENDING");
         });
 
         it("โรงเรียนมีข้อมูลครบ", async () => {
@@ -684,6 +708,24 @@ describe("Integration: Onboarding Flow", () => {
             expect(user?.schoolId).toBe(createdSchoolId);
             expect(user?.teacher).not.toBeNull();
             expect(user?.teacher?.firstName).toBe("ครูนางฟ้า");
+        });
+
+        it("ทำเครื่องหมาย onboarding เสร็จและป้องกันการเขียนทับ", async () => {
+            mockSession(USERS.schoolAdmin);
+
+            const completed = await completeOnboarding();
+            expect(completed.success).toBe(true);
+
+            const user = await prisma.user.findUnique({
+                where: { id: USERS.schoolAdmin.id },
+                select: { onboardingStatus: true },
+            });
+            expect(user?.onboardingStatus).toBe("COMPLETED");
+
+            const updateAfterCompletion = await saveOnboardingProgress({
+                status: "SCHOOL_CREATED",
+            });
+            expect(updateAfterCompletion.success).toBe(false);
         });
     });
 });

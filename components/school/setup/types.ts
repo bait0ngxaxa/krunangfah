@@ -5,14 +5,20 @@ import type {
 } from "@/types/school-setup.types";
 import type { AcademicYearOption } from "@/components/school/classes";
 import type { SchoolInfoData } from "./constants";
+import type {
+    SchoolSetupStep,
+} from "@/types/onboarding.types";
 
 // Re-export for convenience
 export type { SchoolClassItem, TeacherRosterItem, SchoolInfoData };
 
-export type StepIndex = 0 | 1 | 2 | 3;
+export type StepIndex = SchoolSetupStep;
 
 export interface SchoolSetupWizardProps {
-    initialHasSchool?: boolean;
+    initialStep?: StepIndex;
+    initialClasses?: SchoolClassItem[];
+    initialRoster?: TeacherRosterItem[];
+    initialSchoolInfo?: { name: string; province?: string } | null;
     currentAcademicYear: AcademicYearOption | null;
 }
 
@@ -25,11 +31,11 @@ export interface UseSchoolSetupWizardReturn {
     isSubmitting: boolean;
     register: UseFormRegister<SchoolInfoData>;
     errors: FieldErrors<SchoolInfoData>;
-    setStep: (step: StepIndex) => void;
+    goToStep: (step: StepIndex) => Promise<void>;
     setClasses: (classes: SchoolClassItem[]) => void;
     setRoster: (roster: TeacherRosterItem[]) => void;
     onSchoolInfoSubmit: (data: SchoolInfoData) => Promise<void>;
-    handleFinish: () => void;
+    handleFinish: () => Promise<void>;
     handleSubmitForm: (
         e?: React.BaseSyntheticEvent,
     ) => Promise<void>;
@@ -51,15 +57,15 @@ export interface ClassStepProps {
     classes: SchoolClassItem[];
     currentAcademicYear: AcademicYearOption | null;
     onUpdate: (classes: SchoolClassItem[]) => void;
-    onNext: () => void;
+    onNext: () => Promise<void>;
 }
 
 export interface RosterStepProps {
     roster: TeacherRosterItem[];
     classes: SchoolClassItem[];
     onUpdate: (roster: TeacherRosterItem[]) => void;
-    onBack: () => void;
-    onNext: () => void;
+    onBack: () => Promise<void>;
+    onNext: () => Promise<void>;
 }
 
 export interface SummaryStepProps {
@@ -68,6 +74,6 @@ export interface SummaryStepProps {
     classes: SchoolClassItem[];
     roster: TeacherRosterItem[];
     canFinish: boolean;
-    onBack: () => void;
-    onFinish: () => void;
+    onBack: () => Promise<void>;
+    onFinish: () => Promise<void>;
 }

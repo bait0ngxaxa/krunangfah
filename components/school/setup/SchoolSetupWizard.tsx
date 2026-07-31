@@ -11,7 +11,10 @@ import {
 import type { SchoolSetupWizardProps } from "./types";
 
 export function SchoolSetupWizard({
-    initialHasSchool = false,
+    initialStep = 0,
+    initialClasses = [],
+    initialRoster = [],
+    initialSchoolInfo = null,
     currentAcademicYear,
 }: SchoolSetupWizardProps) {
     const {
@@ -23,16 +26,30 @@ export function SchoolSetupWizard({
         isSubmitting,
         register,
         errors,
-        setStep,
+        goToStep,
         setClasses,
         setRoster,
         handleFinish,
         handleSubmitForm,
-    } = useSchoolSetupWizard({ initialHasSchool });
+    } = useSchoolSetupWizard({
+        initialStep,
+        initialClasses,
+        initialRoster,
+        initialSchoolInfo,
+    });
 
     return (
         <div className="w-full max-w-2xl mx-auto">
             <StepIndicator currentStep={step} />
+
+            {serverError && step !== 0 && (
+                <p
+                    role="alert"
+                    className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600"
+                >
+                    {serverError}
+                </p>
+            )}
 
             {step === 0 && (
                 <SchoolInfoStep
@@ -49,7 +66,7 @@ export function SchoolSetupWizard({
                     classes={classes}
                     currentAcademicYear={currentAcademicYear}
                     onUpdate={setClasses}
-                    onNext={() => setStep(2)}
+                    onNext={() => goToStep(2)}
                 />
             )}
 
@@ -58,8 +75,8 @@ export function SchoolSetupWizard({
                     roster={roster}
                     classes={classes}
                     onUpdate={setRoster}
-                    onBack={() => setStep(1)}
-                    onNext={() => setStep(3)}
+                    onBack={() => goToStep(1)}
+                    onNext={() => goToStep(3)}
                 />
             )}
 
@@ -70,7 +87,7 @@ export function SchoolSetupWizard({
                     classes={classes}
                     roster={roster}
                     canFinish={!!schoolInfo?.name}
-                    onBack={() => setStep(2)}
+                    onBack={() => goToStep(2)}
                     onFinish={handleFinish}
                 />
             )}

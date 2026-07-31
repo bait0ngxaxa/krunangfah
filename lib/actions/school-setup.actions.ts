@@ -99,6 +99,7 @@ export async function createSchoolAndLink(input: {
                     data: {
                         schoolId: newSchool.id,
                         isPrimary: true,
+                        onboardingStatus: "SCHOOL_CREATED",
                     },
                 });
 

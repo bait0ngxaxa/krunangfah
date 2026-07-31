@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createSchoolAndLink } from "@/lib/actions/school-setup.actions";
+import {
+    completeOnboarding,
+    saveOnboardingProgress,
+} from "@/lib/actions/onboarding.actions";
+import {
+    getOnboardingStatusForStep,
+} from "@/lib/onboarding/school-setup-resume";
 import type {
     SchoolClassItem,
     TeacherRosterItem,
@@ -12,33 +19,24 @@ import { schoolInfoSchema, type SchoolInfoData } from "./constants";
 import type { StepIndex, UseSchoolSetupWizardReturn } from "./types";
 
 interface UseSchoolSetupWizardParams {
-    initialHasSchool: boolean;
+    initialStep: StepIndex;
+    initialClasses: SchoolClassItem[];
+    initialRoster: TeacherRosterItem[];
+    initialSchoolInfo: { name: string; province?: string } | null;
 }
 
 export function useSchoolSetupWizard({
-    initialHasSchool,
+    initialStep,
+    initialClasses,
+    initialRoster,
+    initialSchoolInfo,
 }: UseSchoolSetupWizardParams): UseSchoolSetupWizardReturn {
-    const [step, setStep] = useState<StepIndex>(0);
-    const [classes, setClasses] = useState<SchoolClassItem[]>([]);
-    const [roster, setRoster] = useState<TeacherRosterItem[]>([]);
-    const [schoolInfo, setSchoolInfo] = useState<{
-        name: string;
-        province?: string;
-    } | null>(null);
+    const [step, setStep] = useState<StepIndex>(initialStep);
+    const [classes, setClasses] = useState<SchoolClassItem[]>(initialClasses);
+    const [roster, setRoster] = useState<TeacherRosterItem[]>(initialRoster);
+    const [schoolInfo, setSchoolInfo] = useState(initialSchoolInfo);
     const [serverError, setServerError] = useState<string | null>(null);
-
-    // Flag ป้องกัน server action revalidation redirect
-    // ตั้ง true ก่อนเรียก server action → เมื่อ page re-render
-    // (initialHasSchool เปลี่ยนเป็น true) จะไม่ redirect ทิ้งกลางทาง wizard
-    const [wizardActive, setWizardActive] = useState(false);
-
-    // ถ้ามีโรงเรียนแล้วและยังไม่เริ่ม wizard → redirect ไป dashboard
-    // (กรณี user พิมพ์ URL ตรงมาหลัง setup เสร็จ)
-    useEffect(() => {
-        if (initialHasSchool && !wizardActive) {
-            window.location.href = "/dashboard";
-        }
-    }, [initialHasSchool, wizardActive]);
+    const [isProgressPending, setIsProgressPending] = useState(false);
 
     const {
         register,
@@ -51,16 +49,9 @@ export function useSchoolSetupWizard({
     async function onSchoolInfoSubmit(data: SchoolInfoData): Promise<void> {
         setServerError(null);
 
-        // ต้องตั้ง flag ก่อนเรียก server action
-        // เพราะ server action จะ trigger page revalidation
-        // ซึ่งจะทำให้ initialHasSchool เปลี่ยนเป็น true
-        // React 18+ batch state updates → commit ก่อน async yield
-        setWizardActive(true);
-
         const result = await createSchoolAndLink(data);
 
         if (!result.success) {
-            setWizardActive(false);
             setServerError(result.message);
             return;
         }
@@ -71,15 +62,57 @@ export function useSchoolSetupWizard({
         setStep(1);
     }
 
-    function handleFinish(): void {
+    async function goToStep(nextStep: StepIndex): Promise<void> {
+        if (nextStep === step || isProgressPending) return;
+
+        const nextStatus = getOnboardingStatusForStep(nextStep);
+        if (!nextStatus) {
+            setStep(nextStep);
+            return;
+        }
+
+        setIsProgressPending(true);
+        setServerError(null);
+
+        try {
+            const result = await saveOnboardingProgress({
+                status: nextStatus,
+            });
+
+            if (!result.success) {
+                setServerError(result.message);
+                return;
+            }
+
+            setStep(nextStep);
+        } finally {
+            setIsProgressPending(false);
+        }
+    }
+
+    async function handleFinish(): Promise<void> {
         if (!schoolInfo?.name) {
             setStep(0);
             setServerError("กรุณากรอกข้อมูลโรงเรียนให้ครบก่อนเสร็จสิ้น");
             return;
         }
 
-        // Hard redirect — layout เช็ค schoolId จาก DB โดยตรง ไม่พึ่ง cookie claims
-        window.location.href = "/dashboard";
+        if (isProgressPending) return;
+
+        setIsProgressPending(true);
+        setServerError(null);
+
+        try {
+            const result = await completeOnboarding();
+            if (!result.success) {
+                setServerError(result.message);
+                return;
+            }
+
+            window.location.href = "/dashboard";
+        } finally {
+            setIsProgressPending(false);
+        }
     }
 
     return {
@@ -91,7 +124,7 @@ export function useSchoolSetupWizard({
         isSubmitting,
         register,
         errors,
-        setStep,
+        goToStep,
         setClasses,
         setRoster,
         onSchoolInfoSubmit,
