@@ -4,7 +4,7 @@ import { prisma } from "@/lib/database/prisma";
 import { ActivityStatus, Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/auth/session";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
-import { calculateRiskLevel } from "@/lib/utils/phq-scoring";
+import { calculateRiskLevel, isPhqScores } from "@/lib/utils/phq-scoring";
 import type { RiskLevel } from "@/lib/constants/risk-levels";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { ACTIVITY_INDICES } from "@/lib/actions/activity/constants";
@@ -190,6 +190,20 @@ export async function importStudents(
                 success: false,
                 status: "error",
                 message: "รอบการประเมินไม่ถูกต้อง",
+            };
+        }
+
+        const invalidPhqRowIndex = students.findIndex(
+            (student) => !isPhqScores(student?.scores),
+        );
+        if (invalidPhqRowIndex !== -1) {
+            return {
+                success: false,
+                status: "error",
+                message: "ข้อมูลคำตอบ PHQ ไม่ถูกต้อง",
+                errors: [
+                    `ข้อมูลลำดับที่ ${invalidPhqRowIndex + 1}: คะแนน PHQ ภายในต้องเป็นจำนวนเต็ม 0-3 และข้อ 9a/9b ต้องเป็นค่าบูลีน`,
+                ],
             };
         }
 

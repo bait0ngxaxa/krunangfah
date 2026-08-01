@@ -6,6 +6,7 @@ import { PHQA_SCORE_OPTIONS } from "@/lib/constants/phq-score-labels";
 import type { SystemPhqRecord } from "@/lib/actions/system-admin/types";
 import {
     canReferPhqToHospital,
+    isPhqScores,
     type PhqScores,
 } from "@/lib/utils/phq-scoring";
 
@@ -73,7 +74,8 @@ export function normalizePhqEditFormState(
 export function canEditHospitalReferral(
     value: SystemPhqEditFormState,
 ): boolean {
-    return canReferPhqToHospital(toPhqScores(value));
+    const scores = toPhqScores(value);
+    return scores ? canReferPhqToHospital(scores) : false;
 }
 
 export function SystemCarePhqEditForm({
@@ -288,9 +290,10 @@ function getScoreValue(
     }
 }
 
-function toPhqScores(value: SystemPhqEditFormState): PhqScores {
+function toPhqScores(value: SystemPhqEditFormState): PhqScores | null {
     const { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b } = value;
-    return { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b };
+    const scores = { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b };
+    return isPhqScores(scores) ? scores : null;
 }
 
 function CheckboxField({

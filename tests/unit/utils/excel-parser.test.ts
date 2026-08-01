@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ExcelJS from "exceljs";
 import { parseExcelBuffer } from "@/lib/utils/excel-parser";
+import { parsePhqaScoreLabel } from "@/lib/constants/phq-score-labels";
 import {
     MAX_IMPORT_FILE_SIZE_BYTES,
     MAX_IMPORT_ROW_COUNT,
@@ -85,45 +86,43 @@ describe("Excel Parser - Gender Parsing Logic", () => {
     });
 });
 
-describe("Excel Parser - Number Cell Clamping Logic", () => {
-    /**
-     * Test the number clamping logic (0-3) used for PHQ scores
-     */
-    const getNumberClamped = (value: string): number => {
-        const num = parseInt(value, 10);
-        return isNaN(num) ? 0 : Math.min(Math.max(num, 0), 3);
+describe("Excel Parser - PHQA Answer Mapping", () => {
+    type PhqQuestion =
+        | "q1"
+        | "q2"
+        | "q3"
+        | "q4"
+        | "q5"
+        | "q6"
+        | "q7"
+        | "q8"
+        | "q9";
+
+    const PHQ_QUESTIONS: readonly PhqQuestion[] = [
+        "q1",
+        "q2",
+        "q3",
+        "q4",
+        "q5",
+        "q6",
+        "q7",
+        "q8",
+        "q9",
+    ];
+    const VALID_ANSWERS: Record<PhqQuestion, ExcelJS.CellValue> = {
+        q1: "ไม่มีเลย",
+        q2: "มีบางวัน",
+        q3: "มีมากกว่า 7 วัน",
+        q4: "มีแทบทุกวัน",
+        q5: "ไม่มีเลย",
+        q6: "มีบางวัน",
+        q7: "มีมากกว่า 7 วัน",
+        q8: "มีแทบทุกวัน",
+        q9: "ไม่มีเลย",
     };
 
-    it("should return 0 for empty string", () => {
-        expect(getNumberClamped("")).toBe(0);
-    });
-
-    it("should return 0 for non-numeric string", () => {
-        expect(getNumberClamped("abc")).toBe(0);
-    });
-
-    it("should return 0 for negative numbers (clamp to 0)", () => {
-        expect(getNumberClamped("-1")).toBe(0);
-        expect(getNumberClamped("-10")).toBe(0);
-    });
-
-    it("should return correct value for 0-3", () => {
-        expect(getNumberClamped("0")).toBe(0);
-        expect(getNumberClamped("1")).toBe(1);
-        expect(getNumberClamped("2")).toBe(2);
-        expect(getNumberClamped("3")).toBe(3);
-    });
-
-    it("should clamp values greater than 3 to 3", () => {
-        expect(getNumberClamped("4")).toBe(3);
-        expect(getNumberClamped("10")).toBe(3);
-        expect(getNumberClamped("100")).toBe(3);
-    });
-});
-
-describe("Excel Parser - PHQA Answer Mapping", () => {
     async function createWorkbookBuffer(
-        q1Answer: string | number = "ไม่มีเลย",
+        answers: Partial<Record<PhqQuestion, ExcelJS.CellValue>> = {},
     ): Promise<ArrayBuffer> {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
@@ -136,19 +135,12 @@ describe("Excel Parser - PHQA Answer Mapping", () => {
             "เพศกำเนิด",
             "อายุ (ปี)",
             "ห้อง",
-            "ข้อ1",
-            "ข้อ2",
-            "ข้อ3",
-            "ข้อ4",
-            "ข้อ5",
-            "ข้อ6",
-            "ข้อ7",
-            "ข้อ8",
-            "ข้อ9",
+            ...PHQ_QUESTIONS.map((question) => `ข้อ${question.slice(1)}`),
             "opt1",
             "opt2",
         ]);
 
+        const rowAnswers = { ...VALID_ANSWERS, ...answers };
         worksheet.addRow([
             "66001",
             "1103700000011",
@@ -157,15 +149,7 @@ describe("Excel Parser - PHQA Answer Mapping", () => {
             "ชาย",
             13,
             "ม.1/1",
-            q1Answer,
-            "มีบางวัน",
-            "มีมากกว่า 7 วัน",
-            "มีแทบทุกวัน",
-            0,
-            1,
-            2,
-            3,
-            "ไม่มเลย",
+            ...PHQ_QUESTIONS.map((question) => rowAnswers[question]),
             "ไม่ใช่",
             "ไม่ใช่",
         ]);
@@ -177,7 +161,7 @@ describe("Excel Parser - PHQA Answer Mapping", () => {
         );
     }
 
-    it("maps real PHQA answer labels to scores during import", async () => {
+    it("maps exact PHQA answer labels to internal scores during import", async () => {
         const buffer = await createWorkbookBuffer();
         const result = await parseExcelBuffer(buffer);
 
@@ -195,17 +179,164 @@ describe("Excel Parser - PHQA Answer Mapping", () => {
         });
     });
 
-    it("reports unsupported PHQA answers without saying answers must be numeric", async () => {
-        const buffer = await createWorkbookBuffer("คำตอบอื่น");
+    it.each([
+        ["ไม่มีเลย", 0],
+        ["มีบางวัน", 1],
+        ["มีมากกว่า 7 วัน", 2],
+        ["มีแทบทุกวัน", 3],
+        [" ไม่มีเลย ", 0],
+        ["มีบางวัน  ", 1],
+        ["มีมากกว่า   7 วัน", 2],
+        ["ไม่มเลย", 0],
+    ] as const)("maps supported label %j to %i", (answer, expectedScore) => {
+        expect(parsePhqaScoreLabel(answer)).toBe(expectedScore);
+    });
+
+    it.each([
+        "0",
+        "1",
+        "2",
+        "3",
+        " 2 ",
+        "2.5",
+        "3.0",
+        "03",
+        "+2",
+        "-1",
+        "1e2",
+        "0x2",
+        "2คะแนน",
+        "3abc",
+        "4คะแนน",
+        "1 วัน",
+        "0 วัน",
+        "ไม่มี",
+        "ไม่เคย",
+        "บางวัน",
+        "มากกว่า 7 วัน",
+        "ทุกวัน",
+        "มีทุกวัน",
+        "มีแทบจะทุกวัน",
+        "มี",
+        "ไม่มีเ",
+        "มีบาง",
+        "มีบางวันครับ",
+        "มีบางวัน.",
+    ])("rejects unsupported answer %j at the exact mapper", (answer) => {
+        expect(parsePhqaScoreLabel(answer)).toBeUndefined();
+    });
+
+    it.each([0, 1, 2, 3, 2.5, true, false] as const)(
+        "rejects non-label Excel cell value %j and omits the row",
+        async (answer) => {
+            const buffer = await createWorkbookBuffer({ q3: answer });
+            const result = await parseExcelBuffer(buffer);
+
+            expect(result.success).toBe(false);
+            expect(result.data).toHaveLength(0);
+            expect(result.errors.join("\n")).toContain("คำตอบ PHQ ข้อ 3");
+            expect(result.errors.join("\n")).toContain(`พบ: "${answer}"`);
+        },
+    );
+
+    it("normalizes safe whitespace in a workbook answer", async () => {
+        const buffer = await createWorkbookBuffer({
+            q1: " ไม่มีเลย ",
+            q3: "มีมากกว่า\u00a0  7\nวัน",
+        });
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(true);
+        expect(result.data[0]?.scores.q1).toBe(0);
+        expect(result.data[0]?.scores.q3).toBe(2);
+    });
+
+    it("maps a rich-text label and a cached formula text result exactly", async () => {
+        const buffer = await createWorkbookBuffer({
+            q2: { richText: [{ text: "มี" }, { text: "บางวัน" }] },
+            q4: { formula: "A1", result: "มีแทบทุกวัน" },
+        });
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(true);
+        expect(result.data[0]?.scores.q2).toBe(1);
+        expect(result.data[0]?.scores.q4).toBe(3);
+    });
+
+    it.each([
+        ["ไม่มีเลย", 0],
+        ["มีบางวัน", 1],
+        ["มีมากกว่า 7 วัน", 2],
+        ["มีแทบทุกวัน", 3],
+    ] as const)(
+        "maps q9 label %j to internal score %i",
+        async (answer, expectedScore) => {
+            const buffer = await createWorkbookBuffer({ q9: answer });
+            const result = await parseExcelBuffer(buffer);
+
+            expect(result.success).toBe(true);
+            expect(result.data[0]?.scores.q9).toBe(expectedScore);
+        },
+    );
+
+    it.each(["0", "1", "2", "3", "2.5", "3abc", "4คะแนน"])(
+        "rejects numeric-like text %j through the workbook boundary",
+        async (answer) => {
+            const buffer = await createWorkbookBuffer({ q3: answer });
+            const result = await parseExcelBuffer(buffer);
+
+            expect(result.success).toBe(false);
+            expect(result.data).toHaveLength(0);
+            expect(result.errors.join("\n")).toContain("คำตอบ PHQ ข้อ 3");
+        },
+    );
+
+    it("reports unsupported PHQA answers and omits the row", async () => {
+        const buffer = await createWorkbookBuffer({ q1: "คำตอบอื่น" });
         const result = await parseExcelBuffer(buffer);
 
         expect(result.success).toBe(false);
-        expect(result.errors).toContain(
-            `แถว 2: ${TEMPLATE_Q1_HEADER} ต้องเป็นคำตอบที่รองรับ (พบ: "คำตอบอื่น")`,
-        );
+        expect(result.data).toHaveLength(0);
+        expect(result.errors.join("\n")).toContain("คำตอบ PHQ ข้อ 1");
+        expect(result.errors.join("\n")).toContain('พบ: "คำตอบอื่น"');
         expect(result.errors.join("\n")).not.toContain(
             `${TEMPLATE_Q1_HEADER} ต้องเป็นตัวเลข`,
         );
+    });
+
+    it("rejects an invalid q9 without creating a parsed student", async () => {
+        const buffer = await createWorkbookBuffer({ q9: "1คะแนน" });
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(false);
+        expect(result.data).toHaveLength(0);
+        expect(result.errors.join("\n")).toContain("คำตอบ PHQ ข้อ 9");
+        expect(result.errors.join("\n")).toContain('พบ: "1คะแนน"');
+    });
+
+    it.each(["0", "1", "2", "3", "1abc", "1คะแนน", "มี", "เคย", "บางครั้ง"])(
+        "rejects unsupported q9 answer %j",
+        async (answer) => {
+            const buffer = await createWorkbookBuffer({ q9: answer });
+            const result = await parseExcelBuffer(buffer);
+
+            expect(result.success).toBe(false);
+            expect(result.data).toHaveLength(0);
+            expect(result.errors.join("\n")).toContain("คำตอบ PHQ ข้อ 9");
+        },
+    );
+
+    it("reports every unsupported PHQ answer in the same row", async () => {
+        const buffer = await createWorkbookBuffer({
+            q2: "2.5",
+            q5: "3abc",
+        });
+        const result = await parseExcelBuffer(buffer);
+
+        expect(result.success).toBe(false);
+        expect(result.data).toHaveLength(0);
+        expect(result.errors.join("\n")).toContain("คำตอบ PHQ ข้อ 2");
+        expect(result.errors.join("\n")).toContain("คำตอบ PHQ ข้อ 5");
     });
 });
 
@@ -432,15 +563,15 @@ describe("Excel Parser - Primary Q9 Follow-up Columns", () => {
             "ชาย",
             13,
             "ม.1/1",
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
             input.primaryQ9a,
             input.fallbackOpt1 ?? "",
             "ไม่ใช่",
@@ -796,15 +927,15 @@ describe("Excel Parser - National ID Parsing", () => {
             "ชาย",
             13,
             "ม.1/1",
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
             "ไม่ใช่",
             "ไม่ใช่",
         ]);
@@ -818,15 +949,15 @@ describe("Excel Parser - National ID Parsing", () => {
                 "หญิง",
                 13,
                 "ม.1/1",
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
+                "ไม่มีเลย",
+                "ไม่มีเลย",
+                "ไม่มีเลย",
+                "ไม่มีเลย",
+                "ไม่มีเลย",
+                "ไม่มีเลย",
+                "ไม่มีเลย",
+                "ไม่มีเลย",
+                "ไม่มีเลย",
                 "ไม่ใช่",
                 "ไม่ใช่",
             ]);
@@ -936,15 +1067,15 @@ describe("Excel Parser - Mixed Valid And Invalid Rows", () => {
             "ชาย",
             13,
             "ม.1/1",
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
             "ไม่ใช่",
             "ไม่ใช่",
         ]);
@@ -952,19 +1083,19 @@ describe("Excel Parser - Mixed Valid And Invalid Rows", () => {
             "66002",
             "1103700000012",
             "สมหญิง",
-            "",
+            "ใจดี",
             "หญิง",
             13,
             "ม.1/1",
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "2",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
             "ไม่ใช่",
             "ไม่ใช่",
         ]);
@@ -976,15 +1107,15 @@ describe("Excel Parser - Mixed Valid And Invalid Rows", () => {
             "ชาย",
             14,
             "ม.1/2",
-            1,
-            1,
-            1,
-            1,
-            1,
-            0,
-            0,
-            0,
-            0,
+            "มีบางวัน",
+            "มีบางวัน",
+            "มีบางวัน",
+            "มีบางวัน",
+            "มีบางวัน",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
+            "ไม่มีเลย",
             "ไม่ใช่",
             "ไม่ใช่",
         ]);
@@ -996,7 +1127,7 @@ describe("Excel Parser - Mixed Valid And Invalid Rows", () => {
         );
     }
 
-    it("keeps complete rows for preview and reports incomplete rows", async () => {
+    it("keeps valid rows for partial import and rejects a numeric PHQ row", async () => {
         const buffer = await createMixedRowsWorkbookBuffer();
         const result = await parseExcelBuffer(buffer);
 
@@ -1005,8 +1136,7 @@ describe("Excel Parser - Mixed Valid And Invalid Rows", () => {
             "66001",
             "66003",
         ]);
-        expect(result.errors).toContain(
-            "แถว 3: ขาดข้อมูลในฟิลด์: นามสกุล",
-        );
+        expect(result.errors.join("\n")).toContain("แถว 3: คำตอบ PHQ ข้อ 3");
+        expect(result.errors.join("\n")).toContain('พบ: "2"');
     });
 });

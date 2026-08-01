@@ -1,7 +1,11 @@
 "use client";
 import { useState, useRef } from "react";
 import { parseExcelBuffer, type ParsedStudent } from "@/lib/utils/excel-parser";
-import { MAX_IMPORT_FILE_SIZE_BYTES } from "@/lib/constants/import";
+import {
+    MAX_IMPORT_FILE_SIZE_BYTES,
+    MAX_IMPORT_ROW_COUNT,
+} from "@/lib/constants/import";
+import { PHQA_SCORE_OPTIONS } from "@/lib/constants/phq-score-labels";
 import { Button } from "@/components/ui/Button";
 import { ImportErrorModal } from "@/components/student/import/ImportErrorModal";
 import {
@@ -50,15 +54,15 @@ const TEMPLATE_EXAMPLE_ROW = [
     "ชาย",
     "15",
     "ม.3/1",
-    "ไม่มีเลย",
-    "มีบางวัน",
-    "ไม่มีเลย",
-    "มีบางวัน",
-    "ไม่มีเลย",
-    "ไม่มีเลย",
-    "มีบางวัน",
-    "ไม่มีเลย",
-    "ไม่มีเลย",
+    PHQA_SCORE_OPTIONS[0].label,
+    PHQA_SCORE_OPTIONS[1].label,
+    PHQA_SCORE_OPTIONS[0].label,
+    PHQA_SCORE_OPTIONS[1].label,
+    PHQA_SCORE_OPTIONS[0].label,
+    PHQA_SCORE_OPTIONS[0].label,
+    PHQA_SCORE_OPTIONS[1].label,
+    PHQA_SCORE_OPTIONS[0].label,
+    PHQA_SCORE_OPTIONS[0].label,
     "ไม่ใช่",
     "ไม่ใช่",
 ] as const;
@@ -66,6 +70,9 @@ const TEMPLATE_EXAMPLE_ROW = [
 const UPLOAD_ERROR_TITLE = "อัปโหลดไฟล์ไม่สำเร็จ";
 const UPLOAD_ERROR_DESCRIPTION =
     "กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง";
+const PHQA_TEMPLATE_START_COLUMN = REQUIRED_COLUMNS.length + 1;
+const PHQA_TEMPLATE_END_COLUMN = PHQA_TEMPLATE_START_COLUMN + 8;
+const PHQA_DROPDOWN_FORMULA = `"${PHQA_SCORE_OPTIONS.map((option) => option.label).join(",")}"`;
 
 async function downloadStudentImportTemplate(): Promise<void> {
     const ExcelJS = await import("exceljs");
@@ -81,6 +88,24 @@ async function downloadStudentImportTemplate(): Promise<void> {
     }));
     worksheet.getRow(1).font = { bold: true };
     worksheet.views = [{ state: "frozen", ySplit: 1 }];
+
+    for (let rowNumber = 2; rowNumber <= MAX_IMPORT_ROW_COUNT + 1; rowNumber++) {
+        for (
+            let columnNumber = PHQA_TEMPLATE_START_COLUMN;
+            columnNumber <= PHQA_TEMPLATE_END_COLUMN;
+            columnNumber++
+        ) {
+            worksheet.getCell(rowNumber, columnNumber).dataValidation = {
+                type: "list",
+                allowBlank: false,
+                formulae: [PHQA_DROPDOWN_FORMULA],
+                showErrorMessage: true,
+                errorStyle: "stop",
+                errorTitle: "คำตอบ PHQ-A ไม่รองรับ",
+                error: "กรุณาเลือกข้อความคำตอบจากรายการที่กำหนด",
+            };
+        }
+    }
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
@@ -253,7 +278,10 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                                     </div>
                                     <ol className="space-y-1 text-sm leading-6 text-gray-600">
                                         <li>1. ดาวน์โหลด template Excel</li>
-                                        <li>2. กรอกข้อมูลและคะแนน PHQ-A</li>
+                                        <li>
+                                            2. กรอกข้อมูลและเลือกข้อความคำตอบ
+                                            PHQ-A จากรายการ
+                                        </li>
                                         <li>3. บันทึกเป็น .xlsx แล้วอัปโหลด</li>
                                     </ol>
                                 </div>

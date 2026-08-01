@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
     calculateRiskLevel,
     calculateTotalScore,
+    isPhqScores,
     type PhqScores,
 } from "@/lib/utils/phq-scoring";
 import {
@@ -30,6 +31,26 @@ function createScores(overrides: Partial<PhqScores> = {}): PhqScores {
         ...overrides,
     };
 }
+
+describe("isPhqScores", () => {
+    it("accepts mapped internal scores and boolean follow-up answers", () => {
+        expect(isPhqScores(createScores({ q1: 3, q9: 1, q9a: true }))).toBe(
+            true,
+        );
+    });
+
+    it.each([
+        { ...createScores(), q3: -1 },
+        { ...createScores(), q3: 4 },
+        { ...createScores(), q3: 2.5 },
+        { ...createScores(), q3: "2" },
+        { ...createScores(), q9: "1คะแนน" },
+        { ...createScores(), q9a: 0 },
+        { ...createScores(), q9b: "false" },
+    ])("rejects malformed runtime score input %#", (scores) => {
+        expect(isPhqScores(scores)).toBe(false);
+    });
+});
 
 describe("calculateTotalScore", () => {
     it("should return 0 for all zeros", () => {

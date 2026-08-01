@@ -4,7 +4,11 @@ import {
     MAX_IMPORT_FILE_SIZE_BYTES,
     MAX_IMPORT_ROW_COUNT,
 } from "@/lib/constants/import";
-import { PHQA_SCORE_LABELS } from "@/lib/constants/phq-score-labels";
+import {
+    parsePhqaScoreLabel,
+    PHQA_SCORE_OPTIONS,
+    type PhqScore,
+} from "@/lib/constants/phq-score-labels";
 import { logError } from "@/lib/utils/logging";
 import {
     isValidNationalId,
@@ -117,11 +121,24 @@ function stringifyCellValue(value: unknown): string {
             .join("");
     }
 
+    if (
+        isRecord(value) &&
+        (typeof value.formula === "string" ||
+            typeof value.sharedFormula === "string")
+    ) {
+        const result = value.result;
+        return typeof result === "string" ||
+            typeof result === "number" ||
+            typeof result === "boolean"
+            ? String(result)
+            : "";
+    }
+
     if (isRecord(value) && typeof value.text === "string") {
         return value.text;
     }
 
-    return String(value);
+    return "";
 }
 
 function normalizeHeader(value: string): string {
@@ -150,10 +167,18 @@ function findHeaderColumn(
     return undefined;
 }
 
-function parsePhqaScoreLabel(value: string): number | undefined {
-    const normalizedValue = normalizeHeader(value).toLowerCase();
-    return PHQA_SCORE_LABELS.get(normalizedValue);
+function formatInvalidCellValue(value: unknown): string {
+    const stringValue = normalizeHeader(stringifyCellValue(value));
+    const displayValue = stringValue || "[รูปแบบข้อมูลไม่รองรับ]";
+    const sanitizedValue = displayValue.replace(/"/g, "'");
+    return sanitizedValue.length > 50
+        ? `${sanitizedValue.slice(0, 50)}…`
+        : sanitizedValue;
 }
+
+const PHQA_SUPPORTED_ANSWERS = PHQA_SCORE_OPTIONS.map(
+    (option) => `"${option.label}"`,
+).join(", ");
 
 /**
  * Parse Excel buffer to student data
@@ -231,13 +256,18 @@ export async function parseExcelBuffer(
                     return stringifyCellValue(cellValue).trim();
                 };
 
+                const getRawCellByAliases = (
+                    aliases: readonly string[],
+                ): unknown => {
+                    const colIndex = findHeaderColumn(headers, aliases) ?? -1;
+                    if (colIndex === -1) return "";
+                    return row.getCell(colIndex).value;
+                };
+
                 const getCellByAliases = (
                     aliases: readonly string[],
                 ): string => {
-                    const colIndex = findHeaderColumn(headers, aliases) ?? -1;
-                    if (colIndex === -1) return "";
-                    const cellValue = row.getCell(colIndex).value;
-                    return stringifyCellValue(cellValue).trim();
+                    return stringifyCellValue(getRawCellByAliases(aliases)).trim();
                 };
 
                 const requiredValues = REQUIRED_IMPORT_FIELDS.map((field) => ({
@@ -259,15 +289,19 @@ export async function parseExcelBuffer(
                     return;
                 }
 
-                const getNumberCell = (
+                const getPhqaScoreCell = (
+                    questionNumber: number,
                     headerName: string,
                     aliases: readonly string[] = [headerName],
-                ): number => {
-                    const value = getCellByAliases(aliases).trim();
+                ): PhqScore | undefined => {
+                    const rawValue = getRawCellByAliases(aliases);
+                    const value = stringifyCellValue(rawValue);
 
-                    if (!value) {
-                        errors.push(`แถว ${rowNumber}: ไม่มีข้อมูล${headerName}`);
-                        return 0;
+                    if (!normalizeHeader(value)) {
+                        errors.push(
+                            `แถว ${rowNumber}: ไม่มีข้อมูลคำตอบ PHQ ข้อ ${questionNumber}`,
+                        );
+                        return undefined;
                     }
 
                     const mappedScore = parsePhqaScoreLabel(value);
@@ -275,36 +309,21 @@ export async function parseExcelBuffer(
                         return mappedScore;
                     }
 
-                    const num = parseInt(value, 10);
-
-                    // ตรวจสอบว่าเป็นตัวเลขที่ valid
-                    if (isNaN(num)) {
-                        errors.push(
-                            `แถว ${rowNumber}: ${headerName} ต้องเป็นคำตอบที่รองรับ (พบ: "${value}")`,
-                        );
-                        return 0;
-                    }
-
-                    // ตรวจสอบช่วง 0-3
-                    if (num < 0 || num > 3) {
-                        errors.push(
-                            `แถว ${rowNumber}: ${headerName} ต้องอยู่ในช่วง 0-3 (พบ: ${num})`,
-                        );
-                        return Math.min(Math.max(num, 0), 3); // Clamp แต่มี warning
-                    }
-
-                    return num;
+                    errors.push(
+                        `แถว ${rowNumber}: คำตอบ PHQ ข้อ ${questionNumber} ไม่รองรับ ต้องเป็น ${PHQA_SUPPORTED_ANSWERS} (พบ: "${formatInvalidCellValue(rawValue)}")`,
+                    );
+                    return undefined;
                 };
 
                 const getBooleanCell = (
                     headerName: string,
                     aliases: readonly string[] = [headerName],
-                ): boolean => {
+                ): boolean | undefined => {
                     const value = getCellByAliases(aliases).trim().toLowerCase();
 
                     if (!value) {
                         errors.push(`แถว ${rowNumber}: ไม่มีข้อมูล${headerName}`);
-                        return false;
+                        return undefined;
                     }
 
                     // ค่าที่ยอมรับได้สำหรับ true
@@ -331,7 +350,7 @@ export async function parseExcelBuffer(
                     errors.push(
                         `แถว ${rowNumber}: ${headerName} ต้องเป็น "ใช่" หรือ "ไม่ใช่" (พบ: "${value}")`,
                     );
-                    return false;
+                    return undefined;
                 };
 
                 const parseGender = (
@@ -414,6 +433,76 @@ export async function parseExcelBuffer(
                     return;
                 }
 
+                const q1 = getPhqaScoreCell(
+                    1,
+                    PHQA_TEMPLATE_HEADERS.q1,
+                    FIELD_HEADER_ALIASES.q1,
+                );
+                const q2 = getPhqaScoreCell(
+                    2,
+                    PHQA_TEMPLATE_HEADERS.q2,
+                    FIELD_HEADER_ALIASES.q2,
+                );
+                const q3 = getPhqaScoreCell(
+                    3,
+                    PHQA_TEMPLATE_HEADERS.q3,
+                    FIELD_HEADER_ALIASES.q3,
+                );
+                const q4 = getPhqaScoreCell(
+                    4,
+                    PHQA_TEMPLATE_HEADERS.q4,
+                    FIELD_HEADER_ALIASES.q4,
+                );
+                const q5 = getPhqaScoreCell(
+                    5,
+                    PHQA_TEMPLATE_HEADERS.q5,
+                    FIELD_HEADER_ALIASES.q5,
+                );
+                const q6 = getPhqaScoreCell(
+                    6,
+                    PHQA_TEMPLATE_HEADERS.q6,
+                    FIELD_HEADER_ALIASES.q6,
+                );
+                const q7 = getPhqaScoreCell(
+                    7,
+                    PHQA_TEMPLATE_HEADERS.q7,
+                    FIELD_HEADER_ALIASES.q7,
+                );
+                const q8 = getPhqaScoreCell(
+                    8,
+                    PHQA_TEMPLATE_HEADERS.q8,
+                    FIELD_HEADER_ALIASES.q8,
+                );
+                const q9 = getPhqaScoreCell(
+                    9,
+                    PHQA_TEMPLATE_HEADERS.q9,
+                    FIELD_HEADER_ALIASES.q9,
+                );
+                const q9a = getBooleanCell(
+                    PHQA_TEMPLATE_HEADERS.q9a,
+                    FIELD_HEADER_ALIASES.q9a,
+                );
+                const q9b = getBooleanCell(
+                    PHQA_TEMPLATE_HEADERS.q9b,
+                    FIELD_HEADER_ALIASES.q9b,
+                );
+
+                if (
+                    q1 === undefined ||
+                    q2 === undefined ||
+                    q3 === undefined ||
+                    q4 === undefined ||
+                    q5 === undefined ||
+                    q6 === undefined ||
+                    q7 === undefined ||
+                    q8 === undefined ||
+                    q9 === undefined ||
+                    q9a === undefined ||
+                    q9b === undefined
+                ) {
+                    return;
+                }
+
                 const student: ParsedStudent = {
                     studentId,
                     nationalId,
@@ -423,23 +512,17 @@ export async function parseExcelBuffer(
                     age,
                     class: normalizeClassName(studentClass),
                     scores: {
-                        q1: getNumberCell(PHQA_TEMPLATE_HEADERS.q1, FIELD_HEADER_ALIASES.q1),
-                        q2: getNumberCell(PHQA_TEMPLATE_HEADERS.q2, FIELD_HEADER_ALIASES.q2),
-                        q3: getNumberCell(PHQA_TEMPLATE_HEADERS.q3, FIELD_HEADER_ALIASES.q3),
-                        q4: getNumberCell(PHQA_TEMPLATE_HEADERS.q4, FIELD_HEADER_ALIASES.q4),
-                        q5: getNumberCell(PHQA_TEMPLATE_HEADERS.q5, FIELD_HEADER_ALIASES.q5),
-                        q6: getNumberCell(PHQA_TEMPLATE_HEADERS.q6, FIELD_HEADER_ALIASES.q6),
-                        q7: getNumberCell(PHQA_TEMPLATE_HEADERS.q7, FIELD_HEADER_ALIASES.q7),
-                        q8: getNumberCell(PHQA_TEMPLATE_HEADERS.q8, FIELD_HEADER_ALIASES.q8),
-                        q9: getNumberCell(PHQA_TEMPLATE_HEADERS.q9, FIELD_HEADER_ALIASES.q9),
-                        q9a: getBooleanCell(
-                            PHQA_TEMPLATE_HEADERS.q9a,
-                            FIELD_HEADER_ALIASES.q9a,
-                        ),
-                        q9b: getBooleanCell(
-                            PHQA_TEMPLATE_HEADERS.q9b,
-                            FIELD_HEADER_ALIASES.q9b,
-                        ),
+                        q1,
+                        q2,
+                        q3,
+                        q4,
+                        q5,
+                        q6,
+                        q7,
+                        q8,
+                        q9,
+                        q9a,
+                        q9b,
                     },
                 };
 

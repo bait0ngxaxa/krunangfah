@@ -378,6 +378,46 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         expect(result.identityConflicts).toBe(1);
     });
 
+    it("rejects malformed q9 input before creating a student or PHQ result", async () => {
+        mockSession(USERS.schoolAdmin);
+        const studentCode = `E2E-INVALID-PHQ-${Date.now()}`;
+        const nationalId = `G${String(Date.now()).padStart(13, "0").slice(-13)}`;
+        const malformedRow = {
+            studentId: studentCode,
+            nationalId,
+            firstName: "Invalid",
+            lastName: "PHQ",
+            class: "class-1",
+            scores: {
+                q1: 0,
+                q2: 0,
+                q3: 0,
+                q4: 0,
+                q5: 0,
+                q6: 0,
+                q7: 0,
+                q8: 0,
+                q9: "1คะแนน",
+                q9a: false,
+                q9b: false,
+            },
+        };
+
+        const result = await importStudents(
+            [malformedRow as unknown as ParsedStudent],
+            academicYearId,
+            1,
+        );
+        const persistedStudent = await prisma.student.findFirst({
+            where: { schoolId, studentId: studentCode },
+            select: { id: true },
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.message).toBe("ข้อมูลคำตอบ PHQ ไม่ถูกต้อง");
+        expect(persistedStudent).toBeNull();
+    });
+
     it("role action scope: owner can delete worksheet, non-owner cannot", async () => {
         const upload = await prisma.worksheetUpload.create({
             data: {

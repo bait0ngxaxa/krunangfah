@@ -6,6 +6,8 @@ import { prisma } from "@/lib/database/prisma";
 import {
     calculateRiskLevel,
     canReferPhqToHospital,
+    isPhqScores,
+    type PhqScores,
 } from "@/lib/utils/phq-scoring";
 import type {
     SystemEditResponse,
@@ -232,9 +234,13 @@ export async function deleteSystemReferral(
     return { success: true, message: "ลบการส่งต่อแล้ว" };
 }
 
-function toScores(input: SystemPhqEditInput) {
+function toScores(input: SystemPhqEditInput): PhqScores {
     const { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b } = input;
-    return { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b };
+    const scores = { q1, q2, q3, q4, q5, q6, q7, q8, q9, q9a, q9b };
+    if (!isPhqScores(scores)) {
+        throw new Error("Validated PHQ scores violated the scoring invariant");
+    }
+    return scores;
 }
 
 async function replaceReferral(
