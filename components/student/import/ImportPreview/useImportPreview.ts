@@ -67,7 +67,15 @@ export function useImportPreview({
     const [schoolClassNames, setSchoolClassNames] = useState<string[]>([]);
     const [isImportContextLoaded, setIsImportContextLoaded] =
         useState<boolean>(false);
+    const [hasImportContextError, setHasImportContextError] = useState(false);
+    const [importContextQueryError, setImportContextQueryError] = useState<{
+        requestId: string;
+        message?: string;
+    } | null>(null);
     const [round1Exists, setRound1Exists] = useState<boolean>(false);
+    const [isRound1Checking, setIsRound1Checking] = useState(false);
+    const [round1CheckFailed, setRound1CheckFailed] = useState(false);
+    const [incompleteCheckFailed, setIncompleteCheckFailed] = useState(false);
     const [incompleteWarning, setIncompleteWarning] =
         useState<IncompleteActivityInfo | null>(null);
     const roundCheckRequestRef = useRef(0);
@@ -107,7 +115,7 @@ export function useImportPreview({
 
         const loadData = async (): Promise<void> => {
             try {
-                const [years, profile, classes] = await Promise.all([
+                const [yearsResult, profile, classes] = await Promise.all([
                     getCurrentAcademicYearTerms(),
                     getCurrentTeacherProfile().catch((err) => {
                         console.error("Failed to load teacher profile:", err);
@@ -120,6 +128,33 @@ export function useImportPreview({
                     return;
                 }
 
+                if (yearsResult.status === "transient_error") {
+                    setHasImportContextError(true);
+                    setImportContextQueryError({
+                        requestId: yearsResult.requestId,
+                        message: yearsResult.message,
+                    });
+                    setErrorTitle("โหลดข้อมูลประกอบไม่สำเร็จ");
+                    setErrorDescription(
+                        "กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง",
+                    );
+                    setError(
+                        `${yearsResult.message ?? "ไม่สามารถโหลดข้อมูลปีการศึกษาได้ กรุณาลองใหม่อีกครั้ง"} รหัสอ้างอิง: ${yearsResult.requestId}`,
+                    );
+                    setIsImportContextLoaded(true);
+                    return;
+                }
+                if (
+                    yearsResult.status === "forbidden" ||
+                    yearsResult.status === "not_found"
+                ) {
+                    setHasImportContextError(true);
+                    setErrorTitle("โหลดข้อมูลประกอบไม่สำเร็จ");
+                    setError("ไม่มีสิทธิ์เข้าถึงข้อมูลปีการศึกษา");
+                    setIsImportContextLoaded(true);
+                    return;
+                }
+                const years = yearsResult.data;
                 setAcademicYears(years);
                 setSchoolClassNames(classes.map((schoolClass) => schoolClass.name));
                 const current = years.find((year) => year.isCurrent);
@@ -129,15 +164,37 @@ export function useImportPreview({
                     setSelectedYearId(initialYearId);
                     const requestId = roundCheckRequestRef.current + 1;
                     roundCheckRequestRef.current = requestId;
+                    setIsRound1Checking(true);
+                    setRound1CheckFailed(false);
                     hasRound1Data(initialYearId)
-                        .then((exists) => {
-                            if (isActive && roundCheckRequestRef.current === requestId) {
-                                setRound1Exists(exists);
+                        .then((round1Result) => {
+                            if (!isActive || roundCheckRequestRef.current !== requestId) {
+                                return;
                             }
+                            setIsRound1Checking(false);
+                            if (round1Result.status === "transient_error") {
+                                setRound1CheckFailed(true);
+                                setErrorTitle("ตรวจสอบข้อมูลครั้งที่ 1 ไม่สำเร็จ");
+                                setError(
+                                    `${round1Result.message ?? "ไม่สามารถตรวจสอบข้อมูลได้ กรุณาลองใหม่อีกครั้ง"} รหัสอ้างอิง: ${round1Result.requestId}`,
+                                );
+                                return;
+                            }
+                            if (
+                                round1Result.status === "forbidden" ||
+                                round1Result.status === "not_found"
+                            ) {
+                                setRound1CheckFailed(true);
+                                setError("ไม่มีสิทธิ์ตรวจสอบข้อมูลครั้งที่ 1");
+                                return;
+                            }
+                            setRound1Exists(round1Result.data);
                         })
                         .catch(() => {
                             if (isActive && roundCheckRequestRef.current === requestId) {
-                                setRound1Exists(false);
+                                setIsRound1Checking(false);
+                                setRound1CheckFailed(true);
+                                setError("ไม่สามารถตรวจสอบข้อมูลครั้งที่ 1 ได้");
                             }
                         });
                 }
@@ -156,6 +213,7 @@ export function useImportPreview({
                     return;
                 }
                 setErrorTitle("โหลดข้อมูลประกอบไม่สำเร็จ");
+                setHasImportContextError(true);
                 setErrorDescription("กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง");
                 setError(
                     "ไม่สามารถโหลดปีการศึกษาและข้อมูลห้องเรียนได้ กรุณารีเฟรชหน้าแล้วลองใหม่",
@@ -184,22 +242,44 @@ export function useImportPreview({
             setSelectedYearId(yearId);
             setAssessmentRound(1);
             setIncompleteWarning(null);
+            setIncompleteCheckFailed(false);
+            setRound1Exists(false);
             const requestId = roundCheckRequestRef.current + 1;
             roundCheckRequestRef.current = requestId;
 
             if (!yearId) {
                 setRound1Exists(false);
+                setRound1CheckFailed(false);
                 return;
             }
 
+            setIsRound1Checking(true);
+            setRound1CheckFailed(false);
             try {
-                const exists = await hasRound1Data(yearId);
+                const result = await hasRound1Data(yearId);
                 if (roundCheckRequestRef.current === requestId) {
-                    setRound1Exists(exists);
+                    setIsRound1Checking(false);
+                    if (result.status === "transient_error") {
+                        setRound1CheckFailed(true);
+                        setErrorTitle("ตรวจสอบข้อมูลครั้งที่ 1 ไม่สำเร็จ");
+                        setError(
+                            `${result.message ?? "ไม่สามารถตรวจสอบข้อมูลได้ กรุณาลองใหม่อีกครั้ง"} รหัสอ้างอิง: ${result.requestId}`,
+                        );
+                    } else if (
+                        result.status === "forbidden" ||
+                        result.status === "not_found"
+                    ) {
+                        setRound1CheckFailed(true);
+                        setError("ไม่มีสิทธิ์ตรวจสอบข้อมูลครั้งที่ 1");
+                    } else {
+                        setRound1Exists(result.data);
+                    }
                 }
             } catch {
                 if (roundCheckRequestRef.current === requestId) {
-                    setRound1Exists(false);
+                    setIsRound1Checking(false);
+                    setRound1CheckFailed(true);
+                    setError("ไม่สามารถตรวจสอบข้อมูลครั้งที่ 1 ได้");
                 }
             }
         },
@@ -210,19 +290,40 @@ export function useImportPreview({
     const handleRoundChange = useCallback(
         async (round: number) => {
             setAssessmentRound(round);
+            setIncompleteCheckFailed(false);
             if (!selectedYearId) {
                 setIncompleteWarning(null);
                 return;
             }
             try {
-                const warning = await getIncompleteActivityWarning(
+                const result = await getIncompleteActivityWarning(
                     selectedYearId,
                     round,
                     importedClasses,
                 );
-                setIncompleteWarning(warning);
+                if (result.status === "transient_error") {
+                    setIncompleteWarning(null);
+                    setIncompleteCheckFailed(true);
+                    setErrorTitle("ตรวจสอบกิจกรรมค้างไม่สำเร็จ");
+                    setError(
+                        `${result.message ?? "ไม่สามารถตรวจสอบข้อมูลได้ กรุณาลองใหม่อีกครั้ง"} รหัสอ้างอิง: ${result.requestId}`,
+                    );
+                    return;
+                }
+                if (
+                    result.status === "forbidden" ||
+                    result.status === "not_found"
+                ) {
+                    setIncompleteWarning(null);
+                    setIncompleteCheckFailed(true);
+                    setError("ไม่มีสิทธิ์ตรวจสอบกิจกรรมค้าง");
+                    return;
+                }
+                setIncompleteWarning(result.data);
             } catch {
                 setIncompleteWarning(null);
+                setIncompleteCheckFailed(true);
+                setError("ไม่สามารถตรวจสอบกิจกรรมค้างได้");
             }
         },
         [selectedYearId, importedClasses],
@@ -318,12 +419,17 @@ export function useImportPreview({
         errorTitle,
         errorDescription,
         isImportContextLoaded,
+        hasImportContextError,
+        importContextQueryError,
         academicYears,
         selectedYearId,
         assessmentRound,
         teacherProfile,
         schoolClassNames,
         hasRound1: round1Exists,
+        isRound1Checking,
+        round1CheckFailed,
+        incompleteCheckFailed,
         incompleteWarning,
         zeroScoreWarning,
 

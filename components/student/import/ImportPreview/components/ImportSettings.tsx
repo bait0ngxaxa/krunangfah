@@ -7,6 +7,9 @@ interface ImportSettingsProps {
     assessmentRound: number;
     onRoundChange: (round: number) => void;
     hasRound1: boolean;
+    isRound1Checking: boolean;
+    round1CheckFailed: boolean;
+    incompleteCheckFailed: boolean;
     isLoading: boolean;
 }
 
@@ -20,6 +23,9 @@ export function ImportSettings({
     assessmentRound,
     onRoundChange,
     hasRound1,
+    isRound1Checking,
+    round1CheckFailed,
+    incompleteCheckFailed,
     isLoading,
 }: ImportSettingsProps) {
     const hasAcademicYears = academicYears.length > 0;
@@ -70,9 +76,20 @@ export function ImportSettings({
                             className="w-full appearance-none rounded-xl border border-emerald-100 bg-white px-4 py-3 font-medium text-gray-700 outline-none transition-base focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
                         >
                             <option value={1}>ครั้งที่ 1</option>
-                            <option value={2} disabled={!hasRound1}>
+                            <option
+                                value={2}
+                                disabled={
+                                    !hasRound1 ||
+                                    isRound1Checking ||
+                                    round1CheckFailed
+                                }
+                            >
                                 ครั้งที่ 2
-                                {!hasRound1
+                                {isRound1Checking
+                                    ? " (กำลังตรวจสอบข้อมูลครั้งที่ 1)"
+                                    : round1CheckFailed
+                                      ? " (ตรวจสอบข้อมูลครั้งที่ 1 ไม่สำเร็จ)"
+                                      : !hasRound1
                                     ? " (ต้องนำเข้าครั้งที่ 1 ก่อน)"
                                     : ""}
                             </option>
@@ -90,10 +107,23 @@ export function ImportSettings({
                 </p>
             )}
 
-            {selectedYearId && !hasRound1 && (
+            {selectedYearId &&
+                !hasRound1 &&
+                !isRound1Checking &&
+                !round1CheckFailed && (
                 <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-700">
                     ปีการศึกษานี้ยังไม่มีข้อมูลครั้งที่ 1
                     กรุณานำเข้าครั้งที่ 1 ก่อน จึงจะสามารถเลือกครั้งที่ 2 ได้
+                </p>
+                )}
+
+            {incompleteCheckFailed && (
+                <p
+                    className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700"
+                    role="alert"
+                >
+                    ตรวจสอบกิจกรรมค้างไม่สำเร็จ กรุณาเลือกครั้งที่ 1
+                    แล้วเลือกครั้งที่ 2 อีกครั้งก่อนนำเข้า
                 </p>
             )}
         </div>

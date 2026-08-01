@@ -209,19 +209,21 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
         await cleanupAll();
     });
 
-    it("auth/session smoke: unauthenticated gets empty student list, authenticated gets data", async () => {
+    it("auth/session smoke: unauthenticated does not get an empty success result", async () => {
         mockUnauthenticated();
         const guest = await getStudents({ page: 1, limit: 20 });
-        expect(guest.students).toEqual([]);
+        expect(guest.status).toBe("transient_error");
 
         mockSession(USERS.schoolAdmin);
-        const admin = await getStudents({ page: 1, limit: 20 });
+        const admin = getQueryData(await getStudents({ page: 1, limit: 20 }));
         expect(admin.students.length).toBeGreaterThanOrEqual(2);
     });
 
     it("class_teacher sees imported students in own advisory class", async () => {
         mockSession(USERS.classTeacher);
-        const result = await getStudents({ page: 1, limit: 50 });
+        const result = getQueryData(
+            await getStudents({ page: 1, limit: 50 }),
+        );
 
         expect(result.students.length).toBeGreaterThan(0);
         expect(result.students.every((s) => s.class === "class-1")).toBe(true);
@@ -229,7 +231,9 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
 
     it("class_teacher in another advisory class cannot see class-1 students", async () => {
         mockSession(USERS.otherTeacher);
-        const result = await getStudents({ page: 1, limit: 50 });
+        const result = getQueryData(
+            await getStudents({ page: 1, limit: 50 }),
+        );
 
         expect(result.students.length).toBeGreaterThan(0);
         expect(result.students.every((s) => s.class === "class-2")).toBe(true);
@@ -286,17 +290,23 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
             ]);
             const after = getQueryData(afterResult);
             const referred = getQueryData(referredResult);
-            const outsideSearch = await searchStudents(class2StudentCode);
+            const listData = getQueryData(list);
+            const searchData = getQueryData(search);
+            const outsideSearch = getQueryData(
+                await searchStudents(class2StudentCode),
+            );
             const outsideDetail = await getStudentDetail(class2Student.id);
 
             expect(after.totalStudents).toBe(before.totalStudents);
             expect(after.riskCounts).toEqual(before.riskCounts);
             expect(
-                list.students.some((student) => student.id === class1StudentDbId),
+                listData.students.some(
+                    (student) => student.id === class1StudentDbId,
+                ),
             ).toBe(true);
-            expect(search.some((student) => student.id === class1StudentDbId)).toBe(
-                true,
-            );
+            expect(
+                searchData.some((student) => student.id === class1StudentDbId),
+            ).toBe(true);
             expect(detail?.id).toBe(class1StudentDbId);
             expect(referred.students.map((student) => student.id)).toEqual([
                 class1StudentDbId,
@@ -314,7 +324,7 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
 
     it("system_admin can search students by national ID", async () => {
         mockSession(USERS.systemAdmin);
-        const result = await searchStudents(class1NationalId);
+        const result = getQueryData(await searchStudents(class1NationalId));
 
         expect(result.some((student) => student.studentId === class1StudentCode)).toBe(
             true,
@@ -326,7 +336,7 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
 
     it("class_teacher cannot search students by national ID", async () => {
         mockSession(USERS.classTeacher);
-        const result = await searchStudents(class1NationalId);
+        const result = getQueryData(await searchStudents(class1NationalId));
 
         expect(result).toEqual([]);
     });

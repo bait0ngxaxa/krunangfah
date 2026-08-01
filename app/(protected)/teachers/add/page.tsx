@@ -10,6 +10,7 @@ import { TeacherSetupTabs } from "@/components/teacher/TeacherSetupTabs";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTeacherManagementCapabilities } from "@/lib/auth/teacher-management-policy";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 
 export const metadata: Metadata = {
     title: "จัดการครูและเชิญเข้าระบบ | โครงการครูนางฟ้า",
@@ -24,12 +25,31 @@ export default async function AddTeacherPage() {
         redirect("/dashboard");
     }
 
-    const [classes, academicYears, roster, inviteResult] = await Promise.all([
+    const [classes, academicYearsResult, roster, inviteResult] = await Promise.all([
         getSchoolClasses(),
         getCurrentAcademicYearTerms(),
         getSchoolRoster(),
         getMyTeacherInvites(),
     ]);
+    if (academicYearsResult.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={academicYearsResult.requestId}
+                message={academicYearsResult.message}
+            />
+        );
+    }
+    if (
+        academicYearsResult.status === "forbidden" ||
+        academicYearsResult.status === "not_found"
+    ) {
+        return (
+            <p role="alert" className="py-10 text-center text-slate-700">
+                ไม่มีสิทธิ์เข้าถึงข้อมูลปีการศึกษา
+            </p>
+        );
+    }
+    const academicYears = academicYearsResult.data;
 
     return (
         <div className="min-h-screen bg-emerald-50 py-6 px-4 relative overflow-hidden">

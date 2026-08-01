@@ -242,7 +242,10 @@ describe("Integration: append-only student referrals", () => {
         });
         mockSession(sender);
 
-        await expect(getReferredOutStudents()).resolves.toEqual([]);
+        await expect(getReferredOutStudents()).resolves.toEqual({
+            status: "empty",
+            data: [],
+        });
         await expect(
             revokeStudentReferral({ referralId: current!.id }),
         ).resolves.toMatchObject({ success: false });

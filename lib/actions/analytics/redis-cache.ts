@@ -189,6 +189,8 @@ async function getJsonCache<T>(
         const parsed: unknown = JSON.parse(cached);
         return { data: guard(parsed) ? parsed : null, versionedKeyParts };
     } catch (error) {
+        // Redis is an optional cache. Log the sanitized failure and continue to
+        // the authoritative database query instead of failing the read.
         logError("Analytics Redis cache read error:", error);
         return { data: null, versionedKeyParts: null };
     }
@@ -222,6 +224,7 @@ async function setJsonCache(
             }),
         );
     } catch (error) {
+        // Cache population is best-effort after authoritative data is loaded.
         logError("Analytics Redis cache write error:", error);
     }
 }
@@ -238,6 +241,7 @@ async function invalidateTag(tag: string): Promise<void> {
         }
         await client.del(tag);
     } catch (error) {
+        // Cache invalidation is best-effort; versioned keys and TTL bound staleness.
         logError("Analytics Redis cache invalidate error:", error);
     }
 }

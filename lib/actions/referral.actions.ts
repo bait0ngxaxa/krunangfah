@@ -13,6 +13,13 @@
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth, isSystemAdmin } from "@/lib/auth/session";
 import { handleActionError } from "./error-handler";
+import { handleQueryError } from "./error-handler";
+import {
+    queryEmpty,
+    queryForbidden,
+    querySuccess,
+    type QueryResult,
+} from "./query-result";
 import { revalidateStudentsCache } from "./student/cache";
 import {
     createReferralSchema,
@@ -283,11 +290,15 @@ export async function revokeStudentReferral(input: {
 /**
  * Get students that the current teacher has referred out
  */
-export async function getReferredOutStudents(): Promise<ReferredOutStudent[]> {
+export async function getReferredOutStudents(): Promise<
+    QueryResult<ReferredOutStudent[]>
+> {
     try {
         const viewer = await getViewerContext();
-        if (viewer.role === "class_teacher" && !viewer.advisoryClass) return [];
-        if (!viewer.schoolId) return [];
+        if (viewer.role === "class_teacher" && !viewer.advisoryClass) {
+            return queryForbidden();
+        }
+        if (!viewer.schoolId) return queryForbidden();
 
         const studentScope = buildReferralStudentScope(
             viewer.schoolId,
@@ -322,7 +333,7 @@ export async function getReferredOutStudents(): Promise<ReferredOutStudent[]> {
             orderBy: { createdAt: "desc" },
         });
 
-        return referrals.map((r) => ({
+        const data = referrals.map((r) => ({
             id: r.student.id,
             firstName: r.student.firstName,
             lastName: r.student.lastName,
@@ -334,12 +345,9 @@ export async function getReferredOutStudents(): Promise<ReferredOutStudent[]> {
             referralId: r.id,
             referredAt: r.createdAt,
         }));
+        return data.length === 0 ? queryEmpty(data) : querySuccess(data);
     } catch (error) {
-        return handleActionError({
-            context: "Error getting referred out students:",
-            error,
-            fallback: [],
-        });
+        return handleQueryError("Error getting referred out students:", error);
     }
 }
 
@@ -351,7 +359,9 @@ export async function getReferredOutStudents(): Promise<ReferredOutStudent[]> {
  * - school_admin: sees only other school_admins
  * - class_teacher: sees only school_admins
  */
-export async function getTeachersForReferral(): Promise<TeacherPickerOption[]> {
+export async function getTeachersForReferral(): Promise<
+    QueryResult<TeacherPickerOption[]>
+> {
     try {
         const session = await requireAuth();
         const userId = session.user.id;
@@ -361,7 +371,7 @@ export async function getTeachersForReferral(): Promise<TeacherPickerOption[]> {
             select: { schoolId: true },
         });
 
-        if (!currentUser?.schoolId) return [];
+        if (!currentUser?.schoolId) return queryForbidden();
 
         const teachers = await prisma.teacher.findMany({
             where: {
@@ -379,16 +389,13 @@ export async function getTeachersForReferral(): Promise<TeacherPickerOption[]> {
             orderBy: [{ advisoryClass: "asc" }, { firstName: "asc" }],
         });
 
-        return teachers.map((t) => ({
+        const data = teachers.map((t) => ({
             userId: t.userId,
             name: `${t.firstName} ${t.lastName}`,
             advisoryClass: t.advisoryClass,
         }));
+        return data.length === 0 ? queryEmpty(data) : querySuccess(data);
     } catch (error) {
-        return handleActionError({
-            context: "Error getting teachers for referral:",
-            error,
-            fallback: [],
-        });
+        return handleQueryError("Error getting teachers for referral:", error);
     }
 }

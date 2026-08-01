@@ -18,9 +18,14 @@ import {
     getStudentDetailQuery,
 } from "./queries";
 import { transformRiskCounts } from "./transforms";
-import { handleActionError } from "@/lib/actions/error-handler";
 import { handleQueryError } from "@/lib/actions/error-handler";
-import { querySuccess, type QueryResult } from "@/lib/actions/query-result";
+import {
+    queryEmpty,
+    queryForbidden,
+    queryNotFound,
+    querySuccess,
+    type QueryResult,
+} from "@/lib/actions/query-result";
 import type {
     StudentListResponse,
     RiskCountsResponse,
@@ -44,11 +49,13 @@ import {
  */
 export async function getStudentRiskCounts(
     classFilter?: string,
-): Promise<RiskCountsResponse | null> {
+): Promise<QueryResult<RiskCountsResponse>> {
     try {
         const viewer = await getViewerContext();
 
-        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return null;
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
+            return queryForbidden();
+        }
 
         // Get classes and risk counts in parallel
         const [classes, rawCounts] = await Promise.all([
@@ -69,13 +76,10 @@ export async function getStudentRiskCounts(
             ),
         ]);
 
-        return transformRiskCounts(rawCounts, classes);
+        const data = transformRiskCounts(rawCounts, classes);
+        return data.total === 0 ? queryEmpty(data) : querySuccess(data);
     } catch (error) {
-        return handleActionError({
-            context: "Get student risk counts error:",
-            error,
-            fallback: null,
-        });
+        return handleQueryError("Get student risk counts error:", error);
     }
 }
 
@@ -132,7 +136,7 @@ async function getCachedStudents(
 
 export async function getStudents(
     options?: GetStudentsOptions,
-): Promise<StudentListResponse> {
+): Promise<QueryResult<StudentListResponse>> {
     try {
         const viewer = await getViewerContext();
 
@@ -141,14 +145,11 @@ export async function getStudents(
         const classFilter = options?.classFilter;
 
         if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
-            return {
-                students: [],
-                pagination: { total: 0, page, limit, totalPages: 0 },
-            };
+            return queryForbidden();
         }
 
         if (page === 1 && !classFilter) {
-            return getCachedStudents(
+            const data = await getCachedStudents(
                 viewer.schoolId,
                 viewer.advisoryClass,
                 viewer.role,
@@ -159,6 +160,9 @@ export async function getStudents(
                     classFilter,
                 },
             );
+            return data.pagination.total === 0
+                ? queryEmpty(data)
+                : querySuccess(data);
         }
 
         const { students, total } = await getStudentsQuery(
@@ -169,7 +173,7 @@ export async function getStudents(
             { classFilter, page, limit },
         );
 
-        return {
+        const data: StudentListResponse = {
             students,
             pagination: {
                 total,
@@ -178,15 +182,9 @@ export async function getStudents(
                 totalPages: Math.ceil(total / limit),
             },
         };
+        return total === 0 ? queryEmpty(data) : querySuccess(data);
     } catch (error) {
-        return handleActionError({
-            context: "Get students error:",
-            error,
-            fallback: {
-                students: [],
-                pagination: { total: 0, page: 1, limit: 100, totalPages: 0 },
-            },
-        });
+        return handleQueryError("Get students error:", error);
     }
 }
 
@@ -223,12 +221,12 @@ async function getCachedStudentsForDashboard(
 
 export async function getStudentsForDashboard(
     selectedSchoolId?: string,
-): Promise<StudentWithLatestPhq[]> {
+): Promise<QueryResult<StudentWithLatestPhq[]>> {
     try {
         const viewer = await getViewerContext();
 
         if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
-            return [];
+            return queryForbidden();
         }
 
         const scopeSchoolId = isSystemAdmin(viewer.role)
@@ -237,7 +235,7 @@ export async function getStudentsForDashboard(
 
         // system_admin must scope the dashboard to a selected school.
         if (isSystemAdmin(viewer.role) && !scopeSchoolId) {
-            return [];
+            return queryEmpty([]);
         }
 
         const result = await getCachedStudentsForDashboard(
@@ -247,13 +245,11 @@ export async function getStudentsForDashboard(
             viewer.userId,
         );
 
-        return result.students;
+        return result.students.length === 0
+            ? queryEmpty(result.students)
+            : querySuccess(result.students);
     } catch (error) {
-        return handleActionError({
-            context: "Get students for dashboard error:",
-            error,
-            fallback: [],
-        });
+        return handleQueryError("Get students for dashboard error:", error);
     }
 }
 
@@ -261,15 +257,19 @@ export async function getStudentsForDashboard(
  * Search by name/studentId within viewer scope.
  * Query is not cached because input is user-typed and highly dynamic.
  */
-export async function searchStudents(query: string) {
+export async function searchStudents(
+    query: string,
+): Promise<QueryResult<Awaited<ReturnType<typeof searchStudentsQuery>>>> {
     try {
         // SECURITY: limit input length to keep search queries bounded
         const sanitizedQuery = (query ?? "").trim().slice(0, 100);
-        if (!sanitizedQuery) return [];
+        if (!sanitizedQuery) return queryEmpty([]);
 
         const viewer = await getViewerContext();
 
-        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return [];
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
+            return queryForbidden();
+        }
         const canViewNationalId = isSystemAdmin(viewer.role);
 
         const students = await searchStudentsQuery(
@@ -282,19 +282,20 @@ export async function searchStudents(query: string) {
         );
 
         if (canViewNationalId) {
-            return students;
+            return students.length === 0
+                ? queryEmpty(students)
+                : querySuccess(students);
         }
 
-        return students.map((student) => ({
+        const sanitizedStudents = students.map((student) => ({
             ...student,
             nationalId: null,
         }));
+        return sanitizedStudents.length === 0
+            ? queryEmpty(sanitizedStudents)
+            : querySuccess(sanitizedStudents);
     } catch (error) {
-        return handleActionError({
-            context: "Search students error:",
-            error,
-            fallback: [],
-        });
+        return handleQueryError("Search students error:", error);
     }
 }
 
@@ -336,7 +337,9 @@ async function getCachedStudentDetail(
     return cachedFetcher();
 }
 
-export async function getStudentDetail(studentId: string) {
+export async function getStudentDetail(
+    studentId: string,
+): Promise<Awaited<ReturnType<typeof getCachedStudentDetail>>> {
     const result = await getStudentDetailResult(studentId);
     if (result.status === "success") return result.data;
     if (result.status === "transient_error") {
@@ -352,7 +355,7 @@ export async function getStudentDetailResult(
         const viewer = await getViewerContext();
 
         if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
-            return { status: "forbidden" };
+            return queryForbidden();
         }
 
         const student = await getCachedStudentDetail(
@@ -362,7 +365,7 @@ export async function getStudentDetailResult(
             viewer.userId,
             studentId,
         );
-        return student ? querySuccess(student) : { status: "not_found" };
+        return student ? querySuccess(student) : queryNotFound();
     } catch (error) {
         return handleQueryError("Get student detail error:", error);
     }
@@ -371,11 +374,15 @@ export async function getStudentDetailResult(
 /**
  * Guard import flow: round 2 is allowed only when round 1 exists in the same academic year.
  */
-export async function hasRound1Data(academicYearId: string): Promise<boolean> {
+export async function hasRound1Data(
+    academicYearId: string,
+): Promise<QueryResult<boolean>> {
     try {
         const viewer = await getViewerContext();
 
-        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return false;
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
+            return queryForbidden();
+        }
 
         const count = await prisma.phqResult.count({
             where: {
@@ -386,13 +393,9 @@ export async function hasRound1Data(academicYearId: string): Promise<boolean> {
             take: 1,
         });
 
-        return count > 0;
+        return querySuccess(count > 0);
     } catch (error) {
-        return handleActionError({
-            context: "hasRound1Data error:",
-            error,
-            fallback: false,
-        });
+        return handleQueryError("hasRound1Data error:", error);
     }
 }
 
@@ -404,7 +407,7 @@ export async function getIncompleteActivityWarning(
     academicYearId: string,
     assessmentRound: number,
     classes: string[],
-): Promise<IncompleteActivityInfo> {
+): Promise<QueryResult<IncompleteActivityInfo>> {
     const noWarning: IncompleteActivityInfo = {
         hasIncomplete: false,
         studentCount: 0,
@@ -413,12 +416,16 @@ export async function getIncompleteActivityWarning(
     };
 
     // Round 1 has no previous round, so skip the warning entirely.
-    if (classes.length === 0 || assessmentRound <= 1) return noWarning;
+    if (classes.length === 0 || assessmentRound <= 1) {
+        return querySuccess(noWarning);
+    }
 
     try {
         const viewer = await getViewerContext();
 
-        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) return noWarning;
+        if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
+            return queryForbidden();
+        }
 
         const previousRound = assessmentRound - 1;
         const incompleteActivities = await prisma.activityProgress.findMany({
@@ -438,24 +445,20 @@ export async function getIncompleteActivityWarning(
             },
         });
 
-        if (incompleteActivities.length === 0) return noWarning;
+        if (incompleteActivities.length === 0) return querySuccess(noWarning);
 
         const uniqueStudents = new Set(
             incompleteActivities.map((a) => a.studentId),
         );
 
-        return {
+        return querySuccess({
             hasIncomplete: true,
             studentCount: uniqueStudents.size,
             activityCount: incompleteActivities.length,
             previousRound,
-        };
-    } catch (error) {
-        return handleActionError({
-            context: "getIncompleteActivityWarning error:",
-            error,
-            fallback: noWarning,
         });
+    } catch (error) {
+        return handleQueryError("getIncompleteActivityWarning error:", error);
     }
 }
 

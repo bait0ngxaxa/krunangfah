@@ -46,6 +46,7 @@ describe("care record query results", () => {
         expect(result).toEqual({
             status: "transient_error",
             requestId: expect.any(String),
+            message: "ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
         });
     });
 
@@ -57,6 +58,7 @@ describe("care record query results", () => {
         expect(result).toEqual({
             status: "transient_error",
             requestId: expect.any(String),
+            message: "ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
         });
     });
 });

@@ -18,6 +18,7 @@ import {
 import { canStudentPerformActions } from "@/lib/constants/student-status";
 import { getActivitySequenceSummary } from "@/lib/actions/activity/constants";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -83,26 +84,46 @@ export default async function ActivityStartPage({
             ? initialProgress
             : await getActivityProgress(studentId, latestResult.id);
 
-    if (!progressResult?.success) {
+    if (progressResult.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={progressResult.requestId}
+                message={progressResult.message}
+            />
+        );
+    }
+    if (
+        progressResult.status === "forbidden" ||
+        progressResult.status === "not_found"
+    ) {
         redirect(studentHelpRoute(studentId));
     }
 
     // First access initializes sequence records for this PHQ result.
-    if (!progressResult.success || !progressResult.data?.length) {
+    if (progressResult.status === "empty") {
         await initializeActivityProgress(
             studentId,
             latestResult.id,
             riskLevel as "orange" | "yellow" | "green",
         );
         progressResult = await getActivityProgress(studentId, latestResult.id);
-        if (!progressResult.success) {
+        if (progressResult.status === "transient_error") {
+            return (
+                <QueryErrorState
+                    requestId={progressResult.requestId}
+                    message={progressResult.message}
+                />
+            );
+        }
+        if (
+            progressResult.status === "forbidden" ||
+            progressResult.status === "not_found"
+        ) {
             redirect(studentHelpRoute(studentId));
         }
     }
 
-    const activityProgress = progressResult.success
-        ? progressResult.data || []
-        : [];
+    const activityProgress = progressResult.data;
     const activitySummary = getActivitySequenceSummary(
         riskLevel,
         activityProgress,

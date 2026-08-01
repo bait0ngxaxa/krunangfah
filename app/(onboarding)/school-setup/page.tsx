@@ -13,6 +13,7 @@ import type {
     TeacherRosterItem,
 } from "@/types/school-setup.types";
 import type { Metadata } from "next";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 
 export const metadata: Metadata = {
     title: "ตั้งค่าโรงเรียน | โครงการครูนางฟ้า",
@@ -56,13 +57,28 @@ export default async function SchoolSetupPage() {
         redirect("/dashboard");
     }
 
-    const currentAcademicYear = await getCurrentAcademicYearRecord();
+    const currentAcademicYearResult = await getCurrentAcademicYearRecord();
+    if (currentAcademicYearResult.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={currentAcademicYearResult.requestId}
+                message={currentAcademicYearResult.message}
+            />
+        );
+    }
+    if (
+        currentAcademicYearResult.status === "forbidden" ||
+        currentAcademicYearResult.status === "not_found"
+    ) {
+        redirect("/dashboard");
+    }
+    const currentAcademicYear = currentAcademicYearResult.data;
     let initialClasses: SchoolClassItem[] = [];
     let initialRoster: TeacherRosterItem[] = [];
 
     if (hasSchool) {
         [initialClasses, initialRoster] = await Promise.all([
-            getSchoolClasses(currentAcademicYear?.id),
+            getSchoolClasses(currentAcademicYear.id),
             getSchoolRoster(),
         ]);
     }
@@ -98,14 +114,12 @@ export default async function SchoolSetupPage() {
                                 : null
                         }
                         currentAcademicYear={
-                            currentAcademicYear
-                                ? {
-                                      id: currentAcademicYear.id,
-                                      year: currentAcademicYear.year,
-                                      semester: currentAcademicYear.semester,
-                                      isCurrent: currentAcademicYear.isCurrent,
-                                  }
-                                : null
+                            {
+                                id: currentAcademicYear.id,
+                                year: currentAcademicYear.year,
+                                semester: currentAcademicYear.semester,
+                                isCurrent: currentAcademicYear.isCurrent,
+                            }
                         }
                     />
                 </div>

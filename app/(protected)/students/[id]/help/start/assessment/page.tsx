@@ -16,6 +16,7 @@ import {
     getRequestedOrLatestPhqResult,
 } from "@/lib/utils/phq-result-selection";
 import { canStudentPerformActions } from "@/lib/constants/student-status";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -79,12 +80,22 @@ export default async function TeacherAssessmentPage({
         studentId,
         latestResult.id,
     );
-    if (!progressResult.success) {
+    if (progressResult.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={progressResult.requestId}
+                message={progressResult.message}
+            />
+        );
+    }
+    if (
+        progressResult.status === "forbidden" ||
+        progressResult.status === "not_found" ||
+        progressResult.status === "empty"
+    ) {
         redirect(studentHelpRoute(studentId));
     }
-    const activityProgress = progressResult.success
-        ? progressResult.data || []
-        : [];
+    const activityProgress = progressResult.data;
 
     // Prefer explicit activity param; fallback to the next assessable activity.
     const activityNumber = parseActivityNumber(activityParam);

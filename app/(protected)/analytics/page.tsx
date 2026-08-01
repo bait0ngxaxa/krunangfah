@@ -150,7 +150,25 @@ export default async function AnalyticsPage({
 
     // ── Phase 2: Validate schoolId against DB before main fetch ──
     // Fetch schools first (lightweight) to validate schoolId before the heavy analytics query
-    const schools = isSystemAdmin ? await getSchools() : undefined;
+    let schools: { id: string; name: string }[] | undefined;
+    if (isSystemAdmin) {
+        const schoolsResult = await getSchools();
+        if (schoolsResult.status === "transient_error") {
+            return (
+                <QueryErrorState
+                    requestId={schoolsResult.requestId}
+                    message={schoolsResult.message}
+                />
+            );
+        }
+        if (
+            schoolsResult.status === "forbidden" ||
+            schoolsResult.status === "not_found"
+        ) {
+            redirect("/dashboard");
+        }
+        schools = schoolsResult.data;
+    }
 
     if (isSystemAdmin && selectedSchoolId) {
         const schoolExists = schools?.some((school) => school.id === selectedSchoolId) ?? false;
@@ -170,7 +188,12 @@ export default async function AnalyticsPage({
             parsedSemester,
         );
         if (systemOverviewResult.status === "transient_error") {
-            return <QueryErrorState requestId={systemOverviewResult.requestId} />;
+            return (
+                <QueryErrorState
+                    requestId={systemOverviewResult.requestId}
+                    message={systemOverviewResult.message}
+                />
+            );
         }
         if (
             systemOverviewResult.status === "forbidden" ||
@@ -236,7 +259,12 @@ export default async function AnalyticsPage({
     );
 
     if (analyticsResult.status === "transient_error") {
-        return <QueryErrorState requestId={analyticsResult.requestId} />;
+        return (
+            <QueryErrorState
+                requestId={analyticsResult.requestId}
+                message={analyticsResult.message}
+            />
+        );
     }
     if (
         analyticsResult.status === "forbidden" ||

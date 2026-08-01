@@ -4,6 +4,7 @@ import type { ActivityProgressTableProps } from "./types";
 import { getActivityNumbers } from "./utils";
 import { ActivityProgressHeader } from "./ActivityProgressHeader";
 import { ActivityRow } from "./ActivityRow";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 
 /**
  * Server Component — fetches data and composes sub-components
@@ -24,17 +25,38 @@ export async function ActivityProgressTable({
 
     const result = await getActivityProgress(studentId, phqResultId);
 
-    if (!result.success || !result.data) {
+    if (result.status === "transient_error") {
         return (
-            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <p className="text-gray-500 text-center">
-                    ไม่สามารถโหลดข้อมูลกิจกรรมได้
+            <QueryErrorState
+                requestId={result.requestId}
+                message={result.message}
+            />
+        );
+    }
+
+    if (result.status === "forbidden" || result.status === "not_found") {
+        return (
+            <div
+                className="rounded-2xl border border-amber-200 bg-amber-50 p-6"
+                role="alert"
+            >
+                <p className="text-center text-amber-800">
+                    ไม่มีสิทธิ์เข้าถึงข้อมูลกิจกรรม
                 </p>
             </div>
         );
     }
 
     const progressData = result.data;
+    if (result.status === "empty") {
+        return (
+            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+                <p className="text-center text-gray-600">
+                    ยังไม่มีข้อมูลกิจกรรมสำหรับผลประเมินนี้
+                </p>
+            </div>
+        );
+    }
     const activitySummary = getActivitySequenceSummary(
         riskLevel,
         progressData,

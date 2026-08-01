@@ -15,6 +15,14 @@ import {
     createTestUser,
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
+import type { QueryResult } from "@/lib/actions/query-result";
+
+function getQueryData<T>(result: QueryResult<T>): T {
+    if (result.status === "success" || result.status === "empty") {
+        return result.data;
+    }
+    throw new Error(`Expected query data, received ${result.status}`);
+}
 
 setupAuthMocks();
 
@@ -86,7 +94,9 @@ describe("Integration: E2E Smoke (Role + Advisory Class)", () => {
     it("school_admin sees students in the whole school", async () => {
         mockSession(USERS.schoolAdmin);
 
-        const result = await getStudents({ page: 1, limit: 50 });
+        const result = getQueryData(
+            await getStudents({ page: 1, limit: 50 }),
+        );
 
         expect(result.students.length).toBeGreaterThan(1);
         expect(result.students.some((s) => s.id === importedStudentId)).toBe(
@@ -100,7 +110,9 @@ describe("Integration: E2E Smoke (Role + Advisory Class)", () => {
     it("class_teacher sees only own advisory class including students imported by school_admin", async () => {
         mockSession(USERS.classTeacher);
 
-        const result = await getStudents({ page: 1, limit: 50 });
+        const result = getQueryData(
+            await getStudents({ page: 1, limit: 50 }),
+        );
 
         expect(result.students.length).toBeGreaterThan(0);
         expect(result.students.every((s) => s.class === "ม.1/1")).toBe(true);

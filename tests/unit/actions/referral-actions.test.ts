@@ -48,6 +48,11 @@ vi.mock("next/cache", () => ({
 
 vi.mock("@/lib/actions/error-handler", () => ({
     handleActionError: vi.fn(({ fallback }) => fallback),
+    handleQueryError: vi.fn((_context: string, _error: unknown) => ({
+        status: "transient_error",
+        requestId: "request-1",
+        message: "ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
+    })),
 }));
 
 import { prisma } from "@/lib/database/prisma";
@@ -332,13 +337,30 @@ describe("referral actions business rules", () => {
                 },
                 orderBy: [{ advisoryClass: "asc" }, { firstName: "asc" }],
             });
-            expect(result).toEqual([
-                {
-                    userId: validSchoolAdminUserId,
-                    name: "ครู นางฟ้า",
-                    advisoryClass: "ทุกห้อง",
-                },
-            ]);
+            expect(result).toEqual({
+                status: "success",
+                data: [
+                    {
+                        userId: validSchoolAdminUserId,
+                        name: "ครู นางฟ้า",
+                        advisoryClass: "ทุกห้อง",
+                    },
+                ],
+            });
+        });
+
+        it("returns transient_error instead of an empty teacher list on failure", async () => {
+            vi.mocked(requireAuth).mockResolvedValue({
+                user: { id: validClassTeacherUserId, role: "class_teacher" },
+            } as never);
+            vi.mocked(prisma.user.findUnique).mockRejectedValue(
+                new Error("database unavailable"),
+            );
+
+            const result = await getTeachersForReferral();
+
+            expect(result.status).toBe("transient_error");
+            expect(result).not.toHaveProperty("data");
         });
     });
 
@@ -374,6 +396,10 @@ describe("referral actions business rules", () => {
                     },
                 }),
             );
+            await expect(getReferredOutStudents()).resolves.toEqual({
+                status: "empty",
+                data: [],
+            });
         });
 
         it("scopes school_admin results to the viewer's current school", async () => {

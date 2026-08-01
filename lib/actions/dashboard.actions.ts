@@ -3,6 +3,13 @@
 import { prisma } from "@/lib/database/prisma";
 import { unstable_cache } from "next/cache";
 import { getRequiredSessionUser } from "@/lib/auth/viewer-context";
+import { handleQueryError } from "./error-handler";
+import {
+    queryEmpty,
+    queryForbidden,
+    querySuccess,
+    type QueryResult,
+} from "./query-result";
 import {
     DASHBOARD_TAG,
     SCHOOLS_TAG,
@@ -83,18 +90,37 @@ async function getCachedSchools() {
     return cachedFetcher();
 }
 
-export async function getDashboardData() {
-    const sessionUser = await getRequiredSessionUser();
+type DashboardData = Awaited<ReturnType<typeof getCachedDashboardData>>;
+type SchoolOption = { id: string; name: string };
 
-    return getCachedDashboardData(sessionUser.userId, sessionUser.role);
+export async function getDashboardData(): Promise<QueryResult<DashboardData>> {
+    try {
+        const sessionUser = await getRequiredSessionUser();
+        const data = await getCachedDashboardData(
+            sessionUser.userId,
+            sessionUser.role,
+        );
+        return sessionUser.role !== "system_admin" && !data.teacher
+            ? queryEmpty(data)
+            : querySuccess(data);
+    } catch (error) {
+        return handleQueryError("Get dashboard data error:", error);
+    }
 }
 
-export async function getSchools(): Promise<{ id: string; name: string }[]> {
-    const sessionUser = await getRequiredSessionUser();
+export async function getSchools(): Promise<QueryResult<SchoolOption[]>> {
+    try {
+        const sessionUser = await getRequiredSessionUser();
 
-    if (sessionUser.role !== "system_admin") {
-        return [];
+        if (sessionUser.role !== "system_admin") {
+            return queryForbidden();
+        }
+
+        const schools = await getCachedSchools();
+        return schools.length === 0
+            ? queryEmpty(schools)
+            : querySuccess(schools);
+    } catch (error) {
+        return handleQueryError("Get schools error:", error);
     }
-
-    return getCachedSchools();
 }

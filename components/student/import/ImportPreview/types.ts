@@ -79,12 +79,20 @@ export interface UseImportPreviewReturn {
     errorTitle: string;
     errorDescription: string;
     isImportContextLoaded: boolean;
+    hasImportContextError: boolean;
+    importContextQueryError: {
+        requestId: string;
+        message?: string;
+    } | null;
     academicYears: AcademicYear[];
     selectedYearId: string;
     assessmentRound: number;
     teacherProfile: TeacherProfile | null;
     schoolClassNames: string[];
     hasRound1: boolean;
+    isRound1Checking: boolean;
+    round1CheckFailed: boolean;
+    incompleteCheckFailed: boolean;
     incompleteWarning: IncompleteActivityInfo | null;
     zeroScoreWarning: ZeroScoreWarningInfo | null;
 

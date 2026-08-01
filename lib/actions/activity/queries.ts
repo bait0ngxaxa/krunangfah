@@ -1,9 +1,38 @@
 "use server";
 
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
-import { handleActionError } from "../error-handler";
+import { handleQueryError } from "../error-handler";
+import {
+    queryEmpty,
+    queryForbidden,
+    querySuccess,
+    type QueryResult,
+} from "../query-result";
 import { verifyStudentActivityAccess } from "./access";
+
+const activityProgressInclude = {
+    worksheetUploads: {
+        orderBy: { worksheetNumber: "asc" as const },
+    },
+    teacher: {
+        select: {
+            name: true,
+            email: true,
+            teacher: {
+                select: {
+                    firstName: true,
+                    lastName: true,
+                },
+            },
+        },
+    },
+} satisfies Prisma.ActivityProgressInclude;
+
+export type ActivityProgressData = Prisma.ActivityProgressGetPayload<{
+    include: typeof activityProgressInclude;
+}>;
 
 /**
  * Get activity progress for a student
@@ -11,7 +40,7 @@ import { verifyStudentActivityAccess } from "./access";
 export async function getActivityProgress(
     studentId: string,
     phqResultId: string,
-) {
+): Promise<QueryResult<ActivityProgressData[]>> {
     try {
         const session = await requireAuth();
 
@@ -23,7 +52,7 @@ export async function getActivityProgress(
         );
 
         if (!allowed) {
-            return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+            return queryForbidden(error || "ไม่มีสิทธิ์เข้าถึง");
         }
 
         const progress = await prisma.activityProgress.findMany({
@@ -31,35 +60,14 @@ export async function getActivityProgress(
                 studentId,
                 phqResultId,
             },
-            include: {
-                worksheetUploads: {
-                    orderBy: { worksheetNumber: "asc" },
-                },
-                teacher: {
-                    select: {
-                        name: true,
-                        email: true,
-                        teacher: {
-                            select: {
-                                firstName: true,
-                                lastName: true,
-                            },
-                        },
-                    },
-                },
-            },
+            include: activityProgressInclude,
             orderBy: { activityNumber: "asc" },
         });
 
-        return { success: true, data: progress };
+        return progress.length === 0
+            ? queryEmpty(progress)
+            : querySuccess(progress);
     } catch (error) {
-        return handleActionError({
-            context: "Error getting activity progress:",
-            error,
-            fallback: {
-                success: false,
-                error: "เกิดข้อผิดพลาดในการดึงข้อมูลความคืบหน้ากิจกรรม",
-            },
-        });
+        return handleQueryError("Error getting activity progress:", error);
     }
 }

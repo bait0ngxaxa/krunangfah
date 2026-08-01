@@ -1,6 +1,8 @@
 "use client";
 
 import { BarChart3 } from "lucide-react";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
+import { Button } from "@/components/ui/Button";
 import { useImportPreview } from "./useImportPreview";
 import {
     RiskSummaryCards,
@@ -30,12 +32,17 @@ export function ImportPreview({
         errorTitle,
         errorDescription,
         isImportContextLoaded,
+        hasImportContextError,
+        importContextQueryError,
         academicYears,
         selectedYearId,
         handleYearChange,
         assessmentRound,
         setAssessmentRound,
         hasRound1,
+        isRound1Checking,
+        round1CheckFailed,
+        incompleteCheckFailed,
         teacherProfile,
         schoolClassNames,
         previewData,
@@ -71,15 +78,45 @@ export function ImportPreview({
                     </div>
                 )}
 
-                <ImportSettings
-                    academicYears={academicYears}
-                    selectedYearId={selectedYearId}
-                    onYearChange={handleYearChange}
-                    assessmentRound={assessmentRound}
-                    onRoundChange={setAssessmentRound}
-                    hasRound1={hasRound1}
-                    isLoading={!isImportContextLoaded}
-                />
+                {importContextQueryError ? (
+                    <QueryErrorState
+                        requestId={importContextQueryError.requestId}
+                        message={importContextQueryError.message}
+                        onRetry={() => window.location.reload()}
+                    />
+                ) : hasImportContextError ? (
+                    <div
+                        className="rounded-xl border border-red-200 bg-red-50 p-5 text-center"
+                        role="alert"
+                    >
+                        <p className="text-sm font-semibold text-red-800">
+                            {error ??
+                                "ไม่สามารถโหลดปีการศึกษาและข้อมูลห้องเรียนได้"}
+                        </p>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="mt-3"
+                            onClick={() => window.location.reload()}
+                        >
+                            โหลดข้อมูลอีกครั้ง
+                        </Button>
+                    </div>
+                ) : (
+                    <ImportSettings
+                        academicYears={academicYears}
+                        selectedYearId={selectedYearId}
+                        onYearChange={handleYearChange}
+                        assessmentRound={assessmentRound}
+                        onRoundChange={setAssessmentRound}
+                        hasRound1={hasRound1}
+                        isRound1Checking={isRound1Checking}
+                        round1CheckFailed={round1CheckFailed}
+                        incompleteCheckFailed={incompleteCheckFailed}
+                        isLoading={!isImportContextLoaded}
+                    />
+                )}
 
                 <FilteredStudentsWarning
                     students={filteredOutStudents}
@@ -95,12 +132,14 @@ export function ImportPreview({
                 canViewNationalId={canViewNationalId}
             />
 
-            <ImportError
-                error={error}
-                title={errorTitle}
-                description={errorDescription}
-                onClose={handleDismissError}
-            />
+            {!hasImportContextError && (
+                <ImportError
+                    error={error}
+                    title={errorTitle}
+                    description={errorDescription}
+                    onClose={handleDismissError}
+                />
+            )}
 
             <ImportActions
                 onCancel={onCancel}
@@ -109,6 +148,7 @@ export function ImportPreview({
                 canSave={
                     isImportContextLoaded &&
                     !!selectedYearId &&
+                    !incompleteCheckFailed &&
                     previewData.length > 0
                 }
                 studentCount={previewData.length}

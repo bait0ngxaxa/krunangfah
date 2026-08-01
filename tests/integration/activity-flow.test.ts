@@ -102,37 +102,37 @@ describe("Integration: Activity Flow", () => {
         it("system_admin can view any student's activity", async () => {
             mockSession(USERS.systemAdmin);
             const result = await getActivityProgress(studentId, phqResultId);
-            expect(result.success).toBe(true);
+            expect(result.status).toBe("success");
         });
 
         it("school_admin can view student in same school", async () => {
             mockSession(USERS.schoolAdmin);
             const result = await getActivityProgress(studentId, phqResultId);
-            expect(result.success).toBe(true);
+            expect(result.status).toBe("success");
         });
 
         it("class_teacher can view student in advisory class", async () => {
             mockSession(USERS.classTeacher);
             const result = await getActivityProgress(studentId, phqResultId);
-            expect(result.success).toBe(true);
+            expect(result.status).toBe("success");
         });
 
         it("class_teacher CANNOT view student in same school but different advisory class", async () => {
             mockSession(SAME_SCHOOL_OTHER_CLASS_TEACHER);
             const result = await getActivityProgress(studentId, phqResultId);
-            expect(result.success).toBe(false);
+            expect(result.status).toBe("forbidden");
         });
 
         it("class_teacher CANNOT view student in different school", async () => {
             mockSession(USERS.otherTeacher);
             const result = await getActivityProgress(studentId, phqResultId);
-            expect(result.success).toBe(false);
+            expect(result.status).toBe("forbidden");
         });
 
         it("unauthenticated user gets error", async () => {
             mockUnauthenticated();
             const result = await getActivityProgress(studentId, phqResultId);
-            expect(result.success).toBe(false);
+            expect(result.status).toBe("transient_error");
         });
     });
 

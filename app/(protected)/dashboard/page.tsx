@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { getDashboardData } from "@/lib/actions/dashboard.actions";
 import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import {
     USER_ROLE_LABELS,
     PROJECT_ROLE_LABELS_EXT,
@@ -43,9 +44,12 @@ function cleanDisplayText(value: string | null | undefined): string {
     return text && text.length > 0 ? text : "ไม่ระบุ";
 }
 
-function getSchoolCount(
-    dashboardData: Awaited<ReturnType<typeof getDashboardData>>,
-): number | undefined {
+type DashboardData = Extract<
+    Awaited<ReturnType<typeof getDashboardData>>,
+    { status: "success" | "empty" }
+>["data"];
+
+function getSchoolCount(dashboardData: DashboardData): number | undefined {
     return "schoolCount" in dashboardData ? dashboardData.schoolCount : undefined;
 }
 
@@ -121,7 +125,26 @@ export default async function DashboardPage() {
 }
 
 async function DashboardContent({ session }: { session: Session }) {
-    const dashboardData = await getDashboardData();
+    const dashboardResult = await getDashboardData();
+    if (dashboardResult.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={dashboardResult.requestId}
+                message={dashboardResult.message}
+            />
+        );
+    }
+    if (
+        dashboardResult.status === "forbidden" ||
+        dashboardResult.status === "not_found"
+    ) {
+        return (
+            <p role="alert" className="py-10 text-center text-slate-700">
+                ไม่มีสิทธิ์เข้าถึงข้อมูลหน้าหลัก
+            </p>
+        );
+    }
+    const dashboardData = dashboardResult.data;
 
     const { teacher, studentCount } = dashboardData;
     const userRole = session.user.role;
@@ -175,7 +198,26 @@ async function DashboardContent({ session }: { session: Session }) {
     }
 
     const isClassTeacher = userRole === "class_teacher";
-    const currentAcademicYear = await getCurrentAcademicYearRecord();
+    const currentAcademicYearResult = await getCurrentAcademicYearRecord();
+    if (currentAcademicYearResult.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={currentAcademicYearResult.requestId}
+                message={currentAcademicYearResult.message}
+            />
+        );
+    }
+    if (
+        currentAcademicYearResult.status === "forbidden" ||
+        currentAcademicYearResult.status === "not_found"
+    ) {
+        return (
+            <p role="alert" className="py-10 text-center text-slate-700">
+                ไม่มีสิทธิ์เข้าถึงข้อมูลปีการศึกษา
+            </p>
+        );
+    }
+    const currentAcademicYear = currentAcademicYearResult.data;
     const teacherName = cleanDisplayText(
         `${teacher.firstName ?? ""} ${teacher.lastName ?? ""}`,
     );

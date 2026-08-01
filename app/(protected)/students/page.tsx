@@ -180,7 +180,7 @@ async function StudentsContent({
     isAdmin: boolean;
 }) {
     const isClassTeacher = userRole === "class_teacher";
-    const [dashboardResult, schools, referredOutStudents] = await Promise.all([
+    const [dashboardResult, schoolsResult, referredOutResult] = await Promise.all([
         getStudentDashboardData({
             schoolId: filters.school,
             classFilter: filters.class,
@@ -194,19 +194,66 @@ async function StudentsContent({
                 ? { assessmentRound: filters.assessmentRound }
                 : {}),
         }),
-        isAdmin ? getSchools() : Promise.resolve([]),
-        isClassTeacher ? getReferredOutStudents() : Promise.resolve([]),
+        isAdmin ? getSchools() : Promise.resolve(null),
+        isClassTeacher ? getReferredOutStudents() : Promise.resolve(null),
     ]);
     if (dashboardResult.status === "transient_error") {
-        return <QueryErrorState requestId={dashboardResult.requestId} />;
+        return (
+            <QueryErrorState
+                requestId={dashboardResult.requestId}
+                message={dashboardResult.message}
+            />
+        );
     }
     if (
         dashboardResult.status === "forbidden" ||
         dashboardResult.status === "not_found"
     ) {
-        return null;
+        return (
+            <p role="alert" className="py-10 text-center text-slate-700">
+                ไม่มีสิทธิ์เข้าถึงข้อมูลนักเรียน
+            </p>
+        );
+    }
+    if (schoolsResult?.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={schoolsResult.requestId}
+                message={schoolsResult.message}
+            />
+        );
+    }
+    if (
+        schoolsResult?.status === "forbidden" ||
+        schoolsResult?.status === "not_found"
+    ) {
+        return (
+            <p role="alert" className="py-10 text-center text-slate-700">
+                ไม่มีสิทธิ์เข้าถึงรายชื่อโรงเรียน
+            </p>
+        );
+    }
+    if (referredOutResult?.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={referredOutResult.requestId}
+                message={referredOutResult.message}
+            />
+        );
+    }
+    if (
+        referredOutResult?.status === "forbidden" ||
+        referredOutResult?.status === "not_found"
+    ) {
+        return (
+            <p role="alert" className="py-10 text-center text-slate-700">
+                ไม่มีสิทธิ์เข้าถึงข้อมูลการส่งต่อ
+            </p>
+        );
     }
     const dashboardData = dashboardResult.data;
+    const schools = schoolsResult?.data ?? [];
+    const referredOutStudents = referredOutResult?.data ?? [];
     const students = dashboardData.students;
     const shouldShowImportEmptyState = shouldShowStudentsImportEmptyState({
         classFilter: filters.class,

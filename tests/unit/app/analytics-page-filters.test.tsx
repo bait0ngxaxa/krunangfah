@@ -188,7 +188,7 @@ describe("Analytics page filter validation", () => {
         mocks.requireAuth.mockResolvedValue({
             user: { role: "system_admin" },
         });
-        mocks.getSchools.mockResolvedValue([]);
+        mocks.getSchools.mockResolvedValue({ status: "empty", data: [] });
         mocks.getSystemAnalyticsOverview.mockResolvedValue({
             status: "success",
             data: systemOverview,
@@ -205,7 +205,7 @@ describe("Analytics page filter validation", () => {
         mocks.requireAuth.mockResolvedValue({
             user: { role: "system_admin" },
         });
-        mocks.getSchools.mockResolvedValue([]);
+        mocks.getSchools.mockResolvedValue({ status: "empty", data: [] });
         mocks.getSystemAnalyticsOverview.mockResolvedValue({
             status: "success",
             data: {

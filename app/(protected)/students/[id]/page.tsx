@@ -178,7 +178,12 @@ async function StudentDetailContent({
         session.user.role === "class_teacher";
 
     if (studentResult.status === "transient_error") {
-        return <QueryErrorState requestId={studentResult.requestId} />;
+        return (
+            <QueryErrorState
+                requestId={studentResult.requestId}
+                message={studentResult.message}
+            />
+        );
     }
     if (studentResult.status === "not_found") {
         notFound();
@@ -232,10 +237,20 @@ async function StudentDetailContent({
         }),
     ]);
     if (counselingResult.status === "transient_error") {
-        return <QueryErrorState requestId={counselingResult.requestId} />;
+        return (
+            <QueryErrorState
+                requestId={counselingResult.requestId}
+                message={counselingResult.message}
+            />
+        );
     }
     if (homeVisitResult.status === "transient_error") {
-        return <QueryErrorState requestId={homeVisitResult.requestId} />;
+        return (
+            <QueryErrorState
+                requestId={homeVisitResult.requestId}
+                message={homeVisitResult.message}
+            />
+        );
     }
     if (
         counselingResult.status === "forbidden" ||

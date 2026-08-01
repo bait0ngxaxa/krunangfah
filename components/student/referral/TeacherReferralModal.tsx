@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
     UserCheck,
@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import type { TeacherPickerOption } from "@/types/referral.types";
 import { Button } from "@/components/ui/Button";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 
 interface TeacherReferralModalProps {
     studentId: string;
@@ -34,6 +35,10 @@ export function TeacherReferralModal({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [queryError, setQueryError] = useState<{
+        requestId: string;
+        message?: string;
+    } | null>(null);
     const [teachers, setTeachers] = useState<TeacherPickerOption[]>([]);
     const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(
         null,
@@ -47,28 +52,62 @@ export function TeacherReferralModal({
         };
     }, []);
 
+    const applyTeacherResult = useCallback(
+        (result: Awaited<ReturnType<typeof getTeachersForReferral>>): void => {
+            if (result.status === "transient_error") {
+                setTeachers([]);
+                setQueryError({
+                    requestId: result.requestId,
+                    message: result.message,
+                });
+                return;
+            }
+            if (result.status === "forbidden" || result.status === "not_found") {
+                setTeachers([]);
+                setError("ไม่มีสิทธิ์เข้าถึงรายชื่อครู");
+                return;
+            }
+            setTeachers(result.data);
+        },
+        [],
+    );
+
+    const loadTeachers = useCallback(async (): Promise<void> => {
+        setIsLoading(true);
+        setQueryError(null);
+        try {
+            applyTeacherResult(await getTeachersForReferral());
+        } catch {
+            setTeachers([]);
+            setError("ไม่สามารถโหลดรายชื่อครูได้");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [applyTeacherResult]);
+
     // Fetch teacher options once per modal open.
     useEffect(() => {
         let cancelled = false;
-        async function loadTeachers(): Promise<void> {
+
+        async function loadInitialTeachers(): Promise<void> {
             try {
                 const result = await getTeachersForReferral();
-                if (!cancelled) {
-                    setTeachers(result);
-                    setIsLoading(false);
-                }
+                if (!cancelled) applyTeacherResult(result);
             } catch {
                 if (!cancelled) {
+                    setTeachers([]);
                     setError("ไม่สามารถโหลดรายชื่อครูได้");
-                    setIsLoading(false);
                 }
+            } finally {
+                if (!cancelled) setIsLoading(false);
             }
         }
-        void loadTeachers();
+
+        void loadInitialTeachers();
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [applyTeacherResult]);
 
     const handleSubmit = async (e: React.FormEvent): Promise<void> => {
         e.preventDefault();
@@ -161,6 +200,12 @@ export function TeacherReferralModal({
                                 <Loader2 className="w-6 h-6 animate-spin mr-2" />
                                 กำลังโหลดรายชื่อครู…
                             </div>
+                        ) : queryError ? (
+                            <QueryErrorState
+                                requestId={queryError.requestId}
+                                message={queryError.message}
+                                onRetry={() => void loadTeachers()}
+                            />
                         ) : teachers.length === 0 ? (
                             <div className="flex flex-col items-center py-8 text-gray-400">
                                 <Users className="w-10 h-10 mb-2 opacity-50" />

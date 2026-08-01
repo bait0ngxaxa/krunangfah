@@ -17,7 +17,7 @@ import {
     setRedisCachedSystemOverview,
 } from "./redis-cache";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
-import { getCurrentAcademicYearRecord } from "@/lib/actions/academic-year.actions";
+import { ensureCurrentAcademicYearLifecycle } from "@/lib/services/academic-year-lifecycle";
 
 import type { AcademicTermOption, AnalyticsData, SystemAnalyticsOverview } from "./types";
 import { handleQueryError } from "@/lib/actions/error-handler";
@@ -154,7 +154,7 @@ async function fetchSystemAnalyticsOverview(
 ): Promise<SystemAnalyticsOverview> {
     const [totalSchools, currentAcademicYear, overviewOptions] = await Promise.all([
         prisma.school.count({ where: { disabledAt: null, isTestData: false } }),
-        getCurrentAcademicYearRecord(),
+        ensureCurrentAcademicYearLifecycle(),
         getOverviewAcademicTermOptions(),
     ]);
 

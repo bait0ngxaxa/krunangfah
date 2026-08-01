@@ -7,11 +7,15 @@ import { Button } from "./Button";
 interface QueryErrorStateProps {
     requestId: string;
     title?: string;
+    message?: string;
+    onRetry?: () => void;
 }
 
 export function QueryErrorState({
     requestId,
     title = "โหลดข้อมูลไม่สำเร็จ",
+    message = "ข้อมูลอาจยังอยู่ครบ กรุณาลองโหลดอีกครั้งก่อนดำเนินการต่อ",
+    onRetry,
 }: QueryErrorStateProps) {
     const router = useRouter();
 
@@ -26,7 +30,7 @@ export function QueryErrorState({
                     <div>
                         <h2 className="font-bold text-red-900">{title}</h2>
                         <p className="mt-1 text-sm text-red-800">
-                            ข้อมูลอาจยังอยู่ครบ กรุณาลองโหลดอีกครั้งก่อนดำเนินการต่อ
+                            {message}
                         </p>
                         <p className="mt-2 break-all text-xs text-red-700">
                             รหัสอ้างอิง: {requestId}
@@ -36,7 +40,7 @@ export function QueryErrorState({
                         type="button"
                         variant="secondary"
                         size="sm"
-                        onClick={() => router.refresh()}
+                        onClick={onRetry ?? (() => router.refresh())}
                     >
                         <RefreshCw className="h-4 w-4" />
                         โหลดข้อมูลอีกครั้ง

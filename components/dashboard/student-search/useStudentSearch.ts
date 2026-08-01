@@ -9,19 +9,39 @@ import { MAX_VISIBLE_RESULTS } from "./constants";
 import { useState, useEffect, useRef } from "react";
 import type { Student } from "./types";
 import { studentRoute } from "@/lib/constants/student-routes";
+import type { Dispatch, RefObject, SetStateAction } from "react";
+
+interface StudentSearchState {
+    query: string;
+    setQuery: Dispatch<SetStateAction<string>>;
+    results: Student[];
+    isSearching: boolean;
+    hasSearchError: boolean;
+    queryError: { requestId: string; message?: string } | null;
+    searchAccessDenied: boolean;
+    retrySearch: () => void;
+    handleStudentClick: (studentId: string) => void;
+}
+
+interface ScrollFadeState {
+    scrollRef: RefObject<HTMLDivElement | null>;
+    isScrollable: boolean;
+    showFade: boolean;
+}
 
 /**
  * Hook for student search logic with SWR (replaces manual debounce).
  */
-export function useStudentSearch() {
+export function useStudentSearch(): StudentSearchState {
     const router = useRouter();
     const [query, setQuery] = useState("");
 
     // SWR with deduping replaces manual debounce
     const {
-        data: swrResults = [],
+        data: searchResult,
         error,
         isValidating: isSearching,
+        mutate,
     } = useSWR(
         query.trim() ? swrKeys.studentsSearch(query.trim()) : null,
         actionFetcher(() => searchStudents(query.trim())),
@@ -32,7 +52,24 @@ export function useStudentSearch() {
     );
 
     // When query is empty, show empty results immediately (no cache)
-    const results = query.trim() ? (swrResults as Student[]) : [];
+    const results: Student[] =
+        query.trim() &&
+        (searchResult?.status === "success" || searchResult?.status === "empty")
+            ? searchResult.data
+            : [];
+    const queryError =
+        searchResult?.status === "transient_error"
+            ? {
+                  requestId: searchResult.requestId,
+                  message: searchResult.message,
+              }
+            : null;
+    const searchAccessDenied =
+        searchResult?.status === "forbidden" ||
+        searchResult?.status === "not_found";
+    const retrySearch = useCallback((): void => {
+        void mutate();
+    }, [mutate]);
 
     const handleStudentClick = useCallback((studentId: string): void => {
         router.push(studentRoute(studentId));
@@ -44,6 +81,9 @@ export function useStudentSearch() {
         results,
         isSearching,
         hasSearchError: !!error,
+        queryError,
+        searchAccessDenied,
+        retrySearch,
         handleStudentClick,
     };
 }
@@ -51,7 +91,7 @@ export function useStudentSearch() {
 /**
  * Hook for scroll-fade behavior on the results list.
  */
-export function useScrollFade(resultCount: number) {
+export function useScrollFade(resultCount: number): ScrollFadeState {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [scrolledToBottom, setScrolledToBottom] = useState(false);
 

@@ -162,4 +162,55 @@ describe("academic-year.actions", () => {
             orderBy: [{ year: "desc" }, { semester: "desc" }],
         });
     });
+
+    it("returns success when academic years exist and empty only for a real empty query", async () => {
+        const academicYear = {
+            id: "ay-2569-1",
+            year: 2569,
+            semester: 1,
+            startDate: new Date(2026, 4, 15),
+            endDate: new Date(2026, 9, 15),
+            isCurrent: true,
+            createdAt: new Date(2026, 4, 12),
+            updatedAt: new Date(2026, 4, 12),
+        };
+        mocks.findMany.mockResolvedValueOnce([academicYear]);
+
+        await expect(getAcademicYears()).resolves.toEqual({
+            status: "success",
+            data: [academicYear],
+        });
+
+        mocks.findMany.mockResolvedValueOnce([]);
+        await expect(getAcademicYears()).resolves.toEqual({
+            status: "empty",
+            data: [],
+        });
+    });
+
+    it("returns transient_error instead of an empty academic-year list on database failure", async () => {
+        mocks.findMany.mockRejectedValue(new Error("database unavailable"));
+
+        const result = await getAcademicYears();
+
+        expect(result).toEqual({
+            status: "transient_error",
+            requestId: expect.any(String),
+            message: "ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
+        });
+        expect(result).not.toHaveProperty("data");
+        expect(mocks.logError).toHaveBeenCalledWith(
+            expect.stringMatching(/Get academic years error: \[requestId=.+\]/),
+            expect.any(Error),
+        );
+    });
+
+    it("returns transient_error when current-term lifecycle resolution fails", async () => {
+        mocks.upsert.mockRejectedValue(new Error("lifecycle unavailable"));
+
+        const result = await getCurrentAcademicYearRecord();
+
+        expect(result.status).toBe("transient_error");
+        expect(result).not.toHaveProperty("data");
+    });
 });
