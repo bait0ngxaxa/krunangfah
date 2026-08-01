@@ -107,7 +107,10 @@ describe("session management actions", () => {
     it("lists active sessions and marks the current session", async () => {
         const result = await listMySessions();
 
-        expect(result.success).toBe(true);
+        expect(result.status).toBe("success");
+        if (result.status !== "success") {
+            throw new Error("Expected active sessions");
+        }
         expect(updateCurrentSessionMetadata).toHaveBeenCalled();
         expect(prisma.userSession.findMany).toHaveBeenCalledWith({
             where: {
@@ -125,16 +128,31 @@ describe("session management actions", () => {
                 lastIpPrefix: true,
             },
         });
-        expect(result.sessions[0]).toMatchObject({
+        expect(result.data[0]).toMatchObject({
             id: "current-session",
             isCurrent: true,
             userAgentLabel: "Chrome บนคอมพิวเตอร์",
         });
-        expect(result.sessions[1]).toMatchObject({
+        expect(result.data[1]).toMatchObject({
             id: "other-session",
             isCurrent: false,
             userAgentLabel: "อุปกรณ์ไม่ทราบชนิด",
         });
+    });
+
+    it("returns a request ID instead of empty sessions when the query fails", async () => {
+        vi.mocked(prisma.userSession.findMany).mockRejectedValue(
+            new Error("database unavailable"),
+        );
+
+        const result = await listMySessions();
+
+        expect(result.status).toBe("transient_error");
+        if (result.status !== "transient_error") {
+            throw new Error("Expected transient_error");
+        }
+        expect(result.requestId).toEqual(expect.any(String));
+        expect(result).not.toHaveProperty("data");
     });
 
     it("does not revoke the current session from the management panel", async () => {

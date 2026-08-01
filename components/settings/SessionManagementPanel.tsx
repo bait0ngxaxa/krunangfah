@@ -37,11 +37,20 @@ export function SessionManagementPanel({
     function refreshSessions(): void {
         startTransition(async () => {
             const result = await listMySessions();
-            if (!result.success) {
-                toast.error(result.message);
+            if (result.status === "transient_error") {
+                toast.error(
+                    `${result.message ?? "ไม่สามารถโหลด session ได้"} รหัสอ้างอิง: ${result.requestId}`,
+                );
                 return;
             }
-            setSessions(result.sessions);
+            if (
+                result.status === "forbidden" ||
+                result.status === "not_found"
+            ) {
+                toast.error(result.message ?? "ไม่มีสิทธิ์โหลด session");
+                return;
+            }
+            setSessions(result.data);
         });
     }
 

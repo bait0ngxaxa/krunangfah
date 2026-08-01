@@ -9,7 +9,8 @@ import {
     revokeUserSessionById,
     updateCurrentSessionMetadata,
 } from "@/lib/auth/session-store";
-import { handleActionError } from "./error-handler";
+import { handleActionError, handleQueryError } from "./error-handler";
+import { queryEmpty, querySuccess, type QueryResult } from "./query-result";
 import type {
     ManagedSession,
     SessionManagementResponse,
@@ -39,47 +40,42 @@ function toManagedSession(
     };
 }
 
-export async function listMySessions(): Promise<SessionManagementResponse> {
-    try {
-        const session = await requireAuth();
-        const currentSessionId = session.sessionId ?? null;
-        const headerStore = await headers();
-        await updateCurrentSessionMetadata((name) => headerStore.get(name));
-        const now = new Date();
-        const sessions = await prisma.userSession.findMany({
-            where: {
-                userId: session.user.id,
-                revokedAt: null,
-                expiresAt: { gt: now },
-            },
-            orderBy: { lastActivityAt: "desc" },
-            select: {
-                id: true,
-                createdAt: true,
-                expiresAt: true,
-                lastActivityAt: true,
-                userAgentLabel: true,
-                lastIpPrefix: true,
-            },
-        });
+async function getMyManagedSessions(): Promise<ManagedSession[]> {
+    const session = await requireAuth();
+    const currentSessionId = session.sessionId ?? null;
+    const headerStore = await headers();
+    await updateCurrentSessionMetadata((name) => headerStore.get(name));
+    const now = new Date();
+    const sessions = await prisma.userSession.findMany({
+        where: {
+            userId: session.user.id,
+            revokedAt: null,
+            expiresAt: { gt: now },
+        },
+        orderBy: { lastActivityAt: "desc" },
+        select: {
+            id: true,
+            createdAt: true,
+            expiresAt: true,
+            lastActivityAt: true,
+            userAgentLabel: true,
+            lastIpPrefix: true,
+        },
+    });
 
-        return {
-            success: true,
-            message: "โหลด session สำเร็จ",
-            sessions: sessions.map((item) =>
-                toManagedSession(item, currentSessionId),
-            ),
-        };
+    return sessions.map((item) => toManagedSession(item, currentSessionId));
+}
+
+export async function listMySessions(): Promise<
+    QueryResult<ManagedSession[]>
+> {
+    try {
+        const sessions = await getMyManagedSessions();
+        return sessions.length === 0
+            ? queryEmpty(sessions)
+            : querySuccess(sessions);
     } catch (error) {
-        return handleActionError({
-            context: "List sessions error:",
-            error,
-            fallback: {
-                success: false,
-                message: "ไม่สามารถโหลด session ได้",
-                sessions: [],
-            },
-        });
+        return handleQueryError("List sessions error:", error);
     }
 }
 
@@ -95,16 +91,17 @@ export async function revokeSessionById(
             return {
                 success: false,
                 message: "ไม่สามารถออกจากระบบ session ปัจจุบันจากหน้านี้ได้",
-                sessions: (await listMySessions()).sessions,
+                sessions: await getMyManagedSessions(),
             };
         }
 
         await revokeUserSessionById(session.user.id, parsedSessionId);
 
-        const refreshed = await listMySessions();
+        const sessions = await getMyManagedSessions();
         return {
-            ...refreshed,
+            success: true,
             message: "ออกจากระบบอุปกรณ์ที่เลือกแล้ว",
+            sessions,
         };
     } catch (error) {
         return handleActionError({
@@ -126,10 +123,11 @@ export async function revokeOtherSessions(): Promise<SessionManagementResponse> 
 
         await revokeOtherUserSessions(session.user.id, currentSessionId);
 
-        const refreshed = await listMySessions();
+        const sessions = await getMyManagedSessions();
         return {
-            ...refreshed,
+            success: true,
             message: "ออกจากระบบอุปกรณ์อื่นทั้งหมดแล้ว",
+            sessions,
         };
     } catch (error) {
         return handleActionError({

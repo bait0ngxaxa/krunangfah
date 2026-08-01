@@ -1,6 +1,6 @@
 "use server";
 
-import { requireAdmin } from "@/lib/auth/session";
+import { requireAdmin, requireAuth } from "@/lib/auth/session";
 import {
     getSystemAdminValidationMessage,
     systemCareRecordDeleteSchema,
@@ -12,7 +12,14 @@ import {
     systemTeacherProfileEditSchema,
     systemAuditTimelineSchema,
 } from "@/lib/validations/system-admin.validation";
-import { handleActionError } from "./error-handler";
+import { handleActionError, handleQueryError } from "./error-handler";
+import {
+    queryEmpty,
+    queryForbidden,
+    queryNotFound,
+    querySuccess,
+    type QueryResult,
+} from "./query-result";
 import {
     getStudentCareRecords,
     deleteSystemReferral,
@@ -49,18 +56,22 @@ const EMPTY_SYSTEM_SEARCH_RESULT: SystemSearchResult = {
 
 export async function searchSystemAdminEntities(
     input: unknown,
-): Promise<SystemSearchResult> {
+): Promise<QueryResult<SystemSearchResult>> {
     try {
-        await requireAdmin();
+        const session = await requireAuth();
+        if (session.user.role !== "system_admin") {
+            return queryForbidden("ไม่มีสิทธิ์ค้นหาข้อมูลระบบ");
+        }
         const parsed = systemSearchSchema.safeParse(input);
-        if (!parsed.success) return EMPTY_SYSTEM_SEARCH_RESULT;
-        return searchSystemEntities(parsed.data);
+        if (!parsed.success) return queryEmpty(EMPTY_SYSTEM_SEARCH_RESULT);
+        const result = await searchSystemEntities(parsed.data);
+        return result.schools.length === 0 &&
+            result.staffs.length === 0 &&
+            result.students.length === 0
+            ? queryEmpty(result)
+            : querySuccess(result);
     } catch (error) {
-        return handleActionError({
-            context: "searchSystemAdminEntities error:",
-            error,
-            fallback: EMPTY_SYSTEM_SEARCH_RESULT,
-        });
+        return handleQueryError("searchSystemAdminEntities error:", error);
     }
 }
 
@@ -143,18 +154,18 @@ export async function updateSystemAdminTeacherProfile(
     }
 }
 
-export async function listSystemAdminEvents(): Promise<{
-    events: SystemAdminEditEventItem[];
-}> {
+export async function listSystemAdminEvents(): Promise<
+    QueryResult<SystemAdminEditEventItem[]>
+> {
     try {
-        await requireAdmin();
-        return { events: await listSystemAdminEditEvents() };
+        const session = await requireAuth();
+        if (session.user.role !== "system_admin") {
+            return queryForbidden("ไม่มีสิทธิ์ดูประวัติระบบ");
+        }
+        const events = await listSystemAdminEditEvents();
+        return events.length === 0 ? queryEmpty(events) : querySuccess(events);
     } catch (error) {
-        return handleActionError({
-            context: "listSystemAdminEvents error:",
-            error,
-            fallback: { events: [] },
-        });
+        return handleQueryError("listSystemAdminEvents error:", error);
     }
 }
 
@@ -189,18 +200,22 @@ export async function searchSystemAuditTimeline(
 
 export async function getSystemStudentCareRecords(
     input: unknown,
-): Promise<SystemCareRecordResponse | null> {
+): Promise<QueryResult<SystemCareRecordResponse>> {
     try {
-        await requireAdmin();
+        const session = await requireAuth();
+        if (session.user.role !== "system_admin") {
+            return queryForbidden("ไม่มีสิทธิ์ดูข้อมูลการดูแลนักเรียน");
+        }
         const parsed = systemStudentCareRecordsSchema.safeParse(input);
-        if (!parsed.success) return null;
-        return getStudentCareRecords(parsed.data.studentId);
+        if (!parsed.success) {
+            return queryNotFound("ไม่พบข้อมูลนักเรียน");
+        }
+        const records = await getStudentCareRecords(parsed.data.studentId);
+        return records
+            ? querySuccess(records)
+            : queryNotFound("ไม่พบข้อมูลนักเรียน");
     } catch (error) {
-        return handleActionError({
-            context: "getSystemStudentCareRecords error:",
-            error,
-            fallback: null,
-        });
+        return handleQueryError("getSystemStudentCareRecords error:", error);
     }
 }
 

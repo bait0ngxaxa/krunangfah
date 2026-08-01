@@ -37,6 +37,13 @@ export interface TeacherProfile {
     school?: School;
 }
 
+export interface CurrentTeacherProfile {
+    advisoryClass: string;
+    user: {
+        role: UserRole;
+    };
+}
+
 export interface CreateTeacherInput {
     firstName: string;
     lastName: string;

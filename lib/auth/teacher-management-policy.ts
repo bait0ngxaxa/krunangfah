@@ -61,6 +61,10 @@ export function canManageSchoolClasses(
     return isPrimarySchoolAdmin(actor);
 }
 
+export function canViewSchoolClasses(actor: TeacherManagementActor): boolean {
+    return actor.role === "school_admin" || actor.role === "class_teacher";
+}
+
 export function getTeacherManagementCapabilities(
     actor: TeacherManagementActor,
 ): TeacherManagementCapabilities {

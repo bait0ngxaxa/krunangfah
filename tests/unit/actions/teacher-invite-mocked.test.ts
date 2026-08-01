@@ -531,14 +531,24 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
     });
 
     describe("getMyTeacherInvites", () => {
+        it("returns forbidden when the role cannot view invites", async () => {
+            vi.mocked(requireAuth).mockResolvedValue({
+                user: { id: "u1", role: "class_teacher", schoolId: "s1" },
+            } as never);
+
+            const res = await getMyTeacherInvites();
+
+            expect(res.status).toBe("forbidden");
+            expect(prisma.teacherInvite.findMany).not.toHaveBeenCalled();
+        });
+
         it("returns empty array if no schoolId", async () => {
             vi.mocked(requireAuth).mockResolvedValue({
                 user: { id: "u1", role: "school_admin" },
             } as any);
             vi.mocked(prisma.user.findUnique).mockResolvedValue(null as any);
             const res = await getMyTeacherInvites();
-            expect(res.success).toBe(true);
-            expect(res.invites).toEqual([]);
+            expect(res).toEqual({ status: "empty", data: [] });
         });
 
         it("returns invites if schoolId is found in session", async () => {
@@ -549,15 +559,27 @@ describe("Mocked Teacher Invite Actions (Coverage Run)", () => {
                 { id: "i1" },
             ] as any);
             const res = await getMyTeacherInvites();
-            expect(res.success).toBe(true);
-            expect(res.invites).toHaveLength(1);
+            expect(res.status).toBe("success");
+            if (res.status !== "success") {
+                throw new Error("Expected invites");
+            }
+            expect(res.data).toHaveLength(1);
         });
 
-        it("catches error", async () => {
-            vi.mocked(requireAuth).mockRejectedValue(new Error("Err"));
+        it("returns transient_error when the invite query rejects", async () => {
+            vi.mocked(requireAuth).mockResolvedValue({
+                user: { id: "u1", role: "school_admin", schoolId: "s1" },
+            } as never);
+            vi.mocked(prisma.teacherInvite.findMany).mockRejectedValue(
+                new Error("Prisma connection failed"),
+            );
             const res = await getMyTeacherInvites();
-            expect(res.success).toBe(false);
-            expect(res.invites).toEqual([]);
+            expect(res.status).toBe("transient_error");
+            if (res.status !== "transient_error") {
+                throw new Error("Expected transient_error");
+            }
+            expect(res.requestId).toEqual(expect.any(String));
+            expect(res).not.toHaveProperty("data");
         });
     });
 });

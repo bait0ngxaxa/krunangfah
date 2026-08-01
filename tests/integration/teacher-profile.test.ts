@@ -55,27 +55,33 @@ describe("Integration: Teacher Profile", () => {
         it("teacher can view own profile", async () => {
             mockSession(USERS.classTeacher);
             const result = await getTeacherProfile(USERS.classTeacher.id);
-            expect(result).not.toBeNull();
-            expect(result?.advisoryClass).toBe("ม.2/5");
+            expect(result.status).toBe("success");
+            if (result.status !== "success") {
+                throw new Error("Expected teacher profile");
+            }
+            expect(result.data.advisoryClass).toBe("ม.2/5");
         });
 
         it("teacher CANNOT view another teacher's profile", async () => {
             mockSession(USERS.classTeacher);
             const result = await getTeacherProfile(USERS.otherTeacher.id);
-            expect(result).toBeNull();
+            expect(result.status).toBe("forbidden");
         });
 
         it("system_admin CAN view any teacher's profile", async () => {
             mockSession(USERS.systemAdmin);
             const result = await getTeacherProfile(USERS.classTeacher.id);
-            expect(result).not.toBeNull();
-            expect(result?.advisoryClass).toBe("ม.2/5");
+            expect(result.status).toBe("success");
+            if (result.status !== "success") {
+                throw new Error("Expected teacher profile");
+            }
+            expect(result.data.advisoryClass).toBe("ม.2/5");
         });
 
-        it("school_admin with no teacher profile returns null", async () => {
+        it("school_admin with no teacher profile returns not_found", async () => {
             mockSession(USERS.schoolAdmin);
             const result = await getTeacherProfile(USERS.schoolAdmin.id);
-            expect(result).toBeNull();
+            expect(result.status).toBe("not_found");
         });
     });
 });

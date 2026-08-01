@@ -6,6 +6,8 @@ import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
 import { getSchoolAdmins } from "@/lib/actions/primary-admin.actions";
 import { getSchoolTeachers } from "@/lib/actions/user-management.actions";
 import { SchoolClassesTabs } from "@/components/school/SchoolClassesTabs";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,11 +20,26 @@ export default async function SchoolClassesPage() {
     const isPrimary = session.user.isPrimary === true;
 
     // Only primary admins should see this page
-    const [classes, schoolAdmins, registeredTeachers] = await Promise.all([
+    const [classesResult, schoolAdmins, registeredTeachers] = await Promise.all([
         getSchoolClasses(),
         isPrimary ? getSchoolAdmins() : Promise.resolve([]),
         isPrimary ? getSchoolTeachers() : Promise.resolve([]),
     ]);
+    if (classesResult.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={classesResult.requestId}
+                message={classesResult.message}
+            />
+        );
+    }
+    if (
+        classesResult.status === "forbidden" ||
+        classesResult.status === "not_found"
+    ) {
+        redirect("/dashboard");
+    }
+    const classes = classesResult.data;
 
     return (
         <div className="min-h-screen bg-emerald-50 py-6 px-4 relative overflow-hidden">

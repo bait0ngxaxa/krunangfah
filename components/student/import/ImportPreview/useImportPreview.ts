@@ -115,48 +115,84 @@ export function useImportPreview({
 
         const loadData = async (): Promise<void> => {
             try {
-                const [yearsResult, profile, classes] = await Promise.all([
-                    getCurrentAcademicYearTerms(),
-                    getCurrentTeacherProfile().catch((err) => {
-                        console.error("Failed to load teacher profile:", err);
-                        return null;
-                    }),
-                    getSchoolClasses(),
-                ]);
+                const [yearsResult, profileResult, classesResult] =
+                    await Promise.all([
+                        getCurrentAcademicYearTerms(),
+                        getCurrentTeacherProfile(),
+                        getSchoolClasses(),
+                    ]);
 
                 if (!isActive) {
                     return;
                 }
 
-                if (yearsResult.status === "transient_error") {
+                const queryError = [
+                    yearsResult,
+                    profileResult,
+                    classesResult,
+                ].find((result) => result.status === "transient_error");
+                if (queryError?.status === "transient_error") {
                     setHasImportContextError(true);
                     setImportContextQueryError({
-                        requestId: yearsResult.requestId,
-                        message: yearsResult.message,
+                        requestId: queryError.requestId,
+                        message: queryError.message,
                     });
                     setErrorTitle("โหลดข้อมูลประกอบไม่สำเร็จ");
                     setErrorDescription(
                         "กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง",
                     );
                     setError(
-                        `${yearsResult.message ?? "ไม่สามารถโหลดข้อมูลปีการศึกษาได้ กรุณาลองใหม่อีกครั้ง"} รหัสอ้างอิง: ${yearsResult.requestId}`,
+                        `${queryError.message ?? "ไม่สามารถโหลดข้อมูลประกอบได้ กรุณาลองใหม่อีกครั้ง"} รหัสอ้างอิง: ${queryError.requestId}`,
                     );
                     setIsImportContextLoaded(true);
                     return;
                 }
                 if (
-                    yearsResult.status === "forbidden" ||
-                    yearsResult.status === "not_found"
+                    (yearsResult.status !== "success" &&
+                        yearsResult.status !== "empty") ||
+                    (classesResult.status !== "success" &&
+                        classesResult.status !== "empty")
                 ) {
                     setHasImportContextError(true);
                     setErrorTitle("โหลดข้อมูลประกอบไม่สำเร็จ");
-                    setError("ไม่มีสิทธิ์เข้าถึงข้อมูลปีการศึกษา");
+                    setError("ไม่มีสิทธิ์เข้าถึงข้อมูลประกอบการนำเข้า");
+                    setIsImportContextLoaded(true);
+                    return;
+                }
+                if (profileResult.status !== "success") {
+                    const profileMessage =
+                        profileResult.status === "forbidden" ||
+                        profileResult.status === "not_found"
+                            ? profileResult.message
+                            : undefined;
+                    setHasImportContextError(true);
+                    setErrorTitle("ตรวจสอบสิทธิ์นำเข้าไม่สำเร็จ");
+                    setError(
+                        profileMessage ??
+                            "ไม่พบโปรไฟล์ครู จึงยังไม่สามารถยืนยันสิทธิ์และห้องที่รับผิดชอบได้",
+                    );
                     setIsImportContextLoaded(true);
                     return;
                 }
                 const years = yearsResult.data;
+                const classes = classesResult.data;
+                const profile = profileResult.data;
+                if (
+                    profile.user.role === "class_teacher" &&
+                    !profile.advisoryClass.trim()
+                ) {
+                    setHasImportContextError(true);
+                    setErrorTitle("ตรวจสอบห้องที่รับผิดชอบไม่สำเร็จ");
+                    setError(
+                        "ไม่พบห้องที่ปรึกษาในโปรไฟล์ครู จึงยังไม่สามารถนำเข้าข้อมูลได้",
+                    );
+                    setIsImportContextLoaded(true);
+                    return;
+                }
                 setAcademicYears(years);
-                setSchoolClassNames(classes.map((schoolClass) => schoolClass.name));
+                setSchoolClassNames(
+                    classes.map((schoolClass) => schoolClass.name),
+                );
                 const current = years.find((year) => year.isCurrent);
                 const initialYearId = current?.id ?? years[0]?.id ?? "";
 
@@ -199,24 +235,27 @@ export function useImportPreview({
                         });
                 }
 
-                if (profile) {
-                    setTeacherProfile({
-                        role: profile.user.role,
-                        advisoryClass: profile.advisoryClass,
-                    });
-                }
+                setTeacherProfile({
+                    role: profile.user.role,
+                    advisoryClass: profile.advisoryClass,
+                });
 
                 setIsImportContextLoaded(true);
             } catch (err) {
-                console.error("Failed to load import context:", err);
+                const requestId = crypto.randomUUID();
+                console.error(
+                    `Failed to load import context [requestId=${requestId}]:`,
+                    err,
+                );
                 if (!isActive) {
                     return;
                 }
                 setErrorTitle("โหลดข้อมูลประกอบไม่สำเร็จ");
                 setHasImportContextError(true);
+                setImportContextQueryError({ requestId });
                 setErrorDescription("กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง");
                 setError(
-                    "ไม่สามารถโหลดปีการศึกษาและข้อมูลห้องเรียนได้ กรุณารีเฟรชหน้าแล้วลองใหม่",
+                    `ไม่สามารถโหลดข้อมูลประกอบได้ กรุณารีเฟรชหน้าแล้วลองใหม่ รหัสอ้างอิง: ${requestId}`,
                 );
                 setIsImportContextLoaded(true);
             }

@@ -7,7 +7,13 @@ import {
     canManageTeacherRoster,
     canViewTeacherRoster,
 } from "@/lib/auth/teacher-management-policy";
-import { handleActionError } from "./error-handler";
+import { handleActionError, handleQueryError } from "./error-handler";
+import {
+    queryEmpty,
+    queryForbidden,
+    querySuccess,
+    type QueryResult,
+} from "./query-result";
 import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
 import {
     teacherRosterSchema,
@@ -288,39 +294,49 @@ export async function removeFromRoster(
  * Parallel-fetches invites + users to compute status per entry.
  * Filters out "accepted" entries.
  */
-export async function getSchoolRoster(): Promise<TeacherRosterItem[]> {
-    const session = await requireAuth();
-    if (!canViewTeacherRoster(session.user)) return [];
+export async function getSchoolRoster(): Promise<
+    QueryResult<TeacherRosterItem[]>
+> {
+    try {
+        const session = await requireAuth();
+        if (!canViewTeacherRoster(session.user)) {
+            return queryForbidden("ไม่มีสิทธิ์ดูรายชื่อครู");
+        }
 
-    const schoolId = await resolveSchoolId(
-        session.user.id,
-        session.user.schoolId,
-    );
+        const schoolId = await resolveSchoolId(
+            session.user.id,
+            session.user.schoolId,
+        );
 
-    if (!schoolId) return [];
+        if (!schoolId) return queryEmpty([]);
 
-    const [rows, invites] = await Promise.all([
-        prisma.schoolTeacherRoster.findMany({
-            where: { schoolId },
-            orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
-        }),
-        prisma.teacherInvite.findMany({
-            where: { schoolId },
-            select: {
-                rosterId: true,
-                acceptedAt: true,
-                expiresAt: true,
-            },
-        }),
-    ]);
+        const [rows, invites] = await Promise.all([
+            prisma.schoolTeacherRoster.findMany({
+                where: { schoolId },
+                orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+            }),
+            prisma.teacherInvite.findMany({
+                where: { schoolId },
+                select: {
+                    rosterId: true,
+                    acceptedAt: true,
+                    expiresAt: true,
+                },
+            }),
+        ]);
 
-    const statuses = buildRosterStatusMap(invites);
-    return rows
-        .map((row) => {
-            const status = statuses.get(row.id) ?? "draft";
-            return toRosterItem(row, status);
-        })
-        .filter((item) => item.status !== "accepted");
+        const statuses = buildRosterStatusMap(invites);
+        const roster = rows
+            .map((row) => {
+                const status = statuses.get(row.id) ?? "draft";
+                return toRosterItem(row, status);
+            })
+            .filter((item) => item.status !== "accepted");
+
+        return roster.length === 0 ? queryEmpty(roster) : querySuccess(roster);
+    } catch (error) {
+        return handleQueryError("Get school roster error:", error);
+    }
 }
 
 /**

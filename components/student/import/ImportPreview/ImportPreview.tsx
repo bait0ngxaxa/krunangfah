@@ -65,9 +65,13 @@ export function ImportPreview({
                     </span>
                 </h3>
 
-                <RiskSummaryCards riskCounts={riskCounts} />
+                {!hasImportContextError ? (
+                    <RiskSummaryCards riskCounts={riskCounts} />
+                ) : null}
 
-                <div className="my-6 border-t border-emerald-100/50" />
+                {!hasImportContextError ? (
+                    <div className="my-6 border-t border-emerald-100/50" />
+                ) : null}
 
                 {!isImportContextLoaded && (
                     <div
@@ -118,19 +122,23 @@ export function ImportPreview({
                     />
                 )}
 
-                <FilteredStudentsWarning
-                    students={filteredOutStudents}
-                    advisoryClass={teacherProfile?.advisoryClass ?? null}
-                    validClassNames={schoolClassNames}
-                    isClassScoped={teacherProfile?.role === "class_teacher"}
-                />
+                {!hasImportContextError ? (
+                    <FilteredStudentsWarning
+                        students={filteredOutStudents}
+                        advisoryClass={teacherProfile?.advisoryClass ?? null}
+                        validClassNames={schoolClassNames}
+                        isClassScoped={teacherProfile?.role === "class_teacher"}
+                    />
+                ) : null}
             </div>
 
-            <StudentPreviewTable
-                students={previewData}
-                onRemoveStudent={handleRemoveStudent}
-                canViewNationalId={canViewNationalId}
-            />
+            {!hasImportContextError ? (
+                <StudentPreviewTable
+                    students={previewData}
+                    onRemoveStudent={handleRemoveStudent}
+                    canViewNationalId={canViewNationalId}
+                />
+            ) : null}
 
             {!hasImportContextError && (
                 <ImportError
@@ -147,6 +155,7 @@ export function ImportPreview({
                 isLoading={isLoading}
                 canSave={
                     isImportContextLoaded &&
+                    !hasImportContextError &&
                     !!selectedYearId &&
                     !incompleteCheckFailed &&
                     previewData.length > 0

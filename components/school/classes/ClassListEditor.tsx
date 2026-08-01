@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useClassList } from "./useClassList";
 import { SingleClassAdder, BulkClassAdder, ClassGroupList } from "./components";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { getSchoolClasses } from "@/lib/actions/school-setup.actions";
 import type { ClassListEditorProps } from "./types";
 
@@ -21,6 +22,12 @@ export function ClassListEditor({
         defaultAcademicYearId ?? "",
     );
     const [termClasses, setTermClasses] = useState(initialClasses);
+    const [termQueryError, setTermQueryError] = useState<{
+        requestId: string;
+        message?: string;
+        academicYearId: string;
+    } | null>(null);
+    const [termAccessError, setTermAccessError] = useState<string | null>(null);
     const [isTermPending, startTermTransition] = useTransition();
     const selectedAcademicYear = useMemo(
         () =>
@@ -69,16 +76,55 @@ export function ClassListEditor({
     }
 
     function handleAcademicYearChange(academicYearId: string): void {
-        setSelectedAcademicYearId(academicYearId);
+        setTermQueryError(null);
+        setTermAccessError(null);
         startTermTransition(async () => {
-            const nextClasses = await getSchoolClasses(academicYearId);
-            setTermClasses(nextClasses);
-            onUpdate?.(nextClasses);
+            const result = await getSchoolClasses(academicYearId);
+            if (result.status === "transient_error") {
+                setTermQueryError({
+                    requestId: result.requestId,
+                    message: result.message,
+                    academicYearId,
+                });
+                return;
+            }
+            if (
+                result.status === "forbidden" ||
+                result.status === "not_found"
+            ) {
+                setTermAccessError(
+                    result.message ?? "ไม่มีสิทธิ์เข้าถึงข้อมูลห้องเรียน",
+                );
+                return;
+            }
+
+            setSelectedAcademicYearId(academicYearId);
+            setTermClasses(result.data);
+            onUpdate?.(result.data);
         });
     }
 
     return (
         <div className="space-y-5">
+            {termQueryError ? (
+                <QueryErrorState
+                    requestId={termQueryError.requestId}
+                    message={termQueryError.message}
+                    onRetry={() =>
+                        handleAcademicYearChange(
+                            termQueryError.academicYearId,
+                        )
+                    }
+                />
+            ) : null}
+            {termAccessError ? (
+                <p
+                    className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800"
+                    role="alert"
+                >
+                    {termAccessError}
+                </p>
+            ) : null}
             {academicYears.length > 0 && (
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
                     <label

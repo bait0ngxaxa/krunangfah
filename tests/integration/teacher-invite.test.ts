@@ -481,12 +481,15 @@ describe("Integration: Teacher Invite", () => {
 
             const result = await getMyTeacherInvites();
 
-            expect(result.success).toBe(true);
-            expect(result.invites.length).toBeGreaterThanOrEqual(1);
+            expect(result.status).toBe("success");
+            if (result.status !== "success") {
+                throw new Error("Expected invites");
+            }
+            expect(result.data.length).toBeGreaterThanOrEqual(1);
             expect(
-                result.invites.some((inv) => inv.firstName === "StaleJWT"),
+                result.data.some((inv) => inv.firstName === "StaleJWT"),
             ).toBe(true);
-            expect(result.invites.every((inv) => inv.token === "")).toBe(true);
+            expect(result.data.every((inv) => inv.token === "")).toBe(true);
         });
 
         it("returns invites normally when JWT has schoolId", async () => {
@@ -495,8 +498,11 @@ describe("Integration: Teacher Invite", () => {
 
             const result = await getMyTeacherInvites();
 
-            expect(result.success).toBe(true);
-            expect(result.invites.length).toBeGreaterThanOrEqual(1);
+            expect(result.status).toBe("success");
+            if (result.status !== "success") {
+                throw new Error("Expected invites");
+            }
+            expect(result.data.length).toBeGreaterThanOrEqual(1);
         });
     });
 });

@@ -25,31 +25,43 @@ export default async function AddTeacherPage() {
         redirect("/dashboard");
     }
 
-    const [classes, academicYearsResult, roster, inviteResult] = await Promise.all([
-        getSchoolClasses(),
-        getCurrentAcademicYearTerms(),
-        getSchoolRoster(),
-        getMyTeacherInvites(),
-    ]);
-    if (academicYearsResult.status === "transient_error") {
+    const [classesResult, academicYearsResult, rosterResult, inviteResult] =
+        await Promise.all([
+            getSchoolClasses(),
+            getCurrentAcademicYearTerms(),
+            getSchoolRoster(),
+            getMyTeacherInvites(),
+        ]);
+    const queryError = [
+        classesResult,
+        academicYearsResult,
+        rosterResult,
+        inviteResult,
+    ].find((result) => result.status === "transient_error");
+    if (queryError?.status === "transient_error") {
         return (
             <QueryErrorState
-                requestId={academicYearsResult.requestId}
-                message={academicYearsResult.message}
+                requestId={queryError.requestId}
+                message={queryError.message}
             />
         );
     }
     if (
-        academicYearsResult.status === "forbidden" ||
-        academicYearsResult.status === "not_found"
+        (classesResult.status !== "success" &&
+            classesResult.status !== "empty") ||
+        (academicYearsResult.status !== "success" &&
+            academicYearsResult.status !== "empty") ||
+        (rosterResult.status !== "success" &&
+            rosterResult.status !== "empty") ||
+        (inviteResult.status !== "success" &&
+            inviteResult.status !== "empty")
     ) {
-        return (
-            <p role="alert" className="py-10 text-center text-slate-700">
-                ไม่มีสิทธิ์เข้าถึงข้อมูลปีการศึกษา
-            </p>
-        );
+        redirect("/dashboard");
     }
+    const classes = classesResult.data;
     const academicYears = academicYearsResult.data;
+    const roster = rosterResult.data;
+    const invites = inviteResult.data;
 
     return (
         <div className="min-h-screen bg-emerald-50 py-6 px-4 relative overflow-hidden">
@@ -73,7 +85,7 @@ export default async function AddTeacherPage() {
                     classes={classes}
                     academicYears={academicYears}
                     roster={roster}
-                    invites={inviteResult.invites}
+                    invites={invites}
                     capabilities={capabilities}
                 />
             </div>

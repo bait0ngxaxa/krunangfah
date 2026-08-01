@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { GraduationCap } from "lucide-react";
 import { TeacherProfileForm } from "@/components/teacher/forms/TeacherProfileForm/TeacherProfileForm";
 import { PageHeaderCard } from "@/components/ui/PageHeaderCard";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { requireAuth } from "@/lib/auth/session";
 import { prisma } from "@/lib/database/prisma";
 import { getTeacherProfile } from "@/lib/actions/teacher.actions";
@@ -21,8 +22,19 @@ export default async function TeacherProfilePage() {
     }
 
     // Existing profile continues remaining onboarding step, otherwise dashboard.
-    const existingProfile = await getTeacherProfile(session.user.id);
-    if (existingProfile) {
+    const profileResult = await getTeacherProfile(session.user.id);
+    if (profileResult.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={profileResult.requestId}
+                message={profileResult.message}
+            />
+        );
+    }
+    if (profileResult.status === "forbidden") {
+        redirect("/dashboard");
+    }
+    if (profileResult.status === "success") {
         const dbUser = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: { schoolId: true },

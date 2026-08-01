@@ -103,12 +103,20 @@ export function SystemCareAdminPanel({
                 return;
             }
             const refreshed = await getSystemStudentCareRecords({ studentId });
-            if (refreshed) {
-                setData(refreshed);
+            if (
+                refreshed.status === "success" ||
+                refreshed.status === "empty"
+            ) {
+                setData(refreshed.data);
             } else {
                 setData((current) =>
                     markReferralRevoked(current, referral.id, deleteReason),
                 );
+                if (refreshed.status === "transient_error") {
+                    toast.error(
+                        `${refreshed.message ?? "โหลดข้อมูลล่าสุดไม่สำเร็จ"} รหัสอ้างอิง: ${refreshed.requestId}`,
+                    );
+                }
             }
             setIsDeletingReferral(false);
             setDeleteReason("");

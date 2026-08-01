@@ -4,7 +4,12 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { searchSystemAdminEntities } from "@/lib/actions/system-admin.actions";
-import type { SystemEntityResult } from "@/lib/actions/system-admin/types";
+import type {
+    SystemEntityResult,
+    SystemSearchResult,
+} from "@/lib/actions/system-admin/types";
+import type { QueryResult } from "@/lib/actions/query-result";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { SystemDetailPanel } from "./SystemDetailPanel";
 import { SystemEventPanel } from "./SystemEventPanel";
 import { SystemResultList } from "./SystemResultList";
@@ -27,6 +32,10 @@ export function SystemOperationsCenter() {
     const [results, setResults] = useState(EMPTY_SYSTEM_RESULTS);
     const [selected, setSelected] = useState<SystemEntityResult | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
+    const [searchError, setSearchError] = useState<{
+        requestId: string;
+        message?: string;
+    } | null>(null);
     const [isPending, startTransition] = useTransition();
     const flatResults = useMemo(() => flattenSystemResults(results), [results]);
 
@@ -50,10 +59,16 @@ export function SystemOperationsCenter() {
     );
 
     const searchWithState = useCallback(
-        (nextQuery: string, nextEntityType: SystemEntityFilter) => {
+        (
+            nextQuery: string,
+            nextEntityType: SystemEntityFilter,
+        ): Promise<QueryResult<SystemSearchResult>> => {
             const trimmedQuery = nextQuery.trim();
             if (trimmedQuery.length < 2) {
-                return Promise.resolve(EMPTY_SYSTEM_RESULTS);
+                return Promise.resolve({
+                    status: "empty",
+                    data: EMPTY_SYSTEM_RESULTS,
+                });
             }
             return searchSystemAdminEntities({
                 query: trimmedQuery,
@@ -72,19 +87,54 @@ export function SystemOperationsCenter() {
 
         replaceSearchParams(trimmedQuery, entityType);
         startTransition(async () => {
-            const next = await searchWithState(trimmedQuery, entityType);
-            setResults(next);
+            const result = await searchWithState(trimmedQuery, entityType);
+            if (result.status === "transient_error") {
+                setSearchError({
+                    requestId: result.requestId,
+                    message: result.message,
+                });
+                setSelected(null);
+                setHasSearched(true);
+                return;
+            }
+            if (
+                result.status === "forbidden" ||
+                result.status === "not_found"
+            ) {
+                setResults(EMPTY_SYSTEM_RESULTS);
+                setSelected(null);
+                setHasSearched(false);
+                toast.error(result.message ?? "ไม่มีสิทธิ์ค้นหาข้อมูลระบบ");
+                return;
+            }
+            setSearchError(null);
+            setResults(result.data);
             setSelected(null);
             setHasSearched(true);
         });
     }, [entityType, query, replaceSearchParams, searchWithState]);
 
     const refreshSearch = useCallback(async () => {
-        const next = await searchWithState(query, entityType);
-        setResults(next);
+        const result = await searchWithState(query, entityType);
+        if (result.status === "transient_error") {
+            setSearchError({
+                requestId: result.requestId,
+                message: result.message,
+            });
+            return results;
+        }
+        if (
+            result.status === "forbidden" ||
+            result.status === "not_found"
+        ) {
+            toast.error(result.message ?? "ไม่มีสิทธิ์ค้นหาข้อมูลระบบ");
+            return results;
+        }
+        setSearchError(null);
+        setResults(result.data);
         setHasSearched(query.trim().length >= 2);
-        return next;
-    }, [entityType, query, searchWithState]);
+        return result.data;
+    }, [entityType, query, results, searchWithState]);
 
     const handleEntityUpdated = (entity: SystemEntityResult) => {
         setSelected(entity);
@@ -119,8 +169,27 @@ export function SystemOperationsCenter() {
     useEffect(() => {
         if (initialQuery.trim().length < 2) return;
         startTransition(async () => {
-            const next = await searchWithState(initialQuery, initialEntityType);
-            setResults(next);
+            const result = await searchWithState(
+                initialQuery,
+                initialEntityType,
+            );
+            if (result.status === "transient_error") {
+                setSearchError({
+                    requestId: result.requestId,
+                    message: result.message,
+                });
+                setHasSearched(true);
+                return;
+            }
+            if (
+                result.status === "forbidden" ||
+                result.status === "not_found"
+            ) {
+                toast.error(result.message ?? "ไม่มีสิทธิ์ค้นหาข้อมูลระบบ");
+                return;
+            }
+            setSearchError(null);
+            setResults(result.data);
             setHasSearched(true);
         });
     }, [initialEntityType, initialQuery, searchWithState]);
@@ -160,13 +229,21 @@ export function SystemOperationsCenter() {
                                 </span>
                             ) : null}
                         </div>
-                        <SystemResultList
-                            results={flatResults}
-                            selectedId={selected?.id ?? null}
-                            hasSearched={hasSearched}
-                            isPending={isPending}
-                            onSelect={setSelected}
-                        />
+                        {searchError ? (
+                            <QueryErrorState
+                                requestId={searchError.requestId}
+                                message={searchError.message}
+                                onRetry={runSearch}
+                            />
+                        ) : (
+                            <SystemResultList
+                                results={flatResults}
+                                selectedId={selected?.id ?? null}
+                                hasSearched={hasSearched}
+                                isPending={isPending}
+                                onSelect={setSelected}
+                            />
+                        )}
                     </section>
                     <SystemEventPanel />
                 </div>

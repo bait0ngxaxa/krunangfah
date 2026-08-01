@@ -3,7 +3,10 @@
 import { z } from "zod";
 import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
-import { canManageSchoolClasses } from "@/lib/auth/teacher-management-policy";
+import {
+    canManageSchoolClasses,
+    canViewSchoolClasses,
+} from "@/lib/auth/teacher-management-policy";
 import {
     ensureSchoolClassTermsForAcademicYear,
     upsertCurrentSchoolClassTerm,
@@ -14,7 +17,13 @@ import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { schoolInfoSchema } from "@/lib/validations/school.validation";
 import { revalidateDashboardCache } from "./dashboard/cache";
 import { revalidateAnalyticsCache } from "./analytics/cache";
-import { handleActionError } from "./error-handler";
+import { handleActionError, handleQueryError } from "./error-handler";
+import {
+    queryEmpty,
+    queryForbidden,
+    querySuccess,
+    type QueryResult,
+} from "./query-result";
 import type {
     SchoolClassItem,
     SchoolSetupResponse,
@@ -359,37 +368,52 @@ export async function removeSchoolClass(
  */
 export async function getSchoolClasses(
     academicYearId?: string,
-): Promise<SchoolClassItem[]> {
-    const session = await requireAuth();
-    const schoolId = await resolveSchoolId(
-        session.user.id,
-        session.user.schoolId,
-    );
+): Promise<QueryResult<SchoolClassItem[]>> {
+    try {
+        const session = await requireAuth();
+        if (!canViewSchoolClasses(session.user)) {
+            return queryForbidden("ไม่มีสิทธิ์ดูข้อมูลห้องเรียน");
+        }
 
-    if (!schoolId) return [];
+        const schoolId = await resolveSchoolId(
+            session.user.id,
+            session.user.schoolId,
+        );
 
-    const resolvedAcademicYearId =
-        await ensureSchoolClassTermsForAcademicYear(schoolId, academicYearId);
-    const classes = await prisma.schoolClass.findMany({
-        where: { schoolId },
-        orderBy: { name: "asc" },
-        select: {
-            id: true,
-            name: true,
-            expectedStudentCount: true,
-            terms: {
-                where: { academicYearId: resolvedAcademicYearId ?? "" },
-                select: { expectedStudentCount: true },
-                take: 1,
+        if (!schoolId) return queryEmpty([]);
+
+        const resolvedAcademicYearId =
+            await ensureSchoolClassTermsForAcademicYear(
+                schoolId,
+                academicYearId,
+            );
+        const classes = await prisma.schoolClass.findMany({
+            where: { schoolId },
+            orderBy: { name: "asc" },
+            select: {
+                id: true,
+                name: true,
+                expectedStudentCount: true,
+                terms: {
+                    where: { academicYearId: resolvedAcademicYearId ?? "" },
+                    select: { expectedStudentCount: true },
+                    take: 1,
+                },
             },
-        },
-    });
+        });
 
-    return classes.map((schoolClass) => ({
-        id: schoolClass.id,
-        name: schoolClass.name,
-        expectedStudentCount:
-            schoolClass.terms?.[0]?.expectedStudentCount ??
-            schoolClass.expectedStudentCount,
-    }));
+        const schoolClasses = classes.map((schoolClass) => ({
+            id: schoolClass.id,
+            name: schoolClass.name,
+            expectedStudentCount:
+                schoolClass.terms?.[0]?.expectedStudentCount ??
+                schoolClass.expectedStudentCount,
+        }));
+
+        return schoolClasses.length === 0
+            ? queryEmpty(schoolClasses)
+            : querySuccess(schoolClasses);
+    } catch (error) {
+        return handleQueryError("Get school classes error:", error);
+    }
 }

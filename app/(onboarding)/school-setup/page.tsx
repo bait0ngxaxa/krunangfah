@@ -77,10 +77,31 @@ export default async function SchoolSetupPage() {
     let initialRoster: TeacherRosterItem[] = [];
 
     if (hasSchool) {
-        [initialClasses, initialRoster] = await Promise.all([
+        const [classesResult, rosterResult] = await Promise.all([
             getSchoolClasses(currentAcademicYear.id),
             getSchoolRoster(),
         ]);
+        const setupError = [classesResult, rosterResult].find(
+            (result) => result.status === "transient_error",
+        );
+        if (setupError?.status === "transient_error") {
+            return (
+                <QueryErrorState
+                    requestId={setupError.requestId}
+                    message={setupError.message}
+                />
+            );
+        }
+        if (
+            (classesResult.status !== "success" &&
+                classesResult.status !== "empty") ||
+            (rosterResult.status !== "success" &&
+                rosterResult.status !== "empty")
+        ) {
+            redirect("/dashboard");
+        }
+        initialClasses = classesResult.data;
+        initialRoster = rosterResult.data;
     }
 
     return (

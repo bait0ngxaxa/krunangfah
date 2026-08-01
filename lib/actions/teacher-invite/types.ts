@@ -36,8 +36,3 @@ export interface InviteResponse {
 
 // Type for invite in list queries (no academicYear needed)
 export type TeacherInviteWithAcademicYear = TeacherInvite;
-
-export interface InviteListResponse {
-    success: boolean;
-    invites: TeacherInviteWithAcademicYear[];
-}

@@ -7,6 +7,8 @@ import { listMySessions } from "@/lib/actions/session-management.actions";
 import { getMySchoolInfo } from "@/lib/actions/school-info.actions";
 import { getMyTeacherGeneralInfo } from "@/lib/actions/teacher-general-info.actions";
 import { Building2, Lock, ShieldCheck, UserRoundPen } from "lucide-react";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -23,6 +25,21 @@ export default async function SettingsPage() {
         canEditSchool ? getMySchoolInfo() : Promise.resolve(null),
         getMyTeacherGeneralInfo(),
     ]);
+    if (sessionResult.status === "transient_error") {
+        return (
+            <QueryErrorState
+                requestId={sessionResult.requestId}
+                message={sessionResult.message}
+            />
+        );
+    }
+    if (
+        sessionResult.status === "forbidden" ||
+        sessionResult.status === "not_found"
+    ) {
+        redirect("/dashboard");
+    }
+    const sessions = sessionResult.data;
 
     return (
         <div className="min-h-screen bg-slate-50 px-4 py-12">
@@ -100,7 +117,7 @@ export default async function SettingsPage() {
                         </h2>
                     </div>
                     <SessionManagementPanel
-                        initialSessions={sessionResult.sessions}
+                        initialSessions={sessions}
                     />
                 </div>
             </div>

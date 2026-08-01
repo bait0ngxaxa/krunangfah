@@ -4,7 +4,6 @@ export type {
     TeacherInvite,
     TeacherInviteWithAcademicYear,
     InviteResponse,
-    InviteListResponse,
 } from "./types";
 
 export { getTeacherInvite, getMyTeacherInvites } from "./queries";

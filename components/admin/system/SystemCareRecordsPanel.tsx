@@ -14,6 +14,7 @@ import { FilterSelect } from "@/components/ui/FilterSelect";
 import { filterSystemCareRecords } from "@/lib/utils/system-care-record-filter";
 import { SummaryGrid } from "./SystemCareRecordViews";
 import { SystemCareAdminPanel } from "./SystemCareAdminPanel";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import {
     CareRecordSections,
     type DeleteTarget,
@@ -21,6 +22,11 @@ import {
 
 export function SystemCareRecordsPanel({ studentId }: { studentId: string }) {
     const [data, setData] = useState<SystemCareRecordResponse | null>(null);
+    const [queryError, setQueryError] = useState<{
+        requestId: string;
+        message?: string;
+    } | null>(null);
+    const [accessError, setAccessError] = useState<string | null>(null);
     const [selectedPhqId, setSelectedPhqId] = useState("");
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
     const [deleteReason, setDeleteReason] = useState("");
@@ -31,8 +37,27 @@ export function SystemCareRecordsPanel({ studentId }: { studentId: string }) {
         startTransition(async () => {
             const result = await getSystemStudentCareRecords({ studentId });
             if (isActive) {
-                setData(result);
-                setSelectedPhqId(result?.phqResults[0]?.id ?? "");
+                if (result.status === "transient_error") {
+                    setQueryError({
+                        requestId: result.requestId,
+                        message: result.message,
+                    });
+                    return;
+                }
+                if (
+                    result.status === "forbidden" ||
+                    result.status === "not_found"
+                ) {
+                    setAccessError(
+                        result.message ??
+                            "ไม่มีสิทธิ์เข้าถึงข้อมูลการดูแลนักเรียน",
+                    );
+                    return;
+                }
+                setQueryError(null);
+                setAccessError(null);
+                setData(result.data);
+                setSelectedPhqId(result.data.phqResults[0]?.id ?? "");
             }
         });
         return () => {
@@ -60,6 +85,25 @@ export function SystemCareRecordsPanel({ studentId }: { studentId: string }) {
     };
 
     if (!data) {
+        if (queryError) {
+            return (
+                <QueryErrorState
+                    requestId={queryError.requestId}
+                    message={queryError.message}
+                    onRetry={() => window.location.reload()}
+                />
+            );
+        }
+        if (accessError) {
+            return (
+                <p
+                    className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800"
+                    role="alert"
+                >
+                    {accessError}
+                </p>
+            );
+        }
         return (
             <section className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-gray-600">

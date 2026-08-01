@@ -4,8 +4,17 @@ import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import { canViewTeacherInvites } from "@/lib/auth/teacher-management-policy";
 import { hashToken } from "@/lib/auth/token";
-import type { InviteResponse, InviteListResponse } from "./types";
-import { handleActionError } from "../error-handler";
+import type {
+    InviteResponse,
+    TeacherInviteWithAcademicYear,
+} from "./types";
+import { handleActionError, handleQueryError } from "../error-handler";
+import {
+    queryEmpty,
+    queryForbidden,
+    querySuccess,
+    type QueryResult,
+} from "../query-result";
 
 /**
  * ดึงข้อมูล invite จาก token
@@ -49,11 +58,13 @@ export async function getTeacherInvite(token: string): Promise<InviteResponse> {
 /**
  * ดึงรายการ invites ทั้งหมดของโรงเรียน
  */
-export async function getMyTeacherInvites(): Promise<InviteListResponse> {
+export async function getMyTeacherInvites(): Promise<
+    QueryResult<TeacherInviteWithAcademicYear[]>
+> {
     try {
         const session = await requireAuth();
         if (!canViewTeacherInvites(session.user)) {
-            return { success: false, invites: [] };
+            return queryForbidden("ไม่มีสิทธิ์ดูคำเชิญครู");
         }
 
         // Fallback to DB when schoolId was just created in onboarding.
@@ -67,7 +78,7 @@ export async function getMyTeacherInvites(): Promise<InviteListResponse> {
             )?.schoolId;
 
         if (!schoolId) {
-            return { success: true, invites: [] };
+            return queryEmpty([]);
         }
 
         const invites = await prisma.teacherInvite.findMany({
@@ -75,15 +86,14 @@ export async function getMyTeacherInvites(): Promise<InviteListResponse> {
             orderBy: { createdAt: "desc" },
         });
 
-        return {
-            success: true,
-            invites: invites.map((invite) => ({ ...invite, token: "" })),
-        };
+        const sanitizedInvites = invites.map((invite) => ({
+            ...invite,
+            token: "",
+        }));
+        return sanitizedInvites.length === 0
+            ? queryEmpty(sanitizedInvites)
+            : querySuccess(sanitizedInvites);
     } catch (error) {
-        return handleActionError({
-            context: "Get school teacher invites error:",
-            error,
-            fallback: { success: false, invites: [] },
-        });
+        return handleQueryError("Get school teacher invites error:", error);
     }
 }

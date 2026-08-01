@@ -6,16 +6,23 @@ import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { teacherProfileSchema } from "@/lib/validations/teacher.validation";
 import { revalidateDashboardCache } from "./dashboard/cache";
-import { handleActionError } from "./error-handler";
+import { handleActionError, handleQueryError } from "./error-handler";
+import {
+    queryForbidden,
+    queryNotFound,
+    querySuccess,
+    type QueryResult,
+} from "./query-result";
 import type {
     CreateTeacherInput,
+    CurrentTeacherProfile,
     TeacherResponse,
     TeacherProfile,
 } from "@/types/teacher.types";
 
 export async function getTeacherProfile(
     userId: string,
-): Promise<TeacherProfile | null> {
+): Promise<QueryResult<TeacherProfile>> {
     try {
         const session = await requireAuth();
 
@@ -24,19 +31,17 @@ export async function getTeacherProfile(
             session.user.role !== "system_admin" &&
             session.user.id !== userId
         ) {
-            return null;
+            return queryForbidden("ไม่มีสิทธิ์เข้าถึงโปรไฟล์ครูนี้");
         }
 
         const teacher = await prisma.teacher.findUnique({
             where: { userId },
         });
-        return teacher;
+        return teacher
+            ? querySuccess(teacher)
+            : queryNotFound<TeacherProfile>("ไม่พบโปรไฟล์ครู");
     } catch (error) {
-        return handleActionError({
-            context: "Get teacher profile error:",
-            error,
-            fallback: null,
-        });
+        return handleQueryError("Get teacher profile error:", error);
     }
 }
 
@@ -44,7 +49,9 @@ export async function getTeacherProfile(
  * Get current teacher's profile with role (for client components)
  * Replaces /api/teacher/profile
  */
-export async function getCurrentTeacherProfile() {
+export async function getCurrentTeacherProfile(): Promise<
+    QueryResult<CurrentTeacherProfile>
+> {
     try {
         const session = await requireAuth();
         const userId = session.user.id;
@@ -62,21 +69,17 @@ export async function getCurrentTeacherProfile() {
         });
 
         if (!teacher) {
-            return null;
+            return queryNotFound<CurrentTeacherProfile>("ไม่พบโปรไฟล์ครู");
         }
 
-        return {
+        return querySuccess({
             advisoryClass: teacher.advisoryClass,
             user: {
                 role: teacher.user.role,
             },
-        };
-    } catch (error) {
-        return handleActionError({
-            context: "Get current teacher profile error:",
-            error,
-            fallback: null,
         });
+    } catch (error) {
+        return handleQueryError("Get current teacher profile error:", error);
     }
 }
 

@@ -20,6 +20,15 @@ import {
     createMockUsers,
 } from "./helpers/auth-mock";
 import { prisma } from "@/lib/database/prisma";
+import type { QueryResult } from "@/lib/actions/query-result";
+
+function expectQueryData<T>(result: QueryResult<T>): T {
+    expect(["success", "empty"]).toContain(result.status);
+    if (result.status === "success" || result.status === "empty") {
+        return result.data;
+    }
+    throw new Error(`Expected query data, received ${result.status}`);
+}
 
 // ── Setup mocks BEFORE dynamic imports ──
 setupAuthMocks();
@@ -355,7 +364,7 @@ describe("Integration: Onboarding Flow", () => {
         it("อัปเดตจำนวนนักเรียนในห้องได้", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const classes = await getSchoolClasses();
+            const classes = expectQueryData(await getSchoolClasses());
             const target = classes.find((c) => c.name === "ม.1/1");
             expect(target).toBeDefined();
 
@@ -401,7 +410,7 @@ describe("Integration: Onboarding Flow", () => {
         it("ต้องกรอกจำนวนนักเรียนมากกว่า 0 ตอนแก้ไขจำนวนห้องเรียน", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const classes = await getSchoolClasses();
+            const classes = expectQueryData(await getSchoolClasses());
             const target = classes.find((c) => c.name === "ม.1/1");
             expect(target).toBeDefined();
 
@@ -414,7 +423,7 @@ describe("Integration: Onboarding Flow", () => {
         it("ลบห้องเรียนได้", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const classes = await getSchoolClasses();
+            const classes = expectQueryData(await getSchoolClasses());
             const toRemove = classes.find((c) => c.name === "ม.1/2");
             expect(toRemove).toBeDefined();
 
@@ -452,7 +461,7 @@ describe("Integration: Onboarding Flow", () => {
         it("ลบห้องแล้วจำนวนห้องลดลง", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const classes = await getSchoolClasses();
+            const classes = expectQueryData(await getSchoolClasses());
             const names = classes.map((c) => c.name);
 
             expect(names).toContain("ม.1/1");
@@ -479,7 +488,9 @@ describe("Integration: Onboarding Flow", () => {
             );
             expect(updated.success).toBe(true);
 
-            const nextTermClasses = await getSchoolClasses(nextAcademicYearId);
+            const nextTermClasses = expectQueryData(
+                await getSchoolClasses(nextAcademicYearId),
+            );
             const nextTermClass = nextTermClasses.find(
                 (schoolClass) => schoolClass.id === added.data!.id,
             );
@@ -564,7 +575,7 @@ describe("Integration: Onboarding Flow", () => {
             mockSession(USERS.schoolAdmin);
 
             // ดึง email ของ วิชัย จาก roster
-            const roster = await getSchoolRoster();
+            const roster = expectQueryData(await getSchoolRoster());
             const wichai = roster.find((t) => t.firstName === "วิชัย");
             expect(wichai?.email).toBeDefined();
 
@@ -586,7 +597,7 @@ describe("Integration: Onboarding Flow", () => {
         it("ลบครูออกจาก roster ได้", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const roster = await getSchoolRoster();
+            const roster = expectQueryData(await getSchoolRoster());
             const wichai = roster.find((t) => t.firstName === "วิชัย");
             expect(wichai).toBeDefined();
 
@@ -657,7 +668,7 @@ describe("Integration: Onboarding Flow", () => {
             };
             mockSession(staleUser);
 
-            const classes = await getSchoolClasses();
+            const classes = expectQueryData(await getSchoolClasses());
 
             // ม.3/1 ที่เพิ่งสร้างด้านบนต้องอยู่ใน list
             expect(classes.some((c) => c.name === "ม.3/1")).toBe(true);
