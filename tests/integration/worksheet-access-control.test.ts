@@ -16,8 +16,12 @@ import {
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 
-vi.mock("@/lib/cache/redis", () => ({
-    getRedisClient: vi.fn(async () => null),
+vi.mock("@/lib/cache/redis-lock", () => ({
+    acquireRedisLock: vi.fn(async (key: string) => ({
+        key,
+        token: "integration-test-lock",
+    })),
+    releaseRedisLock: vi.fn(async () => undefined),
 }));
 
 vi.mock("@/lib/utils/server-image-compression", () => ({

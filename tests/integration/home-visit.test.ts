@@ -24,8 +24,12 @@ import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
 import type { QueryResult } from "@/lib/actions/query-result";
 
-vi.mock("@/lib/cache/redis", () => ({
-    getRedisClient: vi.fn(async () => null),
+vi.mock("@/lib/cache/redis-lock", () => ({
+    acquireRedisLock: vi.fn(async (key: string) => ({
+        key,
+        token: "integration-test-lock",
+    })),
+    releaseRedisLock: vi.fn(async () => undefined),
 }));
 
 vi.mock("@/lib/utils/server-image-compression", () => ({
@@ -208,7 +212,7 @@ describe("Integration: Home Visits", () => {
         );
     });
 
-    it("keeps concurrent photo uploads within five slots when Redis is unavailable", async () => {
+    it("keeps concurrent photo uploads within five slots", async () => {
         const visit = await prisma.homeVisit.create({
             data: {
                 studentId,
