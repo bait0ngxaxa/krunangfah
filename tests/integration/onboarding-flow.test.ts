@@ -83,7 +83,7 @@ describe("Integration: Onboarding Flow", () => {
                 year: UNIQUE_YEAR,
                 semester: 2,
                 startDate: new Date("2024-11-01"),
-                endDate: new Date("2025-03-31"),
+                endDate: new Date("2025-04-30"),
                 isCurrent: false,
             },
         });

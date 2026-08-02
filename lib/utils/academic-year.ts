@@ -56,13 +56,13 @@ export function getCurrentAcademicYear(
         semester = 2;
         academicYear = beYear;
         startDate = new Date(adYear, 10, 1); // 1 พ.ย.
-        endDate = new Date(adYear + 1, 2, 31); // 31 มี.ค. ปีถัดไป
+        endDate = new Date(adYear + 1, 3, 30); // 30 เม.ย. ปีถัดไป
     } else {
         // เทอม 2 (ม.ค. - เม.ย.) → ปีการศึกษาเป็นปี พ.ศ. ก่อน
         semester = 2;
         academicYear = beYear - 1;
         startDate = new Date(adYear - 1, 10, 1); // 1 พ.ย. ปีก่อน
-        endDate = new Date(adYear, 2, 31); // 31 มี.ค.
+        endDate = new Date(adYear, 3, 30); // 30 เม.ย.
     }
 
     return { year: academicYear, semester, startDate, endDate };
@@ -86,7 +86,7 @@ export function generateAcademicYearData(beYear: number): AcademicYearInfo[] {
             year: beYear,
             semester: 2,
             startDate: new Date(adYear, 10, 1), // 1 พ.ย.
-            endDate: new Date(adYear + 1, 2, 31), // 31 มี.ค. ปีถัดไป
+            endDate: new Date(adYear + 1, 3, 30), // 30 เม.ย. ปีถัดไป
         },
     ];
 }

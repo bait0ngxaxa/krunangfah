@@ -141,7 +141,7 @@ describe("Integration: Counseling Sessions", () => {
                 data: {
                     studentId,
                     sessionNumber: 999,
-                    sessionDate: new Date("2026-06-15"),
+                    sessionDate: new Date("2026-04-30T12:00:00"),
                     counselorName: "ครู legacy",
                     summary: "legacy session without academic year",
                     createdById: USERS.classTeacher.id,
@@ -152,8 +152,8 @@ describe("Integration: Counseling Sessions", () => {
                 await getCounselingSessions(studentId, {
                     academicYearId,
                     dateRange: {
-                        startDate: new Date("2026-06-01"),
-                        endDate: new Date("2026-06-30"),
+                        startDate: new Date("2026-04-01T00:00:00"),
+                        endDate: new Date("2026-04-30T23:59:59.999"),
                     },
                 }),
             );

@@ -162,7 +162,7 @@ describe("Integration: Home Visits", () => {
             data: {
                 studentId,
                 visitNumber: 999,
-                visitDate: new Date("2026-06-20"),
+                visitDate: new Date("2026-04-30T12:00:00"),
                 description: "legacy home visit",
                 teacherName: "ครู legacy",
                 teacherRole: "ครูประจำชั้น",
@@ -174,8 +174,8 @@ describe("Integration: Home Visits", () => {
             await getHomeVisits(studentId, {
                 academicYearId,
                 dateRange: {
-                    startDate: new Date("2026-06-01"),
-                    endDate: new Date("2026-06-30"),
+                    startDate: new Date("2026-04-01T00:00:00"),
+                    endDate: new Date("2026-04-30T23:59:59.999"),
                 },
             }),
         );

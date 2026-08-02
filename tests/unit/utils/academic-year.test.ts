@@ -82,13 +82,13 @@ describe("getCurrentAcademicYear", () => {
             expect(result.year).toBe(2567);
         });
 
-        it("should have correct start and end dates for semester 2 (Nov-Dec)", () => {
+        it("should have correct start and end dates for semester 2 (Nov-Apr)", () => {
             const date = new Date(2024, 10, 15); // November 15, 2024
             const result = getCurrentAcademicYear(date);
             expect(result.startDate.getMonth()).toBe(10); // November (0-indexed)
             expect(result.startDate.getDate()).toBe(1);
-            expect(result.endDate.getMonth()).toBe(2); // March next year (0-indexed)
-            expect(result.endDate.getDate()).toBe(31);
+            expect(result.endDate.getMonth()).toBe(3); // April next year (0-indexed)
+            expect(result.endDate.getDate()).toBe(30);
             expect(result.endDate.getFullYear()).toBe(2025); // Next year
         });
 
@@ -97,25 +97,56 @@ describe("getCurrentAcademicYear", () => {
             const result = getCurrentAcademicYear(date);
             expect(result.startDate.getMonth()).toBe(10); // November previous year
             expect(result.startDate.getFullYear()).toBe(2024);
-            expect(result.endDate.getMonth()).toBe(2); // March (0-indexed)
-            expect(result.endDate.getDate()).toBe(31);
+            expect(result.endDate.getMonth()).toBe(3); // April (0-indexed)
+            expect(result.endDate.getDate()).toBe(30);
             expect(result.endDate.getFullYear()).toBe(2025);
         });
     });
 
     describe("Edge cases - Month boundaries", () => {
-        it("should return semester 2 for April 30, 2024 (last day before new academic year)", () => {
-            const date = new Date(2024, 3, 30); // April 30, 2024
-            const result = getCurrentAcademicYear(date);
-            expect(result.semester).toBe(2);
-            expect(result.year).toBe(2566); // Previous academic year
-        });
-
-        it("should return semester 1 for May 1, 2024 (first day of new academic year)", () => {
-            const date = new Date(2024, 4, 1); // May 1, 2024
-            const result = getCurrentAcademicYear(date);
-            expect(result.semester).toBe(1);
-            expect(result.year).toBe(2567);
+        it.each([
+            {
+                label: "March 31",
+                date: new Date(2025, 2, 31),
+                expected: {
+                    year: 2567,
+                    semester: 2,
+                    startDate: new Date(2024, 10, 1),
+                    endDate: new Date(2025, 3, 30),
+                },
+            },
+            {
+                label: "April 1",
+                date: new Date(2025, 3, 1),
+                expected: {
+                    year: 2567,
+                    semester: 2,
+                    startDate: new Date(2024, 10, 1),
+                    endDate: new Date(2025, 3, 30),
+                },
+            },
+            {
+                label: "April 30",
+                date: new Date(2025, 3, 30),
+                expected: {
+                    year: 2567,
+                    semester: 2,
+                    startDate: new Date(2024, 10, 1),
+                    endDate: new Date(2025, 3, 30),
+                },
+            },
+            {
+                label: "May 1",
+                date: new Date(2025, 4, 1),
+                expected: {
+                    year: 2568,
+                    semester: 1,
+                    startDate: new Date(2025, 4, 15),
+                    endDate: new Date(2025, 9, 15),
+                },
+            },
+        ])("should classify $label at the correct academic boundary", ({ date, expected }) => {
+            expect(getCurrentAcademicYear(date)).toEqual(expected);
         });
 
         it("should return semester 1 for October 31, 2024 (last day of semester 1)", () => {
@@ -168,10 +199,12 @@ describe("getCurrentAcademicYear", () => {
             expect(yearData[0].startDate.getFullYear()).toBe(2026);
             expect(yearData[0].startDate.getMonth()).toBe(4); // May
 
-            // เทอม 2: พ.ย. 2026 - มี.ค. 2027
+            // เทอม 2: พ.ย. 2026 - เม.ย. 2027
             expect(yearData[1].year).toBe(2569);
             expect(yearData[1].semester).toBe(2);
             expect(yearData[1].startDate.getFullYear()).toBe(2026);
+            expect(yearData[1].endDate.getMonth()).toBe(3); // April
+            expect(yearData[1].endDate.getDate()).toBe(30);
             expect(yearData[1].endDate.getFullYear()).toBe(2027);
         });
 
@@ -244,8 +277,8 @@ describe("generateAcademicYearData", () => {
         const semester2 = result[1];
         expect(semester2.startDate.getMonth()).toBe(10); // November
         expect(semester2.startDate.getDate()).toBe(1);
-        expect(semester2.endDate.getMonth()).toBe(2); // March
-        expect(semester2.endDate.getDate()).toBe(31);
+        expect(semester2.endDate.getMonth()).toBe(3); // April
+        expect(semester2.endDate.getDate()).toBe(30);
         expect(semester2.startDate.getFullYear()).toBe(2024); // AD 2024
         expect(semester2.endDate.getFullYear()).toBe(2025); // AD 2025 (next year)
     });

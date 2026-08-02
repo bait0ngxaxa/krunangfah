@@ -21,7 +21,7 @@ const semesterTwo = {
     year: 2568,
     semester: 2,
     startDate: new Date(2025, 10, 1),
-    endDate: new Date(2026, 2, 31),
+    endDate: new Date(2026, 3, 30),
 };
 
 const olderSemester = {
@@ -29,7 +29,7 @@ const olderSemester = {
     year: 2567,
     semester: 2,
     startDate: new Date(2024, 10, 1),
-    endDate: new Date(2025, 2, 31),
+    endDate: new Date(2025, 3, 30),
 };
 
 describe("getUniqueAcademicYears", () => {
@@ -58,7 +58,7 @@ describe("resolveAcademicTermScope", () => {
             year: 2568,
             dateRange: {
                 startDate: new Date(2025, 4, 15, 0, 0, 0, 0),
-                endDate: new Date(2026, 2, 31, 23, 59, 59, 999),
+                endDate: new Date(2026, 3, 30, 23, 59, 59, 999),
             },
         });
     });
@@ -71,7 +71,7 @@ describe("resolveAcademicTermScope", () => {
             semester: 2,
             dateRange: {
                 startDate: new Date(2025, 10, 1, 0, 0, 0, 0),
-                endDate: new Date(2026, 2, 31, 23, 59, 59, 999),
+                endDate: new Date(2026, 3, 30, 23, 59, 59, 999),
             },
         });
     });
@@ -101,7 +101,7 @@ describe("toCareRecordAcademicTermFilter", () => {
         expect(toCareRecordAcademicTermFilter(scope)).toEqual({
             dateRange: {
                 startDate: new Date(2025, 4, 15, 0, 0, 0, 0),
-                endDate: new Date(2026, 2, 31, 23, 59, 59, 999),
+                endDate: new Date(2026, 3, 30, 23, 59, 59, 999),
             },
         });
     });
@@ -112,7 +112,7 @@ describe("toCareRecordAcademicTermFilter", () => {
             academicYearId: "ay-2568-2",
             dateRange: {
                 startDate: new Date(2025, 10, 1, 0, 0, 0, 0),
-                endDate: new Date(2026, 2, 31, 23, 59, 59, 999),
+                endDate: new Date(2026, 3, 30, 23, 59, 59, 999),
             },
         });
     });
@@ -194,7 +194,7 @@ describe("resolveAcademicYearDateRange", () => {
         expect(result).not.toBeNull();
         expect(result?.startDate).toEqual(new Date(2025, 4, 15, 0, 0, 0, 0));
         expect(result?.endDate).toEqual(
-            new Date(2026, 2, 31, 23, 59, 59, 999),
+            new Date(2026, 3, 30, 23, 59, 59, 999),
         );
     });
 
