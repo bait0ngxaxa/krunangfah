@@ -54,6 +54,20 @@ export async function upsertCurrentSchoolClassTerm(
     });
 }
 
+export async function hasMissingSchoolClassTermsForAcademicYear(
+    academicYearId: string,
+): Promise<boolean> {
+    const missingClass = await prisma.schoolClass.findFirst({
+        where: {
+            school: { disabledAt: null, isTestData: false },
+            terms: { none: { academicYearId } },
+        },
+        select: { id: true },
+    });
+
+    return missingClass !== null;
+}
+
 function compareAcademicYearOrder(
     left: { year: number; semester: number },
     right: { year: number; semester: number },

@@ -1,19 +1,15 @@
 import { prisma } from "@/lib/database/prisma";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { acquireRedisLock, releaseRedisLock } from "@/lib/cache/redis-lock";
-import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
+import {
+    ensureSchoolClassTermsForAcademicYear,
+    hasMissingSchoolClassTermsForAcademicYear,
+} from "@/lib/services/school-class-term-service";
 import { getCurrentAcademicYear } from "@/lib/utils/academic-year";
 import type { AcademicYear } from "@/types/teacher.types";
 
 const ACADEMIC_YEAR_LIFECYCLE_LOCK_TTL_SECONDS = 300;
 const SCHOOL_PREPARATION_BATCH_SIZE = 10;
-
-function isSameTerm(
-    term: { year: number; semester: number } | null,
-    current: { year: number; semester: number },
-): boolean {
-    return term?.year === current.year && term.semester === current.semester;
-}
 
 async function prepareCurrentTermForSchools(
     academicYearId: string,
@@ -46,11 +42,6 @@ async function prepareCurrentTermForSchools(
 
 export async function ensureCurrentAcademicYearLifecycle(): Promise<AcademicYear> {
     const current = getCurrentAcademicYear();
-    const previousCurrent = await prisma.academicYear.findFirst({
-        where: { isCurrent: true },
-        orderBy: [{ year: "desc" }, { semester: "desc" }],
-        select: { year: true, semester: true },
-    });
 
     const [, record] = await prisma.$transaction([
         prisma.academicYear.updateMany({
@@ -73,20 +64,27 @@ export async function ensureCurrentAcademicYearLifecycle(): Promise<AcademicYear
         }),
     ]);
 
-    if (!isSameTerm(previousCurrent, current)) {
-        const lock = await acquireRedisLock(
-            `lock:academic-year-lifecycle:${current.year}:${current.semester}`,
-            ACADEMIC_YEAR_LIFECYCLE_LOCK_TTL_SECONDS,
-        );
+    const lock = await acquireRedisLock(
+        `lock:academic-year-lifecycle:${current.year}:${current.semester}`,
+        ACADEMIC_YEAR_LIFECYCLE_LOCK_TTL_SECONDS,
+    );
 
-        if (lock) {
-            try {
+    if (lock) {
+        try {
+            const hasMissingTerms =
+                await hasMissingSchoolClassTermsForAcademicYear(record.id);
+
+            if (hasMissingTerms) {
                 await prepareCurrentTermForSchools(record.id);
                 await revalidateAnalyticsCache();
-            } finally {
-                await releaseRedisLock(lock);
             }
+        } finally {
+            await releaseRedisLock(lock);
         }
+    } else if (await hasMissingSchoolClassTermsForAcademicYear(record.id)) {
+        throw new Error(
+            "Academic year school class term provisioning is not complete",
+        );
     }
 
     return record;

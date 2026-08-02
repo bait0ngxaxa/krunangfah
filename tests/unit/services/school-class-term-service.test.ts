@@ -5,7 +5,10 @@ const prismaMock = vi.hoisted(() => ({
         findFirst: vi.fn(),
         findUnique: vi.fn(),
     },
-    schoolClass: { findMany: vi.fn() },
+    schoolClass: {
+        findMany: vi.fn(),
+        findFirst: vi.fn(),
+    },
     schoolClassTerm: {
         createMany: vi.fn(),
         upsert: vi.fn(),
@@ -14,7 +17,10 @@ const prismaMock = vi.hoisted(() => ({
 
 vi.mock("@/lib/database/prisma", () => ({ prisma: prismaMock }));
 
-import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
+import {
+    ensureSchoolClassTermsForAcademicYear,
+    hasMissingSchoolClassTermsForAcademicYear,
+} from "@/lib/services/school-class-term-service";
 
 describe("school class term service", () => {
     beforeEach(() => {
@@ -68,5 +74,56 @@ describe("school class term service", () => {
             ],
             skipDuplicates: true,
         });
+    });
+
+    it("detects missing terms only for active production school classes", async () => {
+        prismaMock.schoolClass.findFirst.mockResolvedValue({
+            id: "class-missing",
+        });
+
+        await expect(
+            hasMissingSchoolClassTermsForAcademicYear("term-2"),
+        ).resolves.toBe(true);
+
+        expect(prismaMock.schoolClass.findFirst).toHaveBeenCalledWith({
+            where: {
+                school: { disabledAt: null, isTestData: false },
+                terms: { none: { academicYearId: "term-2" } },
+            },
+            select: { id: true },
+        });
+
+        prismaMock.schoolClass.findFirst.mockResolvedValue(null);
+
+        await expect(
+            hasMissingSchoolClassTermsForAcademicYear("term-2"),
+        ).resolves.toBe(false);
+    });
+
+    it("can complete a later retry after term creation fails", async () => {
+        prismaMock.academicYear.findUnique
+            .mockResolvedValueOnce({ id: "term-2" })
+            .mockResolvedValueOnce({ id: "term-2", year: 2569, semester: 1 })
+            .mockResolvedValueOnce({ id: "term-2" })
+            .mockResolvedValueOnce({ id: "term-2", year: 2569, semester: 1 });
+        prismaMock.schoolClass.findMany.mockResolvedValue([
+            {
+                id: "class-missing",
+                expectedStudentCount: 30,
+                terms: [],
+            },
+        ]);
+        prismaMock.schoolClassTerm.createMany
+            .mockRejectedValueOnce(new Error("term storage unavailable"))
+            .mockResolvedValue({ count: 1 });
+
+        await expect(
+            ensureSchoolClassTermsForAcademicYear("school-1", "term-2"),
+        ).rejects.toThrow("term storage unavailable");
+        await expect(
+            ensureSchoolClassTermsForAcademicYear("school-1", "term-2"),
+        ).resolves.toBe("term-2");
+
+        expect(prismaMock.schoolClassTerm.createMany).toHaveBeenCalledTimes(2);
     });
 });

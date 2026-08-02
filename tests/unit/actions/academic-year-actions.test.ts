@@ -7,7 +7,6 @@ import {
 
 const mocks = vi.hoisted(() => ({
     findMany: vi.fn(),
-    findFirst: vi.fn(),
     findSchools: vi.fn(),
     updateMany: vi.fn(),
     upsert: vi.fn(),
@@ -15,6 +14,7 @@ const mocks = vi.hoisted(() => ({
     requireAuth: vi.fn(),
     logError: vi.fn(),
     ensureSchoolClassTerms: vi.fn(),
+    hasMissingSchoolClassTerms: vi.fn(),
     revalidateAnalyticsCache: vi.fn(),
     acquireRedisLock: vi.fn(),
     releaseRedisLock: vi.fn(),
@@ -24,7 +24,6 @@ vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         academicYear: {
             findMany: mocks.findMany,
-            findFirst: mocks.findFirst,
             updateMany: mocks.updateMany,
             upsert: mocks.upsert,
         },
@@ -43,6 +42,7 @@ vi.mock("@/lib/utils/logging", () => ({
 
 vi.mock("@/lib/services/school-class-term-service", () => ({
     ensureSchoolClassTermsForAcademicYear: mocks.ensureSchoolClassTerms,
+    hasMissingSchoolClassTermsForAcademicYear: mocks.hasMissingSchoolClassTerms,
 }));
 
 vi.mock("@/lib/actions/analytics/cache", () => ({
@@ -73,16 +73,12 @@ describe("academic-year.actions", () => {
             updatedAt: new Date(2026, 4, 12),
         });
         mocks.findMany.mockResolvedValue([]);
-        mocks.findFirst.mockResolvedValue({
-            id: "ay-2568-2",
-            year: 2568,
-            semester: 2,
-        });
         mocks.findSchools.mockResolvedValue([
             { id: "school-1" },
             { id: "school-2" },
         ]);
         mocks.ensureSchoolClassTerms.mockResolvedValue("ay-2569-1");
+        mocks.hasMissingSchoolClassTerms.mockResolvedValue(true);
         mocks.revalidateAnalyticsCache.mockResolvedValue(undefined);
         mocks.acquireRedisLock.mockResolvedValue({
             key: "lock:academic-year-lifecycle:2569:1",
@@ -161,11 +157,12 @@ describe("academic-year.actions", () => {
         });
     });
 
-    it("skips term preparation when another lifecycle request holds the lock", async () => {
+    it("does not report lifecycle success while terms are missing and another request holds the lock", async () => {
         mocks.acquireRedisLock.mockResolvedValue(null);
 
-        await getCurrentAcademicYearRecord();
+        const result = await getCurrentAcademicYearRecord();
 
+        expect(result.status).toBe("transient_error");
         expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
         expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
         expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
@@ -211,13 +208,33 @@ describe("academic-year.actions", () => {
         });
     });
 
-    it("does not rebuild terms or invalidate analytics when the current term is unchanged", async () => {
-        mocks.findFirst.mockResolvedValue({ year: 2569, semester: 1 });
+    it("does not rebuild terms or invalidate analytics when all current terms exist", async () => {
+        mocks.hasMissingSchoolClassTerms.mockResolvedValue(false);
 
         await getCurrentAcademicYearRecord();
 
+        expect(mocks.acquireRedisLock).toHaveBeenCalledTimes(1);
         expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
         expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
+    });
+
+    it("retries provisioning on the next request after the first attempt fails", async () => {
+        mocks.findSchools.mockResolvedValue([{ id: "school-1" }]);
+        mocks.ensureSchoolClassTerms
+            .mockRejectedValueOnce(new Error("school preparation unavailable"))
+            .mockResolvedValue("ay-2569-1");
+
+        const firstResult = await getCurrentAcademicYearRecord();
+        const secondResult = await getCurrentAcademicYearRecord();
+
+        expect(firstResult.status).toBe("transient_error");
+        expect(secondResult).toEqual({
+            status: "success",
+            data: expect.objectContaining({ id: "ay-2569-1" }),
+        });
+        expect(mocks.ensureSchoolClassTerms).toHaveBeenCalledTimes(2);
+        expect(mocks.releaseRedisLock).toHaveBeenCalledTimes(2);
+        expect(mocks.revalidateAnalyticsCache).toHaveBeenCalledTimes(1);
     });
 
     it("returns every academic year for filters and history views", async () => {

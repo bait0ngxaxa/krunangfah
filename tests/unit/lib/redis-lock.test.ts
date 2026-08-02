@@ -60,17 +60,21 @@ describe("lib/redis-lock", () => {
         });
     });
 
-    it("allows fallback execution when Redis is unavailable", async () => {
+    it("fails closed when Redis is unavailable", async () => {
         mocks.getRedisClient.mockResolvedValue(null);
 
         const lock = await acquireRedisLock("lock:test", 30);
-        await releaseRedisLock(lock as RedisLock);
 
-        expect(lock).toEqual({
-            key: "lock:test",
-            token: "redis-unavailable",
-        });
+        expect(lock).toBeNull();
         expect(mocks.sendCommand).not.toHaveBeenCalled();
         expect(mocks.eval).not.toHaveBeenCalled();
+    });
+
+    it("fails closed when Redis lock acquisition errors", async () => {
+        mocks.sendCommand.mockRejectedValue(new Error("Redis unavailable"));
+
+        const lock = await acquireRedisLock("lock:test", 30);
+
+        expect(lock).toBeNull();
     });
 });

@@ -22,13 +22,14 @@ export async function acquireRedisLock(
     key: string,
     ttlSeconds: number,
 ): Promise<RedisLock | null> {
-    const client = await getRedisClient();
-    if (!client) {
-        return { key, token: "redis-unavailable" };
-    }
-
     const token = createLockToken();
     try {
+        const client = await getRedisClient();
+        // Lock-dependent operations fail closed when Redis is unavailable.
+        if (!client) {
+            return null;
+        }
+
         const result: unknown = await client.sendCommand([
             "SET",
             key,
@@ -41,21 +42,17 @@ export async function acquireRedisLock(
         return result === "OK" ? { key, token } : null;
     } catch (error) {
         logError("Redis lock acquire error:", error);
-        return { key, token: "redis-error" };
+        return null;
     }
 }
 
 export async function releaseRedisLock(lock: RedisLock): Promise<void> {
-    if (lock.token === "redis-unavailable" || lock.token === "redis-error") {
-        return;
-    }
-
-    const client = await getRedisClient();
-    if (!client) {
-        return;
-    }
-
     try {
+        const client = await getRedisClient();
+        if (!client) {
+            return;
+        }
+
         await client.eval(RELEASE_LOCK_SCRIPT, {
             keys: [lock.key],
             arguments: [lock.token],
