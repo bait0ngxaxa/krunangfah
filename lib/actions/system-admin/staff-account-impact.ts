@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { normalizeEmail } from "@/lib/utils/email";
 
 type Tx = Prisma.TransactionClient;
 
@@ -194,11 +195,14 @@ async function deleteStaffAccountData(
     tx: Tx,
     target: StaffAccountTargetForImpact,
 ): Promise<StaffAccountCleanupCounts> {
+    const normalizedEmail = normalizeEmail(target.email);
     const [invites, sessions, resetTokens, roster, referrals] = await Promise.all([
         deleteStaffInvites(tx, target),
         tx.userSession.deleteMany({ where: { userId: target.id } }),
-        tx.passwordResetToken.deleteMany({ where: { email: target.email } }),
-        tx.schoolTeacherRoster.deleteMany({ where: { email: target.email } }),
+        tx.passwordResetToken.deleteMany({
+            where: { email: normalizedEmail },
+        }),
+        tx.schoolTeacherRoster.deleteMany({ where: { email: normalizedEmail } }),
         tx.studentReferral.deleteMany({
             where: {
                 OR: [
@@ -222,15 +226,16 @@ async function deleteStaffInvites(
     tx: Tx,
     target: StaffAccountTargetForImpact,
 ): Promise<{ teacherInviteCount: number; schoolAdminInviteCount: number }> {
+    const normalizedEmail = normalizeEmail(target.email);
     const [teacherInvites, schoolAdminInvites] = await Promise.all([
         tx.teacherInvite.deleteMany({
             where: {
-                OR: [{ invitedById: target.id }, { email: target.email }],
+                OR: [{ invitedById: target.id }, { email: normalizedEmail }],
             },
         }),
         tx.schoolAdminInvite.deleteMany({
             where: {
-                OR: [{ createdBy: target.id }, { email: target.email }],
+                OR: [{ createdBy: target.id }, { email: normalizedEmail }],
             },
         }),
     ]);
@@ -245,7 +250,7 @@ function createStaffSnapshot(
 ): Prisma.InputJsonObject {
     return {
         id: target.id,
-        email: target.email,
+        email: normalizeEmail(target.email),
         name: target.name,
         role: target.role,
     };

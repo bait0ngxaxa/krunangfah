@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { getCurrentAcademicYear } from "../lib/utils/academic-year";
+import { normalizeEmail } from "../lib/utils/email";
 
 const prisma = new PrismaClient();
 
@@ -19,7 +20,7 @@ async function seedSystemAdmin(): Promise<void> {
         return;
     }
 
-    const normalizedEmail = adminEmail.toLowerCase().trim();
+    const normalizedEmail = normalizeEmail(adminEmail);
     const hashedPassword = await hash(adminPassword, 12);
 
     // Upsert User — สร้างใหม่ถ้ายังไม่มี, อัปเดต role ถ้ามีแล้ว

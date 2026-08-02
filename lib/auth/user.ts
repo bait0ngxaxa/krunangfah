@@ -7,6 +7,7 @@
 
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/database/prisma";
+import { normalizeEmail } from "@/lib/utils/email";
 import { logError } from "@/lib/utils/logging";
 import type {
     ExtendedUser,
@@ -33,9 +34,11 @@ export async function createUser(
     credentials: SignUpCredentials,
 ): Promise<AuthResponse> {
     try {
+        const email = normalizeEmail(credentials.email);
+
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
-            where: { email: credentials.email },
+            where: { email },
         });
 
         if (existingUser) {
@@ -50,14 +53,14 @@ export async function createUser(
 
         // Check if email is in system_admin whitelist
         const isWhitelisted = await prisma.systemAdminWhitelist.findUnique({
-            where: { email: credentials.email, isActive: true },
+            where: { email, isActive: true },
         });
 
         // Create user with basic info only (no name, no school yet)
         // Name and school will be set when creating Teacher profile
         const user = await prisma.user.create({
             data: {
-                email: credentials.email,
+                email,
                 password: hashedPassword,
                 role: isWhitelisted ? "system_admin" : "school_admin",
             },

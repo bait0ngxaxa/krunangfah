@@ -49,7 +49,7 @@ describe("lib/user", () => {
         expect(prisma.user.create).not.toHaveBeenCalled();
     });
 
-    it("createUser creates school_admin when email is not whitelisted", async () => {
+    it("createUser normalizes email before lookup and persistence", async () => {
         vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null as never);
         vi.mocked(hash).mockResolvedValue("hashed-password" as never);
         vi.mocked(prisma.systemAdminWhitelist.findUnique).mockResolvedValueOnce(
@@ -69,11 +69,17 @@ describe("lib/user", () => {
         } as never);
 
         const result = await createUser({
-            email: "new@test.local",
+            email: " New@Test.Local ",
             password: "Password123!",
         });
 
         expect(result.success).toBe(true);
+        expect(prisma.user.findUnique).toHaveBeenCalledWith({
+            where: { email: "new@test.local" },
+        });
+        expect(prisma.systemAdminWhitelist.findUnique).toHaveBeenCalledWith({
+            where: { email: "new@test.local", isActive: true },
+        });
         expect(prisma.user.create).toHaveBeenCalledWith({
             data: {
                 email: "new@test.local",
@@ -106,11 +112,17 @@ describe("lib/user", () => {
         } as never);
 
         const result = await createUser({
-            email: "sa@test.local",
+            email: "SA@Test.Local",
             password: "Password123!",
         });
 
         expect(result.success).toBe(true);
+        expect(prisma.user.findUnique).toHaveBeenCalledWith({
+            where: { email: "sa@test.local" },
+        });
+        expect(prisma.systemAdminWhitelist.findUnique).toHaveBeenCalledWith({
+            where: { email: "sa@test.local", isActive: true },
+        });
         expect(prisma.user.create).toHaveBeenCalledWith({
             data: {
                 email: "sa@test.local",

@@ -30,6 +30,18 @@ describe("teacherInviteSchema", () => {
             }
         });
 
+        it("should normalize email casing and surrounding whitespace", () => {
+            const result = teacherInviteSchema.safeParse({
+                ...validData,
+                email: " Teacher@School.ac.th ",
+            });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.email).toBe("teacher@school.ac.th");
+            }
+        });
+
         it("should accept all valid user roles", () => {
             USER_ROLE_VALUES.forEach((role) => {
                 const data = { ...validData, userRole: role };

@@ -184,13 +184,17 @@ describe("lib/auth/session-store", () => {
         });
 
         const result = await signInWithPassword(
-            { email: "teacher@example.com", password: "password" },
+            { email: " Teacher@Example.com ", password: "password" },
             createHeaderGetter(
                 "Mozilla/5.0 Chrome/125.0.0.0 Safari/537.36",
             ),
         );
 
         expect(result.success).toBe(true);
+        expect(mocks.userFindUnique).toHaveBeenCalledWith({
+            where: { email: "teacher@example.com" },
+            include: { school: { select: { disabledAt: true } } },
+        });
         expect(mocks.userSessionCreate).toHaveBeenCalledWith({
             data: expect.objectContaining({
                 userId: "user-1",

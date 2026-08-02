@@ -8,6 +8,7 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/database/prisma";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
+import { normalizeEmail } from "@/lib/utils/email";
 
 /** Token lifetime: 1 hour */
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000;
@@ -59,19 +60,21 @@ export function generateInviteToken(): string {
 export async function generatePasswordResetToken(
     email: string,
 ): Promise<string> {
+    const normalizedEmail = normalizeEmail(email);
+
     return runSerializableTransaction(async (tx) => {
         const token = crypto.randomUUID();
         const tokenHash = hashPasswordResetToken(token);
         const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MS);
 
         await tx.passwordResetToken.upsert({
-            where: { email },
+            where: { email: normalizedEmail },
             update: {
                 token: tokenHash,
                 expiresAt,
             },
             create: {
-                email,
+                email: normalizedEmail,
                 token: tokenHash,
                 expiresAt,
             },

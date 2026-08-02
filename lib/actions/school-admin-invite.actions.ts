@@ -13,6 +13,7 @@ import type {
 } from "@/types/school-admin-invite.types";
 import type { AuthResponse } from "@/types/auth.types";
 import { handleActionError } from "./error-handler";
+import { normalizeEmail } from "@/lib/utils/email";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 import {
     acceptInvite,
@@ -22,7 +23,11 @@ import {
 
 const INVITES_PATH = "/admin/invites";
 
-const emailSchema = z.string().email("อีเมลไม่ถูกต้อง");
+const emailSchema = z
+    .string()
+    .trim()
+    .email("อีเมลไม่ถูกต้อง")
+    .transform(normalizeEmail);
 
 /**
  * สร้าง invite link สำหรับ admin (system_admin only)
@@ -48,7 +53,7 @@ export async function createSchoolAdminInvite(
             return { success: false, message: "บทบาทไม่ถูกต้อง" };
         }
 
-        const normalizedEmail = parsedEmail.data.toLowerCase().trim();
+        const normalizedEmail = normalizeEmail(parsedEmail.data);
 
         // Check if email already has a user account
         const existingUser = await prisma.user.findUnique({
@@ -212,7 +217,10 @@ export async function validateInviteToken(
         throw new Error("คำเชิญหมดอายุแล้ว");
     }
 
-    return { email: invite.email, role: invite.role as InviteRole };
+    return {
+        email: normalizeEmail(invite.email),
+        role: invite.role as InviteRole,
+    };
 }
 
 async function checkSchoolAdminInviteToken(
@@ -294,10 +302,11 @@ async function acceptClaimedSchoolAdminInvite(
                 } satisfies AuthResponse;
             }
 
+            const normalizedEmail = normalizeEmail(invite.email);
             const inviteRole = invite.role as InviteRole;
             await tx.user.create({
                 data: {
-                    email: invite.email,
+                    email: normalizedEmail,
                     password: context.hashedPassword,
                     role: inviteRole,
                     isPrimary: inviteRole === "school_admin",
@@ -307,9 +316,9 @@ async function acceptClaimedSchoolAdminInvite(
             // system_admin: เพิ่มเข้า whitelist เพื่อให้ auto-promote ทำงาน
             if (inviteRole === "system_admin") {
                 await tx.systemAdminWhitelist.upsert({
-                    where: { email: invite.email },
+                    where: { email: normalizedEmail },
                     update: { isActive: true },
-                    create: { email: invite.email },
+                    create: { email: normalizedEmail },
                 });
             }
 

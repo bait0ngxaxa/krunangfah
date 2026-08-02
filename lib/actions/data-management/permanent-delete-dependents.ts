@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { normalizeEmail } from "@/lib/utils/email";
 
 type Tx = Prisma.TransactionClient;
 export type SchoolUserForDelete = { id: string; email: string | null };
@@ -163,5 +164,7 @@ async function deleteSchoolUserDependents(
 }
 
 function getUserEmails(users: SchoolUserForDelete[]): string[] {
-    return users.flatMap(({ email }) => (email ? [email] : []));
+    return users.flatMap(({ email }) =>
+        email ? [normalizeEmail(email)] : [],
+    );
 }

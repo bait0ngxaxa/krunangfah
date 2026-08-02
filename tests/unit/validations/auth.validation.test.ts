@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { ZodIssue } from "zod";
 import {
     signInSchema,
+    forgotPasswordSchema,
     inviteRegisterSchema,
     type SignInFormData,
     type InviteRegisterFormData,
@@ -28,6 +29,18 @@ describe("signInSchema", () => {
             };
             const result = signInSchema.safeParse(data);
             expect(result.success).toBe(true);
+        });
+
+        it("should normalize email casing and surrounding whitespace", () => {
+            const result = signInSchema.safeParse({
+                email: " Teacher@School.ac.th ",
+                password: "password123",
+            });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.email).toBe("teacher@school.ac.th");
+            }
         });
     });
 
@@ -104,6 +117,19 @@ describe("signInSchema", () => {
             const result = signInSchema.safeParse(data);
             expect(result.success).toBe(false);
         });
+    });
+});
+
+describe("forgotPasswordSchema", () => {
+    it("normalizes email casing and surrounding whitespace", () => {
+        const result = forgotPasswordSchema.safeParse({
+            email: " Teacher@School.ac.th ",
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.email).toBe("teacher@school.ac.th");
+        }
     });
 });
 

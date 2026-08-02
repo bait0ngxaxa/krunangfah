@@ -8,6 +8,7 @@ import { deleteUserSessionCaches } from "@/lib/auth/session-cache";
 import { invalidateUserSessionCaches } from "@/lib/auth/session-store";
 import { prisma } from "@/lib/database/prisma";
 import { logError } from "@/lib/utils/logging";
+import { normalizeEmail } from "@/lib/utils/email";
 import type {
     SystemStaffAccountActionInput,
     SystemStaffAccountPermanentDeleteInput,
@@ -191,7 +192,7 @@ function validatePermanentDeleteTarget(
     if (target.role === "system_admin") return failure("ไม่สามารถลบ System Admin");
     if (target.isPrimary) return failure("ไม่สามารถลบ Primary Admin");
     if (!target.deletedAt) return failure("ต้องปิดบัญชีก่อนลบถาวร");
-    if (confirmation.trim().toLowerCase() !== target.email.toLowerCase()) {
+    if (normalizeEmail(confirmation) !== normalizeEmail(target.email)) {
         return failure("อีเมลยืนยันไม่ตรงกับบัญชีที่ต้องการลบ");
     }
     return null;

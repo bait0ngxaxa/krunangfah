@@ -1,7 +1,15 @@
 import { z } from "zod";
+import { normalizeEmail } from "@/lib/utils/email";
+
+const emailSchema = z
+    .string()
+    .trim()
+    .email("อีเมลไม่ถูกต้อง")
+    .max(254, "อีเมลยาวเกินไป")
+    .transform(normalizeEmail);
 
 export const signInSchema = z.object({
-    email: z.string().trim().email("อีเมลไม่ถูกต้อง").max(254, "อีเมลยาวเกินไป"),
+    email: emailSchema,
     password: z.string().min(1, "กรุณากรอกรหัสผ่าน"),
 });
 
@@ -25,7 +33,7 @@ export const inviteAcceptanceSchema = z.object({
 });
 
 export const forgotPasswordSchema = z.object({
-    email: z.string().trim().email("อีเมลไม่ถูกต้อง").max(254, "อีเมลยาวเกินไป"),
+    email: emailSchema,
 });
 
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;

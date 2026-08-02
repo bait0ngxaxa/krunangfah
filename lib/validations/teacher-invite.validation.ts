@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
+import { normalizeEmail } from "@/lib/utils/email";
 
 export const PROJECT_ROLE_VALUES = ["lead", "care", "coordinate"] as const;
 export const USER_ROLE_VALUES = ["school_admin", "class_teacher"] as const;
@@ -10,7 +11,7 @@ export const teacherInviteSchema = z.object({
         .trim()
         .min(1, "กรุณากรอกอีเมล")
         .email("อีเมลไม่ถูกต้อง")
-        .transform((email) => email.toLowerCase()),
+        .transform(normalizeEmail),
     firstName: z
         .string()
         .min(1, "กรุณากรอกชื่อ")

@@ -15,6 +15,7 @@ import {
     pickRateLimitResult,
 } from "@/lib/rate-limit/errors";
 import { createEmailRateLimitKey } from "@/lib/rate-limit/keys";
+import { normalizeEmail } from "@/lib/utils/email";
 import { signInSchema } from "@/lib/validations/auth.validation";
 import {
     getUserSessionVersion,
@@ -109,7 +110,8 @@ export async function signInWithPassword(
         return { success: false, message: "ข้อมูลเข้าสู่ระบบไม่ถูกต้อง" };
     }
 
-    const { email, password } = parsed.data;
+    const { password } = parsed.data;
+    const email = normalizeEmail(parsed.data.email);
     const rateLimitFailure = await checkSigninRateLimit(email, headerGetter);
     if (rateLimitFailure) return rateLimitFailure;
 

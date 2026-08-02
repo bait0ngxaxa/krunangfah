@@ -62,7 +62,7 @@ describe("lib/token", () => {
             {} as never,
         );
 
-        const token = await generatePasswordResetToken("u@test.local");
+        const token = await generatePasswordResetToken(" U@Test.Local ");
 
         expect(token).toBe("123e4567-e89b-12d3-a456-426614174000");
         expect(prisma.$transaction).toHaveBeenCalledTimes(1);

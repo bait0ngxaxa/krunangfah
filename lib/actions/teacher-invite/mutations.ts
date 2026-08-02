@@ -10,6 +10,7 @@ import {
 import { generateInviteToken, hashToken } from "@/lib/auth/token";
 import { revalidatePath } from "next/cache";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
+import { normalizeEmail } from "@/lib/utils/email";
 import type { TeacherInviteFormData } from "@/lib/validations/teacher-invite.validation";
 import { teacherInviteSchema } from "@/lib/validations/teacher-invite.validation";
 import type { InviteResponse } from "./types";
@@ -61,6 +62,7 @@ export async function createTeacherInvite(
         }
 
         const data = parsed.data;
+        const normalizedEmail = normalizeEmail(data.email);
         const schoolId = user.schoolId;
 
         // Token is single-use and must be unguessable.
@@ -76,7 +78,12 @@ export async function createTeacherInvite(
                   })
                 : null;
 
-            if (rosterId && (!roster || roster.email !== data.email)) {
+            if (
+                rosterId &&
+                (!roster ||
+                    !roster.email ||
+                    normalizeEmail(roster.email) !== normalizedEmail)
+            ) {
                 return {
                     success: false,
                     message: "ไม่พบรายชื่อครูที่ตรงกับคำเชิญ",
@@ -84,7 +91,7 @@ export async function createTeacherInvite(
             }
 
             const existingUser = await tx.user.findUnique({
-                where: { email: data.email },
+                where: { email: normalizedEmail },
                 select: { id: true },
             });
 
@@ -97,8 +104,8 @@ export async function createTeacherInvite(
 
             const now = new Date();
             const inviteIdentityWhere = rosterId
-                ? { OR: [{ rosterId }, { email: data.email }] }
-                : { email: data.email };
+                ? { OR: [{ rosterId }, { email: normalizedEmail }] }
+                : { email: normalizedEmail };
 
             const activeInvite = await tx.teacherInvite.findFirst({
                 where: {
@@ -137,7 +144,7 @@ export async function createTeacherInvite(
 
             const inviteData = {
                 token: tokenHash,
-                email: data.email,
+                email: normalizedEmail,
                 firstName: data.firstName,
                 lastName: data.lastName,
                 age: Number(data.age),
@@ -273,7 +280,7 @@ async function acceptClaimedTeacherInvite(
 
             const user = await tx.user.create({
                 data: {
-                    email: invite.email,
+                    email: normalizeEmail(invite.email),
                     name: `${invite.firstName} ${invite.lastName}`,
                     password: context.hashedPassword,
                     role: invite.userRole,

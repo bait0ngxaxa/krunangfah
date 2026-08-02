@@ -7,6 +7,7 @@
  */
 
 import { Resend } from "resend";
+import { normalizeEmail } from "@/lib/utils/email";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -76,13 +77,14 @@ export async function sendPasswordResetEmail(
     email: string,
     token: string,
 ): Promise<void> {
+    const normalizedEmail = normalizeEmail(email);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const from = process.env.EMAIL_FROM ?? "Krunangfah <noreply@krucarejai.com>";
     const resetLink = `${appUrl}/reset-password?token=${token}`;
 
     const payload = {
         from,
-        to: email,
+        to: normalizedEmail,
         subject: "รีเซ็ตรหัสผ่าน — Krunangfah",
         html: buildPasswordResetHtml(resetLink, appUrl),
     };

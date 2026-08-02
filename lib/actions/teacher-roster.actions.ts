@@ -15,6 +15,7 @@ import {
     type QueryResult,
 } from "./query-result";
 import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
+import { normalizeEmail } from "@/lib/utils/email";
 import {
     teacherRosterSchema,
     type TeacherRosterFormData,
@@ -122,8 +123,9 @@ async function validateRosterEmailAvailable(
     email: string,
     excludeRosterId?: string,
 ): Promise<string | null> {
+    const normalizedEmail = normalizeEmail(email);
     const existingUser = await prisma.user.findUnique({
-        where: { email },
+        where: { email: normalizedEmail },
         select: { id: true },
     });
 
@@ -133,7 +135,7 @@ async function validateRosterEmailAvailable(
 
     const existingInvite = await prisma.teacherInvite.findFirst({
         where: {
-            email,
+            email: normalizedEmail,
             acceptedAt: null,
             expiresAt: { gt: new Date() },
         },
@@ -147,14 +149,14 @@ async function validateRosterEmailAvailable(
     const existingRoster = await prisma.schoolTeacherRoster.findFirst({
         where: {
             schoolId,
-            email,
+            email: normalizedEmail,
             ...(excludeRosterId ? { id: { not: excludeRosterId } } : {}),
         },
         select: { id: true },
     });
 
     if (existingRoster) {
-        return `อีเมล "${email}" มีอยู่ใน roster แล้ว`;
+        return `อีเมล "${normalizedEmail}" มีอยู่ใน roster แล้ว`;
     }
 
     return null;
@@ -189,7 +191,7 @@ export async function addTeacherToRoster(
         }
 
         const { email, ...rest } = parsed.data;
-        const cleanEmail = email.trim();
+        const cleanEmail = normalizeEmail(email);
 
         const emailConflict = await validateRosterEmailAvailable(
             schoolId,
@@ -390,7 +392,7 @@ export async function updateRosterEntry(
         }
 
         const { email, ...rest } = parsed.data;
-        const cleanEmail = email.trim();
+        const cleanEmail = normalizeEmail(email);
 
         const emailConflict = await validateRosterEmailAvailable(
             schoolId,

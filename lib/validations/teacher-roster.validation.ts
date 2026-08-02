@@ -3,6 +3,7 @@ import { UserRole, ProjectRole } from "@prisma/client";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { ADMIN_ADVISORY_CLASS } from "@/lib/constants/advisory-class";
 import { sanitizeName, sanitizeText } from "@/lib/utils/text-sanitizer";
+import { normalizeEmail } from "@/lib/utils/email";
 
 // ดึง enum values จาก Prisma โดยตรง — ไม่ hardcode
 const projectRoleValues = Object.values(ProjectRole) as [string, ...string[]];
@@ -30,7 +31,7 @@ export const teacherRosterSchema = z
             .trim()
             .min(1, "กรุณากรอกอีเมล")
             .email("อีเมลไม่ถูกต้อง")
-            .transform((email) => email.toLowerCase()),
+            .transform(normalizeEmail),
         age: z
             .number({ error: "กรุณากรอกอายุเป็นตัวเลข" })
             .min(18, "อายุต้องมากกว่า 18 ปี")

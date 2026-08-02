@@ -1,11 +1,8 @@
 import { createHash } from "crypto";
+import { normalizeEmail } from "@/lib/utils/email";
 
 function hashRateLimitPart(value: string): string {
     return createHash("sha256").update(value).digest("hex").slice(0, 32);
-}
-
-function normalizePart(value: string): string {
-    return value.trim().toLowerCase();
 }
 
 export function createEmailRateLimitKey(
@@ -13,7 +10,7 @@ export function createEmailRateLimitKey(
     email: string,
 ): string {
     return `ip:${hashRateLimitPart(requestKey)}:email:${hashRateLimitPart(
-        normalizePart(email),
+        normalizeEmail(email),
     )}`;
 }
 

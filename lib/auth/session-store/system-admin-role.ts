@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/database/prisma";
+import { normalizeEmail } from "@/lib/utils/email";
 import type { UserRole } from "@/types/auth.types";
 
 export async function syncSystemAdminRole(user: {
@@ -6,8 +7,9 @@ export async function syncSystemAdminRole(user: {
     email: string;
     role: UserRole;
 }): Promise<UserRole> {
+    const email = normalizeEmail(user.email);
     const whitelisted = await prisma.systemAdminWhitelist.findUnique({
-        where: { email: user.email, isActive: true },
+        where: { email, isActive: true },
         select: { id: true },
     });
 

@@ -29,6 +29,7 @@ import {
     hashPasswordResetToken,
 } from "@/lib/auth/token";
 import { sendPasswordResetEmail } from "@/lib/notifications/email";
+import { normalizeEmail } from "@/lib/utils/email";
 import { logError } from "@/lib/utils/logging";
 import {
     forgotPasswordSchema,
@@ -71,7 +72,10 @@ export async function requestPasswordReset(input: {
         TRUSTED_PROXY_HEADERS,
     );
     const rawEmail = typeof input?.email === "string" ? input.email : "";
-    const emailRateLimitKey = createEmailRateLimitKey(rateLimitKey, rawEmail);
+    const emailRateLimitKey = createEmailRateLimitKey(
+        rateLimitKey,
+        normalizeEmail(rawEmail),
+    );
     const rateLimitResult =
         await forgotPasswordRequestLimiter.check(emailRateLimitKey);
 
@@ -91,7 +95,7 @@ export async function requestPasswordReset(input: {
         return { success: false, message: parsed.error.issues[0].message };
     }
 
-    const { email } = parsed.data;
+    const email = normalizeEmail(parsed.data.email);
 
     // --- Check user existence (silently) ---
     const user = await prisma.user.findUnique({ where: { email } });
@@ -194,11 +198,13 @@ export async function resetPassword(input: {
             } satisfies ActionResult;
         }
 
+        const normalizedEmail = normalizeEmail(record.email);
+
         // Invalidate all sessions atomically with the password change:
         // a user resetting a forgotten password often does so because the
         // account was compromised — keep no stale sessions alive.
         const updatedUser = await tx.user.update({
-            where: { email: record.email },
+            where: { email: normalizedEmail },
             data: { password: hashedPassword },
             select: { id: true },
         });
