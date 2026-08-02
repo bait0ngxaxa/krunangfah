@@ -123,12 +123,12 @@ async function withWorksheetUploadLock(
     activityProgressId: string,
     callback: () => Promise<UploadWorksheetResult>,
 ): Promise<UploadWorksheetResult> {
-    const lock = await acquireRedisLock(
+    const lockResult = await acquireRedisLock(
         createWorksheetUploadLockKey(activityProgressId),
         WORKSHEET_UPLOAD_LOCK_TTL_SECONDS,
     );
 
-    if (!lock) {
+    if (lockResult.status === "contended") {
         return {
             success: false,
             message: "มีการอัปโหลดใบงานนี้อยู่ กรุณารอสักครู่แล้วลองใหม่",
@@ -137,10 +137,18 @@ async function withWorksheetUploadLock(
         };
     }
 
+    if (lockResult.status === "unavailable") {
+        logError(
+            "Worksheet upload lock unavailable; using database-safe fallback:",
+            new Error(lockResult.reason),
+        );
+        return callback();
+    }
+
     try {
         return await callback();
     } finally {
-        await releaseRedisLock(lock);
+        await releaseRedisLock(lockResult.lock);
     }
 }
 

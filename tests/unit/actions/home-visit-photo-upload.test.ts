@@ -102,8 +102,11 @@ describe("uploadHomeVisitPhoto", () => {
             physicalFiles.delete(filePath);
         });
         mocks.acquireRedisLock.mockResolvedValue({
-            key: "home-visit-photo-lock",
-            token: "lock-token",
+            status: "acquired",
+            lock: {
+                key: "home-visit-photo-lock",
+                token: "lock-token",
+            },
         });
         mocks.releaseRedisLock.mockResolvedValue(undefined);
         mocks.validateFileSignature.mockReturnValue(true);
@@ -173,6 +176,43 @@ describe("uploadHomeVisitPhoto", () => {
             "Failed to revalidate after home visit photo upload:",
             expect.any(Error),
         );
+    });
+
+    it("returns an in-progress error when another upload holds the lock", async () => {
+        mocks.acquireRedisLock.mockResolvedValue({ status: "contended" });
+
+        const result = await uploadHomeVisitPhoto(
+            "visit-1",
+            createUploadFormData(),
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "มีการอัปโหลดรูปภาพนี้อยู่ กรุณารอสักครู่แล้วลองใหม่",
+            error: "UPLOAD_IN_PROGRESS",
+            retryable: true,
+        });
+        expect(mocks.writeFile).not.toHaveBeenCalled();
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
+    });
+
+    it("uses the database-safe fallback when the lock service is unavailable", async () => {
+        mocks.acquireRedisLock.mockResolvedValue({
+            status: "unavailable",
+            reason: "command_failed",
+        });
+
+        const result = await uploadHomeVisitPhoto(
+            "visit-1",
+            createUploadFormData(),
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.error).not.toBe("UPLOAD_IN_PROGRESS");
+        expect(mocks.writeFile).toHaveBeenCalledOnce();
+        expect(mocks.transaction).toHaveBeenCalledOnce();
+        expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
     });
 });
 

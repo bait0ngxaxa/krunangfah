@@ -171,7 +171,7 @@ describe("uploadWorksheet lock", () => {
     });
 
     it("returns an in-progress error when another upload holds the lock", async () => {
-        mocks.acquireRedisLock.mockResolvedValue(null);
+        mocks.acquireRedisLock.mockResolvedValue({ status: "contended" });
 
         const result = await uploadWorksheet(
             "progress-1",
@@ -193,9 +193,38 @@ describe("uploadWorksheet lock", () => {
         expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
     });
 
+    it("uses the database-safe fallback when the lock service is unavailable", async () => {
+        mocks.acquireRedisLock.mockResolvedValue({
+            status: "unavailable",
+            reason: "client_unavailable",
+        });
+        mocks.existsSync.mockReturnValue(true);
+        mocks.writeFile.mockResolvedValue(undefined);
+        mocks.worksheetUploadFindMany.mockResolvedValue([]);
+        mocks.worksheetUploadCreate.mockResolvedValue({ id: "upload-1" });
+        mocks.worksheetUploadCount.mockResolvedValue(1);
+        mocks.activityProgressUpdate.mockResolvedValue({ id: "progress-1" });
+
+        const result = await uploadWorksheet(
+            "progress-1",
+            createWorksheetFormData(),
+        );
+
+        expect(result).toMatchObject({
+            success: true,
+            worksheet: { id: "upload-1", worksheetNumber: 1 },
+        });
+        expect(mocks.writeFile).toHaveBeenCalledOnce();
+        expect(mocks.worksheetUploadCreate).toHaveBeenCalledOnce();
+        expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
+    });
+
     it("releases the upload lock after a successful upload", async () => {
         const lock = { key: "lock:worksheet-upload:progress-1", token: "token-1" };
-        mocks.acquireRedisLock.mockResolvedValue(lock);
+        mocks.acquireRedisLock.mockResolvedValue({
+            status: "acquired",
+            lock,
+        });
         mocks.existsSync.mockReturnValue(true);
         mocks.writeFile.mockResolvedValue(undefined);
         mocks.worksheetUploadFindMany.mockResolvedValue([]);
@@ -266,7 +295,10 @@ describe("uploadWorksheet lock", () => {
             }),
         );
         const lock = { key: "lock:worksheet-upload:progress-1", token: "token-1" };
-        mocks.acquireRedisLock.mockResolvedValue(lock);
+        mocks.acquireRedisLock.mockResolvedValue({
+            status: "acquired",
+            lock,
+        });
         mocks.existsSync.mockReturnValue(true);
         mocks.writeFile.mockResolvedValue(undefined);
         mocks.worksheetUploadFindMany.mockResolvedValue([]);

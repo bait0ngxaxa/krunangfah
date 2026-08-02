@@ -24,13 +24,21 @@ import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
 import type { QueryResult } from "@/lib/actions/query-result";
 
-vi.mock("@/lib/cache/redis-lock", () => ({
-    acquireRedisLock: vi.fn(async (key: string) => ({
-        key,
-        token: "integration-test-lock",
-    })),
-    releaseRedisLock: vi.fn(async () => undefined),
+const redisLockMocks = vi.hoisted(() => ({
+    acquireRedisLock: vi.fn(),
+    releaseRedisLock: vi.fn(),
 }));
+
+vi.mock("@/lib/cache/redis-lock", () => ({
+    acquireRedisLock: redisLockMocks.acquireRedisLock,
+    releaseRedisLock: redisLockMocks.releaseRedisLock,
+}));
+
+redisLockMocks.acquireRedisLock.mockResolvedValue({
+    status: "unavailable",
+    reason: "client_unavailable",
+});
+redisLockMocks.releaseRedisLock.mockResolvedValue(undefined);
 
 vi.mock("@/lib/utils/server-image-compression", () => ({
     compressWorksheetImageBuffer: vi.fn(async (buffer: Buffer) => ({
@@ -227,6 +235,16 @@ describe("Integration: Home Visits", () => {
         });
 
         mockSession(USERS.classTeacher);
+        redisLockMocks.acquireRedisLock.mockClear();
+        const uploadDir = join(
+            process.cwd(),
+            ".data",
+            "uploads",
+            "home-visits",
+        );
+        const filesBeforeUpload = new Set(
+            await readdir(uploadDir).catch(() => [] as string[]),
+        );
         const dateNow = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
         try {
             const results = await Promise.all(
@@ -242,14 +260,29 @@ describe("Integration: Home Visits", () => {
                 select: { slot: true, fileUrl: true },
             });
             const successfulResults = results.filter((result) => result.success);
+            const limitResults = results.filter(
+                (result) => result.error === "UPLOAD_LIMIT_REACHED",
+            );
 
-            expect(successfulResults.length).toBeLessThanOrEqual(5);
+            expect(redisLockMocks.acquireRedisLock).toHaveBeenCalledTimes(10);
+            expect(successfulResults).toHaveLength(5);
+            expect(limitResults).toHaveLength(5);
             expect(photos.length).toBe(successfulResults.length);
             expect(new Set(photos.map((photo) => photo.slot)).size).toBe(
                 photos.length,
             );
             expect(new Set(photos.map((photo) => photo.fileUrl)).size).toBe(
                 photos.length,
+            );
+            const filesAfterUpload = new Set(
+                await readdir(uploadDir).catch(() => [] as string[]),
+            );
+            const newFiles = [...filesAfterUpload].filter(
+                (fileName) => !filesBeforeUpload.has(fileName),
+            );
+            expect(newFiles).toHaveLength(photos.length);
+            expect(new Set(newFiles)).toEqual(
+                new Set(photos.map((photo) => basename(photo.fileUrl))),
             );
         } finally {
             dateNow.mockRestore();

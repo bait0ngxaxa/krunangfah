@@ -6,6 +6,7 @@ import {
     hasMissingSchoolClassTermsForAcademicYear,
 } from "@/lib/services/school-class-term-service";
 import { getCurrentAcademicYear } from "@/lib/utils/academic-year";
+import { logError } from "@/lib/utils/logging";
 import type { AcademicYear } from "@/types/teacher.types";
 
 const ACADEMIC_YEAR_LIFECYCLE_LOCK_TTL_SECONDS = 300;
@@ -64,12 +65,12 @@ export async function ensureCurrentAcademicYearLifecycle(): Promise<AcademicYear
         }),
     ]);
 
-    const lock = await acquireRedisLock(
+    const lockResult = await acquireRedisLock(
         `lock:academic-year-lifecycle:${current.year}:${current.semester}`,
         ACADEMIC_YEAR_LIFECYCLE_LOCK_TTL_SECONDS,
     );
 
-    if (lock) {
+    if (lockResult.status === "acquired") {
         try {
             const hasMissingTerms =
                 await hasMissingSchoolClassTermsForAcademicYear(record.id);
@@ -79,13 +80,25 @@ export async function ensureCurrentAcademicYearLifecycle(): Promise<AcademicYear
                 await revalidateAnalyticsCache();
             }
         } finally {
-            await releaseRedisLock(lock);
+            await releaseRedisLock(lockResult.lock);
         }
-    } else if (await hasMissingSchoolClassTermsForAcademicYear(record.id)) {
-        throw new Error(
-            "Academic year school class term provisioning is not complete",
-        );
+
+        return record;
     }
 
-    return record;
+    if (lockResult.status === "contended") {
+        if (await hasMissingSchoolClassTermsForAcademicYear(record.id)) {
+            throw new Error(
+                "Academic year school class term provisioning is not complete",
+            );
+        }
+
+        return record;
+    }
+
+    logError(
+        "Academic year lifecycle lock unavailable:",
+        new Error(lockResult.reason),
+    );
+    throw new Error("Academic year lifecycle lock service is unavailable");
 }

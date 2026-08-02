@@ -1,4 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { readdir, unlink } from "fs/promises";
+import { basename, join } from "path";
 import { prisma } from "@/lib/database/prisma";
 import {
     createMockUsers,
@@ -15,14 +17,23 @@ import {
     createTestUser,
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
+import { UPLOAD_WORKSHEETS_DIR } from "@/lib/constants/uploads";
+
+const redisLockMocks = vi.hoisted(() => ({
+    acquireRedisLock: vi.fn(),
+    releaseRedisLock: vi.fn(),
+}));
 
 vi.mock("@/lib/cache/redis-lock", () => ({
-    acquireRedisLock: vi.fn(async (key: string) => ({
-        key,
-        token: "integration-test-lock",
-    })),
-    releaseRedisLock: vi.fn(async () => undefined),
+    acquireRedisLock: redisLockMocks.acquireRedisLock,
+    releaseRedisLock: redisLockMocks.releaseRedisLock,
 }));
+
+redisLockMocks.acquireRedisLock.mockResolvedValue({
+    status: "unavailable",
+    reason: "client_unavailable",
+});
+redisLockMocks.releaseRedisLock.mockResolvedValue(undefined);
 
 vi.mock("@/lib/utils/server-image-compression", () => ({
     compressWorksheetImageBuffer: vi.fn(async (buffer: Buffer) => ({
@@ -190,7 +201,7 @@ describe("Integration: Worksheet Access Control", () => {
         expect(activity?.status).toBe("in_progress");
     });
 
-    it("uses distinct physical files for parallel uploads with the same timestamp", async () => {
+    it("uses the database-safe fallback for parallel uploads with the same timestamp", async () => {
         const student = await createTestStudent(USERS.schoolAdmin.schoolId!, {
             class: "ม.2/6",
         });
@@ -205,6 +216,10 @@ describe("Integration: Worksheet Access Control", () => {
         });
 
         mockSession(USERS.schoolAdmin);
+        redisLockMocks.acquireRedisLock.mockClear();
+        const filesBeforeUpload = new Set(
+            await readdir(UPLOAD_WORKSHEETS_DIR).catch(() => [] as string[]),
+        );
         const dateNow = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
         let uploads: Array<{
             id: string;
@@ -236,6 +251,19 @@ describe("Integration: Worksheet Access Control", () => {
             expect(
                 new Set(uploads.map((upload) => upload.worksheetNumber)).size,
             ).toBe(uploads.length);
+            expect(redisLockMocks.acquireRedisLock).toHaveBeenCalledTimes(2);
+            const filesAfterUpload = new Set(
+                await readdir(UPLOAD_WORKSHEETS_DIR).catch(
+                    () => [] as string[],
+                ),
+            );
+            const newFiles = [...filesAfterUpload].filter(
+                (fileName) => !filesBeforeUpload.has(fileName),
+            );
+            expect(newFiles).toHaveLength(uploads.length);
+            expect(new Set(newFiles)).toEqual(
+                new Set(uploads.map((upload) => basename(upload.fileUrl))),
+            );
         } finally {
             dateNow.mockRestore();
             mockSession(USERS.schoolAdmin);
@@ -244,6 +272,18 @@ describe("Integration: Worksheet Access Control", () => {
                 select: { id: true },
             });
             await Promise.all(rows.map((row) => deleteWorksheetUpload(row.id)));
+            const filesAfterCleanup = await readdir(UPLOAD_WORKSHEETS_DIR).catch(
+                () => [] as string[],
+            );
+            await Promise.all(
+                filesAfterCleanup
+                    .filter((fileName) => !filesBeforeUpload.has(fileName))
+                    .map((fileName) =>
+                        unlink(join(UPLOAD_WORKSHEETS_DIR, fileName)).catch(
+                            () => {},
+                        ),
+                    ),
+            );
         }
     });
 

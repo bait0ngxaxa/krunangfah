@@ -85,11 +85,11 @@ async function withHomeVisitPhotoLock(
     homeVisitId: string,
     callback: () => Promise<HomeVisitPhotoUploadResult>,
 ): Promise<HomeVisitPhotoUploadResult> {
-    const lock = await acquireRedisLock(
+    const lockResult = await acquireRedisLock(
         createHomeVisitPhotoLockKey(homeVisitId),
         HOME_VISIT_UPLOAD_LOCK_TTL_SECONDS,
     );
-    if (!lock) {
+    if (lockResult.status === "contended") {
         return {
             success: false,
             message: "มีการอัปโหลดรูปภาพนี้อยู่ กรุณารอสักครู่แล้วลองใหม่",
@@ -98,10 +98,18 @@ async function withHomeVisitPhotoLock(
         };
     }
 
+    if (lockResult.status === "unavailable") {
+        logError(
+            "Home visit photo upload lock unavailable; using database-safe fallback:",
+            new Error(lockResult.reason),
+        );
+        return callback();
+    }
+
     try {
         return await callback();
     } finally {
-        await releaseRedisLock(lock);
+        await releaseRedisLock(lockResult.lock);
     }
 }
 

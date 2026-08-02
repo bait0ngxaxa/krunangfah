@@ -14,6 +14,19 @@ export interface RedisLock {
     token: string;
 }
 
+export type AcquireRedisLockResult =
+    | {
+          status: "acquired";
+          lock: RedisLock;
+      }
+    | {
+          status: "contended";
+      }
+    | {
+          status: "unavailable";
+          reason: "client_unavailable" | "command_failed";
+      };
+
 function createLockToken(): string {
     return randomBytes(16).toString("hex");
 }
@@ -21,13 +34,15 @@ function createLockToken(): string {
 export async function acquireRedisLock(
     key: string,
     ttlSeconds: number,
-): Promise<RedisLock | null> {
+): Promise<AcquireRedisLockResult> {
     const token = createLockToken();
     try {
         const client = await getRedisClient();
-        // Lock-dependent operations fail closed when Redis is unavailable.
         if (!client) {
-            return null;
+            return {
+                status: "unavailable",
+                reason: "client_unavailable",
+            };
         }
 
         const result: unknown = await client.sendCommand([
@@ -39,10 +54,20 @@ export async function acquireRedisLock(
             ttlSeconds.toString(),
         ]);
 
-        return result === "OK" ? { key, token } : null;
+        if (result !== "OK") {
+            return { status: "contended" };
+        }
+
+        return {
+            status: "acquired",
+            lock: { key, token },
+        };
     } catch (error) {
         logError("Redis lock acquire error:", error);
-        return null;
+        return {
+            status: "unavailable",
+            reason: "command_failed",
+        };
     }
 }
 

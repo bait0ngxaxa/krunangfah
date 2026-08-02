@@ -27,10 +27,14 @@ describe("lib/redis-lock", () => {
     });
 
     it("acquires locks with SET NX EX", async () => {
-        const lock = await acquireRedisLock("lock:test", 30);
+        const result = await acquireRedisLock("lock:test", 30);
 
-        expect(lock).toMatchObject({ key: "lock:test" });
-        expect(lock?.token).toHaveLength(32);
+        expect(result.status).toBe("acquired");
+        if (result.status !== "acquired") {
+            throw new Error("Expected Redis lock to be acquired");
+        }
+        expect(result.lock).toMatchObject({ key: "lock:test" });
+        expect(result.lock.token).toHaveLength(32);
         expect(mocks.sendCommand).toHaveBeenCalledWith([
             "SET",
             "lock:test",
@@ -41,12 +45,12 @@ describe("lib/redis-lock", () => {
         ]);
     });
 
-    it("returns null when the lock is already held", async () => {
+    it("returns contended when the lock is already held", async () => {
         mocks.sendCommand.mockResolvedValue(null);
 
-        const lock = await acquireRedisLock("lock:test", 30);
+        const result = await acquireRedisLock("lock:test", 30);
 
-        expect(lock).toBeNull();
+        expect(result).toEqual({ status: "contended" });
     });
 
     it("releases locks only when the token matches", async () => {
@@ -58,23 +62,53 @@ describe("lib/redis-lock", () => {
             keys: ["lock:test"],
             arguments: ["token-1"],
         });
+
+        const script = mocks.eval.mock.calls[0]?.[0] as string;
+        expect(script).toContain('redis.call("GET", KEYS[1]) == ARGV[1]');
+        expect(script).toContain('redis.call("DEL", KEYS[1])');
     });
 
-    it("fails closed when Redis is unavailable", async () => {
+    it("does not delete a lock held by another token", async () => {
+        const currentToken = "other-token";
+        let deleted = false;
+        mocks.eval.mockImplementation(
+            async (
+                _script: string,
+                options: { keys: string[]; arguments: string[] },
+            ) => {
+                if (currentToken === options.arguments[0]) {
+                    deleted = true;
+                }
+                return deleted ? 1 : 0;
+            },
+        );
+
+        await releaseRedisLock({ key: "lock:test", token: "token-1" });
+
+        expect(deleted).toBe(false);
+    });
+
+    it("returns unavailable when the Redis client is unavailable", async () => {
         mocks.getRedisClient.mockResolvedValue(null);
 
-        const lock = await acquireRedisLock("lock:test", 30);
+        const result = await acquireRedisLock("lock:test", 30);
 
-        expect(lock).toBeNull();
+        expect(result).toEqual({
+            status: "unavailable",
+            reason: "client_unavailable",
+        });
         expect(mocks.sendCommand).not.toHaveBeenCalled();
         expect(mocks.eval).not.toHaveBeenCalled();
     });
 
-    it("fails closed when Redis lock acquisition errors", async () => {
+    it("returns unavailable when Redis lock acquisition errors", async () => {
         mocks.sendCommand.mockRejectedValue(new Error("Redis unavailable"));
 
-        const lock = await acquireRedisLock("lock:test", 30);
+        const result = await acquireRedisLock("lock:test", 30);
 
-        expect(lock).toBeNull();
+        expect(result).toEqual({
+            status: "unavailable",
+            reason: "command_failed",
+        });
     });
 });

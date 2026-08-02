@@ -81,8 +81,11 @@ describe("academic-year.actions", () => {
         mocks.hasMissingSchoolClassTerms.mockResolvedValue(true);
         mocks.revalidateAnalyticsCache.mockResolvedValue(undefined);
         mocks.acquireRedisLock.mockResolvedValue({
-            key: "lock:academic-year-lifecycle:2569:1",
-            token: "token-1",
+            status: "acquired",
+            lock: {
+                key: "lock:academic-year-lifecycle:2569:1",
+                token: "token-1",
+            },
         });
         mocks.releaseRedisLock.mockResolvedValue(undefined);
         mocks.transaction.mockImplementation(
@@ -158,11 +161,40 @@ describe("academic-year.actions", () => {
     });
 
     it("does not report lifecycle success while terms are missing and another request holds the lock", async () => {
-        mocks.acquireRedisLock.mockResolvedValue(null);
+        mocks.acquireRedisLock.mockResolvedValue({ status: "contended" });
 
         const result = await getCurrentAcademicYearRecord();
 
         expect(result.status).toBe("transient_error");
+        expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
+        expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
+        expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
+    });
+
+    it("reports success when another request holds the lock but provisioning is complete", async () => {
+        mocks.acquireRedisLock.mockResolvedValue({ status: "contended" });
+        mocks.hasMissingSchoolClassTerms.mockResolvedValue(false);
+
+        const result = await getCurrentAcademicYearRecord();
+
+        expect(result).toEqual({
+            status: "success",
+            data: expect.objectContaining({ id: "ay-2569-1" }),
+        });
+        expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
+        expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
+    });
+
+    it("fails closed when the lifecycle lock service is unavailable", async () => {
+        mocks.acquireRedisLock.mockResolvedValue({
+            status: "unavailable",
+            reason: "client_unavailable",
+        });
+
+        const result = await getCurrentAcademicYearRecord();
+
+        expect(result.status).toBe("transient_error");
+        expect(mocks.hasMissingSchoolClassTerms).not.toHaveBeenCalled();
         expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
         expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
         expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
