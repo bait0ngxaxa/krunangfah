@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => ({
     logError: vi.fn(),
     ensureSchoolClassTerms: vi.fn(),
     revalidateAnalyticsCache: vi.fn(),
+    acquireRedisLock: vi.fn(),
+    releaseRedisLock: vi.fn(),
 }));
 
 vi.mock("@/lib/database/prisma", () => ({
@@ -45,6 +47,11 @@ vi.mock("@/lib/services/school-class-term-service", () => ({
 
 vi.mock("@/lib/actions/analytics/cache", () => ({
     revalidateAnalyticsCache: mocks.revalidateAnalyticsCache,
+}));
+
+vi.mock("@/lib/cache/redis-lock", () => ({
+    acquireRedisLock: mocks.acquireRedisLock,
+    releaseRedisLock: mocks.releaseRedisLock,
 }));
 
 describe("academic-year.actions", () => {
@@ -77,6 +84,11 @@ describe("academic-year.actions", () => {
         ]);
         mocks.ensureSchoolClassTerms.mockResolvedValue("ay-2569-1");
         mocks.revalidateAnalyticsCache.mockResolvedValue(undefined);
+        mocks.acquireRedisLock.mockResolvedValue({
+            key: "lock:academic-year-lifecycle:2569:1",
+            token: "token-1",
+        });
+        mocks.releaseRedisLock.mockResolvedValue(undefined);
         mocks.transaction.mockImplementation(
             async (operations: Promise<unknown>[]): Promise<unknown[]> =>
                 Promise.all(operations),
@@ -135,6 +147,64 @@ describe("academic-year.actions", () => {
             "ay-2569-1",
         );
         expect(mocks.revalidateAnalyticsCache).toHaveBeenCalledTimes(1);
+        expect(mocks.acquireRedisLock).toHaveBeenCalledWith(
+            "lock:academic-year-lifecycle:2569:1",
+            expect.any(Number),
+        );
+        expect(mocks.releaseRedisLock).toHaveBeenCalledWith({
+            key: "lock:academic-year-lifecycle:2569:1",
+            token: "token-1",
+        });
+    });
+
+    it("skips term preparation when another lifecycle request holds the lock", async () => {
+        mocks.acquireRedisLock.mockResolvedValue(null);
+
+        await getCurrentAcademicYearRecord();
+
+        expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
+        expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
+        expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
+    });
+
+    it("limits concurrent school preparation to one batch of ten", async () => {
+        mocks.findSchools.mockResolvedValue(
+            Array.from({ length: 11 }, (_, index) => ({
+                id: `school-${index + 1}`,
+            })),
+        );
+
+        let activePreparations = 0;
+        let maxConcurrentPreparations = 0;
+        mocks.ensureSchoolClassTerms.mockImplementation(async () => {
+            activePreparations += 1;
+            maxConcurrentPreparations = Math.max(
+                maxConcurrentPreparations,
+                activePreparations,
+            );
+            await Promise.resolve();
+            activePreparations -= 1;
+            return "ay-2569-1";
+        });
+
+        await getCurrentAcademicYearRecord();
+
+        expect(mocks.ensureSchoolClassTerms).toHaveBeenCalledTimes(11);
+        expect(maxConcurrentPreparations).toBe(10);
+    });
+
+    it("releases the lifecycle lock when school preparation fails", async () => {
+        mocks.ensureSchoolClassTerms.mockRejectedValue(
+            new Error("school preparation unavailable"),
+        );
+
+        const result = await getCurrentAcademicYearRecord();
+
+        expect(result.status).toBe("transient_error");
+        expect(mocks.releaseRedisLock).toHaveBeenCalledWith({
+            key: "lock:academic-year-lifecycle:2569:1",
+            token: "token-1",
+        });
     });
 
     it("does not rebuild terms or invalidate analytics when the current term is unchanged", async () => {

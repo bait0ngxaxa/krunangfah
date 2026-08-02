@@ -1,8 +1,12 @@
 import { prisma } from "@/lib/database/prisma";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
+import { acquireRedisLock, releaseRedisLock } from "@/lib/cache/redis-lock";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
 import { getCurrentAcademicYear } from "@/lib/utils/academic-year";
 import type { AcademicYear } from "@/types/teacher.types";
+
+const ACADEMIC_YEAR_LIFECYCLE_LOCK_TTL_SECONDS = 300;
+const SCHOOL_PREPARATION_BATCH_SIZE = 10;
 
 function isSameTerm(
     term: { year: number; semester: number } | null,
@@ -19,11 +23,25 @@ async function prepareCurrentTermForSchools(
         select: { id: true },
     });
 
-    await Promise.all(
-        schools.map((school) =>
-            ensureSchoolClassTermsForAcademicYear(school.id, academicYearId),
-        ),
-    );
+    for (
+        let index = 0;
+        index < schools.length;
+        index += SCHOOL_PREPARATION_BATCH_SIZE
+    ) {
+        const schoolBatch = schools.slice(
+            index,
+            index + SCHOOL_PREPARATION_BATCH_SIZE,
+        );
+
+        await Promise.all(
+            schoolBatch.map((school) =>
+                ensureSchoolClassTermsForAcademicYear(
+                    school.id,
+                    academicYearId,
+                ),
+            ),
+        );
+    }
 }
 
 export async function ensureCurrentAcademicYearLifecycle(): Promise<AcademicYear> {
@@ -52,8 +70,19 @@ export async function ensureCurrentAcademicYearLifecycle(): Promise<AcademicYear
     ]);
 
     if (!isSameTerm(previousCurrent, current)) {
-        await prepareCurrentTermForSchools(record.id);
-        await revalidateAnalyticsCache();
+        const lock = await acquireRedisLock(
+            `lock:academic-year-lifecycle:${current.year}:${current.semester}`,
+            ACADEMIC_YEAR_LIFECYCLE_LOCK_TTL_SECONDS,
+        );
+
+        if (lock) {
+            try {
+                await prepareCurrentTermForSchools(record.id);
+                await revalidateAnalyticsCache();
+            } finally {
+                await releaseRedisLock(lock);
+            }
+        }
     }
 
     return record;
