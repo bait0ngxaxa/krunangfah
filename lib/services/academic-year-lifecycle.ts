@@ -64,7 +64,11 @@ export async function ensureCurrentAcademicYearLifecycle(): Promise<AcademicYear
             where: {
                 year_semester: { year: current.year, semester: current.semester },
             },
-            update: { isCurrent: true },
+            update: {
+                startDate: current.startDate,
+                endDate: current.endDate,
+                isCurrent: true,
+            },
             create: { ...current, isCurrent: true },
         }),
     ]);

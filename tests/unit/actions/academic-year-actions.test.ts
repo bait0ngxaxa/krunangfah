@@ -114,7 +114,7 @@ describe("academic-year.actions", () => {
         );
     });
 
-    it("clears stale current flags before activating the current semester", async () => {
+    it("syncs the current term dates while activating the current semester", async () => {
         await getCurrentAcademicYearRecord();
 
         expect(mocks.updateMany).toHaveBeenCalledWith({
@@ -129,7 +129,11 @@ describe("academic-year.actions", () => {
         });
         expect(mocks.upsert).toHaveBeenCalledWith(
             expect.objectContaining({
-                update: { isCurrent: true },
+                update: {
+                    startDate: new Date(2026, 4, 15),
+                    endDate: new Date(2026, 9, 15),
+                    isCurrent: true,
+                },
             }),
         );
     });
