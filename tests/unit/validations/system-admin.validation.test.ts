@@ -122,6 +122,7 @@ describe("system edit schemas", () => {
     it("accepts home visits without next scheduled date", () => {
         const parsed = systemHomeVisitEditSchema.safeParse({
             studentId: "ck12345678901234567890123",
+            academicYearId: "ck12345678901234567890123",
             visitDate: "2026-07-07",
             description: "เยี่ยมบ้านและพูดคุยกับผู้ปกครอง",
             nextScheduledDate: "",

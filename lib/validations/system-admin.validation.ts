@@ -144,6 +144,7 @@ export const systemHomeVisitEditSchema = z
         id: z.string().cuid("รหัสบันทึกไม่ถูกต้อง").optional(),
         expectedUpdatedAt: z.coerce.date().optional(),
         studentId: z.string().cuid("รหัสนักเรียนไม่ถูกต้อง"),
+        academicYearId: z.string().cuid("รหัสปี/เทอมไม่ถูกต้อง").optional(),
         visitDate: z.coerce.date(),
         description: z.string().trim().min(1).max(5000),
         nextScheduledDate: z.coerce.date().optional().or(z.literal("")),

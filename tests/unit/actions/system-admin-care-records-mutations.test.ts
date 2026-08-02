@@ -20,6 +20,8 @@ const prismaMocks = vi.hoisted(() => {
         transaction: vi.fn(),
         counselingFindFirst: vi.fn(),
         homeVisitFindFirst: vi.fn(),
+        academicYearFindUnique: vi.fn(),
+        academicYearFindFirst: vi.fn(),
         phqResultFindFirst: vi.fn(),
         tx,
     };
@@ -34,6 +36,10 @@ vi.mock("@/lib/database/prisma", () => ({
         $transaction: prismaMocks.transaction,
         counselingSession: { findFirst: prismaMocks.counselingFindFirst },
         homeVisit: { findFirst: prismaMocks.homeVisitFindFirst },
+        academicYear: {
+            findUnique: prismaMocks.academicYearFindUnique,
+            findFirst: prismaMocks.academicYearFindFirst,
+        },
         phqResult: { findFirst: prismaMocks.phqResultFindFirst },
     },
 }));
@@ -75,6 +81,12 @@ describe("system admin care record mutations", () => {
         prismaMocks.phqResultFindFirst.mockResolvedValue({
             academicYearId: "cmacademicyear000000000001",
         });
+        prismaMocks.academicYearFindUnique.mockResolvedValue(
+            createAcademicYear(),
+        );
+        prismaMocks.academicYearFindFirst.mockResolvedValue(
+            createAcademicYear(),
+        );
     });
 
     it("does not reuse a soft-deleted counseling session number", async () => {
@@ -161,6 +173,7 @@ describe("system admin care record mutations", () => {
             data: expect.objectContaining({
                 studentId,
                 visitNumber: 3,
+                academicYearId: "cmacademicyear000000000001",
                 createdById: actor.id,
             }),
             select: expect.objectContaining({
@@ -179,6 +192,96 @@ describe("system admin care record mutations", () => {
             schoolId,
             studentId,
         );
+    });
+
+    it("rejects a home visit update outside the existing academic year", async () => {
+        prismaMocks.homeVisitFindFirst.mockResolvedValue(createHomeVisitRow(1));
+
+        const result = await saveSystemHomeVisitRecord(
+            {
+                id: "cmhomevisit000000000001",
+                studentId,
+                expectedUpdatedAt,
+                visitDate: new Date("2026-11-01T00:00:00.000Z"),
+                description: "แก้วันที่เยี่ยมบ้านออกนอกเทอม",
+                nextScheduledDate: "",
+                teacherName: "ครูประจำชั้น",
+                teacherRole: "ครูที่ปรึกษา",
+                reason: "แก้วันที่ตามเอกสารต้นฉบับ",
+            },
+            actor,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "วันที่เยี่ยมบ้านต้องอยู่ในช่วงปี/เทอมที่เลือก",
+        });
+        expect(prismaMocks.academicYearFindUnique).toHaveBeenCalledWith({
+            where: { id: "cmacademicyear000000000001" },
+            select: { id: true, startDate: true, endDate: true },
+        });
+        expect(prismaMocks.transaction).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.homeVisit.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("updates a home visit within the existing academic year", async () => {
+        prismaMocks.homeVisitFindFirst.mockResolvedValue(createHomeVisitRow(1));
+        prismaMocks.tx.homeVisit.findUniqueOrThrow.mockResolvedValue({
+            ...createHomeVisitRow(1),
+            visitDate: new Date("2026-08-01T00:00:00.000Z"),
+            description: "แก้รายละเอียดและวันที่ในเทอมเดิม",
+        });
+
+        const result = await saveSystemHomeVisitRecord(
+            {
+                id: "cmhomevisit000000000001",
+                studentId,
+                expectedUpdatedAt,
+                visitDate: new Date("2026-08-01T00:00:00.000Z"),
+                description: "แก้รายละเอียดและวันที่ในเทอมเดิม",
+                nextScheduledDate: "",
+                teacherName: "ครูประจำชั้น",
+                teacherRole: "ครูที่ปรึกษา",
+                reason: "แก้ข้อมูลตามเอกสารต้นฉบับ",
+            },
+            actor,
+        );
+
+        expect(result.success).toBe(true);
+        expect(prismaMocks.tx.homeVisit.updateMany).toHaveBeenCalledWith({
+            where: {
+                id: "cmhomevisit000000000001",
+                updatedAt: expectedUpdatedAt,
+            },
+            data: expect.objectContaining({
+                visitDate: new Date("2026-08-01T00:00:00.000Z"),
+            }),
+        });
+    });
+
+    it("rejects a new home visit outside the current academic year", async () => {
+        const result = await saveSystemHomeVisitRecord(
+            {
+                studentId,
+                visitDate: new Date("2026-11-01T00:00:00.000Z"),
+                description: "เพิ่มวันที่เยี่ยมบ้านออกนอกเทอม",
+                nextScheduledDate: "",
+                teacherName: "ครูประจำชั้น",
+                teacherRole: "ครูที่ปรึกษา",
+                reason: "เพิ่มรายการจากเอกสารต้นฉบับ",
+            },
+            actor,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "วันที่เยี่ยมบ้านต้องอยู่ในช่วงปี/เทอมที่เลือก",
+        });
+        expect(prismaMocks.academicYearFindFirst).toHaveBeenCalledWith({
+            where: { isCurrent: true },
+            select: { id: true, startDate: true, endDate: true },
+        });
+        expect(prismaMocks.transaction).not.toHaveBeenCalled();
     });
 
     it("retries counseling creation after a concurrent number conflict", async () => {
@@ -373,6 +476,14 @@ function createHomeVisitRow(visitNumber: number) {
         updatedAt: expectedUpdatedAt,
         _count: { photos: 0 },
         student: { schoolId },
+    };
+}
+
+function createAcademicYear() {
+    return {
+        id: "cmacademicyear000000000001",
+        startDate: new Date("2026-05-15T00:00:00.000Z"),
+        endDate: new Date("2026-10-15T00:00:00.000Z"),
     };
 }
 

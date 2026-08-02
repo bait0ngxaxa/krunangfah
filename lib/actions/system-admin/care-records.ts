@@ -24,6 +24,10 @@ import {
     canMutateAcademicYearContext,
     LATEST_CARE_RECORD_ONLY_MESSAGE,
 } from "./care-record-current-policy";
+import {
+    HOME_VISIT_ACADEMIC_YEAR_DATE_ERROR_MESSAGE,
+} from "@/lib/validations/home-visit.validation";
+import { isDateWithinAcademicYear } from "@/lib/utils/academic-year";
 
 export { getStudentCareRecords } from "./care-records-read";
 export { softDeleteSystemCareRecord } from "./care-records-delete";
@@ -91,9 +95,22 @@ export async function saveSystemHomeVisitRecord(
     }
     if (input.id && !input.expectedUpdatedAt) return staleCareRecordResponse();
 
+    const academicYear = await resolveHomeVisitAcademicYear(
+        existing?.academicYearId ?? input.academicYearId,
+    );
+    if (!academicYear) {
+        return { success: false, message: "ไม่พบปี/เทอมสำหรับบันทึกนี้" };
+    }
+    if (!isDateWithinAcademicYear(input.visitDate, academicYear)) {
+        return {
+            success: false,
+            message: HOME_VISIT_ACADEMIC_YEAR_DATE_ERROR_MESSAGE,
+        };
+    }
+
     const result = await runSerializableTransaction(async (tx) => {
         if (existing) return updateHomeVisit(tx, existing, input, actor);
-        return createHomeVisit(tx, input, actor);
+        return createHomeVisit(tx, input, actor, academicYear.id);
     });
     if (!result) return staleCareRecordResponse();
 
@@ -220,11 +237,13 @@ async function createHomeVisit(
     tx: Prisma.TransactionClient,
     input: SystemHomeVisitEditInput,
     actor: Actor,
+    academicYearId: string,
 ): Promise<HomeVisitRow> {
     const visitNumber = await getNextHomeVisitNumber(tx, input.studentId);
     const created = await tx.homeVisit.create({
         data: {
             studentId: input.studentId,
+            academicYearId,
             visitNumber,
             visitDate: input.visitDate,
             description: input.description,
@@ -246,6 +265,22 @@ async function createHomeVisit(
         changes: [{ field: "record", label: "เพิ่มบันทึก", before: null, after: "created" }],
     });
     return created;
+}
+
+async function resolveHomeVisitAcademicYear(
+    academicYearId?: string,
+): Promise<{ id: string; startDate: Date; endDate: Date } | null> {
+    if (academicYearId) {
+        return prisma.academicYear.findUnique({
+            where: { id: academicYearId },
+            select: { id: true, startDate: true, endDate: true },
+        });
+    }
+
+    return prisma.academicYear.findFirst({
+        where: { isCurrent: true },
+        select: { id: true, startDate: true, endDate: true },
+    });
 }
 
 async function getNextCounselingNumber(
