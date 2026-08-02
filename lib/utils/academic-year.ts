@@ -69,6 +69,22 @@ export function getCurrentAcademicYear(
 }
 
 /**
+ * ตรวจว่าวันที่อยู่ในช่วงปีการศึกษาแบบรวมวันเริ่มต้นและวันสิ้นสุด
+ */
+export function isDateWithinAcademicYear(
+    date: Date,
+    academicYear: Pick<AcademicYearInfo, "startDate" | "endDate">,
+): boolean {
+    const startDate = new Date(academicYear.startDate);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(academicYear.endDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    return date >= startDate && date <= endDate;
+}
+
+/**
  * สร้างข้อมูล Academic Year สำหรับทั้งปี (เทอม 1 และ 2)
  * @param beYear - ปี พ.ศ.
  */

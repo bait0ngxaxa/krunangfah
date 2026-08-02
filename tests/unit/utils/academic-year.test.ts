@@ -4,6 +4,7 @@ import {
     getCurrentAcademicYear,
     generateAcademicYearData,
     formatAcademicYear,
+    isDateWithinAcademicYear,
 } from "@/lib/utils/academic-year";
 
 describe("toBuddhistYear", () => {
@@ -249,6 +250,34 @@ describe("getCurrentAcademicYear", () => {
             expect(april2026.year).toBe(2568); // ไม่ใช่ 2569
             expect(april2026.semester).toBe(2);
         });
+    });
+});
+
+describe("isDateWithinAcademicYear", () => {
+    const academicYear = {
+        startDate: new Date(2024, 4, 15),
+        endDate: new Date(2024, 9, 15),
+    };
+
+    it("accepts dates on both inclusive boundaries", () => {
+        expect(
+            isDateWithinAcademicYear(academicYear.startDate, academicYear),
+        ).toBe(true);
+        expect(
+            isDateWithinAcademicYear(
+                new Date(2024, 9, 15, 23, 59, 59, 999),
+                academicYear,
+            ),
+        ).toBe(true);
+    });
+
+    it("rejects dates outside the academic year", () => {
+        expect(
+            isDateWithinAcademicYear(new Date(2024, 4, 14, 23, 59, 59), academicYear),
+        ).toBe(false);
+        expect(
+            isDateWithinAcademicYear(new Date(2024, 9, 16), academicYear),
+        ).toBe(false);
     });
 });
 

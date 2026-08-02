@@ -133,6 +133,20 @@ describe("system edit schemas", () => {
         expect(parsed.success).toBe(true);
     });
 
+    it("rejects a next scheduled date before the visit date", () => {
+        const parsed = systemHomeVisitEditSchema.safeParse({
+            studentId: "ck12345678901234567890123",
+            visitDate: "2026-07-07",
+            description: "เยี่ยมบ้านและพูดคุยกับผู้ปกครอง",
+            nextScheduledDate: "2026-07-06",
+            teacherName: "ครูที่ปรึกษา",
+            teacherRole: "ครูประจำชั้น",
+            reason: "แก้วันที่นัดหมายไม่ถูกต้อง",
+        });
+
+        expect(parsed.success).toBe(false);
+    });
+
     it("requires a reason before deleting care records", () => {
         const parsed = systemCareRecordDeleteSchema.safeParse({
             id: "ck12345678901234567890123",

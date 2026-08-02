@@ -15,6 +15,7 @@ import { prisma } from "@/lib/database/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import { revalidatePath } from "next/cache";
 import {
+    HOME_VISIT_ACADEMIC_YEAR_DATE_ERROR_MESSAGE,
     createHomeVisitSchema,
     deleteHomeVisitSchema,
 } from "@/lib/validations/home-visit.validation";
@@ -25,6 +26,7 @@ import { queryEmpty, querySuccess, type QueryResult } from "./query-result";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import { verifyStudentAccessForUser } from "@/lib/security/student-access";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
+import { isDateWithinAcademicYear } from "@/lib/utils/academic-year";
 import type { OffsetPagination } from "@/types/pagination.types";
 import type { AcademicYearDateRange } from "@/lib/utils/student-detail-filters";
 
@@ -74,22 +76,28 @@ function normalizePaginationParams(
     return { page: safePage, pageSize: safePageSize };
 }
 
-async function resolveAcademicYearId(
+interface ResolvedAcademicYear {
+    id: string;
+    startDate: Date;
+    endDate: Date;
+}
+
+async function resolveAcademicYear(
     academicYearId?: string,
-): Promise<string | null> {
+): Promise<ResolvedAcademicYear | null> {
     if (academicYearId) {
         const selectedYear = await prisma.academicYear.findUnique({
             where: { id: academicYearId },
-            select: { id: true },
+            select: { id: true, startDate: true, endDate: true },
         });
-        return selectedYear?.id ?? null;
+        return selectedYear;
     }
 
     const currentYear = await prisma.academicYear.findFirst({
         where: { isCurrent: true },
-        select: { id: true },
+        select: { id: true, startDate: true, endDate: true },
     });
-    return currentYear?.id ?? null;
+    return currentYear;
 }
 
 interface SoftDeleteHomeVisitInput {
@@ -292,11 +300,17 @@ export async function createHomeVisit(data: {
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        const academicYearId = await resolveAcademicYearId(
+        const academicYear = await resolveAcademicYear(
             validated.academicYearId,
         );
-        if (!academicYearId) {
+        if (!academicYear) {
             return { success: false, message: "ไม่พบปี/เทอมสำหรับบันทึกนี้" };
+        }
+        if (!isDateWithinAcademicYear(validated.visitDate, academicYear)) {
+            return {
+                success: false,
+                message: HOME_VISIT_ACADEMIC_YEAR_DATE_ERROR_MESSAGE,
+            };
         }
 
         // Get teacher info for snapshot
@@ -342,7 +356,7 @@ export async function createHomeVisit(data: {
                         return tx.homeVisit.create({
                             data: {
                                 studentId: validated.studentId,
-                                academicYearId,
+                                academicYearId: academicYear.id,
                                 visitNumber,
                                 visitDate: validated.visitDate,
                                 description: validated.description,

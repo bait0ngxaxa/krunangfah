@@ -54,6 +54,8 @@ const { uploadHomeVisitPhoto } =
 describe("Integration: Home Visits", () => {
     let studentId: string;
     let academicYearId: string;
+    let academicYearStartDate: Date;
+    let academicYearEndDate: Date;
 
     beforeAll(async () => {
         const school = await createTestSchool();
@@ -62,6 +64,8 @@ describe("Integration: Home Visits", () => {
             semester: 1,
         });
         academicYearId = academicYear.id;
+        academicYearStartDate = academicYear.startDate;
+        academicYearEndDate = academicYear.endDate;
 
         USERS.classTeacher.schoolId = school.id;
 
@@ -107,7 +111,7 @@ describe("Integration: Home Visits", () => {
         const first = await createHomeVisit({
             studentId,
             academicYearId,
-            visitDate: new Date("2026-06-10"),
+            visitDate: addDays(academicYearStartDate, 1),
             description: "เยี่ยมบ้านครั้งที่ 1",
         });
         expect(first.success).toBe(true);
@@ -115,7 +119,7 @@ describe("Integration: Home Visits", () => {
         const second = await createHomeVisit({
             studentId,
             academicYearId,
-            visitDate: new Date("2026-06-11"),
+            visitDate: addDays(academicYearStartDate, 2),
             description: "เยี่ยมบ้านครั้งที่ 2",
         });
         expect(second.success).toBe(true);
@@ -131,6 +135,25 @@ describe("Integration: Home Visits", () => {
         expect(allVisits[1]?.academicYearId).toBe(academicYearId);
     });
 
+    it("rejects a visit date outside the selected academic year", async () => {
+        mockSession(USERS.classTeacher);
+
+        const result = await createHomeVisit({
+            studentId,
+            academicYearId,
+            visitDate: addDays(academicYearEndDate, 1),
+            description: "วันที่อยู่นอกช่วงปีการศึกษาที่เลือก",
+        });
+
+        expect(result).toEqual({
+            success: false,
+            message: "วันที่เยี่ยมบ้านต้องอยู่ในช่วงปี/เทอมที่เลือก",
+        });
+        await expect(
+            prisma.homeVisit.count({ where: { studentId } }),
+        ).resolves.toBe(2);
+    });
+
     it("should not reuse the latest soft-deleted visit number", async () => {
         mockSession(USERS.classTeacher);
         await prisma.homeVisit.updateMany({
@@ -141,7 +164,7 @@ describe("Integration: Home Visits", () => {
         const result = await createHomeVisit({
             studentId,
             academicYearId,
-            visitDate: new Date("2026-06-12"),
+            visitDate: addDays(academicYearStartDate, 3),
             description: "Visit after soft delete",
         });
 
@@ -339,4 +362,10 @@ function createHomeVisitPhotoFormData(index: number): FormData {
         `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
     );
     return formData;
+}
+
+function addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
 }

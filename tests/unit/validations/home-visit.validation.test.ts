@@ -37,6 +37,31 @@ describe("createHomeVisitSchema", () => {
         }
     });
 
+    it("should accept nextScheduledDate on the same day as visitDate", () => {
+        const result = createHomeVisitSchema.safeParse(
+            validInput({
+                visitDate: "2026-03-15",
+                nextScheduledDate: "2026-03-15",
+            }),
+        );
+
+        expect(result.success).toBe(true);
+    });
+
+    it("should reject nextScheduledDate before visitDate", () => {
+        const result = createHomeVisitSchema.safeParse(
+            validInput({
+                visitDate: "2026-03-15",
+                nextScheduledDate: "2026-03-14",
+            }),
+        );
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]?.path).toEqual(["nextScheduledDate"]);
+        }
+    });
+
     it("should accept optional academicYearId", () => {
         const result = createHomeVisitSchema.safeParse(
             validInput({ academicYearId: "cmlxdhmsq003dm6to89zm40sp" }),

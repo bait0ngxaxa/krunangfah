@@ -7,6 +7,10 @@ import {
     NATIONAL_ID_ERROR_MESSAGE,
     normalizeOptionalNationalId,
 } from "@/lib/utils/national-id";
+import {
+    HOME_VISIT_NEXT_SCHEDULED_DATE_ERROR_MESSAGE,
+    isNextScheduledDateOnOrAfterVisit,
+} from "@/lib/validations/home-visit.validation";
 
 export const systemEntityTypes = [
     "all",
@@ -135,17 +139,29 @@ export const systemCounselingEditSchema = z.object({
     reason: reasonSchema,
 });
 
-export const systemHomeVisitEditSchema = z.object({
-    id: z.string().cuid("รหัสบันทึกไม่ถูกต้อง").optional(),
-    expectedUpdatedAt: z.coerce.date().optional(),
-    studentId: z.string().cuid("รหัสนักเรียนไม่ถูกต้อง"),
-    visitDate: z.coerce.date(),
-    description: z.string().trim().min(1).max(5000),
-    nextScheduledDate: z.coerce.date().optional().or(z.literal("")),
-    teacherName: z.string().trim().min(1).max(200),
-    teacherRole: z.string().trim().min(1).max(200),
-    reason: reasonSchema,
-});
+export const systemHomeVisitEditSchema = z
+    .object({
+        id: z.string().cuid("รหัสบันทึกไม่ถูกต้อง").optional(),
+        expectedUpdatedAt: z.coerce.date().optional(),
+        studentId: z.string().cuid("รหัสนักเรียนไม่ถูกต้อง"),
+        visitDate: z.coerce.date(),
+        description: z.string().trim().min(1).max(5000),
+        nextScheduledDate: z.coerce.date().optional().or(z.literal("")),
+        teacherName: z.string().trim().min(1).max(200),
+        teacherRole: z.string().trim().min(1).max(200),
+        reason: reasonSchema,
+    })
+    .refine(
+        (data) =>
+            isNextScheduledDateOnOrAfterVisit(
+                data.visitDate,
+                data.nextScheduledDate,
+            ),
+        {
+            message: HOME_VISIT_NEXT_SCHEDULED_DATE_ERROR_MESSAGE,
+            path: ["nextScheduledDate"],
+        },
+    );
 
 const phqScoreSchema = z.coerce.number().int().min(0).max(3);
 
