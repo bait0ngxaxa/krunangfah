@@ -12,6 +12,9 @@ const mocks = vi.hoisted(() => ({
     activityProgressUpdate: vi.fn(),
     transaction: vi.fn(),
     transactionActivityProgressFindUnique: vi.fn(),
+    transactionWorksheetUploadFindMany: vi.fn(),
+    transactionWorksheetUploadFindUnique: vi.fn(),
+    transactionWorksheetUploadCreate: vi.fn(),
     transactionWorksheetUploadDelete: vi.fn(),
     transactionWorksheetUploadCount: vi.fn(),
     transactionActivityProgressUpdate: vi.fn(),
@@ -148,8 +151,17 @@ describe("uploadWorksheet lock", () => {
         mocks.transactionWorksheetUploadDelete.mockResolvedValue({
             id: "upload-1",
         });
-        mocks.transactionWorksheetUploadCount.mockResolvedValue(0);
+        mocks.transactionWorksheetUploadFindMany.mockResolvedValue([]);
+        mocks.transactionWorksheetUploadFindUnique.mockResolvedValue(null);
+        mocks.transactionWorksheetUploadCreate.mockResolvedValue({
+            id: "upload-1",
+        });
+        mocks.transactionWorksheetUploadCount.mockResolvedValue(1);
         mocks.transactionActivityProgressFindUnique.mockResolvedValue({
+            id: "progress-1",
+            studentId: "student-1",
+            phqResultId: "phq-1",
+            activityNumber: 1,
             status: "in_progress",
         });
         mocks.transactionActivityProgressUpdate.mockResolvedValue({
@@ -163,6 +175,9 @@ describe("uploadWorksheet lock", () => {
             async (callback: (tx: unknown) => Promise<unknown>) =>
                 callback({
                     worksheetUpload: {
+                        findMany: mocks.transactionWorksheetUploadFindMany,
+                        findUnique: mocks.transactionWorksheetUploadFindUnique,
+                        create: mocks.transactionWorksheetUploadCreate,
                         delete: mocks.transactionWorksheetUploadDelete,
                         count: mocks.transactionWorksheetUploadCount,
                     },
@@ -195,7 +210,7 @@ describe("uploadWorksheet lock", () => {
             90,
         );
         expect(mocks.writeFile).not.toHaveBeenCalled();
-        expect(mocks.worksheetUploadCreate).not.toHaveBeenCalled();
+        expect(mocks.transactionWorksheetUploadCreate).not.toHaveBeenCalled();
         expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
     });
 
@@ -221,7 +236,7 @@ describe("uploadWorksheet lock", () => {
             worksheet: { id: "upload-1", worksheetNumber: 1 },
         });
         expect(mocks.writeFile).toHaveBeenCalledOnce();
-        expect(mocks.worksheetUploadCreate).toHaveBeenCalledOnce();
+        expect(mocks.transactionWorksheetUploadCreate).toHaveBeenCalledOnce();
         expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
     });
 
@@ -249,14 +264,18 @@ describe("uploadWorksheet lock", () => {
     });
 
     it("returns the completed upload for a repeated request id", async () => {
-        mocks.worksheetUploadFindUnique.mockResolvedValue({
+        mocks.transactionWorksheetUploadFindUnique.mockResolvedValue({
             id: "upload-1",
             activityProgressId: "progress-1",
             worksheetNumber: 1,
             fileUrl: "/api/uploads/worksheets/upload-1.png",
-            activityProgress: { activityNumber: 1 },
+            uploadedById: "teacher-1",
+            activityProgress: {
+                activityNumber: 1,
+                studentId: "student-1",
+                phqResultId: "phq-1",
+            },
         });
-        mocks.worksheetUploadCount.mockResolvedValue(1);
 
         const result = await uploadWorksheet(
             "progress-1",
@@ -327,7 +346,7 @@ describe("uploadWorksheet lock", () => {
             "manage",
         );
         expect(mocks.writeFile).not.toHaveBeenCalled();
-        expect(mocks.worksheetUploadCreate).not.toHaveBeenCalled();
+        expect(mocks.transactionWorksheetUploadCreate).not.toHaveBeenCalled();
     });
 
     it("uses fresh role claims before checking delete access", async () => {

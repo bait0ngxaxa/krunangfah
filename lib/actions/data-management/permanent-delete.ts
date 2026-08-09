@@ -11,7 +11,6 @@ import {
     createActorSnapshot,
     impactToJsonObject,
 } from "./helpers";
-import { deleteFilesByUrl } from "./file-storage";
 import {
     getSchoolImpact,
     getStudentImpact,
@@ -57,8 +56,6 @@ export interface PermanentDeleteInput {
 }
 
 interface DeleteResult extends DataManagementResponse {
-    eventId?: string;
-    fileUrls?: string[];
     schoolId?: string;
     userIds?: string[];
 }
@@ -78,7 +75,6 @@ export async function permanentlyDeleteStudent(
     );
     if (!result.success) return result;
 
-    await recordFileWarnings(result.eventId, result.fileUrls);
     revalidateStudentsCache(result.schoolId, input.id);
     await revalidateAnalyticsCache(result.schoolId);
     revalidatePath(DATA_MANAGEMENT_PATH);
@@ -101,7 +97,6 @@ export async function permanentlyDeleteSchool(
             invalidateUserSessionCaches(userId),
         ),
     );
-    await recordFileWarnings(result.eventId, result.fileUrls);
     revalidateDashboardCache();
     revalidateStudentsCache(result.schoolId);
     await revalidateAnalyticsCache(result.schoolId);
@@ -138,8 +133,9 @@ async function deleteStudentInTransaction(
         fingerprint,
     );
     if (impactFailure) return impactFailure;
+    await enqueueFileDeletions(tx, fileUrls);
     await deleteStudentDependents(tx, student.id);
-    const event = await tx.dataManagementEvent.create({
+    await tx.dataManagementEvent.create({
         data: {
             targetType: "student",
             targetId: student.id,
@@ -153,14 +149,11 @@ async function deleteStudentInTransaction(
                 impactFingerprint: fingerprint,
             },
         },
-        select: { id: true },
     });
     await tx.student.delete({ where: { id: student.id } });
     return {
         success: true,
         message: "ลบถาวรนักเรียนสำเร็จ",
-        eventId: event.id,
-        fileUrls,
         schoolId: student.schoolId,
     };
 }
@@ -202,10 +195,11 @@ async function deleteSchoolInTransaction(
     );
     if (impactFailure) return impactFailure;
     const userIds = users.map((user) => user.id);
+    await enqueueFileDeletions(tx, fileUrls);
     await deleteSchoolDependents(tx, school.id, users);
     await assertNoUserReferences(tx, userIds);
 
-    const event = await tx.dataManagementEvent.create({
+    await tx.dataManagementEvent.create({
         data: {
             targetType: "school",
             targetId: school.id,
@@ -219,15 +213,12 @@ async function deleteSchoolInTransaction(
                 impactFingerprint: fingerprint,
             },
         },
-        select: { id: true },
     });
     await tx.user.deleteMany({ where: { id: { in: userIds } } });
     await tx.school.delete({ where: { id: school.id } });
     return {
         success: true,
         message: "ลบถาวรโรงเรียนสำเร็จ",
-        eventId: event.id,
-        fileUrls,
         schoolId: school.id,
         userIds,
     };
@@ -297,27 +288,14 @@ async function runDeleteTransaction(
     }
 }
 
-async function recordFileWarnings(
-    eventId: string | undefined,
-    fileUrls: string[] | undefined,
-): Promise<void> {
-    if (!eventId || !fileUrls) return;
-    let warnings: string[];
-    try {
-        warnings = await deleteFilesByUrl(fileUrls);
-    } catch (error) {
-        logError("Delete managed files error:", error);
-        warnings = ["ลบไฟล์ไม่สำเร็จ"];
-    }
-    if (warnings.length === 0) return;
-    try {
-        await prisma.dataManagementEvent.update({
-            where: { id: eventId },
-            data: { warnings },
-        });
-    } catch (error) {
-        logError("Record managed file warnings error:", error);
-    }
+async function enqueueFileDeletions(tx: Tx, fileUrls: string[]): Promise<void> {
+    const uniqueFileUrls = [...new Set(fileUrls)];
+    if (uniqueFileUrls.length === 0) return;
+
+    await tx.fileDeletionOutbox.createMany({
+        data: uniqueFileUrls.map((fileUrl) => ({ fileUrl })),
+        skipDuplicates: true,
+    });
 }
 
 function isSystemAdmin(actor: Actor): boolean {

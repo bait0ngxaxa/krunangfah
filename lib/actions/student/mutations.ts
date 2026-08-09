@@ -44,9 +44,33 @@ import {
 } from "@/lib/utils/national-id";
 import { MAX_IMPORT_ROW_COUNT } from "@/lib/constants/import";
 import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
 const IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS = 30 * 60;
+const MAX_IMPORT_UNIQUE_CONFLICT_RETRIES = 3;
+
+async function runImportTransaction<T>(
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+    for (let attempt = 0; attempt < MAX_IMPORT_UNIQUE_CONFLICT_RETRIES; attempt++) {
+        try {
+            return await runSerializableTransaction(callback);
+        } catch (error) {
+            const isConcurrentUniqueConflict =
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === "P2002";
+            if (
+                !isConcurrentUniqueConflict ||
+                attempt === MAX_IMPORT_UNIQUE_CONFLICT_RETRIES - 1
+            ) {
+                throw error;
+            }
+        }
+    }
+
+    throw new Error("Import transaction retry limit exceeded");
+}
 
 interface UpdateStudentStatusResult {
     success: boolean;
@@ -350,7 +374,6 @@ export async function importStudents(
         const errors: string[] = [];
         const failedStudents: ImportStudentSummary[] = [];
         let skippedCount = 0;
-        let identityConflictCount = 0;
         const seenStudentIds = new Set<string>();
         const seenNationalIds = new Set<string>();
         const eligibleRows: ParsedStudent[] = [];
@@ -402,7 +425,9 @@ export async function importStudents(
         const importedStudentIds = eligibleRows.map((row) => row.studentId);
         const importedNationalIds = eligibleRows.map((row) => row.nationalId);
 
-        const txResult = await prisma.$transaction(async (tx) => {
+        const txResult = await runImportTransaction(async (tx) => {
+            const identityConflictErrors: string[] = [];
+            const identityConflictFailures: ImportStudentSummary[] = [];
             if (importedStudentIds.length === 0) {
                 return {
                     importedCount: 0,
@@ -411,6 +436,8 @@ export async function importStudents(
                     importedStudents: [] as ImportStudentSummary[],
                     createdStudentCount: 0,
                     updatedStudentCount: 0,
+                    identityConflictErrors,
+                    identityConflictFailures,
                 };
             }
 
@@ -464,10 +491,13 @@ export async function importStudents(
                 );
 
                 if (nationalIdOwner && nationalIdOwner.schoolId !== schoolId) {
-                    identityConflictCount++;
                     const reason = "เลขบัตรประชาชนซ้ำกับข้อมูลที่มีในระบบ";
-                    errors.push(formatImportStudentError(row, reason));
-                    failedStudents.push(createImportStudentSummary(row, reason));
+                    identityConflictErrors.push(
+                        formatImportStudentError(row, reason),
+                    );
+                    identityConflictFailures.push(
+                        createImportStudentSummary(row, reason),
+                    );
                     return false;
                 }
 
@@ -476,10 +506,13 @@ export async function importStudents(
                     studentIdOwner &&
                     nationalIdOwner.id !== studentIdOwner.id
                 ) {
-                    identityConflictCount++;
                     const reason = "เลขบัตรประชาชนซ้ำกับนักเรียนคนอื่นในระบบ";
-                    errors.push(formatImportStudentError(row, reason));
-                    failedStudents.push(createImportStudentSummary(row, reason));
+                    identityConflictErrors.push(
+                        formatImportStudentError(row, reason),
+                    );
+                    identityConflictFailures.push(
+                        createImportStudentSummary(row, reason),
+                    );
                     return false;
                 }
 
@@ -487,11 +520,14 @@ export async function importStudents(
                     resolveImportIdentity(studentIdOwner, nationalIdOwner).kind ===
                     "conflict"
                 ) {
-                    identityConflictCount++;
                     const reason =
                         "รหัสนักเรียนและเลขบัตรประชาชนไม่ตรงกับนักเรียนคนเดียวกัน กรุณาตรวจสอบข้อมูลก่อนนำเข้า";
-                    errors.push(formatImportStudentError(row, reason));
-                    failedStudents.push(createImportStudentSummary(row, reason));
+                    identityConflictErrors.push(
+                        formatImportStudentError(row, reason),
+                    );
+                    identityConflictFailures.push(
+                        createImportStudentSummary(row, reason),
+                    );
                     return false;
                 }
 
@@ -506,6 +542,8 @@ export async function importStudents(
                     importedStudents: [] as ImportStudentSummary[],
                     createdStudentCount: 0,
                     updatedStudentCount: 0,
+                    identityConflictErrors,
+                    identityConflictFailures,
                 };
             }
 
@@ -587,14 +625,12 @@ export async function importStudents(
                     importedStudents: [] as ImportStudentSummary[],
                     createdStudentCount: 0,
                     updatedStudentCount: 0,
+                    identityConflictErrors,
+                    identityConflictFailures,
                 };
             }
 
-            const createdStudentCount = rowsToMutate.filter(
-                (row) => resolveExistingStudentId(row) === null,
-            ).length;
-
-            await tx.student.createMany({
+            const createdStudents = await tx.student.createMany({
                 data: rowsToMutate.map((row) => ({
                     studentId: row.studentId,
                     nationalId: row.nationalId,
@@ -687,6 +723,8 @@ export async function importStudents(
             }
 
             if (studentUpdates.length > 0) {
+                // Policy: student master fields follow the last import that
+                // commits after Serializable conflict retries; fields are not merged.
                 await Promise.all(studentUpdates);
             }
 
@@ -777,13 +815,21 @@ export async function importStudents(
                 duplicateRoundErrors,
                 duplicateRoundFailures,
                 importedStudents,
-                createdStudentCount,
+                createdStudentCount: createdStudents.count,
                 updatedStudentCount: studentUpdates.length,
+                identityConflictErrors,
+                identityConflictFailures,
             };
         });
 
-        errors.push(...txResult.duplicateRoundErrors);
-        failedStudents.push(...txResult.duplicateRoundFailures);
+        errors.push(
+            ...txResult.identityConflictErrors,
+            ...txResult.duplicateRoundErrors,
+        );
+        failedStudents.push(
+            ...txResult.identityConflictFailures,
+            ...txResult.duplicateRoundFailures,
+        );
 
         revalidatePath("/dashboard");
         revalidatePath("/students");
@@ -831,7 +877,7 @@ export async function importStudents(
             updatedStudents: txResult.updatedStudentCount,
             phqCreated: importedCount,
             duplicateRoundsSkipped: txResult.duplicateRoundFailures.length,
-            identityConflicts: identityConflictCount,
+            identityConflicts: txResult.identityConflictFailures.length,
             errors: failedCount > 0 ? errors : undefined,
             importedStudents: txResult.importedStudents,
             failedStudents:

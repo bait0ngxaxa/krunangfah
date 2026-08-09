@@ -18,6 +18,7 @@ const prismaMocks = vi.hoisted(() => {
         schoolTeacherRoster: { deleteMany: vi.fn() },
         schoolClass: { deleteMany: vi.fn() },
         dataManagementEvent: { create: vi.fn() },
+        fileDeletionOutbox: { createMany: vi.fn() },
         phqResult: { count: vi.fn(), deleteMany: vi.fn() },
         activityProgress: { count: vi.fn(), deleteMany: vi.fn() },
         worksheetUpload: {
@@ -126,6 +127,7 @@ describe("data management permanent delete", () => {
         prismaMocks.tx.dataManagementEvent.create.mockResolvedValue({
             id: "event-1",
         });
+        prismaMocks.tx.fileDeletionOutbox.createMany.mockResolvedValue({ count: 0 });
         cacheMocks.deleteFilesByUrl.mockResolvedValue([]);
         prismaMocks.tx.worksheetUpload.findMany.mockResolvedValue([]);
         prismaMocks.tx.homeVisitPhoto.findMany.mockResolvedValue([]);
@@ -211,7 +213,7 @@ describe("data management permanent delete", () => {
         expect(prismaMocks.tx.dataManagementEvent.create).not.toHaveBeenCalled();
     });
 
-    it("deletes an eligible student in one transaction and cleans files afterward", async () => {
+    it("deletes an eligible student and queues owned files in the transaction", async () => {
         prismaMocks.tx.student.findUnique.mockResolvedValue(createStudent());
         prismaMocks.tx.worksheetUpload.findMany.mockResolvedValue([
             { fileUrl: "/api/uploads/worksheets/activity.png" },
@@ -240,13 +242,16 @@ describe("data management permanent delete", () => {
         expect(prismaMocks.tx.student.delete).toHaveBeenCalledWith({
             where: { id: input.id },
         });
-        expect(cacheMocks.deleteFilesByUrl).toHaveBeenCalledWith([
-            "/api/uploads/worksheets/activity.png",
-            "/api/uploads/home-visits/photo.png",
-        ]);
+        expect(prismaMocks.tx.fileDeletionOutbox.createMany).toHaveBeenCalledWith({
+            data: [
+                { fileUrl: "/api/uploads/worksheets/activity.png" },
+                { fileUrl: "/api/uploads/home-visits/photo.png" },
+            ],
+            skipDuplicates: true,
+        });
         expect(
-            cacheMocks.deleteFilesByUrl.mock.invocationCallOrder[0],
-        ).toBeGreaterThan(prismaMocks.transaction.mock.invocationCallOrder[0]);
+            prismaMocks.tx.fileDeletionOutbox.createMany.mock.invocationCallOrder[0],
+        ).toBeLessThan(prismaMocks.tx.student.delete.mock.invocationCallOrder[0]);
     });
 
     it("rolls back the student transaction when audit creation fails", async () => {
@@ -284,12 +289,15 @@ describe("data management permanent delete", () => {
         prismaMocks.tx.student.findUnique
             .mockResolvedValueOnce(createStudent())
             .mockResolvedValueOnce(null);
+        prismaMocks.tx.worksheetUpload.findMany.mockResolvedValue([
+            { fileUrl: "/api/uploads/worksheets/activity.png" },
+        ]);
 
         await permanentlyDeleteStudent(input);
         const secondResult = await permanentlyDeleteStudent(input);
 
         expect(secondResult).toEqual({ success: false, message: "ไม่พบนักเรียน" });
-        expect(cacheMocks.deleteFilesByUrl).toHaveBeenCalledTimes(1);
+        expect(prismaMocks.tx.fileDeletionOutbox.createMany).toHaveBeenCalledTimes(1);
         expect(prismaMocks.tx.dataManagementEvent.create).toHaveBeenCalledTimes(1);
     });
 
@@ -352,6 +360,9 @@ describe("data management permanent delete", () => {
             { id: "user-1", email: "teacher@example.com" },
             { id: "user-2", email: "admin@example.com" },
         ]);
+        prismaMocks.tx.homeVisitPhoto.findMany.mockResolvedValue([
+            { fileUrl: "/api/uploads/home-visits/school-photo.png" },
+        ]);
 
         const result = await permanentlyDeleteSchool(input);
 
@@ -383,7 +394,10 @@ describe("data management permanent delete", () => {
         expect(
             cacheMocks.invalidateUserSessionCaches.mock.invocationCallOrder[0],
         ).toBeGreaterThan(prismaMocks.transaction.mock.invocationCallOrder[0]);
-        expect(cacheMocks.deleteFilesByUrl).toHaveBeenCalled();
+        expect(prismaMocks.tx.fileDeletionOutbox.createMany).toHaveBeenCalledWith({
+            data: [{ fileUrl: "/api/uploads/home-visits/school-photo.png" }],
+            skipDuplicates: true,
+        });
     });
 
     it("rolls back a school transaction when user references remain", async () => {

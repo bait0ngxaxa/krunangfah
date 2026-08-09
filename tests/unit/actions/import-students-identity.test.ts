@@ -247,6 +247,7 @@ describe("importStudents identity reconciliation", () => {
             .mockResolvedValueOnce([])
             .mockResolvedValueOnce([])
             .mockResolvedValueOnce(createdStudents);
+        mocks.studentCreateMany.mockResolvedValueOnce({ count: 2 });
 
         const result = await importStudents(
             [importedRow, secondRow],

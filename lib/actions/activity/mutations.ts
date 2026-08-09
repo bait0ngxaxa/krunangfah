@@ -3,7 +3,7 @@
 import { requireAuth } from "@/lib/auth/session";
 import { prisma } from "@/lib/database/prisma";
 import { ActivityStatus } from "@prisma/client";
-import type { Prisma } from "@prisma/client";
+import type { ActivityProgress, Prisma } from "@prisma/client";
 import {
     getActivityIndices,
     getRequiredWorksheetCount,
@@ -20,6 +20,7 @@ import {
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
+import { canMutatePhqContext } from "@/lib/actions/care-record-current-policy";
 import { verifyStudentActivityAccess } from "./access";
 
 async function verifyLatestActivityPhqResult(
@@ -91,7 +92,7 @@ async function unlockNextActivity(
     }
 }
 
-async function saveAssessmentAndCompleteActivity(
+async function saveTeacherAssessment(
     activityProgressId: string,
     data: SubmitAssessmentData,
 ): Promise<{ success: boolean; error?: string }> {
@@ -117,11 +118,42 @@ async function saveAssessmentAndCompleteActivity(
             return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
         }
 
-        if (currentActivity.status !== ActivityStatus.pending_assessment) {
+        if (
+            currentActivity.status !== ActivityStatus.pending_assessment &&
+            currentActivity.status !== ActivityStatus.completed
+        ) {
             return {
                 success: false,
                 error: "ไม่สามารถบันทึกแบบประเมินได้ในสถานะปัจจุบัน",
             };
+        }
+
+        if (
+            currentActivity.activityNumber !== 1 ||
+            currentActivity.status !== ActivityStatus.pending_assessment
+        ) {
+            const remainsCurrent = await canMutatePhqContext(
+                currentActivity.studentId,
+                currentActivity.phqResultId,
+                tx,
+            );
+            if (!remainsCurrent) {
+                return {
+                    success: false,
+                    error: ERROR_MESSAGES.activity.latestOnly,
+                };
+            }
+
+            await tx.activityProgress.update({
+                where: { id: currentActivity.id },
+                data: {
+                    internalProblems: data.internalProblems,
+                    externalProblems: data.externalProblems,
+                    problemType: data.problemType,
+                    assessedAt: new Date(),
+                },
+            });
+            return { success: true };
         }
 
         const requiredCount = getRequiredWorksheetCount(
@@ -137,6 +169,18 @@ async function saveAssessmentAndCompleteActivity(
                     requiredCount,
                     "บันทึกแบบประเมิน",
                 ),
+            };
+        }
+
+        const remainsCurrent = await canMutatePhqContext(
+            currentActivity.studentId,
+            currentActivity.phqResultId,
+            tx,
+        );
+        if (!remainsCurrent) {
+            return {
+                success: false,
+                error: ERROR_MESSAGES.activity.latestOnly,
             };
         }
 
@@ -175,7 +219,7 @@ export async function initializeActivityProgress(
     studentId: string,
     phqResultId: string,
     riskLevel: string,
-) {
+): Promise<{ success: boolean; count?: number; error?: string }> {
     try {
         // Require authenticated server context even when function is imported client-side.
         const session = await requireAuth();
@@ -224,10 +268,26 @@ export async function initializeActivityProgress(
             unlockedAt: index === 0 ? new Date() : null,
         }));
 
-        await prisma.activityProgress.createMany({
-            data: records,
-            skipDuplicates: true,
+        const initialized = await runSerializableTransaction(async (tx) => {
+            const remainsCurrent = await canMutatePhqContext(
+                studentId,
+                phqResultId,
+                tx,
+            );
+            if (!remainsCurrent) return false;
+
+            await tx.activityProgress.createMany({
+                data: records,
+                skipDuplicates: true,
+            });
+            return true;
         });
+        if (!initialized) {
+            return {
+                success: false,
+                error: ERROR_MESSAGES.activity.latestOnly,
+            };
+        }
 
         return { success: true, count: records.length };
     } catch (error) {
@@ -248,7 +308,7 @@ export async function initializeActivityProgress(
 export async function submitTeacherAssessment(
     activityProgressId: string,
     data: SubmitAssessmentData,
-) {
+): Promise<{ success: boolean; error?: string }> {
     try {
         // Validate shape and field constraints before touching DB.
         const validated = submitAssessmentSchema.parse({
@@ -311,27 +371,10 @@ export async function submitTeacherAssessment(
             return { success: false, error: latestCheck.error };
         }
 
-        if (
-            activityProgress.activityNumber === 1 &&
-            activityProgress.status === ActivityStatus.pending_assessment
-        ) {
-            return saveAssessmentAndCompleteActivity(
-                validated.activityProgressId,
-                validated,
-            );
-        }
-
-        await prisma.activityProgress.update({
-            where: { id: validated.activityProgressId },
-            data: {
-                internalProblems: validated.internalProblems,
-                externalProblems: validated.externalProblems,
-                problemType: validated.problemType,
-                assessedAt: new Date(),
-            },
-        });
-
-        return { success: true };
+        return saveTeacherAssessment(
+            validated.activityProgressId,
+            validated,
+        );
     } catch (error) {
         return handleActionError({
             context: "Error submitting assessment:",
@@ -498,6 +541,18 @@ export async function confirmActivityComplete(
                 };
             }
 
+            const remainsCurrent = await canMutatePhqContext(
+                currentActivity.studentId,
+                currentActivity.phqResultId,
+                tx,
+            );
+            if (!remainsCurrent) {
+                return {
+                    success: false,
+                    error: ERROR_MESSAGES.activity.latestOnly,
+                };
+            }
+
             if (
                 currentActivity.activityNumber === 1 &&
                 !currentActivity.assessedAt
@@ -537,7 +592,7 @@ export async function confirmActivityComplete(
 export async function updateTeacherNotes(
     activityProgressId: string,
     notes: string,
-) {
+): Promise<{ success: boolean; data?: ActivityProgress; error?: string }> {
     try {
         // Validate shape and constraints before DB access.
         const validated = updateTeacherNotesSchema.parse({
@@ -584,15 +639,39 @@ export async function updateTeacherNotes(
             return { success: false, error: latestCheck.error };
         }
 
-        const updated = await prisma.activityProgress.update({
-            where: { id: validated.activityProgressId },
-            data: {
-                teacherNotes: validated.notes,
-                teacherId: activityProgress.teacherId || session.user.id,
-            },
+        const result = await runSerializableTransaction(async (tx) => {
+            const currentActivity = await tx.activityProgress.findUnique({
+                where: { id: validated.activityProgressId },
+                select: { studentId: true, teacherId: true, phqResultId: true },
+            });
+            if (!currentActivity) {
+                return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+            }
+
+            const remainsCurrent = await canMutatePhqContext(
+                currentActivity.studentId,
+                currentActivity.phqResultId,
+                tx,
+            );
+            if (!remainsCurrent) {
+                return {
+                    success: false,
+                    error: ERROR_MESSAGES.activity.latestOnly,
+                };
+            }
+
+            const updated = await tx.activityProgress.update({
+                where: { id: validated.activityProgressId },
+                data: {
+                    teacherNotes: validated.notes,
+                    teacherId: currentActivity.teacherId || session.user.id,
+                },
+            });
+
+            return { success: true, data: updated };
         });
 
-        return { success: true, data: updated };
+        return result;
     } catch (error) {
         return handleActionError({
             context: "Error updating teacher notes:",
@@ -670,16 +749,53 @@ export async function updateScheduledDate(
             return { success: false, error: latestCheck.error };
         }
 
-        await prisma.activityProgress.update({
-            where: { id: validated.activityProgressId },
-            data: {
-                scheduledDate: new Date(validated.scheduledDate),
-            },
+        const result = await runSerializableTransaction(async (tx) => {
+            const currentActivity = await tx.activityProgress.findUnique({
+                where: { id: validated.activityProgressId },
+                select: { studentId: true, status: true, phqResultId: true },
+            });
+            if (!currentActivity) {
+                return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+            }
+            if (currentActivity.status === ActivityStatus.locked) {
+                return {
+                    success: false,
+                    error: "ไม่สามารถนัดหมายกิจกรรมที่ยังล็อคอยู่",
+                };
+            }
+            if (currentActivity.status === ActivityStatus.completed) {
+                return {
+                    success: false,
+                    error: "ไม่สามารถแก้ไขวันนัดหมายของกิจกรรมที่จบแล้ว",
+                };
+            }
+
+            const remainsCurrent = await canMutatePhqContext(
+                currentActivity.studentId,
+                currentActivity.phqResultId,
+                tx,
+            );
+            if (!remainsCurrent) {
+                return {
+                    success: false,
+                    error: ERROR_MESSAGES.activity.latestOnly,
+                };
+            }
+
+            await tx.activityProgress.update({
+                where: { id: validated.activityProgressId },
+                data: {
+                    scheduledDate: new Date(validated.scheduledDate),
+                },
+            });
+            return { success: true };
         });
 
-        revalidateStudentsCache(undefined, activityProgress.studentId);
+        if (result.success) {
+            revalidateStudentsCache(undefined, activityProgress.studentId);
+        }
 
-        return { success: true };
+        return result;
     } catch (error) {
         return handleActionError({
             context: "Error updating scheduled date:",

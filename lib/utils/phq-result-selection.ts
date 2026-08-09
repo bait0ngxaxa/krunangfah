@@ -7,6 +7,14 @@ export const LATEST_PHQ_ORDER_BY = [
     { createdAt: "desc" },
 ] satisfies Prisma.PhqResultOrderByWithRelationInput[];
 
+/** Activity rows grouped by the same canonical academic PHQ chronology. */
+export const LATEST_ACTIVITY_PHQ_ORDER_BY = [
+    { phqResult: { academicYear: { year: "desc" } } },
+    { phqResult: { academicYear: { semester: "desc" } } },
+    { phqResult: { assessmentRound: "desc" } },
+    { phqResult: { createdAt: "desc" } },
+] satisfies Prisma.ActivityProgressOrderByWithRelationInput[];
+
 /** SQL callers using this fragment must alias phq_results as `pr` and academic_years as `ay`. */
 export const LATEST_PHQ_SQL_ORDER_BY = Prisma.sql`
     ay.year DESC,

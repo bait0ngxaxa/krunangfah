@@ -24,6 +24,7 @@ import {
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
 import type { QueryResult } from "@/lib/actions/query-result";
+import { LATEST_CARE_RECORD_ONLY_MESSAGE } from "@/lib/actions/care-record-current-policy";
 
 const redisLockMocks = vi.hoisted(() => ({
     acquireRedisLock: vi.fn(),
@@ -68,6 +69,7 @@ describe("Integration: Home Visits", () => {
     let studentId: string;
     let academicYearId: string;
     let historicalAcademicYearId: string;
+    let historicalAcademicYearStartDate: Date;
     let academicYearStartDate: Date;
     let academicYearEndDate: Date;
 
@@ -83,6 +85,7 @@ describe("Integration: Home Visits", () => {
         });
         academicYearId = academicYear.id;
         historicalAcademicYearId = historicalAcademicYear.id;
+        historicalAcademicYearStartDate = historicalAcademicYear.startDate;
         academicYearStartDate = academicYear.startDate;
         academicYearEndDate = academicYear.endDate;
 
@@ -238,11 +241,14 @@ describe("Integration: Home Visits", () => {
         const result = await createHomeVisit({
             studentId,
             academicYearId: historicalAcademicYearId,
-            visitDate: addDays(academicYearStartDate, 6),
+            visitDate: addDays(historicalAcademicYearStartDate, 6),
             description: "ไม่ควรเพิ่มข้อมูลเยี่ยมบ้านย้อนหลัง",
         });
 
-        expect(result.success).toBe(false);
+        expect(result).toEqual({
+            success: false,
+            message: LATEST_CARE_RECORD_ONLY_MESSAGE,
+        });
         await expect(
             prisma.homeVisit.count({
                 where: { studentId, academicYearId: historicalAcademicYearId },
@@ -508,7 +514,7 @@ describe("Integration: Home Visits", () => {
                 studentId,
                 academicYearId: historicalAcademicYearId,
                 visitNumber,
-                visitDate: addDays(academicYearStartDate, 1),
+                visitDate: addDays(historicalAcademicYearStartDate, 1),
                 description: "ข้อมูลเยี่ยมบ้านย้อนหลัง",
                 teacherName: "ครูทดสอบ",
                 teacherRole: "ครูประจำชั้น",

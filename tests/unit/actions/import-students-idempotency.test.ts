@@ -176,6 +176,10 @@ describe("importStudents idempotency", () => {
             duplicateRoundErrors: [],
             duplicateRoundFailures: [],
             importedStudents: [],
+            createdStudentCount: 1,
+            updatedStudentCount: 0,
+            identityConflictErrors: [],
+            identityConflictFailures: [],
         });
 
         const result = await importStudents([createParsedStudent()], "ay-input", 1);
@@ -224,6 +228,10 @@ describe("importStudents idempotency", () => {
             ],
             duplicateRoundFailures: [],
             importedStudents: [],
+            createdStudentCount: 0,
+            updatedStudentCount: 0,
+            identityConflictErrors: [],
+            identityConflictFailures: [],
         });
 
         const result = await importStudents([createParsedStudent()], "ay-input", 1);

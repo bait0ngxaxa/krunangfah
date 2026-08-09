@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
     txActivityProgressFindFirst: vi.fn(),
     txActivityProgressUpdate: vi.fn(),
     txActivityProgressUpdateMany: vi.fn(),
+    txPhqResultFindFirst: vi.fn(),
     txWorksheetUploadCount: vi.fn(),
 }));
 
@@ -23,6 +24,9 @@ const tx = {
     },
     worksheetUpload: {
         count: mocks.txWorksheetUploadCount,
+    },
+    phqResult: {
+        findFirst: mocks.txPhqResultFindFirst,
     },
 };
 
@@ -87,6 +91,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
                 callback(tx),
         );
         mocks.txWorksheetUploadCount.mockResolvedValue(2);
+        mocks.txPhqResultFindFirst.mockResolvedValue({ id: "phq-1" });
     });
 
     it("keeps activity 1 pending assessment and does not unlock activity 2 before teacher assessment is saved", async () => {
@@ -149,6 +154,38 @@ describe("confirmActivityComplete teacher assessment gate", () => {
         expect(result).toEqual({
             success: false,
             error: "ต้องอัปโหลดใบงานให้ครบ 2 ไฟล์ก่อนยืนยันจบกิจกรรม",
+        });
+        expect(mocks.txActivityProgressUpdate).not.toHaveBeenCalled();
+        expect(mocks.txActivityProgressUpdateMany).not.toHaveBeenCalled();
+    });
+
+    it("does not write after the target PHQ becomes historical before the transaction", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "in_progress",
+            phqResultId: "phq-1",
+            activityNumber: 4,
+            student: { schoolId: "school-1" },
+        });
+        mocks.txActivityProgressFindUnique.mockResolvedValue({
+            id: "cprogress1",
+            status: "in_progress",
+            scheduledDate: null,
+            studentId: "student-1",
+            phqResultId: "phq-1",
+            activityNumber: 4,
+            assessedAt: new Date("2026-06-01T04:30:00.000Z"),
+            worksheetUploads: [
+                { uploadedAt: new Date("2026-06-01T04:30:00.000Z") },
+            ],
+        });
+        mocks.txPhqResultFindFirst.mockResolvedValue({ id: "phq-2" });
+
+        const result = await confirmActivityComplete("cprogress1");
+
+        expect(result).toEqual({
+            success: false,
+            error: "ทำกิจกรรมได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
         });
         expect(mocks.txActivityProgressUpdate).not.toHaveBeenCalled();
         expect(mocks.txActivityProgressUpdateMany).not.toHaveBeenCalled();

@@ -22,6 +22,7 @@ import {
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
 import type { QueryResult } from "@/lib/actions/query-result";
+import { LATEST_CARE_RECORD_ONLY_MESSAGE } from "@/lib/actions/care-record-current-policy";
 
 function getQueryData<T>(result: QueryResult<T>): T {
     if (result.status === "success" || result.status === "empty") return result.data;
@@ -39,6 +40,7 @@ describe("Integration: Counseling Sessions", () => {
     let studentId: string;
     let academicYearId: string;
     let historicalAcademicYearId: string;
+    let historicalAcademicYearStartDate: Date;
     let academicYearStartDate: Date;
     let academicYearEndDate: Date;
 
@@ -54,6 +56,7 @@ describe("Integration: Counseling Sessions", () => {
         });
         academicYearId = academicYear.id;
         historicalAcademicYearId = historicalAcademicYear.id;
+        historicalAcademicYearStartDate = historicalAcademicYear.startDate;
         academicYearStartDate = academicYear.startDate;
         academicYearEndDate = academicYear.endDate;
 
@@ -148,12 +151,15 @@ describe("Integration: Counseling Sessions", () => {
             const result = await createCounselingSession({
                 studentId,
                 academicYearId: historicalAcademicYearId,
-                sessionDate: addDays(academicYearStartDate, 5),
+                sessionDate: addDays(historicalAcademicYearStartDate, 5),
                 counselorName: "ครูทดสอบ",
                 summary: "ไม่ควรเพิ่มข้อมูลย้อนหลัง",
             });
 
-            expect(result.success).toBe(false);
+            expect(result).toEqual({
+                success: false,
+                message: LATEST_CARE_RECORD_ONLY_MESSAGE,
+            });
             await expect(
                 prisma.counselingSession.count({
                     where: {

@@ -10,6 +10,7 @@ import {
 } from "./helpers/auth-mock";
 import {
     createTestAcademicYear,
+    createTestActivityProgress,
     createTestPhqResult,
     createTestSchool,
     createTestStudent,
@@ -36,6 +37,9 @@ const { initializeActivityProgress } = await import(
 );
 const { saveSystemPhqResult } = await import(
     "@/lib/actions/system-admin/care-records-admin"
+);
+const { getStudentCareRecords } = await import(
+    "@/lib/actions/system-admin/care-records-read"
 );
 
 describe("Integration: canonical latest PHQ policy", () => {
@@ -126,6 +130,30 @@ describe("Integration: canonical latest PHQ policy", () => {
             currentPhqId,
             historicalBackfillPhqId,
         ]);
+    });
+
+    it("shows System Admin activities in academic PHQ chronology", async () => {
+        const activities = await Promise.all([
+            createTestActivityProgress(student.id, currentPhqId, 99, {
+                status: "completed",
+            }),
+            createTestActivityProgress(student.id, historicalBackfillPhqId, 99, {
+                status: "completed",
+            }),
+        ]);
+
+        try {
+            const records = await getStudentCareRecords(student.id);
+
+            expect(records?.activityProgress[0]?.phqResultId).toBe(currentPhqId);
+            expect(records?.activityProgress[1]?.phqResultId).toBe(
+                historicalBackfillPhqId,
+            );
+        } finally {
+            await prisma.activityProgress.deleteMany({
+                where: { id: { in: activities.map((activity) => activity.id) } },
+            });
+        }
     });
 
     it("uses academic chronology for the profile editing guard", async () => {

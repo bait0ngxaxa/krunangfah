@@ -7,7 +7,10 @@ import {
     toHomeVisitRecord,
 } from "./care-records-selects";
 import { getStudentReferralHistory } from "@/lib/services/student-referral-history";
-import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
+import {
+    LATEST_ACTIVITY_PHQ_ORDER_BY,
+    LATEST_PHQ_ORDER_BY,
+} from "@/lib/utils/phq-result-selection";
 
 export async function getStudentCareRecords(
     studentId: string,
@@ -131,7 +134,7 @@ async function getActivitySummaries(studentId: string) {
             },
         },
         orderBy: [
-            { phqResult: { createdAt: "desc" } },
+            ...LATEST_ACTIVITY_PHQ_ORDER_BY,
             { activityNumber: "asc" },
         ],
         take: 20,

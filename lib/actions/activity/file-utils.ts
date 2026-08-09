@@ -46,7 +46,8 @@ class UploadWorksheetError extends Error {
             | "UPLOAD_IMAGE_COMPRESSION_FAILED"
             | "UPLOAD_FILE_WRITE_FAILED"
             | "UPLOAD_DB_FAILED"
-            | "UPLOAD_POST_PROCESS_FAILED",
+            | "UPLOAD_ACTIVITY_NOT_FOUND"
+            | "UPLOAD_ACCESS_DENIED",
         message: string,
         options?: { cause?: unknown },
     ) {
@@ -72,52 +73,77 @@ function createWorksheetUploadLockKey(activityProgressId: string): string {
     return `lock:worksheet-upload:${activityProgressId}`;
 }
 
-async function findIdempotentWorksheetUpload(
+async function reconcileIdempotentWorksheetUpload(
     idempotencyKey: string,
     activityProgressId: string,
+    fallbackTeacherId: string,
 ): Promise<UploadWorksheetResult | null> {
-    const upload = await prisma.worksheetUpload.findUnique({
-        where: { idempotencyKey },
-        select: {
-            id: true,
-            activityProgressId: true,
-            worksheetNumber: true,
-            fileUrl: true,
-            activityProgress: { select: { activityNumber: true } },
-        },
-    });
+    return runSerializableTransaction(async (tx) => {
+        const upload = await tx.worksheetUpload.findUnique({
+            where: { idempotencyKey },
+            select: {
+                id: true,
+                activityProgressId: true,
+                worksheetNumber: true,
+                fileUrl: true,
+                uploadedById: true,
+                activityProgress: {
+                    select: {
+                        activityNumber: true,
+                        studentId: true,
+                        phqResultId: true,
+                    },
+                },
+            },
+        });
 
-    if (!upload) {
-        return null;
-    }
-    if (upload.activityProgressId !== activityProgressId) {
+        if (!upload) return null;
+        if (upload.activityProgressId !== activityProgressId) {
+            return {
+                success: false,
+                message: "คำขออัปโหลดไม่ถูกต้อง",
+                error: "UPLOAD_REQUEST_ID_INVALID" as const,
+            };
+        }
+
+        const remainsCurrent = await canMutatePhqContext(
+            upload.activityProgress.studentId,
+            upload.activityProgress.phqResultId,
+            tx,
+        );
+        if (!remainsCurrent) {
+            return {
+                success: false,
+                message: ERROR_MESSAGES.activity.latestOnly,
+                error: "UPLOAD_ACCESS_DENIED" as const,
+            };
+        }
+
+        await tx.activityProgress.updateMany({
+            where: { id: activityProgressId, teacherId: null },
+            data: { teacherId: upload.uploadedById ?? fallbackTeacherId },
+        });
+        const uploadedCount = await tx.worksheetUpload.count({
+            where: { activityProgressId },
+        });
+        const requiredCount = getRequiredWorksheetCount(
+            upload.activityProgress.activityNumber,
+        );
+
         return {
-            success: false,
-            message: "คำขออัปโหลดไม่ถูกต้อง",
-            error: "UPLOAD_REQUEST_ID_INVALID",
+            success: true,
+            message: "อัปโหลดใบงานสำเร็จ",
+            worksheet: {
+                id: upload.id,
+                worksheetNumber: upload.worksheetNumber,
+                filePath: upload.fileUrl,
+            },
+            uploadedCount,
+            requiredCount,
+            allUploaded: uploadedCount >= requiredCount,
+            activityNumber: upload.activityProgress.activityNumber,
         };
-    }
-
-    const uploadedCount = await prisma.worksheetUpload.count({
-        where: { activityProgressId },
     });
-    const requiredCount = getRequiredWorksheetCount(
-        upload.activityProgress.activityNumber,
-    );
-
-    return {
-        success: true,
-        message: "อัปโหลดใบงานสำเร็จ",
-        worksheet: {
-            id: upload.id,
-            worksheetNumber: upload.worksheetNumber,
-            filePath: upload.fileUrl,
-        },
-        uploadedCount,
-        requiredCount,
-        allUploaded: uploadedCount >= requiredCount,
-        activityNumber: upload.activityProgress.activityNumber,
-    };
 }
 
 async function withWorksheetUploadLock(
@@ -304,167 +330,196 @@ export async function uploadWorksheet(
             };
         }
 
-        const existingUpload = await findIdempotentWorksheetUpload(
+        const existingUpload = await reconcileIdempotentWorksheetUpload(
             idempotencyKey,
             activityProgressId,
+            session.user.id,
         );
         if (existingUpload) {
             return existingUpload;
         }
 
         return withWorksheetUploadLock(activityProgressId, async () => {
-        const uploadAfterLock = await findIdempotentWorksheetUpload(
-            idempotencyKey,
-            activityProgressId,
-        );
-        if (uploadAfterLock) {
-            return uploadAfterLock;
-        }
+            const uploadAfterLock = await reconcileIdempotentWorksheetUpload(
+                idempotencyKey,
+                activityProgressId,
+                session.user.id,
+            );
+            if (uploadAfterLock) {
+                return uploadAfterLock;
+            }
 
-        // Create upload directory if not exists
-        // SECURITY: Store outside public/ to prevent unauthenticated access
-        // Files are served exclusively through the /api/uploads/ route with auth checks
-        const uploadDir = UPLOAD_WORKSHEETS_DIR;
-        // eslint-disable-next-line security/detect-non-literal-fs-filename -- uploadDir is a fixed trusted constant path
-        if (!existsSync(uploadDir)) {
+            // Create upload directory if not exists
+            // SECURITY: Store outside public/ to prevent unauthenticated access
+            // Files are served exclusively through the /api/uploads/ route with auth checks
+            const uploadDir = UPLOAD_WORKSHEETS_DIR;
             // eslint-disable-next-line security/detect-non-literal-fs-filename -- uploadDir is a fixed trusted constant path
-            await mkdir(uploadDir, { recursive: true });
-        }
+            if (!existsSync(uploadDir)) {
+                // eslint-disable-next-line security/detect-non-literal-fs-filename -- uploadDir is a fixed trusted constant path
+                await mkdir(uploadDir, { recursive: true });
+            }
 
-        // Generate a collision-resistant physical filename using the validated extension.
-        const fileName = `${randomUUID()}.${outputExt}`;
-        const filePath = buildWorksheetFilePath(fileName);
+            // Generate a collision-resistant physical filename using the validated extension.
+            const fileName = `${randomUUID()}.${outputExt}`;
+            const filePath = buildWorksheetFilePath(fileName);
 
-        // Save file to disk
-        try {
-            // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from random UUID + whitelist-validated extension
-            await writeFile(filePath, buffer);
-        } catch (error) {
-            throw new UploadWorksheetError(
-                "UPLOAD_FILE_WRITE_FAILED",
-                "ไม่สามารถบันทึกไฟล์ได้ กรุณาลองใหม่อีกครั้ง",
-                { cause: error },
-            );
-        }
-
-        // Save to database — clean up file if DB write fails
-        const fileUrl = buildWorksheetFileUrl(fileName);
-        let upload:
-            | {
-                  id: string;
-              }
-            | undefined;
-        let worksheetNumber = 1;
-
-        try {
-            for (let attempt = 0; attempt < MAX_WORKSHEET_NUMBER_RETRIES; attempt++) {
-                const existingNumbers = new Set(
-                    (
-                        await prisma.worksheetUpload.findMany({
-                            where: { activityProgressId },
-                            select: { worksheetNumber: true },
-                        })
-                    ).map((item) => item.worksheetNumber),
+            // Save file to disk
+            try {
+                // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath built from random UUID + whitelist-validated extension
+                await writeFile(filePath, buffer);
+            } catch (error) {
+                throw new UploadWorksheetError(
+                    "UPLOAD_FILE_WRITE_FAILED",
+                    "ไม่สามารถบันทึกไฟล์ได้ กรุณาลองใหม่อีกครั้ง",
+                    { cause: error },
                 );
+            }
 
-                worksheetNumber = 1;
-                while (existingNumbers.has(worksheetNumber)) {
-                    worksheetNumber++;
-                }
+            // Save metadata and required post-processing atomically. The physical
+            // file remains outside PostgreSQL and is compensated if this fails.
+            const fileUrl = buildWorksheetFileUrl(fileName);
 
-                try {
-                    upload = await prisma.worksheetUpload.create({
-                        data: {
-                            activityProgressId,
-                            worksheetNumber,
-                            fileName: file.name,
-                            fileUrl,
-                            fileType: outputFileType,
-                            fileSize: buffer.length,
-                            uploadedById: session.user.id,
-                            idempotencyKey,
-                        },
-                        select: { id: true },
-                    });
-                    break;
-                } catch (createError) {
-                    if (
-                        createError instanceof Prisma.PrismaClientKnownRequestError &&
-                        createError.code === "P2002"
-                    ) {
-                        const duplicateUpload = await findIdempotentWorksheetUpload(
-                            idempotencyKey,
-                            activityProgressId,
+            try {
+                for (
+                    let attempt = 0;
+                    attempt < MAX_WORKSHEET_NUMBER_RETRIES;
+                    attempt++
+                ) {
+                    try {
+                        const saved = await runSerializableTransaction(
+                            async (tx) => {
+                                const currentActivity =
+                                    await tx.activityProgress.findUnique({
+                                        where: { id: activityProgressId },
+                                        select: {
+                                            id: true,
+                                            studentId: true,
+                                            phqResultId: true,
+                                            activityNumber: true,
+                                        },
+                                    });
+                                if (!currentActivity) {
+                                    throw new UploadWorksheetError(
+                                        "UPLOAD_ACTIVITY_NOT_FOUND",
+                                        "ไม่พบข้อมูลกิจกรรม",
+                                    );
+                                }
+
+                                const remainsCurrent =
+                                    await canMutatePhqContext(
+                                        currentActivity.studentId,
+                                        currentActivity.phqResultId,
+                                        tx,
+                                    );
+                                if (!remainsCurrent) {
+                                    throw new UploadWorksheetError(
+                                        "UPLOAD_ACCESS_DENIED",
+                                        ERROR_MESSAGES.activity.latestOnly,
+                                    );
+                                }
+
+                                const existingNumbers = new Set(
+                                    (
+                                        await tx.worksheetUpload.findMany({
+                                            where: { activityProgressId },
+                                            select: { worksheetNumber: true },
+                                        })
+                                    ).map((item) => item.worksheetNumber),
+                                );
+                                let worksheetNumber = 1;
+                                while (existingNumbers.has(worksheetNumber)) {
+                                    worksheetNumber++;
+                                }
+
+                                const upload = await tx.worksheetUpload.create({
+                                    data: {
+                                        activityProgressId,
+                                        worksheetNumber,
+                                        fileName: file.name,
+                                        fileUrl,
+                                        fileType: outputFileType,
+                                        fileSize: buffer.length,
+                                        uploadedById: session.user.id,
+                                        idempotencyKey,
+                                    },
+                                    select: { id: true },
+                                });
+                                await tx.activityProgress.updateMany({
+                                    where: {
+                                        id: activityProgressId,
+                                        teacherId: null,
+                                    },
+                                    data: { teacherId: session.user.id },
+                                });
+                                const uploadedCount =
+                                    await tx.worksheetUpload.count({
+                                        where: { activityProgressId },
+                                    });
+                                const requiredCount = getRequiredWorksheetCount(
+                                    currentActivity.activityNumber,
+                                );
+
+                                return {
+                                    upload,
+                                    worksheetNumber,
+                                    uploadedCount,
+                                    requiredCount,
+                                    activityNumber:
+                                        currentActivity.activityNumber,
+                                };
+                            },
                         );
-                        if (duplicateUpload) {
-                            const { unlink } = await import("fs/promises");
-                            await unlink(filePath).catch(() => {});
-                            return duplicateUpload;
+
+                        return {
+                            success: true,
+                            message: "อัปโหลดใบงานสำเร็จ",
+                            worksheet: {
+                                id: saved.upload.id,
+                                worksheetNumber: saved.worksheetNumber,
+                                filePath: fileUrl,
+                            },
+                            uploadedCount: saved.uploadedCount,
+                            requiredCount: saved.requiredCount,
+                            allUploaded:
+                                saved.uploadedCount >= saved.requiredCount,
+                            activityNumber: saved.activityNumber,
+                        };
+                    } catch (createError) {
+                        if (
+                            createError instanceof
+                                Prisma.PrismaClientKnownRequestError &&
+                            createError.code === "P2002"
+                        ) {
+                            const duplicateUpload =
+                                await reconcileIdempotentWorksheetUpload(
+                                    idempotencyKey,
+                                    activityProgressId,
+                                    session.user.id,
+                                );
+                            if (duplicateUpload) {
+                                const { unlink } = await import("fs/promises");
+                                await unlink(filePath).catch(() => {});
+                                return duplicateUpload;
+                            }
+                            if (attempt < MAX_WORKSHEET_NUMBER_RETRIES - 1) {
+                                continue;
+                            }
                         }
-                        if (attempt < MAX_WORKSHEET_NUMBER_RETRIES - 1) {
-                            continue;
-                        }
+                        throw createError;
                     }
-                    throw createError;
                 }
-            }
-
-            if (!upload) {
                 throw new Error("ไม่สามารถกำหนดหมายเลขใบงานได้");
+            } catch (dbError) {
+                // Clean up orphaned file if DB insert fails
+                const { unlink } = await import("fs/promises");
+                await unlink(filePath).catch(() => {});
+                if (dbError instanceof UploadWorksheetError) throw dbError;
+                throw new UploadWorksheetError(
+                    "UPLOAD_DB_FAILED",
+                    "ไม่สามารถบันทึกข้อมูลไฟล์ได้ กรุณาลองใหม่อีกครั้ง",
+                    { cause: dbError },
+                );
             }
-        } catch (dbError) {
-            // Clean up orphaned file if DB insert fails
-            const { unlink } = await import("fs/promises");
-            await unlink(filePath).catch(() => {});
-            throw new UploadWorksheetError(
-                "UPLOAD_DB_FAILED",
-                "ไม่สามารถบันทึกข้อมูลไฟล์ได้ กรุณาลองใหม่อีกครั้ง",
-                { cause: dbError },
-            );
-        }
-
-        // Check if all required worksheets are uploaded
-        const requiredCount = getRequiredWorksheetCount(
-            activityProgress.activityNumber,
-        );
-        let currentUploadCount = 0;
-        let allUploaded = false;
-        try {
-            currentUploadCount = await prisma.worksheetUpload.count({
-                where: { activityProgressId },
-            });
-            allUploaded = currentUploadCount >= requiredCount;
-
-            // Update teacherId if not set
-            if (!activityProgress.teacherId) {
-                await prisma.activityProgress.update({
-                    where: { id: activityProgressId },
-                    data: {
-                        teacherId: session.user.id,
-                    },
-                });
-            }
-        } catch (error) {
-            throw new UploadWorksheetError(
-                "UPLOAD_POST_PROCESS_FAILED",
-                "อัปโหลดไฟล์สำเร็จ แต่ไม่สามารถอัปเดตสถานะได้ กรุณารีเฟรชหน้า",
-                { cause: error },
-            );
-        }
-
-        return {
-            success: true,
-            message: "อัปโหลดใบงานสำเร็จ",
-            worksheet: {
-                id: upload.id,
-                worksheetNumber,
-                filePath: fileUrl,
-            },
-            uploadedCount: currentUploadCount,
-            requiredCount,
-            allUploaded,
-            activityNumber: activityProgress.activityNumber,
-        };
         });
     } catch (error) {
         logError("Error uploading worksheet:", error);
@@ -473,7 +528,11 @@ export async function uploadWorksheet(
                 success: false,
                 message: error.message,
                 error: error.code,
-                retryable: error.code !== "UPLOAD_IMAGE_COMPRESSION_FAILED",
+                retryable: ![
+                    "UPLOAD_IMAGE_COMPRESSION_FAILED",
+                    "UPLOAD_ACTIVITY_NOT_FOUND",
+                    "UPLOAD_ACCESS_DENIED",
+                ].includes(error.code),
             };
         }
 

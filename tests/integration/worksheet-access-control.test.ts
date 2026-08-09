@@ -287,6 +287,59 @@ describe("Integration: Worksheet Access Control", () => {
         }
     });
 
+    it("reconciles activity attribution when an idempotent retry finds an existing upload", async () => {
+        const student = await createTestStudent(USERS.schoolAdmin.schoolId!, {
+            class: "ม.2/6",
+        });
+        const ay = await createTestAcademicYear({ year: 2606, semester: 1 });
+        const phq = await createTestPhqResult(
+            student.id,
+            ay.id,
+            USERS.schoolAdmin.id,
+        );
+        const progress = await createTestActivityProgress(student.id, phq.id, 1, {
+            status: "in_progress",
+        });
+        const idempotencyKey = "00000000-0000-4000-8000-000000000088";
+        const existingUpload = await prisma.worksheetUpload.create({
+            data: {
+                activityProgressId: progress.id,
+                worksheetNumber: 1,
+                fileName: "partial-upload.png",
+                fileUrl: "/api/uploads/worksheets/partial-upload.png",
+                fileType: "image/png",
+                fileSize: 8,
+                uploadedById: USERS.schoolAdmin.id,
+                idempotencyKey,
+            },
+        });
+
+        mockSession(USERS.schoolAdmin);
+        const result = await uploadWorksheet(
+            progress.id,
+            createWorksheetFormData(idempotencyKey),
+        );
+
+        expect(result).toEqual(
+            expect.objectContaining({
+                success: true,
+                worksheet: expect.objectContaining({ id: existingUpload.id }),
+                uploadedCount: 1,
+            }),
+        );
+        await expect(
+            prisma.worksheetUpload.count({
+                where: { activityProgressId: progress.id },
+            }),
+        ).resolves.toBe(1);
+        await expect(
+            prisma.activityProgress.findUnique({
+                where: { id: progress.id },
+                select: { teacherId: true },
+            }),
+        ).resolves.toEqual({ teacherId: USERS.schoolAdmin.id });
+    });
+
     it("class_teacher cannot delete worksheet for referred student in own advisory class", async () => {
         const ownStudent = await createTestStudent(USERS.classTeacher.schoolId!, {
             class: "ม.2/5",
