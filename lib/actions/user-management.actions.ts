@@ -160,6 +160,10 @@ export async function deleteUser(
         return { success: false, message: "ไม่พบผู้ใช้งาน" };
     }
 
+    if (isPrimaryAdmin && target.schoolId !== session.user.schoolId) {
+        return { success: false, message: "ไม่สามารถลบครูต่างโรงเรียน" };
+    }
+
     if (target.role === "system_admin") {
         return { success: false, message: "ไม่สามารถลบ System Admin" };
     }
@@ -173,10 +177,6 @@ export async function deleteUser(
     }
 
     if (isPrimaryAdmin) {
-        if (target.schoolId !== session.user.schoolId) {
-            return { success: false, message: "ไม่สามารถลบครูต่างโรงเรียน" };
-        }
-
         if (!target.teacher) {
             return { success: false, message: "ไม่พบโปรไฟล์ครู" };
         }

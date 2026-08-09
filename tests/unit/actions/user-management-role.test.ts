@@ -68,6 +68,7 @@ vi.mock("@/lib/actions/system-admin/events", () => ({
 
 const {
     changeUserRole,
+    deleteUser,
     updateTeacherProfile,
 } = await import("@/lib/actions/user-management.actions");
 
@@ -255,6 +256,35 @@ describe("changeUserRole primary assignment", () => {
         expect(mocks.transaction).toHaveBeenCalledOnce();
         expect(mocks.userUpdate).not.toHaveBeenCalled();
         expect(mocks.teacherUpdate).not.toHaveBeenCalled();
+    });
+
+    it("checks a primary admin's school scope before revealing a target's protected role", async () => {
+        mocks.requireAuth.mockResolvedValue({
+            user: {
+                id: "primary-admin-1",
+                role: "school_admin",
+                isPrimary: true,
+                schoolId: "school-1",
+            },
+        });
+        mocks.userFindUnique.mockResolvedValue({
+            id: "system-admin-2",
+            role: "system_admin",
+            email: "other-admin@example.com",
+            isPrimary: false,
+            schoolId: null,
+            deletedAt: null,
+            updatedAt: new Date("2026-07-16T00:00:00.000Z"),
+            teacher: null,
+        });
+
+        const result = await deleteUser("system-admin-2");
+
+        expect(result).toEqual({
+            success: false,
+            message: "ไม่สามารถลบครูต่างโรงเรียน",
+        });
+        expect(mocks.userUpdateMany).not.toHaveBeenCalled();
     });
 
     it("keeps one Primary Admin when System Admin demotes two concurrently", async () => {

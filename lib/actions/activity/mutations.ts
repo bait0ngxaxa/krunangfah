@@ -218,7 +218,6 @@ async function saveTeacherAssessment(
 export async function initializeActivityProgress(
     studentId: string,
     phqResultId: string,
-    riskLevel: string,
 ): Promise<{ success: boolean; count?: number; error?: string }> {
     try {
         // Require authenticated server context even when function is imported client-side.
@@ -241,55 +240,54 @@ export async function initializeActivityProgress(
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        const latestCheck = await verifyLatestActivityPhqResult(
-            studentId,
-            phqResultId,
-        );
-        if (!latestCheck.allowed) {
-            return { success: false, error: latestCheck.error };
-        }
+        return await runSerializableTransaction(async (tx) => {
+            const phqResult = await tx.phqResult.findFirst({
+                where: { id: phqResultId, studentId },
+                select: { riskLevel: true },
+            });
+            if (!phqResult) {
+                return {
+                    success: false,
+                    error: "ไม่พบผลคัดกรองล่าสุดของนักเรียน",
+                };
+            }
 
-        const activityNumbers = getActivityIndices(riskLevel);
-
-        if (activityNumbers.length === 0) {
-            // Red/blue risk groups do not use worksheet activity flow.
-            return { success: true, count: 0 };
-        }
-
-        // Create full sequence once; first step unlocked, remaining steps locked.
-        const records = activityNumbers.map((activityNumber, index) => ({
-            studentId,
-            phqResultId,
-            activityNumber,
-            status:
-                index === 0
-                    ? ActivityStatus.in_progress
-                    : ActivityStatus.locked, // Only first activity is immediately actionable
-            unlockedAt: index === 0 ? new Date() : null,
-        }));
-
-        const initialized = await runSerializableTransaction(async (tx) => {
             const remainsCurrent = await canMutatePhqContext(
                 studentId,
                 phqResultId,
                 tx,
             );
-            if (!remainsCurrent) return false;
+            if (!remainsCurrent) {
+                return {
+                    success: false,
+                    error: ERROR_MESSAGES.activity.latestOnly,
+                };
+            }
+
+            const activityNumbers = getActivityIndices(phqResult.riskLevel);
+            if (activityNumbers.length === 0) {
+                // Red/blue risk groups do not use worksheet activity flow.
+                return { success: true, count: 0 };
+            }
+
+            // Create full sequence once; first step unlocked, remaining steps locked.
+            const records = activityNumbers.map((activityNumber, index) => ({
+                studentId,
+                phqResultId,
+                activityNumber,
+                status:
+                    index === 0
+                        ? ActivityStatus.in_progress
+                        : ActivityStatus.locked, // Only first activity is immediately actionable
+                unlockedAt: index === 0 ? new Date() : null,
+            }));
 
             await tx.activityProgress.createMany({
                 data: records,
                 skipDuplicates: true,
             });
-            return true;
+            return { success: true, count: records.length };
         });
-        if (!initialized) {
-            return {
-                success: false,
-                error: ERROR_MESSAGES.activity.latestOnly,
-            };
-        }
-
-        return { success: true, count: records.length };
     } catch (error) {
         return handleActionError({
             context: "Error initializing activity progress:",
@@ -340,17 +338,6 @@ export async function submitTeacherAssessment(
             return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
         }
 
-        // Assessment is valid after uploads are submitted (pending_assessment/completed).
-        if (
-            activityProgress.status !== "pending_assessment" &&
-            activityProgress.status !== "completed"
-        ) {
-            return {
-                success: false,
-                error: "ไม่สามารถบันทึกแบบประเมินได้ในสถานะปัจจุบัน",
-            };
-        }
-
         // Enforce school/class ownership before update.
         const { allowed, error } = await verifyStudentActivityAccess(
             activityProgress.studentId,
@@ -361,6 +348,17 @@ export async function submitTeacherAssessment(
 
         if (!allowed) {
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        // Assessment is valid after uploads are submitted (pending_assessment/completed).
+        if (
+            activityProgress.status !== "pending_assessment" &&
+            activityProgress.status !== "completed"
+        ) {
+            return {
+                success: false,
+                error: "ไม่สามารถบันทึกแบบประเมินได้ในสถานะปัจจุบัน",
+            };
         }
 
         const latestCheck = await verifyLatestActivityPhqResult(
@@ -467,14 +465,6 @@ export async function confirmActivityComplete(
             return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
         }
 
-        if (activityProgress.status === "completed") {
-            await revalidateAnalyticsCache(activityProgress.student.schoolId);
-            return {
-                success: true,
-                activityNumber: activityProgress.activityNumber,
-            };
-        }
-
         // Enforce school/class ownership before completion update.
         const { allowed, error } = await verifyStudentActivityAccess(
             activityProgress.studentId,
@@ -485,6 +475,14 @@ export async function confirmActivityComplete(
 
         if (!allowed) {
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        if (activityProgress.status === "completed") {
+            await revalidateAnalyticsCache(activityProgress.student.schoolId);
+            return {
+                success: true,
+                activityNumber: activityProgress.activityNumber,
+            };
         }
 
         const latestCheck = await verifyLatestActivityPhqResult(
@@ -716,6 +714,17 @@ export async function updateScheduledDate(
             return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
         }
 
+        const { allowed, error } = await verifyStudentActivityAccess(
+            activityProgress.studentId,
+            session.user.id,
+            session.user.role,
+            "manage",
+        );
+
+        if (!allowed) {
+            return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
         if (activityProgress.status === "locked") {
             return {
                 success: false,
@@ -728,17 +737,6 @@ export async function updateScheduledDate(
                 success: false,
                 error: "ไม่สามารถแก้ไขวันนัดหมายของกิจกรรมที่จบแล้ว",
             };
-        }
-
-        const { allowed, error } = await verifyStudentActivityAccess(
-            activityProgress.studentId,
-            session.user.id,
-            session.user.role,
-            "manage",
-        );
-
-        if (!allowed) {
-            return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
         const latestCheck = await verifyLatestActivityPhqResult(

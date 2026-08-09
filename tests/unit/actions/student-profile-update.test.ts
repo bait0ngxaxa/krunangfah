@@ -184,6 +184,25 @@ describe("updateStudentProfile", () => {
         expect(prismaMock.student.updateMany).not.toHaveBeenCalled();
     });
 
+    it("does not update a profile when its PHQ context becomes historical before the write", async () => {
+        prismaMock.phqResult.findFirst
+            .mockResolvedValueOnce({ id: "phq-latest" })
+            .mockResolvedValueOnce({ id: "phq-newer" });
+
+        const result = await updateStudentProfile(
+            "student-1",
+            validInput({ firstName: "สมหญิง" }),
+            latestProfileContext(),
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message:
+                "กำลังดูข้อมูลย้อนหลัง กรุณากลับไปที่ปีการศึกษาล่าสุดก่อนแก้ไขข้อมูลนักเรียน",
+        });
+        expect(prismaMock.student.updateMany).not.toHaveBeenCalled();
+    });
+
     it("updates only the student record for valid profile data", async () => {
         const result = await updateStudentProfile(
             "student-1",

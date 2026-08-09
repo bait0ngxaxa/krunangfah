@@ -49,6 +49,8 @@ import { runSerializableTransaction } from "@/lib/utils/serializable-transaction
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
 const IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS = 30 * 60;
 const MAX_IMPORT_UNIQUE_CONFLICT_RETRIES = 3;
+const HISTORICAL_PROFILE_CONTEXT_MESSAGE =
+    "กำลังดูข้อมูลย้อนหลัง กรุณากลับไปที่ปีการศึกษาล่าสุดก่อนแก้ไขข้อมูลนักเรียน";
 
 async function runImportTransaction<T>(
     callback: (tx: Prisma.TransactionClient) => Promise<T>,
@@ -1117,7 +1119,7 @@ async function validateLatestImportedProfileContext(
 
     return latestPhqResult.id === context.activePhqResultId
         ? null
-        : "กำลังดูข้อมูลย้อนหลัง กรุณากลับไปที่ปีการศึกษาล่าสุดก่อนแก้ไขข้อมูลนักเรียน";
+        : HISTORICAL_PROFILE_CONTEXT_MESSAGE;
 }
 
 async function validateStudentProfileUpdateRules(
@@ -1162,8 +1164,18 @@ async function validateStudentProfileUpdateRules(
 async function saveStudentProfileUpdate(
     student: EditableStudentProfileRecord,
     input: StudentProfileUpdateInput,
-): Promise<UpdatedStudentProfile> {
-    return prisma.$transaction(async (tx) => {
+    context: StudentProfileUpdateContext,
+): Promise<UpdatedStudentProfile | null> {
+    return runSerializableTransaction(async (tx) => {
+        const latestPhqResult = await tx.phqResult.findFirst({
+            where: { studentId: student.id },
+            orderBy: LATEST_PHQ_ORDER_BY,
+            select: { id: true },
+        });
+        if (latestPhqResult?.id !== context.activePhqResultId) {
+            return null;
+        }
+
         const currentStudent = await tx.student.findUnique({
             where: { id: student.id },
             select: {
@@ -1325,7 +1337,17 @@ export async function updateStudentProfile(
             return { success: false, message: ruleError };
         }
 
-        const updatedStudent = await saveStudentProfileUpdate(student, validated);
+        const updatedStudent = await saveStudentProfileUpdate(
+            student,
+            validated,
+            updateContext,
+        );
+        if (!updatedStudent) {
+            return {
+                success: false,
+                message: HISTORICAL_PROFILE_CONTEXT_MESSAGE,
+            };
+        }
         await revalidateStudentProfilePaths(student, validated);
 
         return {

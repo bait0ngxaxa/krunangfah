@@ -168,6 +168,51 @@ describe("referral actions business rules", () => {
             expect(createActiveStudentReferral).not.toHaveBeenCalled();
         });
 
+        it("authorizes the student before revealing a blocked lifecycle status", async () => {
+            vi.mocked(requireAuth).mockResolvedValue({
+                user: { id: validClassTeacherUserId, role: "class_teacher" },
+            } as never);
+
+            vi.mocked(prisma.student.findUnique).mockResolvedValue({
+                id: validStudentId,
+                class: "ม.1/1",
+                schoolId: "school-1",
+                status: "GRADUATED",
+                referral: null,
+            } as never);
+
+            vi.mocked(prisma.user.findUnique)
+                .mockResolvedValueOnce({
+                    schoolId: "school-2",
+                    teacher: {
+                        advisoryClass: "ม.1/1",
+                        firstName: "ครู",
+                        lastName: "ต่างโรงเรียน",
+                    },
+                } as never)
+                .mockResolvedValueOnce({
+                    id: validSchoolAdminUserId,
+                    schoolId: "school-1",
+                    deletedAt: null,
+                    school: { disabledAt: null },
+                    teacher: {
+                        firstName: "ครู",
+                        lastName: "นางฟ้า",
+                    },
+                } as never);
+
+            const result = await createStudentReferral({
+                studentId: validStudentId,
+                toTeacherUserId: validSchoolAdminUserId,
+            });
+
+            expect(result).toEqual({
+                success: false,
+                message: "ไม่มีสิทธิ์เข้าถึงนักเรียนนี้",
+            });
+            expect(createActiveStudentReferral).not.toHaveBeenCalled();
+        });
+
         it("rejects referral target that is not school_admin", async () => {
             vi.mocked(requireAuth).mockResolvedValue({
                 user: { id: validClassTeacherUserId, role: "class_teacher" },

@@ -14,6 +14,7 @@ const prismaMocks = vi.hoisted(() => {
             updateMany: vi.fn(),
             findUniqueOrThrow: vi.fn(),
         },
+        phqResult: { findFirst: vi.fn() },
         systemAdminEvent: { create: vi.fn() },
     };
     return {
@@ -79,6 +80,9 @@ describe("system admin care record mutations", () => {
         prismaMocks.tx.counselingSession.updateMany.mockResolvedValue({ count: 1 });
         prismaMocks.tx.homeVisit.updateMany.mockResolvedValue({ count: 1 });
         prismaMocks.phqResultFindFirst.mockResolvedValue({
+            academicYearId: "cmacademicyear000000000001",
+        });
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue({
             academicYearId: "cmacademicyear000000000001",
         });
         prismaMocks.academicYearFindUnique.mockResolvedValue(
@@ -423,6 +427,30 @@ describe("system admin care record mutations", () => {
         );
     });
 
+    it("does not delete a counseling session when its academic context becomes historical before the transaction", async () => {
+        prismaMocks.counselingFindFirst.mockResolvedValue(createCounselingRow(1));
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue({
+            academicYearId: "cmacademicyear000000000002",
+        });
+
+        const result = await softDeleteSystemCareRecord(
+            "counselingSession",
+            {
+                id: "cmcounseling000000000001",
+                expectedUpdatedAt,
+                reason: "ไม่ควรลบข้อมูลย้อนหลัง",
+            },
+            actor,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+        });
+        expect(prismaMocks.tx.counselingSession.updateMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.systemAdminEvent.create).not.toHaveBeenCalled();
+    });
+
     it("invalidates scoped caches when soft deleting a home visit", async () => {
         prismaMocks.homeVisitFindFirst.mockResolvedValue(createHomeVisitRow(1));
 
@@ -441,6 +469,30 @@ describe("system admin care record mutations", () => {
             schoolId,
             studentId,
         );
+    });
+
+    it("does not delete a home visit when its academic context becomes historical before the transaction", async () => {
+        prismaMocks.homeVisitFindFirst.mockResolvedValue(createHomeVisitRow(1));
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue({
+            academicYearId: "cmacademicyear000000000002",
+        });
+
+        const result = await softDeleteSystemCareRecord(
+            "homeVisit",
+            {
+                id: "cmhomevisit000000000001",
+                expectedUpdatedAt,
+                reason: "ไม่ควรลบข้อมูลย้อนหลัง",
+            },
+            actor,
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+        });
+        expect(prismaMocks.tx.homeVisit.updateMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.systemAdminEvent.create).not.toHaveBeenCalled();
     });
 });
 

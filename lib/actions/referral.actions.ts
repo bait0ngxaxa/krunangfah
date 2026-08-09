@@ -97,6 +97,31 @@ export async function createStudentReferral(input: {
         if (!student) {
             return { success: false, message: "ไม่พบข้อมูลนักเรียน" };
         }
+
+        // Authorize access to the student before evaluating sensitive state.
+        if (!isSystemAdmin(userRole)) {
+            if (!fromUser?.schoolId || fromUser.schoolId !== student.schoolId) {
+                return {
+                    success: false,
+                    message: "ไม่มีสิทธิ์เข้าถึงนักเรียนนี้",
+                };
+            }
+
+            if (userRole === "class_teacher") {
+                const advisoryClass = fromUser.teacher?.advisoryClass;
+                const isInAdvisoryClass =
+                    advisoryClass && student.class === advisoryClass;
+
+                if (!isInAdvisoryClass) {
+                    return {
+                        success: false,
+                        message:
+                            "คุณสามารถส่งต่อได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
+                    };
+                }
+            }
+        }
+
         if (
             !toUser ||
             !toUser.teacher ||
@@ -116,13 +141,6 @@ export async function createStudentReferral(input: {
 
         // Access control
         if (!isSystemAdmin(userRole)) {
-            if (!fromUser?.schoolId || fromUser.schoolId !== student.schoolId) {
-                return {
-                    success: false,
-                    message: "ไม่มีสิทธิ์เข้าถึงนักเรียนนี้",
-                };
-            }
-
             // Target teacher must be in the same school
             if (toUser.schoolId !== student.schoolId) {
                 return {
@@ -141,20 +159,6 @@ export async function createStudentReferral(input: {
                     success: false,
                     message: "สามารถส่งต่อให้ครูนางฟ้าเท่านั้น",
                 };
-            }
-
-            if (userRole === "class_teacher") {
-                const advisoryClass = fromUser.teacher?.advisoryClass;
-                const isInAdvisoryClass =
-                    advisoryClass && student.class === advisoryClass;
-
-                if (!isInAdvisoryClass) {
-                    return {
-                        success: false,
-                        message:
-                            "คุณสามารถส่งต่อได้เฉพาะนักเรียนในห้องที่คุณดูแลเท่านั้น",
-                    };
-                }
             }
         }
 

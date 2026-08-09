@@ -24,6 +24,7 @@ import {
     canMutatePhqContext,
     LATEST_CARE_RECORD_ONLY_MESSAGE,
 } from "./care-record-current-policy";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 export async function resetSystemActivityProgress(
     input: SystemCareRecordDeleteInput,
@@ -44,9 +45,16 @@ export async function resetSystemActivityProgress(
         };
     }
 
-    const { updated, fileUrls } = await prisma.$transaction(async (tx) => {
+    const transactionResult = await runSerializableTransaction(async (tx) => {
+        const remainsCurrent = await canMutatePhqContext(
+            existing.studentId,
+            existing.phqResultId,
+            tx,
+        );
+        if (!remainsCurrent) return { status: "historical" } as const;
+
         const row = await resetSelectedActivity(tx, existing, input.expectedUpdatedAt);
-        if (!row) return { updated: null, fileUrls: [] };
+        if (!row) return { status: "stale" } as const;
         const fileUrls = await resetWorksheets(tx, existing);
         await lockLaterActivities(tx, existing);
         await createSystemAdminEditEvent({
@@ -64,9 +72,14 @@ export async function resetSystemActivityProgress(
                 after: "in_progress",
             }],
         });
-        return { updated: row, fileUrls };
+        return { status: "updated", updated: row, fileUrls } as const;
     });
-    if (!updated) return staleCareRecordResponse();
+    if (transactionResult.status === "historical") {
+        return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
+    }
+    if (transactionResult.status === "stale") return staleCareRecordResponse();
+
+    const { updated, fileUrls } = transactionResult;
 
     const hasFileCleanupWarnings = await cleanupSystemCareRecordFiles(fileUrls);
     await revalidateCarePaths(updated.student.schoolId, updated.studentId);

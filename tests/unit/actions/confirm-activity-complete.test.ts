@@ -63,9 +63,11 @@ vi.mock("@/lib/utils/serializable-transaction", () => ({
     runSerializableTransaction: mocks.runSerializableTransaction,
 }));
 
-const { confirmActivityComplete, submitTeacherAssessment } = await import(
-    "@/lib/actions/activity/mutations"
-);
+const {
+    confirmActivityComplete,
+    submitTeacherAssessment,
+    updateScheduledDate,
+} = await import("@/lib/actions/activity/mutations");
 
 function mockTeacherSession(): void {
     mocks.requireAuth.mockResolvedValue({
@@ -92,6 +94,117 @@ describe("confirmActivityComplete teacher assessment gate", () => {
         );
         mocks.txWorksheetUploadCount.mockResolvedValue(2);
         mocks.txPhqResultFindFirst.mockResolvedValue({ id: "phq-1" });
+    });
+
+    it("returns idempotent success to an authorized caller when the activity is already completed", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "completed",
+            phqResultId: "phq-1",
+            activityNumber: 1,
+            student: { schoolId: "school-1" },
+        });
+
+        const result = await confirmActivityComplete("cprogress1");
+
+        expect(result).toEqual({ success: true, activityNumber: 1 });
+        expect(mocks.verifyStudentActivityAccess).toHaveBeenCalledWith(
+            "student-1",
+            "teacher-1",
+            "class_teacher",
+            "manage",
+        );
+        expect(mocks.revalidateAnalyticsCache).toHaveBeenCalledWith(
+            "school-1",
+        );
+        expect(mocks.runSerializableTransaction).not.toHaveBeenCalled();
+    });
+
+    it("denies an unauthorized caller before returning completed activity details or revalidating analytics", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "completed",
+            phqResultId: "phq-1",
+            activityNumber: 1,
+            student: { schoolId: "school-1" },
+        });
+        mocks.verifyStudentActivityAccess.mockResolvedValue({
+            allowed: false,
+            error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+        });
+
+        const result = await confirmActivityComplete("cprogress1");
+
+        expect(result).toEqual({
+            success: false,
+            error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+        });
+        expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
+        expect(mocks.runSerializableTransaction).not.toHaveBeenCalled();
+    });
+
+    it("keeps the normal activity mutation path read-only for system admins", async () => {
+        mocks.requireAuth.mockResolvedValue({
+            user: { id: "system-admin-1", role: "system_admin" },
+        });
+
+        const result = await confirmActivityComplete("cprogress1");
+
+        expect(result).toEqual({
+            success: false,
+            error: "system_admin ไม่มีสิทธิ์แก้ไขข้อมูลกิจกรรม",
+        });
+        expect(mocks.activityProgressFindUnique).not.toHaveBeenCalled();
+        expect(mocks.verifyStudentActivityAccess).not.toHaveBeenCalled();
+        expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
+    });
+
+    it("authorizes before revealing that an activity cannot accept an assessment", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "locked",
+            phqResultId: "phq-1",
+            activityNumber: 2,
+        });
+        mocks.verifyStudentActivityAccess.mockResolvedValue({
+            allowed: false,
+            error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+        });
+
+        const result = await submitTeacherAssessment("cprogress1", {
+            internalProblems: "ปัญหาภายใน",
+            externalProblems: "ปัญหาภายนอก",
+            problemType: "internal",
+        });
+
+        expect(result).toEqual({
+            success: false,
+            error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+        });
+        expect(mocks.runSerializableTransaction).not.toHaveBeenCalled();
+    });
+
+    it("authorizes before revealing that a completed activity cannot be rescheduled", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "completed",
+            phqResultId: "phq-1",
+        });
+        mocks.verifyStudentActivityAccess.mockResolvedValue({
+            allowed: false,
+            error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+        });
+
+        const result = await updateScheduledDate(
+            "cprogress1",
+            "2026-06-10T00:00:00.000Z",
+        );
+
+        expect(result).toEqual({
+            success: false,
+            error: "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+        });
+        expect(mocks.runSerializableTransaction).not.toHaveBeenCalled();
     });
 
     it("keeps activity 1 pending assessment and does not unlock activity 2 before teacher assessment is saved", async () => {

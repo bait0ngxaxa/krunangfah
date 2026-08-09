@@ -101,11 +101,7 @@ export default async function ActivityStartPage({
 
     // First access initializes sequence records for this PHQ result.
     if (progressResult.status === "empty") {
-        await initializeActivityProgress(
-            studentId,
-            latestResult.id,
-            riskLevel as "orange" | "yellow" | "green",
-        );
+        await initializeActivityProgress(studentId, latestResult.id);
         progressResult = await getActivityProgress(studentId, latestResult.id);
         if (progressResult.status === "transient_error") {
             return (

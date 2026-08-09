@@ -190,12 +190,10 @@ describe("Integration: canonical latest PHQ policy", () => {
         const historicalResult = await initializeActivityProgress(
             student.id,
             historicalBackfillPhqId,
-            "yellow",
         );
         const currentResult = await initializeActivityProgress(
             student.id,
             currentPhqId,
-            "yellow",
         );
 
         expect(historicalResult.success).toBe(false);

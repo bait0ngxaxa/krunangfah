@@ -45,6 +45,7 @@ const {
 } = await import("@/lib/actions/activity/mutations");
 
 describe("Integration: Activity Flow", () => {
+    let schoolId: string;
     let studentId: string;
     let phqResultId: string;
     let activityProgressId: string;
@@ -52,6 +53,7 @@ describe("Integration: Activity Flow", () => {
     beforeAll(async () => {
         const school = await createTestSchool();
         const otherSchool = await createTestSchool({ name: "โรงเรียนอื่น" });
+        schoolId = school.id;
 
         const ay = await createTestAcademicYear({ year: 2599, semester: 1 });
 
@@ -465,7 +467,34 @@ describe("Integration: Activity Flow", () => {
     });
 
     describe("initializeActivityProgress - New PHQ Result", () => {
-        it("creates a separate sequence for the newest academic term", async () => {
+        const runSuffix = Date.now().toString(36);
+        const academicYearBase =
+            1_000_000_000 + Number(String(Date.now()).slice(-7)) * 10;
+        let caseNumber = 0;
+
+        async function createInitializationCase(
+            riskLevel: "green" | "yellow" | "red" | "blue",
+        ) {
+            caseNumber += 1;
+            const caseStudent = await createTestStudent(schoolId, {
+                studentId: `AF-INIT-${runSuffix}-${caseNumber}`,
+                class: "ม.2/5",
+            });
+            const academicYear = await createTestAcademicYear({
+                year: academicYearBase + caseNumber,
+                semester: 1,
+            });
+            const phqResult = await createTestPhqResult(
+                caseStudent.id,
+                academicYear.id,
+                USERS.classTeacher.id,
+                { riskLevel },
+            );
+
+            return { student: caseStudent, phqResult };
+        }
+
+        it("derives the green sequence from the stored PHQ risk for the newest academic term", async () => {
             const nextAcademicYear = await createTestAcademicYear({
                 year: 2600,
                 semester: 1,
@@ -487,7 +516,6 @@ describe("Integration: Activity Flow", () => {
             const result = await initializeActivityProgress(
                 studentId,
                 nextPhqResult.id,
-                "green",
             );
             const nextProgress = await prisma.activityProgress.findMany({
                 where: { studentId, phqResultId: nextPhqResult.id },
@@ -505,6 +533,73 @@ describe("Integration: Activity Flow", () => {
                 { activityNumber: 5, status: "locked" },
             ]);
             expect(unchangedPreviousCount).toBe(previousProgressCount);
+        });
+
+        it("derives the yellow sequence from the stored PHQ risk", async () => {
+            const { student, phqResult } =
+                await createInitializationCase("yellow");
+
+            mockSession(USERS.classTeacher);
+            const result = await initializeActivityProgress(
+                student.id,
+                phqResult.id,
+            );
+            const progress = await prisma.activityProgress.findMany({
+                where: { studentId: student.id, phqResultId: phqResult.id },
+                orderBy: { activityNumber: "asc" },
+                select: { activityNumber: true, status: true },
+            });
+
+            expect(result).toEqual({ success: true, count: 4 });
+            expect(progress).toEqual([
+                { activityNumber: 1, status: "in_progress" },
+                { activityNumber: 2, status: "locked" },
+                { activityNumber: 3, status: "locked" },
+                { activityNumber: 5, status: "locked" },
+            ]);
+        });
+
+        it.each(["red", "blue"] as const)(
+            "does not create an activity sequence for stored %s risk",
+            async (riskLevel) => {
+                const { student, phqResult } =
+                    await createInitializationCase(riskLevel);
+
+                mockSession(USERS.classTeacher);
+                const result = await initializeActivityProgress(
+                    student.id,
+                    phqResult.id,
+                );
+                const progressCount = await prisma.activityProgress.count({
+                    where: {
+                        studentId: student.id,
+                        phqResultId: phqResult.id,
+                    },
+                });
+
+                expect(result).toEqual({ success: true, count: 0 });
+                expect(progressCount).toBe(0);
+            },
+        );
+
+        it("rejects a PHQ result that belongs to another student", async () => {
+            const ownerCase = await createInitializationCase("green");
+            const otherStudent = await createTestStudent(schoolId, {
+                studentId: `AF-INIT-${runSuffix}-other-${caseNumber}`,
+                class: "ม.2/5",
+            });
+
+            mockSession(USERS.classTeacher);
+            const result = await initializeActivityProgress(
+                otherStudent.id,
+                ownerCase.phqResult.id,
+            );
+            const progressCount = await prisma.activityProgress.count({
+                where: { phqResultId: ownerCase.phqResult.id },
+            });
+
+            expect(result.success).toBe(false);
+            expect(progressCount).toBe(0);
         });
     });
 });

@@ -15,6 +15,7 @@ import {
     canMutateAcademicYearContext,
     LATEST_CARE_RECORD_ONLY_MESSAGE,
 } from "./care-record-current-policy";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 export async function softDeleteSystemCareRecord(
     type: "counselingSession" | "homeVisit",
@@ -43,12 +44,19 @@ async function softDeleteCounseling(
         return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
     }
 
-    const deleted = await prisma.$transaction(async (tx) => {
+    const deleteResult = await runSerializableTransaction(async (tx) => {
+        const remainsCurrent = await canMutateAcademicYearContext(
+            existing.studentId,
+            existing.academicYearId,
+            tx,
+        );
+        if (!remainsCurrent) return "historical" as const;
+
         const write = await tx.counselingSession.updateMany({
             where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
             data: getDeleteData(actor, input.reason),
         });
-        if (write.count !== 1) return false;
+        if (write.count !== 1) return "stale" as const;
         await logDeleteEvent(
             tx,
             "counselingSession",
@@ -57,9 +65,12 @@ async function softDeleteCounseling(
             input.reason,
             actor,
         );
-        return true;
+        return "deleted" as const;
     });
-    if (!deleted) return staleCareRecordResponse();
+    if (deleteResult === "historical") {
+        return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
+    }
+    if (deleteResult === "stale") return staleCareRecordResponse();
 
     revalidateCareRecordPaths(existing.student.schoolId, existing.studentId);
     return { success: true, message: "ลบบันทึกการให้คำปรึกษาแล้ว" };
@@ -81,12 +92,19 @@ async function softDeleteHomeVisit(
         return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
     }
 
-    const deleted = await prisma.$transaction(async (tx) => {
+    const deleteResult = await runSerializableTransaction(async (tx) => {
+        const remainsCurrent = await canMutateAcademicYearContext(
+            existing.studentId,
+            existing.academicYearId,
+            tx,
+        );
+        if (!remainsCurrent) return "historical" as const;
+
         const write = await tx.homeVisit.updateMany({
             where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
             data: getDeleteData(actor, input.reason),
         });
-        if (write.count !== 1) return false;
+        if (write.count !== 1) return "stale" as const;
         await logDeleteEvent(
             tx,
             "homeVisit",
@@ -95,9 +113,12 @@ async function softDeleteHomeVisit(
             input.reason,
             actor,
         );
-        return true;
+        return "deleted" as const;
     });
-    if (!deleted) return staleCareRecordResponse();
+    if (deleteResult === "historical") {
+        return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
+    }
+    if (deleteResult === "stale") return staleCareRecordResponse();
 
     revalidateCareRecordPaths(existing.student.schoolId, existing.studentId);
     return { success: true, message: "ลบบันทึกเยี่ยมบ้านแล้ว" };

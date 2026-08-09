@@ -4,6 +4,7 @@ const prismaMocks = vi.hoisted(() => {
     const tx = {
         worksheetUpload: { deleteMany: vi.fn(), findMany: vi.fn() },
         activityProgress: { updateMany: vi.fn(), findUniqueOrThrow: vi.fn() },
+        phqResult: { findFirst: vi.fn() },
         systemAdminEvent: { create: vi.fn() },
     };
     return {
@@ -66,6 +67,7 @@ describe("resetSystemActivityProgress", () => {
             createActivityRow("completed"),
         );
         prismaMocks.phqResultFindFirst.mockResolvedValue({ id: phqResultId });
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue({ id: phqResultId });
         prismaMocks.tx.worksheetUpload.findMany.mockResolvedValue([
             { fileUrl: "/api/uploads/worksheets/activity-2.png" },
             { fileUrl: "/api/uploads/worksheets/activity-3.png" },
@@ -160,6 +162,30 @@ describe("resetSystemActivityProgress", () => {
             message: "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
         });
         expect(prismaMocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("does not reset an activity when its PHQ becomes historical before the transaction", async () => {
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue({
+            id: "newer-phq",
+        });
+
+        const result = await resetSystemActivityProgress(
+            { id: activityId, expectedUpdatedAt, reason: "ไม่ควรแก้ย้อนหลัง" },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+        });
+        expect(prismaMocks.tx.activityProgress.updateMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.worksheetUpload.deleteMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.systemAdminEvent.create).not.toHaveBeenCalled();
     });
 
     it("reports worksheet cleanup warnings after a successful reset", async () => {
