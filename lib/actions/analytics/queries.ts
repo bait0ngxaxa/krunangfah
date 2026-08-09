@@ -1,6 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { REQUIRED_ACTIVITY_NUMBERS_BY_RISK } from "./constants";
+import { LATEST_PHQ_SQL_ORDER_BY } from "@/lib/utils/phq-result-selection";
+import { buildCurrentStudentPopulationSql } from "@/lib/utils/student-population";
 
 // ========================================
 // Type Definitions
@@ -49,7 +51,12 @@ interface HospitalReferralResult {
 
 function buildActiveStudentSchoolCondition(
     schoolId: string | undefined,
+    currentPopulationOnly: boolean,
 ): Prisma.Sql {
+    const lifecycleCondition = currentPopulationOnly
+        ? buildCurrentStudentPopulationSql()
+        : Prisma.empty;
+
     if (schoolId) {
         return Prisma.sql`
             WHERE s."schoolId" = ${schoolId}
@@ -57,6 +64,7 @@ function buildActiveStudentSchoolCondition(
               AND s."isTestData" = false
               AND sch."disabledAt" IS NULL
               AND sch."isTestData" = false
+              ${lifecycleCondition}
         `;
     }
 
@@ -65,6 +73,7 @@ function buildActiveStudentSchoolCondition(
           AND s."isTestData" = false
           AND sch."disabledAt" IS NULL
           AND sch."isTestData" = false
+          ${lifecycleCondition}
     `;
 }
 
@@ -90,8 +99,12 @@ export async function getCombinedAnalytics(
     classFilter?: string,
     academicYearIds?: readonly string[],
     assessmentRound?: number,
+    currentPopulationOnly = true,
 ): Promise<CombinedAnalyticsResult> {
-    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
+    const schoolCondition = buildActiveStudentSchoolCondition(
+        schoolId,
+        currentPopulationOnly,
+    );
 
     const classCondition = classFilter
         ? Prisma.sql`AND s.class = ${classFilter}`
@@ -124,11 +137,12 @@ export async function getCombinedAnalytics(
                 SPLIT_PART(s.class, '/', 1) as grade,
                 ROW_NUMBER() OVER (
                     PARTITION BY pr."studentId"
-                    ORDER BY pr."createdAt" DESC
+                    ORDER BY ${LATEST_PHQ_SQL_ORDER_BY}
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN schools sch ON s."schoolId" = sch.id
+            JOIN academic_years ay ON pr."academicYearId" = ay.id
             ${schoolCondition}
               ${classCondition}
               ${academicYearCondition}
@@ -221,8 +235,12 @@ export async function getTrendData(
     classFilter?: string,
     academicYearIds?: readonly string[],
     assessmentRound?: number,
+    currentPopulationOnly = true,
 ): Promise<TrendDataResult[]> {
-    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
+    const schoolCondition = buildActiveStudentSchoolCondition(
+        schoolId,
+        currentPopulationOnly,
+    );
 
     const classCondition = classFilter
         ? Prisma.sql`AND s.class = ${classFilter}`
@@ -247,7 +265,7 @@ export async function getTrendData(
                 pr."assessmentRound" as assessment_round,
                 ROW_NUMBER() OVER (
                     PARTITION BY pr."studentId", pr."academicYearId", pr."assessmentRound"
-                    ORDER BY pr."createdAt" DESC
+                    ORDER BY ${LATEST_PHQ_SQL_ORDER_BY}
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
@@ -284,8 +302,12 @@ export async function getActivityProgressByRisk(
     classFilter?: string,
     academicYearIds?: readonly string[],
     assessmentRound?: number,
+    currentPopulationOnly = true,
 ): Promise<ActivityProgressResult[]> {
-    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
+    const schoolCondition = buildActiveStudentSchoolCondition(
+        schoolId,
+        currentPopulationOnly,
+    );
 
     const classCondition = classFilter
         ? Prisma.sql`AND s.class = ${classFilter}`
@@ -309,11 +331,12 @@ export async function getActivityProgressByRisk(
                 pr."riskLevel" as risk_level,
                 ROW_NUMBER() OVER (
                     PARTITION BY pr."studentId"
-                    ORDER BY pr."createdAt" DESC
+                    ORDER BY ${LATEST_PHQ_SQL_ORDER_BY}
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN schools sch ON s."schoolId" = sch.id
+            JOIN academic_years ay ON pr."academicYearId" = ay.id
             ${schoolCondition}
               ${classCondition}
               ${academicYearCondition}
@@ -355,8 +378,12 @@ export async function getActivityCompletionSummary(
     classFilter?: string,
     academicYearIds?: readonly string[],
     assessmentRound?: number,
+    currentPopulationOnly = true,
 ): Promise<ActivityCompletionSummaryResult> {
-    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
+    const schoolCondition = buildActiveStudentSchoolCondition(
+        schoolId,
+        currentPopulationOnly,
+    );
 
     const classCondition = classFilter
         ? Prisma.sql`AND s.class = ${classFilter}`
@@ -390,11 +417,12 @@ export async function getActivityCompletionSummary(
                 pr."riskLevel"::text as risk_level,
                 ROW_NUMBER() OVER (
                     PARTITION BY pr."studentId"
-                    ORDER BY pr."createdAt" DESC
+                    ORDER BY ${LATEST_PHQ_SQL_ORDER_BY}
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN schools sch ON s."schoolId" = sch.id
+            JOIN academic_years ay ON pr."academicYearId" = ay.id
             ${schoolCondition}
               ${classCondition}
               ${academicYearCondition}

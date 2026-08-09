@@ -148,6 +148,68 @@ describe("class_teacher student scope policy", () => {
         }
     });
 
+    it("excludes non-contributing lifecycle statuses from current dashboard population", async () => {
+        await getStudentsForDashboardQuery(
+            "school-1",
+            "ม.1/1",
+            "class_teacher",
+            "teacher-1",
+        );
+        await getRiskLevelCountsQuery(
+            "school-1",
+            "ม.1/1",
+            "class_teacher",
+            "teacher-1",
+        );
+
+        expect(mocks.studentCount).toHaveBeenCalledWith({
+            where: expect.objectContaining({
+                status: {
+                    notIn: ["RESIGNED", "TRANSFERRED", "GRADUATED"],
+                },
+            }),
+        });
+        const sql = collectSql(mocks.queryRaw.mock.calls[0]);
+        expect(sql).toContain('s."status"::text NOT IN');
+        expect(sql).toContain("RESIGNED");
+        expect(sql).toContain("TRANSFERRED");
+        expect(sql).toContain("GRADUATED");
+    });
+
+    it("keeps historical dashboard and student detail visibility independent from current status", async () => {
+        await getStudentsForDashboardQuery(
+            "school-1",
+            "ม.1/1",
+            "class_teacher",
+            "teacher-1",
+            { currentPopulationOnly: false },
+        );
+        await getRiskLevelCountsQuery(
+            "school-1",
+            "ม.1/1",
+            "class_teacher",
+            "teacher-1",
+            { currentPopulationOnly: false },
+        );
+        await getStudentDetailQuery(
+            "school-1",
+            "ม.1/1",
+            "class_teacher",
+            "teacher-1",
+            "historical-student",
+        );
+
+        expect(mocks.studentCount.mock.calls[0]?.[0]?.where).not.toHaveProperty(
+            "status",
+        );
+        expect(collectSql(mocks.queryRaw.mock.calls[0])).not.toContain(
+            's."status"::text NOT IN',
+        );
+        expect(
+            mocks.studentFindFirst.mock.calls[0]?.[0]?.where,
+        ).not.toHaveProperty("status");
+    });
+
     it.each(["g1234567890123", "456789"])(
         "searches national IDs case-insensitively with query %s",
         async (query) => {

@@ -1,5 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const prismaMocks = vi.hoisted(() => ({
+    academicYearFindUnique: vi.fn(),
+}));
+
+vi.mock("@/lib/database/prisma", () => ({
+    prisma: {
+        academicYear: { findUnique: prismaMocks.academicYearFindUnique },
+    },
+}));
+
 vi.mock("@/lib/auth/viewer-context", () => ({
     getViewerContext: vi.fn(),
 }));
@@ -78,6 +88,9 @@ describe("getStudentDashboardData", () => {
                 limit: 50,
                 totalPages: 1,
             },
+        });
+        prismaMocks.academicYearFindUnique.mockResolvedValue({
+            isCurrent: false,
         });
     });
 
@@ -216,6 +229,7 @@ describe("getStudentDashboardData", () => {
             {
                 academicYearId,
                 assessmentRound: 2,
+                currentPopulationOnly: false,
                 referredOnly: false,
             },
         );
@@ -228,6 +242,7 @@ describe("getStudentDashboardData", () => {
                 academicYearId,
                 assessmentRound: 2,
                 classFilter: "ม.1/1",
+                currentPopulationOnly: false,
                 referredOnly: false,
             },
         );
@@ -240,12 +255,17 @@ describe("getStudentDashboardData", () => {
                 academicYearId,
                 assessmentRound: 2,
                 classFilter: "ม.1/1",
+                currentPopulationOnly: false,
                 limit: 50,
                 page: 1,
                 referredOnly: false,
                 riskFilter: undefined,
             },
         );
+        expect(prismaMocks.academicYearFindUnique).toHaveBeenCalledWith({
+            where: { id: academicYearId },
+            select: { isCurrent: true },
+        });
     });
 
     it("keeps class filters available when selected risk has zero matching students", async () => {

@@ -20,6 +20,7 @@ import {
     cleanupSystemCareRecordFiles,
 } from "./care-record-file-cleanup";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
+import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
 
 export async function resetSystemPhqResult(
     input: SystemCareRecordDeleteInput,
@@ -77,12 +78,7 @@ async function findLatestPhqForStudent(
     return tx.phqResult.findFirst({
         where: { studentId },
         select: PHQ_SELECT,
-        orderBy: [
-            { academicYear: { year: "desc" } },
-            { academicYear: { semester: "desc" } },
-            { assessmentRound: "desc" },
-            { createdAt: "desc" },
-        ],
+        orderBy: LATEST_PHQ_ORDER_BY,
     });
 }
 

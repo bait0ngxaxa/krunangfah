@@ -34,6 +34,7 @@ import {
     isLatestPhqResult,
     LATEST_CARE_RECORD_ONLY_MESSAGE,
 } from "./care-record-current-policy";
+import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
 
 export async function saveSystemPhqResult(
     input: SystemPhqEditInput,
@@ -314,12 +315,7 @@ async function findLatestPhqForStudent(tx: Prisma.TransactionClient, studentId: 
     return tx.phqResult.findFirst({
         where: { studentId },
         select: PHQ_SELECT,
-        orderBy: [
-            { academicYear: { year: "desc" } },
-            { academicYear: { semester: "desc" } },
-            { assessmentRound: "desc" },
-            { createdAt: "desc" },
-        ],
+        orderBy: LATEST_PHQ_ORDER_BY,
     });
 }
 

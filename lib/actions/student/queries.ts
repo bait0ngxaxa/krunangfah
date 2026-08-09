@@ -11,11 +11,17 @@ import { prisma } from "@/lib/database/prisma";
 import type { RiskCountRaw, StudentListResponse } from "./types";
 import { getStudentReferralHistory } from "@/lib/services/student-referral-history";
 import {
+    LATEST_PHQ_ORDER_BY,
+    LATEST_PHQ_SQL_ORDER_BY,
+} from "@/lib/utils/phq-result-selection";
+import {
     buildClassTeacherScopeSql,
     buildReferredStudentSql,
     buildReferredStudentWhere,
+    buildCurrentStudentVisibilityWhere,
     buildStudentVisibilityWhere,
 } from "./student-scope";
+import { buildCurrentStudentPopulationSql } from "@/lib/utils/student-population";
 
 interface ClassCountRow {
     class: string;
@@ -30,11 +36,13 @@ interface DashboardSummaryFilterOptions {
     referredOnly?: boolean;
     academicYearId?: string;
     assessmentRound?: number;
+    currentPopulationOnly?: boolean;
 }
 
 interface PhqContextFilterOptions {
     academicYearId?: string;
     assessmentRound?: number;
+    currentPopulationOnly?: boolean;
 }
 
 function appendStudentWhereCondition(
@@ -99,7 +107,12 @@ function buildPhqContextSql(
 
 function buildActiveStudentSchoolCondition(
     schoolId: string | undefined,
+    currentPopulationOnly: boolean,
 ): Prisma.Sql {
+    const lifecycleCondition = currentPopulationOnly
+        ? buildCurrentStudentPopulationSql()
+        : Prisma.empty;
+
     if (schoolId) {
         return Prisma.sql`
             WHERE s."schoolId" = ${schoolId}
@@ -107,6 +120,7 @@ function buildActiveStudentSchoolCondition(
               AND s."isTestData" = false
               AND sch."disabledAt" IS NULL
               AND sch."isTestData" = false
+              ${lifecycleCondition}
         `;
     }
 
@@ -115,6 +129,7 @@ function buildActiveStudentSchoolCondition(
           AND s."isTestData" = false
           AND sch."disabledAt" IS NULL
           AND sch."isTestData" = false
+          ${lifecycleCondition}
     `;
 }
 
@@ -182,8 +197,12 @@ async function getStudentIdsByLatestRiskQuery(
     referredOnly?: boolean,
     academicYearId?: string,
     assessmentRound?: number,
+    currentPopulationOnly = true,
 ): Promise<string[]> {
-    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
+    const schoolCondition = buildActiveStudentSchoolCondition(
+        schoolId,
+        currentPopulationOnly,
+    );
     const teacherCondition = buildClassTeacherScopeSql(advisoryClass, userRole);
     const classCondition =
         classFilter && classFilter !== "all"
@@ -204,11 +223,12 @@ async function getStudentIdsByLatestRiskQuery(
                 pr."riskLevel",
                 ROW_NUMBER() OVER (
                     PARTITION BY pr."studentId"
-                    ORDER BY pr."createdAt" DESC
+                    ORDER BY ${LATEST_PHQ_SQL_ORDER_BY}
                 ) AS rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN schools sch ON s."schoolId" = sch.id
+            JOIN academic_years ay ON pr."academicYearId" = ay.id
             ${schoolCondition}
               ${teacherCondition}
               ${classCondition}
@@ -234,6 +254,7 @@ async function applyRiskFilterToWhereClause(
     referredOnly?: boolean,
     academicYearId?: string,
     assessmentRound?: number,
+    currentPopulationOnly = true,
 ): Promise<boolean> {
     if (!riskFilter || riskFilter === "all") {
         return true;
@@ -249,6 +270,7 @@ async function applyRiskFilterToWhereClause(
         referredOnly,
         academicYearId,
         assessmentRound,
+        currentPopulationOnly,
     );
 
     if (studentIds.length === 0) {
@@ -280,7 +302,10 @@ export async function getRiskLevelCountsQuery(
     options?: DashboardSummaryFilterOptions,
 ): Promise<RiskCountRaw[]> {
     // Build base visibility scope from role + school context.
-    const schoolCondition = buildActiveStudentSchoolCondition(schoolId);
+    const schoolCondition = buildActiveStudentSchoolCondition(
+        schoolId,
+        options?.currentPopulationOnly !== false,
+    );
 
     const teacherCondition = buildClassTeacherScopeSql(advisoryClass, userRole);
 
@@ -300,11 +325,12 @@ export async function getRiskLevelCountsQuery(
                 pr."riskLevel",
                 ROW_NUMBER() OVER (
                     PARTITION BY pr."studentId"
-                    ORDER BY pr."createdAt" DESC
+                    ORDER BY ${LATEST_PHQ_SQL_ORDER_BY}
                 ) as rn
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN schools sch ON s."schoolId" = sch.id
+            JOIN academic_years ay ON pr."academicYearId" = ay.id
             ${schoolCondition}
               ${teacherCondition}
               ${classCondition}
@@ -331,7 +357,11 @@ export async function getDistinctClassesQuery(
     userRole: string,
     _userId: string | undefined,
 ): Promise<string[]> {
-    const where = buildStudentVisibilityWhere(schoolId, advisoryClass, userRole);
+    const where = buildCurrentStudentVisibilityWhere(
+        schoolId,
+        advisoryClass,
+        userRole,
+    );
 
     const classesResult = await prisma.student.findMany({
         where,
@@ -359,7 +389,7 @@ export async function getStudentsQuery(
 ) {
     const { classFilter, page, limit } = options;
 
-    const whereClause = buildStudentVisibilityWhere(
+    const whereClause = buildCurrentStudentVisibilityWhere(
         schoolId,
         advisoryClass,
         userRole,
@@ -375,7 +405,7 @@ export async function getStudentsQuery(
         where: whereClause,
         include: {
             phqResults: {
-                orderBy: { createdAt: "desc" },
+                orderBy: LATEST_PHQ_ORDER_BY,
                 take: 1,
             },
             referral: {
@@ -410,13 +440,16 @@ export async function getStudentsForDashboardQuery(
         limit?: number;
         academicYearId?: string;
         assessmentRound?: number;
+        currentPopulationOnly?: boolean;
     },
 ): Promise<StudentListResponse> {
-    const whereClause = buildStudentVisibilityWhere(
-        schoolId,
-        advisoryClass,
-        userRole,
-    );
+    const whereClause = options?.currentPopulationOnly === false
+        ? buildStudentVisibilityWhere(schoolId, advisoryClass, userRole)
+        : buildCurrentStudentVisibilityWhere(
+              schoolId,
+              advisoryClass,
+              userRole,
+          );
     const classFilter = options?.classFilter;
     const riskFilter = options?.riskFilter;
     const referredOnly = options?.referredOnly;
@@ -440,6 +473,7 @@ export async function getStudentsForDashboardQuery(
         referredOnly,
         academicYearId,
         assessmentRound,
+        options?.currentPopulationOnly !== false,
     );
 
     if (!hasMatchingRiskStudents) {
@@ -471,7 +505,7 @@ export async function getStudentsForDashboardQuery(
         include: {
             phqResults: {
                 ...(phqContextWhere ? { where: phqContextWhere } : {}),
-                orderBy: { createdAt: "desc" },
+                orderBy: LATEST_PHQ_ORDER_BY,
                 take: 1,
             },
             referral: {
@@ -505,11 +539,13 @@ export async function getClassCountsQuery(
     userId: string | undefined,
     options?: DashboardSummaryFilterOptions,
 ): Promise<ClassCountRow[]> {
-    const whereClause = buildStudentVisibilityWhere(
-        schoolId,
-        advisoryClass,
-        userRole,
-    );
+    const whereClause = options?.currentPopulationOnly === false
+        ? buildStudentVisibilityWhere(schoolId, advisoryClass, userRole)
+        : buildCurrentStudentVisibilityWhere(
+              schoolId,
+              advisoryClass,
+              userRole,
+          );
 
     applyReferredOnlyFilter(
         whereClause,
@@ -530,6 +566,7 @@ export async function getClassCountsQuery(
         options?.referredOnly,
         options?.academicYearId,
         options?.assessmentRound,
+        options?.currentPopulationOnly !== false,
     );
 
     if (!hasMatchingRiskStudents) {
@@ -557,11 +594,13 @@ export async function getReferredStudentCountQuery(
     userId: string | undefined,
     options?: DashboardSummaryFilterOptions,
 ): Promise<number> {
-    const whereClause = buildStudentVisibilityWhere(
-        schoolId,
-        advisoryClass,
-        userRole,
-    );
+    const whereClause = options?.currentPopulationOnly === false
+        ? buildStudentVisibilityWhere(schoolId, advisoryClass, userRole)
+        : buildCurrentStudentVisibilityWhere(
+              schoolId,
+              advisoryClass,
+              userRole,
+          );
 
     applyClassFilter(whereClause, options?.classFilter);
     applyPhqContextFilter(whereClause, options);
@@ -576,6 +615,7 @@ export async function getReferredStudentCountQuery(
         undefined,
         options?.academicYearId,
         options?.assessmentRound,
+        options?.currentPopulationOnly !== false,
     );
 
     if (!hasMatchingRiskStudents) {
@@ -643,7 +683,7 @@ export async function searchStudentsQuery(
                 },
             },
             phqResults: {
-                orderBy: { createdAt: "desc" },
+                orderBy: LATEST_PHQ_ORDER_BY,
                 take: 1,
             },
             referral: {
@@ -692,7 +732,7 @@ export async function getStudentDetailQuery(
                 include: {
                     academicYear: true,
                 },
-                orderBy: { createdAt: "desc" },
+                orderBy: LATEST_PHQ_ORDER_BY,
             },
             referral: {
                 include: {

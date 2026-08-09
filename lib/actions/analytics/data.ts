@@ -49,6 +49,9 @@ export async function fetchAnalyticsData(
         : undefined;
     const academicYearIds = selectedAcademicYears?.map((term) => term.id);
     const selectedAcademicTermExists = (academicYearIds?.length ?? 0) > 0;
+    const currentPopulationOnly =
+        selectedAcademicYears?.length === 1 &&
+        selectedAcademicYears[0].isCurrent;
 
     const selectedCurrentTerm = selectedAcademicYears?.find(
         (term) => term.isCurrent,
@@ -104,14 +107,33 @@ export async function fetchAnalyticsData(
             distinct: ["year", "semester"],
             orderBy: [{ year: "desc" }, { semester: "asc" }],
         }),
-        getCombinedAnalytics(schoolId, classFilter, academicYearIds, assessmentRound),
-        getTrendData(schoolId, classFilter, academicYearIds, assessmentRound),
-        getActivityProgressByRisk(schoolId, classFilter, academicYearIds, assessmentRound),
+        getCombinedAnalytics(
+            schoolId,
+            classFilter,
+            academicYearIds,
+            assessmentRound,
+            currentPopulationOnly,
+        ),
+        getTrendData(
+            schoolId,
+            classFilter,
+            academicYearIds,
+            assessmentRound,
+            currentPopulationOnly,
+        ),
+        getActivityProgressByRisk(
+            schoolId,
+            classFilter,
+            academicYearIds,
+            assessmentRound,
+            currentPopulationOnly,
+        ),
         getActivityCompletionSummary(
             schoolId,
             classFilter,
             academicYearIds,
             assessmentRound,
+            currentPopulationOnly,
         ),
     ]);
 

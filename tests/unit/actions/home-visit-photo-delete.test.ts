@@ -34,6 +34,11 @@ vi.mock("fs/promises", () => ({
 vi.mock("@/lib/security/student-access", () => ({
     canAccessStudentByRole: mocks.canAccessStudentByRole,
 }));
+vi.mock("@/lib/actions/care-record-current-policy", () => ({
+    canMutateAcademicYearContext: vi.fn(async () => true),
+    LATEST_CARE_RECORD_ONLY_MESSAGE:
+        "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/utils/logging", () => ({ logError: mocks.logError }));
 

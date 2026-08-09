@@ -29,6 +29,10 @@ import { runSerializableTransaction } from "@/lib/utils/serializable-transaction
 import { isDateWithinAcademicYear } from "@/lib/utils/academic-year";
 import type { OffsetPagination } from "@/types/pagination.types";
 import type { AcademicYearDateRange } from "@/lib/utils/student-detail-filters";
+import {
+    canMutateAcademicYearContext,
+    LATEST_CARE_RECORD_ONLY_MESSAGE,
+} from "@/lib/actions/care-record-current-policy";
 
 const MAX_VISIT_NUMBER_RETRIES = 3;
 const DEFAULT_HOME_VISIT_PAGE_SIZE = 5;
@@ -107,16 +111,27 @@ interface SoftDeleteHomeVisitInput {
 
 async function softDeleteHomeVisitAndEnqueueFiles(
     input: SoftDeleteHomeVisitInput,
-): Promise<boolean> {
+): Promise<"deleted" | "historical" | "not-found"> {
     return runSerializableTransaction(async (tx) => {
         const visitWithPhotos = await tx.homeVisit.findUnique({
             where: { id: input.visitId, deletedAt: null },
             select: {
+                studentId: true,
+                academicYearId: true,
                 photos: { select: { fileUrl: true } },
             },
         });
         if (!visitWithPhotos) {
-            return false;
+            return "not-found";
+        }
+
+        const isCurrentContext = await canMutateAcademicYearContext(
+            visitWithPhotos.studentId,
+            visitWithPhotos.academicYearId,
+            tx,
+        );
+        if (!isCurrentContext) {
+            return "historical";
         }
 
         await tx.homeVisit.update({
@@ -136,7 +151,7 @@ async function softDeleteHomeVisitAndEnqueueFiles(
             });
         }
 
-        return true;
+        return "deleted";
     });
 }
 
@@ -343,8 +358,18 @@ export async function createHomeVisit(data: {
 
         for (let attempt = 0; attempt < MAX_VISIT_NUMBER_RETRIES; attempt++) {
             try {
-                visit = await prisma.$transaction(
+                const transactionResult = await prisma.$transaction(
                     async (tx) => {
+                        const isCurrentContext =
+                            await canMutateAcademicYearContext(
+                                validated.studentId,
+                                academicYear.id,
+                                tx,
+                            );
+                        if (!isCurrentContext) {
+                            return { kind: "historical" } as const;
+                        }
+
                         const visitNumbers = await tx.homeVisit.aggregate({
                             where: { studentId: validated.studentId },
                             _max: { visitNumber: true },
@@ -353,7 +378,7 @@ export async function createHomeVisit(data: {
                         const visitNumber =
                             (visitNumbers._max.visitNumber ?? 0) + 1;
 
-                        return tx.homeVisit.create({
+                        const created = await tx.homeVisit.create({
                             data: {
                                 studentId: validated.studentId,
                                 academicYearId: academicYear.id,
@@ -367,11 +392,19 @@ export async function createHomeVisit(data: {
                             },
                             select: { id: true },
                         });
+                        return { kind: "created", created } as const;
                     },
                     {
                         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
                     },
                 );
+                if (transactionResult.kind === "historical") {
+                    return {
+                        success: false,
+                        message: LATEST_CARE_RECORD_ONLY_MESSAGE,
+                    };
+                }
+                visit = transactionResult.created;
                 break;
             } catch (txError) {
                 if (
@@ -441,13 +474,19 @@ export async function deleteHomeVisit(
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        const deleted = await softDeleteHomeVisitAndEnqueueFiles({
+        const deleteResult = await softDeleteHomeVisitAndEnqueueFiles({
             visitId: validated.visitId,
             deletedById: session.user.id,
         });
 
-        if (!deleted) {
+        if (deleteResult === "not-found") {
             return { success: false, message: "ไม่พบข้อมูลที่ต้องการลบ" };
+        }
+        if (deleteResult === "historical") {
+            return {
+                success: false,
+                message: LATEST_CARE_RECORD_ONLY_MESSAGE,
+            };
         }
 
         revalidatePath(`/students/${visit.studentId}`);

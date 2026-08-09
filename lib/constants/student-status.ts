@@ -26,11 +26,14 @@ export const STUDENT_STATUS_OPTIONS: readonly {
 
 const STUDENT_STATUS_SET: ReadonlySet<string> = new Set(STUDENT_STATUS_VALUES);
 
-const COUNT_EXCLUDED_STUDENT_STATUSES: ReadonlySet<StudentStatusValue> = new Set([
+export const STUDENT_COUNT_EXCLUDED_STATUSES = [
     STUDENT_STATUS.RESIGNED,
     STUDENT_STATUS.TRANSFERRED,
     STUDENT_STATUS.GRADUATED,
-]);
+] as const;
+
+const COUNT_EXCLUDED_STUDENT_STATUS_SET: ReadonlySet<StudentStatusValue> =
+    new Set(STUDENT_COUNT_EXCLUDED_STATUSES);
 
 const ACTION_BLOCKED_STUDENT_STATUSES: ReadonlySet<StudentStatusValue> = new Set([
     STUDENT_STATUS.RESIGNED,
@@ -68,7 +71,7 @@ export function getStudentStatusLabel(status: string): string {
 export function isStudentCountExcludedStatus(
     status: StudentStatusValue,
 ): boolean {
-    return COUNT_EXCLUDED_STUDENT_STATUSES.has(status);
+    return COUNT_EXCLUDED_STUDENT_STATUS_SET.has(status);
 }
 
 export function canStudentPerformActions(status: StudentStatusValue): boolean {

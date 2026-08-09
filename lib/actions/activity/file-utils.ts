@@ -35,6 +35,7 @@ import { verifyStudentActivityAccess } from "./access";
 import { acquireRedisLock, releaseRedisLock } from "@/lib/cache/redis-lock";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 import { getUploadRequestId } from "@/lib/validations/upload.validation";
+import { canMutatePhqContext } from "@/lib/actions/care-record-current-policy";
 
 const MAX_WORKSHEET_NUMBER_RETRIES = 3;
 const WORKSHEET_UPLOAD_LOCK_TTL_SECONDS = 90;
@@ -291,6 +292,18 @@ export async function uploadWorksheet(
             };
         }
 
+        const isCurrentContext = await canMutatePhqContext(
+            activityProgress.student.id,
+            activityProgress.phqResultId,
+        );
+        if (!isCurrentContext) {
+            return {
+                success: false,
+                message: ERROR_MESSAGES.activity.latestOnly,
+                error: "UPLOAD_ACCESS_DENIED",
+            };
+        }
+
         const existingUpload = await findIdempotentWorksheetUpload(
             idempotencyKey,
             activityProgressId,
@@ -525,16 +538,34 @@ export async function deleteWorksheetUpload(
             };
         }
 
+        const activityProgress = upload.activityProgress;
+        const isCurrentContext = await canMutatePhqContext(
+            activityProgress.student.id,
+            activityProgress.phqResultId,
+        );
+        if (!isCurrentContext) {
+            return {
+                success: false,
+                message: ERROR_MESSAGES.activity.latestOnly,
+            };
+        }
+
         if (!extractWorksheetFileName(upload.fileUrl)) {
             return { success: false, message: "ไม่พบไฟล์ที่ต้องการลบ" };
         }
 
-        const activityProgress = upload.activityProgress;
         const requiredCount = getRequiredWorksheetCount(
             activityProgress.activityNumber,
         );
 
-        await runSerializableTransaction(async (tx) => {
+        const deleted = await runSerializableTransaction(async (tx) => {
+            const remainsCurrent = await canMutatePhqContext(
+                activityProgress.student.id,
+                activityProgress.phqResultId,
+                tx,
+            );
+            if (!remainsCurrent) return false;
+
             await tx.worksheetUpload.delete({
                 where: { id: uploadId },
             });
@@ -567,7 +598,14 @@ export async function deleteWorksheetUpload(
                     },
                 });
             }
+            return true;
         });
+        if (!deleted) {
+            return {
+                success: false,
+                message: ERROR_MESSAGES.activity.latestOnly,
+            };
+        }
 
         await revalidateAnalyticsCache(upload.activityProgress.student.schoolId);
 

@@ -17,6 +17,7 @@ import type {
     StudentDashboardQueryOptions,
 } from "./types";
 import { z } from "zod";
+import { prisma } from "@/lib/database/prisma";
 
 const DASHBOARD_PAGE_SIZE = 50;
 
@@ -127,9 +128,21 @@ export async function getStudentDashboardData(
         const assessmentRound = normalizeAssessmentRound(
             options?.assessmentRound,
         );
+        const selectedAcademicYear = academicYearId
+            ? await prisma.academicYear.findUnique({
+                  where: { id: academicYearId },
+                  select: { isCurrent: true },
+              })
+            : null;
+        const currentPopulationOnly = academicYearId
+            ? selectedAcademicYear?.isCurrent === true
+            : true;
         const contextFilters = {
             ...(academicYearId ? { academicYearId } : {}),
             ...(assessmentRound ? { assessmentRound } : {}),
+            ...(!currentPopulationOnly
+                ? { currentPopulationOnly: false }
+                : {}),
         };
 
         const [

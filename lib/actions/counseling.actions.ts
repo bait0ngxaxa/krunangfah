@@ -19,11 +19,17 @@ import { handleQueryError } from "./error-handler";
 import { queryEmpty, querySuccess, type QueryResult } from "./query-result";
 import { verifyStudentAccessForUser } from "@/lib/security/student-access";
 import {
+    COUNSELING_ACADEMIC_YEAR_DATE_ERROR_MESSAGE,
     counselingSessionSchema,
 } from "@/lib/validations/counseling.validation";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import type { OffsetPagination } from "@/types/pagination.types";
 import type { AcademicYearDateRange } from "@/lib/utils/student-detail-filters";
+import { isDateWithinAcademicYear } from "@/lib/utils/academic-year";
+import {
+    canMutateAcademicYearContext,
+    LATEST_CARE_RECORD_ONLY_MESSAGE,
+} from "@/lib/actions/care-record-current-policy";
 
 export interface CounselingSession {
     id: string;
@@ -32,6 +38,25 @@ export interface CounselingSession {
     counselorName: string;
     summary: string;
     createdAt: Date;
+}
+
+interface CreatedCounselingSession {
+    id: string;
+    studentId: string;
+    academicYearId: string | null;
+    sessionNumber: number;
+    sessionDate: Date;
+    counselorName: string;
+    summary: string;
+    createdById: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+interface CreateCounselingSessionResult {
+    success: boolean;
+    message?: string;
+    session?: CreatedCounselingSession;
 }
 
 const MAX_SESSION_NUMBER_RETRIES = 3;
@@ -55,22 +80,28 @@ function normalizePaginationParams(
     return { page: safePage, pageSize: safePageSize };
 }
 
-async function resolveAcademicYearId(
+interface ResolvedAcademicYear {
+    id: string;
+    startDate: Date;
+    endDate: Date;
+}
+
+async function resolveAcademicYear(
     academicYearId?: string,
-): Promise<string | null> {
+): Promise<ResolvedAcademicYear | null> {
     if (academicYearId) {
         const selectedYear = await prisma.academicYear.findUnique({
             where: { id: academicYearId },
-            select: { id: true },
+            select: { id: true, startDate: true, endDate: true },
         });
-        return selectedYear?.id ?? null;
+        return selectedYear;
     }
 
     const currentYear = await prisma.academicYear.findFirst({
         where: { isCurrent: true },
-        select: { id: true },
+        select: { id: true, startDate: true, endDate: true },
     });
-    return currentYear?.id ?? null;
+    return currentYear;
 }
 
 function buildAcademicYearRecordFilter(
@@ -201,7 +232,7 @@ export async function createCounselingSession(data: {
     sessionDate: Date;
     counselorName: string;
     summary: string;
-}) {
+}): Promise<CreateCounselingSessionResult> {
     try {
         // Validate input
         const validated = counselingSessionSchema.parse(data);
@@ -230,32 +261,35 @@ export async function createCounselingSession(data: {
             return { success: false, message: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
-        const academicYearId = await resolveAcademicYearId(
+        const academicYear = await resolveAcademicYear(
             validated.academicYearId,
         );
-        if (!academicYearId) {
+        if (!academicYear) {
             return { success: false, message: "ไม่พบปี/เทอมสำหรับบันทึกนี้" };
         }
+        if (!isDateWithinAcademicYear(validated.sessionDate, academicYear)) {
+            return {
+                success: false,
+                message: COUNSELING_ACADEMIC_YEAR_DATE_ERROR_MESSAGE,
+            };
+        }
 
-        let counselingSession:
-            | {
-                  id: string;
-                  studentId: string;
-                  academicYearId: string | null;
-                  sessionNumber: number;
-                  sessionDate: Date;
-                  counselorName: string;
-                  summary: string;
-                  createdById: string | null;
-                  createdAt: Date;
-                  updatedAt: Date;
-              }
-            | undefined;
+        let counselingSession: CreatedCounselingSession | undefined;
 
         for (let attempt = 0; attempt < MAX_SESSION_NUMBER_RETRIES; attempt++) {
             try {
-                counselingSession = await prisma.$transaction(
+                const transactionResult = await prisma.$transaction(
                     async (tx) => {
+                        const isCurrentContext =
+                            await canMutateAcademicYearContext(
+                                validated.studentId,
+                                academicYear.id,
+                                tx,
+                            );
+                        if (!isCurrentContext) {
+                            return { kind: "historical" } as const;
+                        }
+
                         const sessionNumbers =
                             await tx.counselingSession.aggregate({
                                 where: { studentId: validated.studentId },
@@ -265,10 +299,10 @@ export async function createCounselingSession(data: {
                         const sessionNumber =
                             (sessionNumbers._max.sessionNumber ?? 0) + 1;
 
-                        return tx.counselingSession.create({
+                        const created = await tx.counselingSession.create({
                             data: {
                                 studentId: validated.studentId,
-                                academicYearId,
+                                academicYearId: academicYear.id,
                                 sessionNumber,
                                 sessionDate: validated.sessionDate,
                                 counselorName: validated.counselorName,
@@ -276,11 +310,19 @@ export async function createCounselingSession(data: {
                                 createdById: userId,
                             },
                         });
+                        return { kind: "created", created } as const;
                     },
                     {
                         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
                     },
                 );
+                if (transactionResult.kind === "historical") {
+                    return {
+                        success: false,
+                        message: LATEST_CARE_RECORD_ONLY_MESSAGE,
+                    };
+                }
+                counselingSession = transactionResult.created;
                 break;
             } catch (txError) {
                 if (

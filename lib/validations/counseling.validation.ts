@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 
+export const COUNSELING_ACADEMIC_YEAR_DATE_ERROR_MESSAGE =
+    "วันที่ให้คำปรึกษาต้องอยู่ในช่วงปี/เทอมที่เลือก";
+
 export const counselingSessionSchema = z.object({
     studentId: z.string().cuid("Invalid student ID"),
     academicYearId: z.string().cuid("Invalid academic year ID").optional(),

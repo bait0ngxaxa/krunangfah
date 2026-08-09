@@ -74,6 +74,12 @@ vi.mock("@/lib/actions/activity/access", () => ({
     verifyStudentActivityAccess: mocks.verifyStudentActivityAccess,
 }));
 
+vi.mock("@/lib/actions/care-record-current-policy", () => ({
+    canMutatePhqContext: vi.fn(async () => true),
+    LATEST_CARE_RECORD_ONLY_MESSAGE:
+        "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+}));
+
 vi.mock("@/lib/cache/redis-lock", () => ({
     acquireRedisLock: mocks.acquireRedisLock,
     releaseRedisLock: mocks.releaseRedisLock,

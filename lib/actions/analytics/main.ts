@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/database/prisma";
+import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import { getViewerContext } from "@/lib/auth/viewer-context";
 import { fetchAnalyticsData, getExpectedStudentCount } from "./data";
@@ -25,6 +26,7 @@ import {
     querySuccess,
     type QueryResult,
 } from "@/lib/actions/query-result";
+import { buildCurrentStudentPopulationSql } from "@/lib/utils/student-population";
 
 function buildAnalyticsCacheKey(input: {
     role: string;
@@ -166,12 +168,12 @@ async function fetchSystemAnalyticsOverview(
                       ...(semester !== undefined ? { semester } : {}),
                   },
                   orderBy: [{ semester: "desc" }],
-                  select: { id: true, year: true, semester: true },
+                  select: { id: true, year: true, semester: true, isCurrent: true },
               })
             : currentAcademicYear ??
               (await prisma.academicYear.findFirst({
                   orderBy: [{ year: "desc" }, { semester: "desc" }],
-                  select: { id: true, year: true, semester: true },
+                  select: { id: true, year: true, semester: true, isCurrent: true },
               }));
 
     if (!resolvedAcademicYear) {
@@ -204,6 +206,9 @@ async function fetchSystemAnalyticsOverview(
         [resolvedAcademicYear.id],
     );
     const resolvedTotalStudents = totalStudents ?? 0;
+    const lifecycleCondition = resolvedAcademicYear.isCurrent
+        ? buildCurrentStudentPopulationSql()
+        : Prisma.empty;
 
     const assessedStudentsRaw = await prisma.$queryRaw<Array<{ count: bigint }>>`
         SELECT COUNT(DISTINCT pr."studentId")::bigint as count
@@ -215,6 +220,7 @@ async function fetchSystemAnalyticsOverview(
           AND s."isTestData" = false
           AND sch."disabledAt" IS NULL
           AND sch."isTestData" = false
+          ${lifecycleCondition}
     `;
     const studentsWithAssessment = Number(
         assessedStudentsRaw[0]?.count ?? BigInt(0),

@@ -19,6 +19,7 @@ import {
     createTestTeacher,
     createTestStudent,
     createTestAcademicYear,
+    createTestPhqResult,
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
@@ -60,12 +61,13 @@ const USERS = createMockUsers("hv");
 
 const { createHomeVisit, deleteHomeVisit, getHomeVisits } =
     await import("@/lib/actions/home-visit.actions");
-const { uploadHomeVisitPhoto } =
+const { uploadHomeVisitPhoto, deleteHomeVisitPhoto } =
     await import("@/lib/actions/home-visit-photo.actions");
 
 describe("Integration: Home Visits", () => {
     let studentId: string;
     let academicYearId: string;
+    let historicalAcademicYearId: string;
     let academicYearStartDate: Date;
     let academicYearEndDate: Date;
 
@@ -75,7 +77,12 @@ describe("Integration: Home Visits", () => {
             year: 2597,
             semester: 1,
         });
+        const historicalAcademicYear = await createTestAcademicYear({
+            year: 2596,
+            semester: 1,
+        });
         academicYearId = academicYear.id;
+        historicalAcademicYearId = historicalAcademicYear.id;
         academicYearStartDate = academicYear.startDate;
         academicYearEndDate = academicYear.endDate;
 
@@ -88,6 +95,11 @@ describe("Integration: Home Visits", () => {
 
         const student = await createTestStudent(school.id, { class: "ม.2/6" });
         studentId = student.id;
+        await createTestPhqResult(
+            student.id,
+            academicYear.id,
+            USERS.classTeacher.id,
+        );
     });
 
     afterAll(async () => {
@@ -218,6 +230,112 @@ describe("Integration: Home Visits", () => {
         expect(result.visits.some((visit) => visit.visitNumber === 999)).toBe(
             true,
         );
+    });
+
+    it("rejects creating a home visit in a historical academic term", async () => {
+        mockSession(USERS.classTeacher);
+
+        const result = await createHomeVisit({
+            studentId,
+            academicYearId: historicalAcademicYearId,
+            visitDate: addDays(academicYearStartDate, 6),
+            description: "ไม่ควรเพิ่มข้อมูลเยี่ยมบ้านย้อนหลัง",
+        });
+
+        expect(result.success).toBe(false);
+        await expect(
+            prisma.homeVisit.count({
+                where: { studentId, academicYearId: historicalAcademicYearId },
+            }),
+        ).resolves.toBe(0);
+    });
+
+    it("rejects deleting a historical home visit", async () => {
+        const historicalVisit = await createHistoricalVisit(2000);
+        mockSession(USERS.classTeacher);
+
+        const result = await deleteHomeVisit(historicalVisit.id);
+
+        expect(result.success).toBe(false);
+        await expect(
+            prisma.homeVisit.findUnique({
+                where: { id: historicalVisit.id },
+                select: { deletedAt: true },
+            }),
+        ).resolves.toEqual({ deletedAt: null });
+    });
+
+    it("rejects uploading a photo to a historical home visit", async () => {
+        const historicalVisit = await createHistoricalVisit(2001);
+        mockSession(USERS.classTeacher);
+
+        const result = await uploadHomeVisitPhoto(
+            historicalVisit.id,
+            createHomeVisitPhotoFormData(2001),
+        );
+
+        expect(result.success).toBe(false);
+        await expect(
+            prisma.homeVisitPhoto.count({
+                where: { homeVisitId: historicalVisit.id },
+            }),
+        ).resolves.toBe(0);
+    });
+
+    it("rejects deleting a photo from a historical home visit", async () => {
+        const historicalVisit = await createHistoricalVisit(2002);
+        const photo = await prisma.homeVisitPhoto.create({
+            data: {
+                homeVisitId: historicalVisit.id,
+                slot: 1,
+                fileName: "historical-photo.png",
+                fileUrl: `/api/uploads/home-visits/historical-${Date.now()}.png`,
+                fileType: "image/png",
+                fileSize: 8,
+            },
+        });
+        mockSession(USERS.classTeacher);
+
+        const result = await deleteHomeVisitPhoto(photo.id);
+
+        expect(result.success).toBe(false);
+        await expect(
+            prisma.homeVisitPhoto.findUnique({ where: { id: photo.id } }),
+        ).resolves.not.toBeNull();
+    });
+
+    it("keeps historical care records readable after the student transfers", async () => {
+        const historicalVisit = await createHistoricalVisit(2003);
+        await prisma.student.update({
+            where: { id: studentId },
+            data: {
+                status: "TRANSFERRED",
+                statusChangedAt: new Date(),
+                leftAt: new Date(),
+            },
+        });
+        mockSession(USERS.classTeacher);
+
+        try {
+            const result = getQueryData(
+                await getHomeVisits(studentId, {
+                    academicYearId: historicalAcademicYearId,
+                }),
+            );
+
+            expect(result.visits.map((visit) => visit.id)).toContain(
+                historicalVisit.id,
+            );
+        } finally {
+            await prisma.student.update({
+                where: { id: studentId },
+                data: {
+                    status: "ACTIVE",
+                    statusChangedAt: new Date(),
+                    leftAt: null,
+                },
+            });
+        }
     });
 
     it("keeps concurrent photo uploads within five slots", async () => {
@@ -383,6 +501,21 @@ describe("Integration: Home Visits", () => {
             expect.arrayContaining(photos.map((photo) => photo.fileUrl)),
         );
     });
+
+    async function createHistoricalVisit(visitNumber: number) {
+        return prisma.homeVisit.create({
+            data: {
+                studentId,
+                academicYearId: historicalAcademicYearId,
+                visitNumber,
+                visitDate: addDays(academicYearStartDate, 1),
+                description: "ข้อมูลเยี่ยมบ้านย้อนหลัง",
+                teacherName: "ครูทดสอบ",
+                teacherRole: "ครูประจำชั้น",
+                createdById: USERS.classTeacher.id,
+            },
+        });
+    }
 });
 
 function createHomeVisitPhotoFormData(index: number): FormData {

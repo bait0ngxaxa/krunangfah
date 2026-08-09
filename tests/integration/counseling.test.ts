@@ -17,6 +17,7 @@ import {
     createTestTeacher,
     createTestStudent,
     createTestAcademicYear,
+    createTestPhqResult,
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
@@ -37,6 +38,9 @@ const { createCounselingSession, getCounselingSessions } =
 describe("Integration: Counseling Sessions", () => {
     let studentId: string;
     let academicYearId: string;
+    let historicalAcademicYearId: string;
+    let academicYearStartDate: Date;
+    let academicYearEndDate: Date;
 
     beforeAll(async () => {
         const school = await createTestSchool();
@@ -44,7 +48,14 @@ describe("Integration: Counseling Sessions", () => {
             year: 2598,
             semester: 2,
         });
+        const historicalAcademicYear = await createTestAcademicYear({
+            year: 2597,
+            semester: 2,
+        });
         academicYearId = academicYear.id;
+        historicalAcademicYearId = historicalAcademicYear.id;
+        academicYearStartDate = academicYear.startDate;
+        academicYearEndDate = academicYear.endDate;
 
         USERS.classTeacher.schoolId = school.id;
 
@@ -56,6 +67,11 @@ describe("Integration: Counseling Sessions", () => {
 
         const student = await createTestStudent(school.id, { class: "ม.2/5" });
         studentId = student.id;
+        await createTestPhqResult(
+            student.id,
+            academicYear.id,
+            USERS.classTeacher.id,
+        );
     });
 
     afterAll(async () => {
@@ -71,7 +87,7 @@ describe("Integration: Counseling Sessions", () => {
             const result = await createCounselingSession({
                 studentId,
                 academicYearId,
-                sessionDate: new Date(),
+                sessionDate: addDays(academicYearStartDate, 1),
                 counselorName: "ครูทดสอบ",
                 summary: "Session 1 notes",
             });
@@ -84,7 +100,7 @@ describe("Integration: Counseling Sessions", () => {
             const result = await createCounselingSession({
                 studentId,
                 academicYearId,
-                sessionDate: new Date(),
+                sessionDate: addDays(academicYearStartDate, 2),
                 counselorName: "ครูทดสอบ",
                 summary: "Session 2 notes",
             });
@@ -97,7 +113,7 @@ describe("Integration: Counseling Sessions", () => {
             const result = await createCounselingSession({
                 studentId,
                 academicYearId,
-                sessionDate: new Date(),
+                sessionDate: addDays(academicYearStartDate, 3),
                 counselorName: "ครูทดสอบ",
                 summary: "Session 3 notes",
             });
@@ -115,13 +131,54 @@ describe("Integration: Counseling Sessions", () => {
             const result = await createCounselingSession({
                 studentId,
                 academicYearId,
-                sessionDate: new Date(),
+                sessionDate: addDays(academicYearStartDate, 4),
                 counselorName: "ครูทดสอบ",
                 summary: "Session after soft delete",
             });
 
             expect(result.success).toBe(true);
             expect(result.session?.sessionNumber).toBe(4);
+        });
+    });
+
+    describe("Current academic care context", () => {
+        it("rejects creating counseling in a historical academic term", async () => {
+            mockSession(USERS.classTeacher);
+
+            const result = await createCounselingSession({
+                studentId,
+                academicYearId: historicalAcademicYearId,
+                sessionDate: addDays(academicYearStartDate, 5),
+                counselorName: "ครูทดสอบ",
+                summary: "ไม่ควรเพิ่มข้อมูลย้อนหลัง",
+            });
+
+            expect(result.success).toBe(false);
+            await expect(
+                prisma.counselingSession.count({
+                    where: {
+                        studentId,
+                        academicYearId: historicalAcademicYearId,
+                    },
+                }),
+            ).resolves.toBe(0);
+        });
+
+        it("rejects a session date outside the selected academic term", async () => {
+            mockSession(USERS.classTeacher);
+
+            const result = await createCounselingSession({
+                studentId,
+                academicYearId,
+                sessionDate: addDays(academicYearEndDate, 1),
+                counselorName: "ครูทดสอบ",
+                summary: "วันที่อยู่นอกช่วงปีการศึกษา",
+            });
+
+            expect(result).toEqual({
+                success: false,
+                message: "วันที่ให้คำปรึกษาต้องอยู่ในช่วงปี/เทอมที่เลือก",
+            });
         });
     });
 
@@ -166,3 +223,9 @@ describe("Integration: Counseling Sessions", () => {
         });
     });
 });
+
+function addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}

@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { buildCurrentStudentPopulationWhere } from "@/lib/utils/student-population";
 
 export function buildStudentVisibilityWhere(
     schoolId: string | undefined,
@@ -15,6 +16,17 @@ export function buildStudentVisibilityWhere(
     if (userRole !== "class_teacher") return where;
     if (advisoryClass) return { ...where, class: advisoryClass };
     return { ...where, id: { in: [] } };
+}
+
+export function buildCurrentStudentVisibilityWhere(
+    schoolId: string | undefined,
+    advisoryClass: string | undefined,
+    userRole: string,
+): Prisma.StudentWhereInput {
+    return {
+        ...buildStudentVisibilityWhere(schoolId, advisoryClass, userRole),
+        ...buildCurrentStudentPopulationWhere(),
+    };
 }
 
 export function buildClassTeacherScopeSql(

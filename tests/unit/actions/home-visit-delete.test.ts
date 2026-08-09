@@ -26,6 +26,11 @@ vi.mock("@/lib/auth/session", () => ({ requireAuth: mocks.requireAuth }));
 vi.mock("@/lib/security/student-access", () => ({
     verifyStudentAccessForUser: mocks.verifyAccess,
 }));
+vi.mock("@/lib/actions/care-record-current-policy", () => ({
+    canMutateAcademicYearContext: vi.fn(async () => true),
+    LATEST_CARE_RECORD_ONLY_MESSAGE:
+        "แก้ไขข้อมูลได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+}));
 vi.mock("fs/promises", () => ({ unlink: mocks.unlink }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/utils/logging", () => ({ logError: mocks.logError }));
@@ -59,6 +64,7 @@ describe("deleteHomeVisit", () => {
         mocks.softDelete.mockResolvedValue({ id: "cvisit123" });
         mocks.transactionHomeVisitFindUnique.mockResolvedValue({
             studentId: "student-1",
+            academicYearId: "academic-year-1",
             photos: [
                 { fileUrl: "/api/uploads/home-visits/photo-one.webp" },
                 { fileUrl: "/api/uploads/home-visits/photo-two.webp" },
@@ -115,6 +121,8 @@ describe("deleteHomeVisit", () => {
         expect(mocks.transactionHomeVisitFindUnique).toHaveBeenCalledWith({
             where: { id: "cvisit123", deletedAt: null },
             select: {
+                studentId: true,
+                academicYearId: true,
                 photos: { select: { fileUrl: true } },
             },
         });

@@ -43,6 +43,7 @@ import {
     normalizeNationalId,
 } from "@/lib/utils/national-id";
 import { MAX_IMPORT_ROW_COUNT } from "@/lib/constants/import";
+import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
 const IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS = 30 * 60;
@@ -1060,7 +1061,7 @@ async function validateLatestImportedProfileContext(
 ): Promise<string | null> {
     const latestPhqResult = await prisma.phqResult.findFirst({
         where: { studentId },
-        orderBy: { createdAt: "desc" },
+        orderBy: LATEST_PHQ_ORDER_BY,
         select: { id: true },
     });
 

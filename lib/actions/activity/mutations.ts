@@ -19,6 +19,7 @@ import {
 } from "@/lib/validations/activity.validation";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
+import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
 import { verifyStudentActivityAccess } from "./access";
 
 async function verifyLatestActivityPhqResult(
@@ -27,7 +28,7 @@ async function verifyLatestActivityPhqResult(
 ): Promise<{ allowed: boolean; error?: string }> {
     const latestPhqResult = await prisma.phqResult.findFirst({
         where: { studentId },
-        orderBy: { createdAt: "desc" },
+        orderBy: LATEST_PHQ_ORDER_BY,
         select: { id: true },
     });
 

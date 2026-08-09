@@ -35,6 +35,11 @@ import {
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
 import { acquireRedisLock, releaseRedisLock } from "@/lib/cache/redis-lock";
 import { getUploadRequestId } from "@/lib/validations/upload.validation";
+import {
+    canMutateAcademicYearContext,
+    LATEST_CARE_RECORD_ONLY_MESSAGE,
+} from "@/lib/actions/care-record-current-policy";
+import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 
 /** Allowed image extensions for home visit photos */
 const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png"]);
@@ -192,6 +197,7 @@ type HomeVisitPhotoTransactionResult =
       }
     | { kind: "existing"; result: HomeVisitPhotoUploadResult }
     | { kind: "not-found" }
+    | { kind: "historical" }
     | { kind: "limit-reached" };
 
 type HomeVisitPhotoTransactionCheck =
@@ -204,10 +210,18 @@ async function checkHomeVisitPhotoTransaction(
 ): Promise<HomeVisitPhotoTransactionCheck> {
     const homeVisit = await tx.homeVisit.findFirst({
         where: { id: input.homeVisitId, deletedAt: null },
-        select: { id: true, studentId: true },
+        select: { id: true, studentId: true, academicYearId: true },
     });
     if (!homeVisit) {
         return { kind: "not-found" };
+    }
+    const isCurrentContext = await canMutateAcademicYearContext(
+        homeVisit.studentId,
+        homeVisit.academicYearId,
+        tx,
+    );
+    if (!isCurrentContext) {
+        return { kind: "historical" };
     }
 
     const existingPhoto = await findIdempotentHomeVisitPhoto(
@@ -370,6 +384,7 @@ export async function uploadHomeVisitPhoto(
             select: {
                 id: true,
                 studentId: true,
+                academicYearId: true,
                 student: {
                     select: { schoolId: true, class: true, status: true },
                 },
@@ -428,6 +443,18 @@ export async function uploadHomeVisitPhoto(
             return {
                 success: false,
                 message: statusError,
+                error: "UPLOAD_ACCESS_DENIED",
+            };
+        }
+
+        const isCurrentContext = await canMutateAcademicYearContext(
+            homeVisit.studentId,
+            homeVisit.academicYearId,
+        );
+        if (!isCurrentContext) {
+            return {
+                success: false,
+                message: LATEST_CARE_RECORD_ONLY_MESSAGE,
                 error: "UPLOAD_ACCESS_DENIED",
             };
         }
@@ -535,6 +562,13 @@ export async function uploadHomeVisitPhoto(
                         error: "UPLOAD_NOT_FOUND",
                     };
                 }
+                if (transactionResult.kind === "historical") {
+                    return {
+                        success: false,
+                        message: LATEST_CARE_RECORD_ONLY_MESSAGE,
+                        error: "UPLOAD_ACCESS_DENIED",
+                    };
+                }
                 return {
                     success: false,
                     message: `อัปโหลดรูปภาพได้สูงสุด ${MAX_PHOTOS_PER_VISIT} รูปต่อครั้ง`,
@@ -580,6 +614,7 @@ export async function deleteHomeVisitPhoto(
                 homeVisit: {
                     select: {
                         studentId: true,
+                        academicYearId: true,
                         student: {
                             select: {
                                 schoolId: true,
@@ -632,7 +667,25 @@ export async function deleteHomeVisitPhoto(
             return { success: false, message: statusError };
         }
 
-        await prisma.$transaction(async (tx) => {
+        const isCurrentContext = await canMutateAcademicYearContext(
+            photo.homeVisit.studentId,
+            photo.homeVisit.academicYearId,
+        );
+        if (!isCurrentContext) {
+            return {
+                success: false,
+                message: LATEST_CARE_RECORD_ONLY_MESSAGE,
+            };
+        }
+
+        const deleted = await runSerializableTransaction(async (tx) => {
+            const remainsCurrent = await canMutateAcademicYearContext(
+                photo.homeVisit.studentId,
+                photo.homeVisit.academicYearId,
+                tx,
+            );
+            if (!remainsCurrent) return false;
+
             await tx.homeVisitPhoto.delete({
                 where: { id: photoId },
             });
@@ -640,7 +693,14 @@ export async function deleteHomeVisitPhoto(
                 data: [{ fileUrl: photo.fileUrl }],
                 skipDuplicates: true,
             });
+            return true;
         });
+        if (!deleted) {
+            return {
+                success: false,
+                message: LATEST_CARE_RECORD_ONLY_MESSAGE,
+            };
+        }
 
         revalidatePath(`/students/${photo.homeVisit.studentId}`);
 

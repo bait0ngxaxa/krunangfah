@@ -335,6 +335,66 @@ describe("Integration: Worksheet Access Control", () => {
             "นักเรียนคนนี้ถูกส่งต่อแล้ว ครูประจำชั้นไม่สามารถทำกิจกรรมต่อได้",
         );
     });
+
+    it("rejects worksheet upload and delete for a historical PHQ activity", async () => {
+        const student = await createTestStudent(USERS.schoolAdmin.schoolId!, {
+            class: "ม.2/6",
+        });
+        const [historicalTerm, currentTerm] = await Promise.all([
+            createTestAcademicYear({ year: 2604, semester: 1 }),
+            createTestAcademicYear({ year: 2605, semester: 1 }),
+        ]);
+        await createTestPhqResult(
+            student.id,
+            currentTerm.id,
+            USERS.schoolAdmin.id,
+            { createdAt: new Date("2026-01-01T00:00:00.000Z") },
+        );
+        const historicalPhq = await createTestPhqResult(
+            student.id,
+            historicalTerm.id,
+            USERS.schoolAdmin.id,
+            { createdAt: new Date("2026-02-01T00:00:00.000Z") },
+        );
+        const progress = await createTestActivityProgress(
+            student.id,
+            historicalPhq.id,
+            1,
+            { status: "in_progress" },
+        );
+        mockSession(USERS.schoolAdmin);
+
+        const uploadResult = await uploadWorksheet(
+            progress.id,
+            createWorksheetFormData(
+                "00000000-0000-4000-8000-000000000099",
+            ),
+        );
+        expect(uploadResult.success).toBe(false);
+        await expect(
+            prisma.worksheetUpload.count({
+                where: { activityProgressId: progress.id },
+            }),
+        ).resolves.toBe(0);
+
+        const upload = await prisma.worksheetUpload.create({
+            data: {
+                activityProgressId: progress.id,
+                worksheetNumber: 1,
+                fileName: "historical-worksheet.png",
+                fileUrl: `/api/uploads/worksheets/historical-${Date.now()}.png`,
+                fileType: "image/png",
+                fileSize: 100,
+                uploadedById: USERS.schoolAdmin.id,
+            },
+        });
+
+        const deleteResult = await deleteWorksheetUpload(upload.id);
+        expect(deleteResult.success).toBe(false);
+        await expect(
+            prisma.worksheetUpload.findUnique({ where: { id: upload.id } }),
+        ).resolves.not.toBeNull();
+    });
 });
 
 function createWorksheetFormData(uploadRequestId: string): FormData {

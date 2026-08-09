@@ -7,6 +7,7 @@ import {
     toHomeVisitRecord,
 } from "./care-records-selects";
 import { getStudentReferralHistory } from "@/lib/services/student-referral-history";
+import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
 
 export async function getStudentCareRecords(
     studentId: string,
@@ -74,12 +75,7 @@ async function getPhqSummaries(studentId: string) {
             updatedAt: true,
             academicYear: { select: { year: true, semester: true } },
         },
-        orderBy: [
-            { academicYear: { year: "desc" } },
-            { academicYear: { semester: "desc" } },
-            { assessmentRound: "desc" },
-            { createdAt: "desc" },
-        ],
+        orderBy: LATEST_PHQ_ORDER_BY,
         take: 10,
     });
     const latestPhqId = rows[0]?.id;
