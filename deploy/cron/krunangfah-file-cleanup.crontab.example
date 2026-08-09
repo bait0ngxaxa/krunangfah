@@ -1,0 +1,9 @@
+# Merge this entry with `crontab -e` for the same non-root user that runs PM2.
+# Replace both placeholders before installation:
+#   __NODE_BIN_DIR__: output of `dirname "$(command -v node)"`
+#   __APP_DIR__: absolute repository root, for example /srv/krunangfah
+
+SHELL=/bin/bash
+PATH=__NODE_BIN_DIR__:/usr/local/bin:/usr/bin:/bin
+
+*/5 * * * * cd __APP_DIR__ && /usr/bin/flock -n .data/file-deletion-outbox.lock /bin/bash -o pipefail -c './node_modules/.bin/tsx --env-file=.env scripts/process-file-deletion-outbox.ts 2>&1 | /usr/bin/logger -t krunangfah-file-cleanup'
