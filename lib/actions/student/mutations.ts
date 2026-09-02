@@ -7,7 +7,10 @@ import { type ParsedStudent } from "@/lib/utils/excel-parser";
 import { calculateRiskLevel, isPhqScores } from "@/lib/utils/phq-scoring";
 import type { RiskLevel } from "@/lib/constants/risk-levels";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
-import { ACTIVITY_INDICES } from "@/lib/actions/activity/constants";
+import {
+    ACTIVITY_INDICES,
+    canGenerateActivitiesForAssessmentRound,
+} from "@/lib/actions/activity/constants";
 import { revalidatePath } from "next/cache";
 import type { ImportResult, ImportStudentSummary } from "./types";
 import { logError } from "@/lib/utils/logging";
@@ -768,18 +771,25 @@ export async function importStudents(
                     data: phqResultsToCreate,
                 });
 
-                const createdPhqResults = await tx.phqResult.findMany({
-                    where: {
-                        studentId: { in: phqResultsToCreate.map((record) => record.studentId) },
-                        academicYearId: resolvedAcademicYearId,
-                        assessmentRound,
-                    },
-                    select: {
-                        id: true,
-                        studentId: true,
-                        riskLevel: true,
-                    },
-                });
+                const createdPhqResults =
+                    canGenerateActivitiesForAssessmentRound(assessmentRound)
+                        ? await tx.phqResult.findMany({
+                              where: {
+                                  studentId: {
+                                      in: phqResultsToCreate.map(
+                                          (record) => record.studentId,
+                                      ),
+                                  },
+                                  academicYearId: resolvedAcademicYearId,
+                                  assessmentRound,
+                              },
+                              select: {
+                                  id: true,
+                                  studentId: true,
+                                  riskLevel: true,
+                              },
+                          })
+                        : [];
 
                 const activityProgressRows: Prisma.ActivityProgressCreateManyInput[] = [];
                 for (const phqResult of createdPhqResults) {

@@ -246,6 +246,132 @@ describe("Integration: concurrent student imports", () => {
         });
         expect([masterDataA, masterDataB]).toContainEqual(committedMasterData);
     });
+
+    it("creates round 1 activities and allows round 2 without completing them", async () => {
+        const academicYear = await createTestAcademicYear({
+            year: 9000 + Number(suffix.slice(-5)),
+            semester: 1,
+        });
+        const studentId = `ROUND-FLOW-${suffix}`;
+        const nationalId = createNationalId(10);
+        const row = createImportRow({
+            studentId,
+            nationalId,
+            scores: {
+                q1: 3,
+                q2: 3,
+                q3: 3,
+                q4: 3,
+                q5: 3,
+                q6: 0,
+                q7: 0,
+                q8: 0,
+                q9: 0,
+                q9a: false,
+                q9b: false,
+            },
+        });
+        const expires = new Date(Date.now() + 86_400_000).toISOString();
+        vi.mocked(requireAuth).mockResolvedValue({
+            user: toSessionUser(USERS_A.schoolAdmin),
+            expires,
+        });
+
+        const round1Result = await importStudents(
+            [row],
+            academicYear.id,
+            1,
+        );
+        const student = await prisma.student.findFirstOrThrow({
+            where: { schoolId, studentId },
+        });
+        const round1Phq = await prisma.phqResult.findUniqueOrThrow({
+            where: {
+                studentId_academicYearId_assessmentRound: {
+                    studentId: student.id,
+                    academicYearId: academicYear.id,
+                    assessmentRound: 1,
+                },
+            },
+        });
+        const round1Progress = await prisma.activityProgress.findMany({
+            where: { phqResultId: round1Phq.id },
+            orderBy: { activityNumber: "asc" },
+            select: { activityNumber: true, status: true },
+        });
+        const round1ProgressRows = await prisma.activityProgress.findMany({
+            where: { phqResultId: round1Phq.id },
+            select: { id: true },
+        });
+        const round1WorksheetCount = await prisma.worksheetUpload.count({
+            where: {
+                activityProgressId: {
+                    in: round1ProgressRows.map((progress) => progress.id),
+                },
+            },
+        });
+
+        expect(round1Result).toMatchObject({
+            success: true,
+            imported: 1,
+            phqCreated: 1,
+        });
+        expect(round1Progress).toEqual([
+            { activityNumber: 1, status: "in_progress" },
+            { activityNumber: 2, status: "locked" },
+            { activityNumber: 3, status: "locked" },
+            { activityNumber: 4, status: "locked" },
+            { activityNumber: 5, status: "locked" },
+        ]);
+        expect(round1WorksheetCount).toBe(0);
+
+        const round2Result = await importStudents([row], academicYear.id, 2);
+        const round2Phq = await prisma.phqResult.findUniqueOrThrow({
+            where: {
+                studentId_academicYearId_assessmentRound: {
+                    studentId: student.id,
+                    academicYearId: academicYear.id,
+                    assessmentRound: 2,
+                },
+            },
+        });
+        const round2ProgressCount = await prisma.activityProgress.count({
+            where: { phqResultId: round2Phq.id },
+        });
+
+        expect(round2Result).toMatchObject({
+            success: true,
+            imported: 1,
+            phqCreated: 1,
+        });
+        expect(round2ProgressCount).toBe(0);
+
+        const otherAcademicYear = await createTestAcademicYear({
+            year: 9100 + Number(suffix.slice(-5)),
+            semester: 2,
+        });
+        const otherTermRow = createImportRow({
+            studentId: `ROUND-FLOW-OTHER-TERM-${suffix}`,
+            nationalId: createNationalId(11),
+            scores: row.scores,
+        });
+        await expect(
+            importStudents([otherTermRow], otherAcademicYear.id, 1),
+        ).resolves.toMatchObject({ success: true, imported: 1 });
+
+        const missingRound1Result = await importStudents(
+            [otherTermRow],
+            academicYear.id,
+            2,
+        );
+
+        expect(missingRound1Result).toMatchObject({
+            success: false,
+            imported: 0,
+            phqCreated: 0,
+            duplicateRoundsSkipped: 1,
+        });
+    });
 });
 
 async function runConcurrentImports<T>(
@@ -274,6 +400,7 @@ function toSessionUser(user: MockUser) {
 function createImportRow(input: {
     studentId: string;
     nationalId: string;
+    scores?: ParsedStudent["scores"];
 }): ParsedStudent {
     return {
         studentId: input.studentId,
@@ -283,7 +410,7 @@ function createImportRow(input: {
         gender: "MALE",
         age: 13,
         class: "ม.1/1",
-        scores: {
+        scores: input.scores ?? {
             q1: 0,
             q2: 0,
             q3: 0,

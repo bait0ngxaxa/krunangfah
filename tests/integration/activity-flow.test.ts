@@ -559,6 +559,40 @@ describe("Integration: Activity Flow", () => {
             ]);
         });
 
+        it("does not initialize activities for a current round 2 PHQ", async () => {
+            const { student, phqResult: round1Phq } =
+                await createInitializationCase("green");
+
+            mockSession(USERS.classTeacher);
+            await expect(
+                initializeActivityProgress(student.id, round1Phq.id),
+            ).resolves.toEqual({ success: true, count: 3 });
+
+            const round2Phq = await createTestPhqResult(
+                student.id,
+                round1Phq.academicYearId,
+                USERS.classTeacher.id,
+                {
+                    assessmentRound: 2,
+                    riskLevel: "green",
+                },
+            );
+
+            const result = await initializeActivityProgress(
+                student.id,
+                round2Phq.id,
+            );
+            const round2ProgressCount = await prisma.activityProgress.count({
+                where: {
+                    studentId: student.id,
+                    phqResultId: round2Phq.id,
+                },
+            });
+
+            expect(result).toEqual({ success: true, count: 0 });
+            expect(round2ProgressCount).toBe(0);
+        });
+
         it.each(["red", "blue"] as const)(
             "does not create an activity sequence for stored %s risk",
             async (riskLevel) => {

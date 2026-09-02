@@ -20,6 +20,12 @@ export function getActivityIndices(riskLevel: string): number[] {
     }
 }
 
+export function canGenerateActivitiesForAssessmentRound(
+    assessmentRound: number,
+): boolean {
+    return assessmentRound === 1;
+}
+
 interface ActivityProgressStatus {
     activityNumber: number;
     status: string;

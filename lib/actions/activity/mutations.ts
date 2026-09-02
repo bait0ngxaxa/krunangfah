@@ -5,6 +5,7 @@ import { prisma } from "@/lib/database/prisma";
 import { ActivityStatus } from "@prisma/client";
 import type { ActivityProgress, Prisma } from "@prisma/client";
 import {
+    canGenerateActivitiesForAssessmentRound,
     getActivityIndices,
     getRequiredWorksheetCount,
 } from "./constants";
@@ -243,7 +244,7 @@ export async function initializeActivityProgress(
         return await runSerializableTransaction(async (tx) => {
             const phqResult = await tx.phqResult.findFirst({
                 where: { id: phqResultId, studentId },
-                select: { riskLevel: true },
+                select: { assessmentRound: true, riskLevel: true },
             });
             if (!phqResult) {
                 return {
@@ -262,6 +263,14 @@ export async function initializeActivityProgress(
                     success: false,
                     error: ERROR_MESSAGES.activity.latestOnly,
                 };
+            }
+
+            if (
+                !canGenerateActivitiesForAssessmentRound(
+                    phqResult.assessmentRound,
+                )
+            ) {
+                return { success: true, count: 0 };
             }
 
             const activityNumbers = getActivityIndices(phqResult.riskLevel);

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
 import { calculateRiskLevel, type PhqScores } from "@/lib/utils/phq-scoring";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 
 /**
  * Import Students Test Suite
@@ -538,4 +539,18 @@ describe("Import Students - Incomplete Activity Warning Round Guard", () => {
         const noWarning = getNoWarning(2);
         expect(noWarning.previousRound).toBe(1);
     });
+});
+
+describe("Import Students - Activity Generation Round Policy", () => {
+    it.each([
+        [1, true],
+        [2, false],
+    ] as const)(
+        "allows activity generation for round %s: %s",
+        (assessmentRound, expected) => {
+            expect(
+                canGenerateActivitiesForAssessmentRound(assessmentRound),
+            ).toBe(expected);
+        },
+    );
 });
