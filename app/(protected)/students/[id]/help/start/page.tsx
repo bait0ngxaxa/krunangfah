@@ -16,7 +16,10 @@ import {
     getRequestedOrLatestPhqResult,
 } from "@/lib/utils/phq-result-selection";
 import { canStudentPerformActions } from "@/lib/constants/student-status";
-import { getActivitySequenceSummary } from "@/lib/actions/activity/constants";
+import {
+    canGenerateActivitiesForAssessmentRound,
+    getActivitySequenceSummary,
+} from "@/lib/actions/activity/constants";
 import { formatAcademicYear } from "@/lib/utils/academic-year";
 import { QueryErrorState } from "@/components/ui/QueryErrorState";
 
@@ -38,13 +41,7 @@ export default async function ActivityStartPage({
         redirect(studentRoute(studentId));
     }
 
-    // Fetch detail + optional progress in parallel.
-    const [student, initialProgress] = await Promise.all([
-        getStudentDetail(studentId),
-        phqResultId
-            ? getActivityProgress(studentId, phqResultId)
-            : Promise.resolve(null),
-    ]);
+    const student = await getStudentDetail(studentId);
 
     if (!student) {
         notFound();
@@ -71,6 +68,15 @@ export default async function ActivityStartPage({
         redirect(studentHelpRoute(studentId));
     }
 
+    // Round 2 is the terminal assessment and has no activity workflow.
+    if (
+        !canGenerateActivitiesForAssessmentRound(
+            latestResult.assessmentRound,
+        )
+    ) {
+        redirect(studentHelpRoute(studentId));
+    }
+
     const riskLevel = latestResult.riskLevel;
 
     // Activity flow exists only for orange/yellow/green.
@@ -78,11 +84,10 @@ export default async function ActivityStartPage({
         redirect(studentHelpRoute(studentId));
     }
 
-    // Reuse prefetched progress only when it targets selected PHQ result.
-    let progressResult =
-        initialProgress && phqResultId === latestResult.id
-            ? initialProgress
-            : await getActivityProgress(studentId, latestResult.id);
+    let progressResult = await getActivityProgress(
+        studentId,
+        latestResult.id,
+    );
 
     if (progressResult.status === "transient_error") {
         return (

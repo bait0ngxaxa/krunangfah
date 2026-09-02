@@ -17,6 +17,7 @@ import {
 } from "@/lib/utils/phq-result-selection";
 import type { RiskLevel } from "@/lib/utils/phq-scoring";
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -49,6 +50,14 @@ export default async function GuidelinesPage({
 
     if (!selectedPhqResult) {
         redirect(studentHelpRoute(studentId));
+    }
+
+    if (
+        !canGenerateActivitiesForAssessmentRound(
+            selectedPhqResult.assessmentRound,
+        )
+    ) {
+        redirect(studentRoute(studentId));
     }
 
     const statusLockedMessage = getStudentActionBlockedMessage(student.status);

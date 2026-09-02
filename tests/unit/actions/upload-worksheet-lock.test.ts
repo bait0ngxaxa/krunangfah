@@ -129,6 +129,7 @@ describe("uploadWorksheet lock", () => {
             studentId: "student-1",
             activityNumber: 1,
             teacherId: null,
+            phqResult: { assessmentRound: 1 },
             student: {
                 id: "student-db-1",
                 schoolId: "school-1",
@@ -163,6 +164,7 @@ describe("uploadWorksheet lock", () => {
             phqResultId: "phq-1",
             activityNumber: 1,
             status: "in_progress",
+            phqResult: { assessmentRound: 1 },
         });
         mocks.transactionActivityProgressUpdate.mockResolvedValue({
             id: "progress-1",
@@ -274,6 +276,7 @@ describe("uploadWorksheet lock", () => {
                 activityNumber: 1,
                 studentId: "student-1",
                 phqResultId: "phq-1",
+                phqResult: { assessmentRound: 1 },
             },
         });
 
@@ -375,6 +378,7 @@ describe("uploadWorksheet lock", () => {
                     class: "ม.1/1",
                 },
                 worksheetUploads: [{ id: "upload-1" }],
+                phqResult: { assessmentRound: 1 },
             },
         });
         mocks.verifyStudentActivityAccess.mockImplementation(
@@ -407,6 +411,69 @@ describe("uploadWorksheet lock", () => {
         expect(mocks.worksheetUploadDelete).not.toHaveBeenCalled();
     });
 
+    it("rejects worksheet uploads for a legacy Round 2 activity before writing a file", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            id: "progress-1",
+            studentId: "student-1",
+            activityNumber: 1,
+            teacherId: null,
+            phqResult: { assessmentRound: 2 },
+            student: {
+                id: "student-db-1",
+                schoolId: "school-1",
+                class: "ม.1/1",
+            },
+            worksheetUploads: [],
+        });
+        mocks.verifyStudentActivityAccess.mockResolvedValue({
+            allowed: true,
+        });
+
+        const result = await uploadWorksheet(
+            "progress-1",
+            createWorksheetFormData(),
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "กิจกรรมช่วยเหลือมีได้เฉพาะผลคัดกรองครั้งที่ 1",
+            error: "UPLOAD_ACCESS_DENIED",
+        });
+        expect(mocks.writeFile).not.toHaveBeenCalled();
+        expect(mocks.transactionWorksheetUploadCreate).not.toHaveBeenCalled();
+    });
+
+    it("rejects deleting a worksheet from a legacy Round 2 activity", async () => {
+        mocks.worksheetUploadFindUnique.mockResolvedValue({
+            id: "upload-1",
+            fileUrl: "/api/uploads/worksheets/worksheet.png",
+            activityProgress: {
+                id: "progress-1",
+                activityNumber: 1,
+                status: "in_progress",
+                phqResult: { assessmentRound: 2 },
+                student: {
+                    id: "student-db-1",
+                    schoolId: "school-1",
+                    class: "ม.1/1",
+                },
+                worksheetUploads: [{ id: "upload-1" }],
+            },
+        });
+        mocks.verifyStudentActivityAccess.mockResolvedValue({
+            allowed: true,
+        });
+
+        const result = await deleteWorksheetUpload("upload-1");
+
+        expect(result).toEqual({
+            success: false,
+            message: "กิจกรรมช่วยเหลือมีได้เฉพาะผลคัดกรองครั้งที่ 1",
+        });
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.worksheetUploadDelete).not.toHaveBeenCalled();
+    });
+
     it("deletes worksheet metadata and queues physical cleanup atomically", async () => {
         mocks.worksheetUploadFindUnique.mockResolvedValue({
             id: "upload-1",
@@ -421,6 +488,7 @@ describe("uploadWorksheet lock", () => {
                     class: "ม.1/1",
                 },
                 worksheetUploads: [{ id: "upload-1" }],
+                phqResult: { assessmentRound: 1 },
             },
         });
         mocks.verifyStudentActivityAccess.mockResolvedValue({ allowed: true });
@@ -458,6 +526,7 @@ describe("uploadWorksheet lock", () => {
                         class: "ม.1/1",
                     },
                     worksheetUploads: [{ id: "upload-1" }],
+                    phqResult: { assessmentRound: 1 },
                 },
             });
             mocks.verifyStudentActivityAccess.mockResolvedValue({
@@ -465,6 +534,7 @@ describe("uploadWorksheet lock", () => {
             });
             mocks.transactionActivityProgressFindUnique.mockResolvedValue({
                 status: currentStatus,
+                phqResult: { assessmentRound: 1 },
             });
             mocks.transactionWorksheetUploadCount.mockResolvedValue(1);
 
@@ -477,7 +547,10 @@ describe("uploadWorksheet lock", () => {
             expect(mocks.transactionActivityProgressFindUnique).toHaveBeenCalledWith(
                 {
                     where: { id: "progress-1" },
-                    select: { status: true },
+                    select: {
+                        status: true,
+                        phqResult: { select: { assessmentRound: true } },
+                    },
                 },
             );
             expect(mocks.transactionActivityProgressUpdateMany).toHaveBeenCalledWith(

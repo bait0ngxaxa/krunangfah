@@ -5,6 +5,7 @@ import { TeacherAssessmentForm } from "@/components/activity/TeacherAssessmentFo
 import { requireAuth } from "@/lib/auth/session";
 import { ACTIVITIES } from "@/lib/config/help-page-config";
 import { getWorksheetActivityIndices } from "@/components/activity/ActivityWorkspace/constants";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 import {
     studentHelpEncouragementRoute,
     studentHelpRoute,
@@ -65,6 +66,15 @@ export default async function TeacherAssessmentPage({
         redirect(studentHelpRoute(studentId));
     }
     if (!canStudentPerformActions(student.status)) {
+        redirect(studentHelpRoute(studentId));
+    }
+
+    // Round 2 is the terminal assessment and has no activity workflow.
+    if (
+        !canGenerateActivitiesForAssessmentRound(
+            latestResult.assessmentRound,
+        )
+    ) {
         redirect(studentHelpRoute(studentId));
     }
 

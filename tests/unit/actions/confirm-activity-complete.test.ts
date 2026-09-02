@@ -66,6 +66,7 @@ vi.mock("@/lib/utils/serializable-transaction", () => ({
 const {
     confirmActivityComplete,
     submitTeacherAssessment,
+    updateTeacherNotes,
     updateScheduledDate,
 } = await import("@/lib/actions/activity/mutations");
 
@@ -102,6 +103,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             status: "completed",
             phqResultId: "phq-1",
             activityNumber: 1,
+            phqResult: { assessmentRound: 1 },
             student: { schoolId: "school-1" },
         });
 
@@ -126,6 +128,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             status: "completed",
             phqResultId: "phq-1",
             activityNumber: 1,
+            phqResult: { assessmentRound: 1 },
             student: { schoolId: "school-1" },
         });
         mocks.verifyStudentActivityAccess.mockResolvedValue({
@@ -159,12 +162,95 @@ describe("confirmActivityComplete teacher assessment gate", () => {
         expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
     });
 
+    it("rejects completing a legacy Round 2 activity before any mutation", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "completed",
+            phqResultId: "phq-round-2",
+            activityNumber: 1,
+            phqResult: { assessmentRound: 2 },
+            student: { schoolId: "school-1" },
+        });
+
+        const result = await confirmActivityComplete("cprogress1");
+
+        expect(result).toEqual({
+            success: false,
+            error: "กิจกรรมช่วยเหลือมีได้เฉพาะผลคัดกรองครั้งที่ 1",
+        });
+        expect(mocks.runSerializableTransaction).not.toHaveBeenCalled();
+        expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
+    });
+
+    it("rejects editing a legacy Round 2 assessment before any mutation", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "pending_assessment",
+            phqResultId: "phq-round-2",
+            activityNumber: 1,
+            phqResult: { assessmentRound: 2 },
+        });
+
+        const result = await submitTeacherAssessment("cprogress1", {
+            internalProblems: "ปัญหาภายใน",
+            externalProblems: "ปัญหาภายนอก",
+            problemType: "internal",
+        });
+
+        expect(result).toEqual({
+            success: false,
+            error: "กิจกรรมช่วยเหลือมีได้เฉพาะผลคัดกรองครั้งที่ 1",
+        });
+        expect(mocks.runSerializableTransaction).not.toHaveBeenCalled();
+    });
+
+    it("rejects scheduling a legacy Round 2 activity before any mutation", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "in_progress",
+            phqResultId: "phq-round-2",
+            phqResult: { assessmentRound: 2 },
+        });
+
+        const result = await updateScheduledDate(
+            "cprogress1",
+            "2026-06-10T00:00:00.000Z",
+        );
+
+        expect(result).toEqual({
+            success: false,
+            error: "กิจกรรมช่วยเหลือมีได้เฉพาะผลคัดกรองครั้งที่ 1",
+        });
+        expect(mocks.runSerializableTransaction).not.toHaveBeenCalled();
+    });
+
+    it("rejects editing notes on a legacy Round 2 activity before any mutation", async () => {
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            teacherId: null,
+            phqResultId: "phq-round-2",
+            phqResult: { assessmentRound: 2 },
+        });
+
+        const result = await updateTeacherNotes(
+            "cprogress1",
+            "บันทึกที่ไม่ควรถูกเพิ่ม",
+        );
+
+        expect(result).toEqual({
+            success: false,
+            error: "กิจกรรมช่วยเหลือมีได้เฉพาะผลคัดกรองครั้งที่ 1",
+        });
+        expect(mocks.runSerializableTransaction).not.toHaveBeenCalled();
+    });
+
     it("authorizes before revealing that an activity cannot accept an assessment", async () => {
         mocks.activityProgressFindUnique.mockResolvedValue({
             studentId: "student-1",
             status: "locked",
             phqResultId: "phq-1",
             activityNumber: 2,
+            phqResult: { assessmentRound: 1 },
         });
         mocks.verifyStudentActivityAccess.mockResolvedValue({
             allowed: false,
@@ -189,6 +275,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             studentId: "student-1",
             status: "completed",
             phqResultId: "phq-1",
+            phqResult: { assessmentRound: 1 },
         });
         mocks.verifyStudentActivityAccess.mockResolvedValue({
             allowed: false,
@@ -214,6 +301,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             status: "in_progress",
             phqResultId: "phq-1",
             activityNumber: 1,
+            phqResult: { assessmentRound: 1 },
             student: { schoolId: "school-1" },
         });
         mocks.txActivityProgressFindUnique.mockResolvedValue({
@@ -223,6 +311,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             studentId: "student-1",
             phqResultId: "phq-1",
             activityNumber: 1,
+            phqResult: { assessmentRound: 1 },
             assessedAt: null,
             worksheetUploads: [{ uploadedAt }],
         });
@@ -248,6 +337,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             status: "in_progress",
             phqResultId: "phq-1",
             activityNumber: 4,
+            phqResult: { assessmentRound: 1 },
             student: { schoolId: "school-1" },
         });
         mocks.txActivityProgressFindUnique.mockResolvedValue({
@@ -257,6 +347,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             studentId: "student-1",
             phqResultId: "phq-1",
             activityNumber: 4,
+            phqResult: { assessmentRound: 1 },
             assessedAt: new Date("2026-06-01T04:30:00.000Z"),
             worksheetUploads: [],
         });
@@ -278,6 +369,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             status: "in_progress",
             phqResultId: "phq-1",
             activityNumber: 4,
+            phqResult: { assessmentRound: 1 },
             student: { schoolId: "school-1" },
         });
         mocks.txActivityProgressFindUnique.mockResolvedValue({
@@ -287,6 +379,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             studentId: "student-1",
             phqResultId: "phq-1",
             activityNumber: 4,
+            phqResult: { assessmentRound: 1 },
             assessedAt: new Date("2026-06-01T04:30:00.000Z"),
             worksheetUploads: [
                 { uploadedAt: new Date("2026-06-01T04:30:00.000Z") },
@@ -311,6 +404,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             status: "pending_assessment",
             phqResultId: "phq-1",
             activityNumber: 1,
+            phqResult: { assessmentRound: 1 },
         });
         mocks.txActivityProgressFindUnique.mockResolvedValue({
             id: "cprogress1",
@@ -319,6 +413,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             studentId: "student-1",
             phqResultId: "phq-1",
             activityNumber: 1,
+            phqResult: { assessmentRound: 1 },
             worksheetUploads: [{ uploadedAt }],
         });
         mocks.txActivityProgressFindFirst.mockResolvedValue({ id: "progress-2" });
@@ -358,6 +453,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             status: "pending_assessment",
             phqResultId: "phq-1",
             activityNumber: 1,
+            phqResult: { assessmentRound: 1 },
         });
         mocks.txActivityProgressFindUnique.mockResolvedValue({
             id: "cprogress1",
@@ -366,6 +462,7 @@ describe("confirmActivityComplete teacher assessment gate", () => {
             studentId: "student-1",
             phqResultId: "phq-1",
             activityNumber: 1,
+            phqResult: { assessmentRound: 1 },
             worksheetUploads: [
                 { uploadedAt: new Date("2026-06-01T04:30:00.000Z") },
             ],

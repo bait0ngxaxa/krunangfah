@@ -9,6 +9,7 @@ import {
 } from "@/lib/utils/phq-result-selection";
 import { getWorksheetActivityIndices } from "@/components/activity/ActivityWorkspace/constants";
 import { canStudentPerformActions } from "@/lib/constants/student-status";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -65,6 +66,14 @@ export default async function EncouragementRoute({
     }
     if (!canStudentPerformActions(student.status)) {
         redirect(studentHelpRoute(studentId));
+    }
+
+    if (
+        !canGenerateActivitiesForAssessmentRound(
+            latestResult.assessmentRound,
+        )
+    ) {
+        redirect(studentRoute(studentId));
     }
 
     const riskLevel = latestResult.riskLevel;

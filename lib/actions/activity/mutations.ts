@@ -107,6 +107,7 @@ async function saveTeacherAssessment(
                 studentId: true,
                 phqResultId: true,
                 activityNumber: true,
+                phqResult: { select: { assessmentRound: true } },
                 worksheetUploads: {
                     orderBy: { uploadedAt: "desc" },
                     take: 1,
@@ -117,6 +118,14 @@ async function saveTeacherAssessment(
 
         if (!currentActivity) {
             return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+        }
+
+        if (
+            !canGenerateActivitiesForAssessmentRound(
+                currentActivity.phqResult.assessmentRound,
+            )
+        ) {
+            return { success: false, error: ERROR_MESSAGES.activity.roundOneOnly };
         }
 
         if (
@@ -340,6 +349,7 @@ export async function submitTeacherAssessment(
                 status: true,
                 phqResultId: true,
                 activityNumber: true,
+                phqResult: { select: { assessmentRound: true } },
             },
         });
 
@@ -357,6 +367,14 @@ export async function submitTeacherAssessment(
 
         if (!allowed) {
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        if (
+            !canGenerateActivitiesForAssessmentRound(
+                activityProgress.phqResult.assessmentRound,
+            )
+        ) {
+            return { success: false, error: ERROR_MESSAGES.activity.roundOneOnly };
         }
 
         // Assessment is valid after uploads are submitted (pending_assessment/completed).
@@ -467,6 +485,7 @@ export async function confirmActivityComplete(
             where: { id: activityProgressId },
             include: {
                 student: { select: { schoolId: true, class: true } },
+                phqResult: { select: { assessmentRound: true } },
             },
         });
 
@@ -484,6 +503,14 @@ export async function confirmActivityComplete(
 
         if (!allowed) {
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        if (
+            !canGenerateActivitiesForAssessmentRound(
+                activityProgress.phqResult.assessmentRound,
+            )
+        ) {
+            return { success: false, error: ERROR_MESSAGES.activity.roundOneOnly };
         }
 
         if (activityProgress.status === "completed") {
@@ -512,6 +539,7 @@ export async function confirmActivityComplete(
                     studentId: true,
                     phqResultId: true,
                     activityNumber: true,
+                    phqResult: { select: { assessmentRound: true } },
                     assessedAt: true,
                     worksheetUploads: {
                         orderBy: { uploadedAt: "desc" },
@@ -523,6 +551,17 @@ export async function confirmActivityComplete(
 
             if (!currentActivity) {
                 return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+            }
+
+            if (
+                !canGenerateActivitiesForAssessmentRound(
+                    currentActivity.phqResult.assessmentRound,
+                )
+            ) {
+                return {
+                    success: false,
+                    error: ERROR_MESSAGES.activity.roundOneOnly,
+                };
             }
 
             if (currentActivity.status === ActivityStatus.completed) {
@@ -619,7 +658,12 @@ export async function updateTeacherNotes(
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },
-            select: { studentId: true, teacherId: true, phqResultId: true },
+            select: {
+                studentId: true,
+                teacherId: true,
+                phqResultId: true,
+                phqResult: { select: { assessmentRound: true } },
+            },
         });
 
         if (!activityProgress) {
@@ -638,6 +682,14 @@ export async function updateTeacherNotes(
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
         }
 
+        if (
+            !canGenerateActivitiesForAssessmentRound(
+                activityProgress.phqResult.assessmentRound,
+            )
+        ) {
+            return { success: false, error: ERROR_MESSAGES.activity.roundOneOnly };
+        }
+
         const latestCheck = await verifyLatestActivityPhqResult(
             activityProgress.studentId,
             activityProgress.phqResultId,
@@ -649,10 +701,23 @@ export async function updateTeacherNotes(
         const result = await runSerializableTransaction(async (tx) => {
             const currentActivity = await tx.activityProgress.findUnique({
                 where: { id: validated.activityProgressId },
-                select: { studentId: true, teacherId: true, phqResultId: true },
+                select: {
+                    studentId: true,
+                    teacherId: true,
+                    phqResultId: true,
+                    phqResult: { select: { assessmentRound: true } },
+                },
             });
             if (!currentActivity) {
                 return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+            }
+
+            if (
+                !canGenerateActivitiesForAssessmentRound(
+                    currentActivity.phqResult.assessmentRound,
+                )
+            ) {
+                return { success: false, error: ERROR_MESSAGES.activity.roundOneOnly };
             }
 
             const remainsCurrent = await canMutatePhqContext(
@@ -716,7 +781,12 @@ export async function updateScheduledDate(
 
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: validated.activityProgressId },
-            select: { studentId: true, status: true, phqResultId: true },
+            select: {
+                studentId: true,
+                status: true,
+                phqResultId: true,
+                phqResult: { select: { assessmentRound: true } },
+            },
         });
 
         if (!activityProgress) {
@@ -732,6 +802,14 @@ export async function updateScheduledDate(
 
         if (!allowed) {
             return { success: false, error: error || "ไม่มีสิทธิ์เข้าถึง" };
+        }
+
+        if (
+            !canGenerateActivitiesForAssessmentRound(
+                activityProgress.phqResult.assessmentRound,
+            )
+        ) {
+            return { success: false, error: ERROR_MESSAGES.activity.roundOneOnly };
         }
 
         if (activityProgress.status === "locked") {
@@ -759,10 +837,22 @@ export async function updateScheduledDate(
         const result = await runSerializableTransaction(async (tx) => {
             const currentActivity = await tx.activityProgress.findUnique({
                 where: { id: validated.activityProgressId },
-                select: { studentId: true, status: true, phqResultId: true },
+                select: {
+                    studentId: true,
+                    status: true,
+                    phqResultId: true,
+                    phqResult: { select: { assessmentRound: true } },
+                },
             });
             if (!currentActivity) {
                 return { success: false, error: "ไม่พบข้อมูลกิจกรรม" };
+            }
+            if (
+                !canGenerateActivitiesForAssessmentRound(
+                    currentActivity.phqResult.assessmentRound,
+                )
+            ) {
+                return { success: false, error: ERROR_MESSAGES.activity.roundOneOnly };
             }
             if (currentActivity.status === ActivityStatus.locked) {
                 return {

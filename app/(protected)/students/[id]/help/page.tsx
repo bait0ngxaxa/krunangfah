@@ -12,6 +12,7 @@ import {
 } from "@/lib/utils/phq-result-selection";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -43,6 +44,14 @@ export default async function StudentHelpPage({
         phqResultId,
     );
     if (!selectedResult) {
+        redirect(studentRoute(studentId));
+    }
+
+    if (
+        !canGenerateActivitiesForAssessmentRound(
+            selectedResult.assessmentRound,
+        )
+    ) {
         redirect(studentRoute(studentId));
     }
 

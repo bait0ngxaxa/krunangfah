@@ -9,6 +9,7 @@ import { existsSync } from "fs";
 import {
     ALLOWED_EXTENSIONS,
     MAX_FILE_SIZE,
+    canGenerateActivitiesForAssessmentRound,
     getRequiredWorksheetCount,
 } from "./constants";
 import { validateFileSignature } from "@/lib/utils/file-signature";
@@ -92,6 +93,7 @@ async function reconcileIdempotentWorksheetUpload(
                         activityNumber: true,
                         studentId: true,
                         phqResultId: true,
+                        phqResult: { select: { assessmentRound: true } },
                     },
                 },
             },
@@ -103,6 +105,18 @@ async function reconcileIdempotentWorksheetUpload(
                 success: false,
                 message: "คำขออัปโหลดไม่ถูกต้อง",
                 error: "UPLOAD_REQUEST_ID_INVALID" as const,
+            };
+        }
+
+        if (
+            !canGenerateActivitiesForAssessmentRound(
+                upload.activityProgress.phqResult.assessmentRound,
+            )
+        ) {
+            return {
+                success: false,
+                message: ERROR_MESSAGES.activity.roundOneOnly,
+                error: "UPLOAD_ACCESS_DENIED" as const,
             };
         }
 
@@ -292,6 +306,9 @@ export async function uploadWorksheet(
                 worksheetUploads: {
                     select: { id: true, worksheetNumber: true },
                 },
+                phqResult: {
+                    select: { assessmentRound: true },
+                },
             },
         });
 
@@ -314,6 +331,18 @@ export async function uploadWorksheet(
             return {
                 success: false,
                 message: error || "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้",
+                error: "UPLOAD_ACCESS_DENIED",
+            };
+        }
+
+        if (
+            !canGenerateActivitiesForAssessmentRound(
+                activityProgress.phqResult.assessmentRound,
+            )
+        ) {
+            return {
+                success: false,
+                message: ERROR_MESSAGES.activity.roundOneOnly,
                 error: "UPLOAD_ACCESS_DENIED",
             };
         }
@@ -396,12 +425,26 @@ export async function uploadWorksheet(
                                             studentId: true,
                                             phqResultId: true,
                                             activityNumber: true,
+                                            phqResult: {
+                                                select: { assessmentRound: true },
+                                            },
                                         },
                                     });
                                 if (!currentActivity) {
                                     throw new UploadWorksheetError(
                                         "UPLOAD_ACTIVITY_NOT_FOUND",
                                         "ไม่พบข้อมูลกิจกรรม",
+                                    );
+                                }
+
+                                if (
+                                    !canGenerateActivitiesForAssessmentRound(
+                                        currentActivity.phqResult.assessmentRound,
+                                    )
+                                ) {
+                                    throw new UploadWorksheetError(
+                                        "UPLOAD_ACCESS_DENIED",
+                                        ERROR_MESSAGES.activity.roundOneOnly,
                                     );
                                 }
 
@@ -574,6 +617,9 @@ export async function deleteWorksheetUpload(
                                 class: true,
                             },
                         },
+                        phqResult: {
+                            select: { assessmentRound: true },
+                        },
                     },
                 },
             },
@@ -594,6 +640,17 @@ export async function deleteWorksheetUpload(
             return {
                 success: false,
                 message: error || "ไม่มีสิทธิ์ลบไฟล์นี้",
+            };
+        }
+
+        if (
+            !canGenerateActivitiesForAssessmentRound(
+                upload.activityProgress.phqResult.assessmentRound,
+            )
+        ) {
+            return {
+                success: false,
+                message: ERROR_MESSAGES.activity.roundOneOnly,
             };
         }
 
@@ -618,6 +675,22 @@ export async function deleteWorksheetUpload(
         );
 
         const deleted = await runSerializableTransaction(async (tx) => {
+            const currentActivity = await tx.activityProgress.findUnique({
+                where: { id: activityProgress.id },
+                select: {
+                    status: true,
+                    phqResult: { select: { assessmentRound: true } },
+                },
+            });
+            if (!currentActivity) return false;
+            if (
+                !canGenerateActivitiesForAssessmentRound(
+                    currentActivity.phqResult.assessmentRound,
+                )
+            ) {
+                return false;
+            }
+
             const remainsCurrent = await canMutatePhqContext(
                 activityProgress.student.id,
                 activityProgress.phqResultId,
@@ -634,10 +707,6 @@ export async function deleteWorksheetUpload(
             });
             const remainingCount = await tx.worksheetUpload.count({
                 where: { activityProgressId: activityProgress.id },
-            });
-            const currentActivity = await tx.activityProgress.findUnique({
-                where: { id: activityProgress.id },
-                select: { status: true },
             });
             if (
                 remainingCount < requiredCount &&
