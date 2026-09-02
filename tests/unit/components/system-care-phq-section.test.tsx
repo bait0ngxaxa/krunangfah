@@ -31,6 +31,11 @@ const roundOne: SystemPhqRecord = {
     createdAt: new Date("2026-07-08T09:00:00.000Z"),
     updatedAt: new Date("2026-07-08T09:00:00.000Z"),
 };
+const roundTwo: SystemPhqRecord = {
+    ...roundOne,
+    id: "phq-round-2",
+    assessmentRound: 2,
+};
 
 describe("SystemCarePhqSection", () => {
     it("shows PHQ editing for latest-term results instead of rollback copy", () => {
@@ -87,6 +92,25 @@ describe("SystemCarePhqSection", () => {
 
         expect(html).toContain("ดูย้อนหลังได้อย่างเดียว");
         expect(html).not.toContain("แก้ไขผล PHQ รอบ 1");
+    });
+
+    it("keeps a round 2 PHQ record viewable", () => {
+        const html = renderToStaticMarkup(
+            <SystemCarePhqSection
+                records={[roundTwo]}
+                editTarget={null}
+                editForm={null}
+                isPending={false}
+                allowMutations={false}
+                onStartEdit={vi.fn()}
+                onEditChange={vi.fn()}
+                onCancelEdit={vi.fn()}
+                onSaveEdit={vi.fn()}
+            />,
+        );
+
+        expect(html).toContain("2569/1 รอบ 2");
+        expect(html).toContain("9 คะแนน");
     });
 
     it("hides hospital referral controls when edited PHQ scores are not red", () => {

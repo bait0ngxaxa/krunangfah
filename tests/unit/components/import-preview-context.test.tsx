@@ -1,6 +1,14 @@
 /** @vitest-environment jsdom */
 
-import { act, cleanup, render, renderHook, screen, waitFor } from "@testing-library/react";
+import {
+    act,
+    cleanup,
+    fireEvent,
+    render,
+    renderHook,
+    screen,
+    waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ParsedStudent } from "@/lib/utils/excel-parser";
 
@@ -98,6 +106,15 @@ describe("ImportPreview import context", () => {
         mocks.hasRound1Data.mockResolvedValue({
             status: "success",
             data: false,
+        });
+        mocks.getIncompleteActivityWarning.mockResolvedValue({
+            status: "success",
+            data: {
+                hasIncomplete: false,
+                studentCount: 0,
+                activityCount: 0,
+                previousRound: 1,
+            },
         });
     });
 
@@ -200,5 +217,154 @@ describe("ImportPreview import context", () => {
             screen.getByRole("button", { name: /ตรวจสอบและนำเข้า/ }),
         ).toHaveProperty("disabled", true);
         expect(screen.queryByText("S001")).toBeNull();
+    });
+
+    it("keeps round 2 import enabled when round 1 activities are incomplete", async () => {
+        mocks.hasRound1Data.mockResolvedValue({
+            status: "success",
+            data: true,
+        });
+        mocks.getIncompleteActivityWarning.mockResolvedValue({
+            status: "success",
+            data: {
+                hasIncomplete: true,
+                studentCount: 1,
+                activityCount: 2,
+                previousRound: 1,
+            },
+        });
+
+        render(
+            <ImportPreview
+                data={students}
+                onCancel={vi.fn()}
+                onSuccess={vi.fn()}
+                canViewNationalId={false}
+            />,
+        );
+
+        const saveButton = await screen.findByRole("button", {
+            name: /ตรวจสอบและนำเข้า/,
+        });
+        const roundSelect = screen.getAllByRole("combobox")[1];
+        await waitFor(() =>
+            expect(
+                screen.getByRole("option", { name: "ครั้งที่ 2" }),
+            ).toHaveProperty("disabled", false),
+        );
+
+        fireEvent.change(roundSelect, { target: { value: "2" } });
+
+        await waitFor(() =>
+            expect(mocks.getIncompleteActivityWarning).toHaveBeenCalledWith(
+                "year-1",
+                2,
+                ["ม.1/1", "ม.1/2"],
+            ),
+        );
+        await waitFor(() => expect(saveButton).toHaveProperty("disabled", false));
+
+        fireEvent.click(saveButton);
+
+        expect(
+            await screen.findByText(
+                "สามารถนำเข้าผลคัดกรองครั้งที่ 2 ได้ตามปกติ",
+            ),
+        ).toBeTruthy();
+        expect(
+            screen.getByRole("button", { name: "ยืนยันนำเข้าข้อมูล" }),
+        ).toHaveProperty("disabled", false);
+    });
+
+    it("keeps round 2 import enabled when no incomplete activities are found", async () => {
+        mocks.hasRound1Data.mockResolvedValue({
+            status: "success",
+            data: true,
+        });
+
+        render(
+            <ImportPreview
+                data={students}
+                onCancel={vi.fn()}
+                onSuccess={vi.fn()}
+                canViewNationalId={false}
+            />,
+        );
+
+        const saveButton = await screen.findByRole("button", {
+            name: /ตรวจสอบและนำเข้า/,
+        });
+        const roundSelect = screen.getAllByRole("combobox")[1];
+        await waitFor(() =>
+            expect(
+                screen.getByRole("option", { name: "ครั้งที่ 2" }),
+            ).toHaveProperty("disabled", false),
+        );
+
+        fireEvent.change(roundSelect, { target: { value: "2" } });
+
+        await waitFor(() => expect(saveButton).toHaveProperty("disabled", false));
+        expect(mocks.getIncompleteActivityWarning).toHaveBeenCalled();
+    });
+
+    it("keeps round 2 import enabled when the incomplete activity lookup fails", async () => {
+        mocks.hasRound1Data.mockResolvedValue({
+            status: "success",
+            data: true,
+        });
+        mocks.getIncompleteActivityWarning.mockResolvedValue({
+            status: "transient_error",
+            requestId: "activity-warning-request-1",
+            message: "ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
+        });
+
+        render(
+            <ImportPreview
+                data={students}
+                onCancel={vi.fn()}
+                onSuccess={vi.fn()}
+                canViewNationalId={false}
+            />,
+        );
+
+        const saveButton = await screen.findByRole("button", {
+            name: /ตรวจสอบและนำเข้า/,
+        });
+        const roundSelect = screen.getAllByRole("combobox")[1];
+        await waitFor(() =>
+            expect(
+                screen.getByRole("option", { name: "ครั้งที่ 2" }),
+            ).toHaveProperty("disabled", false),
+        );
+
+        fireEvent.change(roundSelect, { target: { value: "2" } });
+
+        expect(
+            await screen.findByText(
+                "ไม่สามารถตรวจสอบกิจกรรมค้างได้ในขณะนี้ แต่ยังสามารถนำเข้าผลคัดกรองครั้งที่ 2 ได้ตามปกติ",
+            ),
+        ).toBeTruthy();
+        expect(saveButton).toHaveProperty("disabled", false);
+        expect(
+            screen.queryByText(/กรุณาเลือกครั้งที่ 1.*ครั้งที่ 2 อีกครั้ง/),
+        ).toBeNull();
+    });
+
+    it("does not allow selecting round 2 when round 1 is missing", async () => {
+        render(
+            <ImportPreview
+                data={students}
+                onCancel={vi.fn()}
+                onSuccess={vi.fn()}
+                canViewNationalId={false}
+            />,
+        );
+
+        await screen.findByRole("button", { name: /ตรวจสอบและนำเข้า/ });
+        await waitFor(() =>
+            expect(
+                screen.getByRole("option", { name: /ครั้งที่ 2/ }),
+            ).toHaveProperty("disabled", true),
+        );
     });
 });

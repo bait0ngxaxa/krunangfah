@@ -1,5 +1,8 @@
 import { getActivityProgress } from "@/lib/actions/activity";
-import { getActivitySequenceSummary } from "@/lib/actions/activity/constants";
+import {
+    canGenerateActivitiesForAssessmentRound,
+    getActivitySequenceSummary,
+} from "@/lib/actions/activity/constants";
 import type { ActivityProgressTableProps } from "./types";
 import { getActivityNumbers } from "./utils";
 import { ActivityProgressHeader } from "./ActivityProgressHeader";
@@ -17,6 +20,21 @@ export async function ActivityProgressTable({
     readOnly = false,
     actionLockedMessage,
 }: ActivityProgressTableProps) {
+    if (!canGenerateActivitiesForAssessmentRound(assessmentPeriod.assessmentRound)) {
+        return (
+            <div
+                className="rounded-2xl border border-sky-200 bg-sky-50/70 p-6"
+                role="status"
+            >
+                <p className="text-center text-sm font-medium leading-6 text-sky-800">
+                    ผลคัดกรองครั้งที่ {assessmentPeriod.assessmentRound}{" "}
+                    เป็นการประเมินปลายเทอม
+                    ไม่มีชุดกิจกรรมต่อจากผลคัดกรองนี้
+                </p>
+            </div>
+        );
+    }
+
     const activityNumbers = getActivityNumbers(riskLevel);
 
     if (activityNumbers.length === 0) {

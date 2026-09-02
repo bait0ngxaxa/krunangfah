@@ -1,12 +1,19 @@
 import type { ReactNode } from "react";
 import { ClipboardList, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 import type { SystemCareRecordResponse } from "@/lib/actions/system-admin/types";
 import { getActivityStatusLabel, getPhqRiskLevelLabel } from "./labels";
 
 export function SummaryGrid({ data }: { data: SystemCareRecordResponse }) {
     const latestPhq = data.phqResults[0];
-    const latestActivity = data.activityProgress.at(-1);
+    const activeActivityProgress = data.activityProgress.filter((record) =>
+        canGenerateActivitiesForAssessmentRound(record.assessmentRound),
+    );
+    const latestActivity = activeActivityProgress.at(-1);
+    const isTerminalAssessment =
+        latestPhq !== undefined &&
+        !canGenerateActivitiesForAssessmentRound(latestPhq.assessmentRound);
     return (
         <div className="grid gap-3 sm:grid-cols-3">
             <SummaryCard
@@ -16,8 +23,14 @@ export function SummaryGrid({ data }: { data: SystemCareRecordResponse }) {
             />
             <SummaryCard
                 label="กิจกรรม"
-                value={`${data.activityProgress.length} รายการ`}
-                detail={latestActivity ? `ล่าสุด: ${getActivityStatusLabel(latestActivity.status)}` : "ไม่มีข้อมูล"}
+                value={`${activeActivityProgress.length} รายการ`}
+                detail={
+                    isTerminalAssessment
+                        ? `ผลคัดกรองครั้งที่ ${latestPhq.assessmentRound} ไม่มีชุดกิจกรรม`
+                        : latestActivity
+                          ? `ล่าสุด: ${getActivityStatusLabel(latestActivity.status)}`
+                          : "ไม่มีข้อมูล"
+                }
             />
             <SummaryCard
                 label="ส่งต่อ"

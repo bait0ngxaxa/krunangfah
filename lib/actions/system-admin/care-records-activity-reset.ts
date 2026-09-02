@@ -24,7 +24,11 @@ import {
     canMutatePhqContext,
     LATEST_CARE_RECORD_ONLY_MESSAGE,
 } from "./care-record-current-policy";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
+
+const ACTIVITY_ROUND_ONLY_MESSAGE =
+    "กิจกรรมช่วยเหลือมีได้เฉพาะผลคัดกรองครั้งที่ 1";
 
 export async function resetSystemActivityProgress(
     input: SystemCareRecordDeleteInput,
@@ -37,6 +41,9 @@ export async function resetSystemActivityProgress(
     if (!existing) return { success: false, message: "ไม่พบกิจกรรม" };
     if (!await canMutatePhqContext(existing.studentId, existing.phqResultId)) {
         return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
+    }
+    if (!canGenerateActivitiesForAssessmentRound(existing.phqResult.assessmentRound)) {
+        return { success: false, message: ACTIVITY_ROUND_ONLY_MESSAGE };
     }
     if (existing.status !== "completed") {
         return {

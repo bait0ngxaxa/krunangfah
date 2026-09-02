@@ -1,6 +1,7 @@
 "use client";
 
 import type { SystemActivityRecord } from "@/lib/actions/system-admin/types";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 import {
     DeleteReasonBox,
     EmptyState,
@@ -10,6 +11,7 @@ import { getActivityStatusLabel } from "./labels";
 
 export function SystemCareActivityGroups({
     records,
+    assessmentRound,
     allowMutations,
     resetTarget,
     resetReason,
@@ -20,6 +22,7 @@ export function SystemCareActivityGroups({
     onReset,
 }: {
     records: SystemActivityRecord[];
+    assessmentRound?: number;
     allowMutations: boolean;
     resetTarget: SystemActivityRecord | null;
     resetReason: string;
@@ -29,8 +32,30 @@ export function SystemCareActivityGroups({
     onCancelReset: () => void;
     onReset: () => void;
 }) {
-    const groups = groupActivities(records);
-    if (groups.length === 0) return <EmptyState />;
+    const selectedAssessmentRound = assessmentRound ?? records[0]?.assessmentRound;
+    const isTerminalAssessment =
+        selectedAssessmentRound !== undefined &&
+        !canGenerateActivitiesForAssessmentRound(selectedAssessmentRound);
+    const legacyRecords = records.filter(
+        (record) => !canGenerateActivitiesForAssessmentRound(record.assessmentRound),
+    );
+    const groups = groupActivities(
+        records.filter((record) =>
+            canGenerateActivitiesForAssessmentRound(record.assessmentRound),
+        ),
+    );
+
+    if (isTerminalAssessment) {
+        return <TerminalActivityNotice legacyCount={legacyRecords.length} />;
+    }
+
+    if (groups.length === 0) {
+        return legacyRecords.length > 0 ? (
+            <LegacyActivityNotice count={legacyRecords.length} />
+        ) : (
+            <EmptyState />
+        );
+    }
 
     return (
         <div className="space-y-3">
@@ -75,12 +100,50 @@ export function SystemCareActivityGroups({
                     </div>
                 </div>
             ))}
+            {legacyRecords.length > 0 ? (
+                <LegacyActivityNotice count={legacyRecords.length} />
+            ) : null}
         </div>
     );
 }
 
 function canResetActivity(record: SystemActivityRecord): boolean {
-    return record.status === "completed";
+    return (
+        record.status === "completed" &&
+        canGenerateActivitiesForAssessmentRound(record.assessmentRound)
+    );
+}
+
+function TerminalActivityNotice({ legacyCount }: { legacyCount: number }) {
+    return (
+        <div
+            className="rounded-xl border border-sky-200 bg-sky-50/70 p-4 text-sm text-sky-800"
+            role="status"
+        >
+            <p className="font-semibold">
+                ผลคัดกรองครั้งที่ 2 เป็นการประเมินปลายเทอม
+                ไม่มีชุดกิจกรรมต่อจากผลคัดกรองนี้
+            </p>
+            {legacyCount > 0 ? (
+                <p className="mt-1 text-xs leading-5 text-sky-700">
+                    พบข้อมูลกิจกรรมเดิม {legacyCount} รายการ
+                    จึงไม่แสดงเป็น workflow กิจกรรมปัจจุบัน
+                </p>
+            ) : null}
+        </div>
+    );
+}
+
+function LegacyActivityNotice({ count }: { count: number }) {
+    return (
+        <p
+            className="rounded-xl border border-sky-200 bg-sky-50/70 p-3 text-sm text-sky-800"
+            role="status"
+        >
+            พบข้อมูลกิจกรรมเดิม {count} รายการจากผลคัดกรองที่ไม่ใช่ครั้งที่ 1
+            จึงไม่แสดงเป็น workflow กิจกรรมปัจจุบัน
+        </p>
+    );
 }
 
 function groupActivities(records: SystemActivityRecord[]) {

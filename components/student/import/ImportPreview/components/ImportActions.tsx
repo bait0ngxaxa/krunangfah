@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, ShieldAlert } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 import { Button } from "@/components/ui/Button";
 import type { ZeroScoreWarningInfo } from "../types";
@@ -134,22 +134,21 @@ export function ImportActions({
                             </div>
 
                             {incompleteWarning?.hasIncomplete && (
-                                <div className="space-y-2 rounded-xl border-2 border-red-300 bg-red-50 p-4">
-                                    <div className="flex items-center gap-2">
-                                        <ShieldAlert className="h-5 w-5 shrink-0 text-red-500" />
-                                        <p className="break-words text-sm font-bold text-red-700">
+                                <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                    <div className="flex items-start gap-2">
+                                        <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                                        <p className="break-words text-sm font-bold text-amber-800">
                                             พบนักเรียน{" "}
                                             {incompleteWarning.studentCount} คน
-                                            ที่ยังทำกิจกรรมไม่ครบ (
+                                            ยังมีกิจกรรมจากการคัดกรองครั้งที่{" "}
+                                            {incompleteWarning.previousRound} ไม่ครบ (
                                             {incompleteWarning.activityCount}{" "}
-                                            กิจกรรม) จากการประเมินครั้งที่{" "}
-                                            {incompleteWarning.previousRound}
+                                            กิจกรรม)
                                         </p>
                                     </div>
-                                    <p className="ml-7 break-words text-xs text-red-600">
-                                        เมื่อนำเข้าข้อมูลใหม่แล้ว
-                                        จะไม่สามารถย้อนกลับไปทำกิจกรรมเดิมได้
-                                        กรุณาตรวจสอบให้แน่ใจก่อนยืนยัน
+                                    <p className="ml-7 break-words text-xs text-amber-700">
+                                        สามารถนำเข้าผลคัดกรองครั้งที่{" "}
+                                        {assessmentRound} ได้ตามปกติ
                                     </p>
                                 </div>
                             )}

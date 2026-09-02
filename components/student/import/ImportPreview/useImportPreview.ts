@@ -325,7 +325,8 @@ export function useImportPreview({
         [],
     );
 
-    // Handler: when user changes assessment round, check incomplete activities
+    // Handler: when user changes assessment round, load an advisory about
+    // incomplete activities. This lookup must never block importing.
     const handleRoundChange = useCallback(
         async (round: number) => {
             setAssessmentRound(round);
@@ -343,10 +344,6 @@ export function useImportPreview({
                 if (result.status === "transient_error") {
                     setIncompleteWarning(null);
                     setIncompleteCheckFailed(true);
-                    setErrorTitle("ตรวจสอบกิจกรรมค้างไม่สำเร็จ");
-                    setError(
-                        `${result.message ?? "ไม่สามารถตรวจสอบข้อมูลได้ กรุณาลองใหม่อีกครั้ง"} รหัสอ้างอิง: ${result.requestId}`,
-                    );
                     return;
                 }
                 if (
@@ -355,14 +352,12 @@ export function useImportPreview({
                 ) {
                     setIncompleteWarning(null);
                     setIncompleteCheckFailed(true);
-                    setError("ไม่มีสิทธิ์ตรวจสอบกิจกรรมค้าง");
                     return;
                 }
                 setIncompleteWarning(result.data);
             } catch {
                 setIncompleteWarning(null);
                 setIncompleteCheckFailed(true);
-                setError("ไม่สามารถตรวจสอบกิจกรรมค้างได้");
             }
         },
         [selectedYearId, importedClasses],

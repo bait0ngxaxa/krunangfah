@@ -7,6 +7,11 @@ const prismaMocks = vi.hoisted(() => {
             findFirst: vi.fn(),
             findUniqueOrThrow: vi.fn(),
         },
+        activityProgress: {
+            createMany: vi.fn(),
+            updateMany: vi.fn(),
+            deleteMany: vi.fn(),
+        },
         systemAdminEvent: { create: vi.fn() },
     };
     return {
@@ -90,6 +95,37 @@ describe("saveSystemPhqResult", () => {
             }),
         });
         expect(prismaMocks.tx.systemAdminEvent.create).toHaveBeenCalled();
+    });
+
+    it("updates a round 2 risk without creating activity progress", async () => {
+        prismaMocks.phqResultFindUnique.mockResolvedValue(
+            createPhqRow(phqId, { assessmentRound: 2 }),
+        );
+        prismaMocks.phqResultFindFirst.mockResolvedValue(
+            createPhqRow(phqId, { assessmentRound: 2 }),
+        );
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue(
+            createPhqRow(phqId, { assessmentRound: 2 }),
+        );
+        prismaMocks.tx.phqResult.findUniqueOrThrow.mockResolvedValue(
+            createPhqRow(phqId, {
+                assessmentRound: 2,
+                q1: 2,
+                totalScore: 10,
+                riskLevel: "yellow",
+            }),
+        );
+
+        const result = await saveSystemPhqResult(
+            createInput("แก้คะแนนผลคัดกรองครั้งที่ 2"),
+            actor,
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.updated?.assessmentRound).toBe(2);
+        expect(prismaMocks.tx.activityProgress.createMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.activityProgress.updateMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.activityProgress.deleteMany).not.toHaveBeenCalled();
     });
 
     it("rejects editing PHQ results from older terms", async () => {

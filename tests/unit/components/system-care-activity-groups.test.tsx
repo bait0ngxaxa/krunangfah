@@ -7,12 +7,13 @@ function createActivity(
     id: string,
     status: string,
     activityNumber: number,
+    assessmentRound = 1,
 ): SystemActivityRecord {
     return {
         id,
         phqResultId: "phq-1",
         academicYearLabel: "2569/1",
-        assessmentRound: 1,
+        assessmentRound,
         activityNumber,
         status,
         scheduledDate: null,
@@ -65,6 +66,19 @@ describe("SystemCareActivityGroups", () => {
             createActivity("activity-3", "locked", 3),
         ]);
 
+        expect(html).not.toContain("aria-label=\"ล้างผลกิจกรรมที่");
+    });
+
+    it("does not present legacy round 2 activities as a normal workflow", () => {
+        const html = render([
+            createActivity("legacy-activity", "completed", 1, 2),
+        ]);
+
+        expect(html).toContain(
+            "ผลคัดกรองครั้งที่ 2 เป็นการประเมินปลายเทอม",
+        );
+        expect(html).toContain("ข้อมูลกิจกรรมเดิม 1 รายการ");
+        expect(html).not.toContain("ผลคัดกรองครั้งที่ 2 · 2569/1");
         expect(html).not.toContain("aria-label=\"ล้างผลกิจกรรมที่");
     });
 });

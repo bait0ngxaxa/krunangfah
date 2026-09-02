@@ -117,13 +117,13 @@ export function ImportSettings({
                 </p>
                 )}
 
-            {incompleteCheckFailed && (
+            {incompleteCheckFailed && assessmentRound === 2 && (
                 <p
-                    className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700"
-                    role="alert"
+                    className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs leading-5 text-amber-800"
+                    role="status"
                 >
-                    ตรวจสอบกิจกรรมค้างไม่สำเร็จ กรุณาเลือกครั้งที่ 1
-                    แล้วเลือกครั้งที่ 2 อีกครั้งก่อนนำเข้า
+                    ไม่สามารถตรวจสอบกิจกรรมค้างได้ในขณะนี้
+                    แต่ยังสามารถนำเข้าผลคัดกรองครั้งที่ 2 ได้ตามปกติ
                 </p>
             )}
         </div>

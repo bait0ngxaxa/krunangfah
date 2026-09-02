@@ -157,7 +157,6 @@ export function ImportPreview({
                     isImportContextLoaded &&
                     !hasImportContextError &&
                     !!selectedYearId &&
-                    !incompleteCheckFailed &&
                     previewData.length > 0
                 }
                 studentCount={previewData.length}

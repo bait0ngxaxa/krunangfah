@@ -164,6 +164,34 @@ describe("resetSystemActivityProgress", () => {
         expect(prismaMocks.transaction).not.toHaveBeenCalled();
     });
 
+    it("rejects resetting a legacy round 2 activity server-side", async () => {
+        prismaMocks.activityProgressFindUnique.mockResolvedValue(
+            createActivityRow("completed", 2),
+        );
+
+        const result = await resetSystemActivityProgress(
+            {
+                id: activityId,
+                expectedUpdatedAt,
+                reason: "ไม่ควรรีเซ็ตกิจกรรมรอบ 2",
+            },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "กิจกรรมช่วยเหลือมีได้เฉพาะผลคัดกรองครั้งที่ 1",
+        });
+        expect(prismaMocks.transaction).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.worksheetUpload.deleteMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.activityProgress.updateMany).not.toHaveBeenCalled();
+    });
+
     it("does not reset an activity when its PHQ becomes historical before the transaction", async () => {
         prismaMocks.tx.phqResult.findFirst.mockResolvedValue({
             id: "newer-phq",
@@ -285,7 +313,10 @@ describe("resetSystemActivityProgress", () => {
     });
 });
 
-function createActivityRow(status: "locked" | "completed" | "in_progress") {
+function createActivityRow(
+    status: "locked" | "completed" | "in_progress",
+    assessmentRound = 1,
+) {
     return {
         id: activityId,
         studentId,
@@ -308,7 +339,7 @@ function createActivityRow(status: "locked" | "completed" | "in_progress") {
         student: { schoolId: "cmschool0000000000000001" },
         teacher: null,
         phqResult: {
-            assessmentRound: 1,
+            assessmentRound,
             academicYear: { year: 2569, semester: 1 },
         },
     };

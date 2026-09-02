@@ -156,6 +156,7 @@ export function SystemCareAdminPanel({
             >
                 <SystemCareActivityGroups
                     records={data.activityProgress}
+                    assessmentRound={data.phqResults[0]?.assessmentRound}
                     allowMutations={allowMutations}
                     resetTarget={activityResetTarget}
                     resetReason={activityResetReason}

@@ -5,6 +5,7 @@ import {
     type DeleteTarget,
 } from "@/components/admin/system/SystemCareRecordSections";
 import type { SystemCareRecordResponse } from "@/lib/actions/system-admin/types";
+import { SummaryGrid } from "@/components/admin/system/SystemCareRecordViews";
 import { filterSystemCareRecords } from "@/lib/utils/system-care-record-filter";
 
 const counselingId = "cmcounseling0000000000001";
@@ -55,6 +56,20 @@ describe("filterSystemCareRecords", () => {
         expect(filtered.activityProgress.map((record) => record.id)).toEqual(["activity-old"]);
         expect(filtered.counselingSessions.map((record) => record.id)).toEqual(["counsel-old"]);
         expect(filtered.homeVisits.map((record) => record.id)).toEqual(["visit-old"]);
+    });
+
+    it("does not count legacy round 2 activities as an active workflow", () => {
+        const data = createCareRecords();
+        data.phqResults = [createPhq("phq-round-2", "year-2", "2569/2", 2)];
+        data.activityProgress = [
+            createActivity("legacy-activity", "phq-round-2", "2569/2", 2),
+        ];
+
+        const html = renderToStaticMarkup(<SummaryGrid data={data} />);
+
+        expect(html).toContain("0 รายการ");
+        expect(html).toContain("ผลคัดกรองครั้งที่ 2 ไม่มีชุดกิจกรรม");
+        expect(html).not.toContain("1 รายการ");
     });
 });
 
