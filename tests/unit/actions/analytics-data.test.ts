@@ -1,0 +1,163 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+    academicYearFindMany: vi.fn(),
+    schoolClassFindMany: vi.fn(),
+    schoolClassTermAggregate: vi.fn(),
+    phqResultFindMany: vi.fn(),
+    getCombinedAnalytics: vi.fn(),
+    getTrendData: vi.fn(),
+    getActivityProgressByRisk: vi.fn(),
+    getActivityCompletionSummary: vi.fn(),
+    ensureCurrentAcademicYearLifecycle: vi.fn(),
+    ensureSchoolClassTermsForAcademicYear: vi.fn(),
+}));
+
+vi.mock("@/lib/database/prisma", () => ({
+    prisma: {
+        academicYear: { findMany: mocks.academicYearFindMany },
+        schoolClass: { findMany: mocks.schoolClassFindMany },
+        schoolClassTerm: { aggregate: mocks.schoolClassTermAggregate },
+        phqResult: { findMany: mocks.phqResultFindMany },
+    },
+}));
+
+vi.mock("@/lib/actions/analytics/queries", () => ({
+    getCombinedAnalytics: mocks.getCombinedAnalytics,
+    getTrendData: mocks.getTrendData,
+    getActivityProgressByRisk: mocks.getActivityProgressByRisk,
+    getActivityCompletionSummary: mocks.getActivityCompletionSummary,
+}));
+
+vi.mock("@/lib/services/academic-year-lifecycle", () => ({
+    ensureCurrentAcademicYearLifecycle:
+        mocks.ensureCurrentAcademicYearLifecycle,
+}));
+vi.mock("@/lib/services/school-class-term-service", () => ({
+    ensureSchoolClassTermsForAcademicYear:
+        mocks.ensureSchoolClassTermsForAcademicYear,
+}));
+
+const { fetchAnalyticsData } = await import("@/lib/actions/analytics/data");
+
+function configureMocks(): void {
+    mocks.academicYearFindMany.mockResolvedValue([
+        { id: "term-1", year: 2569, semester: 1, isCurrent: false },
+    ]);
+    mocks.schoolClassFindMany.mockResolvedValue([]);
+    mocks.schoolClassTermAggregate.mockResolvedValue({
+        _sum: { expectedStudentCount: 10 },
+    });
+    mocks.phqResultFindMany.mockResolvedValue([
+        { assessmentRound: 1 },
+        { assessmentRound: 2 },
+    ]);
+    mocks.getCombinedAnalytics.mockResolvedValue({
+        riskLevelCounts: [
+            {
+                risk_level: "yellow",
+                count: BigInt(4),
+                referral_count: BigInt(0),
+            },
+        ],
+        gradeRiskData: [],
+        hospitalReferrals: [],
+    });
+    mocks.getTrendData.mockResolvedValue([]);
+    mocks.getActivityProgressByRisk.mockResolvedValue([]);
+    mocks.getActivityCompletionSummary.mockResolvedValue({
+        not_started_students: BigInt(1),
+        in_progress_students: BigInt(2),
+        completed_students: BigInt(1),
+        requiring_activity_students: BigInt(4),
+        not_requiring_activity_students: BigInt(2),
+    });
+}
+
+describe("fetchAnalyticsData activity scope", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        configureMocks();
+    });
+
+    it("keeps Round 2 screening analytics while avoiding activity queries", async () => {
+        const data = await fetchAnalyticsData(
+            "school-1",
+            "",
+            "school_admin",
+            "2569",
+            "1",
+            "2",
+        );
+
+        expect(mocks.getCombinedAnalytics).toHaveBeenCalledWith(
+            "school-1",
+            undefined,
+            ["term-1"],
+            2,
+            false,
+        );
+        expect(mocks.getTrendData).toHaveBeenCalledWith(
+            "school-1",
+            undefined,
+            ["term-1"],
+            2,
+            false,
+        );
+        expect(mocks.getActivityProgressByRisk).not.toHaveBeenCalled();
+        expect(mocks.getActivityCompletionSummary).not.toHaveBeenCalled();
+        expect(data.activityAnalyticsApplicable).toBe(false);
+        expect(data.activityAnalyticsRound).toBeNull();
+        expect(data.activityProgressByRisk).toBeNull();
+        expect(data.activityCompletionSummary).toBeNull();
+        expect(data.studentsWithAssessment).toBe(4);
+    });
+
+    it.each([
+        { name: "Round 1", round: "1", screeningRound: 1 },
+        { name: "ALL", round: "", screeningRound: undefined },
+    ])(
+        "$name activity analytics uses Round 1 ownership",
+        async ({ round, screeningRound }) => {
+            const data = await fetchAnalyticsData(
+                "school-1",
+                "",
+                "school_admin",
+                "2569",
+                "1",
+                round,
+            );
+
+            expect(mocks.getCombinedAnalytics).toHaveBeenCalledWith(
+                "school-1",
+                undefined,
+                ["term-1"],
+                screeningRound,
+                false,
+            );
+            expect(mocks.getActivityProgressByRisk).toHaveBeenCalledWith(
+                "school-1",
+                undefined,
+                ["term-1"],
+                1,
+                false,
+            );
+            expect(mocks.getActivityCompletionSummary).toHaveBeenCalledWith(
+                "school-1",
+                undefined,
+                ["term-1"],
+                1,
+                false,
+            );
+            expect(data.activityAnalyticsApplicable).toBe(true);
+            expect(data.activityAnalyticsRound).toBe(1);
+            expect(data.activityCompletionSummary).toEqual({
+                notStartedStudents: 1,
+                inProgressStudents: 2,
+                completedStudents: 1,
+                requiringActivityStudents: 4,
+                notRequiringActivityStudents: 2,
+            });
+        },
+    );
+});

@@ -91,7 +91,9 @@ function isActivityCompletionSummary(value: unknown): boolean {
     return (
         typeof value.notStartedStudents === "number" &&
         typeof value.inProgressStudents === "number" &&
-        typeof value.completedStudents === "number"
+        typeof value.completedStudents === "number" &&
+        typeof value.requiringActivityStudents === "number" &&
+        typeof value.notRequiringActivityStudents === "number"
     );
 }
 
@@ -141,9 +143,15 @@ function isAnalyticsData(value: unknown): value is AnalyticsData {
             typeof value.currentRound === "number") &&
         Array.isArray(value.trendData) &&
         value.trendData.every(isTrendDataPoint) &&
-        Array.isArray(value.activityProgressByRisk) &&
-        value.activityProgressByRisk.every(isActivityProgressByRisk) &&
-        isActivityCompletionSummary(value.activityCompletionSummary) &&
+        typeof value.activityAnalyticsApplicable === "boolean" &&
+        (value.activityAnalyticsApplicable
+            ? value.activityAnalyticsRound === 1 &&
+              Array.isArray(value.activityProgressByRisk) &&
+              value.activityProgressByRisk.every(isActivityProgressByRisk) &&
+              isActivityCompletionSummary(value.activityCompletionSummary)
+            : value.activityAnalyticsRound === null &&
+              value.activityProgressByRisk === null &&
+              value.activityCompletionSummary === null) &&
         Array.isArray(value.gradeRiskData) &&
         value.gradeRiskData.every(isGradeRiskData) &&
         Array.isArray(value.hospitalReferralsByGrade) &&
@@ -256,6 +264,7 @@ export function createAnalyticsRedisKeyParts(input: {
 }): string[] {
     return [
         "analytics-data",
+        "activity-scope:round-one-v1",
         `role:${input.role}`,
         `school:${input.schoolId ?? "none"}`,
         `class:${input.targetClass || "all"}`,

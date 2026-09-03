@@ -36,8 +36,7 @@ export function buildAnalyticsTabs({
     const safeTrendData = normalizeTrendData(data.trendData);
     const safeGradeRiskData = normalizeGradeRiskData(data.gradeRiskData);
     const classScopeLabel = getClassScopeLabel(selectedClass, userRole);
-
-    return [
+    const tabs: Tab[] = [
         {
             id: "summary",
             label: (
@@ -87,19 +86,35 @@ export function buildAnalyticsTabs({
                 </div>
             ),
         },
-        {
+    ];
+
+    if (
+        data.activityAnalyticsApplicable &&
+        data.activityAnalyticsRound === 1 &&
+        data.activityProgressByRisk
+    ) {
+        const activityScopeLabel = data.currentRound === undefined
+            ? `ผลคัดกรองครั้งที่ 1 · ${classScopeLabel}`
+            : classScopeLabel;
+
+        tabs.push({
             id: "progress",
             label: (
                 <span className="flex items-center gap-1.5">
-                    <Target className="w-4 h-4" aria-hidden="true" /> การทำกิจกรรม
+                    <Target className="w-4 h-4" aria-hidden="true" />
+                    {data.currentRound === undefined
+                        ? "การทำกิจกรรม (ครั้งที่ 1)"
+                        : "การทำกิจกรรม"}
                 </span>
             ),
             content: (
                 <ActivitySummaryTable
                     activityProgressByRisk={data.activityProgressByRisk}
-                    scopeLabel={classScopeLabel}
+                    scopeLabel={activityScopeLabel}
                 />
             ),
-        },
-    ];
+        });
+    }
+
+    return tabs;
 }

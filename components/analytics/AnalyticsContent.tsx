@@ -186,7 +186,10 @@ export function AnalyticsContent({
                 totalStudents={data.totalStudents}
                 studentsWithAssessment={data.studentsWithAssessment}
                 screeningCoveragePercent={data.screeningCoveragePercent}
+                activityAnalyticsApplicable={data.activityAnalyticsApplicable}
+                activityAnalyticsRound={data.activityAnalyticsRound}
                 activityCompletionSummary={data.activityCompletionSummary}
+                currentRound={data.currentRound}
                 currentClass={data.currentClass}
             />
             <Tabs tabs={tabs} defaultTab="summary" />

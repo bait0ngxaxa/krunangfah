@@ -1,6 +1,9 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
-import { REQUIRED_ACTIVITY_NUMBERS_BY_RISK } from "./constants";
+import {
+    ACTIVITY_ANALYTICS_ROUND,
+    REQUIRED_ACTIVITY_NUMBERS_BY_RISK,
+} from "./constants";
 import { LATEST_PHQ_SQL_ORDER_BY } from "@/lib/utils/phq-result-selection";
 import { buildCurrentStudentPopulationSql } from "@/lib/utils/student-population";
 
@@ -42,6 +45,8 @@ interface ActivityCompletionSummaryResult {
     not_started_students: bigint;
     in_progress_students: bigint;
     completed_students: bigint;
+    requiring_activity_students: bigint;
+    not_requiring_activity_students: bigint;
 }
 
 interface HospitalReferralResult {
@@ -293,6 +298,17 @@ export async function getTrendData(
 // Activity Progress (Separate - Joins activity_progress)
 // ========================================
 
+function assertRoundOneActivityAnalytics(
+    assessmentRound: number | undefined,
+): void {
+    if (
+        assessmentRound !== undefined &&
+        assessmentRound !== ACTIVITY_ANALYTICS_ROUND
+    ) {
+        throw new Error("Activity analytics only supports assessment round 1");
+    }
+}
+
 /**
  * Get activity progress counts by risk level
  * Uses ROW_NUMBER for better performance
@@ -304,6 +320,8 @@ export async function getActivityProgressByRisk(
     assessmentRound?: number,
     currentPopulationOnly = true,
 ): Promise<ActivityProgressResult[]> {
+    assertRoundOneActivityAnalytics(assessmentRound);
+
     const schoolCondition = buildActiveStudentSchoolCondition(
         schoolId,
         currentPopulationOnly,
@@ -319,9 +337,11 @@ export async function getActivityProgressByRisk(
             : Prisma.sql`AND false`
         : Prisma.empty;
 
-    const roundCondition = assessmentRound !== undefined
-        ? Prisma.sql`AND pr."assessmentRound" = ${assessmentRound}`
-        : Prisma.empty;
+    // Activity ownership is structurally tied to Round 1. The optional argument
+    // is retained for existing internal callers, but cannot change this filter.
+    const roundCondition = Prisma.sql`
+        AND pr."assessmentRound" = ${ACTIVITY_ANALYTICS_ROUND}
+    `;
 
     return prisma.$queryRaw<ActivityProgressResult[]>`
         WITH filtered_phq AS (
@@ -380,6 +400,8 @@ export async function getActivityCompletionSummary(
     assessmentRound?: number,
     currentPopulationOnly = true,
 ): Promise<ActivityCompletionSummaryResult> {
+    assertRoundOneActivityAnalytics(assessmentRound);
+
     const schoolCondition = buildActiveStudentSchoolCondition(
         schoolId,
         currentPopulationOnly,
@@ -395,9 +417,11 @@ export async function getActivityCompletionSummary(
             : Prisma.sql`AND false`
         : Prisma.empty;
 
-    const roundCondition = assessmentRound !== undefined
-        ? Prisma.sql`AND pr."assessmentRound" = ${assessmentRound}`
-        : Prisma.empty;
+    // Activity ownership is structurally tied to Round 1. The optional argument
+    // is retained for existing internal callers, but cannot change this filter.
+    const roundCondition = Prisma.sql`
+        AND pr."assessmentRound" = ${ACTIVITY_ANALYTICS_ROUND}
+    `;
     const requiredActivityRows = Object.entries(
         REQUIRED_ACTIVITY_NUMBERS_BY_RISK,
     ).flatMap(([riskLevel, activityNumbers]) =>
@@ -428,44 +452,72 @@ export async function getActivityCompletionSummary(
               ${academicYearCondition}
               ${roundCondition}
         ),
-        required_students AS (
+        latest_phq AS (
+            SELECT phq_id, "studentId", risk_level
+            FROM filtered_phq
+            WHERE rn = 1
+        ),
+        activity_population AS (
             SELECT
-                rp.phq_id,
-                rp."studentId",
-                rp.risk_level,
+                lp.phq_id,
+                lp."studentId",
+                lp.risk_level,
                 COUNT(ra.activity_number)::int as required_count
-            FROM filtered_phq rp
-            JOIN required_activity ra ON ra.risk_level = rp.risk_level
-            WHERE rp.rn = 1
-            GROUP BY rp.phq_id, rp."studentId", rp.risk_level
+            FROM latest_phq lp
+            LEFT JOIN required_activity ra ON ra.risk_level = lp.risk_level
+            GROUP BY lp.phq_id, lp."studentId", lp.risk_level
         ),
         completion AS (
             SELECT
-                rs."studentId",
-                rs.required_count,
+                population.phq_id,
+                population."studentId",
+                population.required_count,
                 COUNT(DISTINCT ap."activityNumber") FILTER (
                     WHERE ap.status = 'completed'
                 ) as completed_count
-            FROM required_students rs
-            JOIN required_activity ra ON ra.risk_level = rs.risk_level
+            FROM activity_population population
+            JOIN required_activity ra
+              ON ra.risk_level = population.risk_level
             LEFT JOIN activity_progress ap
-              ON ap."studentId" = rs."studentId"
+              ON ap."studentId" = population."studentId"
              AND ap."activityNumber" = ra.activity_number
-             AND ap."phqResultId" = rs.phq_id
-            GROUP BY rs."studentId", rs.required_count
+             AND ap."phqResultId" = population.phq_id
+            WHERE population.required_count > 0
+            GROUP BY
+                population.phq_id,
+                population."studentId",
+                population.required_count
         )
         SELECT
-            COUNT(*) FILTER (WHERE completed_count = 0)::bigint as not_started_students,
             COUNT(*) FILTER (
-                WHERE completed_count > 0 AND completed_count < required_count
+                WHERE population.required_count > 0
+                  AND COALESCE(completion.completed_count, 0) = 0
+            )::bigint as not_started_students,
+            COUNT(*) FILTER (
+                WHERE population.required_count > 0
+                  AND completion.completed_count > 0
+                  AND completion.completed_count < population.required_count
             )::bigint as in_progress_students,
-            COUNT(*) FILTER (WHERE completed_count >= required_count)::bigint as completed_students
-        FROM completion
+            COUNT(*) FILTER (
+                WHERE population.required_count > 0
+                  AND completion.completed_count >= population.required_count
+            )::bigint as completed_students,
+            COUNT(*) FILTER (
+                WHERE population.required_count > 0
+            )::bigint as requiring_activity_students,
+            COUNT(*) FILTER (
+                WHERE population.required_count = 0
+            )::bigint as not_requiring_activity_students
+        FROM activity_population population
+        LEFT JOIN completion
+          ON completion.phq_id = population.phq_id
     `;
 
     return rows[0] ?? {
         not_started_students: BigInt(0),
         in_progress_students: BigInt(0),
         completed_students: BigInt(0),
+        requiring_activity_students: BigInt(0),
+        not_requiring_activity_students: BigInt(0),
     };
 }

@@ -38,6 +38,8 @@ export interface ActivityCompletionSummary {
     notStartedStudents: number;
     inProgressStudents: number;
     completedStudents: number;
+    requiringActivityStudents: number;
+    notRequiringActivityStudents: number;
 }
 
 export interface GradeRiskData {
@@ -76,8 +78,10 @@ export interface AnalyticsData {
     currentSemester?: number;
     currentRound?: number;
     trendData: TrendDataPoint[];
-    activityProgressByRisk: ActivityProgressByRisk[];
-    activityCompletionSummary: ActivityCompletionSummary;
+    activityAnalyticsApplicable: boolean;
+    activityAnalyticsRound: 1 | null;
+    activityProgressByRisk: ActivityProgressByRisk[] | null;
+    activityCompletionSummary: ActivityCompletionSummary | null;
     gradeRiskData: GradeRiskData[];
     hospitalReferralsByGrade: HospitalReferralByGrade[];
     totalReferrals: number;

@@ -7,6 +7,7 @@ import {
     CircleDashed,
     ClipboardList,
     ClipboardX,
+    Info,
     type LucideIcon,
 } from "lucide-react";
 import type { ActivityCompletionSummary } from "@/lib/actions/analytics/types";
@@ -16,15 +17,12 @@ interface AnalyticsSummaryCardsProps {
     totalStudents: number | null;
     studentsWithAssessment: number;
     screeningCoveragePercent: number | null;
-    activityCompletionSummary?: ActivityCompletionSummary;
+    activityAnalyticsApplicable: boolean;
+    activityAnalyticsRound: 1 | null;
+    activityCompletionSummary: ActivityCompletionSummary | null;
+    currentRound?: number;
     currentClass?: string;
 }
-
-const EMPTY_ACTIVITY_COMPLETION_SUMMARY: ActivityCompletionSummary = {
-    notStartedStudents: 0,
-    inProgressStudents: 0,
-    completedStudents: 0,
-};
 
 function MainStudentCard({
     totalStudents,
@@ -109,12 +107,15 @@ function MetricRow({
 
 function ScreeningMetricCard({
     studentsWithAssessment,
-    studentsRequiringActivity,
-    studentsNotRequiringActivity,
+    activityCompletionSummary,
+    currentRound,
 }: {
     studentsWithAssessment: number;
-    studentsRequiringActivity: number;
-    studentsNotRequiringActivity: number;
+    activityCompletionSummary: Pick<
+        ActivityCompletionSummary,
+        "requiringActivityStudents" | "notRequiringActivityStudents"
+    > | null;
+    currentRound?: number;
 }) {
     return (
         <div className="rounded-2xl border border-slate-100 bg-white/80 px-4 py-3">
@@ -138,37 +139,73 @@ function ScreeningMetricCard({
                 </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
-                <div className="flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                        <ClipboardList
-                            className="h-3.5 w-3.5 shrink-0 text-sky-600"
-                            aria-hidden="true"
-                        />
-                        <p className="truncate text-xs font-semibold text-slate-500">
-                            ต้องทำกิจกรรม
+            {activityCompletionSummary ? (
+                <div className="mt-3 border-t border-slate-100 pt-3">
+                    {currentRound === undefined ? (
+                        <p className="mb-2 text-xs font-semibold text-slate-500">
+                            การแบ่งกลุ่มกิจกรรมอ้างอิงผลคัดกรองครั้งที่ 1
                         </p>
+                    ) : null}
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-1.5">
+                                <ClipboardList
+                                    className="h-3.5 w-3.5 shrink-0 text-sky-600"
+                                    aria-hidden="true"
+                                />
+                                <p className="truncate text-xs font-semibold text-slate-500">
+                                    ต้องทำกิจกรรม
+                                </p>
+                            </div>
+                            <p className="shrink-0 text-xs font-extrabold text-slate-700">
+                                {activityCompletionSummary.requiringActivityStudents} คน
+                            </p>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-1.5">
+                                <ClipboardX
+                                    className="h-3.5 w-3.5 shrink-0 text-slate-500"
+                                    aria-hidden="true"
+                                />
+                                <p className="truncate text-xs font-semibold text-slate-500">
+                                    ไม่ต้องทำกิจกรรม
+                                </p>
+                            </div>
+                            <p className="shrink-0 text-xs font-extrabold text-slate-700">
+                                {activityCompletionSummary.notRequiringActivityStudents} คน
+                            </p>
+                        </div>
                     </div>
-                    <p className="shrink-0 text-xs font-extrabold text-slate-700">
-                        {studentsRequiringActivity} คน
-                    </p>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                        <ClipboardX
-                            className="h-3.5 w-3.5 shrink-0 text-slate-500"
-                            aria-hidden="true"
-                        />
-                        <p className="truncate text-xs font-semibold text-slate-500">
-                            ไม่ต้องทำกิจกรรม
-                        </p>
-                    </div>
-                    <p className="shrink-0 text-xs font-extrabold text-slate-700">
-                        {studentsNotRequiringActivity} คน
+            ) : null}
+        </div>
+    );
+}
+
+function ActivityNotApplicableCard() {
+    return (
+        <section
+            className="relative overflow-hidden rounded-3xl border border-cyan-200/80 bg-linear-to-br from-white via-cyan-50/60 to-sky-50/50 p-5 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.38)]"
+            role="status"
+        >
+            <div className="pointer-events-none absolute -top-14 -right-14 h-36 w-36 rounded-full bg-cyan-200/35 blur-3xl" />
+            <div className="relative z-10 flex min-h-36 items-start gap-3">
+                <div className="shrink-0 rounded-2xl border border-white/80 bg-white/85 p-3 shadow-sm ring-1 ring-slate-900/5">
+                    <Info
+                        className="h-6 w-6 text-cyan-600"
+                        aria-hidden="true"
+                    />
+                </div>
+                <div className="space-y-1.5">
+                    <h2 className="text-sm font-extrabold text-slate-700">
+                        การประเมินครั้งที่ 2
+                    </h2>
+                    <p className="text-sm leading-relaxed text-slate-600">
+                        ผลคัดกรองครั้งที่ 2 เป็นการประเมินปลายเทอม จึงไม่มีชุดกิจกรรมต่อจากผลคัดกรองนี้
                     </p>
                 </div>
             </div>
-        </div>
+        </section>
     );
 }
 
@@ -212,30 +249,38 @@ export function AnalyticsSummaryCards({
     totalStudents,
     studentsWithAssessment,
     screeningCoveragePercent,
+    activityAnalyticsApplicable,
+    activityAnalyticsRound,
     activityCompletionSummary,
+    currentRound,
     currentClass,
 }: AnalyticsSummaryCardsProps) {
-    const safeActivityCompletionSummary =
-        activityCompletionSummary ?? EMPTY_ACTIVITY_COMPLETION_SUMMARY;
     const safeTotalStudents = totalStudents === null
         ? null
         : toSafeCount(totalStudents);
     const safeStudentsWithAssessment = toSafeCount(studentsWithAssessment);
-    const safeNotStartedStudents = toSafeCount(
-        safeActivityCompletionSummary.notStartedStudents,
-    );
-    const safeInProgressStudents = toSafeCount(
-        safeActivityCompletionSummary.inProgressStudents,
-    );
-    const safeCompletedStudents = toSafeCount(
-        safeActivityCompletionSummary.completedStudents,
-    );
-    const studentsRequiringActivity =
-        safeNotStartedStudents + safeInProgressStudents + safeCompletedStudents;
-    const studentsNotRequiringActivity = Math.max(
-        0,
-        safeStudentsWithAssessment - studentsRequiringActivity,
-    );
+    const safeActivityCompletionSummary =
+        activityAnalyticsApplicable &&
+        activityAnalyticsRound === 1 &&
+        activityCompletionSummary
+            ? {
+                  notStartedStudents: toSafeCount(
+                      activityCompletionSummary.notStartedStudents,
+                  ),
+                  inProgressStudents: toSafeCount(
+                      activityCompletionSummary.inProgressStudents,
+                  ),
+                  completedStudents: toSafeCount(
+                      activityCompletionSummary.completedStudents,
+                  ),
+                  requiringActivityStudents: toSafeCount(
+                      activityCompletionSummary.requiringActivityStudents,
+                  ),
+                  notRequiringActivityStudents: toSafeCount(
+                      activityCompletionSummary.notRequiringActivityStudents,
+                  ),
+              }
+            : null;
     const coveragePercent = screeningCoveragePercent;
 
     return (
@@ -248,10 +293,8 @@ export function AnalyticsSummaryCards({
                 <MetricBlock title="การครอบคลุม">
                     <ScreeningMetricCard
                         studentsWithAssessment={safeStudentsWithAssessment}
-                        studentsRequiringActivity={studentsRequiringActivity}
-                        studentsNotRequiringActivity={
-                            studentsNotRequiringActivity
-                        }
+                        activityCompletionSummary={safeActivityCompletionSummary}
+                        currentRound={currentRound}
                     />
                     <MetricRow
                         icon={Gauge}
@@ -265,29 +308,39 @@ export function AnalyticsSummaryCards({
                     )}
                 </MetricBlock>
 
-                <MetricBlock title="ผลกิจกรรม">
-                    <MetricRow
-                        icon={CircleDashed}
-                        label="ยังไม่เริ่มทำกิจกรรม"
-                        value={safeNotStartedStudents}
-                        unit="คน"
-                        accentColor="text-slate-500"
-                    />
-                    <MetricRow
-                        icon={Clock3}
-                        label="เริ่มแล้วแต่ยังไม่เสร็จครบ"
-                        value={safeInProgressStudents}
-                        unit="คน"
-                        accentColor="text-amber-600"
-                    />
-                    <MetricRow
-                        icon={ListChecks}
-                        label="ทำกิจกรรมเสร็จครบแล้ว"
-                        value={safeCompletedStudents}
-                        unit="คน"
-                        accentColor="text-teal-600"
-                    />
-                </MetricBlock>
+                {safeActivityCompletionSummary ? (
+                    <MetricBlock
+                        title={
+                            currentRound === undefined
+                                ? "ผลกิจกรรมจากการคัดกรองครั้งที่ 1"
+                                : "ผลกิจกรรม"
+                        }
+                    >
+                        <MetricRow
+                            icon={CircleDashed}
+                            label="ยังไม่เริ่มทำกิจกรรม"
+                            value={safeActivityCompletionSummary.notStartedStudents}
+                            unit="คน"
+                            accentColor="text-slate-500"
+                        />
+                        <MetricRow
+                            icon={Clock3}
+                            label="เริ่มแล้วแต่ยังไม่เสร็จครบ"
+                            value={safeActivityCompletionSummary.inProgressStudents}
+                            unit="คน"
+                            accentColor="text-amber-600"
+                        />
+                        <MetricRow
+                            icon={ListChecks}
+                            label="ทำกิจกรรมเสร็จครบแล้ว"
+                            value={safeActivityCompletionSummary.completedStudents}
+                            unit="คน"
+                            accentColor="text-teal-600"
+                        />
+                    </MetricBlock>
+                ) : activityAnalyticsApplicable ? null : (
+                    <ActivityNotApplicableCard />
+                )}
             </div>
         </div>
     );

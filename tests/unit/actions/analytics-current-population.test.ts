@@ -54,6 +54,15 @@ describe("analytics student population scope", () => {
             expect(sql).toContain("TRANSFERRED");
             expect(sql).toContain("GRADUATED");
         }
+
+        expect(collectSql(mocks.queryRaw.mock.calls[2])).toContain(
+            'pr."assessmentRound"',
+        );
+        expect(collectSql(mocks.queryRaw.mock.calls[2])).toContain("1");
+        expect(collectSql(mocks.queryRaw.mock.calls[3])).toContain(
+            'pr."assessmentRound"',
+        );
+        expect(collectSql(mocks.queryRaw.mock.calls[3])).toContain("1");
     });
 
     it("does not apply current lifecycle status to historical analytics", async () => {
@@ -92,5 +101,20 @@ describe("analytics student population scope", () => {
                 's."status"::text NOT IN',
             );
         }
+    });
+
+    it("rejects non-round-one activity scopes before querying", async () => {
+        await expect(
+            getActivityProgressByRisk("school-1", undefined, ["term-1"], 2),
+        ).rejects.toThrow("Activity analytics only supports assessment round 1");
+        await expect(
+            getActivityCompletionSummary(
+                "school-1",
+                undefined,
+                ["term-1"],
+                2,
+            ),
+        ).rejects.toThrow("Activity analytics only supports assessment round 1");
+        expect(mocks.queryRaw).not.toHaveBeenCalled();
     });
 });

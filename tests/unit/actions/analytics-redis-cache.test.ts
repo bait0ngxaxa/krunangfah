@@ -62,6 +62,8 @@ function createAnalyticsData(): AnalyticsData {
                 red: 0,
             },
         ],
+        activityAnalyticsApplicable: true,
+        activityAnalyticsRound: 1,
         activityProgressByRisk: [
             {
                 riskLevel: "green",
@@ -80,6 +82,8 @@ function createAnalyticsData(): AnalyticsData {
             notStartedStudents: 1,
             inProgressStudents: 2,
             completedStudents: 1,
+            requiringActivityStudents: 4,
+            notRequiringActivityStudents: 4,
         },
         gradeRiskData: [
             {
@@ -154,6 +158,31 @@ describe("analytics Redis cache", () => {
 
         expect(cached).toEqual(data);
         expect(mocks.get).toHaveBeenCalledWith(expect.stringMatching(/^analytics:cache:/));
+    });
+
+    it("rejects cached analytics data from the pre-round-scoped contract", async () => {
+        const legacyPayload = { ...createAnalyticsData() } as Record<
+            string,
+            unknown
+        >;
+        delete legacyPayload.activityAnalyticsApplicable;
+        delete legacyPayload.activityAnalyticsRound;
+
+        const keyParts = createAnalyticsRedisKeyParts({
+            role: "school_admin",
+            schoolId: "school-1",
+            targetClass: "ม.1/1",
+            academicYearStr: "2569",
+            semesterStr: "1",
+            roundStr: "1",
+        });
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(legacyPayload));
+
+        await expect(readRedisCachedAnalyticsData(keyParts)).resolves.toMatchObject({
+            data: null,
+        });
     });
 
     it("stores analytics data and tracks global plus school tags", async () => {

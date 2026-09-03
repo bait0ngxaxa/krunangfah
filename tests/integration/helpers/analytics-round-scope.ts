@@ -50,6 +50,7 @@ interface RoundScopeStudents {
 
 interface RoundScopePhqs {
     oldRoundPhqId: string;
+    latestRoundTwoPhqId: string;
     otherClassPhqId: string;
 }
 
@@ -109,7 +110,7 @@ async function createRoundScopePhqs(
     base: RoundScopeBase,
     students: RoundScopeStudents,
 ): Promise<RoundScopePhqs> {
-    const [oldRoundPhq, , otherClassPhq] = await Promise.all([
+    const [oldRoundPhq, latestRoundTwoPhq, otherClassPhq] = await Promise.all([
         createRoundScopedPhq({
             studentId: students.roundChangedStudentId,
             academicYearId: base.academicYearId,
@@ -137,6 +138,7 @@ async function createRoundScopePhqs(
     ]);
     return {
         oldRoundPhqId: oldRoundPhq.id,
+        latestRoundTwoPhqId: latestRoundTwoPhq.id,
         otherClassPhqId: otherClassPhq.id,
     };
 }
@@ -149,6 +151,12 @@ async function createRoundScopeProgress(
         createTestActivityProgress(
             students.roundChangedStudentId,
             phqs.oldRoundPhqId,
+            1,
+            { status: "completed" },
+        ),
+        createTestActivityProgress(
+            students.roundChangedStudentId,
+            phqs.latestRoundTwoPhqId,
             1,
             { status: "completed" },
         ),
@@ -199,10 +207,18 @@ function expectSummary(
     notStarted: number,
     inProgress: number,
     completed: number,
+    requiringActivityStudents: number,
+    notRequiringActivityStudents: number,
 ): void {
     expect(Number(summary.not_started_students)).toBe(notStarted);
     expect(Number(summary.in_progress_students)).toBe(inProgress);
     expect(Number(summary.completed_students)).toBe(completed);
+    expect(Number(summary.requiring_activity_students)).toBe(
+        requiringActivityStudents,
+    );
+    expect(Number(summary.not_requiring_activity_students)).toBe(
+        notRequiringActivityStudents,
+    );
 }
 
 function findProgressRow(
@@ -224,12 +240,12 @@ function expectActivityOne(
 }
 
 export function expectAllRoomScope(analytics: ActivityAnalyticsResult): void {
-    expectSummary(analytics.summary, 1, 1, 0);
-    expectActivityOne(analytics.progress, "green", 1, 0);
-    expectActivityOne(analytics.progress, "yellow", 1, 1);
+    expectSummary(analytics.summary, 0, 2, 0, 2, 0);
+    expectActivityOne(analytics.progress, "green", 0, 0);
+    expectActivityOne(analytics.progress, "yellow", 2, 2);
 }
 
 export function expectSingleRoomScope(analytics: ActivityAnalyticsResult): void {
-    expectSummary(analytics.summary, 1, 0, 0);
-    expectActivityOne(analytics.progress, "green", 1, 0);
+    expectSummary(analytics.summary, 0, 1, 0, 1, 0);
+    expectActivityOne(analytics.progress, "yellow", 1, 1);
 }

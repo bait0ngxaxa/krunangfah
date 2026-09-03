@@ -50,6 +50,10 @@ describe("Integration: analytics activity completion summary", () => {
             studentId: `AN-DONE-${Date.now()}`,
             class: "ม.1/1",
         });
+        const notRequiringActivityStudent = await createTestStudent(school.id, {
+            studentId: `AN-NO-ACTIVITY-${Date.now()}`,
+            class: "ม.1/1",
+        });
 
         const pendingPhq = await createTestPhqResult(
             pendingOnlyStudent.id,
@@ -68,6 +72,12 @@ describe("Integration: analytics activity completion summary", () => {
             academicYear.id,
             user.id,
             { riskLevel: "yellow" },
+        );
+        await createTestPhqResult(
+            notRequiringActivityStudent.id,
+            academicYear.id,
+            user.id,
+            { riskLevel: "blue" },
         );
 
         const pendingProgress = await createTestActivityProgress(
@@ -113,6 +123,8 @@ describe("Integration: analytics activity completion summary", () => {
         expect(Number(summary.not_started_students)).toBe(1);
         expect(Number(summary.in_progress_students)).toBe(1);
         expect(Number(summary.completed_students)).toBe(1);
+        expect(Number(summary.requiring_activity_students)).toBe(3);
+        expect(Number(summary.not_requiring_activity_students)).toBe(1);
     });
 
     it("does not mix activity progress from older rounds in all-room and class filters", async () => {

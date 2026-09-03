@@ -18,6 +18,9 @@ export const RISK_LEVEL_CONFIG = Object.fromEntries(
 
 export type RiskLevel = keyof typeof RISK_LEVEL_CONFIG;
 
+/** Activity analytics always belongs to the PHQ result that generated activities. */
+export const ACTIVITY_ANALYTICS_ROUND = 1 as const;
+
 export const REQUIRED_ACTIVITY_NUMBERS_BY_RISK: Record<RiskLevel, number[]> = {
     blue: [],
     green: [1, 2, 5],

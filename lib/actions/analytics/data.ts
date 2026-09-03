@@ -15,6 +15,8 @@ import {
 } from "./transforms";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
 import { ensureCurrentAcademicYearLifecycle } from "@/lib/services/academic-year-lifecycle";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
+import { ACTIVITY_ANALYTICS_ROUND } from "./constants";
 
 import type { AnalyticsData } from "./types";
 
@@ -30,6 +32,14 @@ export async function fetchAnalyticsData(
     let academicYear = academicYearStr ? parseInt(academicYearStr, 10) : undefined;
     let semester = semesterStr ? parseInt(semesterStr, 10) : undefined;
     const assessmentRound = roundStr ? parseInt(roundStr, 10) : undefined;
+    // "all" is a screening scope, not an assessment round. Activity ownership
+    // remains Round 1 unless the user explicitly selects terminal Round 2.
+    const activityAnalyticsApplicable =
+        assessmentRound === undefined ||
+        canGenerateActivitiesForAssessmentRound(assessmentRound);
+    const activityAnalyticsRound = activityAnalyticsApplicable
+        ? ACTIVITY_ANALYTICS_ROUND
+        : null;
 
     if (academicYear === undefined && semester === undefined) {
         const currentTerm = await ensureCurrentAcademicYearLifecycle();
@@ -63,14 +73,32 @@ export async function fetchAnalyticsData(
         );
     }
 
+    const activityDataPromise = activityAnalyticsRound === ACTIVITY_ANALYTICS_ROUND
+        ? Promise.all([
+              getActivityProgressByRisk(
+                  schoolId,
+                  classFilter,
+                  academicYearIds,
+                  activityAnalyticsRound,
+                  currentPopulationOnly,
+              ),
+              getActivityCompletionSummary(
+                  schoolId,
+                  classFilter,
+                  academicYearIds,
+                  activityAnalyticsRound,
+                  currentPopulationOnly,
+              ),
+          ])
+        : Promise.resolve(null);
+
     const [
         expectedStudentCount,
         availableClasses,
         availableAcademicTermsRaw,
         combinedData,
         trendDataRaw,
-        activityProgressRaw,
-        activityCompletionRaw,
+        activityData,
     ] = await Promise.all([
         getExpectedStudentCount(schoolId, classFilter, academicYearIds),
         showClassFilter
@@ -121,20 +149,7 @@ export async function fetchAnalyticsData(
             assessmentRound,
             currentPopulationOnly,
         ),
-        getActivityProgressByRisk(
-            schoolId,
-            classFilter,
-            academicYearIds,
-            assessmentRound,
-            currentPopulationOnly,
-        ),
-        getActivityCompletionSummary(
-            schoolId,
-            classFilter,
-            academicYearIds,
-            assessmentRound,
-            currentPopulationOnly,
-        ),
+        activityDataPromise,
     ]);
 
     const availableAcademicTerms = availableAcademicTermsRaw.map((term) => ({
@@ -200,12 +215,24 @@ export async function fetchAnalyticsData(
     );
     const trendData = transformTrendData(trendDataRaw);
     const gradeRiskData = transformGradeRiskData(gradeRiskDataRaw);
-    const activityProgressByRisk = transformActivityProgress(activityProgressRaw);
-    const activityCompletionSummary = {
-        notStartedStudents: Number(activityCompletionRaw.not_started_students),
-        inProgressStudents: Number(activityCompletionRaw.in_progress_students),
-        completedStudents: Number(activityCompletionRaw.completed_students),
-    };
+    const activityProgressByRisk = activityData
+        ? transformActivityProgress(activityData[0])
+        : null;
+    const activityCompletionSummary = activityData
+        ? {
+              notStartedStudents: Number(
+                  activityData[1].not_started_students,
+              ),
+              inProgressStudents: Number(activityData[1].in_progress_students),
+              completedStudents: Number(activityData[1].completed_students),
+              requiringActivityStudents: Number(
+                  activityData[1].requiring_activity_students,
+              ),
+              notRequiringActivityStudents: Number(
+                  activityData[1].not_requiring_activity_students,
+              ),
+          }
+        : null;
     const hospitalReferralsByGrade =
         transformHospitalReferrals(hospitalReferralsRaw);
 
@@ -224,6 +251,8 @@ export async function fetchAnalyticsData(
         currentSemester: semester,
         currentRound: assessmentRound,
         trendData,
+        activityAnalyticsApplicable,
+        activityAnalyticsRound,
         activityProgressByRisk,
         activityCompletionSummary,
         gradeRiskData,
