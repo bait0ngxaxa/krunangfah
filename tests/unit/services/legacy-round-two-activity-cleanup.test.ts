@@ -14,6 +14,7 @@ const prismaMocks = vi.hoisted(() => {
     };
     return {
         activityFindMany: vi.fn(),
+        activityFindFirst: vi.fn(),
         systemAdminEventFindMany: vi.fn(),
         transaction: vi.fn(),
         tx,
@@ -24,6 +25,7 @@ vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         activityProgress: {
             findMany: prismaMocks.activityFindMany,
+            findFirst: prismaMocks.activityFindFirst,
         },
         systemAdminEvent: {
             findMany: prismaMocks.systemAdminEventFindMany,
@@ -33,6 +35,7 @@ vi.mock("@/lib/database/prisma", () => ({
 }));
 
 import {
+    LEGACY_ACTIVITY_CLEANUP_BATCH_SIZE,
     auditLegacyActivityProgress,
     buildLegacyActivityCleanupWhere,
     classifyLegacyActivityProgress,
@@ -137,9 +140,24 @@ function createDbRow(
     };
 }
 
+type TestDbRow = ReturnType<typeof createDbRow>;
+
+function setupCleanupDiscovery(pages: TestDbRow[][]): void {
+    const lastPage = pages[pages.length - 1];
+    const lastRow = lastPage?.[lastPage.length - 1];
+    if (!lastRow) throw new Error("Expected at least one cleanup row");
+
+    prismaMocks.activityFindFirst.mockResolvedValue({ id: lastRow.id });
+    for (const page of pages) {
+        prismaMocks.activityFindMany.mockResolvedValueOnce(page);
+    }
+    prismaMocks.activityFindMany.mockResolvedValue([]);
+}
+
 describe("legacy round-two activity cleanup", () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        prismaMocks.activityFindFirst.mockResolvedValue(null);
         prismaMocks.systemAdminEventFindMany.mockResolvedValue([]);
         prismaMocks.tx.systemAdminEvent.findMany.mockResolvedValue([]);
         prismaMocks.transaction.mockImplementation(
@@ -296,7 +314,7 @@ describe("legacy round-two activity cleanup", () => {
     });
 
     it("deletes only candidates and uses the conditional predicate in a serializable transaction", async () => {
-        prismaMocks.tx.activityProgress.findMany.mockResolvedValue([
+        const discoveredRows = [
             createDbRow(),
             createDbRow({
                 id: "cmactivity000000000000002",
@@ -305,6 +323,10 @@ describe("legacy round-two activity cleanup", () => {
                 unlockedAt: null,
                 teacherNotes: "ห้ามลบ",
             }),
+        ];
+        setupCleanupDiscovery([discoveredRows]);
+        prismaMocks.tx.activityProgress.findMany.mockResolvedValue([
+            ...discoveredRows,
         ]);
         prismaMocks.tx.activityProgress.deleteMany.mockResolvedValue({ count: 1 });
 
@@ -314,6 +336,7 @@ describe("legacy round-two activity cleanup", () => {
         expect(report.deletedIds).toEqual(["cmactivity000000000000001"]);
         expect(report.recheckRejectedCount).toBe(0);
         expect(report.recheckRejectedIds).toEqual([]);
+        expect(report.batchesProcessed).toBe(1);
         expect(prismaMocks.transaction).toHaveBeenCalledWith(
             expect.any(Function),
             expect.objectContaining({ isolationLevel: "Serializable" }),
@@ -330,9 +353,29 @@ describe("legacy round-two activity cleanup", () => {
         expect(prismaMocks.tx.activityProgress.deleteMany).toHaveBeenCalledTimes(1);
     });
 
-    it("reports a recheck rejection instead of deleting a candidate that no longer matches", async () => {
+    it("reclassifies current transactional state before attempting deletion", async () => {
+        const discoveredRow = createDbRow();
+        setupCleanupDiscovery([[discoveredRow]]);
         prismaMocks.tx.activityProgress.findMany.mockResolvedValue([
-            createDbRow(),
+            createDbRow({ worksheetCount: 1 }),
+        ]);
+
+        const report = await cleanupLegacyActivityProgress();
+
+        expect(report.deletedCount).toBe(0);
+        expect(report.deletedIds).toEqual([]);
+        expect(report.recheckRejectedCount).toBe(1);
+        expect(report.recheckRejectedIds).toEqual([
+            "cmactivity000000000000001",
+        ]);
+        expect(prismaMocks.tx.activityProgress.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("reports a recheck rejection when the conditional delete matches no rows", async () => {
+        const discoveredRow = createDbRow();
+        setupCleanupDiscovery([[discoveredRow]]);
+        prismaMocks.tx.activityProgress.findMany.mockResolvedValue([
+            discoveredRow,
         ]);
         prismaMocks.tx.activityProgress.deleteMany.mockResolvedValue({ count: 0 });
 
@@ -344,5 +387,107 @@ describe("legacy round-two activity cleanup", () => {
         expect(report.recheckRejectedIds).toEqual([
             "cmactivity000000000000001",
         ]);
+    });
+
+    it("processes multiple batches without preserved rows blocking the cursor", async () => {
+        const firstCandidate = createDbRow();
+        const preservedRows = Array.from(
+            { length: LEGACY_ACTIVITY_CLEANUP_BATCH_SIZE - 1 },
+            (_, index) =>
+                createDbRow({
+                    id: `cmactivity${String(index + 2).padStart(15, "0")}`,
+                    activityNumber: 2,
+                    status: "locked",
+                    unlockedAt: null,
+                    teacherNotes: "เก็บไว้ตรวจสอบ",
+                }),
+        );
+        const laterCandidate = createDbRow({
+            id: `cmactivity${String(LEGACY_ACTIVITY_CLEANUP_BATCH_SIZE + 1).padStart(15, "0")}`,
+        });
+        const firstPage = [firstCandidate, ...preservedRows];
+        const secondPage = [laterCandidate];
+
+        setupCleanupDiscovery([firstPage, secondPage]);
+        prismaMocks.tx.activityProgress.findMany
+            .mockResolvedValueOnce(firstPage)
+            .mockResolvedValueOnce(secondPage);
+        prismaMocks.tx.activityProgress.deleteMany.mockResolvedValue({ count: 1 });
+
+        const report = await cleanupLegacyActivityProgress();
+
+        expect(report).toMatchObject({
+            totalLegacyRows: LEGACY_ACTIVITY_CLEANUP_BATCH_SIZE + 1,
+            cleanupCandidates: 2,
+            preservedRows: LEGACY_ACTIVITY_CLEANUP_BATCH_SIZE - 1,
+            deletedCount: 2,
+            deletedIds: [firstCandidate.id, laterCandidate.id],
+            recheckRejectedCount: 0,
+            recheckRejectedIds: [],
+            batchesProcessed: 2,
+        });
+        expect(prismaMocks.transaction).toHaveBeenCalledTimes(2);
+        expect(prismaMocks.tx.activityProgress.findMany).toHaveBeenCalledTimes(2);
+        expect(prismaMocks.tx.activityProgress.deleteMany).toHaveBeenCalledTimes(2);
+        const firstPageLastId = preservedRows[preservedRows.length - 1]?.id;
+        if (!firstPageLastId) throw new Error("Expected a full first page");
+        expect(prismaMocks.activityFindFirst).toHaveBeenCalledWith({
+            where: { phqResult: { assessmentRound: { not: 1 } } },
+            select: { id: true },
+            orderBy: { id: "desc" },
+        });
+        expect(prismaMocks.activityFindMany).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({
+                where: expect.objectContaining({
+                    AND: expect.arrayContaining([
+                        {
+                            id: {
+                                gt: firstPageLastId,
+                                lte: laterCandidate.id,
+                            },
+                        },
+                    ]),
+                }),
+            }),
+        );
+    });
+
+    it("retries only the batch that encounters a serializable conflict", async () => {
+        const firstCandidate = createDbRow();
+        const laterCandidate = createDbRow({
+            id: "cmactivity000000000000002",
+        });
+        setupCleanupDiscovery([[firstCandidate], [laterCandidate]]);
+        prismaMocks.tx.activityProgress.findMany
+            .mockResolvedValueOnce([firstCandidate])
+            .mockResolvedValueOnce([laterCandidate]);
+        prismaMocks.tx.activityProgress.deleteMany.mockResolvedValue({ count: 1 });
+
+        let transactionAttempts = 0;
+        prismaMocks.transaction.mockImplementation(
+            async (
+                callback: (tx: typeof prismaMocks.tx) => Promise<unknown>,
+            ) => {
+                transactionAttempts += 1;
+                if (transactionAttempts === 2) {
+                    throw new Prisma.PrismaClientKnownRequestError(
+                        "serialization conflict",
+                        { code: "P2034", clientVersion: "test" },
+                    );
+                }
+                return callback(prismaMocks.tx);
+            },
+        );
+
+        const report = await cleanupLegacyActivityProgress();
+
+        expect(report.deletedIds).toEqual([
+            firstCandidate.id,
+            laterCandidate.id,
+        ]);
+        expect(report.batchesProcessed).toBe(2);
+        expect(transactionAttempts).toBe(3);
+        expect(prismaMocks.tx.activityProgress.findMany).toHaveBeenCalledTimes(2);
     });
 });

@@ -8,6 +8,7 @@ import {
     createTestSchool,
     createTestStudent,
     createTestUser,
+    createTestPhqResult,
     getCreatedIds,
 } from "./helpers/seed";
 import { createMockUsers } from "./helpers/auth-mock";
@@ -17,6 +18,7 @@ const USERS = createMockUsers("legacy-round-two-cleanup");
 
 describe("Integration: legacy Round 2 activity audit and cleanup", () => {
     let testStudentId = "";
+    let adminId = "";
     let roundOneActivityId = "";
     let candidateActivityId = "";
     let worksheetActivityId = "";
@@ -31,6 +33,7 @@ describe("Integration: legacy Round 2 activity audit and cleanup", () => {
             name: "Legacy Round 2 Cleanup Test School",
         });
         const admin = await createTestUser(USERS.schoolAdmin, school.id);
+        adminId = admin.id;
         const student = await createTestStudent(school.id, {
             studentId: `LEGACY-CLEANUP-${Date.now()}`,
         });
@@ -230,14 +233,63 @@ describe("Integration: legacy Round 2 activity audit and cleanup", () => {
     });
 
     it("deletes only the untouched candidate and preserves worksheets and historical rows", async () => {
+        const bulkCandidateIds: string[] = [];
+        const bulkAcademicYearBase =
+            20_000 + Number(String(Date.now()).slice(-5));
+
+        for (let index = 0; index < 10; index += 1) {
+            const academicYear = await prisma.academicYear.create({
+                data: {
+                    year: bulkAcademicYearBase + index,
+                    semester: 1,
+                    startDate: new Date("2026-05-01T00:00:00.000Z"),
+                    endDate: new Date("2026-10-31T00:00:00.000Z"),
+                },
+            });
+            getCreatedIds().academicYears.push(academicYear.id);
+
+            const phqResult = await createTestPhqResult(
+                testStudentId,
+                academicYear.id,
+                adminId,
+                { assessmentRound: 2, riskLevel: "orange" },
+            );
+            for (let activityNumber = 1; activityNumber <= 5; activityNumber += 1) {
+                const activity = await prisma.activityProgress.create({
+                    data: {
+                        studentId: testStudentId,
+                        phqResultId: phqResult.id,
+                        activityNumber,
+                        status: activityNumber === 1 ? "in_progress" : "locked",
+                        unlockedAt: activityNumber === 1 ? new Date() : null,
+                    },
+                });
+                bulkCandidateIds.push(activity.id);
+                getCreatedIds().activityProgress.push(activity.id);
+            }
+        }
+
         const result = await cleanupLegacyActivityProgress({
             studentId: testStudentId,
         });
 
-        expect(result.deletedCount).toBe(1);
-        expect(result.deletedIds).toEqual([candidateActivityId]);
+        expect(result.totalLegacyRows).toBe(55);
+        expect(result.cleanupCandidates).toBe(51);
+        expect(result.preservedRows).toBe(4);
+        expect(result.deletedCount).toBe(51);
+        expect(new Set(result.deletedIds)).toEqual(
+            new Set([candidateActivityId, ...bulkCandidateIds]),
+        );
+        expect(result.batchesProcessed).toBe(2);
         expect(result.recheckRejectedCount).toBe(0);
         expect(result.recheckRejectedIds).toEqual([]);
+        await expect(
+            prisma.activityProgress.count({
+                where: {
+                    id: { in: [candidateActivityId, ...bulkCandidateIds] },
+                },
+            }),
+        ).resolves.toBe(0);
         await expect(
             prisma.activityProgress.findUnique({
                 where: { id: candidateActivityId },

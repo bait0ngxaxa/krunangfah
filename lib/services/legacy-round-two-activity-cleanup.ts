@@ -22,6 +22,12 @@ export const LEGACY_ACTIVITY_PROGRESS_WHERE = {
     },
 } satisfies Prisma.ActivityProgressWhereInput;
 
+/**
+ * Keep each destructive transaction small enough for the default Prisma
+ * interactive transaction timeout and normal production contention.
+ */
+export const LEGACY_ACTIVITY_CLEANUP_BATCH_SIZE = 50;
+
 const LEGACY_ACTIVITY_PROGRESS_SELECT = {
     id: true,
     studentId: true,
@@ -145,6 +151,7 @@ export interface LegacyActivityCleanupReport extends LegacyActivityAuditReport {
     deletedIds: string[];
     recheckRejectedCount: number;
     recheckRejectedIds: string[];
+    batchesProcessed: number;
 }
 
 export interface LegacyActivityAuditOptions {
@@ -265,39 +272,62 @@ export async function auditLegacyActivityProgress(
 export async function cleanupLegacyActivityProgress(
     options: LegacyActivityAuditOptions = {},
 ): Promise<LegacyActivityCleanupReport> {
-    return runSerializableTransaction(async (tx) => {
-        // Classification and deletion happen in the same serializable
-        // transaction. The conditional delete below is the final TOCTOU guard.
-        const activities = await findLegacyActivities(tx, options);
-        const report = buildAuditReport(activities);
-        const deletedIds: string[] = [];
-        const recheckRejectedIds: string[] = [];
-
-        for (const record of report.records) {
-            if (record.classification !== "cleanup_candidate") continue;
-
-            const result = await tx.activityProgress.deleteMany({
-                where: buildLegacyActivityCleanupWhere(record),
-            });
-            if (result.count === 1) {
-                deletedIds.push(record.id);
-            } else if (result.count === 0) {
-                recheckRejectedIds.push(record.id);
-            } else {
-                throw new Error(
-                    `Legacy activity cleanup affected an unexpected number of rows for ${record.id}`,
-                );
-            }
-        }
-
+    // Capture a finite discovery boundary so inserts during maintenance do not
+    // extend the cursor range indefinitely. Rows beyond this boundary can be
+    // handled by a later audit/cleanup invocation.
+    const upperBoundId = await findLegacyActivityUpperBound(prisma, options);
+    if (upperBoundId === null) {
         return {
-            ...report,
-            deletedCount: deletedIds.length,
-            deletedIds,
-            recheckRejectedCount: recheckRejectedIds.length,
-            recheckRejectedIds,
+            ...createEmptyAuditReport(),
+            deletedCount: 0,
+            deletedIds: [],
+            recheckRejectedCount: 0,
+            recheckRejectedIds: [],
+            batchesProcessed: 0,
         };
-    });
+    }
+
+    let cursor: string | null = null;
+    let report = createEmptyAuditReport();
+    const deletedIds: string[] = [];
+    const recheckRejectedIds: string[] = [];
+    let batchesProcessed = 0;
+
+    while (true) {
+        const page = await findLegacyActivityPage(
+            prisma,
+            options,
+            cursor,
+            upperBoundId,
+        );
+        if (page.activities.length === 0) break;
+
+        // These counts and records intentionally describe the complete
+        // discovery pass. Destructive authorization is re-derived below from
+        // the current state inside this page's transaction.
+        report = mergeAuditReports(report, buildAuditReport(page.activities));
+
+        const batchResult = await runSerializableTransaction((tx) =>
+            cleanupLegacyActivityBatch(tx, page.activities, options),
+        );
+        deletedIds.push(...batchResult.deletedIds);
+        recheckRejectedIds.push(...batchResult.recheckRejectedIds);
+        batchesProcessed += 1;
+
+        if (page.nextCursor === null || page.nextCursor === cursor) {
+            throw new Error("Legacy activity cleanup pagination did not advance");
+        }
+        cursor = page.nextCursor;
+    }
+
+    return {
+        ...report,
+        deletedCount: deletedIds.length,
+        deletedIds,
+        recheckRejectedCount: recheckRejectedIds.length,
+        recheckRejectedIds,
+        batchesProcessed,
+    };
 }
 
 function getExpectedInitialState(
@@ -313,11 +343,132 @@ function getExpectedInitialState(
     };
 }
 
+interface LegacyActivityPage {
+    activities: LegacyActivityInspection[];
+    nextCursor: string | null;
+}
+
+interface LegacyActivityCleanupBatchResult {
+    deletedIds: string[];
+    recheckRejectedIds: string[];
+}
+
+async function cleanupLegacyActivityBatch(
+    db: ActivityProgressReader,
+    discoveredActivities: LegacyActivityInspection[],
+    options: LegacyActivityAuditOptions,
+): Promise<LegacyActivityCleanupBatchResult> {
+    const currentActivities = await findLegacyActivitiesByIds(
+        db,
+        discoveredActivities.map((activity) => activity.id),
+        options,
+    );
+    const currentRecordsById = new Map(
+        buildAuditReport(currentActivities).records.map((record) => [
+            record.id,
+            record,
+        ]),
+    );
+    const discoveredCandidateIds = discoveredActivities
+        .filter((activity) =>
+            classifyLegacyActivityProgress(activity).classification ===
+            "cleanup_candidate",
+        )
+        .map((activity) => activity.id);
+    const deletedIds: string[] = [];
+    const recheckRejectedIds: string[] = [];
+
+    for (const id of discoveredCandidateIds) {
+        const currentRecord = currentRecordsById.get(id);
+        if (!currentRecord || currentRecord.classification !== "cleanup_candidate") {
+            recheckRejectedIds.push(id);
+            continue;
+        }
+
+        const result = await db.activityProgress.deleteMany({
+            where: buildLegacyActivityCleanupWhere(currentRecord),
+        });
+        if (result.count === 1) {
+            deletedIds.push(id);
+        } else if (result.count === 0) {
+            recheckRejectedIds.push(id);
+        } else {
+            throw new Error(
+                `Legacy activity cleanup affected an unexpected number of rows for ${id}`,
+            );
+        }
+    }
+
+    return { deletedIds, recheckRejectedIds };
+}
+
+async function findLegacyActivityUpperBound(
+    db: ActivityProgressReader,
+    options: LegacyActivityAuditOptions,
+): Promise<string | null> {
+    const row = await db.activityProgress.findFirst({
+        where: buildLegacyActivityScopeWhere(options),
+        select: { id: true },
+        orderBy: { id: "desc" },
+    });
+    return row?.id ?? null;
+}
+
+async function findLegacyActivityPage(
+    db: ActivityProgressReader,
+    options: LegacyActivityAuditOptions,
+    cursor: string | null,
+    upperBoundId: string,
+): Promise<LegacyActivityPage> {
+    const rows = await db.activityProgress.findMany({
+        where: buildLegacyActivityPageWhere(options, cursor, upperBoundId),
+        select: LEGACY_ACTIVITY_PROGRESS_SELECT,
+        orderBy: { id: "asc" },
+        take: LEGACY_ACTIVITY_CLEANUP_BATCH_SIZE,
+    });
+
+    return {
+        activities: await addSystemAdminEventCounts(db, rows),
+        nextCursor: rows[rows.length - 1]?.id ?? null,
+    };
+}
+
 async function findLegacyActivities(
     db: ActivityProgressReader,
     options: LegacyActivityAuditOptions,
 ): Promise<LegacyActivityInspection[]> {
-    const where: Prisma.ActivityProgressWhereInput = options.studentId
+    const rows = await db.activityProgress.findMany({
+        where: buildLegacyActivityScopeWhere(options),
+        select: LEGACY_ACTIVITY_PROGRESS_SELECT,
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    });
+    return addSystemAdminEventCounts(db, rows);
+}
+
+async function findLegacyActivitiesByIds(
+    db: ActivityProgressReader,
+    ids: string[],
+    options: LegacyActivityAuditOptions,
+): Promise<LegacyActivityInspection[]> {
+    if (ids.length === 0) return [];
+
+    const rows = await db.activityProgress.findMany({
+        where: {
+            AND: [
+                buildLegacyActivityScopeWhere(options),
+                { id: { in: ids } },
+            ],
+        },
+        select: LEGACY_ACTIVITY_PROGRESS_SELECT,
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    });
+    return addSystemAdminEventCounts(db, rows);
+}
+
+function buildLegacyActivityScopeWhere(
+    options: LegacyActivityAuditOptions,
+): Prisma.ActivityProgressWhereInput {
+    return options.studentId
         ? {
               AND: [
                   LEGACY_ACTIVITY_PROGRESS_WHERE,
@@ -325,11 +476,29 @@ async function findLegacyActivities(
               ],
           }
         : LEGACY_ACTIVITY_PROGRESS_WHERE;
-    const rows = await db.activityProgress.findMany({
-        where,
-        select: LEGACY_ACTIVITY_PROGRESS_SELECT,
-        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    });
+}
+
+function buildLegacyActivityPageWhere(
+    options: LegacyActivityAuditOptions,
+    cursor: string | null,
+    upperBoundId: string,
+): Prisma.ActivityProgressWhereInput {
+    return {
+        AND: [
+            buildLegacyActivityScopeWhere(options),
+            {
+                id: cursor
+                    ? { gt: cursor, lte: upperBoundId }
+                    : { lte: upperBoundId },
+            },
+        ],
+    };
+}
+
+async function addSystemAdminEventCounts(
+    db: ActivityProgressReader,
+    rows: LegacyActivityProgressDbRow[],
+): Promise<LegacyActivityInspection[]> {
     if (rows.length === 0) return [];
 
     const events = await db.systemAdminEvent.findMany({
@@ -422,5 +591,31 @@ function buildAuditReport(
         cleanupCandidates,
         preservedRows: records.length - cleanupCandidates,
         records,
+    };
+}
+
+function createEmptyAuditReport(): LegacyActivityAuditReport {
+    return {
+        totalLegacyRows: 0,
+        roundTwoRows: 0,
+        otherNonRoundOneRows: 0,
+        cleanupCandidates: 0,
+        preservedRows: 0,
+        records: [],
+    };
+}
+
+function mergeAuditReports(
+    current: LegacyActivityAuditReport,
+    next: LegacyActivityAuditReport,
+): LegacyActivityAuditReport {
+    return {
+        totalLegacyRows: current.totalLegacyRows + next.totalLegacyRows,
+        roundTwoRows: current.roundTwoRows + next.roundTwoRows,
+        otherNonRoundOneRows:
+            current.otherNonRoundOneRows + next.otherNonRoundOneRows,
+        cleanupCandidates: current.cleanupCandidates + next.cleanupCandidates,
+        preservedRows: current.preservedRows + next.preservedRows,
+        records: [...current.records, ...next.records],
     };
 }

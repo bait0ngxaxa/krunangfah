@@ -33,7 +33,17 @@
    npm run audit:legacy-round-two-activities -- --cleanup
    ```
 
-   คำสั่งนี้ลบเฉพาะ candidate ที่ผ่าน predicate ซ้ำใน serializable transaction และรายงาน `deletedCount`, `deletedIds`, `recheckRejectedCount` กับ `recheckRejectedIds` โดยไม่ลบ worksheet หรือไฟล์จริง
+   คำสั่งนี้ประมวลผลเป็น bounded batches ขนาด 50 แถว โดยแต่ละ batch เปิด
+   Serializable transaction แยกกัน, re-fetch เฉพาะ IDs ของ batch, อ่าน
+   `SystemAdminEvent` ใหม่, จัดประเภทจาก state ปัจจุบัน แล้วจึงลบเฉพาะแถวที่
+   ผ่าน conditional predicate ซ้ำอีกครั้ง แต่ละ batch commit แยกกัน จึงไม่มี
+   interactive transaction เดียวยาวครอบคลุมทั้ง dataset และไม่ลบ worksheet หรือไฟล์จริง
+
+   `cleanupCandidates`, `preservedRows`, `records` และ `reasons` ในผล cleanup
+   หมายถึงผลจาก initial discovery audit ทั้งหมด ส่วน `deletedIds` คือแถวที่ลบสำเร็จจริง และ
+   `recheckRejectedIds` คือ initial candidates ที่ไม่ผ่านการตรวจซ้ำใน transaction
+   ของ batch หรือ conditional delete ไม่ match แล้ว `batchesProcessed` ระบุจำนวน
+   batch ที่ commit สำเร็จ
 
 6. รัน audit ซ้ำหลัง cleanup เพื่อตรวจว่า removable legacy rows เหลือศูนย์:
 
@@ -47,8 +57,17 @@
 
 - ไม่มี migration, startup hook, seed hook หรือ deployment hook ที่เรียก cleanup อัตโนมัติ
 - `--cleanup` เป็น opt-in ที่ทำลายข้อมูลโดยตั้งใจเท่านั้น ค่าเริ่มต้นไม่ลบ
+- dry-run ไม่มี destructive transaction และอ่าน/จัดประเภท/รายงานเท่านั้น
+- cleanup ใช้ keyset pagination ด้วย `ActivityProgress.id` และจับ upper-bound ตอนเริ่มงาน
+  cursor จะเดินต่อจาก ID สุดท้ายของ discovery page ไม่ได้เดินตามผลการลบ ดังนั้น
+  แถวที่ preserve จึงไม่ทำให้เลือก page เดิมซ้ำหรือทำให้ loop ไม่จบ แถวใหม่ที่มี ID
+  นอกขอบเขตจะไม่ถูกเพิ่มเข้า maintenance run นี้ และตรวจได้ด้วยการ audit/cleanup รอบถัดไป
+- แต่ละ batch commit เป็นอิสระ หาก batch ถัดไปล้มเหลว batch ก่อนหน้ายังคง commit แล้ว
+  และสามารถ rerun คำสั่งได้อย่างปลอดภัย/idempotent สำหรับ candidates ที่ลบไปแล้ว
 - SQL/Prisma delete predicate ระบุ `phqResult.assessmentRound != 1` โดยตรง จึงไม่สามารถเลือก Round 1 ได้จากเงื่อนไขนี้ แม้ classification ก่อนหน้า stale หรือ malformed
-- ก่อนลบแต่ละแถวจะตรวจซ้ำทุก field ที่มีความหมาย, ความไม่มี worksheet และ PHQ round/risk context ภายใน transaction หากไม่ตรงจะไม่ลบและรายงานใน `recheckRejectedIds`
+- ก่อนลบแต่ละแถวจะตรวจซ้ำทุก field ที่มีความหมาย, ความไม่มี worksheet, `SystemAdminEvent`
+  และ PHQ round/risk context จาก state ปัจจุบันภายใน transaction หากไม่ตรงจะไม่ลบและ
+  รายงานใน `recheckRejectedIds`; conditional `deleteMany` predicate ยังคงเป็น TOCTOU guard สุดท้าย
 - schema ปัจจุบันมี cascade จาก `WorksheetUpload` ไป `ActivityProgress` แต่ candidate ต้องมี worksheet เป็นศูนย์ และ cleanup ไม่เรียก physical-file deletion ดังนั้นข้อมูลที่มี worksheet จะไม่เข้า delete predicate
 - audit ตรวจ `SystemAdminEvent` ที่อ้าง `targetType=activityProgress` เพิ่มเติม แม้ schema จะไม่มี relation ตรง หากพบ event จะ preserve แถวนั้นเพื่อไม่ตัดประวัติที่เกี่ยวข้อง
 - repository ไม่มี `SystemAdminEvent` target สำหรับ maintenance batch และ CLI ไม่มี actor ของ System Admin จึงใช้ deterministic JSON report/log แทนการสร้าง per-row business audit event
