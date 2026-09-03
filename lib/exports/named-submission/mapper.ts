@@ -1,6 +1,7 @@
 import { getRiskChartLabel } from "@/lib/constants/risk-levels";
 import { getStudentStatusLabel } from "@/lib/constants/student-status";
 import {
+    canGenerateActivitiesForAssessmentRound,
     getActivityIndices,
     getActivitySequenceSummary,
 } from "@/lib/actions/activity/constants";
@@ -17,11 +18,20 @@ const THAI_DATE_FORMATTER = new Intl.DateTimeFormat("th-TH-u-ca-buddhist", {
 export function mapNamedSubmissionRecord(
     record: NamedSubmissionRecord,
 ): NamedSubmissionRow {
-    const requiredActivityCount = getActivityIndices(record.riskLevel).length;
-    const activitySummary = getActivitySequenceSummary(
-        record.riskLevel,
-        record.activityProgress,
-    );
+    const activityCounts = canGenerateActivitiesForAssessmentRound(
+        record.assessmentRound,
+    )
+        ? {
+              requiredActivityCount: getActivityIndices(record.riskLevel).length,
+              completedActivityCount: getActivitySequenceSummary(
+                  record.riskLevel,
+                  record.activityProgress,
+              ).completedCount,
+          }
+        : {
+              requiredActivityCount: null,
+              completedActivityCount: null,
+          };
 
     return {
         schoolName: record.student.school.name,
@@ -38,8 +48,7 @@ export function mapNamedSubmissionRecord(
         assessmentDate: THAI_DATE_FORMATTER.format(record.createdAt),
         totalScore: record.totalScore,
         riskGroup: getRiskChartLabel(record.riskLevel),
-        requiredActivityCount,
-        completedActivityCount: activitySummary.completedCount,
+        ...activityCounts,
         referralStatus: record.referredToHospital ? "ส่งต่อแล้ว" : "ยังไม่ส่งต่อ",
     };
 }

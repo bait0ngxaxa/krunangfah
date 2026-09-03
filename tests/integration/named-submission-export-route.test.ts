@@ -71,6 +71,22 @@ describe("Integration: named submission export route", () => {
         await createTestActivityProgress(included.id, includedPhq.id, 5, {
             status: "in_progress",
         });
+        const includedRoundTwoPhq = await createTestPhqResult(
+            included.id,
+            term.id,
+            USERS.systemAdmin.id,
+            {
+                assessmentRound: 2,
+                riskLevel: "red",
+                totalScore: 24,
+            },
+        );
+        await createTestActivityProgress(
+            included.id,
+            includedRoundTwoPhq.id,
+            1,
+            { status: "completed" },
+        );
 
         const excluded = await createTestStudent(otherSchool.id, {
             studentId: "000999",
@@ -153,7 +169,7 @@ describe("Integration: named submission export route", () => {
         mockSession(USERS.systemAdmin);
         const params = new URLSearchParams({
             school: schoolId,
-            year: academicYear.toString(),
+            year: "2608",
             semester: "1",
             round: "2",
         });
@@ -167,5 +183,65 @@ describe("Integration: named submission export route", () => {
         await expect(response.json()).resolves.toEqual({
             error: "ไม่พบข้อมูลผลคัดกรองตามตัวกรองที่เลือก",
         });
+    });
+
+    it("exports round 2 PHQ data while leaving activity cells blank", async () => {
+        mockSession(USERS.systemAdmin);
+        const params = new URLSearchParams({
+            school: schoolId,
+            year: academicYear.toString(),
+            semester: "1",
+            round: "2",
+        });
+        const response = await GET(
+            new NextRequest(
+                `http://localhost/api/v1/exports/named-submission?${params.toString()}`,
+            ),
+        );
+        const workbook = new ExcelJS.Workbook();
+        // @ts-expect-error ExcelJS bundles an older Buffer declaration than Node 20.
+        await workbook.xlsx.load(Buffer.from(await response.arrayBuffer()));
+        const worksheet = workbook.getWorksheet("รายชื่อผลคัดกรอง");
+
+        expect(response.status).toBe(200);
+        expect(worksheet?.rowCount).toBe(2);
+        expect(worksheet?.getRow(2).getCell(11).value).toBe(2);
+        expect(worksheet?.getRow(2).getCell(13).value).toBe(24);
+        expect(worksheet?.getRow(2).getCell(14).value).toBe("สีแดง");
+        expect(worksheet?.getRow(2).getCell(15).value).toBeNull();
+        expect(worksheet?.getRow(2).getCell(16).value).toBeNull();
+    });
+
+    it("keeps round 1 activity values and round 2 cells distinct without a round filter", async () => {
+        mockSession(USERS.systemAdmin);
+        const params = new URLSearchParams({
+            school: schoolId,
+            year: academicYear.toString(),
+            semester: "1",
+        });
+        const response = await GET(
+            new NextRequest(
+                `http://localhost/api/v1/exports/named-submission?${params.toString()}`,
+            ),
+        );
+        const workbook = new ExcelJS.Workbook();
+        // @ts-expect-error ExcelJS bundles an older Buffer declaration than Node 20.
+        await workbook.xlsx.load(Buffer.from(await response.arrayBuffer()));
+        const worksheet = workbook.getWorksheet("รายชื่อผลคัดกรอง");
+
+        expect(response.status).toBe(200);
+        expect(worksheet?.rowCount).toBe(3);
+        const exportedRows = [worksheet?.getRow(2), worksheet?.getRow(3)];
+        const round1Row = exportedRows.find(
+            (row) => row?.getCell(11).value === 1,
+        );
+        const round2Row = exportedRows.find(
+            (row) => row?.getCell(11).value === 2,
+        );
+
+        expect(round1Row?.getCell(15).value).toBe(4);
+        expect(round1Row?.getCell(16).value).toBe(2);
+        expect(round2Row?.getCell(15).value).toBeNull();
+        expect(round2Row?.getCell(16).value).toBeNull();
     });
 });

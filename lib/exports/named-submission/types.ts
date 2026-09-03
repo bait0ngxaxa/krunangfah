@@ -59,7 +59,7 @@ export interface NamedSubmissionRow {
     assessmentDate: string;
     totalScore: number;
     riskGroup: string;
-    requiredActivityCount: number;
-    completedActivityCount: number;
+    requiredActivityCount: number | null;
+    completedActivityCount: number | null;
     referralStatus: string;
 }

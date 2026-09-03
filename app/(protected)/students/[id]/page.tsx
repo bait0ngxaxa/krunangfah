@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
-import { BarChart3, Target, Home } from "lucide-react";
+import { BarChart3, Target, Home, MessageCircle } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { getStudentDetailResult } from "@/lib/actions/student/main";
 import { QueryErrorState } from "@/components/ui/QueryErrorState";
@@ -50,6 +50,7 @@ import {
 import { getLatestPhqResult } from "@/lib/utils/phq-result-selection";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 
 const PHQ_HISTORY_PAGE_SIZE = 10;
 const COUNSELING_PAGE_SIZE = 10;
@@ -220,6 +221,10 @@ async function StudentDetailContent({
         selectedRound,
     );
     const latestResult = filteredPhqResults[0] || null;
+    const displayedAssessmentRound = latestResult?.assessmentRound;
+    const displaysActivityWorkflow =
+        displayedAssessmentRound !== undefined &&
+        canGenerateActivitiesForAssessmentRound(displayedAssessmentRound);
     const recordAcademicYearId =
         academicTermScope.kind === "term"
             ? academicTermScope.academicYearId
@@ -380,9 +385,18 @@ async function StudentDetailContent({
             label: (
                 <span className="flex items-center gap-2">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm">
-                        <Target className="w-3.5 h-3.5" aria-hidden="true" />
+                        {displaysActivityWorkflow ? (
+                            <Target className="w-3.5 h-3.5" aria-hidden="true" />
+                        ) : (
+                            <MessageCircle
+                                className="w-3.5 h-3.5"
+                                aria-hidden="true"
+                            />
+                        )}
                     </span>
-                    กิจกรรมและบันทึกการพูดคุย
+                    {displaysActivityWorkflow
+                        ? "กิจกรรมและบันทึกการพูดคุย"
+                        : "บันทึกการพูดคุย"}
                 </span>
             ),
             content: activitiesTab,
