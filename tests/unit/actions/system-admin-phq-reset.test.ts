@@ -74,9 +74,9 @@ describe("resetSystemPhqResult", () => {
                 callback(prismaMocks.tx),
         );
         prismaMocks.phqResultFindUnique.mockResolvedValue(createPhqRow(phqRound1Id, 1));
-        prismaMocks.phqResultFindFirst.mockResolvedValue(createPhqRow(phqRound2Id, 2));
+        prismaMocks.phqResultFindFirst.mockResolvedValue(createPhqRow(phqRound1Id, 1));
         prismaMocks.tx.phqResult.findFirst.mockResolvedValue(
-            createPhqRow(phqRound2Id, 2),
+            createPhqRow(phqRound1Id, 1),
         );
         prismaMocks.tx.worksheetUpload.findMany.mockResolvedValue([
             { fileUrl: "/api/uploads/worksheets/phq-round-1.png" },
@@ -85,7 +85,11 @@ describe("resetSystemPhqResult", () => {
         prismaMocks.tx.phqResult.updateMany.mockResolvedValue({ count: 1 });
     });
 
-    it("deletes only the selected PHQ round so teachers can redo that round", async () => {
+    it("rejects resetting Round 1 while same-term Round 2 is canonical latest", async () => {
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue(
+            createPhqRow(phqRound2Id, 2),
+        );
+
         const result = await resetSystemPhqResult(
             { id: phqRound1Id, expectedUpdatedAt, reason: "ครูนำเข้าคะแนน PHQ ผิดรอบ" },
             {
@@ -96,29 +100,58 @@ describe("resetSystemPhqResult", () => {
             },
         );
 
-        expect(result.success).toBe(true);
-        expect(result.updated?.deletedPhqIds).toEqual([phqRound1Id]);
+        expect(result).toEqual({
+            success: false,
+            message: "ล้างผล PHQ ได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
+        });
+        expect(prismaMocks.tx.phqResult.updateMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.worksheetUpload.findMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.worksheetUpload.deleteMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.activityProgress.deleteMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.phqResult.deleteMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.systemAdminEvent.create).not.toHaveBeenCalled();
+        expect(prismaMocks.deleteFilesByUrl).not.toHaveBeenCalled();
         expect(prismaMocks.phqResultFindMany).not.toHaveBeenCalled();
+    });
+
+    it("resets Round 2 when it is canonical latest", async () => {
+        prismaMocks.phqResultFindUnique.mockResolvedValue(createPhqRow(phqRound2Id, 2));
+        prismaMocks.tx.phqResult.findFirst.mockResolvedValue(
+            createPhqRow(phqRound2Id, 2),
+        );
+
+        const result = await resetSystemPhqResult(
+            { id: phqRound2Id, expectedUpdatedAt, reason: "แก้ไขผลคัดกรองครั้งที่ 2" },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.updated?.deletedPhqIds).toEqual([phqRound2Id]);
         expect(prismaMocks.tx.worksheetUpload.deleteMany).toHaveBeenCalledWith({
             where: {
                 activityProgress: {
-                    phqResultId: { in: [phqRound1Id] },
+                    phqResultId: { in: [phqRound2Id] },
                 },
             },
         });
         expect(prismaMocks.tx.worksheetUpload.findMany).toHaveBeenCalledWith({
             where: {
                 activityProgress: {
-                    phqResultId: { in: [phqRound1Id] },
+                    phqResultId: { in: [phqRound2Id] },
                 },
             },
             select: { fileUrl: true },
         });
         expect(prismaMocks.tx.activityProgress.deleteMany).toHaveBeenCalledWith({
-            where: { phqResultId: { in: [phqRound1Id] } },
+            where: { phqResultId: { in: [phqRound2Id] } },
         });
         expect(prismaMocks.tx.phqResult.deleteMany).toHaveBeenCalledWith({
-            where: { id: { in: [phqRound1Id] } },
+            where: { id: { in: [phqRound2Id] } },
         });
         expect(prismaMocks.deleteFilesByUrl).toHaveBeenCalledWith([
             "/api/uploads/worksheets/phq-round-1.png",
@@ -127,9 +160,27 @@ describe("resetSystemPhqResult", () => {
             data: expect.objectContaining({
                 action: "RESET",
                 targetType: "phqResult",
-                targetId: phqRound1Id,
-                reason: "ครูนำเข้าคะแนน PHQ ผิดรอบ",
+                targetId: phqRound2Id,
+                reason: "แก้ไขผลคัดกรองครั้งที่ 2",
             }),
+        });
+    });
+
+    it("resets Round 1 after Round 2 has been removed", async () => {
+        const result = await resetSystemPhqResult(
+            { id: phqRound1Id, expectedUpdatedAt, reason: "เริ่มทำผลคัดกรองครั้งที่ 1 ใหม่" },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.updated?.deletedPhqIds).toEqual([phqRound1Id]);
+        expect(prismaMocks.tx.phqResult.deleteMany).toHaveBeenCalledWith({
+            where: { id: { in: [phqRound1Id] } },
         });
     });
 
@@ -181,7 +232,7 @@ describe("resetSystemPhqResult", () => {
 
         expect(result).toEqual({
             success: false,
-            message: "ล้างผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
+            message: "ล้างผล PHQ ได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
         });
         expect(prismaMocks.phqResultFindMany).not.toHaveBeenCalled();
         expect(prismaMocks.transaction).toHaveBeenCalledOnce();
@@ -209,13 +260,37 @@ describe("resetSystemPhqResult", () => {
 
         expect(result).toEqual({
             success: false,
-            message: "ล้างผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
+            message: "ล้างผล PHQ ได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
         });
         expect(prismaMocks.tx.phqResult.updateMany).not.toHaveBeenCalled();
         expect(prismaMocks.transaction).toHaveBeenCalledWith(
             expect.any(Function),
             expect.objectContaining({ isolationLevel: "Serializable" }),
         );
+    });
+
+    it("returns a stale response without destructive side effects", async () => {
+        prismaMocks.tx.phqResult.updateMany.mockResolvedValue({ count: 0 });
+
+        const result = await resetSystemPhqResult(
+            { id: phqRound1Id, expectedUpdatedAt, reason: "ข้อมูลเก่ากว่ารายการปัจจุบัน" },
+            {
+                id: "cmadmin00000000000000001",
+                email: "admin@example.com",
+                name: "System Admin",
+                role: "system_admin",
+            },
+        );
+
+        expect(result).toEqual({
+            success: false,
+            message: "ข้อมูลถูกแก้ไขแล้ว กรุณาโหลดข้อมูลล่าสุดและลองใหม่",
+        });
+        expect(prismaMocks.tx.worksheetUpload.findMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.activityProgress.deleteMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.phqResult.deleteMany).not.toHaveBeenCalled();
+        expect(prismaMocks.tx.systemAdminEvent.create).not.toHaveBeenCalled();
+        expect(prismaMocks.deleteFilesByUrl).not.toHaveBeenCalled();
     });
 
     it("does not delete worksheet files when the transaction rolls back", async () => {

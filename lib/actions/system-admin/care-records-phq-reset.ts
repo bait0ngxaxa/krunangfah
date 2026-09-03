@@ -21,6 +21,7 @@ import {
 } from "./care-record-file-cleanup";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
 import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
+import { isLatestPhqResult } from "./care-record-current-policy";
 
 export async function resetSystemPhqResult(
     input: SystemCareRecordDeleteInput,
@@ -36,7 +37,7 @@ export async function resetSystemPhqResult(
 
     const transactionResult = await runSerializableTransaction(async (tx) => {
         const latestPhq = await findLatestPhqForStudent(tx, existing.studentId);
-        if (latestPhq && isNewerTerm(latestPhq, existing)) {
+        if (!isLatestPhqResult(latestPhq?.id, existing.id)) {
             return { status: "not-latest" } as const;
         }
         const claim = await tx.phqResult.updateMany({
@@ -52,7 +53,7 @@ export async function resetSystemPhqResult(
     if (transactionResult.status === "not-latest") {
         return {
             success: false,
-            message: "ล้างผล PHQ ได้เฉพาะเทอมล่าสุดของนักเรียน",
+            message: "ล้างผล PHQ ได้เฉพาะผลคัดกรองล่าสุดของนักเรียน",
         };
     }
     if (transactionResult.status === "stale") return staleCareRecordResponse();
@@ -80,13 +81,6 @@ async function findLatestPhqForStudent(
         select: PHQ_SELECT,
         orderBy: LATEST_PHQ_ORDER_BY,
     });
-}
-
-function isNewerTerm(latest: PhqRow, selected: PhqRow): boolean {
-    if (latest.academicYear.year !== selected.academicYear.year) {
-        return latest.academicYear.year > selected.academicYear.year;
-    }
-    return latest.academicYear.semester > selected.academicYear.semester;
 }
 
 async function deleteRelatedActivities(

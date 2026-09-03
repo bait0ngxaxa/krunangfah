@@ -6,7 +6,6 @@ import { ActivityStatus } from "@prisma/client";
 import type { ActivityProgress, Prisma } from "@prisma/client";
 import {
     canGenerateActivitiesForAssessmentRound,
-    getActivityIndices,
     getRequiredWorksheetCount,
 } from "./constants";
 import type { SubmitAssessmentData } from "./types";
@@ -23,6 +22,7 @@ import { runSerializableTransaction } from "@/lib/utils/serializable-transaction
 import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
 import { canMutatePhqContext } from "@/lib/actions/care-record-current-policy";
 import { verifyStudentActivityAccess } from "./access";
+import { buildInitialActivityProgressRecords } from "./initial-state";
 
 async function verifyLatestActivityPhqResult(
     studentId: string,
@@ -282,23 +282,15 @@ export async function initializeActivityProgress(
                 return { success: true, count: 0 };
             }
 
-            const activityNumbers = getActivityIndices(phqResult.riskLevel);
-            if (activityNumbers.length === 0) {
+            const records = buildInitialActivityProgressRecords(
+                studentId,
+                phqResultId,
+                phqResult.riskLevel,
+            );
+            if (records.length === 0) {
                 // Red/blue risk groups do not use worksheet activity flow.
                 return { success: true, count: 0 };
             }
-
-            // Create full sequence once; first step unlocked, remaining steps locked.
-            const records = activityNumbers.map((activityNumber, index) => ({
-                studentId,
-                phqResultId,
-                activityNumber,
-                status:
-                    index === 0
-                        ? ActivityStatus.in_progress
-                        : ActivityStatus.locked, // Only first activity is immediately actionable
-                unlockedAt: index === 0 ? new Date() : null,
-            }));
 
             await tx.activityProgress.createMany({
                 data: records,

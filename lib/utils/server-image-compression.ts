@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import sharp, { type Sharp } from "sharp";
 import { TARGET_COMPRESSED_IMAGE_SIZE } from "@/lib/constants/image-upload";
 
 const MAX_DIMENSION = 1920;
@@ -21,7 +21,7 @@ export function isSupportedWorksheetImageExtension(
     return extension === "jpg" || extension === "jpeg" || extension === "png";
 }
 
-function buildBasePipeline(inputBuffer: Buffer<ArrayBufferLike>): sharp.Sharp {
+function buildBasePipeline(inputBuffer: Buffer<ArrayBufferLike>): Sharp {
     return sharp(inputBuffer, {
         failOn: "error",
         limitInputPixels: MAX_INPUT_PIXELS,

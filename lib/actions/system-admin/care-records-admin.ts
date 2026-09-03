@@ -35,6 +35,14 @@ import {
     LATEST_CARE_RECORD_ONLY_MESSAGE,
 } from "./care-record-current-policy";
 import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
+import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
+import {
+    formatActivitySequence,
+    PHQ_ACTIVITY_RECONCILIATION_REJECTED_MESSAGE,
+    inspectRoundOneActivitySequence,
+    replacePristineActivitySequence,
+    type ActivitySequenceReconciliationPlan,
+} from "./care-records-phq-activity-reconcile";
 
 export async function saveSystemPhqResult(
     input: SystemPhqEditInput,
@@ -79,10 +87,25 @@ export async function saveSystemPhqResult(
     ]);
     const transactionResult = await runSerializableTransaction(async (tx) => {
         const latestPhq = await findLatestPhqForStudent(tx, existing.studentId);
-        if (!isLatestPhqResult(latestPhq?.id, existing.id)) {
+        if (!latestPhq || !isLatestPhqResult(latestPhq.id, existing.id)) {
             return { status: "not-latest" } as const;
         }
         if (changes.length === 0) return { status: "unchanged", row: existing } as const;
+        let activitySequencePlan: ActivitySequenceReconciliationPlan | null = null;
+        if (canGenerateActivitiesForAssessmentRound(latestPhq.assessmentRound)) {
+            const inspection = await inspectRoundOneActivitySequence(tx, {
+                studentId: existing.studentId,
+                phqResultId: existing.id,
+                oldRiskLevel: latestPhq.riskLevel,
+                newRiskLevel: calculated.riskLevel,
+            });
+            if (inspection.status === "rejected") {
+                return { status: "activity-unsafe" } as const;
+            }
+            if (inspection.status === "safe") {
+                activitySequencePlan = inspection.plan;
+            }
+        }
         const write = await tx.phqResult.updateMany({
             where: { id: existing.id, updatedAt: input.expectedUpdatedAt },
             data: {
@@ -94,6 +117,16 @@ export async function saveSystemPhqResult(
             },
         });
         if (write.count !== 1) return { status: "stale" } as const;
+        let activitySequenceChange: Change | null = null;
+        if (activitySequencePlan) {
+            await replacePristineActivitySequence(tx, activitySequencePlan);
+            activitySequenceChange = {
+                field: "activitySequence",
+                label: "ชุดกิจกรรมตามระดับความเสี่ยง",
+                before: formatActivitySequence(activitySequencePlan.oldSequence),
+                after: formatActivitySequence(activitySequencePlan.newSequence),
+            };
+        }
         const row = await tx.phqResult.findUniqueOrThrow({
             where: { id: existing.id },
             select: PHQ_SELECT,
@@ -105,12 +138,20 @@ export async function saveSystemPhqResult(
             targetLabel: `PHQ รอบ ${row.assessmentRound}`,
             reason: input.reason,
             actor,
-            changes,
+            changes: activitySequenceChange
+                ? [...changes, activitySequenceChange]
+                : changes,
         });
         return { status: "updated", row } as const;
     });
     if (transactionResult.status === "not-latest") {
         return { success: false, message: LATEST_CARE_RECORD_ONLY_MESSAGE };
+    }
+    if (transactionResult.status === "activity-unsafe") {
+        return {
+            success: false,
+            message: PHQ_ACTIVITY_RECONCILIATION_REJECTED_MESSAGE,
+        };
     }
     if (transactionResult.status === "stale") return staleCareRecordResponse();
     if (transactionResult.status === "unchanged") {
