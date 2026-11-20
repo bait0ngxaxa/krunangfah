@@ -273,7 +273,17 @@ async function StudentDetailContent({
     const homeVisitData = homeVisitResult.data;
 
     const activePhqResult = getLatestPhqResult(student.phqResults);
-    const visibleStudent = student;
+    const visibleStudent = {
+        id: student.id,
+        studentId: student.studentId,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        gender: student.gender,
+        age: student.age,
+        class: student.class,
+        status: student.status,
+        school: isSystemAdmin ? student.school : undefined,
+    };
     const isViewingLatestImportedResult =
         latestResult?.id !== undefined &&
         activePhqResult?.id !== undefined &&
@@ -423,7 +433,7 @@ async function StudentDetailContent({
                     student={visibleStudent}
                     latestResult={latestResult}
                     activePhqResultId={activePhqResult?.id}
-                    canViewNationalId={isSystemAdmin}
+                    canViewSchool={isSystemAdmin}
                     canEditProfile={canEditStudentProfile}
                     canManageLatestCareRecords={isViewingLatestImportedResult}
                     currentUserId={currentUserId}

@@ -179,7 +179,6 @@ async function searchStudents(query: string): Promise<StudentEntityResult[]> {
         firstName: student.firstName,
         lastName: student.lastName,
         nationalIdMasked: maskNationalId(student.nationalId),
-        nationalId: student.nationalId,
         gender: student.gender,
         age: student.age,
         class: student.class,

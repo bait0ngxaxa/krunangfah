@@ -28,7 +28,6 @@ function createStudentEntity(
         nationalIdMasked: nationalId.startsWith("G")
             ? "G*********0123"
             : "*********0123",
-        nationalId,
         gender: "MALE",
         age: 13,
         class: "ม.1/1",
@@ -60,7 +59,7 @@ describe("SystemEditForm", () => {
         expect(html).toContain('<option value="ม.1/2">ม.1/2</option>');
     });
 
-    it("keeps a G national ID in a 14-character text input", () => {
+    it("renders only the mask until an admin requests the identifier", () => {
         const html = renderToStaticMarkup(
             <SystemEditForm
                 entity={createStudentEntity("G1234567890123")}
@@ -69,10 +68,7 @@ describe("SystemEditForm", () => {
             />,
         );
 
-        expect(html).toContain('value="G1234567890123"');
-        expect(html).toContain('maxLength="14"');
-        expect(html).toContain(
-            'placeholder="ตัวเลข 13 หลัก หรือ G ตามด้วยตัวเลข 13 หลัก"',
-        );
+        expect(html).toContain("G*********0123");
+        expect(html).not.toContain("G1234567890123");
     });
 });

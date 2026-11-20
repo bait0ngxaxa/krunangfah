@@ -5,18 +5,13 @@
 
 import { PrismaClient } from "@prisma/client";
 
-if (
-    process.env.NODE_ENV === "test" &&
-    process.env.ALLOW_REAL_PRISMA_TESTS !== "true"
-) {
-    throw new Error(
-        "Tests must mock @/lib/database/prisma. Real DATABASE_URL access is blocked.",
-    );
-}
-
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };
+
+if (process.env.NODE_ENV === "test" && !globalForPrisma.prisma) {
+    throw new Error("Tests must mock @/lib/database/prisma or use the verified integration database setup.");
+}
 
 export const prisma =
     globalForPrisma.prisma ??

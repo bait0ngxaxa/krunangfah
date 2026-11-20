@@ -3,6 +3,7 @@ import type { ParsedStudent } from "@/lib/utils/excel-parser";
 import { prisma } from "@/lib/database/prisma";
 import {
     createMockUsers,
+    mockSession,
     setupAuthMocks,
     type MockUser,
 } from "./helpers/auth-mock";
@@ -32,7 +33,10 @@ const USERS_B = createMockUsers("import-concurrency-b");
 const OTHER_SCHOOL_USERS = createMockUsers("import-other-school");
 const NATIONAL_ID_BASE = Date.now() * 10;
 const { requireAuth } = await import("@/lib/auth/session");
-const { importStudents, updateStudentProfile } = await import("@/lib/actions/student/mutations");
+const { getStudentIdentifierForEdit, importStudents, updateStudentIdentifier, updateStudentProfile } =
+    await import("@/lib/actions/student/mutations");
+const { getStudentDetail, searchStudents } = await import("@/lib/actions/student/main");
+const { getSystemAdminStudentIdentifier, searchSystemAdminEntities } = await import("@/lib/actions/system-admin.actions");
 
 describe("Integration: concurrent student imports", () => {
     let schoolId = "";
@@ -505,10 +509,58 @@ describe("Integration: concurrent student imports", () => {
         const { studentId, firstName, lastName, gender, age } = row;
         const profile = { studentId, firstName, lastName, gender, age, class: row.class, status: "ACTIVE" };
         const context = { activePhqResultId: enriched.phqResults[1].id };
-        await expect(updateStudentProfile(original.id, { ...profile, nationalId: "" }, context))
-            .resolves.toMatchObject({ success: true, student: { id: original.id, nationalId: null } });
-        await expect(updateStudentProfile(original.id, { ...profile, nationalId }, context))
-            .resolves.toMatchObject({ success: true, student: { id: original.id, nationalId } });
+        const details = await getStudentDetail(original.id);
+        expect(details).not.toHaveProperty("nationalId");
+        const results = await searchStudents(studentId);
+        expect(JSON.stringify(results)).not.toContain(nationalId);
+
+        const edit = await updateStudentProfile(original.id, { ...profile, age: 14 }, context);
+        expect(edit).toMatchObject({ success: true, student: { id: original.id, age: 14 } });
+        expect(edit.student).not.toHaveProperty("nationalId");
+        await expect(updateStudentProfile(original.id, { ...profile, nationalId: null }, context))
+            .resolves.toMatchObject({ success: false });
+        await expect(prisma.student.findUniqueOrThrow({ where: { id: original.id } }))
+            .resolves.toMatchObject({ nationalId });
+
+        const snapshot = await getStudentIdentifierForEdit(original.id);
+        if (!snapshot.success) throw new Error("School admin could not read masked identifier");
+        expect(snapshot.masked).toBe(`G*********${nationalId.slice(-4)}`);
+
+        signIn(USERS_A.classTeacher);
+        await expect(getSystemAdminStudentIdentifier(original.id)).resolves.toMatchObject({ status: "forbidden" });
+        await expect(getStudentIdentifierForEdit(original.id)).resolves.toMatchObject({ success: false });
+        await expect(updateStudentIdentifier(original.id, { nationalId: null, expectedUpdatedAt: snapshot.updatedAt }, context))
+            .resolves.toMatchObject({ success: false });
+        signIn(OTHER_SCHOOL_USERS.schoolAdmin);
+        await expect(getStudentIdentifierForEdit(original.id)).resolves.toMatchObject({ success: false });
+        await expect(updateStudentIdentifier(original.id, { nationalId: null, expectedUpdatedAt: snapshot.updatedAt }, context))
+            .resolves.toMatchObject({ success: false });
+
+        signIn(USERS_A.schoolAdmin);
+        await expect(getSystemAdminStudentIdentifier(original.id)).resolves.toMatchObject({ status: "forbidden" });
+        await expect(updateStudentIdentifier(original.id, { nationalId: "", expectedUpdatedAt: snapshot.updatedAt }, context))
+            .resolves.toMatchObject({ success: false });
+        await expect(updateStudentIdentifier(original.id, { nationalId: createNationalId(1), expectedUpdatedAt: snapshot.updatedAt }, context))
+            .resolves.toMatchObject({ success: false, message: "เลขประจำตัวนี้มีอยู่ในระบบแล้ว" });
+        await expect(updateStudentIdentifier(original.id, { nationalId: null, expectedUpdatedAt: snapshot.updatedAt }, context))
+            .resolves.toMatchObject({ success: true });
+        await expect(updateStudentIdentifier(original.id, { nationalId, expectedUpdatedAt: snapshot.updatedAt }, context))
+            .resolves.toMatchObject({ success: false });
+        const cleared = await getStudentIdentifierForEdit(original.id);
+        if (!cleared.success) throw new Error("School admin could not read updated identifier state");
+        expect(cleared.masked).toBeNull();
+        await expect(updateStudentIdentifier(original.id, { nationalId, expectedUpdatedAt: cleared.updatedAt }, context))
+            .resolves.toMatchObject({ success: true });
+        await expect(prisma.student.findUniqueOrThrow({ where: { id: original.id } }))
+            .resolves.toMatchObject({ nationalId });
+
+        signIn(USERS_A.systemAdmin);
+        const systemSearch = await searchSystemAdminEntities({ query: studentId, entityType: "student" });
+        expect(systemSearch).toMatchObject({ status: "success", data: {
+            students: [expect.objectContaining({ nationalIdMasked: snapshot.masked })],
+        } });
+        expect(JSON.stringify(systemSearch)).not.toContain(nationalId);
+        await expect(getSystemAdminStudentIdentifier(original.id)).resolves.toMatchObject({ status: "success", data: { nationalId } });
     });
 
     it("keeps codes school-scoped and enforces both classroom boundaries", async () => {
@@ -629,6 +681,7 @@ describe("Integration: concurrent student imports", () => {
 });
 
 function signIn(user: MockUser): void {
+    mockSession(user);
     vi.mocked(requireAuth).mockResolvedValue({
         user: toSessionUser(user),
         expires: new Date(Date.now() + 86_400_000).toISOString(),

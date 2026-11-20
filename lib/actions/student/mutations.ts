@@ -17,6 +17,7 @@ import { logError } from "@/lib/utils/logging";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
 import {
+    studentIdentifierUpdateSchema,
     studentProfileUpdateSchema,
     type StudentProfileUpdateInput,
 } from "@/lib/validations/student-profile.validation";
@@ -42,8 +43,10 @@ import {
 } from "./student-class-count";
 import {
     isValidNationalId,
+    maskNationalId,
     NATIONAL_ID_ERROR_MESSAGE,
     normalizeImportNationalId,
+    redactNationalIds,
 } from "@/lib/utils/national-id";
 import { MAX_IMPORT_ROW_COUNT } from "@/lib/constants/import";
 import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
@@ -85,7 +88,6 @@ interface UpdateStudentStatusResult {
 interface UpdatedStudentProfile {
     id: string;
     studentId: string;
-    nationalId: string | null;
     firstName: string;
     lastName: string;
     gender: string | null;
@@ -113,7 +115,6 @@ interface StudentProfileUpdateContext {
 interface EditableStudentProfileRecord {
     id: string;
     studentId: string;
-    nationalId: string | null;
     class: string;
     schoolId: string;
     status: StudentStatusValue;
@@ -127,15 +128,15 @@ function createImportStudentSummary(
     reason?: string,
 ): ImportStudentSummary {
     return {
-        studentId: student.studentId,
-        fullName: `${student.firstName} ${student.lastName}`,
-        class: student.class,
+        studentId: redactNationalIds(student.studentId),
+        fullName: redactNationalIds(`${student.firstName} ${student.lastName}`),
+        class: redactNationalIds(student.class),
         reason,
     };
 }
 
 function formatImportStudentError(student: ParsedStudent, reason: string): string {
-    return `${student.firstName} ${student.lastName} (${student.studentId}): ${reason}`;
+    return redactNationalIds(`${student.firstName} ${student.lastName} (${student.studentId}): ${reason}`);
 }
 
 function normalizeImportStudents(students: ParsedStudent[]): {
@@ -1142,8 +1143,9 @@ async function getEditableStudentProfile(
         userId: string;
         userRole: string;
     },
+    db: Pick<Prisma.TransactionClient, "user" | "student"> = prisma,
 ): Promise<EditableStudentProfileRecord | string> {
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
         where: { id: params.userId },
         select: {
             schoolId: true,
@@ -1155,7 +1157,7 @@ async function getEditableStudentProfile(
         return "ไม่พบโรงเรียนของคุณ";
     }
 
-    const student = await prisma.student.findFirst({
+    const student = await db.student.findFirst({
         where: {
             id: params.studentId,
             schoolId: user.schoolId,
@@ -1166,7 +1168,6 @@ async function getEditableStudentProfile(
         select: {
             id: true,
             studentId: true,
-            nationalId: true,
             class: true,
             schoolId: true,
             status: true,
@@ -1182,8 +1183,9 @@ async function getEditableStudentProfile(
 async function validateLatestImportedProfileContext(
     studentId: string,
     context: StudentProfileUpdateContext,
+    db: Pick<Prisma.TransactionClient, "phqResult"> = prisma,
 ): Promise<string | null> {
-    const latestPhqResult = await prisma.phqResult.findFirst({
+    const latestPhqResult = await db.phqResult.findFirst({
         where: { studentId },
         orderBy: LATEST_PHQ_ORDER_BY,
         select: { id: true },
@@ -1204,20 +1206,6 @@ async function validateStudentProfileUpdateRules(
 ): Promise<string | null> {
     if (input.class !== student.class) {
         return "ห้องเรียนแก้ไขได้จากการนำเข้าข้อมูลเท่านั้น";
-    }
-
-    if (input.nationalId !== student.nationalId && input.nationalId) {
-        const duplicateNationalIdStudent = await prisma.student.findUnique({
-            where: { nationalId: input.nationalId },
-            select: { id: true },
-        });
-
-        if (
-            duplicateNationalIdStudent &&
-            duplicateNationalIdStudent.id !== student.id
-        ) {
-            return "เลขบัตรประชาชนนี้มีอยู่ในระบบแล้ว";
-        }
     }
 
     if (input.studentId === student.studentId) return null;
@@ -1265,7 +1253,9 @@ async function saveStudentProfileUpdate(
                 updatedAt: true,
             },
         });
-        if (!currentStudent) throw new Error("ไม่พบนักเรียนที่ต้องการแก้ไข");
+        if (!currentStudent || currentStudent.schoolId !== student.schoolId || currentStudent.class !== student.class) {
+            return null;
+        }
 
         const statusChanged = currentStudent.status !== input.status;
         const academicYearId = statusChanged
@@ -1284,7 +1274,6 @@ async function saveStudentProfileUpdate(
             },
             data: {
                 studentId: input.studentId,
-                nationalId: input.nationalId,
                 firstName: input.firstName,
                 lastName: input.lastName,
                 gender: input.gender,
@@ -1308,7 +1297,6 @@ async function saveStudentProfileUpdate(
             select: {
                 id: true,
                 studentId: true,
-                nationalId: true,
                 firstName: true,
                 lastName: true,
                 gender: true,
@@ -1437,5 +1425,82 @@ export async function updateStudentProfile(
             success: false,
             message: "เกิดข้อผิดพลาดในการอัปเดตข้อมูลนักเรียน",
         };
+    }
+}
+
+type StudentIdentifierResult =
+    | { success: true; masked: string | null; updatedAt: string }
+    | { success: false; message: string };
+
+export async function getStudentIdentifierForEdit(studentId: string): Promise<StudentIdentifierResult> {
+    try {
+        const { user } = await requireAuth();
+        if (user.role !== "school_admin") {
+            return { success: false, message: "คุณไม่มีสิทธิ์จัดการเลขประจำตัวนักเรียน" };
+        }
+        const student = await getEditableStudentProfile({ studentId, userId: user.id, userRole: user.role });
+        if (typeof student === "string") return { success: false, message: student };
+
+        const identifier = await prisma.student.findFirst({
+            where: { id: student.id, schoolId: student.schoolId, status: "ACTIVE", disabledAt: null },
+            select: { nationalId: true, updatedAt: true },
+        });
+        if (!identifier) return { success: false, message: "ไม่พบนักเรียนที่แก้ไขเลขประจำตัวได้" };
+
+        return {
+            success: true,
+            masked: maskNationalId(identifier.nationalId),
+            updatedAt: identifier.updatedAt.toISOString(),
+        };
+    } catch {
+        return { success: false, message: "ไม่สามารถโหลดข้อมูลเลขประจำตัวได้" };
+    }
+}
+
+export async function updateStudentIdentifier(
+    studentId: string,
+    input: unknown,
+    context: unknown,
+): Promise<{ success: boolean; message: string }> {
+    try {
+        const { user } = await requireAuth();
+        if (user.role !== "school_admin") {
+            return { success: false, message: "คุณไม่มีสิทธิ์จัดการเลขประจำตัวนักเรียน" };
+        }
+        const parsed = studentIdentifierUpdateSchema.safeParse(input);
+        if (!parsed.success) return { success: false, message: "กรุณาระบุเลขประจำตัวที่ถูกต้องหรือเลือกคำสั่งล้างเลข" };
+        const editContext = getStudentProfileUpdateContext(context);
+        if (typeof editContext === "string") return { success: false, message: editContext };
+
+        const saved = await runSerializableTransaction(async (tx) => {
+            const student = await getEditableStudentProfile({ studentId, userId: user.id, userRole: user.role }, tx);
+            if (typeof student === "string") return student;
+            const contextError = await validateLatestImportedProfileContext(student.id, editContext, tx);
+            if (contextError) return contextError;
+
+            const update = await tx.student.updateMany({
+                where: {
+                    id: student.id, schoolId: student.schoolId, status: "ACTIVE", disabledAt: null,
+                    updatedAt: parsed.data.expectedUpdatedAt,
+                },
+                data: { nationalId: parsed.data.nationalId },
+            });
+            if (update.count !== 1) return "ข้อมูลนักเรียนมีการเปลี่ยนแปลง กรุณาเปิดรายการแก้ไขอีกครั้ง";
+            return { schoolId: student.schoolId };
+        });
+        if (typeof saved === "string") return { success: false, message: saved };
+
+        revalidateStudentsCache(saved.schoolId, studentId);
+        revalidatePath(`/students/${studentId}`);
+        return { success: true, message: "บันทึกเลขประจำตัวสำเร็จ" };
+    } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+            return { success: false, message: "เลขประจำตัวนี้มีอยู่ในระบบแล้ว" };
+        }
+        logError("Update student identifier error", {
+            name: error instanceof Error ? error.name : typeof error,
+            code: error instanceof Prisma.PrismaClientKnownRequestError ? error.code : undefined,
+        });
+        return { success: false, message: "ไม่สามารถบันทึกเลขประจำตัวได้" };
     }
 }

@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { studentProfileUpdateSchema } from "@/lib/validations/student-profile.validation";
+import { studentIdentifierUpdateSchema, studentProfileUpdateSchema } from "@/lib/validations/student-profile.validation";
 
 function validStudentProfile(overrides: Record<string, unknown> = {}) {
     return {
         studentId: "ST-001",
-        nationalId: "1103700000011",
         firstName: "สมชาย",
         lastName: "ใจดี",
         gender: "MALE",
@@ -44,22 +43,32 @@ describe("studentProfileUpdateSchema", () => {
         expect(result.success).toBe(false);
     });
 
-    it("rejects invalid national ID", () => {
+    it.each([null, "", "G1234567890123"])("rejects any national ID from general profile edits", (nationalId) => {
         const result = studentProfileUpdateSchema.safeParse(
-            validStudentProfile({ nationalId: "12345" }),
+            validStudentProfile({ nationalId }),
         );
 
         expect(result.success).toBe(false);
     });
+
+    it("allows nullable optional demographics", () => {
+        expect(studentProfileUpdateSchema.safeParse(validStudentProfile({ gender: null, age: null })).success).toBe(true);
+    });
+
+    it("rejects invalid gender", () => {
+        expect(studentProfileUpdateSchema.safeParse(validStudentProfile({ gender: "OTHER" })).success).toBe(false);
+    });
+});
+
+describe("studentIdentifierUpdateSchema", () => {
+    const expectedUpdatedAt = "2026-08-01T00:00:00.000Z";
 
     it.each([
         ["G1234567890123", "G1234567890123"],
         ["g1234567890123", "G1234567890123"],
         ["G123-4567-89012-3", "G1234567890123"],
     ])("accepts and normalizes national ID %s", (nationalId, expected) => {
-        const result = studentProfileUpdateSchema.safeParse(
-            validStudentProfile({ nationalId }),
-        );
+        const result = studentIdentifierUpdateSchema.safeParse({ nationalId, expectedUpdatedAt });
 
         expect(result.success).toBe(true);
         if (result.success) expect(result.data.nationalId).toBe(expected);
@@ -70,41 +79,16 @@ describe("studentProfileUpdateSchema", () => {
         "G123456789012",
         "123G4567890123",
         "GG1234567890123",
+        "12345",
+        "",
     ])("rejects unsupported national ID %s", (nationalId) => {
-        const result = studentProfileUpdateSchema.safeParse(
-            validStudentProfile({ nationalId }),
-        );
+        const result = studentIdentifierUpdateSchema.safeParse({ nationalId, expectedUpdatedAt });
 
         expect(result.success).toBe(false);
     });
 
-    it("allows blank national ID for legacy records", () => {
-        const result = studentProfileUpdateSchema.safeParse(
-            validStudentProfile({ nationalId: "" }),
-        );
-
-        expect(result.success).toBe(true);
-        if (result.success) {
-            expect(result.data.nationalId).toBeNull();
-        }
-    });
-
-    it("allows nullable optional demographics", () => {
-        const result = studentProfileUpdateSchema.safeParse(
-            validStudentProfile({
-                gender: null,
-                age: null,
-            }),
-        );
-
-        expect(result.success).toBe(true);
-    });
-
-    it("rejects invalid gender", () => {
-        const result = studentProfileUpdateSchema.safeParse(
-            validStudentProfile({ gender: "OTHER" }),
-        );
-
-        expect(result.success).toBe(false);
+    it("accepts only explicit null to clear a stored identifier", () => {
+        expect(studentIdentifierUpdateSchema.parse({ nationalId: null, expectedUpdatedAt }).nationalId).toBeNull();
+        expect(studentIdentifierUpdateSchema.safeParse({ expectedUpdatedAt }).success).toBe(false);
     });
 });

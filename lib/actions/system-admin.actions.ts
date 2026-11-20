@@ -1,6 +1,7 @@
 "use server";
 
 import { requireAdmin, requireAuth } from "@/lib/auth/session";
+import { prisma } from "@/lib/database/prisma";
 import {
     getSystemAdminValidationMessage,
     systemCareRecordDeleteSchema,
@@ -128,6 +129,24 @@ export async function updateSystemAdminStudent(
                 message: "เกิดข้อผิดพลาดในการแก้ไขนักเรียน",
             },
         });
+    }
+}
+
+export async function getSystemAdminStudentIdentifier(
+    studentId: string,
+): Promise<QueryResult<{ nationalId: string | null }>> {
+    try {
+        const { user } = await requireAuth();
+        if (user.role !== "system_admin") return queryForbidden("ไม่มีสิทธิ์อ่านเลขประจำตัวนักเรียน");
+        const parsed = systemStudentCareRecordsSchema.safeParse({ studentId });
+        if (!parsed.success) return queryNotFound();
+        const student = await prisma.student.findUnique({
+            where: { id: parsed.data.studentId },
+            select: { nationalId: true },
+        });
+        return student ? querySuccess(student) : queryNotFound();
+    } catch {
+        return queryForbidden("ไม่สามารถเปิดเลขประจำตัวนักเรียนได้");
     }
 }
 

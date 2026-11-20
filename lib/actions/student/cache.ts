@@ -42,7 +42,7 @@ export function buildStudentsListCacheKey(input: {
     options: GetStudentsOptions;
 }): string[] {
     return [
-        "students-list",
+        "students-list:identifier-omitted",
         `role:${input.userRole}`,
         `school:${input.schoolId ?? "none"}`,
         `advisory:${input.advisoryClass ?? "none"}`,
@@ -60,7 +60,7 @@ export function buildStudentsDashboardCacheKey(input: {
     userId: string;
 }): string[] {
     return [
-        "students-dashboard",
+        "students-dashboard:identifier-omitted",
         `role:${input.userRole}`,
         `school:${input.scopeSchoolId ?? "none"}`,
         `advisory:${input.advisoryClass ?? "none"}`,
@@ -76,7 +76,7 @@ export function buildStudentDetailCacheKey(input: {
     studentId: string;
 }): string[] {
     return [
-        "student-detail",
+        "student-detail:identifier-omitted",
         `role:${input.userRole}`,
         `school:${input.schoolId ?? "none"}`,
         `advisory:${input.advisoryClass ?? "none"}`,

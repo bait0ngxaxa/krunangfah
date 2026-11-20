@@ -14,6 +14,7 @@ import {
     isValidNationalId,
     NATIONAL_ID_ERROR_MESSAGE,
     normalizeImportNationalId,
+    redactNationalIds,
 } from "@/lib/utils/national-id";
 
 export type ParsedGender = "MALE" | "FEMALE";
@@ -174,7 +175,7 @@ function findHeaderColumn(
 function formatInvalidCellValue(value: unknown): string {
     const stringValue = normalizeHeader(stringifyCellValue(value));
     const displayValue = stringValue || "[รูปแบบข้อมูลไม่รองรับ]";
-    const sanitizedValue = displayValue.replace(/"/g, "'");
+    const sanitizedValue = redactNationalIds(displayValue).replace(/"/g, "'");
     return sanitizedValue.length > 50
         ? `${sanitizedValue.slice(0, 50)}…`
         : sanitizedValue;
@@ -354,7 +355,7 @@ export async function parseExcelBuffer(
 
                     // ค่าที่ไม่ valid
                     errors.push(
-                        `แถว ${rowNumber}: ${headerName} ต้องเป็น "ใช่" หรือ "ไม่ใช่" (พบ: "${value}")`,
+                        `แถว ${rowNumber}: ${headerName} ต้องเป็น "ใช่" หรือ "ไม่ใช่" (พบ: "${formatInvalidCellValue(value)}")`,
                     );
                     return undefined;
                 };
@@ -577,7 +578,7 @@ export async function parseExcelBuffer(
                 return;
             }
             errors.push(
-                `พบเลขบัตรประชาชนซ้ำในไฟล์สำหรับรหัสนักเรียน ${firstStudentId} และ ${student.studentId}`,
+                `พบเลขบัตรประชาชนซ้ำในไฟล์สำหรับรหัสนักเรียน ${redactNationalIds(firstStudentId)} และ ${redactNationalIds(student.studentId)}`,
             );
         });
 
@@ -585,7 +586,7 @@ export async function parseExcelBuffer(
 
         if (duplicateStudentIds.length > 0) {
             errors.push(
-                `พบรหัสนักเรียนซ้ำในไฟล์: ${duplicateStudentIds.join(", ")}`,
+                `พบรหัสนักเรียนซ้ำในไฟล์: ${duplicateStudentIds.map(redactNationalIds).join(", ")}`,
             );
         }
 

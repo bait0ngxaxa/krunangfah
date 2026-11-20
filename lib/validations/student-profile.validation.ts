@@ -6,7 +6,7 @@ import { sanitizeName, sanitizeText } from "@/lib/utils/text-sanitizer";
 import {
     isValidNationalId,
     NATIONAL_ID_ERROR_MESSAGE,
-    normalizeOptionalNationalId,
+    normalizeNationalId,
 } from "@/lib/utils/national-id";
 
 export const studentProfileUpdateSchema = z
@@ -16,14 +16,6 @@ export const studentProfileUpdateSchema = z
             .min(1, "กรุณากรอกรหัสนักเรียน")
             .max(INPUT_LIMITS.student.studentId, "รหัสนักเรียนยาวเกินไป")
             .transform(sanitizeText),
-        nationalId: z
-            .string()
-            .nullable()
-            .transform(normalizeOptionalNationalId)
-            .refine(
-                (value) => value === null || isValidNationalId(value),
-                NATIONAL_ID_ERROR_MESSAGE,
-            ),
         firstName: z
             .string()
             .min(1, "กรุณากรอกชื่อ")
@@ -55,3 +47,9 @@ export const studentProfileUpdateSchema = z
 export type StudentProfileUpdateInput = z.infer<
     typeof studentProfileUpdateSchema
 >;
+
+export const studentIdentifierUpdateSchema = z.object({
+    nationalId: z.string().transform(normalizeNationalId)
+        .refine(isValidNationalId, NATIONAL_ID_ERROR_MESSAGE).nullable(),
+    expectedUpdatedAt: z.iso.datetime().transform((value) => new Date(value)),
+}).strict();

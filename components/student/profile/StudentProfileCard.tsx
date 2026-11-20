@@ -10,7 +10,6 @@ import {
     School,
     Hash,
     Cake,
-    CreditCard,
     Pencil,
     CalendarDays,
     type LucideIcon,
@@ -28,7 +27,6 @@ export interface StudentProfileStudent {
     firstName: string;
     lastName: string;
     studentId?: string | null;
-    nationalId?: string | null;
     gender?: string | null;
     age?: number | null;
     class: string;
@@ -56,7 +54,7 @@ interface StudentProfileCardProps {
     student: StudentProfileStudent;
     latestResult?: StudentProfileLatestResult | null;
     activePhqResultId?: string;
-    canViewNationalId?: boolean;
+    canViewSchool?: boolean;
     canEditProfile?: boolean;
     onProfileSaved?: (student: StudentProfileStudent) => void;
 }
@@ -84,7 +82,7 @@ function formatAssessmentDate(date: Date): string {
 
 function buildDetailItems(
     student: StudentProfileCardProps["student"],
-    canViewNationalId: boolean,
+    canViewSchool: boolean,
 ): DetailItem[] {
     const items: DetailItem[] = [
         {
@@ -96,7 +94,7 @@ function buildDetailItems(
     ];
     const gender = formatGender(student.gender);
 
-    if (canViewNationalId && student.school?.name) {
+    if (canViewSchool && student.school?.name) {
         items.push({
             label: "โรงเรียน",
             value: student.school.name,
@@ -130,15 +128,6 @@ function buildDetailItems(
             tone: "border-slate-200 bg-slate-50 text-slate-700",
         });
     }
-    if (canViewNationalId) {
-        items.push({
-            label: "เลขบัตร",
-            value: student.nationalId ?? "ยังไม่มีเลขประจำตัว",
-            icon: CreditCard,
-            tone: "border-amber-200 bg-amber-50 text-amber-800",
-        });
-    }
-
     return items;
 }
 
@@ -146,7 +135,7 @@ export function StudentProfileCard({
     student,
     latestResult,
     activePhqResultId,
-    canViewNationalId = false,
+    canViewSchool = false,
     canEditProfile = false,
     onProfileSaved,
 }: StudentProfileCardProps): ReactElement {
@@ -157,7 +146,7 @@ export function StudentProfileCard({
             ? latestResult.riskLevel
             : null;
     const risk = latestRiskLevel ? getRiskLevelConfig(latestRiskLevel) : null;
-    const detailItems = buildDetailItems(profileStudent, canViewNationalId);
+    const detailItems = buildDetailItems(profileStudent, canViewSchool);
     const avatarBg = risk ? risk.bgSolid : "bg-[var(--brand-primary)]";
 
     function handleProfileSaved(updatedStudent: StudentProfileStudent): void {

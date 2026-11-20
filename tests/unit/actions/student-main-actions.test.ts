@@ -210,7 +210,7 @@ describe("student main actions compatibility", () => {
         expect(result[0]?.nationalId).toBeNull();
     });
 
-    it("allows system admin to receive nationalId in search results", async () => {
+    it("allows system admin identifier search and returns a masked result", async () => {
         vi.mocked(getViewerContext).mockResolvedValue({
             advisoryClass: undefined,
             isPrimary: false,
@@ -232,7 +232,7 @@ describe("student main actions compatibility", () => {
             "1103700000011",
             true,
         );
-        expect(result[0]?.nationalId).toBe("1103700000011");
+        expect(result[0]?.nationalId).toBe("*********0011");
     });
 
     it("distinguishes detail query failures from not_found", async () => {

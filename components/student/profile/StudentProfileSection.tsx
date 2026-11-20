@@ -6,6 +6,7 @@ import {
     parseStudentStatusValue,
 } from "@/lib/constants/student-status";
 import { useStudentStatusContext } from "./StudentStatusContext";
+import { StudentIdentifierEditor } from "./StudentIdentifierEditor";
 import { HospitalReferralButton } from "@/components/student/referral/HospitalReferralButton";
 import { ReferralButton } from "@/components/student/referral/ReferralButton";
 import { ReferralHistoryTimeline } from "@/components/student/referral/ReferralHistoryTimeline";
@@ -32,7 +33,7 @@ interface StudentProfileSectionProps {
     student: StudentProfileStudent;
     latestResult?: StudentProfileLatestResult | null;
     activePhqResultId?: string;
-    canViewNationalId: boolean;
+    canViewSchool: boolean;
     canEditProfile: boolean;
     canManageLatestCareRecords: boolean;
     currentUserId: string;
@@ -51,7 +52,7 @@ export function StudentProfileSection({
     student,
     latestResult,
     activePhqResultId,
-    canViewNationalId,
+    canViewSchool,
     canEditProfile,
     canManageLatestCareRecords,
     currentUserId,
@@ -87,10 +88,14 @@ export function StudentProfileSection({
                 student={profileStudent}
                 latestResult={latestResult}
                 activePhqResultId={activePhqResultId}
-                canViewNationalId={canViewNationalId}
+                canViewSchool={canViewSchool}
                 canEditProfile={canEditProfile}
                 onProfileSaved={handleProfileSaved}
             />
+
+            {currentUserRole === "school_admin" && canEditProfile && activePhqResultId && !blockedMessage && (
+                <StudentIdentifierEditor studentId={profileStudent.id} activePhqResultId={activePhqResultId} />
+            )}
 
             {canShowActionButtons && (
                 <div className="flex flex-wrap justify-end gap-3">

@@ -305,6 +305,13 @@ describe("importStudents identity reconciliation", () => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
+    it("masks identifier-shaped strings accidentally copied into import diagnostics", async () => {
+        const id = "1103700000011";
+        const result = await importStudents([{ ...importedRow, studentId: id, nationalId: "invalid" }], "ay-input");
+        expect(result.errors).toEqual([expect.stringContaining("*********0011")]);
+        expect(JSON.stringify(result)).not.toContain(id);
+    });
+
     it.each(["studentId", "firstName", "lastName", "class"] as const)(
         "still requires %s on a row with a null national ID", async (field) => {
             await expect(importStudents([{ ...importedRow, nationalId: null, [field]: " " }], "ay-input"))

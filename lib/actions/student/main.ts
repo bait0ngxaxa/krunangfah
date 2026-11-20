@@ -9,6 +9,7 @@ import { prisma } from "@/lib/database/prisma";
 import { isSystemAdmin } from "@/lib/auth/session";
 import { unstable_cache } from "next/cache";
 import { getViewerContext } from "@/lib/auth/viewer-context";
+import { maskNationalId } from "@/lib/utils/national-id";
 import {
     getRiskLevelCountsQuery,
     getDistinctClassesQuery,
@@ -281,15 +282,9 @@ export async function searchStudents(
             canViewNationalId,
         );
 
-        if (canViewNationalId) {
-            return students.length === 0
-                ? queryEmpty(students)
-                : querySuccess(students);
-        }
-
         const sanitizedStudents = students.map((student) => ({
             ...student,
-            nationalId: null,
+            nationalId: canViewNationalId ? maskNationalId(student.nationalId ?? null) : null,
         }));
         return sanitizedStudents.length === 0
             ? queryEmpty(sanitizedStudents)

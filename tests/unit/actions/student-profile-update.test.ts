@@ -69,7 +69,6 @@ import { updateStudentProfile } from "@/lib/actions/student/mutations";
 function validInput(overrides: Record<string, unknown> = {}) {
     return {
         studentId: "ST-001",
-        nationalId: "1103700000011",
         firstName: "สมชาย",
         lastName: "ใจดี",
         gender: "MALE",
@@ -84,7 +83,6 @@ function updatedStudentProfile(overrides: Record<string, unknown> = {}) {
     return {
         id: "student-1",
         studentId: "ST-001",
-        nationalId: "1103700000011",
         firstName: "สมหญิง",
         lastName: "ใจดี",
         gender: null,
@@ -118,7 +116,6 @@ describe("updateStudentProfile", () => {
         prismaMock.student.findFirst.mockResolvedValue({
             id: "student-1",
             studentId: "ST-001",
-            nationalId: "1103700000011",
             class: "ม.1/1",
             schoolId: "school-1",
             status: "ACTIVE",
@@ -170,6 +167,12 @@ describe("updateStudentProfile", () => {
         expect(prismaMock.student.updateMany).not.toHaveBeenCalled();
     });
 
+    it.each([null, "G1234567890123"])("rejects direct identifier writes through ordinary profile edits", async (nationalId) => {
+        await expect(updateStudentProfile("student-1", validInput({ nationalId }), latestProfileContext()))
+            .resolves.toMatchObject({ success: false });
+        expect(prismaMock.student.updateMany).not.toHaveBeenCalled();
+    });
+
     it("blocks stale profile updates from historical filters", async () => {
         const result = await updateStudentProfile(
             "student-1",
@@ -218,7 +221,6 @@ describe("updateStudentProfile", () => {
             },
             data: {
                 studentId: "ST-001",
-                nationalId: "1103700000011",
                 firstName: "สมหญิง",
                 lastName: "ใจดี",
                 gender: null,

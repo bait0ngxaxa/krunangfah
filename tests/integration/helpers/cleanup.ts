@@ -7,11 +7,13 @@
 
 import { prisma } from "@/lib/database/prisma";
 import { getCreatedIds } from "./seed";
+import { assertVerifiedIntegrationClient } from "../database-safety";
 
 /**
  * Delete all test data in correct FK order
  */
 export async function cleanupAll() {
+    assertVerifiedIntegrationClient(prisma);
     const ids = getCreatedIds();
 
     // Delete in reverse dependency order

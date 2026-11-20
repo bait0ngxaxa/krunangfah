@@ -22,7 +22,6 @@ interface EditableStudent {
     firstName: string;
     lastName: string;
     studentId?: string | null;
-    nationalId?: string | null;
     gender?: string | null;
     age?: number | null;
     class: string;
@@ -48,7 +47,6 @@ interface StudentProfileSubmitPayload
 function createInitialState(student: EditableStudent): StudentProfileFormState {
     return {
         studentId: student.studentId ?? "",
-        nationalId: student.nationalId ?? "",
         firstName: student.firstName,
         lastName: student.lastName,
         gender: student.gender ?? "",
@@ -64,7 +62,6 @@ function hasFormChanges(
 ): boolean {
     return (
         current.studentId !== baseline.studentId ||
-        current.nationalId !== baseline.nationalId ||
         current.firstName !== baseline.firstName ||
         current.lastName !== baseline.lastName ||
         current.gender !== baseline.gender ||

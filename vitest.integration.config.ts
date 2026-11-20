@@ -1,10 +1,8 @@
 import { defineConfig } from "vitest/config";
 import path from "path";
+import { loadIntegrationDatabaseTarget } from "./tests/integration/database-target";
 
-const testDatabaseUrl = process.env.TEST_DATABASE_URL;
-if (!testDatabaseUrl) {
-    throw new Error("Set TEST_DATABASE_URL to a dedicated disposable PostgreSQL database.");
-}
+loadIntegrationDatabaseTarget(__dirname);
 
 export default defineConfig({
     test: {
@@ -12,10 +10,8 @@ export default defineConfig({
         environment: "node",
         env: {
             NODE_ENV: "test",
-            ALLOW_REAL_PRISMA_TESTS: "true",
-            DATABASE_URL: testDatabaseUrl,
-            DIRECT_URL: testDatabaseUrl,
         },
+        setupFiles: ["./tests/integration/setup.ts"],
         include: ["tests/integration/**/*.test.ts"],
         exclude: ["node_modules/**"],
     },

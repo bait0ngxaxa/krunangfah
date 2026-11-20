@@ -5,6 +5,7 @@ import {
     normalizeNationalId,
     normalizeNationalIdInput,
     normalizeOptionalNationalId,
+    redactNationalIds,
 } from "@/lib/utils/national-id";
 
 describe("national ID utility", () => {
@@ -52,5 +53,10 @@ describe("national ID utility", () => {
         expect(maskNationalId("1234567890123")).toBe("*********0123");
         expect(maskNationalId("G1234567890123")).toBe("G*********0123");
         expect(maskNationalId(null)).toBeNull();
+    });
+
+    it("masks identifier-shaped text in import diagnostics", () => {
+        expect(redactNationalIds("แถว 2: พบ g123-4567 89012-3 หรือ 1103700000011, รหัส 00123"))
+            .toBe("แถว 2: พบ G*********0123 หรือ *********0011, รหัส 00123");
     });
 });

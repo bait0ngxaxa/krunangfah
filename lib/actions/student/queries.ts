@@ -403,6 +403,7 @@ export async function getStudentsQuery(
     // Fetch current page with stable ordering.
     const students = await prisma.student.findMany({
         where: whereClause,
+        omit: { nationalId: true },
         include: {
             phqResults: {
                 orderBy: LATEST_PHQ_ORDER_BY,
@@ -502,6 +503,7 @@ export async function getStudentsForDashboardQuery(
             : undefined;
     const students = await prisma.student.findMany({
         where: whereClause,
+        omit: { nationalId: true },
         include: {
             phqResults: {
                 ...(phqContextWhere ? { where: phqContextWhere } : {}),
@@ -676,6 +678,7 @@ export async function searchStudentsQuery(
 
     return prisma.student.findMany({
         where: whereClause,
+        omit: { nationalId: !allowNationalIdSearch },
         include: {
             school: {
                 select: {
@@ -722,6 +725,7 @@ export async function getStudentDetailQuery(
 
     const student = await prisma.student.findFirst({
         where: whereClause,
+        omit: { nationalId: true },
         include: {
             school: {
                 select: {

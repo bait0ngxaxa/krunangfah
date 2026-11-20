@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     getCounselingSessions: vi.fn(),
     getHomeVisits: vi.fn(),
     requireAuth: vi.fn(),
+    renderProfile: vi.fn(),
 }));
 
 vi.mock("@/lib/actions/student/main", () => ({
@@ -50,7 +51,10 @@ vi.mock("@/components/ui/Tabs", () => ({
     ),
 }));
 vi.mock("@/components/student/profile/StudentProfileSection", () => ({
-    StudentProfileSection: () => <div data-testid="student-profile" />,
+    StudentProfileSection: (props: unknown) => {
+        mocks.renderProfile(props);
+        return <div data-testid="student-profile" />;
+    },
 }));
 vi.mock("@/components/student/profile/StudentStatusContext", () => ({
     StudentStatusProvider: ({ children }: { children: ReactNode }) => (
@@ -199,6 +203,17 @@ describe("Student detail care presentation", () => {
         expect(html).toContain("round-2-terminal");
         expect(html).toContain("data-testid=\"counseling-records\"");
         expect(html).toContain("data-testid=\"home-visit-records\"");
+    });
+
+    it.each(["class_teacher", "school_admin", "system_admin"])("never serializes a raw identifier to profile props for %s", async (role) => {
+        const nationalId = "G1234567890123";
+        mocks.requireAuth.mockResolvedValue({ user: { id: "user-1", role } });
+        mocks.getStudentDetailResult.mockResolvedValue({ status: "success", data: { ...student, nationalId } });
+        await renderStudentDetail();
+        const props = mocks.renderProfile.mock.lastCall?.[0];
+        expect(props).toBeDefined();
+        expect(props.student).not.toHaveProperty("nationalId");
+        expect(JSON.stringify(props)).not.toContain(nationalId);
     });
 
     it("keeps the round 1 activity wording and historical activity view read-only", async () => {

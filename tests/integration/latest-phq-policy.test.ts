@@ -160,7 +160,6 @@ describe("Integration: canonical latest PHQ policy", () => {
         mockSession(USERS.schoolAdmin);
         const profileInput = {
             studentId: student.studentId,
-            nationalId: null,
             firstName: "นักเรียนแก้ไข",
             lastName: student.lastName,
             gender: null,
@@ -180,7 +179,7 @@ describe("Integration: canonical latest PHQ policy", () => {
             { activePhqResultId: currentPhqId },
         );
 
-        expect(historicalResult.success).toBe(false);
+        expect(historicalResult).toMatchObject({ success: false, message: expect.stringContaining("กำลังดูข้อมูลย้อนหลัง") });
         expect(currentResult.success).toBe(true);
     });
 

@@ -90,9 +90,10 @@ Repository ปัจจุบัน pin Prisma 6 และยังประก�
 
 ## Test-only configuration
 
-- `ALLOW_REAL_PRISMA_TESTS` เป็น safety switch ภายใน `vitest.integration.config.ts` ไม่ใช่ production setting
-- ห้ามตั้ง `ALLOW_REAL_PRISMA_TESTS=true` ใน production `.env`
-- ก่อนรัน `npm run test:integration` ให้ตั้ง `TEST_DATABASE_URL` เป็น PostgreSQL สำหรับทดสอบที่แยกจากข้อมูลจริงและล้างได้ จากนั้นใช้ migration ของโปรเจกต์เตรียมฐานข้อมูลนั้น ชุดทดสอบใช้ URL นี้แทน `DATABASE_URL` และ `DIRECT_URL` ของแอป
+- ใช้ PostgreSQL แบบใช้แล้วทิ้งที่แยกจากข้อมูลจริง ในเครื่องหรือ CI ที่เปิดพอร์ตเฉพาะบน `127.0.0.1` ใช้ Node.js รุ่นที่ Vitest/Vite รองรับ (20.19 หรือ 22.12 ขึ้นไปในสายรุ่นนั้น)
+- สร้างฐาน `krunangfah_integration` และใช้บัญชี provisioning ของ instance ทดสอบรัน migration เดิม จากนั้นสร้างบัญชี `krunangfah_integration_runner` พร้อมรหัสผ่านเฉพาะงานทดสอบ บัญชีนี้ต้องไม่มีสิทธิ์ผู้ดูแล ไม่มี role membership และไม่เป็นเจ้าของฐาน ให้เฉพาะสิทธิ์ CONNECT, USAGE บน schema, DML บนตาราง fixtures และ USAGE/SELECT บน sequences ในฐานนี้ เก็บ `_prisma_migrations` ให้บัญชี provisioning เท่านั้น
+- ใน instance ทดสอบ ให้บัญชี provisioning ตั้ง comment ของฐานเป็น `krunangfah-integration:<อักขระ hex ตัวเล็ก 64 ตัว>` โดยใช้ค่าสุ่มใหม่ ตั้ง `TEST_DATABASE_AUTHORIZATION` ให้ตรงกับส่วนอักขระ hex และตั้ง `TEST_DATABASE_URL` ให้เป็น `postgresql://krunangfah_integration_runner:<password>@127.0.0.1:<port>/krunangfah_integration` แบบไม่มี query หรือ fragment
+- รัน `npm run test:integration` เมื่อเตรียมเสร็จ ตัวตรวจสอบปฏิเสธปลายทางที่ตรงกับ `DATABASE_URL` หรือ `DIRECT_URL` ของแอปใน shell หรือไฟล์ `.env*` ที่รองรับ และอ่านชื่อฐาน บัญชี สิทธิ์ และ comment จาก PostgreSQL ก่อนอนุญาตให้ fixtures หรือ cleanup ใช้ Prisma
 
 ## Ports และ network boundary
 
@@ -129,4 +130,4 @@ Architecture ปัจจุบันเหมาะกับ app process บน
 4. `RATE_LIMIT_DRIVER=redis` และ Redis healthy
 5. Resend sender ถูก verify ถ้าเปิด password reset
 6. `.data` เขียนได้และรวมอยู่ใน backup policy
-7. ไม่มี `AUTH_*`, `ADMIN_PASSWORD` หรือ `ALLOW_REAL_PRISMA_TESTS` ที่ถูกเข้าใจผิดว่าเป็น production requirement
+7. ไม่มี `AUTH_*`, `ADMIN_PASSWORD` หรือค่าที่ใช้อนุญาต integration tests ที่ถูกเข้าใจผิดว่าเป็น production requirement

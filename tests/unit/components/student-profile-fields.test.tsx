@@ -2,13 +2,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { StudentProfileFields } from "@/components/student/profile/StudentProfileEditFields";
 
-describe("StudentProfileFields national ID input", () => {
-    it("keeps a G national ID in a 14-character text input", () => {
+describe("StudentProfileFields", () => {
+    it("renders the school code and keeps identifiers out of the general form", () => {
         const html = renderToStaticMarkup(
             <StudentProfileFields
                 form={{
                     studentId: "1001",
-                    nationalId: "G1234567890123",
                     firstName: "สมชาย",
                     lastName: "ใจดี",
                     gender: "MALE",
@@ -22,8 +21,8 @@ describe("StudentProfileFields national ID input", () => {
             />,
         );
 
-        expect(html).toContain('value="G1234567890123"');
-        expect(html).toContain('maxLength="14"');
-        expect(html).not.toContain('inputMode="numeric"');
+        expect(html).toContain('value="1001"');
+        expect(html).not.toContain('id="student-national-id"');
+        expect(html).not.toContain("เลขบัตรประชาชน");
     });
 });

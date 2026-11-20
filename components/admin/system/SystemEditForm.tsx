@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
+    getSystemAdminStudentIdentifier,
     updateSystemAdminSchool,
     updateSystemAdminStudent,
 } from "@/lib/actions/system-admin.actions";
@@ -20,6 +21,7 @@ import {
     type SelectOption,
 } from "./SystemFormFields";
 import { normalizeNationalIdInput } from "@/lib/utils/national-id";
+import { Button } from "@/components/ui/Button";
 
 interface SystemEditFormProps {
     entity: SchoolEntityResult | StudentEntityResult;
@@ -93,7 +95,6 @@ function StudentEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
     const student = entity as StudentEntityResult;
     const [form, setForm] = useState({
         studentId: student.studentId,
-        nationalId: student.nationalId ?? "",
         firstName: student.firstName,
         lastName: student.lastName,
         gender: student.gender ?? "",
@@ -103,6 +104,21 @@ function StudentEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
         reason: "",
     });
     const [isPending, startTransition] = useTransition();
+    const [nationalId, setNationalId] = useState<string | undefined>(undefined);
+    const [identifierPending, startIdentifierTransition] = useTransition();
+
+    function loadIdentifier(): void {
+        startIdentifierTransition(async () => {
+            const result = await getSystemAdminStudentIdentifier(student.id);
+            if (result.status === "success") setNationalId(result.data.nationalId ?? "");
+            else toast.error("ไม่สามารถเปิดเลขประจำตัวนักเรียนได้");
+        });
+    }
+
+    function editIdentifier(value: string): void {
+        const normalized = normalizeNationalIdInput(value);
+        if (normalized !== null) setNationalId(normalized);
+    }
 
     const update = (key: keyof typeof form, value: string) => {
         setForm((current) => ({ ...current, [key]: value }));
@@ -114,6 +130,7 @@ function StudentEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
                 id: student.id,
                 expectedUpdatedAt: student.updatedAt.toISOString(),
                 ...form,
+                ...(nationalId === undefined ? {} : { nationalId }),
             });
             if (!result.success || !result.updated) {
                 toast.error(result.message);
@@ -127,7 +144,7 @@ function StudentEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
 
     return (
         <FormShell
-            isPending={isPending}
+            isPending={isPending || identifierPending}
             onCancel={onCancel}
             onSave={save}
         >
@@ -136,20 +153,23 @@ function StudentEditForm({ entity, onSaved, onCancel }: SystemEditFormProps) {
                 value={form.studentId}
                 onChange={(value) => update("studentId", value)}
             />
-            <TextField
-                label="เลขบัตรประชาชน"
-                value={form.nationalId}
-                onChange={(value) => {
-                    const normalized = normalizeNationalIdInput(value);
-                    if (normalized !== null) update("nationalId", normalized);
-                }}
-                onPaste={(value) => {
-                    const normalized = normalizeNationalIdInput(value);
-                    if (normalized !== null) update("nationalId", normalized);
-                }}
-                maxLength={14}
-                placeholder="ตัวเลข 13 หลัก หรือ G ตามด้วยตัวเลข 13 หลัก"
-            />
+            {nationalId === undefined ? (
+                <div className="space-y-1">
+                    <p className="text-xs text-gray-700">{student.nationalIdMasked ?? "ยังไม่มีเลขประจำตัว"}</p>
+                    <Button type="button" variant="secondary" onClick={loadIdentifier} disabled={isPending || identifierPending}>
+                        เปิดเลขประจำตัวเพื่อแก้ไข
+                    </Button>
+                </div>
+            ) : (
+                <TextField
+                    label="เลขบัตรประชาชน"
+                    value={nationalId}
+                    onChange={editIdentifier}
+                    onPaste={editIdentifier}
+                    maxLength={14}
+                    placeholder="ตัวเลข 13 หลัก หรือ G ตามด้วยตัวเลข 13 หลัก"
+                />
+            )}
             <TextField
                 label="ชื่อ"
                 value={form.firstName}

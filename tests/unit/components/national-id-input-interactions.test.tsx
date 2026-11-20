@@ -9,11 +9,20 @@ import {
     type StudentProfileFormState,
 } from "@/components/student/profile/StudentProfileEditFields";
 import { SystemEditForm } from "@/components/admin/system/SystemEditForm";
+import { getSystemAdminStudentIdentifier } from "@/lib/actions/system-admin.actions";
+import { StudentIdentifierEditor } from "@/components/student/profile/StudentIdentifierEditor";
+import { getStudentIdentifierForEdit, updateStudentIdentifier } from "@/lib/actions/student/mutations";
 import type { StudentEntityResult } from "@/lib/actions/system-admin/types";
 
 vi.mock("@/lib/actions/system-admin.actions", () => ({
+    getSystemAdminStudentIdentifier: vi.fn(),
     updateSystemAdminSchool: vi.fn(),
     updateSystemAdminStudent: vi.fn(),
+}));
+
+vi.mock("@/lib/actions/student/mutations", () => ({
+    getStudentIdentifierForEdit: vi.fn(),
+    updateStudentIdentifier: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({
@@ -22,7 +31,6 @@ vi.mock("sonner", () => ({
 
 const BASE_FORM: StudentProfileFormState = {
     studentId: "1001",
-    nationalId: "",
     firstName: "สมชาย",
     lastName: "ใจดี",
     gender: "MALE",
@@ -31,15 +39,8 @@ const BASE_FORM: StudentProfileFormState = {
     status: "ACTIVE",
 };
 
-function StudentProfileHarness({
-    initialNationalId = "",
-}: {
-    initialNationalId?: string;
-}) {
-    const [form, setForm] = useState({
-        ...BASE_FORM,
-        nationalId: initialNationalId,
-    });
+function StudentProfileHarness() {
+    const [form, setForm] = useState(BASE_FORM);
 
     return (
         <StudentProfileFields
@@ -53,7 +54,7 @@ function StudentProfileHarness({
     );
 }
 
-function createStudentEntity(nationalId = "G1234567890123"): StudentEntityResult {
+function createStudentEntity(): StudentEntityResult {
     return {
         type: "student",
         id: "student-1",
@@ -62,7 +63,6 @@ function createStudentEntity(nationalId = "G1234567890123"): StudentEntityResult
         firstName: "สมชาย",
         lastName: "ใจดี",
         nationalIdMasked: "G*********0123",
-        nationalId,
         gender: "MALE",
         age: 13,
         class: "ม.1/1",
@@ -82,10 +82,24 @@ function getNationalIdInput(): HTMLInputElement {
 }
 
 describe("national ID input interactions", () => {
+    async function openIdentifierEditor(user: ReturnType<typeof userEvent.setup>): Promise<HTMLInputElement> {
+        vi.mocked(getStudentIdentifierForEdit).mockResolvedValue({ success: true, masked: "G*********0123", updatedAt: "2026-01-01T00:00:00.000Z" });
+        render(<StudentIdentifierEditor studentId="student-1" activePhqResultId="phq-1" />);
+        await user.click(screen.getByRole("button", { name: "จัดการเลขประจำตัว" }));
+        return await screen.findByLabelText("เลขประจำตัวใหม่") as HTMLInputElement;
+    }
+
+    it("keeps the identifier field out of the general profile form", () => {
+        render(<StudentProfileHarness />);
+        expect(screen.queryByLabelText(/เลขบัตรประชาชน|เลขประจำตัว/)).toBeNull();
+    });
+
     it("uppercases g and rejects unsupported letters while typing", async () => {
         const user = userEvent.setup();
-        render(<StudentProfileHarness />);
-        const input = getNationalIdInput();
+        const input = await openIdentifierEditor(user);
+        expect(input.value).toBe("");
+        expect(input.maxLength).toBe(14);
+        expect(screen.getByText("เลขปัจจุบัน G*********0123")).toBeTruthy();
 
         await user.type(input, "g123A4");
 
@@ -94,8 +108,7 @@ describe("national ID input interactions", () => {
 
     it("normalizes spaces and hyphens when pasting", async () => {
         const user = userEvent.setup();
-        render(<StudentProfileHarness />);
-        const input = getNationalIdInput();
+        const input = await openIdentifierEditor(user);
 
         await user.click(input);
         await user.paste("g123-4567 89012-3");
@@ -103,22 +116,22 @@ describe("national ID input interactions", () => {
         expect(input.value).toBe("G1234567890123");
     });
 
-    it("changes the prefix only through an explicit edit", async () => {
+    it("asks for explicit confirmation before sending a null identifier", async () => {
+        vi.mocked(updateStudentIdentifier).mockResolvedValue({ success: true, message: "บันทึกแล้ว" });
         const user = userEvent.setup();
-        render(<StudentProfileHarness initialNationalId="G1234567890123" />);
-        const input = getNationalIdInput();
-
-        await user.click(input);
-        input.setSelectionRange(1, 1);
-        await user.keyboard("{Backspace}");
-        expect(input.value).toBe("1234567890123");
-
-        input.setSelectionRange(0, 0);
-        await user.keyboard("g");
-        expect(input.value).toBe("G1234567890123");
+        await openIdentifierEditor(user);
+        await user.click(screen.getByRole("button", { name: "ล้างเลขประจำตัว" }));
+        expect(updateStudentIdentifier).not.toHaveBeenCalled();
+        await user.click(screen.getByRole("button", { name: "ยืนยันการล้างเลข" }));
+        expect(updateStudentIdentifier).toHaveBeenCalledWith("student-1", {
+            nationalId: null, expectedUpdatedAt: "2026-01-01T00:00:00.000Z",
+        }, { activePhqResultId: "phq-1" });
     });
 
     it("preserves and edits a G identifier in the system admin form", async () => {
+        vi.mocked(getSystemAdminStudentIdentifier).mockResolvedValue({
+            status: "success", data: { nationalId: "G1234567890123" },
+        });
         const user = userEvent.setup();
         render(
             <SystemEditForm
@@ -127,6 +140,9 @@ describe("national ID input interactions", () => {
                 onCancel={vi.fn()}
             />,
         );
+        expect(screen.getByText("G*********0123")).toBeTruthy();
+        expect(screen.queryByLabelText("เลขบัตรประชาชน")).toBeNull();
+        await user.click(screen.getByRole("button", { name: "เปิดเลขประจำตัวเพื่อแก้ไข" }));
         const input = getNationalIdInput();
 
         expect(input.value).toBe("G1234567890123");

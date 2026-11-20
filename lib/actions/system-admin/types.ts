@@ -56,7 +56,6 @@ export interface StudentEntityResult {
     firstName: string;
     lastName: string;
     nationalIdMasked: string | null;
-    nationalId: string | null;
     gender: Gender | null;
     age: number | null;
     class: string;
