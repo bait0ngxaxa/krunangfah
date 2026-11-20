@@ -133,6 +133,7 @@ export function buildImportStudentsPayload(
 ): ParsedStudent[] {
     return students.map((student) => ({
         studentId: student.studentId,
+        ...(student.numericStudentId ? { numericStudentId: true } : {}),
         nationalId: student.nationalId,
         firstName: student.firstName,
         lastName: student.lastName,

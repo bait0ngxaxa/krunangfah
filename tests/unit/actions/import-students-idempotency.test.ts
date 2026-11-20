@@ -154,6 +154,21 @@ describe("importStudents idempotency", () => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
+    it("trims student codes without equating zero-padded, plain-text and numeric cells", async () => {
+        mocks.startIdempotentOperation.mockResolvedValue({ status: "processing" });
+        const student = createParsedStudent();
+        const rows = [
+            { ...student, studentId: " 00123 " },
+            { ...student, studentId: "00123" },
+            { ...student, studentId: "123" },
+            { ...student, studentId: "123", numericStudentId: true },
+        ];
+        for (const row of rows) await importStudents([row], "ay-input", 1);
+        const keys = mocks.startIdempotentOperation.mock.calls.map(([key]) => key);
+        expect(keys[0]).toBe(keys[1]);
+        expect(new Set(keys)).toHaveProperty("size", 3);
+    });
+
     it("returns a cached successful null-ID import without writing the assessment again", async () => {
         const cachedResult = {
             success: true,

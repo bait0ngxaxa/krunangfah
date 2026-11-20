@@ -47,7 +47,7 @@ const TEMPLATE_COLUMNS = [
 ] as const;
 
 const TEMPLATE_EXAMPLE_ROW = [
-    "68001",
+    "00123",
     "",
     "สมชาย",
     "ใจดี",
@@ -70,6 +70,8 @@ const TEMPLATE_EXAMPLE_ROW = [
 const UPLOAD_ERROR_TITLE = "อัปโหลดไฟล์ไม่สำเร็จ";
 const NATIONAL_ID_TEMPLATE_HINT =
     "ใส่เลขบัตรประชาชน 13 หลักหรือรหัส G ที่ได้รับอย่างเป็นทางการ หากยังไม่มี ให้เว้นช่องนี้ว่าง";
+const STUDENT_ID_TEMPLATE_HINT =
+    "กรอกรหัสนักเรียนเป็นข้อความให้ตรงกับทะเบียน รวมเลขศูนย์นำหน้า เช่น 00123";
 const UPLOAD_ERROR_DESCRIPTION =
     "กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง";
 const PHQA_TEMPLATE_START_COLUMN = REQUIRED_COLUMNS.length + 1;
@@ -89,6 +91,8 @@ async function downloadStudentImportTemplate(): Promise<void> {
         width: Math.min(Math.max(header.length + 6, 14), 48),
     }));
     worksheet.getRow(1).font = { bold: true };
+    worksheet.getCell("A1").note = STUDENT_ID_TEMPLATE_HINT;
+    worksheet.getColumn("A").numFmt = "@";
     worksheet.getCell("B1").note = NATIONAL_ID_TEMPLATE_HINT;
     worksheet.getColumn("B").numFmt = "@";
     worksheet.views = [{ state: "frozen", ySplit: 1 }];
@@ -289,6 +293,9 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                                     </ol>
                                 </div>
                             </div>
+                            <p className="mt-2 text-xs text-gray-600">
+                                {STUDENT_ID_TEMPLATE_HINT}
+                            </p>
                             <p className="mt-2 text-xs text-gray-600">
                                 {NATIONAL_ID_TEMPLATE_HINT}
                             </p>

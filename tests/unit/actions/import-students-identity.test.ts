@@ -274,15 +274,6 @@ describe("importStudents identity reconciliation", () => {
             studentId: "2002",
             nationalId: "G1234567890123",
         };
-        const normalizedFirstRow = {
-            ...existingStudent,
-            nationalId: "G1234567890123",
-        };
-        mocks.studentFindMany
-            .mockResolvedValueOnce([])
-            .mockResolvedValueOnce([]);
-        mocks.studentCreateMany.mockResolvedValueOnce([normalizedFirstRow]);
-
         const result = await importStudents(
             [
                 { ...importedRow, nationalId: "g1234567890123" },
@@ -297,7 +288,9 @@ describe("importStudents identity reconciliation", () => {
                 expect.stringContaining("พบเลขบัตรประชาชนซ้ำในไฟล์นำเข้า"),
             ]),
         );
-        expect(mocks.studentCreateMany.mock.calls[0][0].data).toHaveLength(1);
+        expect(result).toMatchObject({ success: false, imported: 0 });
+        expect(result.failedStudents).toHaveLength(2);
+        expect(mocks.studentCreateMany).not.toHaveBeenCalled();
     });
 
     it.each(["A1234567890123", " - "])("rejects malformed nonblank IDs at the server action boundary", async (nationalId) => {

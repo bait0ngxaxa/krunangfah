@@ -75,6 +75,10 @@ describe("Integration: concurrent student imports", () => {
         ]);
         firstAcademicYearId = firstAcademicYear.id;
         secondAcademicYearId = secondAcademicYear.id;
+        await prisma.academicYear.update({
+            where: { id: secondAcademicYearId },
+            data: { startDate: new Date("2026-05-01"), endDate: new Date("2026-10-31") },
+        });
 
         const existingStudent = await createTestStudent(school.id, {
             studentId: `CONCURRENT-EXISTING-${suffix}`,
@@ -514,9 +518,11 @@ describe("Integration: concurrent student imports", () => {
             { ...row, class: "ม.1/2" },
             { ...row, class: "ม.1/2" },
         ], firstAcademicYearId, 1)).resolves.toMatchObject({
-            status: "partial", createdStudents: 1, phqCreated: 1,
-            errors: [expect.stringContaining("พบรหัสนักเรียนซ้ำ")],
+            status: "error", createdStudents: 0, phqCreated: 0,
+            errors: [expect.stringContaining("พบรหัสนักเรียนซ้ำ"), expect.stringContaining("พบรหัสนักเรียนซ้ำ")],
         });
+        await expect(importStudents([{ ...row, class: "ม.1/2" }], firstAcademicYearId, 1))
+            .resolves.toMatchObject({ success: true, createdStudents: 1 });
 
         signIn(USERS_A.classTeacher);
         const newRow = { ...row, studentId: `${row.studentId}-NEW`, class: "ม.1/2" };
@@ -570,6 +576,55 @@ describe("Integration: concurrent student imports", () => {
             expect(student.phqResults.map((result) => result.assessmentRound))
                 .toEqual(student.nationalId === nationalId ? [1, 2] : [1]);
         }
+    });
+
+    it("reviews conflicting demographics without association and allows corroborated progression", async () => {
+        signIn(USERS_A.schoolAdmin);
+        const row = createImportRow({ studentId: `DEMOGRAPHICS-${suffix}`, nationalId: null });
+        const where = { studentId_schoolId: { studentId: row.studentId, schoolId } };
+        await expect(importStudents([row], firstAcademicYearId, 1)).resolves.toMatchObject({ success: true });
+        const original = await prisma.student.findUniqueOrThrow({ where });
+        for (const mismatch of [
+            { ...row, gender: "FEMALE" as const },
+            { ...row, lastName: "พร้อมกน", gender: "FEMALE" as const },
+            { ...row, lastName: "พร้อมกน", gender: undefined },
+            { ...row, firstName: "นักเรียนอีกคน", lastName: "คนละสกุล" },
+            { ...row, age: 25 },
+        ]) {
+            await expect(importStudents([mismatch], secondAcademicYearId, 1)).resolves.toMatchObject({
+                success: false, identityConflicts: 1, updatedStudents: 0, phqCreated: 0,
+            });
+        }
+        await expect(prisma.student.findUniqueOrThrow({ where })).resolves.toEqual(original);
+        await expect(prisma.phqResult.count({ where: { studentId: original.id } })).resolves.toBe(1);
+        await expect(importStudents([{ ...row, age: 15 }], secondAcademicYearId, 1)).resolves.toMatchObject({
+            success: true, updatedStudents: 1, phqCreated: 1,
+        });
+        await expect(importStudents([{ ...row, age: 16 }], secondAcademicYearId, 2)).resolves.toMatchObject({
+            success: true, updatedStudents: 1, phqCreated: 1,
+        });
+        await expect(prisma.phqResult.count({ where: { studentId: original.id } })).resolves.toBe(3);
+    });
+
+    it("keeps leading-zero codes distinct and accepts legacy numbers only with both identifiers", async () => {
+        signIn(USERS_A.schoolAdmin);
+        const padded = createImportRow({ studentId: "00123", nationalId: null });
+        const plain = createImportRow({ studentId: "123", nationalId: createNationalId(25) });
+        const numeric = { ...plain, numericStudentId: true };
+        await expect(importStudents([numeric], firstAcademicYearId, 1)).resolves.toMatchObject({
+            success: false, identityConflicts: 1, createdStudents: 0,
+        });
+        await expect(importStudents([padded, plain], firstAcademicYearId, 1)).resolves.toMatchObject({ createdStudents: 2 });
+        await expect(importStudents([{ ...numeric, nationalId: null }], firstAcademicYearId, 2))
+            .resolves.toMatchObject({ success: false, identityConflicts: 1, phqCreated: 0 });
+        await expect(importStudents([padded, numeric], firstAcademicYearId, 2))
+            .resolves.toMatchObject({ success: true, createdStudents: 0, phqCreated: 2 });
+        const persisted = await prisma.student.findMany({
+            where: { schoolId, studentId: { in: ["00123", "123"] } },
+            include: { _count: { select: { phqResults: true } } },
+        });
+        expect(persisted).toHaveLength(2);
+        expect(persisted.every((student) => student._count.phqResults === 2)).toBe(true);
     });
 });
 

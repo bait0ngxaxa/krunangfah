@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, expect, it, vi } from "vitest";
 import { ExcelUploader } from "@/components/student/import/ExcelUploader";
 import { parseExcelBuffer } from "@/lib/utils/excel-parser";
+import ExcelJS from "exceljs";
 
 afterEach(() => {
     cleanup();
@@ -35,8 +36,11 @@ it("downloads a template whose blank identifier example can be imported", async 
         reader.onerror = () => reject(reader.error);
         reader.readAsArrayBuffer(blob);
     });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    expect(workbook.worksheets[0].getColumn("A").numFmt).toBe("@");
     await expect(parseExcelBuffer(buffer)).resolves.toMatchObject({
         success: true,
-        data: [{ studentId: "68001", nationalId: null }],
+        data: [{ studentId: "00123", nationalId: null }],
     });
 }, 10_000);

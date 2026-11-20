@@ -894,6 +894,7 @@ describe("Excel Parser - National ID Parsing", () => {
     async function createWorkbookBuffer(
         nationalIdValue: string,
         secondNationalIdValue?: string,
+        studentCodes: { first: ExcelJS.CellValue; second?: ExcelJS.CellValue; format?: string } = { first: "66001" },
     ): Promise<ArrayBuffer> {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
@@ -920,7 +921,7 @@ describe("Excel Parser - National ID Parsing", () => {
         ]);
 
         worksheet.addRow([
-            "66001",
+            studentCodes.first,
             nationalIdValue,
             "สมชาย",
             "ใจดี",
@@ -942,7 +943,7 @@ describe("Excel Parser - National ID Parsing", () => {
 
         if (secondNationalIdValue) {
             worksheet.addRow([
-                "66002",
+                studentCodes.second ?? "66002",
                 secondNationalIdValue,
                 "สมหญิง",
                 "ใจดี",
@@ -963,6 +964,7 @@ describe("Excel Parser - National ID Parsing", () => {
             ]);
         }
 
+        if (studentCodes.format) worksheet.getCell("A2").numFmt = studentCodes.format;
         const output = Buffer.from(await workbook.xlsx.writeBuffer());
         return output.buffer.slice(
             output.byteOffset,
@@ -1027,6 +1029,24 @@ describe("Excel Parser - National ID Parsing", () => {
 
         expect(result.success).toBe(true);
         expect(result.data.map((student) => student.nationalId)).toEqual([null, null]);
+    });
+
+    it("preserves leading zeros and records the provenance of a plain numeric code", async () => {
+        const buffer = await createWorkbookBuffer("", " ", { first: "00123", second: 123 });
+        const result = await parseExcelBuffer(buffer);
+        expect(result.success).toBe(true);
+        expect(result.data).toMatchObject([{ studentId: "00123" }, { studentId: "123", numericStudentId: true }]);
+    });
+
+    it.each([
+        { first: 123, format: "00000" },
+        { first: 1.23 },
+        { first: 1234567890123456 },
+        { first: { formula: "123", result: 123 } },
+    ])("rejects code cells that can hide the original digits", async (studentCodes) => {
+        const result = await parseExcelBuffer(await createWorkbookBuffer("", undefined, studentCodes));
+        expect(result.data).toHaveLength(0);
+        expect(result.errors).toEqual([expect.stringContaining("กรอกเป็นข้อความให้ครบทุกหลัก")]);
     });
 });
 

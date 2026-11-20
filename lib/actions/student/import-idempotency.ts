@@ -5,7 +5,8 @@ import { normalizeImportNationalId } from "@/lib/utils/national-id";
 
 function normalizeImportStudentForHash(student: ParsedStudent): Record<string, unknown> {
     return {
-        studentId: student.studentId,
+        studentId: student.studentId.trim(),
+        numericStudentId: student.numericStudentId === true,
         nationalId: normalizeImportNationalId(student.nationalId),
         firstName: student.firstName,
         lastName: student.lastName,

@@ -182,6 +182,13 @@ interface ImportStudentRecord {
     class: string;
     gender: ParsedStudent["gender"] | null;
     age: number | null;
+    phqResults: { academicYear: { startDate: Date } }[];
+}
+
+const DAYS_PER_YEAR = 365.2425;
+
+function getImportAgeChange(row: ParsedStudent, existing: ImportStudentRecord): number | null {
+    return typeof row.age !== "number" || existing.age === null ? null : row.age - existing.age;
 }
 
 function normalizeImportName(name: string): string {
@@ -205,37 +212,67 @@ function resolveImportIdentity(
     row: ParsedStudent,
     existingStudent: ImportStudentRecord | undefined,
     nationalIdOwner: { id: string } | undefined,
-): { kind: "new" } | { kind: "existing" } | { kind: "conflict"; reason: string } {
+    termStart: Date | undefined,
+): { kind: "new" | "exact" | "consistent" } | { kind: "conflict" | "review"; reason: string } {
     if (nationalIdOwner && nationalIdOwner.id !== existingStudent?.id) {
         return {
             kind: "conflict",
             reason: "เลขประจำตัวซ้ำกับข้อมูลที่มีในระบบ กรุณาตรวจสอบรหัสนักเรียนและเลขประจำตัวก่อนนำเข้า",
         };
     }
+
+    if (row.numericStudentId && (!nationalIdOwner || !existingStudent)) {
+        return {
+            kind: "review",
+            reason: "รหัสนักเรียนมาจากเซลล์ตัวเลข กรุณาตรวจรหัสจากทะเบียนและกรอกเป็นข้อความให้ครบทุกหลัก รวมเลขศูนย์นำหน้า",
+        };
+    }
     if (!existingStudent) return { kind: "new" };
 
     if (row.nationalId !== null && existingStudent.nationalId !== null) {
         return row.nationalId === existingStudent.nationalId
-            ? { kind: "existing" }
+            ? { kind: "exact" }
             : {
                   kind: "conflict",
                   reason: "เลขประจำตัวไม่ตรงกับข้อมูลของรหัสนักเรียนนี้ กรุณาตรวจสอบข้อมูลก่อนนำเข้า",
               };
     }
 
+    const genderCorroborates = Boolean(row.gender && existingStudent.gender === row.gender);
+    if (row.gender && existingStudent.gender && !genderCorroborates) {
+        return { kind: "review", reason: "เพศกำเนิดต่างจากข้อมูลเดิม กรุณาตรวจสอบตัวตนและแก้ไขข้อมูลนักเรียนก่อนนำเข้า" };
+    }
+
+    const ageChange = getImportAgeChange(row, existingStudent);
+    if (ageChange !== null && Math.abs(ageChange) > 1) {
+        const priorStart = existingStudent.phqResults[0]?.academicYear.startDate;
+        const elapsedYears = termStart && priorStart
+            ? (termStart.getTime() - priorStart.getTime()) / (DAYS_PER_YEAR * 86_400_000)
+            : undefined;
+        if (elapsedYears === undefined || Math.abs(ageChange - elapsedYears) > 1) {
+            return { kind: "review", reason: "อายุเปลี่ยนต่างจากช่วงเวลาของการประเมิน กรุณาตรวจสอบตัวตนและอายุก่อนนำเข้า" };
+        }
+    }
+
     const firstName = normalizeImportName(row.firstName);
     const lastName = normalizeImportName(row.lastName);
     const existingFirstName = normalizeImportName(existingStudent.firstName);
     const existingLastName = normalizeImportName(existingStudent.lastName);
-    // With only the school code as shared evidence, allow a typo in one name part.
+    if (firstName === existingFirstName && lastName === existingLastName) {
+        return { kind: ageChange === 0 ? "exact" : "consistent" };
+    }
+
+    // A typo alone cannot corroborate the school code. Require both known demographics.
     if (
-        (firstName === existingFirstName && isMinorNameCorrection(existingLastName, lastName)) ||
-        (lastName === existingLastName && isMinorNameCorrection(existingFirstName, firstName))
+        genderCorroborates && ageChange !== null && (
+            (firstName === existingFirstName && isMinorNameCorrection(existingLastName, lastName)) ||
+            (lastName === existingLastName && isMinorNameCorrection(existingFirstName, firstName))
+        )
     ) {
-        return { kind: "existing" };
+        return { kind: "consistent" };
     }
     return {
-        kind: "conflict",
+        kind: "review",
         reason: "ชื่อหรือนามสกุลไม่ตรงกับข้อมูลของรหัสนักเรียนนี้ กรุณาตรวจสอบตัวตนและแก้ไขข้อมูลนักเรียนก่อนนำเข้า",
     };
 }
@@ -301,6 +338,15 @@ export async function importStudents(
                 message: "กรุณาระบุรหัสนักเรียน ชื่อ นามสกุล และห้องเรียน",
                 errors: [`ข้อมูลลำดับที่ ${invalidStudentRowIndex + 1}: ข้อมูลนักเรียนไม่ครบถ้วน`],
             };
+        }
+
+        const invalidDemographics = students.findIndex(({ age, gender, numericStudentId }) =>
+            (age !== null && age !== undefined && (!Number.isInteger(age) || age < 1 || age > 100)) ||
+            (gender !== null && gender !== undefined && gender !== "MALE" && gender !== "FEMALE") ||
+            (numericStudentId !== undefined && typeof numericStudentId !== "boolean"),
+        );
+        if (invalidDemographics !== -1) {
+            return { success: false, status: "error", message: `ข้อมูลนักเรียนลำดับที่ ${invalidDemographics + 1} ไม่ถูกต้อง` };
         }
 
         const normalizedImport = normalizeImportStudents(students);
@@ -446,9 +492,14 @@ export async function importStudents(
         const errors: string[] = [];
         const failedStudents: ImportStudentSummary[] = [];
         let skippedCount = 0;
-        const seenStudentIds = new Set<string>();
-        const seenNationalIds = new Set<string>();
+        const studentIdCounts = new Map<string, number>();
+        const nationalIdCounts = new Map<string, number>();
         const eligibleRows: ParsedStudent[] = [];
+
+        for (const { studentId, nationalId } of normalizedStudents) {
+            studentIdCounts.set(studentId, (studentIdCounts.get(studentId) ?? 0) + 1);
+            if (nationalId !== null) nationalIdCounts.set(nationalId, (nationalIdCounts.get(nationalId) ?? 0) + 1);
+        }
 
         for (const studentData of normalizedStudents) {
             const studentClass = studentData.class;
@@ -476,21 +527,19 @@ export async function importStudents(
                 }
             }
 
-            if (seenStudentIds.has(studentData.studentId)) {
+            if ((studentIdCounts.get(studentData.studentId) ?? 0) > 1) {
                 const reason = "พบรหัสนักเรียนซ้ำในไฟล์นำเข้า";
                 errors.push(formatImportStudentError(studentData, reason));
                 failedStudents.push(createImportStudentSummary(studentData, reason));
                 continue;
             }
-            if (studentData.nationalId !== null && seenNationalIds.has(studentData.nationalId)) {
+            if (studentData.nationalId !== null && (nationalIdCounts.get(studentData.nationalId) ?? 0) > 1) {
                 const reason = "พบเลขบัตรประชาชนซ้ำในไฟล์นำเข้า";
                 errors.push(formatImportStudentError(studentData, reason));
                 failedStudents.push(createImportStudentSummary(studentData, reason));
                 continue;
             }
 
-            seenStudentIds.add(studentData.studentId);
-            if (studentData.nationalId !== null) seenNationalIds.add(studentData.nationalId);
             eligibleRows.push(studentData);
         }
 
@@ -548,6 +597,11 @@ export async function importStudents(
                     class: true,
                     age: true,
                     gender: true,
+                    phqResults: {
+                        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+                        take: 1,
+                        select: { academicYear: { select: { startDate: true } } },
+                    },
                 },
             });
             const existingStudentByStudentId = new Map(
@@ -556,6 +610,16 @@ export async function importStudents(
                     student,
                 ]),
             );
+
+            const needsTermDates = eligibleRows.some((row) => {
+                const existing = existingStudentByStudentId.get(row.studentId);
+                if (!existing || (row.nationalId !== null && existing.nationalId !== null)) return false;
+                return Math.abs(getImportAgeChange(row, existing) ?? 0) > 1;
+            });
+            const term = needsTermDates ? await tx.academicYear.findUnique({
+                where: { id: resolvedAcademicYearId },
+                select: { startDate: true },
+            }) : null;
 
             const rowsSafeToImport: { row: ParsedStudent; existingStudent?: ImportStudentRecord }[] = [];
             for (const row of eligibleRows) {
@@ -568,8 +632,8 @@ export async function importStudents(
                 const nationalIdOwner = row.nationalId === null
                     ? undefined
                     : studentByNationalId.get(row.nationalId);
-                const identity = resolveImportIdentity(row, existingStudent, nationalIdOwner);
-                if (identity.kind === "conflict") {
+                const identity = resolveImportIdentity(row, existingStudent, nationalIdOwner, term?.startDate);
+                if (identity.kind === "conflict" || identity.kind === "review") {
                     identityConflictErrors.push(formatImportStudentError(row, identity.reason));
                     identityConflictFailures.push(createImportStudentSummary(row, identity.reason));
                     continue;

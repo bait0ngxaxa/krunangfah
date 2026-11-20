@@ -18,6 +18,8 @@ import {
 
 export type ParsedGender = "MALE" | "FEMALE";
 const NATIONAL_ID_HEADER = "เลขบัตรประชาชน";
+const STUDENT_ID_HEADER = "รหัสนักเรียน";
+const STUDENT_ID_FORMAT_ERROR = "กรุณาตรวจรหัสนักเรียนจากทะเบียน แล้วกรอกเป็นข้อความให้ครบทุกหลัก รวมเลขศูนย์นำหน้า";
 const PHQA_TEMPLATE_HEADERS = {
     q1: "ในช่วง 2 สัปดาห์ที่ผ่านมา รู้สึกซึม เศร้า หงุดหงิด หรือสิ้นหวัง",
     q2: "ในช่วง 2 สัปดาห์ที่ผ่านมา เบื่อ ไม่ค่อยสนใจหรือเพลิดเพลินเวลาทำสิ่งต่างๆ",
@@ -55,7 +57,7 @@ interface RequiredImportField {
 }
 
 const REQUIRED_IMPORT_FIELDS: readonly RequiredImportField[] = [
-    { label: "รหัสนักเรียน", aliases: ["รหัสนักเรียน"] },
+    { label: STUDENT_ID_HEADER, aliases: [STUDENT_ID_HEADER] },
     { label: NATIONAL_ID_HEADER, aliases: [NATIONAL_ID_HEADER], allowBlank: true },
     { label: "ชื่อ", aliases: ["ชื่อ"] },
     { label: "นามสกุล", aliases: ["นามสกุล"] },
@@ -77,6 +79,7 @@ const REQUIRED_IMPORT_FIELDS: readonly RequiredImportField[] = [
 
 export interface ParsedStudent {
     studentId: string;
+    numericStudentId?: boolean;
     nationalId: string | null;
     firstName: string;
     lastName: string;
@@ -234,6 +237,8 @@ export async function parseExcelBuffer(
             return { success: false, data: [], errors };
         }
 
+        const studentIdColumn = findHeaderColumn(headers, [STUDENT_ID_HEADER]);
+
         const dataRowCount = Math.max(worksheet.actualRowCount - 1, 0);
         if (dataRowCount > MAX_IMPORT_ROW_COUNT) {
             return {
@@ -386,7 +391,10 @@ export async function parseExcelBuffer(
                         ? ageParsed
                         : undefined;
                 const studentClass = getCellByAliases(FIELD_HEADER_ALIASES.class);
-                const studentId = getCell("รหัสนักเรียน");
+                const studentIdCell = studentIdColumn === undefined ? undefined : row.getCell(studentIdColumn);
+                const studentIdValue = studentIdCell?.value;
+                const numericStudentId = typeof studentIdValue === "number";
+                const studentId = stringifyCellValue(studentIdValue).trim();
                 const nationalIdCell = getRawCellByAliases([NATIONAL_ID_HEADER]);
                 const nationalId = normalizeImportNationalId(stringifyCellValue(nationalIdCell));
 
@@ -421,6 +429,17 @@ export async function parseExcelBuffer(
                 }
                 if (!studentId) {
                     errors.push(`แถว ${rowNumber}: ไม่มีรหัสนักเรียน`);
+                    return;
+                }
+                if (
+                    (numericStudentId && (
+                        !/^[0-9]{1,15}$/.test(studentId) ||
+                        ![undefined, "General", "0", "@"].includes(studentIdCell?.numFmt)
+                    )) ||
+                    (isRecord(studentIdValue) && ("formula" in studentIdValue || "sharedFormula" in studentIdValue)) ||
+                    typeof studentIdValue === "boolean"
+                ) {
+                    errors.push(`แถว ${rowNumber}: ${STUDENT_ID_FORMAT_ERROR}`);
                     return;
                 }
                 if (
@@ -511,6 +530,7 @@ export async function parseExcelBuffer(
 
                 const student: ParsedStudent = {
                     studentId,
+                    ...(numericStudentId ? { numericStudentId } : {}),
                     nationalId,
                     firstName,
                     lastName,
