@@ -123,19 +123,49 @@ UI → Hooks → Services → Data Layer
 * หากรันคำสั่งใดไม่ได้ ต้องระบุคำสั่ง สาเหตุ และสิ่งที่ยังไม่ได้ verify
 * การทำ code review ไม่ต้อง spawn sub-agents ให้ review diff เองเลย
 
+### GitHub CI และเกณฑ์พร้อมรีวิว
+
+ใช้ local checks ที่ตรงกับการเปลี่ยนแปลงเพื่อให้ได้ feedback เร็ว แล้วใช้ GitHub Actions ตรวจชุดเต็ม ดูคำสั่ง วิธีอ่านผล และการตั้งค่า required checks ใน [คู่มือ CI](docs/engineering/GITHUB_ACTIONS_INTEGRATION_CI.md)
+
+ก่อนเปลี่ยน PR เป็นพร้อมรีวิว ให้ตรวจว่าทั้งสี่ jobs ของ [Krunangfah CI](.github/workflows/full-integration.yml) สำเร็จบน PR HEAD ล่าสุด ได้แก่ **Code Quality**, **Unit Tests**, **Full PostgreSQL Integration** และ **Production Build** ตรวจผลแยกของแต่ละ job จาก GitHub ทุกครั้งที่ HEAD เปลี่ยน ผล local, ผลจาก SHA เก่า หรือ job ที่ยังรันอยู่ ล้มเหลว ถูกยกเลิก หรือถูกข้าม ใช้ผ่านเกณฑ์นี้ไม่ได้
+
+เมื่อ CI ล้มเหลว ให้อ่าน log ของ job ที่ล้มเหลว บันทึกสาเหตุที่พบและชื่อ test หรือเวลาที่เกี่ยวข้อง ตรวจซ้ำเฉพาะส่วนเมื่อทำได้ แก้ต้นเหตุบน branch และ PR เดิม แล้วตรวจผลบน HEAD ใหม่ รักษา test assertions, exit codes และข้อกำหนดความปลอดภัยของฐานทดสอบไว้
+
 ## 10. Git and Delivery
 
 * ตรวจ `git status` และ `git diff` ก่อนและหลังแก้ไข
 * ห้ามใช้ destructive Git commands, force push หรือ reset งานของผู้ใช้โดยไม่ได้รับอนุญาต
 * ห้ามเปลี่ยน lockfile, generated files หรือ format ทั้ง repository หากไม่จำเป็นต่อ task
 * รักษา diff ให้เล็ก อ่านง่าย และแยก concern ชัดเจน
-* ก่อนจบงานให้สรุป:
 
-  * ไฟล์ที่แก้ไข
-  * Behavior ที่เปลี่ยน
-  * Security หรือ architecture decisions ที่สำคัญ
-  * Commands และ tests ที่รันพร้อมผลลัพธ์
-  * ข้อจำกัด assumption หรือความเสี่ยงที่ยังเหลือ
+### การส่งงานผ่าน Pull Request
+
+กติกานี้บังคับใช้กับ coding agent ทุกตัว รวมถึง Codex และ Claude Code และครอบคลุมทุกการเปลี่ยนแปลงใน repository รวมถึงเอกสาร เทสต์ migration dependency และ configuration
+
+1. สร้าง branch เฉพาะงานก่อนแก้ไข ใช้ prefix ที่สื่อความหมาย เช่น `feature/`, `fix/`, `refactor/`, `docs/`, `test/` หรือ `ci/` ห้ามแก้ไข commit หรือ push งานปกติบน `main` โดยตรง และต้องเก็บงานที่ผู้ใช้ยังไม่ได้ commit ไว้ครบ
+2. ทำการเปลี่ยนแปลงให้น้อยที่สุดตามความต้องการ รัน focused local checks ตรวจ diff และ commit ด้วยข้อความ Conventional Commit ที่สื่อความหมาย
+3. Push เฉพาะ branch งาน แล้วเปิด Draft Pull Request ไปยัง `main` ใช้ branch และ PR เดิมสำหรับการแก้ CI และแก้ตามผลรีวิว
+4. รอ GitHub CI และตรวจผลตามข้อ 9 บน HEAD ล่าสุด เปลี่ยน Draft เป็น ready for review เมื่อทั้งสี่ jobs ผ่านและไม่มีข้อบกพร่องที่ขวางการรีวิว
+5. การ merge ต้องผ่าน PR และได้รับอนุมัติจากเจ้าของ repository ห้าม merge หรือเปิด auto-merge โดยไม่มีคำอนุญาตชัดเจนจากเจ้าของ ห้ามเปลี่ยน branch protection, rulesets หรือ bypass permissions โดยไม่มีคำอนุญาตเฉพาะเรื่อง
+6. ห้ามข้าม PR แม้เป็นงานด่วน แก้บรรทัดเดียว หรือ CI ล้มเหลว หากสร้าง branch, push หรือเปิด PR ไม่ได้ ให้รายงาน **BLOCKED** พร้อมสาเหตุที่แน่นอน งานที่ยังไม่มี branch ที่ push แล้วและ PR ยังไม่ถือว่าส่งมอบ
+
+```text
+Implement → Focused Local Verification → Commit on Task Branch → Push → Draft PR
+→ GitHub CI → Fix CI Failures → Ready for Review → Owner Approval → Merge
+```
+
+ใช้ GitHub Issues สำหรับ issue triage ตามกติกาด้านล่าง และใช้ PR สำหรับส่งงานที่แก้ไขแล้ว
+
+### รายงานส่งงาน
+
+รายงานชื่อ branch, commit SHA ล่าสุด, PR URL, ไฟล์ที่เปลี่ยน, พฤติกรรมที่ทำให้เกิดขึ้น, เหตุผลด้าน security หรือ architecture ที่สำคัญ, คำสั่งตรวจ local ที่รันจริงและผลลัพธ์, GitHub Actions run URL, SHA ที่ตรวจ, ผลของทั้งสี่ jobs, ผลทดสอบและรายละเอียดที่ล้มเหลว รวมถึงความเสี่ยงและข้อจำกัดที่เหลือ หากหลักฐานรายการใดยังไม่มี ให้ระบุสาเหตุ
+
+ใช้สถานะเหล่านี้เท่านั้น:
+
+* **READY FOR REVIEW** — ตรวจแล้วว่าทั้งสี่ jobs สำเร็จบน PR HEAD ล่าสุดและไม่มีข้อบกพร่องที่ขวางการรีวิว เจ้าของยังต้องอนุมัติก่อน merge
+* **CI PENDING** — checks ของ PR HEAD ล่าสุดยังทำงานไม่เสร็จหรือยังไม่เริ่ม
+* **REQUEST CHANGES** — มี check ที่ล้มเหลวหรือข้อบกพร่องที่ต้องแก้ก่อนพร้อมรีวิว
+* **BLOCKED** — dependency, สิทธิ์ หรือเครื่องมือขวางการส่งงานหรือการตรวจผล ให้ระบุสาเหตุและสิ่งที่ยังตรวจไม่ได้
 
 
 ## Agent skills
