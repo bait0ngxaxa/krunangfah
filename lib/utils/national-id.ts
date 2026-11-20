@@ -17,6 +17,13 @@ export function normalizeOptionalNationalId(
     return normalized === "" ? null : normalized;
 }
 
+export function normalizeImportNationalId(
+    value: string | null | undefined,
+): string | null {
+    if (value === null || value === undefined || value.trim() === "") return null;
+    return normalizeNationalId(value);
+}
+
 export function isValidNationalId(value: string): boolean {
     return NATIONAL_ID_PATTERN.test(value);
 }

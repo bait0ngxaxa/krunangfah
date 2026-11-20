@@ -166,7 +166,7 @@ export function StudentPreviewTable({
                                     </td>
                                     {canViewNationalId && (
                                         <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
-                                            {student.nationalId || "-"}
+                                            {student.nationalId ?? "ยังไม่มีเลขประจำตัว"}
                                         </td>
                                     )}
                                     <td className="px-4 py-2 text-sm text-center text-gray-600">

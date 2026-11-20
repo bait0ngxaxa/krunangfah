@@ -43,7 +43,7 @@ import {
 import {
     isValidNationalId,
     NATIONAL_ID_ERROR_MESSAGE,
-    normalizeNationalId,
+    normalizeImportNationalId,
 } from "@/lib/utils/national-id";
 import { MAX_IMPORT_ROW_COUNT } from "@/lib/constants/import";
 import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
@@ -146,8 +146,12 @@ function normalizeImportStudentNationalIds(students: ParsedStudent[]): {
     const errors: string[] = [];
 
     for (const student of students) {
-        const normalizedNationalId = normalizeNationalId(student.nationalId);
-        if (!isValidNationalId(normalizedNationalId)) {
+        if (student.nationalId != null && typeof student.nationalId !== "string") {
+            errors.push(formatImportStudentError(student, NATIONAL_ID_ERROR_MESSAGE));
+            continue;
+        }
+        const normalizedNationalId = normalizeImportNationalId(student.nationalId);
+        if (normalizedNationalId !== null && !isValidNationalId(normalizedNationalId)) {
             errors.push(formatImportStudentError(student, NATIONAL_ID_ERROR_MESSAGE));
             continue;
         }
@@ -234,6 +238,19 @@ export async function importStudents(
                 errors: [
                     `ข้อมูลลำดับที่ ${invalidPhqRowIndex + 1}: คะแนน PHQ ภายในต้องเป็นจำนวนเต็ม 0-3 และข้อ 9a/9b ต้องเป็นค่าบูลีน`,
                 ],
+            };
+        }
+
+        const invalidStudentRowIndex = students.findIndex((student) =>
+            [student.studentId, student.firstName, student.lastName, student.class]
+                .some((value) => typeof value !== "string" || value.trim() === ""),
+        );
+        if (invalidStudentRowIndex !== -1) {
+            return {
+                success: false,
+                status: "error",
+                message: "กรุณาระบุรหัสนักเรียน ชื่อ นามสกุล และห้องเรียน",
+                errors: [`ข้อมูลลำดับที่ ${invalidStudentRowIndex + 1}: ข้อมูลนักเรียนไม่ครบถ้วน`],
             };
         }
 
@@ -415,7 +432,7 @@ export async function importStudents(
                 failedStudents.push(createImportStudentSummary(studentData, reason));
                 continue;
             }
-            if (seenNationalIds.has(studentData.nationalId)) {
+            if (studentData.nationalId !== null && seenNationalIds.has(studentData.nationalId)) {
                 const reason = "พบเลขบัตรประชาชนซ้ำในไฟล์นำเข้า";
                 errors.push(formatImportStudentError(studentData, reason));
                 failedStudents.push(createImportStudentSummary(studentData, reason));
@@ -423,12 +440,14 @@ export async function importStudents(
             }
 
             seenStudentIds.add(studentData.studentId);
-            seenNationalIds.add(studentData.nationalId);
+            if (studentData.nationalId !== null) seenNationalIds.add(studentData.nationalId);
             eligibleRows.push(studentData);
         }
 
         const importedStudentIds = eligibleRows.map((row) => row.studentId);
-        const importedNationalIds = eligibleRows.map((row) => row.nationalId);
+        const importedNationalIds = eligibleRows
+            .map((row) => row.nationalId)
+            .filter((id): id is string => id !== null);
 
         const txResult = await runImportTransaction(async (tx) => {
             const identityConflictErrors: string[] = [];
@@ -490,7 +509,9 @@ export async function importStudents(
             );
 
             const rowsSafeToImport = eligibleRows.filter((row) => {
-                const nationalIdOwner = studentByNationalId.get(row.nationalId);
+                const nationalIdOwner = row.nationalId === null
+                    ? undefined
+                    : studentByNationalId.get(row.nationalId);
                 const studentIdOwner = existingStudentByStudentId.get(
                     row.studentId,
                 );
@@ -555,7 +576,7 @@ export async function importStudents(
             const resolveExistingStudentId = (row: ParsedStudent): string | null => {
                 const identity = resolveImportIdentity(
                     existingStudentByStudentId.get(row.studentId),
-                    studentByNationalId.get(row.nationalId),
+                    row.nationalId === null ? undefined : studentByNationalId.get(row.nationalId),
                 );
                 return identity.kind === "existing" ? identity.studentId : null;
             };
@@ -660,7 +681,8 @@ export async function importStudents(
                         },
                         {
                             nationalId: {
-                                in: rowsToMutate.map((row) => row.nationalId),
+                                in: rowsToMutate.map((row) => row.nationalId)
+                                    .filter((id): id is string => id !== null),
                             },
                         },
                     ],
@@ -685,7 +707,7 @@ export async function importStudents(
             for (const row of rowsToMutate) {
                 const student =
                     studentByStudentId.get(row.studentId) ??
-                    scopedStudentByNationalId.get(row.nationalId);
+                    (row.nationalId === null ? undefined : scopedStudentByNationalId.get(row.nationalId));
                 if (!student) {
                     continue;
                 }
@@ -698,7 +720,7 @@ export async function importStudents(
                     lastName?: string;
                     nationalId?: string;
                 } = {};
-                if (student.nationalId !== row.nationalId) {
+                if (row.nationalId !== null && student.nationalId !== row.nationalId) {
                     updates.nationalId = row.nationalId;
                 }
                 if (row.gender && student.gender !== row.gender) {
@@ -739,7 +761,7 @@ export async function importStudents(
             for (const row of rowsToMutate) {
                 const student =
                     studentByStudentId.get(row.studentId) ??
-                    scopedStudentByNationalId.get(row.nationalId);
+                    (row.nationalId === null ? undefined : scopedStudentByNationalId.get(row.nationalId));
                 if (!student) {
                     continue;
                 }

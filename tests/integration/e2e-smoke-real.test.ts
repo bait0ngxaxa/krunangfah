@@ -133,8 +133,8 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
 
         class1StudentCode = rows[0].studentId;
         class2StudentCode = rows[1].studentId;
-        class1NationalId = rows[0].nationalId;
-        class2NationalId = rows[1].nationalId;
+        class1NationalId = nid1;
+        class2NationalId = nid2;
 
         mockSession(USERS.schoolAdmin);
         const importResult = await importStudents(rows, academicYearId, 1);

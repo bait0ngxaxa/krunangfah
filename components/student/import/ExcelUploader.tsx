@@ -48,7 +48,7 @@ const TEMPLATE_COLUMNS = [
 
 const TEMPLATE_EXAMPLE_ROW = [
     "68001",
-    "1234567890123",
+    "",
     "สมชาย",
     "ใจดี",
     "ชาย",
@@ -68,6 +68,8 @@ const TEMPLATE_EXAMPLE_ROW = [
 ] as const;
 
 const UPLOAD_ERROR_TITLE = "อัปโหลดไฟล์ไม่สำเร็จ";
+const NATIONAL_ID_TEMPLATE_HINT =
+    "ใส่เลขบัตรประชาชน 13 หลักหรือรหัส G ที่ได้รับอย่างเป็นทางการ หากยังไม่มี ให้เว้นช่องนี้ว่าง";
 const UPLOAD_ERROR_DESCRIPTION =
     "กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง";
 const PHQA_TEMPLATE_START_COLUMN = REQUIRED_COLUMNS.length + 1;
@@ -87,6 +89,8 @@ async function downloadStudentImportTemplate(): Promise<void> {
         width: Math.min(Math.max(header.length + 6, 14), 48),
     }));
     worksheet.getRow(1).font = { bold: true };
+    worksheet.getCell("B1").note = NATIONAL_ID_TEMPLATE_HINT;
+    worksheet.getColumn("B").numFmt = "@";
     worksheet.views = [{ state: "frozen", ySplit: 1 }];
 
     for (let rowNumber = 2; rowNumber <= MAX_IMPORT_ROW_COUNT + 1; rowNumber++) {
@@ -286,6 +290,9 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
                                     </ol>
                                 </div>
                             </div>
+                            <p className="mt-2 text-xs text-gray-600">
+                                {NATIONAL_ID_TEMPLATE_HINT}
+                            </p>
                         </div>
                     </div>
 

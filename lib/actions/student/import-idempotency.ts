@@ -1,12 +1,12 @@
 import { createHash } from "crypto";
 import type { ParsedStudent } from "@/lib/utils/excel-parser";
 import type { ImportResult, ImportStudentSummary } from "./types";
-import { normalizeNationalId } from "@/lib/utils/national-id";
+import { normalizeImportNationalId } from "@/lib/utils/national-id";
 
 function normalizeImportStudentForHash(student: ParsedStudent): Record<string, unknown> {
     return {
         studentId: student.studentId,
-        nationalId: normalizeNationalId(student.nationalId),
+        nationalId: normalizeImportNationalId(student.nationalId),
         firstName: student.firstName,
         lastName: student.lastName,
         gender: student.gender ?? null,

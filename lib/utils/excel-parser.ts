@@ -13,7 +13,7 @@ import { logError } from "@/lib/utils/logging";
 import {
     isValidNationalId,
     NATIONAL_ID_ERROR_MESSAGE,
-    normalizeNationalId,
+    normalizeImportNationalId,
 } from "@/lib/utils/national-id";
 
 export type ParsedGender = "MALE" | "FEMALE";
@@ -51,11 +51,12 @@ const FIELD_HEADER_ALIASES = {
 interface RequiredImportField {
     label: string;
     aliases: readonly string[];
+    allowBlank?: boolean;
 }
 
 const REQUIRED_IMPORT_FIELDS: readonly RequiredImportField[] = [
     { label: "รหัสนักเรียน", aliases: ["รหัสนักเรียน"] },
-    { label: NATIONAL_ID_HEADER, aliases: [NATIONAL_ID_HEADER] },
+    { label: NATIONAL_ID_HEADER, aliases: [NATIONAL_ID_HEADER], allowBlank: true },
     { label: "ชื่อ", aliases: ["ชื่อ"] },
     { label: "นามสกุล", aliases: ["นามสกุล"] },
     { label: "เพศกำเนิด", aliases: FIELD_HEADER_ALIASES.gender },
@@ -76,7 +77,7 @@ const REQUIRED_IMPORT_FIELDS: readonly RequiredImportField[] = [
 
 export interface ParsedStudent {
     studentId: string;
-    nationalId: string;
+    nationalId: string | null;
     firstName: string;
     lastName: string;
     gender?: ParsedGender;
@@ -271,7 +272,7 @@ export async function parseExcelBuffer(
                 };
 
                 const requiredValues = REQUIRED_IMPORT_FIELDS.map((field) => ({
-                    label: field.label,
+                    ...field,
                     value: getCellByAliases(field.aliases),
                 }));
                 const hasAnyRequiredValue = requiredValues.some(
@@ -280,7 +281,7 @@ export async function parseExcelBuffer(
                 if (!hasAnyRequiredValue) return;
 
                 const missingFields = requiredValues
-                    .filter((field) => field.value.length === 0)
+                    .filter((field) => !field.allowBlank && field.value.length === 0)
                     .map((field) => field.label);
                 if (missingFields.length > 0) {
                     errors.push(
@@ -386,8 +387,8 @@ export async function parseExcelBuffer(
                         : undefined;
                 const studentClass = getCellByAliases(FIELD_HEADER_ALIASES.class);
                 const studentId = getCell("รหัสนักเรียน");
-                const nationalIdRaw = getCell(NATIONAL_ID_HEADER);
-                const nationalId = normalizeNationalId(nationalIdRaw);
+                const nationalIdCell = getRawCellByAliases([NATIONAL_ID_HEADER]);
+                const nationalId = normalizeImportNationalId(stringifyCellValue(nationalIdCell));
 
                 // Skip empty rows
                 if (!firstName && !lastName) return;
@@ -422,11 +423,16 @@ export async function parseExcelBuffer(
                     errors.push(`แถว ${rowNumber}: ไม่มีรหัสนักเรียน`);
                     return;
                 }
-                if (!nationalIdRaw) {
-                    errors.push(`แถว ${rowNumber}: ไม่มี${NATIONAL_ID_HEADER}`);
-                    return;
-                }
-                if (!isValidNationalId(nationalId)) {
+                if (
+                    (nationalId !== null && !isValidNationalId(nationalId)) ||
+                    nationalIdCell instanceof Date ||
+                    (isRecord(nationalIdCell) && (
+                        "error" in nationalIdCell ||
+                        (("formula" in nationalIdCell || "sharedFormula" in nationalIdCell) &&
+                            typeof nationalIdCell.result !== "string" &&
+                            typeof nationalIdCell.result !== "number")
+                    ))
+                ) {
                     errors.push(
                         `แถว ${rowNumber}: ${NATIONAL_ID_ERROR_MESSAGE}`,
                     );
@@ -535,8 +541,7 @@ export async function parseExcelBuffer(
         // Check for duplicate studentId within the Excel file
         const studentIdSet = new Set<string>();
         const duplicateSet = new Set<string>();
-        const nationalIdSet = new Set<string>();
-        const duplicateNationalIdSet = new Set<string>();
+        const firstStudentIdByNationalId = new Map<string, string>();
 
         data.forEach((student) => {
             if (studentIdSet.has(student.studentId)) {
@@ -545,11 +550,15 @@ export async function parseExcelBuffer(
                 studentIdSet.add(student.studentId);
             }
 
-            if (nationalIdSet.has(student.nationalId)) {
-                duplicateNationalIdSet.add(student.nationalId);
-            } else {
-                nationalIdSet.add(student.nationalId);
+            if (student.nationalId === null) return;
+            const firstStudentId = firstStudentIdByNationalId.get(student.nationalId);
+            if (firstStudentId === undefined) {
+                firstStudentIdByNationalId.set(student.nationalId, student.studentId);
+                return;
             }
+            errors.push(
+                `พบเลขบัตรประชาชนซ้ำในไฟล์สำหรับรหัสนักเรียน ${firstStudentId} และ ${student.studentId}`,
+            );
         });
 
         const duplicateStudentIds = [...duplicateSet];
@@ -557,13 +566,6 @@ export async function parseExcelBuffer(
         if (duplicateStudentIds.length > 0) {
             errors.push(
                 `พบรหัสนักเรียนซ้ำในไฟล์: ${duplicateStudentIds.join(", ")}`,
-            );
-        }
-
-        const duplicateNationalIds = [...duplicateNationalIdSet];
-        if (duplicateNationalIds.length > 0) {
-            errors.push(
-                `พบเลขบัตรประชาชนซ้ำในไฟล์: ${duplicateNationalIds.join(", ")}`,
             );
         }
 

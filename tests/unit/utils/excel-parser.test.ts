@@ -1006,7 +1006,7 @@ describe("Excel Parser - National ID Parsing", () => {
 
         expect(result.success).toBe(false);
         expect(result.errors).toContain(
-            "พบเลขบัตรประชาชนซ้ำในไฟล์: G1103700000011",
+            "พบเลขบัตรประชาชนซ้ำในไฟล์สำหรับรหัสนักเรียน 66001 และ 66002",
         );
     });
 
@@ -1021,15 +1021,12 @@ describe("Excel Parser - National ID Parsing", () => {
         expect(result.data).toHaveLength(0);
     });
 
-    it("rejects missing national ID values", async () => {
-        const buffer = await createWorkbookBuffer("");
+    it("allows multiple missing national IDs in an existing template", async () => {
+        const buffer = await createWorkbookBuffer("", "   ");
         const result = await parseExcelBuffer(buffer);
 
-        expect(result.success).toBe(false);
-        expect(result.errors).toContain(
-            "แถว 2: ขาดข้อมูลในฟิลด์: เลขบัตรประชาชน",
-        );
-        expect(result.data).toHaveLength(0);
+        expect(result.success).toBe(true);
+        expect(result.data.map((student) => student.nationalId)).toEqual([null, null]);
     });
 });
 

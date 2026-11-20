@@ -313,6 +313,26 @@ describe("importStudents identity reconciliation", () => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
+    it("persists null for a student with a blank national ID", async () => {
+        mocks.studentFindMany
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([{ ...existingStudent, nationalId: null }]);
+        mocks.studentCreateMany.mockResolvedValueOnce({ count: 1 });
+
+        const result = await importStudents(
+            [{ ...importedRow, nationalId: "   " }],
+            "ay-input",
+            1,
+        );
+
+        expect(result).toMatchObject({ success: true, imported: 1, createdStudents: 1 });
+        expect(mocks.studentCreateMany).toHaveBeenCalledWith({
+            data: [expect.objectContaining({ nationalId: null })],
+            skipDuplicates: true,
+        });
+    });
+
     it("rejects oversized input after authentication and before database work", async () => {
         const oversizedInput = Array.from(
             { length: 1_001 },
