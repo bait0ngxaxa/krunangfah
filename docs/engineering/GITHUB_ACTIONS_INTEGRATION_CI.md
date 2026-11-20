@@ -19,6 +19,8 @@ Prisma validation uses loopback URLs on port 1 to satisfy the schema’s two env
 
 [The existing target checks](../../tests/integration/database-target.ts) require the loopback address, expected database and login, and a target distinct from configured application databases. [Worker setup](../../tests/integration/setup.ts) verifies the marker and privileges before handing the client to tests and [guarded cleanup](../../tests/integration/database-safety.ts). Use only the disposable database and keep those guards active. Keep application credentials, external databases and the root Compose project outside the test lifecycle.
 
+Integration files run one at a time because they share academic-term fixtures and a file can delete rows it created during cleanup. Tests that explicitly run concurrent requests still exercise that concurrency.
+
 GitHub records the original failed step and exit code. PostgreSQL diagnostics are printed before cleanup, and cleanup has a separate step and conclusion. A runner forcibly terminated before cleanup is itself disposable. Avoid printing environment dumps, expanded Compose config or connection strings.
 
 ## Run and inspect CI

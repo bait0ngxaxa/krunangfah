@@ -12,6 +12,8 @@ export default defineConfig({
             NODE_ENV: "test",
         },
         setupFiles: ["./tests/integration/setup.ts"],
+        // Files share academic-term fixtures that another file's cleanup can delete.
+        fileParallelism: false,
         include: ["tests/integration/**/*.test.ts"],
         exclude: ["node_modules/**"],
     },
