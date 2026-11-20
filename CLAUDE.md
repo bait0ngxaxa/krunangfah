@@ -34,7 +34,8 @@
 
 - **Defensive:** Handle `null/undefined` explicitly, re-verify roles server-side on every mutation, use exponential backoff for retries.
 - **Git & Docs:** Use Conventional Commits. Comments should explain the "WHY", not the "WHAT".
-- **PROJECT.md:** Drop into the project root to define the tech stack and override specific rules.
+- **Delivery:** Follow the mandatory branch, Draft PR, hosted CI and owner approval rules in [AGENTS.md Sections 9–10](AGENTS.md#9-testing-and-verification).
+- **PROJECT.md:** Use for project-specific guidance within the requirements of AGENTS.md.
 
 ## Agent skills
 

@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: krunangfah_integration
+      POSTGRES_PASSWORD: ${CI_POSTGRES_PASSWORD:-}
+    ports:
+      - "127.0.0.1::5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "krunangfah_integration"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

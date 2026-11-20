@@ -12,6 +12,8 @@ export default defineConfig({
             NODE_ENV: "test",
         },
         setupFiles: ["./tests/integration/setup.ts"],
+        // Some suites read or update the database-wide current academic term.
+        fileParallelism: false,
         include: ["tests/integration/**/*.test.ts"],
         exclude: ["node_modules/**"],
     },

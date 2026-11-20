@@ -28,7 +28,7 @@ const { getTeacherProfile } = await import("@/lib/actions/teacher.actions");
 describe("Integration: Teacher Profile", () => {
     beforeAll(async () => {
         const school = await createTestSchool();
-        const ay = await createTestAcademicYear({ year: 2597, semester: 1 });
+        await createTestAcademicYear({ year: 2652, semester: 1 });
 
         USERS.schoolAdmin.schoolId = school.id;
         USERS.classTeacher.schoolId = school.id;

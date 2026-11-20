@@ -33,7 +33,6 @@ const { getMyTeacherInvites } =
 
 describe("Integration: Teacher Invite", () => {
     let schoolId: string;
-    let academicYearId: string;
 
     beforeAll(async () => {
         const school = await createTestSchool();
@@ -42,8 +41,7 @@ describe("Integration: Teacher Invite", () => {
         USERS.schoolAdmin.schoolId = schoolId;
         await createTestUser(USERS.schoolAdmin, schoolId);
 
-        const ay = await createTestAcademicYear({ year: 2596, semester: 1 });
-        academicYearId = ay.id;
+        await createTestAcademicYear({ year: 2651, semester: 1 });
     });
 
     afterAll(async () => {

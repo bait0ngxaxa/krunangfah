@@ -496,7 +496,7 @@ describe("Integration: Activity Flow", () => {
 
         it("derives the green sequence from the stored PHQ risk for the newest academic term", async () => {
             const nextAcademicYear = await createTestAcademicYear({
-                year: 2600,
+                year: 2654,
                 semester: 1,
             });
             const nextPhqResult = await createTestPhqResult(

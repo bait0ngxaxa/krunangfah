@@ -47,7 +47,7 @@ describe("Integration: Upload Route Access Control", () => {
 
     beforeAll(async () => {
         const school = await createTestSchool({ name: "Upload Route School" });
-        const ay = await createTestAcademicYear({ year: 2601, semester: 1 });
+        const ay = await createTestAcademicYear({ year: 2653, semester: 1 });
 
         USERS.schoolAdmin.schoolId = school.id;
         USERS.classTeacher.schoolId = school.id;
