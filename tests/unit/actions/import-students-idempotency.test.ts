@@ -180,6 +180,7 @@ describe("importStudents idempotency", () => {
             updatedStudentCount: 0,
             identityConflictErrors: [],
             identityConflictFailures: [],
+            classAccessFailures: [],
         });
 
         const result = await importStudents([createParsedStudent()], "ay-input", 1);
@@ -232,6 +233,7 @@ describe("importStudents idempotency", () => {
             updatedStudentCount: 0,
             identityConflictErrors: [],
             identityConflictFailures: [],
+            classAccessFailures: [],
         });
 
         const result = await importStudents([createParsedStudent()], "ay-input", 1);
@@ -270,7 +272,7 @@ describe("importStudents idempotency", () => {
             callback({
                 student: {
                     findMany: mocks.studentFindMany,
-                    createMany: mocks.studentCreateMany,
+                    createManyAndReturn: mocks.studentCreateMany,
                     update: mocks.studentUpdate,
                 },
                 phqResult: {

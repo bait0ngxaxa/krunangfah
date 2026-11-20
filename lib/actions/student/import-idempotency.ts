@@ -38,6 +38,7 @@ export function createImportIdempotencyKey(input: {
     schoolId: string;
     academicYearId: string;
     assessmentRound: number;
+    classScope?: string;
     students: ParsedStudent[];
 }): string {
     return [
@@ -47,6 +48,7 @@ export function createImportIdempotencyKey(input: {
         input.academicYearId,
         input.assessmentRound.toString(),
         createImportPayloadHash(input.students),
+        ...(input.classScope === undefined ? [] : ["class", input.classScope]),
     ].join(":");
 }
 

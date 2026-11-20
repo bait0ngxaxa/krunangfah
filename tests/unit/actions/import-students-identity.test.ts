@@ -83,7 +83,7 @@ function mockTransaction(): void {
         callback({
             student: {
                 findMany: mocks.studentFindMany,
-                createMany: mocks.studentCreateMany,
+                createManyAndReturn: mocks.studentCreateMany,
                 update: mocks.studentUpdate,
             },
             phqResult: {
@@ -122,7 +122,7 @@ describe("importStudents identity reconciliation", () => {
         mocks.completeIdempotentOperation.mockResolvedValue(undefined);
         mocks.clearIdempotentOperation.mockResolvedValue(undefined);
         mocks.phqResultFindMany.mockResolvedValue([]);
-        mocks.studentCreateMany.mockResolvedValue({ count: 0 });
+        mocks.studentCreateMany.mockResolvedValue([]);
         mocks.studentUpdate.mockResolvedValue(existingStudent);
         mocks.phqResultCreateMany.mockResolvedValue({ count: 1 });
         mockTransaction();
@@ -181,7 +181,6 @@ describe("importStudents identity reconciliation", () => {
         };
         mocks.studentFindMany
             .mockResolvedValueOnce([matchingStudent])
-            .mockResolvedValueOnce([matchingStudent])
             .mockResolvedValueOnce([matchingStudent]);
 
         const result = await importStudents([importedRow], "ay-input", 1);
@@ -211,9 +210,9 @@ describe("importStudents identity reconciliation", () => {
             nationalId: "G1234567890123",
         };
         mocks.studentFindMany
-            .mockResolvedValueOnce([matchingStudent])
-            .mockResolvedValueOnce([matchingStudent])
-            .mockResolvedValueOnce([matchingStudent]);
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([]);
+        mocks.studentCreateMany.mockResolvedValueOnce([matchingStudent]);
 
         const result = await importStudents(
             [{ ...importedRow, nationalId: "g1234567890123" }],
@@ -224,7 +223,7 @@ describe("importStudents identity reconciliation", () => {
         expect(result).toMatchObject({ success: true, imported: 1 });
         expect(mocks.studentCreateMany).toHaveBeenCalledWith({
             data: [expect.objectContaining({ nationalId: "G1234567890123" })],
-            skipDuplicates: true,
+            select: { id: true, studentId: true },
         });
     });
 
@@ -245,9 +244,9 @@ describe("importStudents identity reconciliation", () => {
         ];
         mocks.studentFindMany
             .mockResolvedValueOnce([])
-            .mockResolvedValueOnce([])
-            .mockResolvedValueOnce(createdStudents);
-        mocks.studentCreateMany.mockResolvedValueOnce({ count: 2 });
+            .mockResolvedValueOnce([]);
+        mocks.studentCreateMany.mockResolvedValueOnce(createdStudents);
+        mocks.phqResultCreateMany.mockResolvedValueOnce({ count: 2 });
 
         const result = await importStudents(
             [importedRow, secondRow],
@@ -281,8 +280,8 @@ describe("importStudents identity reconciliation", () => {
         };
         mocks.studentFindMany
             .mockResolvedValueOnce([])
-            .mockResolvedValueOnce([])
-            .mockResolvedValueOnce([normalizedFirstRow]);
+            .mockResolvedValueOnce([]);
+        mocks.studentCreateMany.mockResolvedValueOnce([normalizedFirstRow]);
 
         const result = await importStudents(
             [
@@ -314,11 +313,8 @@ describe("importStudents identity reconciliation", () => {
     });
 
     it("persists null for a student with a blank national ID", async () => {
-        mocks.studentFindMany
-            .mockResolvedValueOnce([])
-            .mockResolvedValueOnce([])
-            .mockResolvedValueOnce([{ ...existingStudent, nationalId: null }]);
-        mocks.studentCreateMany.mockResolvedValueOnce({ count: 1 });
+        mocks.studentFindMany.mockResolvedValueOnce([]);
+        mocks.studentCreateMany.mockResolvedValueOnce([{ ...existingStudent, nationalId: null }]);
 
         const result = await importStudents(
             [{ ...importedRow, nationalId: "   " }],
@@ -329,7 +325,7 @@ describe("importStudents identity reconciliation", () => {
         expect(result).toMatchObject({ success: true, imported: 1, createdStudents: 1 });
         expect(mocks.studentCreateMany).toHaveBeenCalledWith({
             data: [expect.objectContaining({ nationalId: null })],
-            skipDuplicates: true,
+            select: { id: true, studentId: true },
         });
     });
 

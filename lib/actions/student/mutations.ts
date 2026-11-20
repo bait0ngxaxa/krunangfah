@@ -138,7 +138,7 @@ function formatImportStudentError(student: ParsedStudent, reason: string): strin
     return `${student.firstName} ${student.lastName} (${student.studentId}): ${reason}`;
 }
 
-function normalizeImportStudentNationalIds(students: ParsedStudent[]): {
+function normalizeImportStudents(students: ParsedStudent[]): {
     students: ParsedStudent[];
     errors: string[];
 } {
@@ -157,7 +157,9 @@ function normalizeImportStudentNationalIds(students: ParsedStudent[]): {
         }
         normalizedStudents.push({
             ...student,
+            studentId: student.studentId.trim(),
             nationalId: normalizedNationalId,
+            class: normalizeClassName(student.class),
         });
     }
 
@@ -171,24 +173,70 @@ function getActivityNumbersByRiskLevel(riskLevel: RiskLevel): number[] {
     return ACTIVITY_INDICES[riskLevel as keyof typeof ACTIVITY_INDICES];
 }
 
-interface ImportIdentityRecord {
+interface ImportStudentRecord {
     id: string;
-    schoolId: string;
+    nationalId: string | null;
+    firstName: string;
+    lastName: string;
+    class: string;
+    gender: ParsedStudent["gender"] | null;
+    age: number | null;
+}
+
+function normalizeImportName(name: string): string {
+    return name.normalize("NFC").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function isMinorNameCorrection(before: string, after: string): boolean {
+    const left = Array.from(before);
+    const right = Array.from(after);
+    const [shorter, longer] = left.length <= right.length ? [left, right] : [right, left];
+    if (longer.length - shorter.length > 1) return false;
+
+    const mismatch = shorter.findIndex((character, index) => character !== longer.at(index));
+    if (mismatch === -1) return true;
+    const offset = longer.length - shorter.length;
+    return shorter.slice(mismatch + (offset === 0 ? 1 : 0)).join("") ===
+        longer.slice(mismatch + 1).join("");
 }
 
 function resolveImportIdentity(
-    studentIdOwner: ImportIdentityRecord | undefined,
-    nationalIdOwner: ImportIdentityRecord | undefined,
-): { kind: "new" } | { kind: "existing"; studentId: string } | { kind: "conflict" } {
-    if (!studentIdOwner && !nationalIdOwner) return { kind: "new" };
-    if (
-        studentIdOwner &&
-        nationalIdOwner &&
-        studentIdOwner.id === nationalIdOwner.id
-    ) {
-        return { kind: "existing", studentId: studentIdOwner.id };
+    row: ParsedStudent,
+    existingStudent: ImportStudentRecord | undefined,
+    nationalIdOwner: { id: string } | undefined,
+): { kind: "new" } | { kind: "existing" } | { kind: "conflict"; reason: string } {
+    if (nationalIdOwner && nationalIdOwner.id !== existingStudent?.id) {
+        return {
+            kind: "conflict",
+            reason: "เลขประจำตัวซ้ำกับข้อมูลที่มีในระบบ กรุณาตรวจสอบรหัสนักเรียนและเลขประจำตัวก่อนนำเข้า",
+        };
     }
-    return { kind: "conflict" };
+    if (!existingStudent) return { kind: "new" };
+
+    if (row.nationalId !== null && existingStudent.nationalId !== null) {
+        return row.nationalId === existingStudent.nationalId
+            ? { kind: "existing" }
+            : {
+                  kind: "conflict",
+                  reason: "เลขประจำตัวไม่ตรงกับข้อมูลของรหัสนักเรียนนี้ กรุณาตรวจสอบข้อมูลก่อนนำเข้า",
+              };
+    }
+
+    const firstName = normalizeImportName(row.firstName);
+    const lastName = normalizeImportName(row.lastName);
+    const existingFirstName = normalizeImportName(existingStudent.firstName);
+    const existingLastName = normalizeImportName(existingStudent.lastName);
+    // With only the school code as shared evidence, allow a typo in one name part.
+    if (
+        (firstName === existingFirstName && isMinorNameCorrection(existingLastName, lastName)) ||
+        (lastName === existingLastName && isMinorNameCorrection(existingFirstName, firstName))
+    ) {
+        return { kind: "existing" };
+    }
+    return {
+        kind: "conflict",
+        reason: "ชื่อหรือนามสกุลไม่ตรงกับข้อมูลของรหัสนักเรียนนี้ กรุณาตรวจสอบตัวตนและแก้ไขข้อมูลนักเรียนก่อนนำเข้า",
+    };
 }
 
 /**
@@ -211,7 +259,7 @@ export async function importStudents(
         const userId = session.user.id;
         const userRole = session.user.role;
 
-        if (!Array.isArray(students) || students.length > MAX_IMPORT_ROW_COUNT) {
+        if (!Array.isArray(students) || students.length === 0 || students.length > MAX_IMPORT_ROW_COUNT) {
             return {
                 success: false,
                 status: "error",
@@ -254,7 +302,7 @@ export async function importStudents(
             };
         }
 
-        const normalizedImport = normalizeImportStudentNationalIds(students);
+        const normalizedImport = normalizeImportStudents(students);
         if (normalizedImport.errors.length > 0) {
             return {
                 success: false,
@@ -289,7 +337,7 @@ export async function importStudents(
         }
 
         const schoolId = user.schoolId;
-        const advisoryClass = user.teacher?.advisoryClass;
+        const advisoryClass = normalizeClassName(user.teacher?.advisoryClass ?? "");
         const isClassTeacher = userRole === "class_teacher";
         const resolvedAcademicYearId =
             await ensureSchoolClassTermsForAcademicYear(
@@ -310,6 +358,7 @@ export async function importStudents(
             schoolId,
             academicYearId: resolvedAcademicYearId,
             assessmentRound,
+            classScope: isClassTeacher ? advisoryClass : undefined,
             students: normalizedStudents,
         });
         const idempotencyResult = await startIdempotentOperation(
@@ -401,7 +450,7 @@ export async function importStudents(
         const eligibleRows: ParsedStudent[] = [];
 
         for (const studentData of normalizedStudents) {
-            const studentClass = normalizeClassName(studentData.class);
+            const studentClass = studentData.class;
             if (!validClassSet.has(studentClass)) {
                 failedStudents.push(
                     createImportStudentSummary(
@@ -452,6 +501,7 @@ export async function importStudents(
         const txResult = await runImportTransaction(async (tx) => {
             const identityConflictErrors: string[] = [];
             const identityConflictFailures: ImportStudentSummary[] = [];
+            const classAccessFailures: ImportStudentSummary[] = [];
             if (importedStudentIds.length === 0) {
                 return {
                     importedCount: 0,
@@ -462,22 +512,16 @@ export async function importStudents(
                     updatedStudentCount: 0,
                     identityConflictErrors,
                     identityConflictFailures,
+                    classAccessFailures,
                 };
             }
 
-            const existingStudentsByNationalId = await tx.student.findMany({
-                where: {
-                    nationalId: { in: importedNationalIds },
-                },
-                select: {
-                    id: true,
-                    schoolId: true,
-                    studentId: true,
-                    nationalId: true,
-                    firstName: true,
-                    lastName: true,
-                },
-            });
+            const existingStudentsByNationalId = importedNationalIds.length > 0
+                ? await tx.student.findMany({
+                      where: { nationalId: { in: importedNationalIds } },
+                      select: { id: true, nationalId: true },
+                  })
+                : [];
 
             const studentByNationalId = new Map(
                 existingStudentsByNationalId
@@ -496,9 +540,13 @@ export async function importStudents(
                 },
                 select: {
                     id: true,
-                    schoolId: true,
                     studentId: true,
                     nationalId: true,
+                    firstName: true,
+                    lastName: true,
+                    class: true,
+                    age: true,
+                    gender: true,
                 },
             });
             const existingStudentByStudentId = new Map(
@@ -508,57 +556,25 @@ export async function importStudents(
                 ]),
             );
 
-            const rowsSafeToImport = eligibleRows.filter((row) => {
+            const rowsSafeToImport: { row: ParsedStudent; existingStudent?: ImportStudentRecord }[] = [];
+            for (const row of eligibleRows) {
+                const existingStudent = existingStudentByStudentId.get(row.studentId);
+                if (isClassTeacher && existingStudent &&
+                    normalizeClassName(existingStudent.class) !== advisoryClass) {
+                    classAccessFailures.push(createImportStudentSummary(row, "ไม่ใช่ห้องที่คุณดูแล"));
+                    continue;
+                }
                 const nationalIdOwner = row.nationalId === null
                     ? undefined
                     : studentByNationalId.get(row.nationalId);
-                const studentIdOwner = existingStudentByStudentId.get(
-                    row.studentId,
-                );
-
-                if (nationalIdOwner && nationalIdOwner.schoolId !== schoolId) {
-                    const reason = "เลขบัตรประชาชนซ้ำกับข้อมูลที่มีในระบบ";
-                    identityConflictErrors.push(
-                        formatImportStudentError(row, reason),
-                    );
-                    identityConflictFailures.push(
-                        createImportStudentSummary(row, reason),
-                    );
-                    return false;
+                const identity = resolveImportIdentity(row, existingStudent, nationalIdOwner);
+                if (identity.kind === "conflict") {
+                    identityConflictErrors.push(formatImportStudentError(row, identity.reason));
+                    identityConflictFailures.push(createImportStudentSummary(row, identity.reason));
+                    continue;
                 }
-
-                if (
-                    nationalIdOwner &&
-                    studentIdOwner &&
-                    nationalIdOwner.id !== studentIdOwner.id
-                ) {
-                    const reason = "เลขบัตรประชาชนซ้ำกับนักเรียนคนอื่นในระบบ";
-                    identityConflictErrors.push(
-                        formatImportStudentError(row, reason),
-                    );
-                    identityConflictFailures.push(
-                        createImportStudentSummary(row, reason),
-                    );
-                    return false;
-                }
-
-                if (
-                    resolveImportIdentity(studentIdOwner, nationalIdOwner).kind ===
-                    "conflict"
-                ) {
-                    const reason =
-                        "รหัสนักเรียนและเลขบัตรประชาชนไม่ตรงกับนักเรียนคนเดียวกัน กรุณาตรวจสอบข้อมูลก่อนนำเข้า";
-                    identityConflictErrors.push(
-                        formatImportStudentError(row, reason),
-                    );
-                    identityConflictFailures.push(
-                        createImportStudentSummary(row, reason),
-                    );
-                    return false;
-                }
-
-                return true;
-            });
+                rowsSafeToImport.push({ row, existingStudent });
+            }
 
             if (rowsSafeToImport.length === 0) {
                 return {
@@ -570,23 +586,13 @@ export async function importStudents(
                     updatedStudentCount: 0,
                     identityConflictErrors,
                     identityConflictFailures,
+                    classAccessFailures,
                 };
             }
 
-            const resolveExistingStudentId = (row: ParsedStudent): string | null => {
-                const identity = resolveImportIdentity(
-                    existingStudentByStudentId.get(row.studentId),
-                    row.nationalId === null ? undefined : studentByNationalId.get(row.nationalId),
-                );
-                return identity.kind === "existing" ? identity.studentId : null;
-            };
-            const existingCandidateIds = [
-                ...new Set(
-                    rowsSafeToImport
-                        .map(resolveExistingStudentId)
-                        .filter((id): id is string => id !== null),
-                ),
-            ];
+            const existingCandidateIds = rowsSafeToImport.flatMap(({ existingStudent }) =>
+                existingStudent ? [existingStudent.id] : [],
+            );
             const existingPhqResults = await tx.phqResult.findMany({
                 where: {
                     studentId: { in: existingCandidateIds },
@@ -615,8 +621,8 @@ export async function importStudents(
                     : null;
             const duplicateRoundErrors: string[] = [];
             const duplicateRoundFailures: ImportStudentSummary[] = [];
-            const rowsToMutate = rowsSafeToImport.filter((row) => {
-                const existingStudentId = resolveExistingStudentId(row);
+            const rowsToMutate = rowsSafeToImport.filter(({ row, existingStudent }) => {
+                const existingStudentId = existingStudent?.id;
                 if (
                     assessmentRound === 2 &&
                     (!existingStudentId || !round1StudentSet?.has(existingStudentId))
@@ -653,11 +659,13 @@ export async function importStudents(
                     updatedStudentCount: 0,
                     identityConflictErrors,
                     identityConflictFailures,
+                    classAccessFailures,
                 };
             }
 
-            const createdStudents = await tx.student.createMany({
-                data: rowsToMutate.map((row) => ({
+            const newStudents = rowsToMutate
+                .filter(({ existingStudent }) => !existingStudent)
+                .map(({ row }) => ({
                     studentId: row.studentId,
                     nationalId: row.nationalId,
                     firstName: row.firstName,
@@ -666,51 +674,22 @@ export async function importStudents(
                     age: row.age ?? null,
                     class: row.class,
                     schoolId,
-                })),
-                skipDuplicates: true,
-            });
-
-            const scopedStudents = await tx.student.findMany({
-                where: {
-                    schoolId,
-                    OR: [
-                        {
-                            studentId: {
-                                in: rowsToMutate.map((row) => row.studentId),
-                            },
-                        },
-                        {
-                            nationalId: {
-                                in: rowsToMutate.map((row) => row.nationalId)
-                                    .filter((id): id is string => id !== null),
-                            },
-                        },
-                    ],
-                },
-            });
-
-            const studentByStudentId = new Map(
-                scopedStudents.map((student) => [student.studentId, student]),
-            );
-            const scopedStudentByNationalId = new Map(
-                scopedStudents
-                    .filter(
-                        (
-                            student,
-                        ): student is typeof student & { nationalId: string } =>
-                            typeof student.nationalId === "string",
-                    )
-                    .map((student) => [student.nationalId, student]),
+                }));
+            // A unique conflict rolls back and retries identity reconciliation
+            // against a fresh snapshot before attaching any PHQ results.
+            const createdStudents = newStudents.length > 0
+                ? await tx.student.createManyAndReturn({
+                      data: newStudents,
+                      select: { id: true, studentId: true },
+                  })
+                : [];
+            const createdIdByStudentCode = new Map(
+                createdStudents.map((student) => [student.studentId, student.id]),
             );
 
             const studentUpdates: Promise<unknown>[] = [];
-            for (const row of rowsToMutate) {
-                const student =
-                    studentByStudentId.get(row.studentId) ??
-                    (row.nationalId === null ? undefined : scopedStudentByNationalId.get(row.nationalId));
-                if (!student) {
-                    continue;
-                }
+            for (const { row, existingStudent: student } of rowsToMutate) {
+                if (!student) continue;
 
                 const updates: {
                     age?: number;
@@ -720,7 +699,7 @@ export async function importStudents(
                     lastName?: string;
                     nationalId?: string;
                 } = {};
-                if (row.nationalId !== null && student.nationalId !== row.nationalId) {
+                if (student.nationalId === null && row.nationalId !== null) {
                     updates.nationalId = row.nationalId;
                 }
                 if (row.gender && student.gender !== row.gender) {
@@ -758,16 +737,12 @@ export async function importStudents(
             const importedStudents: ImportStudentSummary[] = [];
             const phqResultsToCreate: Prisma.PhqResultCreateManyInput[] = [];
 
-            for (const row of rowsToMutate) {
-                const student =
-                    studentByStudentId.get(row.studentId) ??
-                    (row.nationalId === null ? undefined : scopedStudentByNationalId.get(row.nationalId));
-                if (!student) {
-                    continue;
-                }
+            for (const { row, existingStudent } of rowsToMutate) {
+                const studentId = existingStudent?.id ?? createdIdByStudentCode.get(row.studentId);
+                if (!studentId) throw new Error("Import did not persist a resolved student");
                 const { totalScore, riskLevel } = calculateRiskLevel(row.scores);
                 phqResultsToCreate.push({
-                    studentId: student.id,
+                    studentId,
                     academicYearId: resolvedAcademicYearId,
                     importedById: userId,
                     assessmentRound,
@@ -789,9 +764,12 @@ export async function importStudents(
             }
 
             if (phqResultsToCreate.length > 0) {
-                await tx.phqResult.createMany({
+                const createdPhq = await tx.phqResult.createMany({
                     data: phqResultsToCreate,
                 });
+                if (createdPhq.count !== phqResultsToCreate.length) {
+                    throw new Error("Import did not persist all PHQ results");
+                }
 
                 const createdPhqResults =
                     canGenerateActivitiesForAssessmentRound(assessmentRound)
@@ -839,7 +817,6 @@ export async function importStudents(
                 if (activityProgressRows.length > 0) {
                     await tx.activityProgress.createMany({
                         data: activityProgressRows,
-                        skipDuplicates: true,
                     });
                 }
             }
@@ -849,10 +826,11 @@ export async function importStudents(
                 duplicateRoundErrors,
                 duplicateRoundFailures,
                 importedStudents,
-                createdStudentCount: createdStudents.count,
+                createdStudentCount: createdStudents.length,
                 updatedStudentCount: studentUpdates.length,
                 identityConflictErrors,
                 identityConflictFailures,
+                classAccessFailures,
             };
         });
 
@@ -863,7 +841,9 @@ export async function importStudents(
         failedStudents.push(
             ...txResult.identityConflictFailures,
             ...txResult.duplicateRoundFailures,
+            ...txResult.classAccessFailures,
         );
+        skippedCount += txResult.classAccessFailures.length;
 
         revalidatePath("/dashboard");
         revalidatePath("/students");
@@ -922,11 +902,10 @@ export async function importStudents(
             await clearIdempotentOperation(importIdempotencyKey);
         }
 
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            logError("Import students transaction error:", error);
-        } else {
-            logError("Import students error:", error);
-        }
+        logError("Import students error:", {
+            name: error instanceof Error ? error.name : typeof error,
+            code: error instanceof Prisma.PrismaClientKnownRequestError ? error.code : undefined,
+        });
         return {
             success: false,
             status: "error",
