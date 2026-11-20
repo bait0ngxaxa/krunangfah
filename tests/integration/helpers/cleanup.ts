@@ -12,9 +12,8 @@ import { assertVerifiedIntegrationClient } from "../database-safety";
 /**
  * Delete all test data in correct FK order
  */
-export async function cleanupAll() {
+export async function cleanupAll(ids = getCreatedIds()): Promise<void> {
     assertVerifiedIntegrationClient(prisma);
-    const ids = getCreatedIds();
 
     // Delete in reverse dependency order
     if (ids.counselingSessions.length > 0) {
@@ -25,18 +24,11 @@ export async function cleanupAll() {
             .catch(() => {});
     }
 
-    // WorksheetUploads cascade from ActivityProgress
-    if (ids.activityProgress.length > 0) {
-        await prisma.worksheetUpload
-            .deleteMany({
-                where: {
-                    activityProgressId: { in: ids.activityProgress },
-                },
-            })
-            .catch(() => {});
+    // Include progress produced by actions for owned PHQ results. Worksheets cascade.
+    if (ids.activityProgress.length > 0 || ids.phqResults.length > 0) {
         await prisma.activityProgress
             .deleteMany({
-                where: { id: { in: ids.activityProgress } },
+                where: { OR: [{ id: { in: ids.activityProgress } }, { phqResultId: { in: ids.phqResults } }] },
             })
             .catch(() => {});
     }
@@ -81,14 +73,6 @@ export async function cleanupAll() {
             .catch(() => {});
     }
 
-    if (ids.academicYears.length > 0) {
-        await prisma.academicYear
-            .deleteMany({
-                where: { id: { in: ids.academicYears } },
-            })
-            .catch(() => {});
-    }
-
     if (ids.schools.length > 0) {
         await prisma.school
             .deleteMany({
@@ -97,9 +81,11 @@ export async function cleanupAll() {
             .catch(() => {});
     }
 
-    // Clear tracked IDs
-    Object.keys(ids).forEach((key) => {
-        (ids as Record<string, string[]>)[key] = [];
-    });
+    // Delete terms last so failures from remaining references surface in the test.
+    if (ids.academicYears.length > 0) {
+        await prisma.academicYear.deleteMany({ where: { id: { in: ids.academicYears } } });
+    }
+
+    for (const tracked of Object.values(ids)) tracked.length = 0;
 }
 

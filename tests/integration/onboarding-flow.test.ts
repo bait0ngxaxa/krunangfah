@@ -21,6 +21,8 @@ import {
 } from "./helpers/auth-mock";
 import { prisma } from "@/lib/database/prisma";
 import type { QueryResult } from "@/lib/actions/query-result";
+import { cleanupAll } from "./helpers/cleanup";
+import { createTestAcademicYear } from "./helpers/seed";
 
 function expectQueryData<T>(result: QueryResult<T>): T {
     expect(["success", "empty"]).toContain(result.status);
@@ -51,41 +53,21 @@ const { saveOnboardingProgress, completeOnboarding } = await import(
 );
 
 describe("Integration: Onboarding Flow", () => {
-    // ใช้ปีที่ unique มากเพื่อไม่ชนกับ test อื่นที่รัน parallel
-    const UNIQUE_YEAR = 2650;
+    // ปีการศึกษาที่สงวนให้ fixture ของ onboarding
+    const FIXTURE_YEAR = 2650;
 
     let academicYearId: string;
     let nextAcademicYearId: string;
     let createdSchoolId: string | null = null;
 
     beforeAll(async () => {
-        // Academic year — ใช้ upsert ป้องกัน race condition กับ test อื่น
-        const ay = await prisma.academicYear.upsert({
-            where: {
-                year_semester: { year: UNIQUE_YEAR, semester: 1 },
-            },
-            update: {},
-            create: {
-                year: UNIQUE_YEAR,
-                semester: 1,
-                startDate: new Date("2024-05-01"),
-                endDate: new Date("2024-10-31"),
-                isCurrent: false,
-            },
-        });
+        const ay = await createTestAcademicYear({ year: FIXTURE_YEAR });
         academicYearId = ay.id;
-        const nextAy = await prisma.academicYear.upsert({
-            where: {
-                year_semester: { year: UNIQUE_YEAR, semester: 2 },
-            },
-            update: {},
-            create: {
-                year: UNIQUE_YEAR,
-                semester: 2,
-                startDate: new Date("2024-11-01"),
-                endDate: new Date("2025-04-30"),
-                isCurrent: false,
-            },
+        const nextAy = await createTestAcademicYear({
+            year: FIXTURE_YEAR,
+            semester: 2,
+            startDate: new Date("2024-11-01"),
+            endDate: new Date("2025-04-30"),
         });
         nextAcademicYearId = nextAy.id;
 
@@ -170,17 +152,7 @@ describe("Integration: Onboarding Flow", () => {
                 .catch(() => {});
         }
 
-        // AcademicYear — ลบเฉพาะปีที่เราสร้าง
-        await prisma.academicYear
-            .deleteMany({
-                where: { year: UNIQUE_YEAR, semester: 1 },
-            })
-            .catch(() => {});
-        await prisma.academicYear
-            .deleteMany({
-                where: { year: UNIQUE_YEAR, semester: 2 },
-            })
-            .catch(() => {});
+        await cleanupAll();
     });
 
     // ═══════════════════════════════════════════════════
@@ -353,7 +325,7 @@ describe("Integration: Onboarding Flow", () => {
         it("เพิ่มห้องเรียนได้ทันทีหลังสร้างโรงเรียน", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const result = await addSchoolClass("ม.1/1", 32);
+            const result = await addSchoolClass("ม.1/1", 32, academicYearId);
 
             expect(result.success).toBe(true);
             expect(result.data?.name).toBe("ม.1/1");
@@ -364,13 +336,14 @@ describe("Integration: Onboarding Flow", () => {
         it("อัปเดตจำนวนนักเรียนในห้องได้", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const classes = expectQueryData(await getSchoolClasses());
+            const classes = expectQueryData(await getSchoolClasses(academicYearId));
             const target = classes.find((c) => c.name === "ม.1/1");
             expect(target).toBeDefined();
 
             const result = await updateSchoolClassStudentCount(
                 target!.id,
                 35,
+                academicYearId,
             );
 
             expect(result.success).toBe(true);
@@ -380,9 +353,9 @@ describe("Integration: Onboarding Flow", () => {
         it("เพิ่มห้องเรียนหลายห้องได้", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const r1 = await addSchoolClass("ม.1/2", 30);
-            const r2 = await addSchoolClass("ม.2/1", 30);
-            const r3 = await addSchoolClass("ม.2/2", 30);
+            const r1 = await addSchoolClass("ม.1/2", 30, academicYearId);
+            const r2 = await addSchoolClass("ม.2/1", 30, academicYearId);
+            const r3 = await addSchoolClass("ม.2/2", 30, academicYearId);
 
             expect(r1.success).toBe(true);
             expect(r2.success).toBe(true);
@@ -392,7 +365,7 @@ describe("Integration: Onboarding Flow", () => {
         it("ชื่อห้องเรียนซ้ำเพิ่มไม่ได้", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const result = await addSchoolClass("ม.1/1", 32);
+            const result = await addSchoolClass("ม.1/1", 32, academicYearId);
 
             expect(result.success).toBe(false);
             expect(result.message).toContain("มีอยู่แล้ว");
@@ -401,7 +374,7 @@ describe("Integration: Onboarding Flow", () => {
         it("ต้องกรอกจำนวนนักเรียนมากกว่า 0 ตอนเพิ่มห้องเรียน", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const result = await addSchoolClass("ม.3/9", 0);
+            const result = await addSchoolClass("ม.3/9", 0, academicYearId);
 
             expect(result.success).toBe(false);
             expect(result.message).toContain("มากกว่า 0");
@@ -410,11 +383,11 @@ describe("Integration: Onboarding Flow", () => {
         it("ต้องกรอกจำนวนนักเรียนมากกว่า 0 ตอนแก้ไขจำนวนห้องเรียน", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const classes = expectQueryData(await getSchoolClasses());
+            const classes = expectQueryData(await getSchoolClasses(academicYearId));
             const target = classes.find((c) => c.name === "ม.1/1");
             expect(target).toBeDefined();
 
-            const result = await updateSchoolClassStudentCount(target!.id, 0);
+            const result = await updateSchoolClassStudentCount(target!.id, 0, academicYearId);
 
             expect(result.success).toBe(false);
             expect(result.message).toContain("มากกว่า 0");
@@ -423,7 +396,7 @@ describe("Integration: Onboarding Flow", () => {
         it("ลบห้องเรียนได้", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const classes = expectQueryData(await getSchoolClasses());
+            const classes = expectQueryData(await getSchoolClasses(academicYearId));
             const toRemove = classes.find((c) => c.name === "ม.1/2");
             expect(toRemove).toBeDefined();
 
@@ -434,7 +407,7 @@ describe("Integration: Onboarding Flow", () => {
         it("ลบห้องเรียนไม่ได้ถ้ายังมีนักเรียนอยู่ในห้อง", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const added = await addSchoolClass("ม.4/1", 1);
+            const added = await addSchoolClass("ม.4/1", 1, academicYearId);
             expect(added.success).toBe(true);
             expect(added.data).toBeDefined();
             expect(createdSchoolId).toBeTruthy();
@@ -461,7 +434,7 @@ describe("Integration: Onboarding Flow", () => {
         it("ลบห้องแล้วจำนวนห้องลดลง", async () => {
             mockSession(USERS.schoolAdmin);
 
-            const classes = expectQueryData(await getSchoolClasses());
+            const classes = expectQueryData(await getSchoolClasses(academicYearId));
             const names = classes.map((c) => c.name);
 
             expect(names).toContain("ม.1/1");
@@ -512,7 +485,7 @@ describe("Integration: Onboarding Flow", () => {
         it("class_teacher (ไม่ใช่ primary) เพิ่มห้องไม่ได้", async () => {
             mockSession(USERS.classTeacher);
 
-            const result = await addSchoolClass("ม.3/1", 30);
+            const result = await addSchoolClass("ม.3/1", 30, academicYearId);
 
             expect(result.success).toBe(false);
         });
@@ -520,7 +493,7 @@ describe("Integration: Onboarding Flow", () => {
         it("unauthenticated เพิ่มห้องไม่ได้", async () => {
             mockUnauthenticated();
 
-            const result = await addSchoolClass("ม.3/1", 30);
+            const result = await addSchoolClass("ม.3/1", 30, academicYearId);
 
             expect(result.success).toBe(false);
         });
@@ -655,7 +628,7 @@ describe("Integration: Onboarding Flow", () => {
             mockSession(staleUser);
 
             // addSchoolClass ใช้ resolveSchoolId ที่ fallback ไป DB
-            const result = await addSchoolClass("ม.3/1", 30);
+            const result = await addSchoolClass("ม.3/1", 30, academicYearId);
 
             expect(result.success).toBe(true);
             expect(result.data?.name).toBe("ม.3/1");
@@ -668,7 +641,7 @@ describe("Integration: Onboarding Flow", () => {
             };
             mockSession(staleUser);
 
-            const classes = expectQueryData(await getSchoolClasses());
+            const classes = expectQueryData(await getSchoolClasses(academicYearId));
 
             // ม.3/1 ที่เพิ่งสร้างด้านบนต้องอยู่ใน list
             expect(classes.some((c) => c.name === "ม.3/1")).toBe(true);

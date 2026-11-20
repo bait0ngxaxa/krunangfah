@@ -5,23 +5,30 @@
  * Uses Prisma's auto-generated CUIDs (important: Zod validates .cuid())
  */
 
+import type { AcademicYear } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import type { MockUser } from "./auth-mock";
 
-// Track created IDs for cleanup
-const createdIds = {
-    schools: [] as string[],
-    users: [] as string[],
-    teachers: [] as string[],
-    students: [] as string[],
-    academicYears: [] as string[],
-    phqResults: [] as string[],
-    activityProgress: [] as string[],
-    counselingSessions: [] as string[],
-    passwordResetTokens: [] as string[],
-};
+type FixtureModel = "schools" | "users" | "teachers" | "students" | "academicYears"
+    | "phqResults" | "activityProgress" | "counselingSessions" | "passwordResetTokens";
 
-export function getCreatedIds() {
+export function createFixtureIds(): Record<FixtureModel, string[]> {
+    return {
+        schools: [],
+        users: [],
+        teachers: [],
+        students: [],
+        academicYears: [],
+        phqResults: [],
+        activityProgress: [],
+        counselingSessions: [],
+        passwordResetTokens: [],
+    };
+}
+
+const createdIds = createFixtureIds();
+
+export function getCreatedIds(): ReturnType<typeof createFixtureIds> {
     return createdIds;
 }
 
@@ -43,29 +50,15 @@ export async function createTestSchool(overrides: { name?: string } = {}) {
  * Create a test academic year
  */
 export async function createTestAcademicYear(
-    overrides: { year?: number; semester?: number } = {},
-) {
-    const year = overrides.year ?? 2567;
-    const semester = overrides.semester ?? 1;
-
-    // Check if exists first (unique constraint)
-    const existing = await prisma.academicYear.findUnique({
-        where: { year_semester: { year, semester } },
-    });
-    if (existing) {
-        return existing;
-    }
-
+    { year, semester = 1, startDate = new Date("2024-05-01"), endDate = new Date("2024-10-31") }:
+        { year: number; semester?: number; startDate?: Date; endDate?: Date },
+    ids = createdIds,
+): Promise<AcademicYear> {
+    // A duplicate term is a fixture collision. Never borrow an independently owned row.
     const ay = await prisma.academicYear.create({
-        data: {
-            year,
-            semester,
-            startDate: new Date("2024-05-01"),
-            endDate: new Date("2024-10-31"),
-            isCurrent: false,
-        },
+        data: { year, semester, startDate, endDate, isCurrent: false },
     });
-    createdIds.academicYears.push(ay.id);
+    ids.academicYears.push(ay.id);
     return ay;
 }
 
