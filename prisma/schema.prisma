@@ -370,6 +370,29 @@ model SystemAdminEvent {
   @@map("system_admin_events")
 }
 
+enum StudentIdentifierAuditAction {
+  ADDED
+  REPLACED
+  CLEARED
+}
+
+// Keep audit attribution even when the student or actor is removed.
+model StudentIdentifierAuditEvent {
+  id               String                       @id @default(cuid())
+  studentId        String
+  schoolId         String
+  actorUserId      String
+  actorRole        UserRole
+  action           StudentIdentifierAuditAction
+  previousMasked   String?                      @db.VarChar(14)
+  newMasked        String?                      @db.VarChar(14)
+  reason           String                       @db.VarChar(1000)
+  createdAt        DateTime                     @default(now())
+
+  @@index([studentId, createdAt])
+  @@map("student_identifier_audit_events")
+}
+
 // PHQ-A Result - ผลคัดกรองสุขภาพจิต
 model PhqResult {
   id              String   @id @default(cuid())

@@ -104,6 +104,7 @@ describe("Integration: concurrent student imports", () => {
     afterAll(async () => {
         const schoolIds = [schoolId, otherSchoolId].filter(Boolean);
         const schoolScope = { schoolId: { in: schoolIds } };
+        await prisma.studentIdentifierAuditEvent.deleteMany({ where: schoolScope });
         await prisma.student.deleteMany({ where: schoolScope });
         await prisma.schoolClass.deleteMany({ where: schoolScope });
         await cleanupAll();
@@ -525,31 +526,32 @@ describe("Integration: concurrent student imports", () => {
         const snapshot = await getStudentIdentifierForEdit(original.id);
         if (!snapshot.success) throw new Error("School admin could not read masked identifier");
         expect(snapshot.masked).toBe(`G*********${nationalId.slice(-4)}`);
+        const change = { expectedUpdatedAt: snapshot.updatedAt, reason: "ยืนยันกับทะเบียนนักเรียน" };
 
         signIn(USERS_A.classTeacher);
         await expect(getSystemAdminStudentIdentifier(original.id)).resolves.toMatchObject({ status: "forbidden" });
         await expect(getStudentIdentifierForEdit(original.id)).resolves.toMatchObject({ success: false });
-        await expect(updateStudentIdentifier(original.id, { nationalId: null, expectedUpdatedAt: snapshot.updatedAt }, context))
+        await expect(updateStudentIdentifier(original.id, { ...change, nationalId: null }, context))
             .resolves.toMatchObject({ success: false });
         signIn(OTHER_SCHOOL_USERS.schoolAdmin);
         await expect(getStudentIdentifierForEdit(original.id)).resolves.toMatchObject({ success: false });
-        await expect(updateStudentIdentifier(original.id, { nationalId: null, expectedUpdatedAt: snapshot.updatedAt }, context))
+        await expect(updateStudentIdentifier(original.id, { ...change, nationalId: null }, context))
             .resolves.toMatchObject({ success: false });
 
         signIn(USERS_A.schoolAdmin);
         await expect(getSystemAdminStudentIdentifier(original.id)).resolves.toMatchObject({ status: "forbidden" });
-        await expect(updateStudentIdentifier(original.id, { nationalId: "", expectedUpdatedAt: snapshot.updatedAt }, context))
+        await expect(updateStudentIdentifier(original.id, { ...change, nationalId: "" }, context))
             .resolves.toMatchObject({ success: false });
-        await expect(updateStudentIdentifier(original.id, { nationalId: createNationalId(1), expectedUpdatedAt: snapshot.updatedAt }, context))
+        await expect(updateStudentIdentifier(original.id, { ...change, nationalId: createNationalId(1) }, context))
             .resolves.toMatchObject({ success: false, message: "เลขประจำตัวนี้มีอยู่ในระบบแล้ว" });
-        await expect(updateStudentIdentifier(original.id, { nationalId: null, expectedUpdatedAt: snapshot.updatedAt }, context))
+        await expect(updateStudentIdentifier(original.id, { ...change, nationalId: null }, context))
             .resolves.toMatchObject({ success: true });
-        await expect(updateStudentIdentifier(original.id, { nationalId, expectedUpdatedAt: snapshot.updatedAt }, context))
+        await expect(updateStudentIdentifier(original.id, { ...change, nationalId }, context))
             .resolves.toMatchObject({ success: false });
         const cleared = await getStudentIdentifierForEdit(original.id);
         if (!cleared.success) throw new Error("School admin could not read updated identifier state");
         expect(cleared.masked).toBeNull();
-        await expect(updateStudentIdentifier(original.id, { nationalId, expectedUpdatedAt: cleared.updatedAt }, context))
+        await expect(updateStudentIdentifier(original.id, { ...change, nationalId, expectedUpdatedAt: cleared.updatedAt }, context))
             .resolves.toMatchObject({ success: true });
         await expect(prisma.student.findUniqueOrThrow({ where: { id: original.id } }))
             .resolves.toMatchObject({ nationalId });

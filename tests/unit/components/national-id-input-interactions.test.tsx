@@ -123,8 +123,12 @@ describe("national ID input interactions", () => {
         await user.click(screen.getByRole("button", { name: "ล้างเลขประจำตัว" }));
         expect(updateStudentIdentifier).not.toHaveBeenCalled();
         await user.click(screen.getByRole("button", { name: "ยืนยันการล้างเลข" }));
+        expect(updateStudentIdentifier).not.toHaveBeenCalled();
+        await user.type(screen.getByLabelText("เหตุผลที่เปลี่ยนเลขประจำตัว"), "ตรวจสอบกับทะเบียนแล้ว");
+        await user.click(screen.getByRole("button", { name: "ยืนยันการล้างเลข" }));
         expect(updateStudentIdentifier).toHaveBeenCalledWith("student-1", {
             nationalId: null, expectedUpdatedAt: "2026-01-01T00:00:00.000Z",
+            reason: "ตรวจสอบกับทะเบียนแล้ว",
         }, { activePhqResultId: "phq-1" });
     });
 

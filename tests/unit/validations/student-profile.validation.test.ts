@@ -62,13 +62,14 @@ describe("studentProfileUpdateSchema", () => {
 
 describe("studentIdentifierUpdateSchema", () => {
     const expectedUpdatedAt = "2026-08-01T00:00:00.000Z";
+    const reason = "ได้รับเลขประจำตัวอย่างเป็นทางการ";
 
     it.each([
         ["G1234567890123", "G1234567890123"],
         ["g1234567890123", "G1234567890123"],
         ["G123-4567-89012-3", "G1234567890123"],
     ])("accepts and normalizes national ID %s", (nationalId, expected) => {
-        const result = studentIdentifierUpdateSchema.safeParse({ nationalId, expectedUpdatedAt });
+        const result = studentIdentifierUpdateSchema.safeParse({ nationalId, expectedUpdatedAt, reason });
 
         expect(result.success).toBe(true);
         if (result.success) expect(result.data.nationalId).toBe(expected);
@@ -82,13 +83,19 @@ describe("studentIdentifierUpdateSchema", () => {
         "12345",
         "",
     ])("rejects unsupported national ID %s", (nationalId) => {
-        const result = studentIdentifierUpdateSchema.safeParse({ nationalId, expectedUpdatedAt });
+        const result = studentIdentifierUpdateSchema.safeParse({ nationalId, expectedUpdatedAt, reason });
 
         expect(result.success).toBe(false);
     });
 
     it("accepts only explicit null to clear a stored identifier", () => {
-        expect(studentIdentifierUpdateSchema.parse({ nationalId: null, expectedUpdatedAt }).nationalId).toBeNull();
-        expect(studentIdentifierUpdateSchema.safeParse({ expectedUpdatedAt }).success).toBe(false);
+        expect(studentIdentifierUpdateSchema.parse({ nationalId: null, expectedUpdatedAt, reason }).nationalId).toBeNull();
+        expect(studentIdentifierUpdateSchema.safeParse({ expectedUpdatedAt, reason }).success).toBe(false);
     });
+
+    it.each([undefined, "  ", "AB", "a".repeat(1001), "เลขเดิม (G123 - 4567 - 89012 - 3)", "เลข １２３４５６７８９０１２３"])(
+        "rejects invalid or identifier-bearing reasons", (invalidReason) => {
+            expect(studentIdentifierUpdateSchema.safeParse({ nationalId: null, expectedUpdatedAt, reason: invalidReason }).success).toBe(false);
+        },
+    );
 });

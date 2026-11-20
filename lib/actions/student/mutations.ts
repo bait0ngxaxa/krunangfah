@@ -1439,6 +1439,10 @@ type StudentIdentifierResult =
     | { success: true; masked: string | null; updatedAt: string }
     | { success: false; message: string };
 
+function maskStoredStudentIdentifier(nationalId: string | null): string | null {
+    return nationalId === null || isValidNationalId(nationalId) ? maskNationalId(nationalId) : "[ปิดบัง]";
+}
+
 export async function getStudentIdentifierForEdit(studentId: string): Promise<StudentIdentifierResult> {
     try {
         const { user } = await requireAuth();
@@ -1456,7 +1460,7 @@ export async function getStudentIdentifierForEdit(studentId: string): Promise<St
 
         return {
             success: true,
-            masked: maskNationalId(identifier.nationalId),
+            masked: maskStoredStudentIdentifier(identifier.nationalId),
             updatedAt: identifier.updatedAt.toISOString(),
         };
     } catch {
@@ -1475,7 +1479,13 @@ export async function updateStudentIdentifier(
             return { success: false, message: "คุณไม่มีสิทธิ์จัดการเลขประจำตัวนักเรียน" };
         }
         const parsed = studentIdentifierUpdateSchema.safeParse(input);
-        if (!parsed.success) return { success: false, message: "กรุณาระบุเลขประจำตัวที่ถูกต้องหรือเลือกคำสั่งล้างเลข" };
+        if (!parsed.success) {
+            const reasonIssue = parsed.error.issues.find((issue) => issue.path[0] === "reason");
+            return {
+                success: false,
+                message: reasonIssue?.message ?? "กรุณาระบุเลขประจำตัวที่ถูกต้องหรือเลือกคำสั่งล้างเลข",
+            };
+        }
         const editContext = getStudentProfileUpdateContext(context);
         if (typeof editContext === "string") return { success: false, message: editContext };
 
@@ -1485,23 +1495,44 @@ export async function updateStudentIdentifier(
             const contextError = await validateLatestImportedProfileContext(student.id, editContext, tx);
             if (contextError) return contextError;
 
-            const update = await tx.student.updateMany({
-                where: {
-                    id: student.id, schoolId: student.schoolId, status: "ACTIVE", disabledAt: null,
-                    updatedAt: parsed.data.expectedUpdatedAt,
+            const { expectedUpdatedAt, nationalId, reason } = parsed.data;
+            const where = {
+                id: student.id, schoolId: student.schoolId, status: "ACTIVE", disabledAt: null,
+                updatedAt: expectedUpdatedAt,
+            } satisfies Prisma.StudentWhereInput;
+            const current = await tx.student.findFirst({ where, select: { nationalId: true } });
+            const conflict = "ข้อมูลนักเรียนมีการเปลี่ยนแปลง กรุณาเปิดรายการแก้ไขอีกครั้ง";
+            if (!current) return conflict;
+            if (current.nationalId === nationalId) return { changed: false } as const;
+
+            // Always advance the optimistic version, including two changes within the same millisecond.
+            const updatedAt = new Date(Math.max(Date.now(), expectedUpdatedAt.getTime() + 1));
+            const update = await tx.student.updateMany({ where, data: { nationalId, updatedAt } });
+            if (update.count !== 1) return conflict;
+
+            await tx.studentIdentifierAuditEvent.create({
+                data: {
+                    studentId: student.id,
+                    schoolId: student.schoolId,
+                    actorUserId: user.id,
+                    actorRole: user.role,
+                    action: nationalId === null ? "CLEARED" : current.nationalId === null ? "ADDED" : "REPLACED",
+                    previousMasked: maskStoredStudentIdentifier(current.nationalId),
+                    newMasked: maskNationalId(nationalId),
+                    reason,
                 },
-                data: { nationalId: parsed.data.nationalId },
             });
-            if (update.count !== 1) return "ข้อมูลนักเรียนมีการเปลี่ยนแปลง กรุณาเปิดรายการแก้ไขอีกครั้ง";
-            return { schoolId: student.schoolId };
+            return { changed: true, schoolId: student.schoolId } as const;
         });
         if (typeof saved === "string") return { success: false, message: saved };
+        if (!saved.changed) return { success: true, message: "เลขประจำตัวไม่มีการเปลี่ยนแปลง" };
 
         revalidateStudentsCache(saved.schoolId, studentId);
         revalidatePath(`/students/${studentId}`);
         return { success: true, message: "บันทึกเลขประจำตัวสำเร็จ" };
     } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002" &&
+            Array.isArray(error.meta?.target) && error.meta.target.includes("nationalId")) {
             return { success: false, message: "เลขประจำตัวนี้มีอยู่ในระบบแล้ว" };
         }
         logError("Update student identifier error", {
