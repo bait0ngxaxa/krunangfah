@@ -1,0 +1,179 @@
+name: Krunangfah CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.1'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Validate Prisma schema
+        env:
+          DATABASE_URL: postgresql://127.0.0.1:1/schema_validation
+          DIRECT_URL: postgresql://127.0.0.1:1/schema_validation
+        run: npm exec -- prisma validate --schema prisma/schema.prisma
+
+      - name: Validate migration files
+        run: |
+          grep -Fx 'provider = "postgresql"' prisma/migrations/migration_lock.toml
+          shopt -s nullglob
+          migrations=(prisma/migrations/*/)
+          if (( ${#migrations[@]} == 0 )); then
+            echo "::error::No Prisma migration directories found."
+            exit 1
+          fi
+          for migration in "${migrations[@]}"; do
+            if [[ ! -f "${migration}migration.sql" || ! -s "${migration}migration.sql" ]]; then
+              echo "::error file=${migration}migration.sql::Expected a non-empty Prisma migration file."
+              exit 1
+            fi
+          done
+
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.1'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Run complete unit suite
+        run: npm run test:ci
+
+  integration:
+    name: Full PostgreSQL Integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      COMPOSE_PROJECT_NAME: krunangfah-ci-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.1'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Runner diagnostics
+        run: |
+          nproc
+          free -h
+          df -h .
+          docker version --format 'Docker Engine {{.Server.Version}}'
+          docker compose version
+
+      - name: Provision disposable PostgreSQL
+        id: database
+        run: bash .github/ci/provision-integration-db.sh
+
+      - name: Run complete integration suite
+        run: |
+          start=$SECONDS
+          status=0
+          npm run test:integration || status=$?
+          {
+            echo '### PostgreSQL integration tests'
+            echo "- Exit code: $status"
+            echo "- Elapsed: $((SECONDS - start))s"
+            echo '- See this step’s log for the Vitest file and test totals.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+      - name: PostgreSQL diagnostics on failure
+        if: ${{ failure() && steps.database.outcome != 'skipped' }}
+        run: docker compose --env-file /dev/null -f .github/ci/compose.integration.yml logs --no-color --tail=200 db
+
+      - name: Remove disposable PostgreSQL
+        if: ${{ always() && steps.database.outcome != 'skipped' }}
+        run: docker compose --env-file /dev/null -f .github/ci/compose.integration.yml down --volumes --remove-orphans
+
+  build:
+    name: Production Build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.1'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Build production application
+        run: npm run build
