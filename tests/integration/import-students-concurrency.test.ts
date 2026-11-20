@@ -10,6 +10,7 @@ import {
     createTestAcademicYear,
     createTestSchool,
     createTestStudent,
+    createTestTeacher,
     createTestUser,
 } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
@@ -28,12 +29,14 @@ setupAuthMocks();
 
 const USERS_A = createMockUsers("import-concurrency-a");
 const USERS_B = createMockUsers("import-concurrency-b");
+const OTHER_SCHOOL_USERS = createMockUsers("import-other-school");
 const NATIONAL_ID_BASE = Date.now() * 10;
 const { requireAuth } = await import("@/lib/auth/session");
-const { importStudents } = await import("@/lib/actions/student/mutations");
+const { importStudents, updateStudentProfile } = await import("@/lib/actions/student/mutations");
 
 describe("Integration: concurrent student imports", () => {
     let schoolId = "";
+    let otherSchoolId = "";
     let firstAcademicYearId = "";
     let secondAcademicYearId = "";
     let existingStudentId = "";
@@ -46,19 +49,25 @@ describe("Integration: concurrent student imports", () => {
             name: `Import Concurrency ${suffix}`,
         });
         schoolId = school.id;
+        otherSchoolId = (await createTestSchool({ name: `Import Other School ${suffix}` })).id;
         USERS_A.schoolAdmin.schoolId = school.id;
         USERS_B.schoolAdmin.schoolId = school.id;
+        USERS_A.classTeacher.schoolId = school.id;
+        OTHER_SCHOOL_USERS.schoolAdmin.schoolId = otherSchoolId;
 
         await Promise.all([
             createTestUser(USERS_A.schoolAdmin, school.id),
             createTestUser(USERS_B.schoolAdmin, school.id),
+            createTestUser(USERS_A.classTeacher, school.id),
+            createTestUser(OTHER_SCHOOL_USERS.schoolAdmin, otherSchoolId),
         ]);
-        await prisma.schoolClass.create({
-            data: {
-                schoolId: school.id,
-                name: "ม.1/1",
-                expectedStudentCount: 30,
-            },
+        await createTestTeacher(USERS_A.classTeacher.id, { advisoryClass: "ม.1/1" });
+        await prisma.schoolClass.createMany({
+            data: [
+                { schoolId, name: "ม.1/1", expectedStudentCount: 30 },
+                { schoolId, name: "ม.1/2", expectedStudentCount: 30 },
+                { schoolId: otherSchoolId, name: "ม.1/1", expectedStudentCount: 30 },
+            ],
         });
         const [firstAcademicYear, secondAcademicYear] = await Promise.all([
             createTestAcademicYear({ year: 8800 + yearSuffix, semester: 1 }),
@@ -85,10 +94,10 @@ describe("Integration: concurrent student imports", () => {
     });
 
     afterAll(async () => {
-        if (schoolId) {
-            await prisma.student.deleteMany({ where: { schoolId } });
-            await prisma.schoolClass.deleteMany({ where: { schoolId } });
-        }
+        const schoolIds = [schoolId, otherSchoolId].filter(Boolean);
+        const schoolScope = { schoolId: { in: schoolIds } };
+        await prisma.student.deleteMany({ where: schoolScope });
+        await prisma.schoolClass.deleteMany({ where: schoolScope });
         await cleanupAll();
     });
 
@@ -132,10 +141,11 @@ describe("Integration: concurrent student imports", () => {
         ).toBe(true);
     });
 
-    it("counts one Student row across overlapping new-student imports", async () => {
+    it.each([true, false])("counts one Student across overlapping imports (has ID: %s)", async (hasId) => {
         const studentId = `CONCURRENT-NEW-${suffix}`;
-        const nationalId = createNationalId(2);
-        const row = createImportRow({ studentId, nationalId });
+        const nationalId = hasId ? createNationalId(2) : null;
+        const scopedStudentId = nationalId === null ? `${studentId}-NULL` : studentId;
+        const row = createImportRow({ studentId: scopedStudentId, nationalId });
 
         const results = await runConcurrentImports(
             [USERS_A.schoolAdmin, USERS_B.schoolAdmin],
@@ -146,12 +156,13 @@ describe("Integration: concurrent student imports", () => {
         );
 
         const students = await prisma.student.findMany({
-            where: { schoolId, studentId },
-            select: { id: true },
+            where: { schoolId, studentId: scopedStudentId },
+            select: { id: true, nationalId: true },
         });
         expect(students).toHaveLength(1);
         const student = students[0];
         if (!student) throw new Error("Concurrent import did not create student");
+        expect(student.nationalId).toBe(nationalId);
         await expect(
             prisma.phqResult.count({ where: { studentId: student.id } }),
         ).resolves.toBe(2);
@@ -162,6 +173,9 @@ describe("Integration: concurrent student imports", () => {
                 0,
             ),
         ).toBe(1);
+        expect(results.map(({ imported, phqCreated, updatedStudents }) =>
+            [imported, phqCreated, updatedStudents],
+        )).toEqual([[1, 1, 0], [1, 1, 0]]);
     });
 
     it("uses the last successfully serialized import as one complete master-data winner", async () => {
@@ -372,7 +386,199 @@ describe("Integration: concurrent student imports", () => {
             duplicateRoundsSkipped: 1,
         });
     });
+
+    it("imports ten null identifiers alongside Thai IDs and G Codes and safely repeats assessments", async () => {
+        signIn(USERS_A.schoolAdmin);
+        const rows = Array.from({ length: 12 }, (_, index) => createImportRow({
+            studentId: `MIXED-${index}-${suffix}`,
+            nationalId: index === 10 ? createNationalId(20).slice(1)
+                : index === 11 ? createNationalId(21).toLowerCase()
+                : null,
+        }));
+        const [first] = rows;
+        const numeric = rows[10];
+        const gCode = rows[11];
+        const studentWhere = { schoolId, studentId: { in: rows.map((row) => row.studentId) } };
+
+        await expect(importStudents(rows, firstAcademicYearId, 1)).resolves.toMatchObject({
+            success: true, imported: 12, createdStudents: 12, updatedStudents: 0, phqCreated: 12,
+        });
+        await expect(prisma.student.count({ where: { ...studentWhere, nationalId: null } }))
+            .resolves.toBe(10);
+        await expect(prisma.student.count({
+            where: { ...studentWhere, nationalId: gCode.nationalId?.toUpperCase() },
+        })).resolves.toBe(1);
+
+        const movedStudent = { ...first, lastName: "พร้อมกน", class: "ม.1/2" };
+        const round2 = [movedStudent, { ...numeric, nationalId: null }];
+        await expect(importStudents(round2, firstAcademicYearId, 2)).resolves.toMatchObject({
+            success: true, imported: 2, createdStudents: 0, updatedStudents: 1, phqCreated: 2,
+        });
+        await expect(importStudents(round2, firstAcademicYearId, 2)).resolves.toMatchObject({
+            success: false, imported: 0, duplicateRoundsSkipped: 2,
+        });
+        const students = await prisma.student.findMany({
+            where: { schoolId, studentId: { in: [first.studentId, numeric.studentId] } },
+            include: { phqResults: { select: { assessmentRound: true }, orderBy: { assessmentRound: "asc" } } },
+        });
+        expect(students).toHaveLength(2);
+        expect(students.find((student) => student.studentId === first.studentId)).toMatchObject({
+            nationalId: null, lastName: movedStudent.lastName, class: movedStudent.class,
+        });
+        expect(students.find((student) => student.studentId === numeric.studentId)?.nationalId)
+            .toBe(numeric.nationalId);
+        for (const student of students) {
+            expect(student.phqResults).toEqual([{ assessmentRound: 1 }, { assessmentRound: 2 }]);
+        }
+    });
+
+    it("enriches the original student without moving any PHQ or care history", async () => {
+        signIn(USERS_A.schoolAdmin);
+        const row = createImportRow({ studentId: `ENRICH-${suffix}`, nationalId: null });
+        row.scores = { ...row.scores, q1: 3, q2: 3, q3: 3, q4: 3, q5: 3 };
+        await expect(importStudents([row], firstAcademicYearId, 1)).resolves.toMatchObject({
+            success: true, createdStudents: 1,
+        });
+        const original = await prisma.student.findUniqueOrThrow({
+            where: { studentId_schoolId: { studentId: row.studentId, schoolId } },
+            include: { phqResults: true, activityProgress: { orderBy: { activityNumber: "asc" } } },
+        });
+        const [firstPhq] = original.phqResults;
+        expect(original.activityProgress).toHaveLength(5);
+        const date = new Date();
+        const counselor = USERS_A.schoolAdmin;
+        const [counseling, visit, referral] = await Promise.all([
+            prisma.counselingSession.create({ data: {
+                studentId: original.id, academicYearId: firstAcademicYearId, sessionNumber: 1,
+                sessionDate: date, counselorName: counselor.name, summary: "ทดสอบการติดตาม",
+            } }),
+            prisma.homeVisit.create({ data: {
+                studentId: original.id, academicYearId: firstAcademicYearId, visitNumber: 1,
+                visitDate: date, description: "ทดสอบเยี่ยมบ้าน", teacherName: counselor.name,
+                teacherRole: "school_admin",
+            } }),
+            prisma.studentReferral.create({ data: {
+                studentId: original.id, fromTeacherUserId: counselor.id, toTeacherUserId: USERS_A.classTeacher.id,
+            } }),
+        ]);
+        await prisma.student.update({ where: { id: original.id }, data: { activeReferralId: referral.id } });
+
+        const nationalId = createNationalId(22);
+        await expect(importStudents([{
+            ...row, firstName: "บุคคลอื่น", lastName: "คนละนามสกุล", nationalId,
+        }], firstAcademicYearId, 2)).resolves.toMatchObject({
+            success: false, identityConflicts: 1, updatedStudents: 0,
+            errors: [expect.stringContaining("ชื่อหรือนามสกุลไม่ตรง")],
+        });
+        await expect(importStudents([{ ...row, nationalId: createNationalId(1) }], firstAcademicYearId, 2))
+            .resolves.toMatchObject({ success: false, identityConflicts: 1, updatedStudents: 0 });
+        await expect(importStudents([{ ...row, nationalId }], firstAcademicYearId, 2)).resolves.toMatchObject({
+            success: true, createdStudents: 0, updatedStudents: 1, phqCreated: 1,
+        });
+        const replacement = createNationalId(23);
+        const conflict = await importStudents([{ ...row, nationalId: replacement }], secondAcademicYearId, 1);
+        expect(conflict).toMatchObject({ success: false, identityConflicts: 1, updatedStudents: 0 });
+        expect(JSON.stringify(conflict)).not.toContain(replacement);
+
+        const enriched = await prisma.student.findUniqueOrThrow({
+            where: { studentId_schoolId: { studentId: row.studentId, schoolId } },
+            include: {
+                phqResults: { orderBy: { assessmentRound: "asc" } },
+                activityProgress: { orderBy: { activityNumber: "asc" } },
+                counselingSessions: true, homeVisits: true, referralHistory: true,
+            },
+        });
+        expect(enriched).toMatchObject({ id: original.id, nationalId, activeReferralId: referral.id });
+        expect(enriched.phqResults.map(({ id, assessmentRound }) => ({ id, assessmentRound }))).toEqual([
+            { id: firstPhq.id, assessmentRound: 1 },
+            { id: expect.any(String), assessmentRound: 2 },
+        ]);
+        expect(enriched.activityProgress).toEqual(original.activityProgress);
+        expect(enriched.counselingSessions).toEqual([counseling]);
+        expect(enriched.homeVisits).toEqual([visit]);
+        expect(enriched.referralHistory).toEqual([referral]);
+
+        const { studentId, firstName, lastName, gender, age } = row;
+        const profile = { studentId, firstName, lastName, gender, age, class: row.class, status: "ACTIVE" };
+        const context = { activePhqResultId: enriched.phqResults[1].id };
+        await expect(updateStudentProfile(original.id, { ...profile, nationalId: "" }, context))
+            .resolves.toMatchObject({ success: true, student: { id: original.id, nationalId: null } });
+        await expect(updateStudentProfile(original.id, { ...profile, nationalId }, context))
+            .resolves.toMatchObject({ success: true, student: { id: original.id, nationalId } });
+    });
+
+    it("keeps codes school-scoped and enforces both classroom boundaries", async () => {
+        const row = createImportRow({ studentId: `SCOPED-${suffix}`, nationalId: null });
+        signIn(USERS_A.schoolAdmin);
+        await expect(importStudents([
+            { ...row, class: "ม.1/2" },
+            { ...row, class: "ม.1/2" },
+        ], firstAcademicYearId, 1)).resolves.toMatchObject({
+            status: "partial", createdStudents: 1, phqCreated: 1,
+            errors: [expect.stringContaining("พบรหัสนักเรียนซ้ำ")],
+        });
+
+        signIn(USERS_A.classTeacher);
+        const newRow = { ...row, studentId: `${row.studentId}-NEW`, class: "ม.1/2" };
+        await expect(importStudents([row, newRow], secondAcademicYearId, 1)).resolves.toMatchObject({
+            success: false, skipped: 2, phqCreated: 0, identityConflicts: 0,
+        });
+        const existingScope = { studentId_schoolId: { studentId: row.studentId, schoolId } };
+        await expect(prisma.student.findUniqueOrThrow({ where: existingScope }))
+            .resolves.toMatchObject({ class: "ม.1/2", nationalId: null });
+        await expect(prisma.student.count({ where: { studentId: newRow.studentId } })).resolves.toBe(0);
+
+        signIn(OTHER_SCHOOL_USERS.schoolAdmin);
+        await expect(importStudents([{ ...row, nationalId: createNationalId(1) }], firstAcademicYearId, 1))
+            .resolves.toMatchObject({ success: false, identityConflicts: 1, createdStudents: 0 });
+        await expect(importStudents([row], firstAcademicYearId, 1)).resolves.toMatchObject({
+            success: true, createdStudents: 1, phqCreated: 1,
+        });
+        const schoolRecords = await prisma.student.findMany({
+            where: { schoolId: { in: [schoolId, otherSchoolId] }, studentId: row.studentId },
+            select: { id: true, schoolId: true, nationalId: true },
+        });
+        expect(schoolRecords).toEqual(expect.arrayContaining([
+            expect.objectContaining({ schoolId, nationalId: null }),
+            expect.objectContaining({ schoolId: otherSchoolId, nationalId: null }),
+        ]));
+        expect(new Set(schoolRecords.map((student) => student.id)).size).toBe(2);
+    });
+
+    it("lets only one concurrent import enrich a student with the same new identifier", async () => {
+        signIn(USERS_A.schoolAdmin);
+        const rows = [1, 2].map((number) => createImportRow({
+            studentId: `CLAIM-${number}-${suffix}`, nationalId: null,
+        }));
+        await expect(importStudents(rows, firstAcademicYearId, 1)).resolves.toMatchObject({ createdStudents: 2 });
+        const nationalId = createNationalId(24);
+        const results = await runConcurrentImports([USERS_A.schoolAdmin, USERS_B.schoolAdmin], [
+            () => importStudents([{ ...rows[0], nationalId }], firstAcademicYearId, 2),
+            () => importStudents([{ ...rows[1], nationalId }], firstAcademicYearId, 2),
+        ]);
+        expect(results).toEqual(expect.arrayContaining([
+            expect.objectContaining({ success: true, imported: 1, updatedStudents: 1, createdStudents: 0 }),
+            expect.objectContaining({ success: false, imported: 0, updatedStudents: 0, identityConflicts: 1 }),
+        ]));
+        const students = await prisma.student.findMany({
+            where: { schoolId, studentId: { in: rows.map((row) => row.studentId) } },
+            include: { phqResults: { orderBy: { assessmentRound: "asc" } } },
+        });
+        expect(students.filter((student) => student.nationalId === nationalId)).toHaveLength(1);
+        expect(students.filter((student) => student.nationalId === null)).toHaveLength(1);
+        for (const student of students) {
+            expect(student.phqResults.map((result) => result.assessmentRound))
+                .toEqual(student.nationalId === nationalId ? [1, 2] : [1]);
+        }
+    });
 });
+
+function signIn(user: MockUser): void {
+    vi.mocked(requireAuth).mockResolvedValue({
+        user: toSessionUser(user),
+        expires: new Date(Date.now() + 86_400_000).toISOString(),
+    });
+}
 
 async function runConcurrentImports<T>(
     users: [MockUser, MockUser],
@@ -399,7 +605,7 @@ function toSessionUser(user: MockUser) {
 
 function createImportRow(input: {
     studentId: string;
-    nationalId: string;
+    nationalId: string | null;
     scores?: ParsedStudent["scores"];
 }): ParsedStudent {
     return {

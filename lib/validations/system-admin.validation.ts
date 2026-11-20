@@ -67,9 +67,9 @@ export const systemStudentEditSchema = z.object({
         .string()
         .nullable()
         .optional()
-        .transform(normalizeOptionalNationalId)
+        .transform((value) => value === undefined ? undefined : normalizeOptionalNationalId(value))
         .refine(
-            (value) => value === null || isValidNationalId(value),
+            (value) => value === null || value === undefined || isValidNationalId(value),
             NATIONAL_ID_ERROR_MESSAGE,
         ),
     firstName: z.string().trim().min(1, "กรุณาระบุชื่อนักเรียน").max(100),

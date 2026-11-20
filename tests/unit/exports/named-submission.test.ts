@@ -119,7 +119,7 @@ describe("named submission export", () => {
         },
     );
 
-    it("keeps round 1 and round 2 activity semantics separate in an all-round export", async () => {
+    it("exports both rounds and leaves the identifier blank for students without one", async () => {
         const content = await createNamedSubmissionWorkbook([
             mapNamedSubmissionRecord(sampleRecord),
             mapNamedSubmissionRecord({
@@ -127,6 +127,7 @@ describe("named submission export", () => {
                 id: "cm9lt9j8f0000z1ntt9r2w0ac",
                 assessmentRound: 2,
                 riskLevel: "orange",
+                student: { ...sampleRecord.student, studentId: "000124", nationalId: null },
                 activityProgress: [
                     { activityNumber: 1, status: "completed" },
                     { activityNumber: 2, status: "completed" },
@@ -141,6 +142,9 @@ describe("named submission export", () => {
         await workbook.xlsx.load(Buffer.from(content));
 
         const worksheet = workbook.getWorksheet("รายชื่อผลคัดกรอง");
+        const nationalIdColumn = NAMED_SUBMISSION_COLUMNS.findIndex(({ key }) => key === "nationalId") + 1;
+        expect(worksheet?.getCell(2, nationalIdColumn).text).toBe(sampleRecord.student.nationalId);
+        expect(worksheet?.getCell(3, nationalIdColumn).text).toBe("");
         expect(worksheet?.getRow(2).getCell(15).value).toBe(4);
         expect(worksheet?.getRow(2).getCell(16).value).toBe(2);
         expect(worksheet?.getRow(3).getCell(15).value).toBeNull();

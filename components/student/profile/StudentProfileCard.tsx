@@ -130,10 +130,10 @@ function buildDetailItems(
             tone: "border-slate-200 bg-slate-50 text-slate-700",
         });
     }
-    if (canViewNationalId && student.nationalId) {
+    if (canViewNationalId) {
         items.push({
             label: "เลขบัตร",
-            value: student.nationalId,
+            value: student.nationalId ?? "ยังไม่มีเลขประจำตัว",
             icon: CreditCard,
             tone: "border-amber-200 bg-amber-50 text-amber-800",
         });

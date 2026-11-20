@@ -176,8 +176,7 @@ export function ExcelUploader({ onDataParsed }: ExcelUploaderProps) {
             } else if (result.errors.length === 0) {
                 setError("ไม่พบข้อมูลนักเรียนในไฟล์");
             }
-        } catch (err) {
-            console.error("File parse error:", err);
+        } catch {
             setError("เกิดข้อผิดพลาดในการอ่านไฟล์");
         } finally {
             setIsLoading(false);

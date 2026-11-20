@@ -1010,8 +1010,8 @@ describe("Excel Parser - National ID Parsing", () => {
         );
     });
 
-    it("rejects national ID values that are not 13 digits", async () => {
-        const buffer = await createWorkbookBuffer("123456789012");
+    it.each(["123456789012", " - "])("rejects malformed nonblank national IDs", async (nationalId) => {
+        const buffer = await createWorkbookBuffer(nationalId);
         const result = await parseExcelBuffer(buffer);
 
         expect(result.success).toBe(false);

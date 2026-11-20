@@ -368,6 +368,28 @@ describe("updateSystemStudent", () => {
         expect(JSON.stringify(changes)).not.toContain("1234567890123");
     });
 
+    it("preserves the identifier when a system edit omits the field", async () => {
+        const input = createInput({ firstName: "สมหญิง" });
+        Reflect.deleteProperty(input, "nationalId");
+
+        await expect(updateSystemStudent(input, actor)).resolves.toMatchObject({ success: true });
+
+        expect(prismaMocks.studentUpdateMany.mock.calls[0][0].data).not.toHaveProperty("nationalId");
+        expect(eventMocks.createSystemAdminEditEvent).toHaveBeenCalledWith(expect.objectContaining({
+            changes: [expect.objectContaining({ field: "firstName" })],
+        }));
+    });
+
+    it("clears the identifier and records a masked audit when explicitly requested", async () => {
+        await expect(updateSystemStudent(createInput({ nationalId: null }), actor))
+            .resolves.toMatchObject({ success: true });
+
+        expect(prismaMocks.studentUpdateMany.mock.calls[0][0].data).toHaveProperty("nationalId", null);
+        expect(eventMocks.createSystemAdminEditEvent).toHaveBeenCalledWith(expect.objectContaining({
+            changes: [{ field: "nationalId", label: "เลขบัตรประชาชน", before: "*********0123", after: null }],
+        }));
+    });
+
     it("rejects a class outside the student's school inside the transaction", async () => {
         prismaMocks.schoolClassFindUnique.mockResolvedValue(null);
 

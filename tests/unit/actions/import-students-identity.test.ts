@@ -300,9 +300,9 @@ describe("importStudents identity reconciliation", () => {
         expect(mocks.studentCreateMany.mock.calls[0][0].data).toHaveLength(1);
     });
 
-    it("rejects invalid national IDs at the server action boundary", async () => {
+    it.each(["A1234567890123", " - "])("rejects malformed nonblank IDs at the server action boundary", async (nationalId) => {
         const result = await importStudents(
-            [{ ...importedRow, nationalId: "A1234567890123" }],
+            [{ ...importedRow, nationalId }],
             "ay-input",
             1,
         );
@@ -311,6 +311,14 @@ describe("importStudents identity reconciliation", () => {
         expect(mocks.requireAuth).toHaveBeenCalledOnce();
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
+
+    it.each(["studentId", "firstName", "lastName", "class"] as const)(
+        "still requires %s on a row with a null national ID", async (field) => {
+            await expect(importStudents([{ ...importedRow, nationalId: null, [field]: " " }], "ay-input"))
+                .resolves.toMatchObject({ success: false, status: "error" });
+            expect(mocks.transaction).not.toHaveBeenCalled();
+        },
+    );
 
     it("persists null for a student with a blank national ID", async () => {
         mocks.studentFindMany.mockResolvedValueOnce([]);

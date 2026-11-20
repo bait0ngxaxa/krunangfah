@@ -231,7 +231,7 @@ function getDetails(entity: SystemEntityResult): DetailItem[] {
         case "student":
             return [
                 { label: "รหัสนักเรียน", value: entity.studentId },
-                { label: "เลขบัตร", value: entity.nationalIdMasked ?? "-" },
+                { label: "เลขบัตร", value: entity.nationalIdMasked ?? "ยังไม่มีเลขประจำตัว" },
                 { label: "เพศ", value: getGenderLabel(entity.gender) },
                 { label: "อายุ", value: entity.age?.toString() ?? "-" },
                 { label: "ห้อง", value: entity.class },

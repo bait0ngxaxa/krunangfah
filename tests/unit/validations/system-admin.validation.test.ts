@@ -90,6 +90,22 @@ describe("system edit schemas", () => {
         }
     });
 
+    it("passes an omitted national ID through and normalizes an explicit blank to null", () => {
+        const input = {
+            id: "ck12345678901234567890123",
+            expectedUpdatedAt: "2026-01-01T00:00:00.000Z",
+            studentId: "1001",
+            firstName: "สมชาย",
+            lastName: "ใจดี",
+            class: "ม.1/1",
+            status: "ACTIVE",
+            reason: "แก้ข้อมูลนำเข้าผิด",
+        };
+
+        expect(systemStudentEditSchema.parse(input).nationalId).toBeUndefined();
+        expect(systemStudentEditSchema.parse({ ...input, nationalId: " " }).nationalId).toBeNull();
+    });
+
     it("rejects invalid national id values", () => {
         const parsed = systemStudentEditSchema.safeParse({
             id: "ck12345678901234567890123",

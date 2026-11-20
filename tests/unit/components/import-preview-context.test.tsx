@@ -122,6 +122,21 @@ describe("ImportPreview import context", () => {
         cleanup();
     });
 
+    it("shows missing identifier status only to authorized preview viewers", async () => {
+        const data = [students[0], { ...students[1], nationalId: null }];
+        const props = { data, onCancel: vi.fn(), onSuccess: vi.fn() };
+        const { rerender } = render(<ImportPreview {...props} canViewNationalId={false} />);
+
+        expect(await screen.findByText("S002")).toBeTruthy();
+        expect(screen.queryByText("ยังไม่มีเลขประจำตัว")).toBeNull();
+        expect(screen.queryByText("1234567890123")).toBeNull();
+
+        rerender(<ImportPreview {...props} canViewNationalId />);
+
+        expect(screen.getByText("ยังไม่มีเลขประจำตัว")).toBeTruthy();
+        expect(screen.getByText("1234567890123")).toBeTruthy();
+    });
+
     it("uses a class teacher profile to scope the preview to the advisory class", async () => {
         mocks.getCurrentTeacherProfile.mockResolvedValue({
             status: "success",

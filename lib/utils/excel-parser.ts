@@ -575,7 +575,7 @@ export async function parseExcelBuffer(
             errors,
         };
     } catch (err) {
-        logError("Excel parse error:", err);
+        logError("Excel parse error:", { name: err instanceof Error ? err.name : typeof err });
         return {
             success: false,
             data: [],

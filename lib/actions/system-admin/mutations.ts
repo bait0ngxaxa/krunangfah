@@ -224,7 +224,7 @@ async function updateStudentAndCounts(
         },
         data: {
             studentId: normalized.studentId,
-            nationalId: normalized.nationalId,
+            ...(normalized.nationalId === undefined ? {} : { nationalId: normalized.nationalId }),
             firstName: normalized.firstName,
             lastName: normalized.lastName,
             gender: normalized.gender,
@@ -361,7 +361,7 @@ function getSchoolChanges(
 
 interface NormalizedStudentInput {
     studentId: string;
-    nationalId: string | null;
+    nationalId: SystemStudentEditInput["nationalId"];
     firstName: string;
     lastName: string;
     gender: "MALE" | "FEMALE" | null;
@@ -375,7 +375,7 @@ function normalizeStudentInput(
 ): NormalizedStudentInput {
     return {
         studentId: input.studentId,
-        nationalId: input.nationalId || null,
+        nationalId: input.nationalId,
         firstName: input.firstName,
         lastName: input.lastName,
         gender: input.gender || null,
@@ -392,7 +392,9 @@ function getStudentChanges(
 ): SystemAdminEditChange[] {
     return [
         createChange("studentId", "รหัสนักเรียน", student.studentId, input.studentId),
-        createNationalIdChange(student.nationalId, input.nationalId),
+        input.nationalId === undefined
+            ? null
+            : createNationalIdChange(student.nationalId, input.nationalId),
         createChange("firstName", "ชื่อ", student.firstName, input.firstName),
         createChange("lastName", "นามสกุล", student.lastName, input.lastName),
         createChange("gender", "เพศ", student.gender, input.gender),

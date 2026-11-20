@@ -146,11 +146,12 @@ function normalizeImportStudents(students: ParsedStudent[]): {
     const errors: string[] = [];
 
     for (const student of students) {
-        if (student.nationalId != null && typeof student.nationalId !== "string") {
+        const { nationalId } = student;
+        if (nationalId !== null && nationalId !== undefined && typeof nationalId !== "string") {
             errors.push(formatImportStudentError(student, NATIONAL_ID_ERROR_MESSAGE));
             continue;
         }
-        const normalizedNationalId = normalizeImportNationalId(student.nationalId);
+        const normalizedNationalId = normalizeImportNationalId(nationalId);
         if (normalizedNationalId !== null && !isValidNationalId(normalizedNationalId)) {
             errors.push(formatImportStudentError(student, NATIONAL_ID_ERROR_MESSAGE));
             continue;

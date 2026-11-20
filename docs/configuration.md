@@ -92,7 +92,7 @@ Repository ปัจจุบัน pin Prisma 6 และยังประก�
 
 - `ALLOW_REAL_PRISMA_TESTS` เป็น safety switch ภายใน `vitest.integration.config.ts` ไม่ใช่ production setting
 - ห้ามตั้ง `ALLOW_REAL_PRISMA_TESTS=true` ใน production `.env`
-- `npm run test:integration` ต้องชี้ไปฐานข้อมูลทดสอบที่แยกและล้างได้เท่านั้น ตรวจ test setup ทุกครั้งก่อนรัน
+- ก่อนรัน `npm run test:integration` ให้ตั้ง `TEST_DATABASE_URL` เป็น PostgreSQL สำหรับทดสอบที่แยกจากข้อมูลจริงและล้างได้ จากนั้นใช้ migration ของโปรเจกต์เตรียมฐานข้อมูลนั้น ชุดทดสอบใช้ URL นี้แทน `DATABASE_URL` และ `DIRECT_URL` ของแอป
 
 ## Ports และ network boundary
 

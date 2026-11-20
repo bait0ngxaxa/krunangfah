@@ -373,7 +373,7 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
 
         expect(result.imported).toBe(0);
         expect(result.errors?.[0]).toContain(
-            "รหัสนักเรียนและเลขบัตรประชาชนไม่ตรงกับนักเรียนคนเดียวกัน",
+            "เลขประจำตัวซ้ำกับข้อมูลที่มีในระบบ",
         );
         expect(result.identityConflicts).toBe(1);
     });

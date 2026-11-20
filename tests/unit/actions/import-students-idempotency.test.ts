@@ -137,7 +137,24 @@ describe("importStudents idempotency", () => {
         expect(firstKey).toBe(secondKey);
     });
 
-    it("returns cached successful completed results without running the import again", async () => {
+    it("uses the same idempotency key for explicit null, omitted and whitespace identifiers", async () => {
+        mocks.startIdempotentOperation.mockResolvedValue({ status: "processing" });
+        const student = { ...createParsedStudent(), nationalId: null };
+        const omitted = { ...student };
+        Reflect.deleteProperty(omitted, "nationalId");
+
+        for (const row of [student, omitted, { ...student, nationalId: "  " }]) {
+            await expect(importStudents([row], "ay-input", 1)).resolves.toMatchObject({
+                message: "ไฟล์นี้กำลังนำเข้าอยู่ กรุณารอสักครู่แล้วลองใหม่",
+            });
+        }
+
+        expect(mocks.startIdempotentOperation).toHaveBeenCalledTimes(3);
+        expect(new Set(mocks.startIdempotentOperation.mock.calls.map(([key]) => key)).size).toBe(1);
+        expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("returns a cached successful null-ID import without writing the assessment again", async () => {
         const cachedResult = {
             success: true,
             status: "success" as const,
@@ -150,7 +167,7 @@ describe("importStudents idempotency", () => {
             result: cachedResult,
         });
 
-        const result = await importStudents([createParsedStudent()], "ay-input", 1);
+        const result = await importStudents([{ ...createParsedStudent(), nationalId: null }], "ay-input", 1);
 
         expect(result).toEqual(cachedResult);
         expect(mocks.schoolClassFindMany).not.toHaveBeenCalled();
