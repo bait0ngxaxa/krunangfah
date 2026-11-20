@@ -90,6 +90,7 @@ UI → Hooks → Services → Data Layer
 * Raw SQL ห้ามใช้ `SELECT *`; เลือกเฉพาะ field ที่ต้องใช้
 * ใช้ transaction เมื่อหลาย operation ต้องสำเร็จหรือล้มเหลวพร้อมกัน
 * Production schema changes ต้องผ่าน migration เท่านั้น
+* รักษาชื่อและ SQL ของ migrations ที่ commit บน target branch แล้ว เพิ่ม migration ใหม่ด้วย timestamp ที่ถูกต้องและใหม่กว่ารายการล่าสุด ดู [วิธีตรวจ migration history](docs/engineering/GITHUB_ACTIONS_INTEGRATION_CI.md#migration-history)
 * ตรวจ uniqueness, foreign keys และ concurrency constraints ที่ database layer เมื่อเป็น business invariant
 
 ## 8. Performance and Reliability
