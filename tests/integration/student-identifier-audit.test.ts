@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/database/prisma";
+import { IDENTIFIER_TEXT_REASONS } from "../fixtures/student-identifier-reasons";
 import { createMockUsers, mockSession } from "./helpers/auth-mock";
 import { cleanupAll } from "./helpers/cleanup";
 import { createTestAcademicYear, createTestPhqResult, createTestSchool, createTestStudent, createTestUser } from "./helpers/seed";
@@ -41,7 +42,7 @@ const USERS = createMockUsers("identifier-audit");
 const OTHER = createMockUsers("identifier-audit-other");
 const FIRST_ID = "G9000000001801";
 const SECOND_ID = "9000000001802";
-const REASON = "ตรวจสอบเอกสารทะเบียนแล้ว";
+const REASON = "ISSUED";
 const { getStudentIdentifierForEdit, updateStudentIdentifier, updateStudentProfile } =
     await import("@/lib/actions/student/mutations");
 
@@ -78,29 +79,29 @@ describe("School Admin identifier audit", () => {
     it("adds, replaces and clears the identifier with masked audit history and no event for no-ops", async () => {
         const { student, context } = await fixture("audit-changes");
         const where = { id: student.id };
-        const expectedEvents = [
-            { action: "ADDED", previousMasked: null, newMasked: "G*********1801" },
-            { action: "REPLACED", previousMasked: "G*********1801", newMasked: "*********1802" },
-            { action: "CLEARED", previousMasked: "*********1802", newMasked: null },
+        const changes = [
+            { nationalId: FIRST_ID, event: { action: "ADDED", reason: "ISSUED", previousMasked: null, newMasked: "G*********1801" } },
+            { nationalId: SECOND_ID, event: { action: "REPLACED", reason: "CORRECTION", previousMasked: "G*********1801", newMasked: "*********1802" } },
+            { nationalId: null, event: { action: "CLEARED", reason: "VERIFIED_REMOVAL", previousMasked: "*********1802", newMasked: null } },
         ];
 
-        for (const [index, nationalId] of [FIRST_ID, SECOND_ID, null].entries()) {
+        for (const [index, { nationalId, event }] of changes.entries()) {
             const expectedUpdatedAt = await editVersion(student.id);
-            await expect(updateStudentIdentifier(student.id, { nationalId, expectedUpdatedAt, reason: `  ${REASON}  ` }, context))
+            await expect(updateStudentIdentifier(student.id, { nationalId, expectedUpdatedAt, reason: event.reason }, context))
                 .resolves.toMatchObject({ success: true });
             const changed = await prisma.student.findUniqueOrThrow({ where });
             expect(changed.nationalId).toBe(nationalId);
             await expect(updateStudentIdentifier(student.id, {
-                nationalId, expectedUpdatedAt: changed.updatedAt.toISOString(), reason: REASON,
+                nationalId, expectedUpdatedAt: changed.updatedAt.toISOString(), reason: event.reason,
             }, context)).resolves.toMatchObject({ success: true, message: "เลขประจำตัวไม่มีการเปลี่ยนแปลง" });
             await expect(prisma.student.findUniqueOrThrow({ where })).resolves.toEqual(changed);
             await expect(prisma.studentIdentifierAuditEvent.count({ where: { studentId: student.id } })).resolves.toBe(index + 1);
         }
 
         const events = await prisma.studentIdentifierAuditEvent.findMany({ where: { studentId: student.id } });
-        expect(events).toEqual(expect.arrayContaining(expectedEvents.map((event) => expect.objectContaining({
+        expect(events).toEqual(expect.arrayContaining(changes.map(({ event }) => expect.objectContaining({
             ...event, studentId: student.id, schoolId, actorUserId: USERS.schoolAdmin.id,
-            actorRole: "school_admin", reason: REASON, createdAt: expect.any(Date),
+            actorRole: "school_admin", createdAt: expect.any(Date),
         }))));
         expect(JSON.stringify(events)).not.toContain(FIRST_ID);
         expect(JSON.stringify(events)).not.toContain(SECOND_ID);
@@ -125,15 +126,34 @@ describe("School Admin identifier audit", () => {
         await expect(updateStudentIdentifier(student.id, { ...input, nationalId: SECOND_ID }, context))
             .resolves.toMatchObject({ success: false, message: "เลขประจำตัวนี้มีอยู่ในระบบแล้ว" });
 
-        for (const reason of [undefined, "  ", "ab", "ก".repeat(1001), `หมายเลขเดิม ${FIRST_ID}`]) {
-            await expect(updateStudentIdentifier(student.id, { ...input, reason }, context)).resolves.toMatchObject({ success: false });
+        for (const reason of [undefined, "  ", "ab", "ก".repeat(1001), ...IDENTIFIER_TEXT_REASONS]) {
+            await expect(updateStudentIdentifier(student.id, { ...input, reason }, context)).resolves.toMatchObject({
+                success: false, message: "กรุณาเลือกเหตุผลจากรายการ",
+            });
         }
+        await expect(updateStudentIdentifier(student.id, { ...input, nationalId: null }, context)).resolves.toMatchObject({
+            success: false, message: "กรุณาเลือกเหตุผลให้ตรงกับการเปลี่ยนเลขประจำตัว",
+        });
         await expect(updateStudentProfile(student.id, {
             studentId: student.studentId, firstName: student.firstName, lastName: student.lastName,
             class: student.class, gender: null, age: null, status: "ACTIVE", nationalId: FIRST_ID,
         }, context)).resolves.toMatchObject({ success: false });
 
         await expect(prisma.student.findUniqueOrThrow({ where: { id: student.id } })).resolves.toEqual(student);
+        await expect(prisma.studentIdentifierAuditEvent.count({ where: { studentId: student.id } })).resolves.toBe(0);
+    });
+
+    it("rejects direct database writes containing free-text reasons or an incompatible reason code", async () => {
+        const { student } = await fixture("audit-structured-reason-db-guard");
+        const event = {
+            studentId: student.id, schoolId, actorUserId: USERS.schoolAdmin.id, actorRole: "school_admin",
+            action: "ADDED", newMasked: "G*********1801",
+        } satisfies Omit<Prisma.StudentIdentifierAuditEventCreateInput, "reason">;
+
+        for (const reason of [...IDENTIFIER_TEXT_REASONS, "ได้รับเลขแล้ว", "VERIFIED_REMOVAL"]) {
+            await expect(prisma.studentIdentifierAuditEvent.create({ data: { ...event, reason } }))
+                .rejects.toThrow("student_identifier_audit_structured_reason");
+        }
         await expect(prisma.studentIdentifierAuditEvent.count({ where: { studentId: student.id } })).resolves.toBe(0);
     });
 

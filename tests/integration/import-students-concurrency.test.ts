@@ -526,16 +526,17 @@ describe("Integration: concurrent student imports", () => {
         const snapshot = await getStudentIdentifierForEdit(original.id);
         if (!snapshot.success) throw new Error("School admin could not read masked identifier");
         expect(snapshot.masked).toBe(`G*********${nationalId.slice(-4)}`);
-        const change = { expectedUpdatedAt: snapshot.updatedAt, reason: "ยืนยันกับทะเบียนนักเรียน" };
+        const change = { expectedUpdatedAt: snapshot.updatedAt, reason: "CORRECTION" };
+        const clear = { ...change, nationalId: null, reason: "VERIFIED_REMOVAL" };
 
         signIn(USERS_A.classTeacher);
         await expect(getSystemAdminStudentIdentifier(original.id)).resolves.toMatchObject({ status: "forbidden" });
         await expect(getStudentIdentifierForEdit(original.id)).resolves.toMatchObject({ success: false });
-        await expect(updateStudentIdentifier(original.id, { ...change, nationalId: null }, context))
+        await expect(updateStudentIdentifier(original.id, clear, context))
             .resolves.toMatchObject({ success: false });
         signIn(OTHER_SCHOOL_USERS.schoolAdmin);
         await expect(getStudentIdentifierForEdit(original.id)).resolves.toMatchObject({ success: false });
-        await expect(updateStudentIdentifier(original.id, { ...change, nationalId: null }, context))
+        await expect(updateStudentIdentifier(original.id, clear, context))
             .resolves.toMatchObject({ success: false });
 
         signIn(USERS_A.schoolAdmin);
@@ -544,7 +545,7 @@ describe("Integration: concurrent student imports", () => {
             .resolves.toMatchObject({ success: false });
         await expect(updateStudentIdentifier(original.id, { ...change, nationalId: createNationalId(1) }, context))
             .resolves.toMatchObject({ success: false, message: "เลขประจำตัวนี้มีอยู่ในระบบแล้ว" });
-        await expect(updateStudentIdentifier(original.id, { ...change, nationalId: null }, context))
+        await expect(updateStudentIdentifier(original.id, clear, context))
             .resolves.toMatchObject({ success: true });
         await expect(updateStudentIdentifier(original.id, { ...change, nationalId }, context))
             .resolves.toMatchObject({ success: false });

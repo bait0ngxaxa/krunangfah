@@ -4,8 +4,8 @@ import { useId, useState, useTransition, type FormEvent, type ReactElement } fro
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import {
-    STUDENT_IDENTIFIER_REASON_MAX_LENGTH,
-    STUDENT_IDENTIFIER_REASON_MIN_LENGTH,
+    STUDENT_IDENTIFIER_CLEAR_REASON_OPTION,
+    STUDENT_IDENTIFIER_EDIT_REASON_OPTIONS,
 } from "@/lib/constants/student-identifier";
 import { getStudentIdentifierForEdit, updateStudentIdentifier } from "@/lib/actions/student/mutations";
 import { isValidNationalId, normalizeNationalIdInput } from "@/lib/utils/national-id";
@@ -21,7 +21,8 @@ export function StudentIdentifierEditor({ studentId, activePhqResultId }: {
     const [value, setValue] = useState("");
     const [reason, setReason] = useState("");
     const [confirmClear, setConfirmClear] = useState(false);
-    const hasReason = reason.trim().length >= STUDENT_IDENTIFIER_REASON_MIN_LENGTH;
+    const reasonOptions = confirmClear ? [STUDENT_IDENTIFIER_CLEAR_REASON_OPTION] : STUDENT_IDENTIFIER_EDIT_REASON_OPTIONS;
+    const hasReason = reasonOptions.some((option) => option.value === reason);
 
     function close(): void {
         setIdentifier(null);
@@ -42,7 +43,7 @@ export function StudentIdentifierEditor({ studentId, activePhqResultId }: {
         if (!identifier || pending || !hasReason) return;
         startTransition(async () => {
             const result = await updateStudentIdentifier(studentId, {
-                nationalId, expectedUpdatedAt: identifier.updatedAt, reason: reason.trim(),
+                nationalId, expectedUpdatedAt: identifier.updatedAt, reason,
             }, { activePhqResultId });
             if (result.success) {
                 close();
@@ -90,21 +91,17 @@ export function StudentIdentifierEditor({ studentId, activePhqResultId }: {
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 sm:max-w-sm"
             />
             <label htmlFor={reasonId} className="block text-sm font-semibold text-slate-900">เหตุผลที่เปลี่ยนเลขประจำตัว</label>
-            <textarea
+            <select
                 id={reasonId}
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
                 disabled={pending}
                 required
-                minLength={STUDENT_IDENTIFIER_REASON_MIN_LENGTH}
-                maxLength={STUDENT_IDENTIFIER_REASON_MAX_LENGTH}
-                rows={2}
-                aria-describedby={`${reasonId}-hint`}
-                className="block w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 sm:max-w-sm"
-            />
-            <p id={`${reasonId}-hint`} className="text-xs text-slate-600">
-                ระบุเหตุผลอย่างน้อย {STUDENT_IDENTIFIER_REASON_MIN_LENGTH} ตัวอักษร โดยเว้นเลขประจำตัวออกจากข้อความ
-            </p>
+                className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 sm:max-w-sm"
+            >
+                <option value="">เลือกเหตุผล</option>
+                {reasonOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
             {confirmClear && <p className="text-sm text-slate-700">ยืนยันการล้างเลขประจำตัวของนักเรียนคนนี้</p>}
             <div className="flex flex-wrap gap-2">
                 {confirmClear ? (
@@ -112,7 +109,10 @@ export function StudentIdentifierEditor({ studentId, activePhqResultId }: {
                 ) : (
                     <>
                         <Button type="submit" variant="primary" disabled={pending || !hasReason || !isValidNationalId(value)}>บันทึกเลขประจำตัว</Button>
-                        {identifier.masked && <Button type="button" variant="secondary" disabled={pending} onClick={() => setConfirmClear(true)}>ล้างเลขประจำตัว</Button>}
+                        {identifier.masked && <Button type="button" variant="secondary" disabled={pending} onClick={() => {
+                            setReason("");
+                            setConfirmClear(true);
+                        }}>ล้างเลขประจำตัว</Button>}
                     </>
                 )}
                 <Button type="button" variant="secondary" disabled={pending} onClick={close}>ยกเลิก</Button>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { studentIdentifierUpdateSchema, studentProfileUpdateSchema } from "@/lib/validations/student-profile.validation";
+import { IDENTIFIER_TEXT_REASONS } from "../../fixtures/student-identifier-reasons";
 
 function validStudentProfile(overrides: Record<string, unknown> = {}) {
     return {
@@ -62,7 +63,7 @@ describe("studentProfileUpdateSchema", () => {
 
 describe("studentIdentifierUpdateSchema", () => {
     const expectedUpdatedAt = "2026-08-01T00:00:00.000Z";
-    const reason = "ได้รับเลขประจำตัวอย่างเป็นทางการ";
+    const reason = "ISSUED";
 
     it.each([
         ["G1234567890123", "G1234567890123"],
@@ -89,13 +90,22 @@ describe("studentIdentifierUpdateSchema", () => {
     });
 
     it("accepts only explicit null to clear a stored identifier", () => {
-        expect(studentIdentifierUpdateSchema.parse({ nationalId: null, expectedUpdatedAt, reason }).nationalId).toBeNull();
-        expect(studentIdentifierUpdateSchema.safeParse({ expectedUpdatedAt, reason }).success).toBe(false);
+        const removal = { nationalId: null, expectedUpdatedAt, reason: "VERIFIED_REMOVAL" };
+        expect(studentIdentifierUpdateSchema.parse(removal)).toMatchObject({ nationalId: null, reason: "VERIFIED_REMOVAL" });
+        expect(studentIdentifierUpdateSchema.safeParse({ expectedUpdatedAt, reason: removal.reason }).success).toBe(false);
+        expect(studentIdentifierUpdateSchema.safeParse({ ...removal, reason }).success).toBe(false);
+        expect(studentIdentifierUpdateSchema.safeParse({ ...removal, nationalId: "G1234567890123" }).success).toBe(false);
     });
 
-    it.each([undefined, "  ", "AB", "a".repeat(1001), "เลขเดิม (G123 - 4567 - 89012 - 3)", "เลข １２３４５６７８９０１２３"])(
+    it.each([undefined, "  ", "AB", " ISSUED ", "ได้รับเลขแล้ว", "a".repeat(1001), ...IDENTIFIER_TEXT_REASONS])(
         "rejects invalid or identifier-bearing reasons", (invalidReason) => {
             expect(studentIdentifierUpdateSchema.safeParse({ nationalId: null, expectedUpdatedAt, reason: invalidReason }).success).toBe(false);
         },
     );
+
+    it("rejects a free-text note even with an allowed reason", () => {
+        expect(studentIdentifierUpdateSchema.safeParse({
+            nationalId: "G1234567890123", expectedUpdatedAt, reason: "CORRECTION", note: IDENTIFIER_TEXT_REASONS[0],
+        }).success).toBe(false);
+    });
 });

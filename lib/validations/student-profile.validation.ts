@@ -2,8 +2,8 @@ import { Gender } from "@prisma/client";
 import { z } from "zod";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import {
-    STUDENT_IDENTIFIER_REASON_MAX_LENGTH,
-    STUDENT_IDENTIFIER_REASON_MIN_LENGTH,
+    STUDENT_IDENTIFIER_CLEAR_REASON_OPTION,
+    STUDENT_IDENTIFIER_REASONS,
 } from "@/lib/constants/student-identifier";
 import { STUDENT_STATUS_VALUES } from "@/lib/constants/student-status";
 import { sanitizeName, sanitizeText } from "@/lib/utils/text-sanitizer";
@@ -56,9 +56,8 @@ export const studentIdentifierUpdateSchema = z.object({
     nationalId: z.string().transform(normalizeNationalId)
         .refine(isValidNationalId, NATIONAL_ID_ERROR_MESSAGE).nullable(),
     expectedUpdatedAt: z.iso.datetime().transform((value) => new Date(value)),
-    reason: z.string({ error: "กรุณาระบุเหตุผลที่เปลี่ยนเลขประจำตัว" }).trim()
-        .min(STUDENT_IDENTIFIER_REASON_MIN_LENGTH, `กรุณาระบุเหตุผลอย่างน้อย ${STUDENT_IDENTIFIER_REASON_MIN_LENGTH} ตัวอักษร`)
-        .max(STUDENT_IDENTIFIER_REASON_MAX_LENGTH, `เหตุผลต้องไม่เกิน ${STUDENT_IDENTIFIER_REASON_MAX_LENGTH} ตัวอักษร`)
-        .refine((reason) => !/\d{13}/.test(normalizeNationalId(reason.normalize("NFKC"))),
-            "กรุณาระบุเหตุผลโดยไม่ใส่เลขประจำตัว"),
-}).strict();
+    reason: z.enum(STUDENT_IDENTIFIER_REASONS, { error: "กรุณาเลือกเหตุผลจากรายการ" }),
+}).strict().refine(
+    ({ nationalId, reason }) => (nationalId === null) === (reason === STUDENT_IDENTIFIER_CLEAR_REASON_OPTION.value),
+    { path: ["reason"], message: "กรุณาเลือกเหตุผลให้ตรงกับการเปลี่ยนเลขประจำตัว" },
+);

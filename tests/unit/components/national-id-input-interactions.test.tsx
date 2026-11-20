@@ -120,15 +120,18 @@ describe("national ID input interactions", () => {
         vi.mocked(updateStudentIdentifier).mockResolvedValue({ success: true, message: "บันทึกแล้ว" });
         const user = userEvent.setup();
         await openIdentifierEditor(user);
+        const reason = screen.getByRole("combobox", { name: "เหตุผลที่เปลี่ยนเลขประจำตัว" });
+        await user.selectOptions(reason, "CORRECTION");
         await user.click(screen.getByRole("button", { name: "ล้างเลขประจำตัว" }));
         expect(updateStudentIdentifier).not.toHaveBeenCalled();
         await user.click(screen.getByRole("button", { name: "ยืนยันการล้างเลข" }));
         expect(updateStudentIdentifier).not.toHaveBeenCalled();
-        await user.type(screen.getByLabelText("เหตุผลที่เปลี่ยนเลขประจำตัว"), "ตรวจสอบกับทะเบียนแล้ว");
+        expect(screen.queryByRole("option", { name: "แก้ไขตามทะเบียนนักเรียน" })).toBeNull();
+        await user.selectOptions(reason, "VERIFIED_REMOVAL");
         await user.click(screen.getByRole("button", { name: "ยืนยันการล้างเลข" }));
         expect(updateStudentIdentifier).toHaveBeenCalledWith("student-1", {
             nationalId: null, expectedUpdatedAt: "2026-01-01T00:00:00.000Z",
-            reason: "ตรวจสอบกับทะเบียนแล้ว",
+            reason: "VERIFIED_REMOVAL",
         }, { activePhqResultId: "phq-1" });
     });
 
