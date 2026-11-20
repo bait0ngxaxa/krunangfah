@@ -10,8 +10,8 @@ function normalizeImportStudentForHash(student: ParsedStudent): Record<string, u
         nationalId: normalizeImportNationalId(student.nationalId),
         firstName: student.firstName,
         lastName: student.lastName,
-        gender: student.gender ?? null,
-        age: student.age ?? null,
+        gender: student.gender,
+        age: student.age,
         class: student.class,
         scores: {
             q1: student.scores.q1,

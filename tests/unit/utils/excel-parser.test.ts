@@ -894,7 +894,7 @@ describe("Excel Parser - National ID Parsing", () => {
     async function createWorkbookBuffer(
         nationalIdValue: string,
         secondNationalIdValue?: string,
-        studentCodes: { first: ExcelJS.CellValue; second?: ExcelJS.CellValue; format?: string } = { first: "66001" },
+        options: { first: ExcelJS.CellValue; second?: ExcelJS.CellValue; format?: string; age?: ExcelJS.CellValue } = { first: "66001" },
     ): Promise<ArrayBuffer> {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("ข้อมูลนักเรียน");
@@ -921,12 +921,12 @@ describe("Excel Parser - National ID Parsing", () => {
         ]);
 
         worksheet.addRow([
-            studentCodes.first,
+            options.first,
             nationalIdValue,
             "สมชาย",
             "ใจดี",
             "ชาย",
-            13,
+            options.age ?? 13,
             "ม.1/1",
             "ไม่มีเลย",
             "ไม่มีเลย",
@@ -943,7 +943,7 @@ describe("Excel Parser - National ID Parsing", () => {
 
         if (secondNationalIdValue) {
             worksheet.addRow([
-                studentCodes.second ?? "66002",
+                options.second ?? "66002",
                 secondNationalIdValue,
                 "สมหญิง",
                 "ใจดี",
@@ -964,7 +964,7 @@ describe("Excel Parser - National ID Parsing", () => {
             ]);
         }
 
-        if (studentCodes.format) worksheet.getCell("A2").numFmt = studentCodes.format;
+        if (options.format) worksheet.getCell("A2").numFmt = options.format;
         const output = Buffer.from(await workbook.xlsx.writeBuffer());
         return output.buffer.slice(
             output.byteOffset,
@@ -1036,6 +1036,12 @@ describe("Excel Parser - National ID Parsing", () => {
         const result = await parseExcelBuffer(buffer);
         expect(result.success).toBe(true);
         expect(result.data).toMatchObject([{ studentId: "00123" }, { studentId: "123", numericStudentId: true }]);
+    });
+
+    it.each([13.5, "13 ปี", 101])("rejects age %s instead of truncating it", async (age) => {
+        const result = await parseExcelBuffer(await createWorkbookBuffer("", undefined, { first: "00123", age }));
+        expect(result.data).toHaveLength(0);
+        expect(result.errors).toEqual([expect.stringContaining("อายุ (ปี) ต้องเป็นตัวเลข 1-100")]);
     });
 
     it.each([

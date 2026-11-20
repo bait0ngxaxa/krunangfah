@@ -320,6 +320,32 @@ describe("importStudents identity reconciliation", () => {
         },
     );
 
+    it.each(["gender", "age", "both"])("rejects missing %s before looking up student identity", async (field) => {
+        const incomplete = { ...importedRow, nationalId: null };
+        if (field !== "age") Reflect.deleteProperty(incomplete, "gender");
+        if (field !== "gender") Reflect.deleteProperty(incomplete, "age");
+
+        await expect(importStudents([incomplete], "ay-input")).resolves.toMatchObject({
+            success: false, status: "error", message: expect.stringContaining("กรุณาตรวจเพศกำเนิดและอายุ"),
+        });
+        expect(mocks.userFindUnique).not.toHaveBeenCalled();
+        expect(mocks.startIdempotentOperation).not.toHaveBeenCalled();
+        expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        { gender: null, age: null }, { gender: "" }, { gender: "OTHER" },
+        { age: "13" }, { age: 13.5 }, { age: NaN }, { age: 0 }, { age: 101 },
+    ])("rejects unsupported demographics %j on direct action calls", async (fields) => {
+        const invalid = Object.assign({ ...importedRow, nationalId: null }, fields);
+        await expect(importStudents([invalid], "ay-input")).resolves.toMatchObject({
+            success: false, status: "error", message: expect.stringContaining("กรุณาตรวจเพศกำเนิดและอายุ"),
+        });
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.studentUpdate).not.toHaveBeenCalled();
+        expect(mocks.phqResultCreateMany).not.toHaveBeenCalled();
+    });
+
     it("persists null for a student with a blank national ID", async () => {
         mocks.studentFindMany.mockResolvedValueOnce([]);
         mocks.studentCreateMany.mockResolvedValueOnce([{ ...existingStudent, nationalId: null }]);

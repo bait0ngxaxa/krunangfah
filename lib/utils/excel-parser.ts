@@ -1,3 +1,4 @@
+import type { Gender as ParsedGender } from "@prisma/client";
 import { type PhqScores } from "./phq-scoring";
 import { normalizeClassName } from "./class-normalizer";
 import {
@@ -17,7 +18,18 @@ import {
     redactNationalIds,
 } from "@/lib/utils/national-id";
 
-export type ParsedGender = "MALE" | "FEMALE";
+import { isImportStudentAge, isImportStudentGender } from "./student-import-demographics";
+
+export type { ParsedGender };
+
+function parseImportGender(value: string): ParsedGender | undefined {
+    const normalized = value.trim().toUpperCase();
+    if (isImportStudentGender(normalized)) return normalized;
+    if (normalized === "ชาย" || normalized === "M") return "MALE";
+    if (normalized === "หญิง" || normalized === "F") return "FEMALE";
+    return undefined;
+}
+
 const NATIONAL_ID_HEADER = "เลขบัตรประชาชน";
 const STUDENT_ID_HEADER = "รหัสนักเรียน";
 const STUDENT_ID_FORMAT_ERROR = "กรุณาตรวจรหัสนักเรียนจากทะเบียน แล้วกรอกเป็นข้อความให้ครบทุกหลัก รวมเลขศูนย์นำหน้า";
@@ -84,8 +96,8 @@ export interface ParsedStudent {
     nationalId: string | null;
     firstName: string;
     lastName: string;
-    gender?: ParsedGender;
-    age?: number;
+    gender: ParsedGender;
+    age: number;
     class: string;
     scores: PhqScores;
 }
@@ -360,37 +372,12 @@ export async function parseExcelBuffer(
                     return undefined;
                 };
 
-                const parseGender = (
-                    value: string,
-                ): ParsedGender | undefined => {
-                    const normalized = value.trim().toLowerCase();
-                    if (
-                        normalized === "ชาย" ||
-                        normalized === "male" ||
-                        normalized === "m"
-                    ) {
-                        return "MALE";
-                    }
-                    if (
-                        normalized === "หญิง" ||
-                        normalized === "female" ||
-                        normalized === "f"
-                    ) {
-                        return "FEMALE";
-                    }
-                    return undefined;
-                };
-
                 const firstName = getCell("ชื่อ");
                 const lastName = getCell("นามสกุล");
                 const genderRaw = getCellByAliases(FIELD_HEADER_ALIASES.gender);
-                const gender = parseGender(genderRaw);
+                const gender = parseImportGender(genderRaw);
                 const ageRaw = getCellByAliases(FIELD_HEADER_ALIASES.age);
-                const ageParsed = parseInt(ageRaw, 10);
-                const age =
-                    !isNaN(ageParsed) && ageParsed > 0 && ageParsed <= 100
-                        ? ageParsed
-                        : undefined;
+                const age = /^\d+$/.test(ageRaw) ? Number(ageRaw) : undefined;
                 const studentClass = getCellByAliases(FIELD_HEADER_ALIASES.class);
                 const studentIdCell = studentIdColumn === undefined ? undefined : row.getCell(studentIdColumn);
                 const studentIdValue = studentIdCell?.value;
@@ -408,7 +395,7 @@ export async function parseExcelBuffer(
                     );
                     return;
                 }
-                if (age === undefined) {
+                if (!isImportStudentAge(age)) {
                     errors.push(
                         `แถว ${rowNumber}: อายุ (ปี) ต้องเป็นตัวเลข 1-100`,
                     );

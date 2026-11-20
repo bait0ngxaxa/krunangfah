@@ -4,6 +4,7 @@ import { prisma } from "@/lib/database/prisma";
 import { ActivityStatus, Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/auth/session";
 import { type ParsedStudent } from "@/lib/utils/excel-parser";
+import { isImportStudentAge, isImportStudentGender } from "@/lib/utils/student-import-demographics";
 import { calculateRiskLevel, isPhqScores } from "@/lib/utils/phq-scoring";
 import type { RiskLevel } from "@/lib/constants/risk-levels";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
@@ -189,7 +190,7 @@ interface ImportStudentRecord {
 const DAYS_PER_YEAR = 365.2425;
 
 function getImportAgeChange(row: ParsedStudent, existing: ImportStudentRecord): number | null {
-    return typeof row.age !== "number" || existing.age === null ? null : row.age - existing.age;
+    return existing.age === null ? null : row.age - existing.age;
 }
 
 function normalizeImportName(name: string): string {
@@ -239,8 +240,8 @@ function resolveImportIdentity(
               };
     }
 
-    const genderCorroborates = Boolean(row.gender && existingStudent.gender === row.gender);
-    if (row.gender && existingStudent.gender && !genderCorroborates) {
+    const genderCorroborates = existingStudent.gender === row.gender;
+    if (existingStudent.gender !== null && !genderCorroborates) {
         return { kind: "review", reason: "เพศกำเนิดต่างจากข้อมูลเดิม กรุณาตรวจสอบตัวตนและแก้ไขข้อมูลนักเรียนก่อนนำเข้า" };
     }
 
@@ -260,6 +261,9 @@ function resolveImportIdentity(
     const existingFirstName = normalizeImportName(existingStudent.firstName);
     const existingLastName = normalizeImportName(existingStudent.lastName);
     if (firstName === existingFirstName && lastName === existingLastName) {
+        if (!genderCorroborates && ageChange === null) {
+            return { kind: "review", reason: "ข้อมูลเดิมไม่พอยืนยันตัวตน กรุณาตรวจสอบทะเบียนและแก้ไขข้อมูลนักเรียนก่อนนำเข้า" };
+        }
         return { kind: ageChange === 0 ? "exact" : "consistent" };
     }
 
@@ -342,12 +346,15 @@ export async function importStudents(
         }
 
         const invalidDemographics = students.findIndex(({ age, gender, numericStudentId }) =>
-            (age !== null && age !== undefined && (!Number.isInteger(age) || age < 1 || age > 100)) ||
-            (gender !== null && gender !== undefined && gender !== "MALE" && gender !== "FEMALE") ||
+            !isImportStudentAge(age) || !isImportStudentGender(gender) ||
             (numericStudentId !== undefined && typeof numericStudentId !== "boolean"),
         );
         if (invalidDemographics !== -1) {
-            return { success: false, status: "error", message: `ข้อมูลนักเรียนลำดับที่ ${invalidDemographics + 1} ไม่ถูกต้อง` };
+            return {
+                success: false,
+                status: "error",
+                message: `ข้อมูลนักเรียนลำดับที่ ${invalidDemographics + 1} ไม่ถูกต้อง กรุณาตรวจเพศกำเนิดและอายุ (จำนวนเต็ม 1–100 ปี)`,
+            };
         }
 
         const normalizedImport = normalizeImportStudents(students);
@@ -736,8 +743,8 @@ export async function importStudents(
                     nationalId: row.nationalId,
                     firstName: row.firstName,
                     lastName: row.lastName,
-                    gender: row.gender ?? null,
-                    age: row.age ?? null,
+                    gender: row.gender,
+                    age: row.age,
                     class: row.class,
                     schoolId,
                 }));
@@ -768,10 +775,10 @@ export async function importStudents(
                 if (student.nationalId === null && row.nationalId !== null) {
                     updates.nationalId = row.nationalId;
                 }
-                if (row.gender && student.gender !== row.gender) {
+                if (student.gender !== row.gender) {
                     updates.gender = row.gender;
                 }
-                if (typeof row.age === "number" && student.age !== row.age) {
+                if (student.age !== row.age) {
                     updates.age = row.age;
                 }
                 if (student.firstName !== row.firstName) {

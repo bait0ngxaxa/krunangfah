@@ -639,7 +639,6 @@ describe("Integration: concurrent student imports", () => {
         for (const mismatch of [
             { ...row, gender: "FEMALE" as const },
             { ...row, lastName: "พร้อมกน", gender: "FEMALE" as const },
-            { ...row, lastName: "พร้อมกน", gender: undefined },
             { ...row, firstName: "นักเรียนอีกคน", lastName: "คนละสกุล" },
             { ...row, age: 25 },
         ]) {
@@ -647,6 +646,12 @@ describe("Integration: concurrent student imports", () => {
                 success: false, identityConflicts: 1, updatedStudents: 0, phqCreated: 0,
             });
         }
+        const incomplete = { ...row };
+        Reflect.deleteProperty(incomplete, "gender");
+        Reflect.deleteProperty(incomplete, "age");
+        await expect(importStudents([incomplete], secondAcademicYearId, 1)).resolves.toMatchObject({
+            success: false, message: expect.stringContaining("กรุณาตรวจเพศกำเนิดและอายุ"),
+        });
         await expect(prisma.student.findUniqueOrThrow({ where })).resolves.toEqual(original);
         await expect(prisma.phqResult.count({ where: { studentId: original.id } })).resolves.toBe(1);
         await expect(importStudents([{ ...row, age: 15 }], secondAcademicYearId, 1)).resolves.toMatchObject({
@@ -656,6 +661,29 @@ describe("Integration: concurrent student imports", () => {
             success: true, updatedStudents: 1, phqCreated: 1,
         });
         await expect(prisma.phqResult.count({ where: { studentId: original.id } })).resolves.toBe(3);
+    });
+
+    it.each(["gender", "age", "both"] as const)("handles legacy %s gaps without guessing", async (gap) => {
+        signIn(USERS_A.schoolAdmin);
+        const row = createImportRow({ studentId: `LEGACY-${gap}-${suffix}`, nationalId: null });
+        await expect(importStudents([row], firstAcademicYearId, 1)).resolves.toMatchObject({ success: true });
+        const where = { studentId_schoolId: { studentId: row.studentId, schoolId } };
+        const legacy = await prisma.student.update({ where, data: {
+            ...(gap !== "age" ? { gender: null } : {}),
+            ...(gap !== "gender" ? { age: null } : {}),
+        } });
+
+        const result = await importStudents([row], firstAcademicYearId, 2);
+        if (gap === "both") {
+            expect(result).toMatchObject({ success: false, identityConflicts: 1, updatedStudents: 0, phqCreated: 0 });
+            await expect(prisma.student.findUniqueOrThrow({ where })).resolves.toEqual(legacy);
+        } else {
+            expect(result).toMatchObject({ success: true, createdStudents: 0, updatedStudents: 1, phqCreated: 1 });
+            await expect(prisma.student.findUniqueOrThrow({ where })).resolves.toMatchObject({
+                id: legacy.id, gender: row.gender, age: row.age, nationalId: null,
+            });
+        }
+        await expect(prisma.phqResult.count({ where: { studentId: legacy.id } })).resolves.toBe(gap === "both" ? 1 : 2);
     });
 
     it("keeps leading-zero codes distinct and accepts legacy numbers only with both identifiers", async () => {

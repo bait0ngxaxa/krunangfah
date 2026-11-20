@@ -94,6 +94,8 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
                 nationalId: nid1,
                 firstName: "Smoke",
                 lastName: "Class1",
+                gender: "MALE",
+                age: 13,
                 class: "class-1",
                 scores: {
                     q1: 1,
@@ -114,6 +116,8 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
                 nationalId: nid2,
                 firstName: "Smoke",
                 lastName: "Class2",
+                gender: "FEMALE",
+                age: 14,
                 class: "class-2",
                 scores: {
                     q1: 1,
@@ -351,6 +355,8 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
                     nationalId: class1NationalId,
                     firstName: "Smoke",
                     lastName: "Class1",
+                    gender: "MALE",
+                    age: 13,
                     class: "class-1",
                     scores: {
                         q1: 1,
@@ -387,6 +393,8 @@ describe("Integration: E2E Smoke (Auth + Import + Role Scope)", () => {
             nationalId,
             firstName: "Invalid",
             lastName: "PHQ",
+            gender: "MALE",
+            age: 13,
             class: "class-1",
             scores: {
                 q1: 0,
