@@ -31,6 +31,14 @@ vi.mock("@/lib/services/school-class-term-service", () => ({
     ensureSchoolClassTermsForAcademicYear:
         mocks.ensureSchoolClassTermsForAcademicYear,
 }));
+// The selected term is treated as the current academic year in these suites.
+vi.mock("@/lib/services/import-term-policy", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/lib/services/import-term-policy")>()),
+    checkImportTerm: vi.fn(async (id: string) => ({
+        kind: "allowed" as const,
+        term: { id, year: 2569, semester: 1 },
+    })),
+}));
 vi.mock("@/lib/cache/redis-idempotency", () => ({
     startIdempotentOperation: mocks.startIdempotentOperation,
     completeIdempotentOperation: mocks.completeIdempotentOperation,
@@ -76,6 +84,8 @@ const existingStudent = {
     gender: "FEMALE",
     age: 12,
     class: "ม.1/1",
+    // IMPORT_STUDENT_SELECT always returns the PHQ history array.
+    phqResults: [],
 };
 
 function mockTransaction(): void {

@@ -117,6 +117,8 @@ export interface ImportResult {
     phqCreated?: number;
     duplicateRoundsSkipped?: number;
     identityConflicts?: number;
+    /** Existing students whose name/age/class were kept because the file is an older term/round. */
+    masterDataPreserved?: number;
     errors?: string[];
     importedStudents?: ImportStudentSummary[];
     failedStudents?: ImportStudentSummary[];

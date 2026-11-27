@@ -42,6 +42,14 @@ vi.mock("@/lib/services/school-class-term-service", () => ({
         mocks.ensureSchoolClassTermsForAcademicYear,
 }));
 
+// The selected term is treated as the current academic year in these suites.
+vi.mock("@/lib/services/import-term-policy", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/lib/services/import-term-policy")>()),
+    checkImportTerm: vi.fn(async (id: string) => ({
+        kind: "allowed" as const,
+        term: { id, year: 2569, semester: 1 },
+    })),
+}));
 vi.mock("@/lib/cache/redis-idempotency", () => ({
     startIdempotentOperation: mocks.startIdempotentOperation,
     completeIdempotentOperation: mocks.completeIdempotentOperation,
@@ -101,6 +109,22 @@ describe("importStudents idempotency", () => {
         mocks.startIdempotentOperation.mockResolvedValue({ status: "started" });
         mocks.completeIdempotentOperation.mockResolvedValue(undefined);
         mocks.clearIdempotentOperation.mockResolvedValue(undefined);
+    });
+
+    it("rejects a non-current academic year before provisioning or claiming idempotency", async () => {
+        const { checkImportTerm } = await import("@/lib/services/import-term-policy");
+        vi.mocked(checkImportTerm).mockResolvedValueOnce({ kind: "not_current" });
+
+        const result = await importStudents([createParsedStudent()], "ay-previous", 1);
+
+        expect(result).toEqual({
+            success: false,
+            status: "error",
+            message: "ปีการศึกษาที่เลือกไม่ใช่ปีการศึกษาปัจจุบัน กรุณารีเฟรชหน้าแล้วเลือกใหม่",
+        });
+        expect(mocks.ensureSchoolClassTermsForAcademicYear).not.toHaveBeenCalled();
+        expect(mocks.startIdempotentOperation).not.toHaveBeenCalled();
+        expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
     it("returns a processing response when the same import is already running", async () => {
