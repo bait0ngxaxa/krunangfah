@@ -129,8 +129,9 @@ describe("academic-year.actions", () => {
         expect(mocks.upsert).toHaveBeenCalledWith(
             expect.objectContaining({
                 update: {
-                    startDate: new Date(2026, 4, 15),
-                    endDate: new Date(2026, 9, 15),
+                    // 1 May and 31 Oct 2026 at Bangkok midnight (UTC+07:00).
+                    startDate: new Date("2026-04-30T17:00:00.000Z"),
+                    endDate: new Date("2026-10-30T17:00:00.000Z"),
                     isCurrent: true,
                 },
             }),

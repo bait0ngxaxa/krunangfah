@@ -8,28 +8,29 @@ import {
     toCareRecordAcademicTermFilter,
 } from "@/lib/utils/student-detail-filters";
 
+// Bangkok-midnight instants (UTC+07:00), matching rows written by the academic-year lifecycle.
 const semesterOne = {
     id: "ay-2568-1",
     year: 2568,
     semester: 1,
-    startDate: new Date(2025, 4, 15),
-    endDate: new Date(2025, 9, 15),
+    startDate: new Date("2025-04-30T17:00:00.000Z"),
+    endDate: new Date("2025-10-30T17:00:00.000Z"),
 };
 
 const semesterTwo = {
     id: "ay-2568-2",
     year: 2568,
     semester: 2,
-    startDate: new Date(2025, 10, 1),
-    endDate: new Date(2026, 3, 30),
+    startDate: new Date("2025-10-31T17:00:00.000Z"),
+    endDate: new Date("2026-04-29T17:00:00.000Z"),
 };
 
 const olderSemester = {
     id: "ay-2567-2",
     year: 2567,
     semester: 2,
-    startDate: new Date(2024, 10, 1),
-    endDate: new Date(2025, 3, 30),
+    startDate: new Date("2024-10-31T17:00:00.000Z"),
+    endDate: new Date("2025-04-29T17:00:00.000Z"),
 };
 
 describe("getUniqueAcademicYears", () => {
@@ -57,8 +58,8 @@ describe("resolveAcademicTermScope", () => {
             kind: "year",
             year: 2568,
             dateRange: {
-                startDate: new Date(2025, 4, 15, 0, 0, 0, 0),
-                endDate: new Date(2026, 3, 30, 23, 59, 59, 999),
+                startDate: new Date("2025-04-30T17:00:00.000Z"),
+                endDate: new Date("2026-04-30T16:59:59.999Z"),
             },
         });
     });
@@ -70,8 +71,8 @@ describe("resolveAcademicTermScope", () => {
             year: 2568,
             semester: 2,
             dateRange: {
-                startDate: new Date(2025, 10, 1, 0, 0, 0, 0),
-                endDate: new Date(2026, 3, 30, 23, 59, 59, 999),
+                startDate: new Date("2025-10-31T17:00:00.000Z"),
+                endDate: new Date("2026-04-30T16:59:59.999Z"),
             },
         });
     });
@@ -100,8 +101,8 @@ describe("toCareRecordAcademicTermFilter", () => {
         const scope = resolveAcademicTermScope(academicYears, "year:2568");
         expect(toCareRecordAcademicTermFilter(scope)).toEqual({
             dateRange: {
-                startDate: new Date(2025, 4, 15, 0, 0, 0, 0),
-                endDate: new Date(2026, 3, 30, 23, 59, 59, 999),
+                startDate: new Date("2025-04-30T17:00:00.000Z"),
+                endDate: new Date("2026-04-30T16:59:59.999Z"),
             },
         });
     });
@@ -111,8 +112,8 @@ describe("toCareRecordAcademicTermFilter", () => {
         expect(toCareRecordAcademicTermFilter(scope)).toEqual({
             academicYearId: "ay-2568-2",
             dateRange: {
-                startDate: new Date(2025, 10, 1, 0, 0, 0, 0),
-                endDate: new Date(2026, 3, 30, 23, 59, 59, 999),
+                startDate: new Date("2025-10-31T17:00:00.000Z"),
+                endDate: new Date("2026-04-30T16:59:59.999Z"),
             },
         });
     });
@@ -192,9 +193,9 @@ describe("resolveAcademicYearDateRange", () => {
         const result = resolveAcademicYearDateRange(academicYears, "year:2568");
 
         expect(result).not.toBeNull();
-        expect(result?.startDate).toEqual(new Date(2025, 4, 15, 0, 0, 0, 0));
+        expect(result?.startDate).toEqual(new Date("2025-04-30T17:00:00.000Z"));
         expect(result?.endDate).toEqual(
-            new Date(2026, 3, 30, 23, 59, 59, 999),
+            new Date("2026-04-30T16:59:59.999Z"),
         );
     });
 
@@ -202,8 +203,8 @@ describe("resolveAcademicYearDateRange", () => {
         const result = resolveAcademicYearDateRange(academicYears, "ay-2568-1");
 
         expect(result).toEqual({
-            startDate: new Date(2025, 4, 15, 0, 0, 0, 0),
-            endDate: new Date(2025, 9, 15, 23, 59, 59, 999),
+            startDate: new Date("2025-04-30T17:00:00.000Z"),
+            endDate: new Date("2025-10-31T16:59:59.999Z"),
         });
     });
 
