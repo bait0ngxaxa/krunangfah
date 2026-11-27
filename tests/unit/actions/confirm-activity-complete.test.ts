@@ -331,6 +331,41 @@ describe("confirmActivityComplete teacher assessment gate", () => {
         expect(mocks.txActivityProgressUpdateMany).not.toHaveBeenCalled();
     });
 
+    it("rejects confirming a locked activity even with enough worksheets", async () => {
+        // Page loaded while the activity was open; an admin reset has relocked it since.
+        mocks.activityProgressFindUnique.mockResolvedValue({
+            studentId: "student-1",
+            status: "in_progress",
+            phqResultId: "phq-1",
+            activityNumber: 3,
+            phqResult: { assessmentRound: 1 },
+            student: { schoolId: "school-1" },
+        });
+        mocks.txActivityProgressFindUnique.mockResolvedValue({
+            id: "cprogress3",
+            status: "locked",
+            scheduledDate: null,
+            studentId: "student-1",
+            phqResultId: "phq-1",
+            activityNumber: 3,
+            phqResult: { assessmentRound: 1 },
+            assessedAt: new Date("2026-06-01T04:30:00.000Z"),
+            worksheetUploads: [{ uploadedAt: new Date("2026-06-02T04:30:00.000Z") }],
+        });
+        mocks.txWorksheetUploadCount.mockResolvedValue(2);
+
+        const result = await confirmActivityComplete("cprogress3");
+
+        expect(result).toEqual({
+            success: false,
+            error: "กิจกรรมนี้ยังไม่เปิดให้ทำ กรุณารีเฟรชหน้าแล้วลองใหม่",
+            refreshRequired: true,
+        });
+        expect(mocks.txActivityProgressUpdate).not.toHaveBeenCalled();
+        expect(mocks.txActivityProgressUpdateMany).not.toHaveBeenCalled();
+        expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
+    });
+
     it("does not complete an activity before its required worksheets are uploaded", async () => {
         mocks.activityProgressFindUnique.mockResolvedValue({
             studentId: "student-1",

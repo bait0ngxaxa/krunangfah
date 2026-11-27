@@ -149,6 +149,7 @@ export function useActivityWorkspace({
                     result.retryable ? { progressId, file, requestId } : null,
                 );
                 toast.error(result.message || "เกิดข้อผิดพลาดในการอัปโหลด");
+                if (result.refreshRequired) router.refresh();
             }
         } catch (error) {
             setPendingUpload({ progressId, file, requestId });
@@ -196,6 +197,7 @@ export function useActivityWorkspace({
                 }
             } else {
                 toast.error(result.error || "เกิดข้อผิดพลาด");
+                if (result.refreshRequired) router.refresh();
             }
         } catch {
             toast.error("เกิดข้อผิดพลาด");
