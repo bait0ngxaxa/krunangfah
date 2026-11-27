@@ -4,8 +4,9 @@ import { ToasterProvider } from "@/components/ui/ToasterProvider";
 import "./globals.css";
 
 // Google Sans Variable Font - รองรับ weights 100-900 ทั้งหมด
+// ใช้ subset เฉพาะ Latin + Thai เพื่อลดขนาดจาก ~1.5 MB เหลือ ~113 KB; วิธีสร้างใหม่ดู scripts/fonts/README.md
 const googleSans = localFont({
-    src: "../public/fonts/GoogleSans-VariableFont.woff2",
+    src: "../public/fonts/GoogleSans-LatinThai-VariableFont.woff2",
     variable: "--font-google-sans",
     display: "swap",
     weight: "100 900", // Variable font รองรับทุก weight
