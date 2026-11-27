@@ -19,6 +19,12 @@ import {
 } from "@/lib/utils/national-id";
 
 import { isImportStudentAge, isImportStudentGender } from "./student-import-demographics";
+import {
+    normalizeHeader,
+    resolveHeaderColumns,
+    type ImportHeaderField,
+    type WorksheetHeader,
+} from "./excel-header-mapping";
 
 export type { ParsedGender };
 
@@ -47,6 +53,8 @@ const PHQA_TEMPLATE_HEADERS = {
     q9b: "ตลอดชีวิตที่ผ่านมา คุณเคยพยายามที่ทำให้ตัวเองตายหรือลงมือฆ่าตัวตายหรือไม่",
 } as const;
 const FIELD_HEADER_ALIASES = {
+    // "ชื่อจริง" is the Google Forms header; listing it lets the exact tier beat "ชื่อเล่น".
+    firstName: ["ชื่อ", "ชื่อจริง"],
     gender: ["เพศ", "เพศกำเนิด"],
     age: ["อายุ", "อายุ (ปี)"],
     class: ["ห้อง", "ห้องเรียน"],
@@ -63,31 +71,39 @@ const FIELD_HEADER_ALIASES = {
     q9b: [PHQA_TEMPLATE_HEADERS.q9b, "ข้อ9b", "opt2"],
 } as const;
 
-interface RequiredImportField {
-    label: string;
-    aliases: readonly string[];
+type ImportFieldKey =
+    | "studentId"
+    | "nationalId"
+    | "firstName"
+    | "lastName"
+    | "gender"
+    | "age"
+    | "class"
+    | keyof typeof PHQA_TEMPLATE_HEADERS;
+
+interface RequiredImportField extends ImportHeaderField<ImportFieldKey> {
     allowBlank?: boolean;
 }
 
 const REQUIRED_IMPORT_FIELDS: readonly RequiredImportField[] = [
-    { label: STUDENT_ID_HEADER, aliases: [STUDENT_ID_HEADER] },
-    { label: NATIONAL_ID_HEADER, aliases: [NATIONAL_ID_HEADER], allowBlank: true },
-    { label: "ชื่อ", aliases: ["ชื่อ"] },
-    { label: "นามสกุล", aliases: ["นามสกุล"] },
-    { label: "เพศกำเนิด", aliases: FIELD_HEADER_ALIASES.gender },
-    { label: "อายุ (ปี)", aliases: FIELD_HEADER_ALIASES.age },
-    { label: "ห้องเรียน", aliases: FIELD_HEADER_ALIASES.class },
-    { label: PHQA_TEMPLATE_HEADERS.q1, aliases: FIELD_HEADER_ALIASES.q1 },
-    { label: PHQA_TEMPLATE_HEADERS.q2, aliases: FIELD_HEADER_ALIASES.q2 },
-    { label: PHQA_TEMPLATE_HEADERS.q3, aliases: FIELD_HEADER_ALIASES.q3 },
-    { label: PHQA_TEMPLATE_HEADERS.q4, aliases: FIELD_HEADER_ALIASES.q4 },
-    { label: PHQA_TEMPLATE_HEADERS.q5, aliases: FIELD_HEADER_ALIASES.q5 },
-    { label: PHQA_TEMPLATE_HEADERS.q6, aliases: FIELD_HEADER_ALIASES.q6 },
-    { label: PHQA_TEMPLATE_HEADERS.q7, aliases: FIELD_HEADER_ALIASES.q7 },
-    { label: PHQA_TEMPLATE_HEADERS.q8, aliases: FIELD_HEADER_ALIASES.q8 },
-    { label: PHQA_TEMPLATE_HEADERS.q9, aliases: FIELD_HEADER_ALIASES.q9 },
-    { label: PHQA_TEMPLATE_HEADERS.q9a, aliases: FIELD_HEADER_ALIASES.q9a },
-    { label: PHQA_TEMPLATE_HEADERS.q9b, aliases: FIELD_HEADER_ALIASES.q9b },
+    { key: "studentId", label: STUDENT_ID_HEADER, aliases: [STUDENT_ID_HEADER] },
+    { key: "nationalId", label: NATIONAL_ID_HEADER, aliases: [NATIONAL_ID_HEADER], allowBlank: true },
+    { key: "firstName", label: "ชื่อ", aliases: FIELD_HEADER_ALIASES.firstName },
+    { key: "lastName", label: "นามสกุล", aliases: ["นามสกุล"] },
+    { key: "gender", label: "เพศกำเนิด", aliases: FIELD_HEADER_ALIASES.gender },
+    { key: "age", label: "อายุ (ปี)", aliases: FIELD_HEADER_ALIASES.age },
+    { key: "class", label: "ห้องเรียน", aliases: FIELD_HEADER_ALIASES.class },
+    { key: "q1", label: PHQA_TEMPLATE_HEADERS.q1, aliases: FIELD_HEADER_ALIASES.q1 },
+    { key: "q2", label: PHQA_TEMPLATE_HEADERS.q2, aliases: FIELD_HEADER_ALIASES.q2 },
+    { key: "q3", label: PHQA_TEMPLATE_HEADERS.q3, aliases: FIELD_HEADER_ALIASES.q3 },
+    { key: "q4", label: PHQA_TEMPLATE_HEADERS.q4, aliases: FIELD_HEADER_ALIASES.q4 },
+    { key: "q5", label: PHQA_TEMPLATE_HEADERS.q5, aliases: FIELD_HEADER_ALIASES.q5 },
+    { key: "q6", label: PHQA_TEMPLATE_HEADERS.q6, aliases: FIELD_HEADER_ALIASES.q6 },
+    { key: "q7", label: PHQA_TEMPLATE_HEADERS.q7, aliases: FIELD_HEADER_ALIASES.q7 },
+    { key: "q8", label: PHQA_TEMPLATE_HEADERS.q8, aliases: FIELD_HEADER_ALIASES.q8 },
+    { key: "q9", label: PHQA_TEMPLATE_HEADERS.q9, aliases: FIELD_HEADER_ALIASES.q9 },
+    { key: "q9a", label: PHQA_TEMPLATE_HEADERS.q9a, aliases: FIELD_HEADER_ALIASES.q9a },
+    { key: "q9b", label: PHQA_TEMPLATE_HEADERS.q9b, aliases: FIELD_HEADER_ALIASES.q9b },
 ];
 
 export interface ParsedStudent {
@@ -158,32 +174,6 @@ function stringifyCellValue(value: unknown): string {
     return "";
 }
 
-function normalizeHeader(value: string): string {
-    return value.trim().replace(/\s+/g, " ");
-}
-
-function findHeaderColumn(
-    headers: Map<string, number>,
-    aliases: readonly string[],
-): number | undefined {
-    const normalizedAliases = aliases.map(normalizeHeader);
-
-    for (const alias of normalizedAliases) {
-        const exactColumn = headers.get(alias);
-        if (exactColumn !== undefined) {
-            return exactColumn;
-        }
-    }
-
-    for (const [header, column] of headers) {
-        if (normalizedAliases.some((alias) => header.includes(alias))) {
-            return column;
-        }
-    }
-
-    return undefined;
-}
-
 function formatInvalidCellValue(value: unknown): string {
     const stringValue = normalizeHeader(stringifyCellValue(value));
     const displayValue = stringValue || "[รูปแบบข้อมูลไม่รองรับ]";
@@ -233,24 +223,18 @@ export async function parseExcelBuffer(
             };
         }
 
-        // Map from header name → column number (reverse index for safe lookup)
-        const headers = new Map<string, number>();
+        const headers: WorksheetHeader[] = [];
         worksheet.getRow(1).eachCell((cell, colNumber) => {
-            headers.set(normalizeHeader(stringifyCellValue(cell.value)), colNumber);
+            headers.push({ header: stringifyCellValue(cell.value), column: colNumber });
         });
 
-        // Validate required headers
-        for (const field of REQUIRED_IMPORT_FIELDS) {
-            if (findHeaderColumn(headers, field.aliases) === undefined) {
-                errors.push(`ไม่พบคอลัมน์ "${field.label}" ในไฟล์`);
-            }
+        // Resolved once per file so every row reads the same validated columns.
+        const resolution = resolveHeaderColumns(headers, REQUIRED_IMPORT_FIELDS);
+        if (!resolution.ok) {
+            return { success: false, data: [], errors: resolution.errors };
         }
-
-        if (errors.length > 0) {
-            return { success: false, data: [], errors };
-        }
-
-        const studentIdColumn = findHeaderColumn(headers, [STUDENT_ID_HEADER]);
+        const columns = resolution.columns;
+        const studentIdColumn = columns.get("studentId");
 
         const dataRowCount = Math.max(worksheet.actualRowCount - 1, 0);
         if (dataRowCount > MAX_IMPORT_ROW_COUNT) {
@@ -268,30 +252,19 @@ export async function parseExcelBuffer(
             if (rowNumber === 1) return; // Skip header
 
             try {
-                const getCell = (headerName: string): string => {
-                    const colIndex = findHeaderColumn(headers, [headerName]) ?? -1;
-                    if (colIndex === -1) return "";
-                    const cellValue = row.getCell(colIndex).value;
-                    return stringifyCellValue(cellValue).trim();
-                };
-
-                const getRawCellByAliases = (
-                    aliases: readonly string[],
-                ): unknown => {
-                    const colIndex = findHeaderColumn(headers, aliases) ?? -1;
-                    if (colIndex === -1) return "";
+                const getRawCell = (key: ImportFieldKey): unknown => {
+                    const colIndex = columns.get(key);
+                    if (colIndex === undefined) return "";
                     return row.getCell(colIndex).value;
                 };
 
-                const getCellByAliases = (
-                    aliases: readonly string[],
-                ): string => {
-                    return stringifyCellValue(getRawCellByAliases(aliases)).trim();
+                const getCell = (key: ImportFieldKey): string => {
+                    return stringifyCellValue(getRawCell(key)).trim();
                 };
 
                 const requiredValues = REQUIRED_IMPORT_FIELDS.map((field) => ({
                     ...field,
-                    value: getCellByAliases(field.aliases),
+                    value: getCell(field.key),
                 }));
                 const hasAnyRequiredValue = requiredValues.some(
                     (field) => field.value.length > 0,
@@ -310,10 +283,9 @@ export async function parseExcelBuffer(
 
                 const getPhqaScoreCell = (
                     questionNumber: number,
-                    headerName: string,
-                    aliases: readonly string[] = [headerName],
+                    key: ImportFieldKey,
                 ): PhqScore | undefined => {
-                    const rawValue = getRawCellByAliases(aliases);
+                    const rawValue = getRawCell(key);
                     const value = stringifyCellValue(rawValue);
 
                     if (!normalizeHeader(value)) {
@@ -336,9 +308,9 @@ export async function parseExcelBuffer(
 
                 const getBooleanCell = (
                     headerName: string,
-                    aliases: readonly string[] = [headerName],
+                    key: ImportFieldKey,
                 ): boolean | undefined => {
-                    const value = getCellByAliases(aliases).trim().toLowerCase();
+                    const value = getCell(key).toLowerCase();
 
                     if (!value) {
                         errors.push(`แถว ${rowNumber}: ไม่มีข้อมูล${headerName}`);
@@ -372,18 +344,18 @@ export async function parseExcelBuffer(
                     return undefined;
                 };
 
-                const firstName = getCell("ชื่อ");
-                const lastName = getCell("นามสกุล");
-                const genderRaw = getCellByAliases(FIELD_HEADER_ALIASES.gender);
+                const firstName = getCell("firstName");
+                const lastName = getCell("lastName");
+                const genderRaw = getCell("gender");
                 const gender = parseImportGender(genderRaw);
-                const ageRaw = getCellByAliases(FIELD_HEADER_ALIASES.age);
+                const ageRaw = getCell("age");
                 const age = /^\d+$/.test(ageRaw) ? Number(ageRaw) : undefined;
-                const studentClass = getCellByAliases(FIELD_HEADER_ALIASES.class);
+                const studentClass = getCell("class");
                 const studentIdCell = studentIdColumn === undefined ? undefined : row.getCell(studentIdColumn);
                 const studentIdValue = studentIdCell?.value;
                 const numericStudentId = typeof studentIdValue === "number";
                 const studentId = stringifyCellValue(studentIdValue).trim();
-                const nationalIdCell = getRawCellByAliases([NATIONAL_ID_HEADER]);
+                const nationalIdCell = getRawCell("nationalId");
                 const nationalId = normalizeImportNationalId(stringifyCellValue(nationalIdCell));
 
                 // Skip empty rows
@@ -450,59 +422,17 @@ export async function parseExcelBuffer(
                     return;
                 }
 
-                const q1 = getPhqaScoreCell(
-                    1,
-                    PHQA_TEMPLATE_HEADERS.q1,
-                    FIELD_HEADER_ALIASES.q1,
-                );
-                const q2 = getPhqaScoreCell(
-                    2,
-                    PHQA_TEMPLATE_HEADERS.q2,
-                    FIELD_HEADER_ALIASES.q2,
-                );
-                const q3 = getPhqaScoreCell(
-                    3,
-                    PHQA_TEMPLATE_HEADERS.q3,
-                    FIELD_HEADER_ALIASES.q3,
-                );
-                const q4 = getPhqaScoreCell(
-                    4,
-                    PHQA_TEMPLATE_HEADERS.q4,
-                    FIELD_HEADER_ALIASES.q4,
-                );
-                const q5 = getPhqaScoreCell(
-                    5,
-                    PHQA_TEMPLATE_HEADERS.q5,
-                    FIELD_HEADER_ALIASES.q5,
-                );
-                const q6 = getPhqaScoreCell(
-                    6,
-                    PHQA_TEMPLATE_HEADERS.q6,
-                    FIELD_HEADER_ALIASES.q6,
-                );
-                const q7 = getPhqaScoreCell(
-                    7,
-                    PHQA_TEMPLATE_HEADERS.q7,
-                    FIELD_HEADER_ALIASES.q7,
-                );
-                const q8 = getPhqaScoreCell(
-                    8,
-                    PHQA_TEMPLATE_HEADERS.q8,
-                    FIELD_HEADER_ALIASES.q8,
-                );
-                const q9 = getPhqaScoreCell(
-                    9,
-                    PHQA_TEMPLATE_HEADERS.q9,
-                    FIELD_HEADER_ALIASES.q9,
-                );
-                const q9a = getBooleanCell(
-                    PHQA_TEMPLATE_HEADERS.q9a,
-                    FIELD_HEADER_ALIASES.q9a,
-                );
-                const q9b = getBooleanCell(
-                    PHQA_TEMPLATE_HEADERS.q9b,
-                    FIELD_HEADER_ALIASES.q9b,
-                );
+                const q1 = getPhqaScoreCell(1, "q1");
+                const q2 = getPhqaScoreCell(2, "q2");
+                const q3 = getPhqaScoreCell(3, "q3");
+                const q4 = getPhqaScoreCell(4, "q4");
+                const q5 = getPhqaScoreCell(5, "q5");
+                const q6 = getPhqaScoreCell(6, "q6");
+                const q7 = getPhqaScoreCell(7, "q7");
+                const q8 = getPhqaScoreCell(8, "q8");
+                const q9 = getPhqaScoreCell(9, "q9");
+                const q9a = getBooleanCell(PHQA_TEMPLATE_HEADERS.q9a, "q9a");
+                const q9b = getBooleanCell(PHQA_TEMPLATE_HEADERS.q9b, "q9b");
 
                 if (
                     q1 === undefined ||
