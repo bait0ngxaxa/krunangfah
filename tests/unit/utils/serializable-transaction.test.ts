@@ -15,9 +15,11 @@ describe("runSerializableTransaction", () => {
         transaction.mockReset();
     });
 
+    // The P2010 shape mirrors what Prisma produced against PostgreSQL in
+    // tests/integration/serializable-transaction-retry.test.ts.
     it.each([
         ["a write conflict", prismaError("P2034")],
-        ["a raw-query serialization failure", prismaError("P2010", { code: "40001" })],
+        ["a raw-query serialization failure", prismaError("P2010", { code: "40001", message: "forced" })],
     ])("retries %s", async (_label, error) => {
         transaction.mockRejectedValueOnce(error).mockResolvedValueOnce("done");
 
@@ -26,7 +28,7 @@ describe("runSerializableTransaction", () => {
     });
 
     it("does not retry other raw-query failures", async () => {
-        const error = prismaError("P2010", { code: "42P01" });
+        const error = prismaError("P2010", { code: "42P01", message: "relation does not exist" });
         transaction.mockRejectedValue(error);
 
         await expect(runSerializableTransaction(async () => "done")).rejects.toBe(error);
