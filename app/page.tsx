@@ -20,8 +20,18 @@ export default async function Home() {
 
     return (
         <div className="relative h-screen flex flex-col overflow-hidden bg-linear-to-b from-sky-300 via-sky-100 to-white">
-            {/* Background image — decorative, kept out of next/image preload pipeline */}
-            <div className="absolute inset-0 bg-[url('/image/homepage/rainbow.webp')] bg-cover bg-bottom" />
+            {/* Background image — decorative; no priority because the LCP element is the hero image.
+                object-cover in an h-screen box renders it max(100vw, 1400/912 × 100vh) wide, so sizes must
+                include the vh term or portrait screens get an upscaled, blurry candidate. */}
+            <div className="absolute inset-0">
+                <Image
+                    src="/image/homepage/rainbow.webp"
+                    alt=""
+                    fill
+                    sizes="max(100vw, 154vh)"
+                    className="object-cover object-bottom"
+                />
+            </div>
 
             {/* ─── Top Green Navbar ─── */}
             <NavbarGreenBar />
