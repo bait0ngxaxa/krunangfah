@@ -33,7 +33,7 @@ export function SearchInput({
                 placeholder={placeholder}
                 maxLength={100}
                 autoComplete="off"
-                className="w-full rounded-xl border border-emerald-100 bg-white/60 py-3.5 pl-12 pr-14 text-sm text-gray-800 shadow-sm outline-none backdrop-blur-sm transition-base hover:border-emerald-200 hover:shadow-md focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200 placeholder:text-gray-500"
+                className="w-full rounded-xl border border-emerald-100 bg-white/60 py-3.5 pl-12 pr-14 text-sm text-gray-800 shadow-sm outline-none transition-base hover:border-emerald-200 hover:shadow-md focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200 placeholder:text-gray-500"
             />
             {isSearching ? (
                 <div

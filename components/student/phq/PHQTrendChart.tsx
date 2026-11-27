@@ -56,7 +56,7 @@ function CustomTooltip({
         const risk = getRiskLevelConfig(data.riskLevel as RiskLevel);
 
         return (
-            <div className="rounded-xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur-sm">
+            <div className="rounded-xl border border-gray-200 bg-white/95 p-4 shadow-lg">
                 <p className="font-semibold text-gray-800 mb-2">{data.date}</p>
                 <p className="text-sm text-gray-600 mb-1">{data.academicYear}</p>
                 <p className="text-lg font-bold text-gray-900">
@@ -129,8 +129,8 @@ export function PHQTrendChart({ results }: PHQTrendChartProps) {
 
     return (
         <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-base duration-300 hover:shadow-[0_24px_44px_-24px_rgba(15,23,42,0.5)] md:p-8">
-            <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-emerald-200/35 blur-3xl" />
-            <div className="pointer-events-none absolute -left-24 -bottom-20 h-56 w-56 rounded-full bg-cyan-200/20 blur-3xl" />
+            <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-emerald-200/35 glow-blob-k162" />
+            <div className="pointer-events-none absolute -left-24 -bottom-20 h-56 w-56 rounded-full bg-cyan-200/20 glow-blob-k175" />
 
             <div className="relative z-10">
                 <div className="mb-6 flex flex-wrap items-start justify-between gap-4">

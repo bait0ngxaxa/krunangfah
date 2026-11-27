@@ -25,7 +25,7 @@ function OverviewCard({
     return (
         <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-cyan-50/40 p-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
             <div
-                className={`pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full blur-3xl ${glowColor}`}
+                className={`pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full glow-blob-k125 ${glowColor}`}
                 aria-hidden="true"
             />
             <div className="relative z-10 flex items-center gap-4">

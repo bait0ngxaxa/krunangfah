@@ -24,7 +24,7 @@ function getVariantStyle(variant: HeaderVariant): VariantStyle {
         return {
             container:
                 "relative bg-white rounded-4xl border-2 border-[var(--brand-primary)] shadow-sm p-5 sm:p-6 overflow-hidden group",
-            accent: "absolute -top-12 -right-12 w-28 h-28 bg-[var(--brand-primary)]/10 rounded-full blur-xl pointer-events-none",
+            accent: "absolute -top-12 -right-12 w-28 h-28 bg-[var(--brand-primary)]/10 rounded-full glow-blob-k225 pointer-events-none",
             iconWrap:
                 "w-12 h-12 rounded-2xl bg-white border-2 border-[var(--brand-primary)] flex items-center justify-center shadow-md group-hover:-translate-y-1 transition-transform duration-300",
             icon: "w-6 h-6 text-[var(--brand-primary)] stroke-[2.5]",

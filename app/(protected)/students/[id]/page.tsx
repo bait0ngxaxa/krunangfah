@@ -126,9 +126,9 @@ export default async function StudentDetailPage({
     return (
         <div className="relative min-h-screen overflow-hidden bg-linear-to-br from-slate-50 via-white to-emerald-50/40 py-6 px-4">
             <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-                <div className="absolute -top-16 -right-12 h-72 w-72 rounded-full bg-emerald-100/60 blur-3xl" />
-                <div className="absolute bottom-8 -left-16 h-72 w-72 rounded-full bg-cyan-100/45 blur-3xl" />
-                <div className="absolute top-1/3 left-1/4 h-52 w-52 rounded-full bg-teal-100/40 blur-3xl" />
+                <div className="absolute -top-16 -right-12 h-72 w-72 rounded-full bg-emerald-100/60 glow-blob-k225" />
+                <div className="absolute bottom-8 -left-16 h-72 w-72 rounded-full bg-cyan-100/45 glow-blob-k225" />
+                <div className="absolute top-1/3 left-1/4 h-52 w-52 rounded-full bg-teal-100/40 glow-blob-k162" />
             </div>
 
             <div className="relative z-10 mx-auto max-w-7xl">

@@ -114,7 +114,7 @@ export function AddHomeVisitModal({
             }}
         >
             <div
-                className="my-4 flex max-h-[92vh] w-full max-w-2xl animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
+                className="my-4 flex max-h-[92vh] w-full max-w-2xl animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] sm:my-8"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="homevisit-modal-title"

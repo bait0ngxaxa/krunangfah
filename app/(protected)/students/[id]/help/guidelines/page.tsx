@@ -80,7 +80,7 @@ export default async function GuidelinesPage({
                 <BackButton href={backHref} label="กลับหน้าใบงาน" />
 
                 <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-8">
-                    <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-linear-to-br from-emerald-200/45 to-teal-300/35 blur-xl" />
+                    <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-linear-to-br from-emerald-200/45 to-teal-300/35 glow-blob-k350" />
                     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
 
                     <HelpPageHeader

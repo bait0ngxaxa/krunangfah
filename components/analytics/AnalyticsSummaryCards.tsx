@@ -37,7 +37,7 @@ function MainStudentCard({
 
     return (
         <div className="relative overflow-hidden rounded-3xl border border-cyan-200/80 bg-linear-to-br from-white via-cyan-50/70 to-emerald-50/50 px-6 py-5 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
-            <div className="pointer-events-none absolute -top-14 -right-14 h-40 w-40 rounded-full bg-cyan-200/40 blur-3xl" />
+            <div className="pointer-events-none absolute -top-14 -right-14 h-40 w-40 rounded-full bg-cyan-200/40 glow-blob-k125" />
             <div className="relative z-10 flex min-h-36 flex-col justify-center gap-4">
                 <div className="flex items-start gap-3">
                     <div className="rounded-2xl border border-white/80 bg-white/85 p-3.5 shadow-md ring-1 ring-slate-900/5">
@@ -188,7 +188,7 @@ function ActivityNotApplicableCard() {
             className="relative overflow-hidden rounded-3xl border border-cyan-200/80 bg-linear-to-br from-white via-cyan-50/60 to-sky-50/50 p-5 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.38)]"
             role="status"
         >
-            <div className="pointer-events-none absolute -top-14 -right-14 h-36 w-36 rounded-full bg-cyan-200/35 blur-3xl" />
+            <div className="pointer-events-none absolute -top-14 -right-14 h-36 w-36 rounded-full bg-cyan-200/35 glow-blob-k112" />
             <div className="relative z-10 flex min-h-36 items-start gap-3">
                 <div className="shrink-0 rounded-2xl border border-white/80 bg-white/85 p-3 shadow-sm ring-1 ring-slate-900/5">
                     <Info
@@ -218,7 +218,7 @@ function MetricBlock({
 }) {
     return (
         <section className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-5 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
-            <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-emerald-200/25 blur-3xl" />
+            <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-emerald-200/25 glow-blob-k125" />
             <div className="relative z-10">
                 <h2 className="mb-4 text-sm font-extrabold tracking-wide text-slate-700 uppercase">
                     {title}

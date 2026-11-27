@@ -98,9 +98,9 @@ export default async function Home() {
 
             {/* Subtle ambient blobs — GPU-accelerated */}
             <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[30%] left-[5%] w-48 sm:w-64 h-48 sm:h-64 bg-emerald-200 rounded-full blur-2xl opacity-25 animate-pulse will-change-transform" />
-                <div className="absolute top-[50%] right-[15%] w-40 sm:w-56 h-40 sm:h-56 bg-teal-100 rounded-full blur-2xl opacity-20 animate-pulse delay-150 will-change-transform" />
-                <div className="absolute bottom-[20%] left-[30%] w-56 sm:w-72 h-56 sm:h-72 bg-cyan-100 rounded-full blur-2xl opacity-15 animate-pulse delay-300 will-change-transform" />
+                <div className="absolute top-[30%] left-[5%] w-48 sm:w-64 h-48 sm:h-64 bg-emerald-200 rounded-full glow-blob-k250 sm:glow-blob-k300 opacity-25 animate-pulse will-change-transform" />
+                <div className="absolute top-[50%] right-[15%] w-40 sm:w-56 h-40 sm:h-56 bg-teal-100 rounded-full glow-blob-k200 sm:glow-blob-k300 opacity-20 animate-pulse delay-150 will-change-transform" />
+                <div className="absolute bottom-[20%] left-[30%] w-56 sm:w-72 h-56 sm:h-72 bg-cyan-100 rounded-full glow-blob-k300 sm:glow-blob-k350 opacity-15 animate-pulse delay-300 will-change-transform" />
             </div>
         </div>
     );

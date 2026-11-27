@@ -63,7 +63,7 @@ export function WorksheetPreviewButton({
                         aria-label={previewFile.name}
                     >
                         <div
-                            className="my-4 flex max-h-[92vh] w-full max-w-5xl animate-zoom-in flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:my-8"
+                            className="my-4 flex max-h-[92vh] w-full max-w-5xl animate-zoom-in flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-[0_30px_80px_-24px_rgba(15,23,42,0.65)] sm:my-8"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-4 sm:px-8 sm:py-5">

@@ -33,7 +33,7 @@ export function ConfirmDialog({
             onClick={onCancel}
         >
             <div
-                className="w-full max-w-sm animate-in fade-in zoom-in-95 duration-200 overflow-hidden rounded-2xl border border-white/60 bg-white/95 shadow-[0_24px_60px_-20px_rgba(15,23,42,0.65)] backdrop-blur-xl"
+                className="w-full max-w-sm animate-in fade-in zoom-in-95 duration-200 overflow-hidden rounded-2xl border border-white/60 bg-white/95 shadow-[0_24px_60px_-20px_rgba(15,23,42,0.65)]"
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby="confirm-dialog-title"

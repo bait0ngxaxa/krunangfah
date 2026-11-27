@@ -176,7 +176,7 @@ async function DashboardContent({ session }: { session: Session }) {
         return (
             <div className="max-w-4xl mx-auto relative z-10 px-4 sm:px-6 lg:px-8 py-6">
                 <div className="text-center py-8">
-                    <div className="inline-flex items-center justify-center p-3 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg ring-1 ring-white/60 mb-5">
+                    <div className="inline-flex items-center justify-center p-3 bg-white/60 rounded-2xl shadow-lg ring-1 ring-white/60 mb-5">
                         <Sparkles className="w-8 h-8 text-pink-400" />
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">

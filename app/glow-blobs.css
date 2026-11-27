@@ -1,0 +1,54 @@
+/* Decorative glow blobs without `filter: blur()`.
+   Each utility reproduces a solid disc blurred by a Gaussian (Tailwind blur-lg/xl/2xl/3xl = 16/24/40/64px std-dev):
+   k = disc radius / blur std-dev, e.g. h-44 + blur-3xl -> k = 88 / 64 = 1.375 -> glow-blob-k138.
+   `scale` grows the element around its centre to the blur's visible extent (radius + 2.4 std-dev),
+   and the mask stops sample the exact blurred-disc profile, so colour, opacity and position classes stay unchanged.
+   Stops were computed from the non-central chi-square CDF; max alpha error vs. the real blur is < 0.035. */
+@utility glow-blob-k100 {
+    scale: 3.4000;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.393) 0%, rgb(0 0 0 / 0.367) 12.5%, rgb(0 0 0 / 0.298) 25%, rgb(0 0 0 / 0.209) 37.5%, rgb(0 0 0 / 0.127) 50%, rgb(0 0 0 / 0.067) 62.5%, rgb(0 0 0 / 0.030) 75%, rgb(0 0 0 / 0.012) 87.5%, transparent);
+}
+@utility glow-blob-k112 {
+    scale: 3.1333;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.469) 0%, rgb(0 0 0 / 0.437) 12.5%, rgb(0 0 0 / 0.354) 25%, rgb(0 0 0 / 0.249) 37.5%, rgb(0 0 0 / 0.150) 50%, rgb(0 0 0 / 0.078) 62.5%, rgb(0 0 0 / 0.034) 75%, rgb(0 0 0 / 0.013) 87.5%, transparent);
+}
+@utility glow-blob-k125 {
+    scale: 2.9200;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.542) 0%, rgb(0 0 0 / 0.506) 12.5%, rgb(0 0 0 / 0.411) 25%, rgb(0 0 0 / 0.288) 37.5%, rgb(0 0 0 / 0.174) 50%, rgb(0 0 0 / 0.089) 62.5%, rgb(0 0 0 / 0.039) 75%, rgb(0 0 0 / 0.014) 87.5%, transparent);
+}
+@utility glow-blob-k138 {
+    scale: 2.7455;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.611) 0%, rgb(0 0 0 / 0.572) 12.5%, rgb(0 0 0 / 0.466) 25%, rgb(0 0 0 / 0.328) 37.5%, rgb(0 0 0 / 0.198) 50%, rgb(0 0 0 / 0.101) 62.5%, rgb(0 0 0 / 0.043) 75%, rgb(0 0 0 / 0.015) 87.5%, transparent);
+}
+@utility glow-blob-k150 {
+    scale: 2.6000;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.675) 0%, rgb(0 0 0 / 0.633) 12.5%, rgb(0 0 0 / 0.519) 25%, rgb(0 0 0 / 0.368) 37.5%, rgb(0 0 0 / 0.222) 50%, rgb(0 0 0 / 0.113) 62.5%, rgb(0 0 0 / 0.047) 75%, rgb(0 0 0 / 0.016) 87.5%, transparent);
+}
+@utility glow-blob-k162 {
+    scale: 2.4769;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.733) 0%, rgb(0 0 0 / 0.689) 12.5%, rgb(0 0 0 / 0.570) 25%, rgb(0 0 0 / 0.408) 37.5%, rgb(0 0 0 / 0.248) 50%, rgb(0 0 0 / 0.125) 62.5%, rgb(0 0 0 / 0.052) 75%, rgb(0 0 0 / 0.018) 87.5%, transparent);
+}
+@utility glow-blob-k175 {
+    scale: 2.3714;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.784) 0%, rgb(0 0 0 / 0.740) 12.5%, rgb(0 0 0 / 0.618) 25%, rgb(0 0 0 / 0.447) 37.5%, rgb(0 0 0 / 0.274) 50%, rgb(0 0 0 / 0.138) 62.5%, rgb(0 0 0 / 0.057) 75%, rgb(0 0 0 / 0.019) 87.5%, transparent);
+}
+@utility glow-blob-k200 {
+    scale: 2.2000;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.865) 0%, rgb(0 0 0 / 0.824) 12.5%, rgb(0 0 0 / 0.704) 25%, rgb(0 0 0 / 0.523) 37.5%, rgb(0 0 0 / 0.327) 50%, rgb(0 0 0 / 0.166) 62.5%, rgb(0 0 0 / 0.067) 75%, rgb(0 0 0 / 0.021) 87.5%, transparent);
+}
+@utility glow-blob-k225 {
+    scale: 2.0667;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.920) 0%, rgb(0 0 0 / 0.886) 12.5%, rgb(0 0 0 / 0.776) 25%, rgb(0 0 0 / 0.596) 37.5%, rgb(0 0 0 / 0.382) 50%, rgb(0 0 0 / 0.196) 62.5%, rgb(0 0 0 / 0.078) 75%, rgb(0 0 0 / 0.024) 87.5%, transparent);
+}
+@utility glow-blob-k250 {
+    scale: 1.9600;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.956) 0%, rgb(0 0 0 / 0.929) 12.5%, rgb(0 0 0 / 0.836) 25%, rgb(0 0 0 / 0.663) 37.5%, rgb(0 0 0 / 0.437) 50%, rgb(0 0 0 / 0.227) 62.5%, rgb(0 0 0 / 0.090) 75%, rgb(0 0 0 / 0.026) 87.5%, transparent);
+}
+@utility glow-blob-k300 {
+    scale: 1.8000;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.989) 0%, rgb(0 0 0 / 0.976) 12.5%, rgb(0 0 0 / 0.919) 25%, rgb(0 0 0 / 0.779) 37.5%, rgb(0 0 0 / 0.548) 50%, rgb(0 0 0 / 0.296) 62.5%, rgb(0 0 0 / 0.116) 75%, rgb(0 0 0 / 0.032) 87.5%, transparent);
+}
+@utility glow-blob-k350 {
+    scale: 1.6857;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0 / 0.998) 0%, rgb(0 0 0 / 0.993) 12.5%, rgb(0 0 0 / 0.964) 25%, rgb(0 0 0 / 0.866) 37.5%, rgb(0 0 0 / 0.652) 50%, rgb(0 0 0 / 0.371) 62.5%, rgb(0 0 0 / 0.146) 75%, rgb(0 0 0 / 0.037) 87.5%, transparent);
+}

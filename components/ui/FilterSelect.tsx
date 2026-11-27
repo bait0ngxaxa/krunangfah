@@ -22,7 +22,7 @@ export function FilterSelect({
 }: FilterSelectProps): ReactElement {
     return (
         <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm">
-            <div className="pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-cyan-100/50 blur-2xl" />
+            <div className="pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-cyan-100/50 glow-blob-k125" />
             <div className="relative flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                 <label
                     htmlFor={id}

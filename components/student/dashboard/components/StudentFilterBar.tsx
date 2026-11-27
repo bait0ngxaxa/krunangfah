@@ -93,7 +93,7 @@ export function StudentFilterBar({
         selectedRiskFilter === "all" && !showReferredOnly;
 
     return (
-        <div className="relative overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 backdrop-blur-xl">
+        <div className="relative overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5">
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-indigo-300/30 to-transparent" />
 
             <div className="px-5 py-4 relative z-10">
