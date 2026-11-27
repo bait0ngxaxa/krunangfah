@@ -3,10 +3,12 @@ import { AlertTriangle, Info } from "lucide-react";
 import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 import { Button } from "@/components/ui/Button";
 import type { ZeroScoreWarningInfo } from "../types";
+import { NumericStudentIdWarning } from "./NumericStudentIdWarning";
 
 interface ImportActionsProps {
     onCancel: () => void;
-    onSave: () => void;
+    /** Receives the numeric-code count the user saw when confirming */
+    onSave: (acknowledgedNumericCount: number) => void;
     isLoading: boolean;
     canSave: boolean;
     studentCount: number;
@@ -15,6 +17,7 @@ interface ImportActionsProps {
     assessmentRound: number;
     incompleteWarning: IncompleteActivityInfo | null;
     zeroScoreWarning: ZeroScoreWarningInfo | null;
+    numericStudentIdCount: number;
 }
 
 /**
@@ -30,8 +33,18 @@ export function ImportActions({
     assessmentRound,
     incompleteWarning,
     zeroScoreWarning,
+    numericStudentIdCount,
 }: ImportActionsProps) {
-    const [showConfirm, setShowConfirm] = useState(false);
+    // Snapshot taken when the dialog opens; if the payload's numeric count
+    // changes while it is open, the dialog closes and must be reopened.
+    const [numericCountAtOpen, setNumericCountAtOpen] = useState<number | null>(null);
+    if (numericCountAtOpen !== null && numericCountAtOpen !== numericStudentIdCount) {
+        setNumericCountAtOpen(null);
+    }
+    const showConfirm = numericCountAtOpen !== null && numericCountAtOpen === numericStudentIdCount;
+    const setShowConfirm = (open: boolean): void => {
+        setNumericCountAtOpen(open ? numericStudentIdCount : null);
+    };
 
     useEffect(() => {
         if (!showConfirm) {
@@ -40,7 +53,7 @@ export function ImportActions({
 
         const handleEscape = (event: KeyboardEvent): void => {
             if (event.key === "Escape") {
-                setShowConfirm(false);
+                setNumericCountAtOpen(null);
             }
         };
 
@@ -63,7 +76,7 @@ export function ImportActions({
         }
 
         setShowConfirm(false);
-        onSave();
+        onSave(numericStudentIdCount);
     };
 
     const handleCancelConfirm = (): void => {
@@ -151,6 +164,10 @@ export function ImportActions({
                                         {assessmentRound} ได้ตามปกติ
                                     </p>
                                 </div>
+                            )}
+
+                            {numericStudentIdCount > 0 && (
+                                <NumericStudentIdWarning count={numericStudentIdCount} />
                             )}
 
                             {zeroScoreWarning && (

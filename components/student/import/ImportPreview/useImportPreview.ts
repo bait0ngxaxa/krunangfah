@@ -24,6 +24,7 @@ import type { IncompleteActivityInfo } from "@/lib/actions/student/types";
 import {
     buildImportStudentsPayload,
     buildZeroScoreWarning,
+    countNumericStudentIds,
     createPreviewStudents,
     filterPreviewStudents,
     formatParseImportErrors,
@@ -106,6 +107,11 @@ export function useImportPreview({
 
     const zeroScoreWarning = useMemo(
         () => buildZeroScoreWarning(previewData),
+        [previewData],
+    );
+
+    const numericStudentIdCount = useMemo(
+        () => countNumericStudentIds(buildImportStudentsPayload(previewData)),
         [previewData],
     );
 
@@ -374,7 +380,7 @@ export function useImportPreview({
     }, []);
 
     // Handle save action — send only previewData (filtered by role) to match the confirmed count
-    const handleSave = () => {
+    const handleSave = (acknowledgedNumericCount: number) => {
         if (isSavingRef.current) {
             return;
         }
@@ -393,19 +399,34 @@ export function useImportPreview({
             return;
         }
 
+        // Send only filtered students (previewData) — not all editableData
+        // This matches the count shown in the confirm dialog
+        const studentsToImport = buildImportStudentsPayload(previewData);
+        const payloadNumericCount = countNumericStudentIds(studentsToImport);
+        if (payloadNumericCount !== acknowledgedNumericCount) {
+            setErrorTitle("นำเข้าข้อมูลไม่สำเร็จ");
+            setErrorDescription("กรุณาตรวจสอบรายละเอียดด้านล่างแล้วลองอีกครั้ง");
+            setError("ข้อมูลที่จะนำเข้าเปลี่ยนไประหว่างยืนยัน กรุณากดตรวจสอบและนำเข้าอีกครั้ง");
+            return;
+        }
+
         setError(null);
         isSavingRef.current = true;
 
         startTransition(async () => {
             try {
-                // Send only filtered students (previewData) — not all editableData
-                // This matches the count shown in the confirm dialog
-                const studentsToImport = buildImportStudentsPayload(previewData);
-                const result = await importStudents(
-                    studentsToImport,
-                    selectedYearId,
-                    assessmentRound,
-                );
+                const result = payloadNumericCount > 0
+                    ? await importStudents(
+                          studentsToImport,
+                          selectedYearId,
+                          assessmentRound,
+                          { numericIdAcknowledged: true },
+                      )
+                    : await importStudents(
+                          studentsToImport,
+                          selectedYearId,
+                          assessmentRound,
+                      );
                 const hasImportedRows =
                     typeof result.imported === "number" && result.imported > 0;
 
@@ -466,6 +487,7 @@ export function useImportPreview({
         incompleteCheckFailed,
         incompleteWarning,
         zeroScoreWarning,
+        numericStudentIdCount,
 
         // Computed values
         previewData,

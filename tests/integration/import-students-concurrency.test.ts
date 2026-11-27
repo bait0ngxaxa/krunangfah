@@ -689,25 +689,30 @@ describe("Integration: concurrent student imports", () => {
         await expect(prisma.phqResult.count({ where: { studentId: legacy.id } })).resolves.toBe(gap === "both" ? 1 : 2);
     });
 
-    it("keeps leading-zero codes distinct and accepts legacy numbers only with both identifiers", async () => {
+    it("keeps leading-zero text codes distinct and never attaches an ambiguous numeric code", async () => {
         signIn(USERS_A.schoolAdmin);
         const padded = createImportRow({ studentId: "00123", nationalId: null });
         const plain = createImportRow({ studentId: "123", nationalId: createNationalId(25) });
         const numeric = { ...plain, numericStudentId: true };
-        await expect(importStudents([numeric], firstAcademicYearId, 1)).resolves.toMatchObject({
-            success: false, identityConflicts: 1, createdStudents: 0,
+        await expect(importStudents([numeric], firstAcademicYearId, 1)).resolves.toEqual({
+            success: false,
+            status: "error",
+            message: "ต้องยืนยันการนำเข้ารหัสนักเรียนที่เป็นตัวเลขก่อน กรุณาลองใหม่",
+            imported: 0,
         });
+        await expect(prisma.student.count({ where: { schoolId, studentId: "123" } })).resolves.toBe(0);
         await expect(importStudents([padded, plain], firstAcademicYearId, 1)).resolves.toMatchObject({ createdStudents: 2 });
-        await expect(importStudents([{ ...numeric, nationalId: null }], firstAcademicYearId, 2))
+        // Both "123" and "00123" now exist, so numeric 123 is ambiguous even with acknowledgement.
+        await expect(importStudents([{ ...numeric, nationalId: null }], firstAcademicYearId, 2, { numericIdAcknowledged: true }))
             .resolves.toMatchObject({ success: false, identityConflicts: 1, phqCreated: 0 });
-        await expect(importStudents([padded, numeric], firstAcademicYearId, 2))
-            .resolves.toMatchObject({ success: true, createdStudents: 0, phqCreated: 2 });
+        await expect(importStudents([padded, numeric], firstAcademicYearId, 2, { numericIdAcknowledged: true }))
+            .resolves.toMatchObject({ status: "partial", createdStudents: 0, phqCreated: 1 });
         const persisted = await prisma.student.findMany({
             where: { schoolId, studentId: { in: ["00123", "123"] } },
             include: { _count: { select: { phqResults: true } } },
         });
-        expect(persisted).toHaveLength(2);
-        expect(persisted.every((student) => student._count.phqResults === 2)).toBe(true);
+        expect(Object.fromEntries(persisted.map((student) => [student.studentId, student._count.phqResults])))
+            .toEqual({ "00123": 2, "123": 1 });
     });
 });
 

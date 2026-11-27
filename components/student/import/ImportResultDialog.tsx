@@ -60,6 +60,12 @@ function StudentResultList({
                     <p className="break-words text-xs opacity-80">
                         ห้อง {student.class}
                     </p>
+                    {student.sourceStudentId && (
+                        <p className="mt-1 break-words text-xs">
+                            รหัสในไฟล์ {student.sourceStudentId} → ใช้รหัสในระบบ{" "}
+                            {student.studentId}
+                        </p>
+                    )}
                     {student.reason && (
                         <p className="mt-1 break-words text-xs">
                             {student.reason}

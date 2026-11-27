@@ -13,7 +13,7 @@ import {
     canGenerateActivitiesForAssessmentRound,
 } from "@/lib/actions/activity/constants";
 import { revalidatePath } from "next/cache";
-import type { ImportResult, ImportStudentSummary } from "./types";
+import type { ImportResult, ImportStudentSummary, ImportStudentsOptions } from "./types";
 import { logError } from "@/lib/utils/logging";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
@@ -52,6 +52,23 @@ import {
 import { MAX_IMPORT_ROW_COUNT } from "@/lib/constants/import";
 import { LATEST_PHQ_ORDER_BY } from "@/lib/utils/phq-result-selection";
 import { runSerializableTransaction } from "@/lib/utils/serializable-transaction";
+import {
+    findInBatchZeroKeyConflicts,
+    formatInBatchConflictReason,
+    formatUndisclosedReviewReason,
+    getImportAgeChange,
+    IMPORT_STUDENT_SELECT,
+    indexTextIdsByZeroKey,
+    loadZeroKeyCandidates,
+    normalizeImportName,
+    NUMERIC_ID_ACK_REQUIRED_MESSAGE,
+    parseImportStudentsOptions,
+    resolveNumericStudentIdentity,
+    zeroKey,
+    type ImportStudentRecord,
+    type ResolvedImportRow,
+    type StoredImportStudent,
+} from "./import-identity";
 
 const ACTIVITY_INIT_RISK_LEVELS = new Set<RiskLevel>(["orange", "yellow", "green"]);
 const IMPORT_STUDENTS_IDEMPOTENCY_TTL_SECONDS = 30 * 60;
@@ -127,13 +144,24 @@ interface EditableStudentProfileRecord {
 function createImportStudentSummary(
     student: ParsedStudent,
     reason?: string,
+    sourceStudentId?: string,
 ): ImportStudentSummary {
     return {
         studentId: redactNationalIds(student.studentId),
         fullName: redactNationalIds(`${student.firstName} ${student.lastName}`),
         class: redactNationalIds(student.class),
         reason,
+        ...(sourceStudentId === undefined ? {} : { sourceStudentId: redactNationalIds(sourceStudentId) }),
     };
+}
+
+function summarizeResolvedRow(entry: ResolvedImportRow, reason?: string): ImportStudentSummary {
+    const { row, source } = entry;
+    return createImportStudentSummary(
+        row,
+        reason,
+        source.studentId === row.studentId ? undefined : source.studentId,
+    );
 }
 
 function formatImportStudentError(student: ParsedStudent, reason: string): string {
@@ -176,26 +204,7 @@ function getActivityNumbersByRiskLevel(riskLevel: RiskLevel): number[] {
     return ACTIVITY_INDICES[riskLevel as keyof typeof ACTIVITY_INDICES];
 }
 
-interface ImportStudentRecord {
-    id: string;
-    nationalId: string | null;
-    firstName: string;
-    lastName: string;
-    class: string;
-    gender: ParsedStudent["gender"] | null;
-    age: number | null;
-    phqResults: { academicYear: { startDate: Date } }[];
-}
-
 const DAYS_PER_YEAR = 365.2425;
-
-function getImportAgeChange(row: ParsedStudent, existing: ImportStudentRecord): number | null {
-    return existing.age === null ? null : row.age - existing.age;
-}
-
-function normalizeImportName(name: string): string {
-    return name.normalize("NFC").trim().replace(/\s+/g, " ").toLowerCase();
-}
 
 function isMinorNameCorrection(before: string, after: string): boolean {
     const left = Array.from(before);
@@ -223,12 +232,6 @@ function resolveImportIdentity(
         };
     }
 
-    if (row.numericStudentId && (!nationalIdOwner || !existingStudent)) {
-        return {
-            kind: "review",
-            reason: "รหัสนักเรียนมาจากเซลล์ตัวเลข กรุณาตรวจรหัสจากทะเบียนและกรอกเป็นข้อความให้ครบทุกหลัก รวมเลขศูนย์นำหน้า",
-        };
-    }
     if (!existingStudent) return { kind: "new" };
 
     if (row.nationalId !== null && existingStudent.nationalId !== null) {
@@ -293,6 +296,7 @@ export async function importStudents(
     students: ParsedStudent[],
     academicYearId: string,
     assessmentRound: number = 1,
+    options?: ImportStudentsOptions,
 ): Promise<ImportResult> {
     let importIdempotencyKey: string | null = null;
     let shouldClearImportIdempotency = false;
@@ -317,6 +321,18 @@ export async function importStudents(
                 message: "รอบการประเมินไม่ถูกต้อง",
             };
         }
+
+        const importOptions = parseImportStudentsOptions(options);
+        if (!importOptions) {
+            return {
+                success: false,
+                status: "error",
+                message: "ข้อมูลการยืนยันนำเข้าไม่ถูกต้อง",
+            };
+        }
+        // UX safeguard against accidental confirmation, not a security control:
+        // the client chooses both this flag and the numeric provenance it covers.
+        const { numericIdAcknowledged } = importOptions;
 
         const invalidPhqRowIndex = students.findIndex(
             (student) => !isPhqScores(student?.scores),
@@ -415,6 +431,7 @@ export async function importStudents(
             assessmentRound,
             classScope: isClassTeacher ? advisoryClass : undefined,
             students: normalizedStudents,
+            numericIdAcknowledged,
         });
         const idempotencyResult = await startIdempotentOperation(
             importIdempotencyKey,
@@ -503,6 +520,7 @@ export async function importStudents(
         const studentIdCounts = new Map<string, number>();
         const nationalIdCounts = new Map<string, number>();
         const eligibleRows: ParsedStudent[] = [];
+        const textIdsByZeroKey = indexTextIdsByZeroKey(normalizedStudents);
 
         for (const { studentId, nationalId } of normalizedStudents) {
             studentIdCounts.set(studentId, (studentIdCounts.get(studentId) ?? 0) + 1);
@@ -543,6 +561,13 @@ export async function importStudents(
             }
             if (studentData.nationalId !== null && (nationalIdCounts.get(studentData.nationalId) ?? 0) > 1) {
                 const reason = "พบเลขบัตรประชาชนซ้ำในไฟล์นำเข้า";
+                errors.push(formatImportStudentError(studentData, reason));
+                failedStudents.push(createImportStudentSummary(studentData, reason));
+                continue;
+            }
+            const inBatchConflicts = findInBatchZeroKeyConflicts(studentData, textIdsByZeroKey);
+            if (inBatchConflicts.length > 0) {
+                const reason = formatInBatchConflictReason(studentData, inBatchConflicts);
                 errors.push(formatImportStudentError(studentData, reason));
                 failedStudents.push(createImportStudentSummary(studentData, reason));
                 continue;
@@ -596,31 +621,66 @@ export async function importStudents(
                     schoolId,
                     studentId: { in: importedStudentIds },
                 },
-                select: {
-                    id: true,
-                    studentId: true,
-                    nationalId: true,
-                    firstName: true,
-                    lastName: true,
-                    class: true,
-                    age: true,
-                    gender: true,
-                    phqResults: {
-                        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-                        take: 1,
-                        select: { academicYear: { select: { startDate: true } } },
-                    },
-                },
+                select: IMPORT_STUDENT_SELECT,
             });
-            const existingStudentByStudentId = new Map(
+            const existingStudentByStudentId = new Map<string, StoredImportStudent>(
                 existingStudentsByStudentId.map((student) => [
                     student.studentId,
                     student,
                 ]),
             );
+            const zeroKeyCandidates = await loadZeroKeyCandidates(
+                tx,
+                schoolId,
+                eligibleRows,
+                existingStudentByStudentId,
+            );
 
-            const needsTermDates = eligibleRows.some((row) => {
-                const existing = existingStudentByStudentId.get(row.studentId);
+            const resolvedRows: ResolvedImportRow[] = [];
+            for (const row of eligibleRows) {
+                const nationalIdOwner = row.nationalId === null
+                    ? undefined
+                    : studentByNationalId.get(row.nationalId);
+                if (row.numericStudentId !== true) {
+                    resolvedRows.push({
+                        row,
+                        source: row,
+                        existingStudent: existingStudentByStudentId.get(row.studentId),
+                        nationalIdOwner,
+                    });
+                    continue;
+                }
+                const numeric = resolveNumericStudentIdentity(
+                    row,
+                    zeroKeyCandidates.get(zeroKey(row.studentId)) ?? [],
+                    nationalIdOwner,
+                );
+                if (numeric.kind === "review") {
+                    // Do not list codes from classes a class teacher cannot access.
+                    const hidesCandidates = isClassTeacher && numeric.candidates.some(
+                        (candidate) => normalizeClassName(candidate.class) !== advisoryClass,
+                    );
+                    const reason = hidesCandidates ? formatUndisclosedReviewReason(row) : numeric.reason;
+                    identityConflictErrors.push(formatImportStudentError(row, reason));
+                    identityConflictFailures.push(createImportStudentSummary(row, reason));
+                    continue;
+                }
+                const existingStudent = numeric.kind === "matched" ? numeric.student : undefined;
+                resolvedRows.push({
+                    // Every write for a resolved row uses the stored code, never the shortened one.
+                    row: existingStudent ? { ...row, studentId: existingStudent.studentId } : row,
+                    source: row,
+                    existingStudent,
+                    nationalIdOwner,
+                });
+            }
+
+            const resolvedIdCounts = new Map<string, number>();
+            for (const { row } of resolvedRows) {
+                resolvedIdCounts.set(row.studentId, (resolvedIdCounts.get(row.studentId) ?? 0) + 1);
+            }
+
+            const needsTermDates = resolvedRows.some(({ row, existingStudent: existing }) => {
                 if (!existing || (row.nationalId !== null && existing.nationalId !== null)) return false;
                 return Math.abs(getImportAgeChange(row, existing) ?? 0) > 1;
             });
@@ -629,24 +689,27 @@ export async function importStudents(
                 select: { startDate: true },
             }) : null;
 
-            const rowsSafeToImport: { row: ParsedStudent; existingStudent?: ImportStudentRecord }[] = [];
-            for (const row of eligibleRows) {
-                const existingStudent = existingStudentByStudentId.get(row.studentId);
+            const rowsSafeToImport: ResolvedImportRow[] = [];
+            for (const entry of resolvedRows) {
+                const { row, source, existingStudent, nationalIdOwner } = entry;
+                if ((resolvedIdCounts.get(row.studentId) ?? 0) > 1) {
+                    const reason = "พบรหัสนักเรียนซ้ำในไฟล์นำเข้า";
+                    identityConflictErrors.push(formatImportStudentError(source, reason));
+                    identityConflictFailures.push(summarizeResolvedRow(entry, reason));
+                    continue;
+                }
                 if (isClassTeacher && existingStudent &&
                     normalizeClassName(existingStudent.class) !== advisoryClass) {
-                    classAccessFailures.push(createImportStudentSummary(row, "ไม่ใช่ห้องที่คุณดูแล"));
+                    classAccessFailures.push(createImportStudentSummary(source, "ไม่ใช่ห้องที่คุณดูแล"));
                     continue;
                 }
-                const nationalIdOwner = row.nationalId === null
-                    ? undefined
-                    : studentByNationalId.get(row.nationalId);
                 const identity = resolveImportIdentity(row, existingStudent, nationalIdOwner, term?.startDate);
                 if (identity.kind === "conflict" || identity.kind === "review") {
-                    identityConflictErrors.push(formatImportStudentError(row, identity.reason));
-                    identityConflictFailures.push(createImportStudentSummary(row, identity.reason));
+                    identityConflictErrors.push(formatImportStudentError(source, identity.reason));
+                    identityConflictFailures.push(summarizeResolvedRow(entry, identity.reason));
                     continue;
                 }
-                rowsSafeToImport.push({ row, existingStudent });
+                rowsSafeToImport.push(entry);
             }
 
             if (rowsSafeToImport.length === 0) {
@@ -694,18 +757,16 @@ export async function importStudents(
                     : null;
             const duplicateRoundErrors: string[] = [];
             const duplicateRoundFailures: ImportStudentSummary[] = [];
-            const rowsToMutate = rowsSafeToImport.filter(({ row, existingStudent }) => {
-                const existingStudentId = existingStudent?.id;
+            const rowsToMutate = rowsSafeToImport.filter((entry) => {
+                const existingStudentId = entry.existingStudent?.id;
                 if (
                     assessmentRound === 2 &&
                     (!existingStudentId || !round1StudentSet?.has(existingStudentId))
                 ) {
                     const reason =
                         "ยังไม่มีข้อมูลการประเมินครั้งที่ 1 สำหรับปีการศึกษานี้";
-                    duplicateRoundErrors.push(formatImportStudentError(row, reason));
-                    duplicateRoundFailures.push(
-                        createImportStudentSummary(row, reason),
-                    );
+                    duplicateRoundErrors.push(formatImportStudentError(entry.source, reason));
+                    duplicateRoundFailures.push(summarizeResolvedRow(entry, reason));
                     return false;
                 }
                 if (
@@ -713,10 +774,8 @@ export async function importStudents(
                     hasExistingResultSet.has(existingStudentId)
                 ) {
                     const reason = `มีข้อมูลการประเมินครั้งที่ ${assessmentRound} อยู่แล้ว`;
-                    duplicateRoundErrors.push(formatImportStudentError(row, reason));
-                    duplicateRoundFailures.push(
-                        createImportStudentSummary(row, reason),
-                    );
+                    duplicateRoundErrors.push(formatImportStudentError(entry.source, reason));
+                    duplicateRoundFailures.push(summarizeResolvedRow(entry, reason));
                     return false;
                 }
                 return true;
@@ -733,6 +792,22 @@ export async function importStudents(
                     identityConflictErrors,
                     identityConflictFailures,
                     classAccessFailures,
+                };
+            }
+
+            // Checked before the first write so an unacknowledged batch is a
+            // complete no-op; a partial success would be cached by idempotency.
+            const createsNumericStudents = rowsToMutate.some(
+                ({ row, existingStudent }) => !existingStudent && row.numericStudentId === true,
+            );
+            if (createsNumericStudents && !numericIdAcknowledged) {
+                return {
+                    numericAcknowledgementRequired: true as const,
+                    identityConflictErrors,
+                    identityConflictFailures,
+                    classAccessFailures,
+                    duplicateRoundErrors,
+                    duplicateRoundFailures,
                 };
             }
 
@@ -810,7 +885,8 @@ export async function importStudents(
             const importedStudents: ImportStudentSummary[] = [];
             const phqResultsToCreate: Prisma.PhqResultCreateManyInput[] = [];
 
-            for (const { row, existingStudent } of rowsToMutate) {
+            for (const entry of rowsToMutate) {
+                const { row, existingStudent } = entry;
                 const studentId = existingStudent?.id ?? createdIdByStudentCode.get(row.studentId);
                 if (!studentId) throw new Error("Import did not persist a resolved student");
                 const { totalScore, riskLevel } = calculateRiskLevel(row.scores);
@@ -833,7 +909,7 @@ export async function importStudents(
                     totalScore,
                     riskLevel,
                 });
-                importedStudents.push(createImportStudentSummary(row));
+                importedStudents.push(summarizeResolvedRow(entry));
             }
 
             if (phqResultsToCreate.length > 0) {
@@ -906,6 +982,29 @@ export async function importStudents(
                 classAccessFailures,
             };
         });
+
+        if ("numericAcknowledgementRequired" in txResult) {
+            // Nothing was written; keep the diagnostics already computed for this batch.
+            const ackErrors = [
+                ...errors,
+                ...txResult.identityConflictErrors,
+                ...txResult.duplicateRoundErrors,
+            ];
+            const ackFailures = [
+                ...failedStudents,
+                ...txResult.identityConflictFailures,
+                ...txResult.duplicateRoundFailures,
+                ...txResult.classAccessFailures,
+            ];
+            return finishImport({
+                success: false,
+                status: "error",
+                message: NUMERIC_ID_ACK_REQUIRED_MESSAGE,
+                imported: 0,
+                ...(ackErrors.length > 0 ? { errors: ackErrors } : {}),
+                ...(ackFailures.length > 0 ? { failedStudents: ackFailures } : {}),
+            });
+        }
 
         errors.push(
             ...txResult.identityConflictErrors,

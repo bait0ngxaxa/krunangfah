@@ -53,6 +53,7 @@ export function ImportPreview({
         handleDismissError,
         incompleteWarning,
         zeroScoreWarning,
+        numericStudentIdCount,
     } = useImportPreview({ data, parseErrors, onSuccess });
 
     return (
@@ -167,6 +168,7 @@ export function ImportPreview({
                 assessmentRound={assessmentRound}
                 incompleteWarning={incompleteWarning}
                 zeroScoreWarning={zeroScoreWarning}
+                numericStudentIdCount={numericStudentIdCount}
             />
         </div>
     );

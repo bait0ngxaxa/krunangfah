@@ -97,6 +97,13 @@ export interface ImportStudentSummary {
     fullName: string;
     class: string;
     reason?: string;
+    /** Code as submitted when it was resolved to a different stored code (e.g. 123 → 00123). */
+    sourceStudentId?: string;
+}
+
+export interface ImportStudentsOptions {
+    /** Set by the confirmation dialog when the payload contains numeric-cell codes. */
+    numericIdAcknowledged?: boolean;
 }
 
 export interface ImportResult {

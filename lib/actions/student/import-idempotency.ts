@@ -41,6 +41,7 @@ export function createImportIdempotencyKey(input: {
     assessmentRound: number;
     classScope?: string;
     students: ParsedStudent[];
+    numericIdAcknowledged?: boolean;
 }): string {
     return [
         "idem:import-students",
@@ -50,6 +51,8 @@ export function createImportIdempotencyKey(input: {
         input.assessmentRound.toString(),
         createImportPayloadHash(input.students),
         ...(input.classScope === undefined ? [] : ["class", input.classScope]),
+        // An unacknowledged attempt is a no-op rejection; keep it distinct from the confirmed retry.
+        ...(input.numericIdAcknowledged === true ? ["numeric-ack"] : []),
     ].join(":");
 }
 
@@ -63,7 +66,8 @@ function isImportStudentSummary(value: unknown): value is ImportStudentSummary {
         typeof record.studentId === "string" &&
         typeof record.fullName === "string" &&
         typeof record.class === "string" &&
-        (record.reason === undefined || typeof record.reason === "string")
+        (record.reason === undefined || typeof record.reason === "string") &&
+        (record.sourceStudentId === undefined || typeof record.sourceStudentId === "string")
     );
 }
 
