@@ -86,7 +86,7 @@ export function ActionButtons({
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                    <div className="absolute left-0 right-0 top-full z-50 mt-3 overflow-hidden rounded-2xl border border-gray-200/80 bg-white/95 shadow-lg backdrop-blur-sm">
+                    <div className="absolute left-0 right-0 top-full z-50 mt-3 overflow-hidden rounded-2xl border border-gray-200/80 bg-white/95 shadow-lg">
                         {downloadUrls.map((url, index) => {
                             const worksheetNames =
                                 getWorksheetNames(activityNumber);

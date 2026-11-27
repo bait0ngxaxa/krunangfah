@@ -40,7 +40,7 @@ type AnalyticsFiltersProps = ComponentProps<typeof AnalyticsFilters>;
 
 function StickyAnalyticsFilters(props: AnalyticsFiltersProps) {
     return (
-        <div className="sticky top-3 z-30 -mx-2 rounded-[2rem] bg-white/85 px-2 py-2 backdrop-blur-md sm:top-4 sm:px-3">
+        <div className="sticky top-3 z-30 -mx-2 rounded-[2rem] bg-white/95 px-2 py-2 sm:top-4 sm:px-3">
             <AnalyticsFilters {...props} />
         </div>
     );
@@ -56,7 +56,7 @@ function FilterWarnings({ warnings }: { warnings: string[] }) {
             className="relative overflow-hidden rounded-3xl border border-amber-200/70 bg-linear-to-br from-white via-amber-50/60 to-orange-50/50 px-5 py-4 text-amber-900 shadow-[0_14px_30px_-24px_rgba(180,83,9,0.55)]"
             role="alert"
         >
-            <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-amber-200/45 blur-3xl" />
+            <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-amber-200/45 glow-blob-k100" />
             <div className="relative z-10 flex items-start gap-2.5">
                 <AlertTriangle
                     className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"

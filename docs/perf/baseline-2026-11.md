@@ -93,3 +93,17 @@ LCP element ของ `/` คือรูปใน hero (`hero.webp` หรื�
 - Screenshots `/`, `/signin`, `/forgot-password` ที่ 390 และ 1440 px: ต่าง 0 pixel (**PASS**)
 - Specimen ภาษาไทย + Latin ที่ weight 400/500/600/700, ขนาด 12–30 px, `GRAD` −50/200 และ `opsz` 17/18 เทียบฟอนต์ต้นฉบับกับ subset: ต่าง 0 pixel (**PASS**)
 - route ที่ต้อง login: NOT VERIFIED (ฟอนต์ชุดเดียวกันมาจาก root layout)
+
+### PR 2 — `perf/render-effects`
+
+| Route | Score | LCP (ms) | TBT (ms) | CLS | Transfer (KB) | Font (KB) |
+|---|---:|---:|---:|---:|---:|---:|
+| `/` | 82 → 82 | 4603 → 4603 | 127 → 128 | 0.000 → 0.000 | 664.2 → 664.8 | 111.5 → 111.5 |
+| `/signin` | 91 → 91 | 3320 → 3324 | 128 → 120 | 0.000 → 0.000 | 379.0 → 379.6 | 111.5 → 111.5 |
+
+- Lighthouse lab metrics ไม่ได้วัดต้นทุน paint/composite ตอน scroll ซึ่งเป็นสิ่งที่ PR นี้ลด ค่าที่ได้จึงเท่าเดิมในระดับ noise ตามที่คาด
+- First Load JS: ต่างกันไม่เกิน ±0.1 KB (มาจากความยาวของ class string)
+- Screenshots เทียบกับ PR 1: `/` ต่างสูงสุด 3 ระดับสี (ไม่มี pixel ไหนต่างเกิน 8) จาก blob ที่เปลี่ยนเป็น mask gradient, `/signin` และ `/forgot-password` ที่ 390 px ต่าง 0 pixel, ที่ 1440 px ต่าง 740 pixel (0.06%) จากการ anti-alias ข้อความ "หน้าหลัก" บน navbar และ pixel แถวล่างสุดหนึ่งแถว (**PASS** ตาเปล่ามองไม่ออก)
+- Gradient ของหน้าคงที่ขณะ scroll: ที่ scrollY 0/1500/3000 ทั้ง 1440 px และ 390 px (mobile emulation) ขอบบนเป็น `#c8f5e6` และขอบล่างเป็นขาวทุกครั้ง (**PASS**)
+- Harness `filter: blur()` เทียบกับ `glow-blob-k*` ด้วยสีและขนาดจริงของ repo 12 แบบ: ต่างสูงสุด 4 ระดับ ส่วนสูตรตรงตัว (ขยายเท่า σ แล้วไล่ gradient แบบเส้นตรง) ต่างสูงสุด 31 ระดับ
+- route ที่ต้อง login (รวม `/analytics` และ `/students/[id]`): NOT VERIFIED

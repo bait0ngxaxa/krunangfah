@@ -47,7 +47,7 @@ export function CounselingLogTable({
     return (
         <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 p-6 shadow-sm transition-base duration-300 hover:shadow-md md:p-8">
             {/* Corner decoration */}
-            <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-100/45 blur-3xl" />
+            <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-100/45 glow-blob-k125" />
 
             <h2 className="relative text-2xl font-bold mb-6 flex items-center gap-3">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200 bg-white text-emerald-600 shadow-sm">

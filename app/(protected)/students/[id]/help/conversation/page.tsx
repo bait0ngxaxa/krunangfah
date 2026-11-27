@@ -73,9 +73,9 @@ export default async function ConversationGuidelinesPage({
     return (
         <div className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-6">
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" />
-                <div className="absolute bottom-10 left-10 w-64 h-64 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow delay-1000" />
-                <div className="absolute top-1/3 left-1/4 w-48 h-48 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow delay-500" />
+                <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-100 rounded-full glow-blob-k200 opacity-40" />
+                <div className="absolute bottom-10 left-10 w-64 h-64 bg-teal-100 rounded-full glow-blob-k200 opacity-40" />
+                <div className="absolute top-1/3 left-1/4 w-48 h-48 bg-emerald-100 rounded-full glow-blob-k150 opacity-30" />
             </div>
 
             <div className="max-w-4xl mx-auto relative z-10">
@@ -85,7 +85,7 @@ export default async function ConversationGuidelinesPage({
                 />
 
                 <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/70 to-emerald-50/40 p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)] md:p-8">
-                    <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-linear-to-br from-emerald-200/45 to-teal-300/35 blur-xl" />
+                    <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-linear-to-br from-emerald-200/45 to-teal-300/35 glow-blob-k350" />
                     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent" />
 
                     <HelpPageHeader

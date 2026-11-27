@@ -34,7 +34,7 @@ export function HeroCard({
 
     if (isEmpty) {
         return (
-            <div className="relative flex items-center gap-4 overflow-hidden rounded-3xl border border-gray-200 bg-white/90 p-5 shadow-sm backdrop-blur-md">
+            <div className="relative flex items-center gap-4 overflow-hidden rounded-3xl border border-gray-200 bg-white/90 p-5 shadow-sm">
                 <div className="relative shrink-0">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200 bg-linear-to-br from-gray-100 to-gray-200 shadow-inner">
                         <Inbox

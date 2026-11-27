@@ -38,7 +38,7 @@ export function ReferredOutSection({ students }: ReferredOutSectionProps) {
     };
 
     return (
-        <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/80 ring-1 ring-slate-900/5 overflow-hidden">
+        <div className="relative bg-white/90 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/80 ring-1 ring-slate-900/5 overflow-hidden">
             {/* Top Edge Highlight */}
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-violet-300/30 to-transparent" />
 

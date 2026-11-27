@@ -176,7 +176,7 @@ export function TeacherSetupTabs({
 
     return (
         <div className="space-y-6">
-            <nav className="sticky top-3 z-30 rounded-2xl border border-gray-100 bg-white/95 backdrop-blur px-2 py-2 shadow-sm">
+            <nav className="sticky top-3 z-30 rounded-2xl border border-gray-100 bg-white/95 px-2 py-2 shadow-sm">
                 <div className="flex items-center gap-2 overflow-x-auto">
                     {FLOW_SECTIONS.map((section) => {
                         const isActive = activeSection === section.id;

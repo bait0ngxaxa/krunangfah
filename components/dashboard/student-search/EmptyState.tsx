@@ -16,7 +16,7 @@ export function EmptyState({
     if (hasError) {
         return (
             <div
-                className="rounded-2xl border border-red-100 bg-red-50/70 px-5 py-8 text-center text-red-700 backdrop-blur-sm"
+                className="rounded-2xl border border-red-100 bg-red-50/70 px-5 py-8 text-center text-red-700"
                 role="status"
             >
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white">
@@ -34,7 +34,7 @@ export function EmptyState({
 
     if (!hasQuery) {
         return (
-            <div className="rounded-2xl border border-white/50 bg-white/30 py-10 text-center text-gray-500 backdrop-blur-sm">
+            <div className="rounded-2xl border border-white/50 bg-white/30 py-10 text-center text-gray-500">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50">
                     <Search className="h-7 w-7 text-emerald-500" />
                 </div>
@@ -50,7 +50,7 @@ export function EmptyState({
 
     if (hasQuery && !isSearching && resultCount === 0) {
         return (
-            <div className="rounded-2xl border border-white/50 bg-white/30 py-10 text-center text-gray-500 backdrop-blur-sm">
+            <div className="rounded-2xl border border-white/50 bg-white/30 py-10 text-center text-gray-500">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50">
                     <Users className="h-7 w-7 text-gray-300" />
                 </div>

@@ -27,7 +27,7 @@ export function SearchResultsList({
         <div className="space-y-3">
             {/* Limit Indicator */}
             {results.length === 50 && (
-                <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3 backdrop-blur-sm">
+                <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3">
                     <AlertTriangle
                         className="w-5 h-5 text-amber-500 mt-0.5 shrink-0"
                         aria-hidden="true"
@@ -59,7 +59,7 @@ export function SearchResultsList({
             </div>
 
             {/* Results List */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-emerald-100/60 ring-1 ring-emerald-50 overflow-hidden shadow-sm">
+            <div className="bg-white/60 rounded-2xl border border-emerald-100/60 ring-1 ring-emerald-50 overflow-hidden shadow-sm">
                 <div className="relative">
                     <div
                         ref={scrollRef}

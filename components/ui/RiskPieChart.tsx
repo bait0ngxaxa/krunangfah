@@ -222,8 +222,8 @@ function RiskPieChartComponent({
     if (chartData.length === 0) {
         return (
             <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-8 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
-                <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 blur-3xl" />
+                <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 glow-blob-k138" />
+                <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 glow-blob-k150" />
                 {title && (
                     <h2 className="relative mb-4 text-center text-lg font-bold text-slate-800 sm:text-xl">
                         {title}
@@ -249,8 +249,8 @@ function RiskPieChartComponent({
         <div
             className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-4 pb-6 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] sm:p-6 sm:pb-8"
         >
-            <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 blur-3xl" />
+            <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-200/35 glow-blob-k138" />
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-cyan-200/25 glow-blob-k150" />
             {title && (
                 <h2 className="relative mb-4 text-center text-lg font-bold text-slate-800 sm:mb-6 sm:text-xl">
                     {title}

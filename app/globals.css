@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./glow-blobs.css";
 
 :root {
     --background: #ffffff;
@@ -38,9 +39,6 @@
 }
 
 body {
-    background-image: linear-gradient(to bottom, #c8f5e6, #ffffff);
-    background-repeat: no-repeat;
-    background-attachment: fixed;
     background-color: var(--background);
     color: var(--foreground);
     font-family:
@@ -48,6 +46,17 @@ body {
         system-ui,
         -apple-system,
         sans-serif;
+}
+
+/* Page gradient lives on a fixed pseudo-element instead of `background-attachment: fixed`,
+   which forces a full-page repaint on every scroll (and is ignored on iOS). */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(to bottom, #c8f5e6, #ffffff);
 }
 
 /* Typography tokens:

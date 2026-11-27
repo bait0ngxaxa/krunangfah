@@ -79,7 +79,7 @@ export function UserManagement({ initialData, schools }: UserManagementProps) {
 
             {/* Search */}
             <div className="relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-4 shadow-sm">
-                <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-emerald-200/30 to-green-300/20 rounded-full blur-lg pointer-events-none" />
+                <div className="absolute -top-8 -right-8 w-20 h-20 bg-linear-to-br from-emerald-200/30 to-green-300/20 rounded-full glow-blob-k250 pointer-events-none" />
                 <div className="relative p-2.5 bg-linear-to-br from-emerald-100 to-green-100 rounded-xl shadow-inner ring-1 ring-emerald-200/50 text-emerald-500">
                     {isValidating ? (
                         <Loader2
