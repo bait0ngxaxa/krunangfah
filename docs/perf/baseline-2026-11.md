@@ -107,3 +107,15 @@ LCP element ของ `/` คือรูปใน hero (`hero.webp` หรื�
 - Gradient ของหน้าคงที่ขณะ scroll: ที่ scrollY 0/1500/3000 ทั้ง 1440 px และ 390 px (mobile emulation) ขอบบนเป็น `#c8f5e6` และขอบล่างเป็นขาวทุกครั้ง (**PASS**)
 - Harness `filter: blur()` เทียบกับ `glow-blob-k*` ด้วยสีและขนาดจริงของ repo 12 แบบ: ต่างสูงสุด 4 ระดับ ส่วนสูตรตรงตัว (ขยายเท่า σ แล้วไล่ gradient แบบเส้นตรง) ต่างสูงสุด 31 ระดับ
 - route ที่ต้อง login (รวม `/analytics` และ `/students/[id]`): NOT VERIFIED
+
+### PR 3 — `chore/public-assets`
+
+| Route | Score | LCP (ms) | TBT (ms) | CLS | Transfer (KB) | Font (KB) |
+|---|---:|---:|---:|---:|---:|---:|
+| `/` | 82 → 92 | 4603 → 3248 | 128 → 96 | 0.000 → 0.000 | 664.8 → 385.4 | 111.5 → 111.5 |
+| `/signin` | 91 → 91 | 3324 → 3321 | 120 → 132 | 0.000 → 0.000 | 379.6 → 379.5 | 111.5 → 111.5 |
+
+- `rainbow.webp` บน `/`: 328,369 bytes (ไฟล์ต้นฉบับผ่าน CSS) → 42,180 bytes (AVIF จาก `next/image`) ไม่ใช่ LCP element จึงไม่ได้ใส่ `priority`
+- ลบไฟล์ใน `public/` ที่ไม่ถูกอ้างอิง 16 ไฟล์ รวม 3,002,909 bytes (ไม่กระทบ transfer ของหน้า เพราะไม่เคยถูกโหลด)
+- First Load JS: ไม่เปลี่ยนจาก PR 2
+- Screenshots เทียบกับ PR 2: `/signin` และ `/forgot-password` ต่าง 0 pixel, `/` ต่างสูงสุด 19 ระดับ (1440 px) และ 16 ระดับ (390 px) กระจายเป็นจุด ๆ จาก noise ของการ re-encode เป็น AVIF q75 เทียบด้วยตาแล้วแยกไม่ออก (**PASS**)
