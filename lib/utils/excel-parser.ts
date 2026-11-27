@@ -419,8 +419,12 @@ export async function parseExcelBuffer(
                     errors.push(`แถว ${rowNumber}: ไม่มีรหัสนักเรียน`);
                     return;
                 }
+                // Spreadsheet apps may already have dropped leading zeros from a
+                // numeric cell; accept only plain non-negative integers so the
+                // server can treat the value as a possibly shortened code.
                 if (
                     (numericStudentId && (
+                        !Number.isSafeInteger(studentIdValue) ||
                         !/^[0-9]{1,15}$/.test(studentId) ||
                         ![undefined, "General", "0", "@"].includes(studentIdCell?.numFmt)
                     )) ||
