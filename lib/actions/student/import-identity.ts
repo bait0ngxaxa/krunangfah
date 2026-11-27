@@ -225,6 +225,15 @@ export function indexTextIdsByZeroKey(rows: readonly ParsedStudent[]): Map<strin
     return index;
 }
 
+/**
+ * For a class teacher whose review candidates include another class: the
+ * incoming student may still belong to this class, so "not your class"
+ * would be false. Built from the submitted code only; it never names a candidate.
+ */
+export function formatUndisclosedReviewReason(row: ParsedStudent): string {
+    return `รหัสนักเรียน ${row.studentId} อาจซ้ำกับนักเรียนที่มีในระบบ กรุณาติดต่อผู้ดูแลระบบของโรงเรียนเพื่อตรวจสอบรหัสก่อนนำเข้า`;
+}
+
 export function formatInBatchConflictReason(row: ParsedStudent, textIds: readonly string[]): string {
     return `รหัสนักเรียน ${row.studentId} อาจเป็นรหัสเดียวกับ ${textIds.join(", ")} ในไฟล์นี้ กรุณาแก้รหัสในไฟล์ให้ตรงกับทะเบียนแล้วนำเข้าใหม่`;
 }

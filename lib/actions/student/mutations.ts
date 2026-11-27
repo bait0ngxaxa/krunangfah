@@ -55,6 +55,7 @@ import { runSerializableTransaction } from "@/lib/utils/serializable-transaction
 import {
     findInBatchZeroKeyConflicts,
     formatInBatchConflictReason,
+    formatUndisclosedReviewReason,
     getImportAgeChange,
     IMPORT_STUDENT_SELECT,
     indexTextIdsByZeroKey,
@@ -656,14 +657,12 @@ export async function importStudents(
                 );
                 if (numeric.kind === "review") {
                     // Do not list codes from classes a class teacher cannot access.
-                    if (isClassTeacher && numeric.candidates.some(
+                    const hidesCandidates = isClassTeacher && numeric.candidates.some(
                         (candidate) => normalizeClassName(candidate.class) !== advisoryClass,
-                    )) {
-                        classAccessFailures.push(createImportStudentSummary(row, "ไม่ใช่ห้องที่คุณดูแล"));
-                    } else {
-                        identityConflictErrors.push(formatImportStudentError(row, numeric.reason));
-                        identityConflictFailures.push(createImportStudentSummary(row, numeric.reason));
-                    }
+                    );
+                    const reason = hidesCandidates ? formatUndisclosedReviewReason(row) : numeric.reason;
+                    identityConflictErrors.push(formatImportStudentError(row, reason));
+                    identityConflictFailures.push(createImportStudentSummary(row, reason));
                     continue;
                 }
                 const existingStudent = numeric.kind === "matched" ? numeric.student : undefined;

@@ -189,6 +189,23 @@ describe("Integration: numeric student code import", () => {
             .resolves.toMatchObject({ class: "ม.1/2" });
     });
 
+    it("gives a class teacher a non-disclosing conflict when a weak candidate is in another class", async () => {
+        mockSession(USERS.schoolAdmin);
+        await importStudents([row("00445", { className: "ม.1/2", firstName: "ก" })], yearId, 1);
+        const before = await prisma.student.findFirstOrThrow({ where: { schoolId, studentId: "00445" } });
+        mockSession(USERS.classTeacher);
+
+        const result = await importStudents([row("445", { numeric: true, firstName: "ข" })], yearId, 1, ACK);
+
+        expect(result).toMatchObject({ success: false, imported: 0, skipped: 0, identityConflicts: 1 });
+        expect(result.failedStudents?.[0]?.reason).toBe(
+            "รหัสนักเรียน 445 อาจซ้ำกับนักเรียนที่มีในระบบ กรุณาติดต่อผู้ดูแลระบบของโรงเรียนเพื่อตรวจสอบรหัสก่อนนำเข้า",
+        );
+        expect(JSON.stringify(result)).not.toContain("00445");
+        await expect(prisma.student.findFirstOrThrow({ where: { id: before.id } })).resolves.toEqual(before);
+        await expect(phqCountsByCode(["00445", "445"])).resolves.toEqual({ "00445": 1 });
+    });
+
     it("neither matches nor discloses a zero-prefixed code from another school", async () => {
         const foreign = await createTestStudent(otherSchoolId, { studentId: "00555", class: "ม.1/1" });
         mockSession(USERS.schoolAdmin);

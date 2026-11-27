@@ -320,14 +320,15 @@ describe("importStudents numeric student code resolution", () => {
         expectNoWrites();
     });
 
-    it("does not disclose ambiguous candidate codes from another class to a class teacher", async () => {
+    it("reports an ambiguity with a candidate in another class as a non-disclosing conflict", async () => {
         signInAs("class_teacher", "ม.1/1");
         db = [stored("0123", { class: "ม.1/2" }), stored("00123")];
 
         const result = await importStudents([numericRow("123")], "ay-input", 1, { numericIdAcknowledged: true });
 
-        expect(result.failedStudents).toEqual([expect.objectContaining({ reason: "ไม่ใช่ห้องที่คุณดูแล" })]);
-        expect(JSON.stringify(result)).not.toMatch(/0123/);
+        expect(result).toMatchObject({ success: false, imported: 0, identityConflicts: 1, skipped: 0 });
+        expect(result.failedStudents).toEqual([expect.objectContaining({ studentId: "123", reason: "รหัสนักเรียน 123 อาจซ้ำกับนักเรียนที่มีในระบบ กรุณาติดต่อผู้ดูแลระบบของโรงเรียนเพื่อตรวจสอบรหัสก่อนนำเข้า" })]);
+        expect(JSON.stringify(result)).not.toMatch(/0123|ม\.1\/2/);
         expectNoWrites();
     });
 });
