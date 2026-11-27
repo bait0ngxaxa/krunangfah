@@ -698,6 +698,7 @@ describe("Integration: concurrent student imports", () => {
             success: false,
             status: "error",
             message: "ต้องยืนยันการนำเข้ารหัสนักเรียนที่เป็นตัวเลขก่อน กรุณาลองใหม่",
+            imported: 0,
         });
         await expect(prisma.student.count({ where: { schoolId, studentId: "123" } })).resolves.toBe(0);
         await expect(importStudents([padded, plain], firstAcademicYearId, 1)).resolves.toMatchObject({ createdStudents: 2 });

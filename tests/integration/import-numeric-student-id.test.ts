@@ -30,6 +30,7 @@ const ACK_REJECTION = {
     success: false,
     status: "error",
     message: "ต้องยืนยันการนำเข้ารหัสนักเรียนที่เป็นตัวเลขก่อน กรุณาลองใหม่",
+    imported: 0,
 };
 const { importStudents } = await import("@/lib/actions/student/mutations");
 
