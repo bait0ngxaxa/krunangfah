@@ -18,6 +18,14 @@ import { logError } from "@/lib/utils/logging";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
 import {
+    checkImportTerm,
+    NON_CURRENT_IMPORT_TERM_MESSAGE,
+} from "@/lib/services/import-term-policy";
+import {
+    isOlderThanLatestPhq,
+    planImportStudentUpdates,
+} from "./import-master-data";
+import {
     studentIdentifierUpdateSchema,
     studentProfileUpdateSchema,
     type StudentProfileUpdateInput,
@@ -410,13 +418,22 @@ export async function importStudents(
         const schoolId = user.schoolId;
         const advisoryClass = normalizeClassName(user.teacher?.advisoryClass ?? "");
         const isClassTeacher = userRole === "class_teacher";
-        const resolvedAcademicYearId =
-            await ensureSchoolClassTermsForAcademicYear(
-                schoolId,
-                academicYearId,
-            );
 
-        if (!resolvedAcademicYearId) {
+        // Checked before any write or idempotency claim: older years must not
+        // provision class terms or overwrite promoted student data.
+        const termCheck = await checkImportTerm(academicYearId);
+        if (termCheck.kind === "not_current") {
+            return {
+                success: false,
+                status: "error",
+                message: NON_CURRENT_IMPORT_TERM_MESSAGE,
+            };
+        }
+        const resolvedAcademicYearId = termCheck.kind === "allowed"
+            ? await ensureSchoolClassTermsForAcademicYear(schoolId, termCheck.term.id)
+            : null;
+
+        if (termCheck.kind !== "allowed" || !resolvedAcademicYearId) {
             return {
                 success: false,
                 status: "error",
@@ -580,6 +597,12 @@ export async function importStudents(
         const importedNationalIds = eligibleRows
             .map((row) => row.nationalId)
             .filter((id): id is string => id !== null);
+        const importContext = {
+            year: termCheck.term.year,
+            semester: termCheck.term.semester,
+            assessmentRound,
+        };
+        const importedAt = new Date();
 
         const txResult = await runImportTransaction(async (tx) => {
             const identityConflictErrors: string[] = [];
@@ -836,35 +859,16 @@ export async function importStudents(
             );
 
             const studentUpdates: Promise<unknown>[] = [];
+            let masterDataPreservedCount = 0;
             for (const { row, existingStudent: student } of rowsToMutate) {
                 if (!student) continue;
 
-                const updates: {
-                    age?: number;
-                    class?: string;
-                    firstName?: string;
-                    gender?: ParsedStudent["gender"];
-                    lastName?: string;
-                    nationalId?: string;
-                } = {};
-                if (student.nationalId === null && row.nationalId !== null) {
-                    updates.nationalId = row.nationalId;
-                }
-                if (student.gender !== row.gender) {
-                    updates.gender = row.gender;
-                }
-                if (student.age !== row.age) {
-                    updates.age = row.age;
-                }
-                if (student.firstName !== row.firstName) {
-                    updates.firstName = row.firstName;
-                }
-                if (student.lastName !== row.lastName) {
-                    updates.lastName = row.lastName;
-                }
-                if (student.class !== row.class) {
-                    updates.class = row.class;
-                }
+                const { updates, masterDataPreserved } = planImportStudentUpdates(
+                    student,
+                    row,
+                    isOlderThanLatestPhq(importContext, student.phqResults, importedAt),
+                );
+                if (masterDataPreserved) masterDataPreservedCount++;
 
                 if (Object.keys(updates).length > 0) {
                     studentUpdates.push(
@@ -877,8 +881,8 @@ export async function importStudents(
             }
 
             if (studentUpdates.length > 0) {
-                // Policy: student master fields follow the last import that
-                // commits after Serializable conflict retries; fields are not merged.
+                // Policy: master fields follow the newest assessment context
+                // (see planImportStudentUpdates); fields are not merged.
                 await Promise.all(studentUpdates);
             }
 
@@ -977,6 +981,7 @@ export async function importStudents(
                 importedStudents,
                 createdStudentCount: createdStudents.length,
                 updatedStudentCount: studentUpdates.length,
+                masterDataPreservedCount,
                 identityConflictErrors,
                 identityConflictFailures,
                 classAccessFailures,
@@ -1025,6 +1030,9 @@ export async function importStudents(
 
         const importedCount = txResult.importedCount;
         const failedCount = errors.length;
+        // Early transaction exits write no student rows, so they preserve nothing.
+        const masterDataPreserved =
+            ("masterDataPreservedCount" in txResult ? txResult.masterDataPreservedCount : undefined) ?? 0;
 
         let message = "";
         const skippedReason = isClassTeacher
@@ -1064,6 +1072,7 @@ export async function importStudents(
             phqCreated: importedCount,
             duplicateRoundsSkipped: txResult.duplicateRoundFailures.length,
             identityConflicts: txResult.identityConflictFailures.length,
+            ...(masterDataPreserved > 0 ? { masterDataPreserved } : {}),
             errors: failedCount > 0 ? errors : undefined,
             importedStudents: txResult.importedStudents,
             failedStudents:

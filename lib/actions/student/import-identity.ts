@@ -20,12 +20,26 @@ export const IMPORT_STUDENT_SELECT = {
     class: true,
     age: true,
     gender: true,
+    // All PHQs, newest createdAt first: phqResults[0] stays the input of the
+    // age/elapsed-time rule, while the master-data guard needs the latest by
+    // academic chronology, which can differ after a late import of an older term.
     phqResults: {
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        take: 1,
-        select: { academicYear: { select: { startDate: true } } },
+        select: {
+            id: true,
+            assessmentRound: true,
+            createdAt: true,
+            academicYear: { select: { startDate: true, year: true, semester: true } },
+        },
     },
 } satisfies Prisma.StudentSelect;
+
+export interface ImportStudentPhqContext {
+    id: string;
+    assessmentRound: number;
+    createdAt: Date;
+    academicYear: { startDate: Date; year: number; semester: number };
+}
 
 export interface ImportStudentRecord {
     id: string;
@@ -35,7 +49,7 @@ export interface ImportStudentRecord {
     class: string;
     gender: ParsedStudent["gender"] | null;
     age: number | null;
-    phqResults: { academicYear: { startDate: Date } }[];
+    phqResults: ImportStudentPhqContext[];
 }
 
 export interface StoredImportStudent extends ImportStudentRecord {

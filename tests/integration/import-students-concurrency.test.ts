@@ -26,6 +26,10 @@ vi.mock("@/lib/actions/analytics/cache", () => ({
     revalidateAnalyticsCache: vi.fn(),
 }));
 
+vi.mock("@/lib/services/import-term-policy", async (importOriginal) =>
+    (await import("./helpers/import-term-policy-mock")).treatSelectedTermAsCurrent(importOriginal),
+);
+
 setupAuthMocks();
 
 const USERS_A = createMockUsers("import-concurrency-a");

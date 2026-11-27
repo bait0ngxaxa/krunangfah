@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/database/prisma";
 import {
     createMockUsers,
@@ -20,6 +20,10 @@ function getQueryData<T>(result: QueryResult<T>): T {
     if (result.status === "success" || result.status === "empty") return result.data;
     throw new Error(`Expected query data, received ${result.status}`);
 }
+
+vi.mock("@/lib/services/import-term-policy", async (importOriginal) =>
+    (await import("./helpers/import-term-policy-mock")).treatSelectedTermAsCurrent(importOriginal),
+);
 
 setupAuthMocks();
 

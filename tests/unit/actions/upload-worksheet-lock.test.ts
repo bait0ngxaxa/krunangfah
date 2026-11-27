@@ -128,6 +128,7 @@ describe("uploadWorksheet lock", () => {
             id: "progress-1",
             studentId: "student-1",
             activityNumber: 1,
+            status: "in_progress",
             teacherId: null,
             phqResult: { assessmentRound: 1 },
             student: {

@@ -12,6 +12,10 @@ import {
     canGenerateActivitiesForAssessmentRound,
     getRequiredWorksheetCount,
 } from "./constants";
+import {
+    getWorksheetUploadRejection,
+    type WorksheetUploadRejection,
+} from "./worksheet-upload-guard";
 import { validateFileSignature } from "@/lib/utils/file-signature";
 import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
 import type { UploadWorksheetResult } from "./types";
@@ -48,7 +52,8 @@ class UploadWorksheetError extends Error {
             | "UPLOAD_FILE_WRITE_FAILED"
             | "UPLOAD_DB_FAILED"
             | "UPLOAD_ACTIVITY_NOT_FOUND"
-            | "UPLOAD_ACCESS_DENIED",
+            | "UPLOAD_ACCESS_DENIED"
+            | WorksheetUploadRejection["code"],
         message: string,
         options?: { cause?: unknown },
     ) {
@@ -58,6 +63,33 @@ class UploadWorksheetError extends Error {
             this.cause = options.cause;
         }
     }
+}
+
+const NON_RETRYABLE_UPLOAD_ERRORS: ReadonlySet<UploadWorksheetError["code"]> = new Set([
+    "UPLOAD_IMAGE_COMPRESSION_FAILED",
+    "UPLOAD_ACTIVITY_NOT_FOUND",
+    "UPLOAD_ACCESS_DENIED",
+    "UPLOAD_ACTIVITY_LOCKED",
+    "UPLOAD_ACTIVITY_COMPLETED",
+    "UPLOAD_LIMIT_REACHED",
+]);
+
+const STALE_ACTIVITY_UPLOAD_ERRORS: ReadonlySet<UploadWorksheetError["code"]> = new Set([
+    "UPLOAD_ACTIVITY_LOCKED",
+    "UPLOAD_ACTIVITY_COMPLETED",
+    "UPLOAD_LIMIT_REACHED",
+]);
+
+function toUploadRejectionResult(
+    rejection: WorksheetUploadRejection,
+): UploadWorksheetResult {
+    return {
+        success: false,
+        message: rejection.message,
+        error: rejection.code,
+        retryable: false,
+        refreshRequired: true,
+    };
 }
 
 function getValidExtension(fileName: string): string | null {
@@ -245,54 +277,7 @@ export async function uploadWorksheet(
             };
         }
 
-        // Read file content
-        const bytes = await file.arrayBuffer();
-        let buffer: Buffer<ArrayBufferLike> = Buffer.from(bytes);
-        let outputExt = ext;
-        let outputFileType = file.type;
-
-        // Validate file signature (magic number) to prevent extension spoofing
-        if (!validateFileSignature(buffer, ext)) {
-            return {
-                success: false,
-                message:
-                    "เนื้อหาไฟล์ไม่ตรงกับนามสกุล กรุณาอัปโหลดไฟล์ที่ถูกต้อง",
-                error: "UPLOAD_SIGNATURE_MISMATCH",
-            };
-        }
-
-        // Enforce server-side compression for worksheet images.
-        // If compression fails, reject to keep storage quality policy deterministic.
-        if (!isSupportedWorksheetImageExtension(ext)) {
-            return {
-                success: false,
-                message: "นามสกุลไฟล์รูปภาพไม่ถูกต้อง",
-                error: "UPLOAD_INVALID_EXTENSION",
-            };
-        }
-        try {
-            const compressed = await compressWorksheetImageBuffer(buffer, ext);
-            buffer = compressed.buffer;
-            outputExt = compressed.extension;
-            outputFileType = compressed.mimeType;
-        } catch (error) {
-            throw new UploadWorksheetError(
-                "UPLOAD_IMAGE_COMPRESSION_FAILED",
-                "ไม่สามารถบีบอัดรูปภาพได้ กรุณาเลือกรูปอื่นแล้วลองใหม่",
-                { cause: error },
-            );
-        }
-
-        // Validate compressed output size
-        if (buffer.length > MAX_FILE_SIZE) {
-            return {
-                success: false,
-                message: `ไฟล์ใหญ่เกินไปหลังบีบอัด (สูงสุด ${MAX_IMAGE_UPLOAD_SIZE_MB}MB)`,
-                error: "UPLOAD_FILE_TOO_LARGE",
-            };
-        }
-
-        // Get activity progress with student info for authorization
+        // Authorize and reject stale activity state before the costly file processing.
         const activityProgress = await prisma.activityProgress.findUnique({
             where: { id: activityProgressId },
             include: {
@@ -368,7 +353,63 @@ export async function uploadWorksheet(
             return existingUpload;
         }
 
-        return withWorksheetUploadLock(activityProgressId, async () => {
+        const preUploadRejection = getWorksheetUploadRejection(
+            activityProgress,
+            activityProgress.worksheetUploads.length,
+        );
+        if (preUploadRejection) {
+            return toUploadRejectionResult(preUploadRejection);
+        }
+
+        // Read file content
+        const bytes = await file.arrayBuffer();
+        let buffer: Buffer<ArrayBufferLike> = Buffer.from(bytes);
+        let outputExt = ext;
+        let outputFileType = file.type;
+
+        // Validate file signature (magic number) to prevent extension spoofing
+        if (!validateFileSignature(buffer, ext)) {
+            return {
+                success: false,
+                message:
+                    "เนื้อหาไฟล์ไม่ตรงกับนามสกุล กรุณาอัปโหลดไฟล์ที่ถูกต้อง",
+                error: "UPLOAD_SIGNATURE_MISMATCH",
+            };
+        }
+
+        // Enforce server-side compression for worksheet images.
+        // If compression fails, reject to keep storage quality policy deterministic.
+        if (!isSupportedWorksheetImageExtension(ext)) {
+            return {
+                success: false,
+                message: "นามสกุลไฟล์รูปภาพไม่ถูกต้อง",
+                error: "UPLOAD_INVALID_EXTENSION",
+            };
+        }
+        try {
+            const compressed = await compressWorksheetImageBuffer(buffer, ext);
+            buffer = compressed.buffer;
+            outputExt = compressed.extension;
+            outputFileType = compressed.mimeType;
+        } catch (error) {
+            throw new UploadWorksheetError(
+                "UPLOAD_IMAGE_COMPRESSION_FAILED",
+                "ไม่สามารถบีบอัดรูปภาพได้ กรุณาเลือกรูปอื่นแล้วลองใหม่",
+                { cause: error },
+            );
+        }
+
+        // Validate compressed output size
+        if (buffer.length > MAX_FILE_SIZE) {
+            return {
+                success: false,
+                message: `ไฟล์ใหญ่เกินไปหลังบีบอัด (สูงสุด ${MAX_IMAGE_UPLOAD_SIZE_MB}MB)`,
+                error: "UPLOAD_FILE_TOO_LARGE",
+            };
+        }
+
+        // Awaited so errors thrown inside the lock reach the catch below and map to a result.
+        return await withWorksheetUploadLock(activityProgressId, async () => {
             const uploadAfterLock = await reconcileIdempotentWorksheetUpload(
                 idempotencyKey,
                 activityProgressId,
@@ -425,6 +466,7 @@ export async function uploadWorksheet(
                                             studentId: true,
                                             phqResultId: true,
                                             activityNumber: true,
+                                            status: true,
                                             phqResult: {
                                                 select: { assessmentRound: true },
                                             },
@@ -461,13 +503,26 @@ export async function uploadWorksheet(
                                     );
                                 }
 
+                                const existingUploads =
+                                    await tx.worksheetUpload.findMany({
+                                        where: { activityProgressId },
+                                        select: { worksheetNumber: true },
+                                    });
+                                // Authoritative re-check: status or count may have changed since the pre-check.
+                                const rejection = getWorksheetUploadRejection(
+                                    currentActivity,
+                                    existingUploads.length,
+                                );
+                                if (rejection) {
+                                    throw new UploadWorksheetError(
+                                        rejection.code,
+                                        rejection.message,
+                                    );
+                                }
                                 const existingNumbers = new Set(
-                                    (
-                                        await tx.worksheetUpload.findMany({
-                                            where: { activityProgressId },
-                                            select: { worksheetNumber: true },
-                                        })
-                                    ).map((item) => item.worksheetNumber),
+                                    existingUploads.map(
+                                        (item) => item.worksheetNumber,
+                                    ),
                                 );
                                 let worksheetNumber = 1;
                                 while (existingNumbers.has(worksheetNumber)) {
@@ -571,11 +626,10 @@ export async function uploadWorksheet(
                 success: false,
                 message: error.message,
                 error: error.code,
-                retryable: ![
-                    "UPLOAD_IMAGE_COMPRESSION_FAILED",
-                    "UPLOAD_ACTIVITY_NOT_FOUND",
-                    "UPLOAD_ACCESS_DENIED",
-                ].includes(error.code),
+                retryable: !NON_RETRYABLE_UPLOAD_ERRORS.has(error.code),
+                ...(STALE_ACTIVITY_UPLOAD_ERRORS.has(error.code)
+                    ? { refreshRequired: true }
+                    : {}),
             };
         }
 

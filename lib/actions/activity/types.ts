@@ -43,8 +43,13 @@ export interface UploadWorksheetResult {
         | "UPLOAD_FILE_WRITE_FAILED"
         | "UPLOAD_DB_FAILED"
         | "UPLOAD_REQUEST_ID_INVALID"
+        | "UPLOAD_ACTIVITY_LOCKED"
+        | "UPLOAD_ACTIVITY_COMPLETED"
+        | "UPLOAD_LIMIT_REACHED"
         | "UPLOAD_UNKNOWN_ERROR";
     retryable?: boolean;
+    /** The activity changed since the page loaded; the client should resync. */
+    refreshRequired?: boolean;
     uploadedCount?: number;
     requiredCount?: number;
     allUploaded?: boolean;

@@ -263,6 +263,13 @@ export function ImportResultDialog({
                             </div>
                         </div>
 
+                        {(result.masterDataPreserved ?? 0) > 0 && (
+                            <p className="break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                                ไม่ได้อัปเดตข้อมูลนักเรียน {result.masterDataPreserved} คน
+                                เพราะไฟล์เป็นข้อมูลเทอม/รอบที่เก่ากว่าข้อมูลล่าสุดในระบบ
+                            </p>
+                        )}
+
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <section className="min-w-0 space-y-3">
                                 <div className="flex items-center gap-2 text-emerald-700">

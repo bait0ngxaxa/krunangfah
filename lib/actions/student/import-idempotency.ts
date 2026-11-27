@@ -97,6 +97,8 @@ export function isImportResult(value: unknown): value is ImportResult {
             typeof record.duplicateRoundsSkipped === "number") &&
         (record.identityConflicts === undefined ||
             typeof record.identityConflicts === "number") &&
+        (record.masterDataPreserved === undefined ||
+            typeof record.masterDataPreserved === "number") &&
         (record.errors === undefined ||
             (Array.isArray(record.errors) &&
                 record.errors.every((item) => typeof item === "string"))) &&

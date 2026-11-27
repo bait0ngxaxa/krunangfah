@@ -1,4 +1,8 @@
-import { generateAcademicYearData } from "@/lib/utils/academic-year";
+import {
+    endOfBangkokDay,
+    generateAcademicYearData,
+    startOfBangkokDay,
+} from "@/lib/utils/academic-year";
 
 export interface AcademicYearFilterOption {
     id: string;
@@ -42,18 +46,6 @@ export interface CareRecordAcademicTermFilter {
     dateRange?: AcademicYearDateRange;
 }
 
-function toStartOfDay(date: Date): Date {
-    const nextDate = new Date(date);
-    nextDate.setHours(0, 0, 0, 0);
-    return nextDate;
-}
-
-function toEndOfDay(date: Date): Date {
-    const nextDate = new Date(date);
-    nextDate.setHours(23, 59, 59, 999);
-    return nextDate;
-}
-
 export function getUniqueAcademicYears<T extends AcademicYearFilterOption>(
     academicYears: readonly T[],
 ): T[] {
@@ -88,8 +80,8 @@ export function resolveAcademicTermScope(
             kind: "year",
             year,
             dateRange: {
-                startDate: toStartOfDay(firstSemester.startDate),
-                endDate: toEndOfDay(secondSemester.endDate),
+                startDate: startOfBangkokDay(firstSemester.startDate),
+                endDate: endOfBangkokDay(secondSemester.endDate),
             },
         };
     }
@@ -105,8 +97,8 @@ export function resolveAcademicTermScope(
         year: academicYear.year,
         semester: academicYear.semester,
         dateRange: {
-            startDate: toStartOfDay(academicYear.startDate),
-            endDate: toEndOfDay(academicYear.endDate),
+            startDate: startOfBangkokDay(academicYear.startDate),
+            endDate: endOfBangkokDay(academicYear.endDate),
         },
     };
 }

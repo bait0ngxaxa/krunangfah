@@ -462,7 +462,12 @@ async function completeActivityAndUnlockNext(
  */
 export async function confirmActivityComplete(
     activityProgressId: string,
-): Promise<{ success: boolean; activityNumber?: number; error?: string }> {
+): Promise<{
+    success: boolean;
+    activityNumber?: number;
+    error?: string;
+    refreshRequired?: boolean;
+}> {
     try {
         const session = await requireAuth();
 
@@ -560,6 +565,15 @@ export async function confirmActivityComplete(
                 return {
                     success: true,
                     activityNumber: currentActivity.activityNumber,
+                };
+            }
+
+            // A stale tab may still show this activity as open after an admin reset relocked it.
+            if (currentActivity.status === ActivityStatus.locked) {
+                return {
+                    success: false,
+                    error: ERROR_MESSAGES.activity.notOpen,
+                    refreshRequired: true,
                 };
             }
 
