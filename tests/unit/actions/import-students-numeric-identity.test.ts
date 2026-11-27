@@ -346,9 +346,20 @@ describe("importStudents numeric student code acknowledgement", () => {
     });
 
     it("rejects the whole batch before any write when a new numeric student is unacknowledged", async () => {
-        const result = await importStudents([numericRow("4501"), textRow("A-1")], "ay-input", 1);
+        db = [stored("123"), stored("00123")];
+        const result = await importStudents(
+            [numericRow("4501"), textRow("A-1"), textRow("B-1", { class: "ม.9/9" }), numericRow("123")],
+            "ay-input",
+            1,
+        );
 
-        expect(result).toEqual({ success: false, status: "error", message: ACK_MESSAGE });
+        expect(result).toMatchObject({ success: false, status: "error", message: ACK_MESSAGE, imported: 0 });
+        expect(result.failedStudents).toEqual(expect.arrayContaining([
+            expect.objectContaining({ studentId: "B-1", reason: "ยังไม่มีห้องเรียนดังกล่าวในระบบ" }),
+            expect.objectContaining({ studentId: "123", reason: expect.stringContaining("มากกว่าหนึ่งรายการ") }),
+        ]));
+        expect(result.failedStudents).toHaveLength(2);
+        expect(result.errors).toEqual([expect.stringContaining("มากกว่าหนึ่งรายการ")]);
         expectNoWrites();
         expect(mocks.completeIdempotentOperation).not.toHaveBeenCalled();
         expect(mocks.clearIdempotentOperation).toHaveBeenCalledTimes(1);

@@ -801,7 +801,14 @@ export async function importStudents(
                 ({ row, existingStudent }) => !existingStudent && row.numericStudentId === true,
             );
             if (createsNumericStudents && !numericIdAcknowledged) {
-                return { numericAcknowledgementRequired: true as const };
+                return {
+                    numericAcknowledgementRequired: true as const,
+                    identityConflictErrors,
+                    identityConflictFailures,
+                    classAccessFailures,
+                    duplicateRoundErrors,
+                    duplicateRoundFailures,
+                };
             }
 
             const newStudents = rowsToMutate
@@ -977,10 +984,25 @@ export async function importStudents(
         });
 
         if ("numericAcknowledgementRequired" in txResult) {
+            // Nothing was written; keep the diagnostics already computed for this batch.
+            const ackErrors = [
+                ...errors,
+                ...txResult.identityConflictErrors,
+                ...txResult.duplicateRoundErrors,
+            ];
+            const ackFailures = [
+                ...failedStudents,
+                ...txResult.identityConflictFailures,
+                ...txResult.duplicateRoundFailures,
+                ...txResult.classAccessFailures,
+            ];
             return finishImport({
                 success: false,
                 status: "error",
                 message: NUMERIC_ID_ACK_REQUIRED_MESSAGE,
+                imported: 0,
+                ...(ackErrors.length > 0 ? { errors: ackErrors } : {}),
+                ...(ackFailures.length > 0 ? { failedStudents: ackFailures } : {}),
             });
         }
 
