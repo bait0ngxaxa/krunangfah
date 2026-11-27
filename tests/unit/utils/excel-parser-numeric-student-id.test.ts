@@ -8,8 +8,9 @@ const TEMPLATE_HEADERS = [
 ];
 const ANSWERS = Array.from({ length: 9 }, () => "ไม่มีเลย");
 
-// Google Form question titles as they appear in a linked response sheet.
-// Every value below is synthetic: the repository is public.
+// Header shape of a real Google Forms response sheet: numbered q1–q9 (q9
+// carries extra wording), unnumbered q9a/q9b. Every value is synthetic:
+// the repository is public.
 const GOOGLE_FORM_PHQ_HEADERS = [
     "1. ในช่วง 2 สัปดาห์ที่ผ่านมา รู้สึกซึม เศร้า หงุดหงิด หรือสิ้นหวัง",
     "2. ในช่วง 2 สัปดาห์ที่ผ่านมา เบื่อ ไม่ค่อยสนใจหรือเพลิดเพลินเวลาทำสิ่งต่างๆ",
@@ -19,9 +20,9 @@ const GOOGLE_FORM_PHQ_HEADERS = [
     "6. ในช่วง 2 สัปดาห์ที่ผ่านมา รู้สึกแย่กับตัวเอง หรือรู้สึกว่าตัวเองล้มเหลว",
     "7. ในช่วง 2 สัปดาห์ที่ผ่านมา จดจ่อกับสิ่งต่างๆได้ยาก เช่น ทำการบ้าน",
     "8. ในช่วง 2 สัปดาห์ที่ผ่านมา พูดหรือทำอะไรช้าลงมาก จนคนอื่นสังเกตุเห็นได้",
-    "9. ในช่วง 2 สัปดาห์ที่ผ่านมา คิดว่าถ้าตายไปเสียจะดีกว่า",
-    "10. ใน 1 เดือนที่ผ่านมา มีช่วงไหนที่คุณคิดอยากตาย หรือไม่คิดอยากมีชีวิตอยู่อย่างจริงจังหรือไม่",
-    "11. ตลอดชีวิตที่ผ่านมา คุณเคยพยายามที่ทำให้ตัวเองตายหรือลงมือฆ่าตัวตายหรือไม่",
+    "9. ในช่วง 2 สัปดาห์ที่ผ่านมา คิดว่าถ้าตายไปเสียจะดีกว่า หรือคิดอยากทำร้ายตัวเอง",
+    "ใน 1 เดือนที่ผ่านมา มีช่วงไหนที่คุณคิดอยากตาย หรือไม่คิดอยากมีชีวิตอยู่อย่างจริงจังหรือไม่",
+    "ตลอดชีวิตที่ผ่านมา คุณเคยพยายามที่ทำให้ตัวเองตายหรือลงมือฆ่าตัวตายหรือไม่",
 ];
 
 interface CodeCell {
@@ -51,7 +52,7 @@ async function createGoogleFormsShapedBuffer(rowCount: number): Promise<ArrayBuf
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Form Responses 1");
     const columns = [
-        "Timestamp", "รหัสนักเรียน", "เลขบัตรประชาชน", "ชื่อจริง", "นามสกุล", "เพศ", "อายุ",
+        "Timestamp", "รหัสนักเรียน", "เลขบัตรประชาชน", "ชื่อจริง", "นามสกุล", "เพศกำเนิด", "อายุ (ปี)",
         "เรียนอยู่ชั้นใด ห้องใด", ...GOOGLE_FORM_PHQ_HEADERS,
     ].map((name) => ({ name, filterButton: true }));
     const rows = Array.from({ length: rowCount }, (_, index) => [
@@ -63,8 +64,10 @@ async function createGoogleFormsShapedBuffer(rowCount: number): Promise<ArrayBuf
         index % 2 === 0 ? "ชาย" : "หญิง",
         14,
         "ม.2/1",
-        ...ANSWERS,
-        "ไม่ใช่",
+        // Row 0 gets distinct q9/q9a/q9b answers to prove each header maps to its own column.
+        ...ANSWERS.slice(0, 8),
+        index === 0 ? "มีแทบทุกวัน" : "ไม่มีเลย",
+        index === 0 ? "ใช่" : "ไม่ใช่",
         "ไม่ใช่",
     ]);
     worksheet.addTable({ name: "FormResponses1", ref: "A1", headerRow: true, columns, rows });
@@ -138,6 +141,8 @@ describe("Excel parser with a Google Forms response sheet structure", () => {
             age: 14,
             gender: "MALE",
         });
+        expect(result.data[0]?.scores).toMatchObject({ q8: 0, q9: 3, q9a: true, q9b: false });
+        expect(result.data[1]?.scores).toMatchObject({ q9: 0, q9a: false, q9b: false });
     });
 
     it("reads a numeric national ID cell as its 13 digits and blanks as null", async () => {
