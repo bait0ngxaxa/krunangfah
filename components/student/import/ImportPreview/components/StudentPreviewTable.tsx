@@ -157,6 +157,14 @@ export function StudentPreviewTable({
                                     </td>
                                     <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
                                         {student.studentId || "-"}
+                                        {student.numericStudentId && (
+                                            <span
+                                                className="ml-1.5 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-700"
+                                                title="รหัสนี้มาจากเซลล์ตัวเลข เลขศูนย์นำหน้าอาจถูกตัดออก"
+                                            >
+                                                ตัวเลข
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="max-w-[14rem] break-words px-4 py-2 text-sm font-bold text-gray-800 transition-colors group-hover:text-emerald-600">
                                         {student.firstName || "-"}

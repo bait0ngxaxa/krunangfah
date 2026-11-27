@@ -144,6 +144,11 @@ export function buildImportStudentsPayload(
     }));
 }
 
+/** Counts rows whose code came from a numeric cell and may have lost leading zeros. */
+export function countNumericStudentIds(payload: ParsedStudent[]): number {
+    return payload.filter((student) => student.numericStudentId === true).length;
+}
+
 export function getAcademicYearLabel(
     academicYears: AcademicYear[],
     selectedYearId: string,

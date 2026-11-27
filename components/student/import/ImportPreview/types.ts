@@ -95,6 +95,8 @@ export interface UseImportPreviewReturn {
     incompleteCheckFailed: boolean;
     incompleteWarning: IncompleteActivityInfo | null;
     zeroScoreWarning: ZeroScoreWarningInfo | null;
+    /** Numeric-cell codes in the exact payload a save would submit */
+    numericStudentIdCount: number;
 
     // Computed values
     previewData: PreviewStudent[];
@@ -106,5 +108,6 @@ export interface UseImportPreviewReturn {
     setAssessmentRound: (round: number) => void;
     handleRemoveStudent: (studentIndex: number) => void;
     handleDismissError: () => void;
-    handleSave: () => void;
+    /** `acknowledgedNumericCount` is the numeric count the user confirmed in the dialog */
+    handleSave: (acknowledgedNumericCount: number) => void;
 }
