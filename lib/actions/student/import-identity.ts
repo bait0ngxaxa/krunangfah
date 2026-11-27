@@ -136,11 +136,11 @@ export async function loadZeroKeyCandidates(
     }));
 }
 
-/** The minor-typo name path deliberately does not count here. */
-function hasStrongIdentityEvidence(row: ParsedStudent, candidate: ImportStudentRecord): boolean {
-    if (row.nationalId !== null && candidate.nationalId !== null) {
-        return row.nationalId === candidate.nationalId;
-    }
+/**
+ * Used only when at least one side has no national ID.
+ * The minor-typo name path deliberately does not count here.
+ */
+function hasNameAndDemographicEvidence(row: ParsedStudent, candidate: ImportStudentRecord): boolean {
     return (
         normalizeImportName(row.firstName) === normalizeImportName(candidate.firstName) &&
         normalizeImportName(row.lastName) === normalizeImportName(candidate.lastName) &&
@@ -184,7 +184,16 @@ export function resolveNumericStudentIdentity(
     if (!candidate) return { kind: "unmatched" };
     // The national ID owner is a different student; let the existing conflict rule report it.
     if (nationalIdOwner && nationalIdOwner.id !== candidate.id) return { kind: "unmatched" };
-    if (hasStrongIdentityEvidence(row, candidate)) return { kind: "matched", student: candidate };
+    if (row.nationalId !== null && candidate.nationalId !== null) {
+        if (row.nationalId === candidate.nationalId) return { kind: "matched", student: candidate };
+        // Contradicting evidence: changing the code in the file would only hit the mismatch conflict.
+        return {
+            kind: "review",
+            candidates: [candidate],
+            reason: `เลขบัตรประชาชนของรหัสนักเรียน ${row.studentId} ไม่ตรงกับนักเรียนรหัส ${candidate.studentId} ในระบบ กรุณาตรวจรหัสนักเรียนและเลขบัตรประชาชนจากทะเบียนก่อนนำเข้า`,
+        };
+    }
+    if (hasNameAndDemographicEvidence(row, candidate)) return { kind: "matched", student: candidate };
 
     return {
         kind: "review",

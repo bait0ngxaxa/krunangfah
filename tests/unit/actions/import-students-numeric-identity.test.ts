@@ -224,6 +224,23 @@ describe("importStudents numeric student code resolution", () => {
         expectNoWrites();
     });
 
+    it("reviews contradicting national IDs without suggesting a code change", async () => {
+        db = [stored("00123", { nationalId: "1103700000012" })];
+
+        const result = await importStudents(
+            [numericRow("123", { nationalId: "1103700000011" })],
+            "ay-input",
+            1,
+            { numericIdAcknowledged: true },
+        );
+
+        expect(result).toMatchObject({ success: false, imported: 0, identityConflicts: 1 });
+        expect(result.failedStudents?.[0]?.reason).toBe(
+            "เลขบัตรประชาชนของรหัสนักเรียน 123 ไม่ตรงกับนักเรียนรหัส 00123 ในระบบ กรุณาตรวจรหัสนักเรียนและเลขบัตรประชาชนจากทะเบียนก่อนนำเข้า",
+        );
+        expectNoWrites();
+    });
+
     it("reviews when two zero-prefixed records share the key", async () => {
         db = [stored("0123"), stored("00123")];
 

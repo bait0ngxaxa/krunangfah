@@ -63,8 +63,14 @@ describe("resolveNumericStudentIdentity", () => {
     it("does not fall back to names when both national IDs are present and differ", () => {
         const stored = candidate("00123", { nationalId: "1103700000012" });
 
-        expect(resolveNumericStudentIdentity({ ...row, nationalId: "1103700000011" }, [stored], undefined))
-            .toMatchObject({ kind: "review", candidates: [stored] });
+        const result = resolveNumericStudentIdentity({ ...row, nationalId: "1103700000011" }, [stored], undefined);
+
+        expect(result).toEqual({
+            kind: "review",
+            candidates: [stored],
+            reason: "เลขบัตรประชาชนของรหัสนักเรียน 123 ไม่ตรงกับนักเรียนรหัส 00123 ในระบบ กรุณาตรวจรหัสนักเรียนและเลขบัตรประชาชนจากทะเบียนก่อนนำเข้า",
+        });
+        expect(result.kind === "review" && result.reason).not.toContain("ให้แก้รหัสในไฟล์เป็น");
     });
 
     it("leaves a different national-ID owner to the existing conflict rule", () => {
