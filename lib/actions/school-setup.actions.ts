@@ -14,8 +14,10 @@ import {
 import {
     createSchoolClassWithTerms,
     resolveClassTermWritePlan,
+    restoreArchivedSchoolClass,
     updateSchoolClassTermCount,
 } from "@/lib/services/school-class-term-writes";
+import { removeOrArchiveSchoolClass } from "@/lib/services/school-class-removal";
 import { revalidatePath } from "next/cache";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
@@ -194,11 +196,13 @@ export async function addSchoolClass(
         // Normalize ชื่อห้องเรียนให้เป็นรูปแบบมาตรฐาน เช่น "ม1/2" → "ม.1/2"
         const normalizedName = normalizeClassName(parsedName.data);
 
+        // Intentionally includes archived classes: re-adding one restores it.
         const existing = await prisma.schoolClass.findUnique({
             where: { schoolId_name: { schoolId, name: normalizedName } },
+            select: { id: true, archivedAt: true },
         });
 
-        if (existing) {
+        if (existing && existing.archivedAt === null) {
             return {
                 success: false,
                 message: `ห้อง "${normalizedName}" มีอยู่แล้ว`,
@@ -210,12 +214,14 @@ export async function addSchoolClass(
             return { success: false, message: termPlan.message };
         }
 
-        const schoolClass = await createSchoolClassWithTerms({
-            schoolId,
+        const classInput = {
             name: normalizedName,
             expectedStudentCount: parsedCount.data,
             termIds: termPlan.plan.newClassTermIds,
-        });
+        };
+        const schoolClass = existing
+            ? await restoreArchivedSchoolClass({ ...classInput, classId: existing.id })
+            : await createSchoolClassWithTerms({ ...classInput, schoolId });
 
         revalidatePath(CLASSES_PATH);
         await revalidateAnalyticsCache(schoolId);
@@ -327,34 +333,24 @@ export async function removeSchoolClass(
             return { success: false, message: "ไม่พบโรงเรียนของคุณ" };
         }
 
-        const schoolClass = await prisma.schoolClass.findUnique({
-            where: { id },
-        });
-
-        if (!schoolClass || schoolClass.schoolId !== schoolId) {
+        const removal = await removeOrArchiveSchoolClass(schoolId, id);
+        if (removal.kind === "not_found") {
             return { success: false, message: "ไม่พบห้องเรียนที่ต้องการลบ" };
         }
-
-        const studentCount = await prisma.student.count({
-            where: {
-                schoolId,
-                class: schoolClass.name,
-            },
-        });
-
-        if (studentCount > 0) {
-            return {
-                success: false,
-                message: `ไม่สามารถลบห้อง "${schoolClass.name}" ได้ เพราะมีนักเรียนอยู่ ${studentCount} คน `,
-            };
+        if (removal.kind === "blocked") {
+            return { success: false, message: removal.message };
         }
-
-        await prisma.schoolClass.delete({ where: { id } });
 
         revalidatePath(CLASSES_PATH);
         await revalidateAnalyticsCache(schoolId);
 
-        return { success: true, message: "ลบห้องเรียนสำเร็จ" };
+        return {
+            success: true,
+            message:
+                removal.kind === "archived"
+                    ? `เก็บห้อง "${removal.name}" เข้าคลังแล้ว ข้อมูลเทอมก่อนหน้ายังอยู่ครบ`
+                    : `ลบห้อง "${removal.name}" สำเร็จ`,
+        };
     } catch (error) {
         return handleActionError({
             context: "removeSchoolClass error:",

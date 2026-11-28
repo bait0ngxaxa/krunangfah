@@ -84,7 +84,8 @@ export function useClassList({
             return;
         }
         syncUpdate(classes.filter((c) => c.id !== id));
-        toast.success(`ลบห้อง "${name}" สำเร็จ`);
+        // The server says whether the class was deleted or archived.
+        toast.success(result.message || `ลบห้อง "${name}" สำเร็จ`);
     }
 
     async function handleUpdateStudentCount(
