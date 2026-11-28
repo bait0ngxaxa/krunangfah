@@ -63,12 +63,23 @@ export interface AcademicTermOption {
     semester: number;
 }
 
+/** A class whose planned count is below the students screened in it. */
+export interface CoverageCountMismatch {
+    className: string;
+    expected: number;
+    assessed: number;
+}
+
 export interface AnalyticsData {
     totalStudents: number | null;
     riskLevelSummary: RiskLevelSummary[];
     studentsWithAssessment: number;
     studentsWithoutAssessment: number | null;
     screeningCoveragePercent: number | null;
+    /** Single term only; sorted by `assessed - expected`, largest first. */
+    coverageCountMismatches: CoverageCountMismatch[];
+    /** Screened students above their class's planned count, so outside coverage. */
+    coverageUncountedStudents: number;
     selectedAcademicTermExists: boolean;
     availableClasses: string[];
     availableAcademicTerms: AcademicTermOption[];

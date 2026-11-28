@@ -4,7 +4,10 @@ import {
     getCombinedAnalytics,
 } from "@/lib/actions/analytics/queries";
 import { getExpectedStudentCount } from "@/lib/actions/analytics/data";
-import { calculateScreeningCoveragePercent } from "@/lib/actions/analytics/transforms";
+import {
+    calculateScreeningCoverage,
+    mergeClassCoverageCounts,
+} from "@/lib/actions/analytics/coverage";
 import { getStudentDetailQuery } from "@/lib/actions/student/queries";
 import {
     createTestAcademicYear,
@@ -84,9 +87,20 @@ describe("Integration: current analytics student population", () => {
         expect(expectedCount).toBe(9);
         expect(currentAssessed).toBe(9);
         expect(expectedCount! - currentAssessed).toBe(0);
-        expect(
-            calculateScreeningCoveragePercent(currentAssessed, expectedCount),
-        ).toBe(100);
+        const coverage = calculateScreeningCoverage(
+            mergeClassCoverageCounts(
+                [
+                    {
+                        schoolId: scenario.schoolId,
+                        className: scenario.className,
+                        expected: expectedCount ?? 0,
+                    },
+                ],
+                currentAnalytics.assessedByClass,
+            ),
+        );
+        expect(coverage.coveragePercent).toBe(100);
+        expect(coverage.mismatches).toEqual([]);
         expect(sumRiskCounts(historicalAnalytics.riskLevelCounts)).toBe(10);
         expect(sumReferralCounts(currentAnalytics.riskLevelCounts)).toBe(0);
         expect(sumReferralCounts(historicalAnalytics.riskLevelCounts)).toBe(1);

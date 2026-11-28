@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
     academicYearFindMany: vi.fn(),
     schoolClassFindMany: vi.fn(),
-    schoolClassTermAggregate: vi.fn(),
+    schoolClassTermFindMany: vi.fn(),
     phqResultFindMany: vi.fn(),
     getCombinedAnalytics: vi.fn(),
     getTrendData: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock("@/lib/database/prisma", () => ({
     prisma: {
         academicYear: { findMany: mocks.academicYearFindMany },
         schoolClass: { findMany: mocks.schoolClassFindMany },
-        schoolClassTerm: { aggregate: mocks.schoolClassTermAggregate },
+        schoolClassTerm: { findMany: mocks.schoolClassTermFindMany },
         phqResult: { findMany: mocks.phqResultFindMany },
         // Past-term class options and the legacy-snapshot check.
         $queryRaw: vi.fn(async () => []),
@@ -42,14 +42,38 @@ vi.mock("@/lib/services/school-class-term-service", () => ({
 
 const { fetchAnalyticsData } = await import("@/lib/actions/analytics/data");
 
+function termRow(name: string, expected: number) {
+    return {
+        expectedStudentCount: expected,
+        schoolClass: { schoolId: "school-1", name },
+    };
+}
+
+function mockCombined(assessed: Record<string, number>): void {
+    const entries = Object.entries(assessed);
+    const total = entries.reduce((sum, [, count]) => sum + count, 0);
+    mocks.getCombinedAnalytics.mockResolvedValue({
+        riskLevelCounts: [
+            { risk_level: "yellow", count: BigInt(total), referral_count: BigInt(0) },
+        ],
+        gradeRiskData: [],
+        hospitalReferrals: [],
+        assessedByClass: entries.map(([className, count]) => ({
+            schoolId: "school-1",
+            className,
+            assessed: count,
+        })),
+    });
+}
+
 function configureMocks(): void {
     mocks.academicYearFindMany.mockResolvedValue([
         { id: "term-1", year: 2569, semester: 1, isCurrent: false },
     ]);
     mocks.schoolClassFindMany.mockResolvedValue([]);
-    mocks.schoolClassTermAggregate.mockResolvedValue({
-        _sum: { expectedStudentCount: 10 },
-    });
+    mocks.schoolClassTermFindMany.mockResolvedValue([
+        termRow("ม.1/1", 10),
+    ]);
     mocks.phqResultFindMany.mockResolvedValue([
         { assessmentRound: 1 },
         { assessmentRound: 2 },
@@ -64,6 +88,9 @@ function configureMocks(): void {
         ],
         gradeRiskData: [],
         hospitalReferrals: [],
+        assessedByClass: [
+            { schoolId: "school-1", className: "ม.1/1", assessed: 4 },
+        ],
     });
     mocks.getTrendData.mockResolvedValue([]);
     mocks.getActivityProgressByRisk.mockResolvedValue([]);
@@ -108,9 +135,12 @@ describe("fetchAnalyticsData activity scope", () => {
             undefined,
             false,
         );
-        expect(mocks.schoolClassTermAggregate).not.toHaveBeenCalled();
+        expect(mocks.schoolClassTermFindMany).not.toHaveBeenCalled();
         expect(data.totalStudents).toBeNull();
         expect(data.screeningCoveragePercent).toBeNull();
+        expect(data.studentsWithoutAssessment).toBeNull();
+        expect(data.coverageCountMismatches).toEqual([]);
+        expect(data.coverageUncountedStudents).toBe(0);
     });
 
     it("never runs the academic-year lifecycle (it executes inside unstable_cache)", async () => {
@@ -238,4 +268,57 @@ describe("fetchAnalyticsData class scope", () => {
             );
         },
     );
+});
+
+describe("fetchAnalyticsData coverage", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        configureMocks();
+    });
+
+    it("caps each class at its planned count, then sums", async () => {
+        mocks.schoolClassTermFindMany.mockResolvedValue([
+            termRow("ม.1/1", 30),
+            termRow("ม.1/2", 30),
+        ]);
+        mockCombined({ "ม.1/1": 35, "ม.1/2": 25 });
+
+        const data = await fetchAnalyticsData("school-1", "", "school_admin", "2569", "1", "");
+
+        expect(data).toMatchObject({
+            totalStudents: 60,
+            studentsWithAssessment: 60,
+            screeningCoveragePercent: 92,
+            studentsWithoutAssessment: 5,
+            coverageCountMismatches: [{ className: "ม.1/1", expected: 30, assessed: 35 }],
+            coverageUncountedStudents: 5,
+        });
+    });
+
+    it("reports no planned total but still lists screened classes for a term without term rows", async () => {
+        mocks.schoolClassTermFindMany.mockResolvedValue([]);
+        mockCombined({ "ม.1/1": 3 });
+
+        const data = await fetchAnalyticsData("school-1", "", "school_admin", "2569", "1", "");
+
+        expect(data).toMatchObject({
+            totalStudents: null,
+            studentsWithAssessment: 3,
+            screeningCoveragePercent: null,
+            studentsWithoutAssessment: null,
+            coverageCountMismatches: [{ className: "ม.1/1", expected: 0, assessed: 3 }],
+            coverageUncountedStudents: 3,
+        });
+    });
+
+    it("reads the planned counts of the selected class only", async () => {
+        await fetchAnalyticsData("school-1", "ม.1/1", "school_admin", "2569", "1", "");
+
+        expect(mocks.schoolClassTermFindMany.mock.calls[0]?.[0]).toMatchObject({
+            where: {
+                academicYearId: "term-1",
+                schoolClass: { schoolId: "school-1", name: "ม.1/1" },
+            },
+        });
+    });
 });

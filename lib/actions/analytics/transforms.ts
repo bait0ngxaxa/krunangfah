@@ -6,18 +6,6 @@ import type {
     HospitalReferralByGrade,
 } from "./types";
 
-export function calculateScreeningCoveragePercent(
-    studentsWithAssessment: number,
-    expectedStudentCount: number | null,
-): number | null {
-    if (expectedStudentCount === null) return null;
-    if (expectedStudentCount <= 0) return 0;
-
-    return Math.min(
-        100,
-        Math.round((studentsWithAssessment / expectedStudentCount) * 100),
-    );
-}
 import { RISK_LEVEL_CONFIG } from "./constants";
 
 /**

@@ -41,6 +41,8 @@ function createAnalyticsData(): AnalyticsData {
         studentsWithAssessment: 8,
         studentsWithoutAssessment: 2,
         screeningCoveragePercent: 80,
+        coverageCountMismatches: [{ className: "ม.1/2", expected: 3, assessed: 4 }],
+        coverageUncountedStudents: 1,
         selectedAcademicTermExists: true,
         availableClasses: ["ม.1/1"],
         availableAcademicTerms: [{ id: "term-2569-1", year: 2569, semester: 1 }],
@@ -205,6 +207,40 @@ describe("analytics Redis cache", () => {
         await expect(readRedisCachedAnalyticsData(keyParts)).resolves.toMatchObject({
             data: null,
         });
+    });
+
+    it("rejects cached analytics data from before per-class coverage and versions the key", async () => {
+        const preCoveragePayload = { ...createAnalyticsData() } as Record<string, unknown>;
+        delete preCoveragePayload.coverageCountMismatches;
+        delete preCoveragePayload.coverageUncountedStudents;
+        const keyParts = createAnalyticsRedisKeyParts({
+            role: "school_admin",
+            schoolId: "school-1",
+            targetClass: "",
+            academicYearStr: "2569",
+            semesterStr: "1",
+            roundStr: "",
+        });
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(preCoveragePayload));
+
+        expect(keyParts).toContain("coverage:per-class-v1");
+        await expect(readRedisCachedAnalyticsData(keyParts)).resolves.toMatchObject({
+            data: null,
+        });
+    });
+
+    it("rejects a cached count mismatch without numeric counts", async () => {
+        const payload = {
+            ...createAnalyticsData(),
+            coverageCountMismatches: [{ className: "ม.1/2", expected: "3", assessed: 4 }],
+        };
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(payload));
+
+        await expect(getRedisCachedAnalyticsData(["analytics-data"])).resolves.toBeNull();
     });
 
     it("stores analytics data and tracks global plus school tags", async () => {

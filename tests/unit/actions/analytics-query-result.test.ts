@@ -37,6 +37,8 @@ const analyticsData: AnalyticsData = {
     studentsWithAssessment: 0,
     studentsWithoutAssessment: 0,
     screeningCoveragePercent: 0,
+    coverageCountMismatches: [],
+    coverageUncountedStudents: 0,
     selectedAcademicTermExists: false,
     riskLevelSummary: [],
     availableClasses: [],

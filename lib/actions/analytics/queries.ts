@@ -5,6 +5,7 @@ import {
     REQUIRED_ACTIVITY_NUMBERS_BY_RISK,
 } from "./constants";
 import { LATEST_PHQ_SQL_ORDER_BY } from "@/lib/utils/phq-result-selection";
+import type { AssessedClassCount } from "./coverage";
 import {
     buildAcademicYearCondition,
     buildActiveStudentSchoolCondition,
@@ -68,6 +69,8 @@ export interface CombinedAnalyticsResult {
     riskLevelCounts: RiskLevelCountResult[];
     gradeRiskData: GradeRiskResult[];
     hospitalReferrals: HospitalReferralResult[];
+    /** Students per report class; sums to the distinct student count. */
+    assessedByClass: AssessedClassCount[];
 }
 
 // ========================================
@@ -101,6 +104,8 @@ export async function getCombinedAnalytics(
     const result = await prisma.$queryRaw<
         Array<{
             risk_level: string;
+            school_id: string;
+            class_name: string;
             grade: string | null;
             referred_to_hospital: boolean;
             student_count: bigint;
@@ -111,6 +116,8 @@ export async function getCombinedAnalytics(
                 pr."studentId",
                 pr."riskLevel",
                 pr."referredToHospital",
+                s."schoolId" as school_id,
+                ${buildReportClassSql(classes)} as class_name,
                 SPLIT_PART(${buildReportClassSql(classes)}, '/', 1) as grade,
                 ROW_NUMBER() OVER (
                     PARTITION BY pr."studentId"
@@ -126,23 +133,26 @@ export async function getCombinedAnalytics(
               ${roundCondition}
         ),
         latest_phq AS (
-            SELECT "studentId", "riskLevel", "referredToHospital", grade
+            SELECT "studentId", "riskLevel", "referredToHospital", school_id, class_name, grade
             FROM ranked_phq
             WHERE rn = 1
         )
         SELECT
             "riskLevel"::text as risk_level,
+            school_id,
+            class_name,
             grade,
             "referredToHospital" as referred_to_hospital,
             COUNT(*)::bigint as student_count
         FROM latest_phq
-        GROUP BY "riskLevel", grade, "referredToHospital"
+        GROUP BY "riskLevel", school_id, class_name, grade, "referredToHospital"
     `;
 
     // Transform single result into 3 aggregations (in JS, very fast)
     const riskMap = new Map<string, { count: number; referralCount: number }>();
     const gradeRiskMap = new Map<string, Map<string, number>>();
     const hospitalMap = new Map<string, number>();
+    const classMap = new Map<string, AssessedClassCount>();
 
     for (const row of result) {
         const count = Number(row.student_count);
@@ -171,6 +181,16 @@ export async function getCombinedAnalytics(
         if (referred && grade) {
             hospitalMap.set(grade, (hospitalMap.get(grade) || 0) + count);
         }
+
+        // Students per report class, for per-class capped coverage
+        const classKey = JSON.stringify([row.school_id, row.class_name]);
+        const classEntry = classMap.get(classKey) ?? {
+            schoolId: row.school_id,
+            className: row.class_name,
+            assessed: 0,
+        };
+        classEntry.assessed += count;
+        classMap.set(classKey, classEntry);
     }
 
     // Convert to expected formats
@@ -196,7 +216,12 @@ export async function getCombinedAnalytics(
         .map(([grade, count]) => ({ grade, referral_count: BigInt(count) }))
         .sort((a, b) => a.grade.localeCompare(b.grade));
 
-    return { riskLevelCounts, gradeRiskData, hospitalReferrals };
+    return {
+        riskLevelCounts,
+        gradeRiskData,
+        hospitalReferrals,
+        assessedByClass: Array.from(classMap.values()),
+    };
 }
 
 // ========================================
