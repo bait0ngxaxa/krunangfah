@@ -19,6 +19,8 @@ const baseData: AnalyticsData = {
     studentsWithAssessment: 8,
     studentsWithoutAssessment: 2,
     screeningCoveragePercent: 80,
+    coverageCountMismatches: [],
+    coverageUncountedStudents: 0,
     selectedAcademicTermExists: true,
     availableClasses: ["ม.1/1"],
     availableAcademicTerms: [
@@ -68,6 +70,10 @@ function renderSummary(data: AnalyticsData): string {
             activityCompletionSummary={data.activityCompletionSummary}
             currentRound={data.currentRound}
             currentClass={data.currentClass}
+            coverageCountMismatches={data.coverageCountMismatches}
+            coverageUncountedStudents={data.coverageUncountedStudents}
+            isSingleTerm={true}
+            canEditPlannedCounts={false}
         />,
     );
 }

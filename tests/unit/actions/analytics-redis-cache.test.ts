@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AnalyticsData, SystemAnalyticsOverview } from "@/lib/actions/analytics/types";
 import {
     createAnalyticsRedisKeyParts,
+    createSystemOverviewRedisKeyParts,
     getRedisCachedAnalyticsData,
     getRedisCachedSystemOverview,
     readRedisCachedAnalyticsData,
@@ -41,6 +42,8 @@ function createAnalyticsData(): AnalyticsData {
         studentsWithAssessment: 8,
         studentsWithoutAssessment: 2,
         screeningCoveragePercent: 80,
+        coverageCountMismatches: [{ className: "ม.1/2", expected: 3, assessed: 4 }],
+        coverageUncountedStudents: 1,
         selectedAcademicTermExists: true,
         availableClasses: ["ม.1/1"],
         availableAcademicTerms: [{ id: "term-2569-1", year: 2569, semester: 1 }],
@@ -113,6 +116,7 @@ function createOverview(): SystemAnalyticsOverview {
         totalStudents: 100,
         studentsWithAssessment: 80,
         screeningCoveragePercent: 80,
+        schoolsWithCountMismatch: 1,
         academicYearLabel: "ปีการศึกษา 2569 เทอม 1",
         availableAcademicTerms: [{ id: "term-2569-1", year: 2569, semester: 1 }],
         currentAcademicYear: 2569,
@@ -207,6 +211,40 @@ describe("analytics Redis cache", () => {
         });
     });
 
+    it("rejects cached analytics data from before per-class coverage and versions the key", async () => {
+        const preCoveragePayload = { ...createAnalyticsData() } as Record<string, unknown>;
+        delete preCoveragePayload.coverageCountMismatches;
+        delete preCoveragePayload.coverageUncountedStudents;
+        const keyParts = createAnalyticsRedisKeyParts({
+            role: "school_admin",
+            schoolId: "school-1",
+            targetClass: "",
+            academicYearStr: "2569",
+            semesterStr: "1",
+            roundStr: "",
+        });
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(preCoveragePayload));
+
+        expect(keyParts).toContain("coverage:per-class-v1");
+        await expect(readRedisCachedAnalyticsData(keyParts)).resolves.toMatchObject({
+            data: null,
+        });
+    });
+
+    it("rejects a cached count mismatch without numeric counts", async () => {
+        const payload = {
+            ...createAnalyticsData(),
+            coverageCountMismatches: [{ className: "ม.1/2", expected: "3", assessed: 4 }],
+        };
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(payload));
+
+        await expect(getRedisCachedAnalyticsData(["analytics-data"])).resolves.toBeNull();
+    });
+
     it("stores analytics data and tracks global plus school tags", async () => {
         const data = createAnalyticsData();
         const keyParts = createAnalyticsRedisKeyParts({
@@ -249,6 +287,31 @@ describe("analytics Redis cache", () => {
         ]);
 
         expect(cached).toEqual(overview);
+    });
+
+    it("rejects a cached system overview from before per-class coverage", async () => {
+        const preCoverageOverview = { ...createOverview() } as Record<string, unknown>;
+        delete preCoverageOverview.schoolsWithCountMismatch;
+        const keyParts = createSystemOverviewRedisKeyParts({ academicYear: 2569, semester: 1 });
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(preCoverageOverview));
+
+        expect(keyParts).toContain("coverage:per-class-v1");
+        await expect(getRedisCachedSystemOverview(keyParts)).resolves.toBeNull();
+    });
+
+    it("accepts a cached system overview without a computable coverage", async () => {
+        const overview = { ...createOverview(), screeningCoveragePercent: null };
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(overview));
+
+        await expect(
+            getRedisCachedSystemOverview(["analytics-system-overview"]),
+        ).resolves.toEqual(overview);
     });
 
     it("tracks overview cache entries for overview invalidation", async () => {

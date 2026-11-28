@@ -18,13 +18,63 @@ import {
     transformGradeRiskData,
     transformActivityProgress,
     transformHospitalReferrals,
-    calculateScreeningCoveragePercent,
 } from "./transforms";
+import {
+    calculateScreeningCoverage,
+    mergeClassCoverageCounts,
+    type ExpectedClassCount,
+} from "./coverage";
+import { getExpectedClassCounts } from "./expected-counts";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
 import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 import { ACTIVITY_ANALYTICS_ROUND } from "./constants";
 
 import type { AnalyticsData } from "./types";
+import type { CombinedAnalyticsResult } from "./queries";
+
+export { getExpectedStudentCount } from "./expected-counts";
+
+interface CoverageFields {
+    totalStudents: number | null;
+    studentsWithoutAssessment: number | null;
+    screeningCoveragePercent: number | null;
+    coverageCountMismatches: AnalyticsData["coverageCountMismatches"];
+    coverageUncountedStudents: number;
+}
+
+/**
+ * Coverage needs one term's planned counts; a multi-term scope (no rows)
+ * keeps every coverage figure null. A single term without any term row also
+ * has no planned total, but its screened classes still show as mismatches.
+ */
+function buildCoverageFields(
+    expectedRows: readonly ExpectedClassCount[],
+    assessedByClass: CombinedAnalyticsResult["assessedByClass"],
+    isSingleTerm: boolean,
+): CoverageFields {
+    if (!isSingleTerm) {
+        return {
+            totalStudents: null,
+            studentsWithoutAssessment: null,
+            screeningCoveragePercent: null,
+            coverageCountMismatches: [],
+            coverageUncountedStudents: 0,
+        };
+    }
+    const coverage = calculateScreeningCoverage(
+        mergeClassCoverageCounts(expectedRows, assessedByClass),
+    );
+    const hasTermRows = expectedRows.length > 0;
+    return {
+        totalStudents: hasTermRows ? coverage.expectedTotal : null,
+        studentsWithoutAssessment: hasTermRows
+            ? coverage.studentsWithoutAssessment
+            : null,
+        screeningCoveragePercent: coverage.coveragePercent,
+        coverageCountMismatches: coverage.mismatches,
+        coverageUncountedStudents: coverage.uncountedStudents,
+    };
+}
 
 export async function fetchAnalyticsData(
     schoolId: string | undefined,
@@ -109,7 +159,7 @@ export async function fetchAnalyticsData(
         : Promise.resolve(null);
 
     const [
-        expectedStudentCount,
+        expectedClassCounts,
         availableClasses,
         availableAcademicTermsRaw,
         combinedData,
@@ -118,7 +168,7 @@ export async function fetchAnalyticsData(
         availableRounds,
         legacyClassAttribution,
     ] = await Promise.all([
-        getExpectedStudentCount(schoolId, selectedClass, academicYearIds),
+        getExpectedClassCounts(schoolId, selectedClass, academicYearIds),
         showClassFilter
             ? getAvailableClassNames(schoolId, selectedAcademicYears)
             : Promise.resolve([]),
@@ -157,18 +207,17 @@ export async function fetchAnalyticsData(
         riskLevelCounts: riskLevelCountsRaw,
         gradeRiskData: gradeRiskDataRaw,
         hospitalReferrals: hospitalReferralsRaw,
+        assessedByClass,
     } = combinedData;
 
     const studentsWithAssessment = riskLevelCountsRaw.reduce(
         (sum, r) => sum + Number(r.count),
         0,
     );
-    const studentsWithoutAssessment = expectedStudentCount === null
-        ? null
-        : Math.max(0, expectedStudentCount - studentsWithAssessment);
-    const screeningCoveragePercent = calculateScreeningCoveragePercent(
-        studentsWithAssessment,
-        expectedStudentCount,
+    const coverageFields = buildCoverageFields(
+        expectedClassCounts,
+        assessedByClass,
+        academicYearIds?.length === 1,
     );
     const totalReferrals = riskLevelCountsRaw.reduce(
         (sum, r) => sum + Number(r.referral_count),
@@ -203,11 +252,9 @@ export async function fetchAnalyticsData(
         transformHospitalReferrals(hospitalReferralsRaw);
 
     return {
-        totalStudents: expectedStudentCount,
+        ...coverageFields,
         riskLevelSummary,
         studentsWithAssessment,
-        studentsWithoutAssessment,
-        screeningCoveragePercent,
         selectedAcademicTermExists,
         availableClasses,
         availableAcademicTerms,
@@ -226,29 +273,4 @@ export async function fetchAnalyticsData(
         totalReferrals,
         legacyClassAttribution,
     };
-}
-
-export async function getExpectedStudentCount(
-    schoolId: string | undefined,
-    classFilter?: string,
-    academicYearIds?: readonly string[],
-): Promise<number | null> {
-    if (!academicYearIds || academicYearIds.length !== 1) return null;
-
-    // Never filter archived classes here: term rows record which classes
-    // existed in each term, so a past term must still count a class that
-    // was archived later.
-    const result = await prisma.schoolClassTerm.aggregate({
-        where: {
-            academicYearId: academicYearIds[0],
-            schoolClass: {
-                ...(schoolId ? { schoolId } : {}),
-                ...(classFilter ? { name: classFilter } : {}),
-                school: { disabledAt: null, isTestData: false },
-            },
-        },
-        _sum: { expectedStudentCount: true },
-    });
-
-    return result._sum.expectedStudentCount;
 }

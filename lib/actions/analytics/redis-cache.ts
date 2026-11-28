@@ -118,6 +118,15 @@ function isHospitalReferralByGrade(value: unknown): boolean {
     );
 }
 
+function isCoverageCountMismatch(value: unknown): boolean {
+    if (!isRecord(value)) return false;
+    return (
+        typeof value.className === "string" &&
+        typeof value.expected === "number" &&
+        typeof value.assessed === "number"
+    );
+}
+
 function isAnalyticsData(value: unknown): value is AnalyticsData {
     if (!isRecord(value)) return false;
     return (
@@ -129,6 +138,9 @@ function isAnalyticsData(value: unknown): value is AnalyticsData {
             typeof value.studentsWithoutAssessment === "number") &&
         (value.screeningCoveragePercent === null ||
             typeof value.screeningCoveragePercent === "number") &&
+        Array.isArray(value.coverageCountMismatches) &&
+        value.coverageCountMismatches.every(isCoverageCountMismatch) &&
+        typeof value.coverageUncountedStudents === "number" &&
         typeof value.selectedAcademicTermExists === "boolean" &&
         isStringArray(value.availableClasses) &&
         isAcademicTermArray(value.availableAcademicTerms) &&
@@ -167,7 +179,9 @@ function isSystemAnalyticsOverview(value: unknown): value is SystemAnalyticsOver
         typeof value.totalSchools === "number" &&
         typeof value.totalStudents === "number" &&
         typeof value.studentsWithAssessment === "number" &&
-        typeof value.screeningCoveragePercent === "number" &&
+        (value.screeningCoveragePercent === null ||
+            typeof value.screeningCoveragePercent === "number") &&
+        typeof value.schoolsWithCountMismatch === "number" &&
         typeof value.academicYearLabel === "string" &&
         isAcademicTermArray(value.availableAcademicTerms) &&
         (value.currentAcademicYear === undefined ||
@@ -268,6 +282,8 @@ export function createAnalyticsRedisKeyParts(input: {
         "activity-scope:round-one-v1",
         // Past-term class filter and grouping follow the class at assessment.
         "class-attribution:assessment-v1",
+        // Coverage is capped per class and lists planned-count mismatches.
+        "coverage:per-class-v1",
         `role:${input.role}`,
         `school:${input.schoolId ?? "none"}`,
         `class:${input.targetClass || "all"}`,
@@ -283,6 +299,8 @@ export function createSystemOverviewRedisKeyParts(input: {
 }): string[] {
     return [
         "analytics-system-overview",
+        // Coverage is capped per class; null without a planned count.
+        "coverage:per-class-v1",
         `year:${input.academicYear ?? "current"}`,
         `semester:${input.semester ?? "current"}`,
     ];

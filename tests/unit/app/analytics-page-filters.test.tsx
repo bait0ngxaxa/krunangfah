@@ -33,6 +33,8 @@ const analyticsData: AnalyticsData = {
     studentsWithAssessment: 10,
     studentsWithoutAssessment: 10,
     screeningCoveragePercent: 50,
+    coverageCountMismatches: [],
+    coverageUncountedStudents: 0,
     selectedAcademicTermExists: true,
     riskLevelSummary: [],
     availableClasses: ["ม.1/1"],
@@ -62,6 +64,7 @@ const systemOverview: SystemAnalyticsOverview = {
     totalStudents: 100,
     studentsWithAssessment: 80,
     screeningCoveragePercent: 80,
+    schoolsWithCountMismatch: 0,
     academicYearLabel: "ปีการศึกษา 2569 เทอม 2",
     availableAcademicTerms: [
         { id: "term-2568-1", year: 2568, semester: 1 },

@@ -37,6 +37,8 @@ const analyticsData: AnalyticsData = {
     studentsWithAssessment: 0,
     studentsWithoutAssessment: 0,
     screeningCoveragePercent: 0,
+    coverageCountMismatches: [],
+    coverageUncountedStudents: 0,
     selectedAcademicTermExists: false,
     riskLevelSummary: [],
     availableClasses: [],
@@ -64,6 +66,7 @@ const overviewData: SystemAnalyticsOverview = {
     totalStudents: 0,
     studentsWithAssessment: 0,
     screeningCoveragePercent: 0,
+    schoolsWithCountMismatch: 0,
     academicYearLabel: "ยังไม่มีข้อมูลปีการศึกษา",
     availableAcademicTerms: [],
 };

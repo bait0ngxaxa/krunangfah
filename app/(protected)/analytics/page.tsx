@@ -10,6 +10,8 @@ import {
 } from "@/lib/actions/analytics/main";
 import { getSchools } from "@/lib/actions/dashboard.actions";
 import { requireAuth } from "@/lib/auth/session";
+import { canManageSchoolClasses } from "@/lib/auth/teacher-management-policy";
+import { getCurrentAcademicYear } from "@/lib/utils/academic-year";
 import type { Metadata } from "next";
 import type { AcademicTermOption } from "@/lib/actions/analytics/types";
 
@@ -355,6 +357,12 @@ export default async function AnalyticsPage({
         );
     }
 
+    // Planned counts are editable only for the current academic year's terms
+    // (same rule as class management), and only by the primary admin.
+    const canEditPlannedCounts =
+        canManageSchoolClasses(session.user) &&
+        analyticsData.currentAcademicYear === getCurrentAcademicYear().year;
+
     if (
         selectedRound !== "all" &&
         !analyticsData.availableRounds.includes(Number(selectedRound))
@@ -389,6 +397,7 @@ export default async function AnalyticsPage({
                     selectedRound={selectedRound}
                     filterWarnings={warnings}
                     systemOverview={null}
+                    canEditPlannedCounts={canEditPlannedCounts}
                 />
             </div>
         </div>

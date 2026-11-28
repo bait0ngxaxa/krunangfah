@@ -1,5 +1,6 @@
 import { School, Users, CheckCircle } from "lucide-react";
 import type { SystemAnalyticsOverview } from "@/lib/actions/analytics/types";
+import { SystemCountMismatchNote } from "./CoverageCountNotice";
 
 interface SystemOverviewCardsProps {
     overview: SystemAnalyticsOverview;
@@ -8,7 +9,8 @@ interface SystemOverviewCardsProps {
 interface OverviewCardProps {
     icon: typeof School;
     label: string;
-    value: number;
+    /** null renders only the unit, e.g. "คำนวณไม่ได้". */
+    value: number | null;
     unit: string;
     accentColor: string;
     glowColor: string;
@@ -40,9 +42,11 @@ function OverviewCard({
                         {label}
                     </p>
                     <div className="mt-1 flex items-baseline gap-2">
-                        <p className="text-3xl font-extrabold tracking-tight text-slate-900">
-                            {value}
-                        </p>
+                        {value === null ? null : (
+                            <p className="text-3xl font-extrabold tracking-tight text-slate-900">
+                                {value}
+                            </p>
+                        )}
                         <p className={`text-sm font-bold ${accentColor}`}>{unit}</p>
                     </div>
                 </div>
@@ -80,11 +84,18 @@ export function SystemOverviewCards({
                     icon={CheckCircle}
                     label="ความครอบคลุมคัดกรอง"
                     value={overview.screeningCoveragePercent}
-                    unit="%"
+                    unit={
+                        overview.screeningCoveragePercent === null
+                            ? "คำนวณไม่ได้"
+                            : "%"
+                    }
                     accentColor="text-violet-600"
                     glowColor="bg-violet-200/35"
                 />
             </div>
+            <SystemCountMismatchNote
+                schoolsWithCountMismatch={overview.schoolsWithCountMismatch}
+            />
         </div>
     );
 }

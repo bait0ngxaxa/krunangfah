@@ -109,6 +109,7 @@ describe("analytics cache keys use the resolved current term", () => {
         expect(defaultRedisKey).toEqual(explicitRedisKey);
         expect(defaultRedisKey).toEqual([
             "analytics-system-overview",
+            "coverage:per-class-v1",
             "year:2569",
             "semester:2",
         ]);
@@ -123,6 +124,7 @@ describe("analytics cache keys use the resolved current term", () => {
 
         expect(mocks.readOverview.mock.calls[0][0]).toEqual([
             "analytics-system-overview",
+            "coverage:per-class-v1",
             "year:2569",
             "semester:2",
         ]);

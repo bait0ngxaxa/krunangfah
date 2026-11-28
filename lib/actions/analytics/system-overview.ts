@@ -1,7 +1,7 @@
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
-import { buildCurrentStudentPopulationSql } from "@/lib/utils/student-population";
-import { getExpectedStudentCount } from "./data";
+import { calculateScreeningCoverage, mergeClassCoverageCounts } from "./coverage";
+import { getExpectedClassCounts } from "./expected-counts";
+import { getCombinedAnalytics } from "./queries";
 import type { AcademicTermOption, SystemAnalyticsOverview } from "./types";
 
 // Not a "use server" module: the fetcher is an internal cache filler, never a
@@ -52,50 +52,41 @@ export async function fetchSystemAnalyticsOverview(
             totalSchools,
             totalStudents: 0,
             studentsWithAssessment: 0,
-            screeningCoveragePercent: 0,
+            screeningCoveragePercent: null,
+            schoolsWithCountMismatch: 0,
             academicYearLabel: "ยังไม่มีข้อมูลปีการศึกษา",
             ...overviewOptions,
         };
     }
 
-    const totalStudents = await getExpectedStudentCount(
-        undefined,
-        undefined,
-        [resolvedAcademicYear.id],
+    // Same per-class rule as a school view, over every active school's
+    // classes (admin attribution). Summing schools first would let a school
+    // with a too-low planned count inflate the national figure.
+    const termIds = [resolvedAcademicYear.id];
+    const [expectedClassCounts, combined] = await Promise.all([
+        getExpectedClassCounts(undefined, undefined, termIds),
+        getCombinedAnalytics(
+            undefined,
+            {},
+            termIds,
+            undefined,
+            resolvedAcademicYear.isCurrent,
+        ),
+    ]);
+    const coverage = calculateScreeningCoverage(
+        mergeClassCoverageCounts(expectedClassCounts, combined.assessedByClass),
     );
-    const resolvedTotalStudents = totalStudents ?? 0;
-    const lifecycleCondition = resolvedAcademicYear.isCurrent
-        ? buildCurrentStudentPopulationSql()
-        : Prisma.empty;
-
-    const assessedStudentsRaw = await prisma.$queryRaw<Array<{ count: bigint }>>`
-        SELECT COUNT(DISTINCT pr."studentId")::bigint as count
-        FROM phq_results pr
-        JOIN students s ON pr."studentId" = s.id
-        JOIN schools sch ON s."schoolId" = sch.id
-        WHERE pr."academicYearId" = ${resolvedAcademicYear.id}
-          AND s."disabledAt" IS NULL
-          AND s."isTestData" = false
-          AND sch."disabledAt" IS NULL
-          AND sch."isTestData" = false
-          ${lifecycleCondition}
-    `;
-    const studentsWithAssessment = Number(
-        assessedStudentsRaw[0]?.count ?? BigInt(0),
+    const studentsWithAssessment = combined.riskLevelCounts.reduce(
+        (sum, row) => sum + Number(row.count),
+        0,
     );
-    const screeningCoveragePercent =
-        resolvedTotalStudents > 0
-            ? Math.min(
-                  100,
-                  Math.round((studentsWithAssessment / resolvedTotalStudents) * 100),
-              )
-            : 0;
 
     return {
         totalSchools,
-        totalStudents: resolvedTotalStudents,
+        totalStudents: coverage.expectedTotal,
         studentsWithAssessment,
-        screeningCoveragePercent,
+        screeningCoveragePercent: coverage.coveragePercent,
+        schoolsWithCountMismatch: coverage.schoolsWithMismatch,
         academicYearLabel: `ปีการศึกษา ${resolvedAcademicYear.year} เทอม ${resolvedAcademicYear.semester}`,
         availableAcademicTerms: overviewOptions.availableAcademicTerms,
         currentAcademicYear: resolvedAcademicYear.year,

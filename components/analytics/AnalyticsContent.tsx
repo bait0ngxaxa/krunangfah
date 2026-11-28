@@ -34,6 +34,8 @@ interface AnalyticsContentProps {
     filterWarnings: string[];
     requireSchoolSelection?: boolean;
     systemOverview?: SystemAnalyticsOverview | null;
+    /** Decided server-side: primary school admin, term in the current year. */
+    canEditPlannedCounts?: boolean;
 }
 
 type AnalyticsFiltersProps = ComponentProps<typeof AnalyticsFilters>;
@@ -85,6 +87,7 @@ export function AnalyticsContent({
     filterWarnings,
     requireSchoolSelection = false,
     systemOverview,
+    canEditPlannedCounts = false,
 }: AnalyticsContentProps) {
     const isSystemAdmin = userRole === "system_admin" && !!schools?.length;
     const showClassFilter =
@@ -192,6 +195,14 @@ export function AnalyticsContent({
                 activityCompletionSummary={data.activityCompletionSummary}
                 currentRound={data.currentRound}
                 currentClass={data.currentClass}
+                coverageCountMismatches={data.coverageCountMismatches}
+                coverageUncountedStudents={data.coverageUncountedStudents}
+                isSingleTerm={
+                    data.selectedAcademicTermExists &&
+                    data.currentAcademicYear !== undefined &&
+                    data.currentSemester !== undefined
+                }
+                canEditPlannedCounts={canEditPlannedCounts}
             />
             <Tabs tabs={tabs} defaultTab="summary" />
         </>
