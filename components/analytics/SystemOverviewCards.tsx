@@ -1,5 +1,6 @@
 import { School, Users, CheckCircle } from "lucide-react";
 import type { SystemAnalyticsOverview } from "@/lib/actions/analytics/types";
+import { SystemCountMismatchNote } from "./CoverageCountNotice";
 
 interface SystemOverviewCardsProps {
     overview: SystemAnalyticsOverview;
@@ -92,6 +93,9 @@ export function SystemOverviewCards({
                     glowColor="bg-violet-200/35"
                 />
             </div>
+            <SystemCountMismatchNote
+                schoolsWithCountMismatch={overview.schoolsWithCountMismatch}
+            />
         </div>
     );
 }

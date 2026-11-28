@@ -10,8 +10,15 @@ import {
     Info,
     type LucideIcon,
 } from "lucide-react";
-import type { ActivityCompletionSummary } from "@/lib/actions/analytics/types";
+import type {
+    ActivityCompletionSummary,
+    CoverageCountMismatch,
+} from "@/lib/actions/analytics/types";
 import { toSafeCount } from "./utils";
+import {
+    CoverageCountMismatchNotice,
+    MissingPlannedCountNotice,
+} from "./CoverageCountNotice";
 
 interface AnalyticsSummaryCardsProps {
     totalStudents: number | null;
@@ -22,6 +29,11 @@ interface AnalyticsSummaryCardsProps {
     activityCompletionSummary: ActivityCompletionSummary | null;
     currentRound?: number;
     currentClass?: string;
+    coverageCountMismatches: readonly CoverageCountMismatch[];
+    coverageUncountedStudents: number;
+    /** One academic term is selected, so coverage can be computed. */
+    isSingleTerm: boolean;
+    canEditPlannedCounts: boolean;
 }
 
 function MainStudentCard({
@@ -76,7 +88,8 @@ function MetricRow({
 }: {
     icon: LucideIcon;
     label: string;
-    value: number;
+    /** null renders only the unit, e.g. "คำนวณไม่ได้". */
+    value: number | null;
     unit: string;
     accentColor: string;
 }) {
@@ -96,9 +109,11 @@ function MetricRow({
                 </div>
             </div>
             <div className="flex shrink-0 items-baseline gap-1.5">
-                <p className="text-2xl font-extrabold tracking-tight text-slate-900">
-                    {value}
-                </p>
+                {value === null ? null : (
+                    <p className="text-2xl font-extrabold tracking-tight text-slate-900">
+                        {value}
+                    </p>
+                )}
                 <p className={`text-sm font-bold ${accentColor}`}>{unit}</p>
             </div>
         </div>
@@ -254,6 +269,10 @@ export function AnalyticsSummaryCards({
     activityCompletionSummary,
     currentRound,
     currentClass,
+    coverageCountMismatches,
+    coverageUncountedStudents,
+    isSingleTerm,
+    canEditPlannedCounts,
 }: AnalyticsSummaryCardsProps) {
     const safeTotalStudents = totalStudents === null
         ? null
@@ -282,6 +301,10 @@ export function AnalyticsSummaryCards({
               }
             : null;
     const coveragePercent = screeningCoveragePercent;
+    const missingPlannedCount =
+        isSingleTerm &&
+        coveragePercent === null &&
+        safeStudentsWithAssessment > 0;
 
     return (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.6fr)]">
@@ -299,13 +322,19 @@ export function AnalyticsSummaryCards({
                     <MetricRow
                         icon={Gauge}
                         label="ความครอบคลุมการคัดกรอง"
-                        value={coveragePercent ?? 0}
+                        value={coveragePercent}
                         unit={coveragePercent === null ? "คำนวณไม่ได้" : "%"}
                         accentColor="text-violet-600"
                     />
                     {coveragePercent === null ? null : (
                         <PercentageBar value={coveragePercent} />
                     )}
+                    {missingPlannedCount ? <MissingPlannedCountNotice /> : null}
+                    <CoverageCountMismatchNotice
+                        mismatches={coverageCountMismatches}
+                        uncountedStudents={toSafeCount(coverageUncountedStudents)}
+                        canEditPlannedCounts={canEditPlannedCounts}
+                    />
                 </MetricBlock>
 
                 {safeActivityCompletionSummary ? (

@@ -70,6 +70,10 @@ function renderSummary(data: AnalyticsData): string {
             activityCompletionSummary={data.activityCompletionSummary}
             currentRound={data.currentRound}
             currentClass={data.currentClass}
+            coverageCountMismatches={data.coverageCountMismatches}
+            coverageUncountedStudents={data.coverageUncountedStudents}
+            isSingleTerm={true}
+            canEditPlannedCounts={false}
         />,
     );
 }
