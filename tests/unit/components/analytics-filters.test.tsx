@@ -74,6 +74,31 @@ describe("AnalyticsFilters", () => {
             .toEqual(["ทุกเทอม", "เทอม 1", "เทอม 2"]);
     });
 
+    it("renders the five controls in order inside one compact card", () => {
+        const { container } = renderFilters({
+            ...systemAdminProps,
+            selectedSchoolId: "school-1",
+        });
+
+        const card = container.firstElementChild;
+        expect(card?.classList.contains("bg-white")).toBe(true);
+        expect(card?.getAttribute("aria-busy")).toBe("false");
+        expect(container.querySelectorAll("div.rounded-2xl, div.rounded-3xl"))
+            .toHaveLength(1);
+        expect(container.querySelector('[class*="glow-blob"], [class*="backdrop-blur"]'))
+            .toBeNull();
+        expect(screen.getAllByRole("combobox").map((select) => select.id)).toEqual([
+            "school-filter",
+            "class-filter",
+            "year-filter-analytics",
+            "semester-filter-analytics",
+            "round-filter",
+        ]);
+        expect(screen.getAllByRole("combobox").every((select) =>
+            select.classList.contains("h-10")
+        )).toBe(true);
+    });
+
     it("hides both term filters when the current term is the only choice", () => {
         renderFilters({ selectableAcademicTerms: [currentTerm] });
 

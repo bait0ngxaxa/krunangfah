@@ -27,6 +27,7 @@ export function ClassFilter({
             value={currentClass ?? "all"}
             onChange={onClassChange}
             disabled={disabled}
+            variant="field"
         >
             <option value="all">แสดงทั้งหมด</option>
             {availableClasses.map((className) => (

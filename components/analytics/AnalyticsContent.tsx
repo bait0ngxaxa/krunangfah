@@ -1,6 +1,6 @@
 import { Tabs } from "@/components/ui/Tabs";
 import { AlertTriangle } from "lucide-react";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import { toChartData, getPieChartTitle } from "./utils";
 import { AnalyticsFilters } from "./AnalyticsFilters";
 import { AnalyticsSummaryCards } from "./AnalyticsSummaryCards";
@@ -40,9 +40,9 @@ interface AnalyticsContentProps {
 
 type AnalyticsFiltersProps = ComponentProps<typeof AnalyticsFilters>;
 
-function StickyAnalyticsFilters(props: AnalyticsFiltersProps) {
+function StickyAnalyticsFilters(props: AnalyticsFiltersProps): ReactElement {
     return (
-        <div className="sticky top-3 z-30 -mx-2 rounded-[2rem] bg-white/95 px-2 py-2 sm:top-4 sm:px-3">
+        <div className="sticky top-[92px] z-30 sm:top-[96px]">
             <AnalyticsFilters {...props} />
         </div>
     );

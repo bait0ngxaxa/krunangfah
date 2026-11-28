@@ -42,7 +42,7 @@ export function AcademicYearFilter({ availableYears, selectedYear, onYearChange,
         onYearChange(nextValue);
     }
 
-    return <FilterSelect icon={CalendarDays} label="ปีการศึกษา:" id="year-filter-analytics" value={value} onChange={handleChange} disabled={disabled}>
+    return <FilterSelect variant="field" icon={CalendarDays} label="ปีการศึกษา:" id="year-filter-analytics" value={value} onChange={handleChange} disabled={disabled}>
         {displayedYears.map((year) => <option key={year} value={String(year)}>ปี {year}{year === currentYear ? " (ปัจจุบัน)" : ""}</option>)}
         {hiddenYearCount > 0 && !showAllYears ? <option value="__show_all__">ดูปีก่อนหน้านี้ ({hiddenYearCount} ปี)</option> : null}
     </FilterSelect>;

@@ -226,7 +226,7 @@ export default async function AnalyticsPage({
         }
 
         return (
-            <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+            <div className="min-h-screen bg-slate-50 relative overflow-x-clip">
                 <PageBanner
                     title="Analytics"
                     subtitle="สรุปผลการคัดกรอง PHQ-A ของนักเรียน"
@@ -371,7 +371,7 @@ export default async function AnalyticsPage({
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+        <div className="min-h-screen bg-slate-50 relative overflow-x-clip">
             <PageBanner
                 title="Analytics"
                 subtitle="สรุปผลการคัดกรอง PHQ-A ของนักเรียน"
