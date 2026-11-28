@@ -25,6 +25,11 @@ vi.mock("@/lib/actions/student/queries", () => ({
     getStudentsForDashboardQuery: vi.fn(),
 }));
 
+vi.mock("@/lib/actions/student/term-queries", () => ({
+    getAvailableTermsQuery: vi.fn(),
+    getCurrentAcademicYearIdQuery: vi.fn(),
+}));
+
 vi.mock("@/lib/utils/logging", () => ({
     logError: vi.fn(),
 }));
@@ -36,6 +41,10 @@ import {
     getRiskLevelCountsQuery,
     getStudentsForDashboardQuery,
 } from "@/lib/actions/student/queries";
+import {
+    getAvailableTermsQuery,
+    getCurrentAcademicYearIdQuery,
+} from "@/lib/actions/student/term-queries";
 import { getStudentDashboardData } from "@/lib/actions/student/dashboard";
 import type { ViewerContext } from "@/lib/auth/viewer-context";
 import type { QueryResult } from "@/lib/actions/query-result";
@@ -61,7 +70,9 @@ function createStudent(id: string, riskLevel: string) {
         studentId: id,
         class: "ม.1/1",
         schoolId: "school-1",
-        phqResults: [{ totalScore: 5, riskLevel }],
+        phqResults: [
+            { totalScore: 5, riskLevel, assessmentRound: 1, academicYear: { id: "term-1", year: 2568, semester: 1 } },
+        ],
         referral: null,
     };
 }
@@ -92,6 +103,8 @@ describe("getStudentDashboardData", () => {
         prismaMocks.academicYearFindUnique.mockResolvedValue({
             isCurrent: false,
         });
+        vi.mocked(getCurrentAcademicYearIdQuery).mockResolvedValue(null);
+        vi.mocked(getAvailableTermsQuery).mockResolvedValue([]);
     });
 
     it("returns empty data for system admin without selected school", async () => {
@@ -264,8 +277,47 @@ describe("getStudentDashboardData", () => {
         );
         expect(prismaMocks.academicYearFindUnique).toHaveBeenCalledWith({
             where: { id: academicYearId },
-            select: { isCurrent: true },
+            select: { id: true, year: true, semester: true, isCurrent: true },
         });
+    });
+
+    it("returns the current term, visible terms and the selected term", async () => {
+        const academicYearId = "cm123456789012345678901234";
+        const availableTerms = [
+            { id: academicYearId, year: 2568, semester: 2, rounds: [1, 2] },
+            { id: "cm999999999999999999999999", year: 2568, semester: 1, rounds: [1] },
+        ];
+        vi.mocked(getCurrentAcademicYearIdQuery).mockResolvedValue(academicYearId);
+        vi.mocked(getAvailableTermsQuery).mockResolvedValue(availableTerms);
+        prismaMocks.academicYearFindUnique.mockResolvedValue({
+            id: academicYearId,
+            year: 2568,
+            semester: 2,
+            isCurrent: true,
+        });
+
+        const selected = getQueryData(
+            await getStudentDashboardData({ academicYearId, classFilter: "ม.1/1" }),
+        );
+        const latest = getQueryData(
+            await getStudentDashboardData({ classFilter: "ม.1/1" }),
+        );
+
+        expect(getAvailableTermsQuery).toHaveBeenCalledWith(
+            "school-1",
+            "ม.1/1",
+            "school_admin",
+        );
+        for (const data of [selected, latest]) {
+            expect(data.currentAcademicYearId).toBe(academicYearId);
+            expect(data.availableTerms).toEqual(availableTerms);
+        }
+        expect(selected.selectedTerm).toEqual({
+            id: academicYearId,
+            year: 2568,
+            semester: 2,
+        });
+        expect(latest.selectedTerm).toBeNull();
     });
 
     it("keeps class filters available when selected risk has zero matching students", async () => {
@@ -392,6 +444,10 @@ describe("getStudentDashboardData", () => {
         expect(getReferredStudentCountQuery).not.toHaveBeenCalled();
         expect(getStudentsForDashboardQuery).not.toHaveBeenCalled();
         expect(prismaMocks.academicYearFindUnique).not.toHaveBeenCalled();
+        expect(getAvailableTermsQuery).not.toHaveBeenCalled();
+        expect(data.availableTerms).toEqual([]);
+        expect(data.currentAcademicYearId).toBeNull();
+        expect(data.selectedTerm).toBeNull();
     });
 
     it("lets a class teacher filter by their own advisory class", async () => {

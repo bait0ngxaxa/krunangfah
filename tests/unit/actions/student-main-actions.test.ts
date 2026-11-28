@@ -130,7 +130,14 @@ describe("student main actions compatibility", () => {
                 studentId: "001",
                 class: "ม.1/1",
                 schoolId: "school-1",
-                phqResults: [{ totalScore: 3, riskLevel: "blue" }],
+                phqResults: [
+                    {
+                        totalScore: 3,
+                        riskLevel: "blue",
+                        assessmentRound: 1,
+                        academicYear: { id: "term-1", year: 2568, semester: 1 },
+                    },
+                ],
                 referral: null,
             },
         ];

@@ -3,6 +3,17 @@
  * Type definitions for student-related operations
  */
 
+export interface StudentResultTerm {
+    id: string;
+    year: number;
+    semester: number;
+}
+
+export interface AvailableStudentTerm extends StudentResultTerm {
+    /** Assessment rounds with at least one visible result in this term. */
+    rounds: number[];
+}
+
 // Student with latest PHQ result
 export interface StudentWithLatestPhq {
     id: string;
@@ -15,6 +26,8 @@ export interface StudentWithLatestPhq {
     phqResults: {
         totalScore: number;
         riskLevel: string;
+        assessmentRound: number;
+        academicYear: StudentResultTerm;
     }[];
     referral?: {
         id: string;
@@ -89,6 +102,11 @@ export interface StudentDashboardDataResponse {
     totalStudents: number;
     filteredStudentCount: number;
     pagination: DashboardPagination;
+    /** Read-only lookup of the `isCurrent` term; null when none is marked. */
+    currentAcademicYearId: string | null;
+    availableTerms: AvailableStudentTerm[];
+    /** The `year` filter's term, or null in the default (latest result) view. */
+    selectedTerm: StudentResultTerm | null;
 }
 
 // Import result type
