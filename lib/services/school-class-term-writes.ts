@@ -36,17 +36,19 @@ async function findCurrentTerm(): Promise<TermOrder | null> {
 }
 
 /**
- * Every existing term between two terms, inclusive, oldest first. A class
- * added to an earlier term also exists in each later term up to now.
+ * Terms a class added to `selected` must exist in, oldest first. A class
+ * added to an earlier term also exists in each later term through `current`.
+ * A term after `current` gets only its own row (unchanged behavior), so no
+ * unrelated terms in between are swept in.
  */
-async function listTermIdsBetween(
-    first: TermOrder,
-    second: TermOrder,
+async function listNewClassTermIds(
+    selected: TermOrder,
+    current: TermOrder,
 ): Promise<string[]> {
-    const [from, to] =
-        compareAcademicYearOrder(first, second) <= 0
-            ? [first, second]
-            : [second, first];
+    if (compareAcademicYearOrder(selected, current) >= 0) {
+        return [selected.id];
+    }
+    const [from, to] = [selected, current];
     const terms = await prisma.academicYear.findMany({
         where: { year: { gte: from.year, lte: to.year } },
         orderBy: [{ year: "asc" }, { semester: "asc" }],
@@ -90,7 +92,7 @@ export async function resolveClassTermWritePlan(
     const current = await findCurrentTerm();
     const isCurrentTarget = current?.id === check.term.id;
     const newClassTermIds = current
-        ? await listTermIdsBetween(check.term, current)
+        ? await listNewClassTermIds(check.term, current)
         : [check.term.id];
 
     return {

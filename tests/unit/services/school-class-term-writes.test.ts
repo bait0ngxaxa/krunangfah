@@ -91,6 +91,20 @@ describe("resolveClassTermWritePlan", () => {
         });
     });
 
+    it("creates only the selected row for a term after the current term", async () => {
+        mockTerms(semesterOne);
+
+        await expect(resolveClassTermWritePlan(semesterTwo.id)).resolves.toEqual({
+            ok: true,
+            plan: {
+                targetTermId: semesterTwo.id,
+                writesClassCount: false,
+                newClassTermIds: [semesterTwo.id],
+            },
+        });
+        expect(prismaMock.academicYear.findMany).not.toHaveBeenCalled();
+    });
+
     it.each([previousYearSemesterTwo.id, "missing-term"])(
         "rejects %s, which is outside the current academic year",
         async (academicYearId) => {
