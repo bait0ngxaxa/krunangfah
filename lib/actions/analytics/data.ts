@@ -14,7 +14,6 @@ import {
     calculateScreeningCoveragePercent,
 } from "./transforms";
 import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
-import { ensureCurrentAcademicYearLifecycle } from "@/lib/services/academic-year-lifecycle";
 import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 import { ACTIVITY_ANALYTICS_ROUND } from "./constants";
 
@@ -29,8 +28,8 @@ export async function fetchAnalyticsData(
     roundStr: string,
 ): Promise<AnalyticsData> {
     const classFilter = targetClass || undefined;
-    let academicYear = academicYearStr ? parseInt(academicYearStr, 10) : undefined;
-    let semester = semesterStr ? parseInt(semesterStr, 10) : undefined;
+    const academicYear = academicYearStr ? parseInt(academicYearStr, 10) : undefined;
+    const semester = semesterStr ? parseInt(semesterStr, 10) : undefined;
     const assessmentRound = roundStr ? parseInt(roundStr, 10) : undefined;
     // "all" is a screening scope, not an assessment round. Activity ownership
     // remains Round 1 unless the user explicitly selects terminal Round 2.
@@ -41,10 +40,12 @@ export async function fetchAnalyticsData(
         ? ACTIVITY_ANALYTICS_ROUND
         : null;
 
+    // Runs inside unstable_cache, which must not run the lifecycle (it may
+    // invalidate caches). Callers resolve the current term first.
     if (academicYear === undefined && semester === undefined) {
-        const currentTerm = await ensureCurrentAcademicYearLifecycle();
-        academicYear = currentTerm.year;
-        semester = currentTerm.semester;
+        throw new Error(
+            "fetchAnalyticsData requires an explicit academic year or semester",
+        );
     }
 
     const showClassFilter = role === "school_admin" || role === "system_admin";

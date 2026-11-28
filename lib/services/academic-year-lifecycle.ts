@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/database/prisma";
-import { revalidateAnalyticsCache } from "@/lib/actions/analytics/cache";
+import { revalidateRedisAnalyticsCache } from "@/lib/actions/analytics/redis-cache";
 import { acquireRedisLock, releaseRedisLock } from "@/lib/cache/redis-lock";
 import {
     ensureSchoolClassTermsForAcademicYear,
@@ -77,7 +77,12 @@ export async function ensureCurrentAcademicYearLifecycle(): Promise<AcademicYear
 
             if (hasMissingTerms) {
                 await prepareCurrentTermForSchools(record.id);
-                await revalidateAnalyticsCache();
+                // Redis only: lifecycle runs during render and before cache
+                // fills, where Next.js forbids updateTag/revalidateTag/
+                // revalidatePath. Analytics callers resolve the current term
+                // before building cache keys, so new-term keys never hit a
+                // stale Next.js cache entry.
+                await revalidateRedisAnalyticsCache();
             }
         } finally {
             await releaseRedisLock(lockResult.lock);

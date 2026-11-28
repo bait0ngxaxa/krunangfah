@@ -80,6 +80,21 @@ describe("fetchAnalyticsData activity scope", () => {
         configureMocks();
     });
 
+    it("throws when called without a year or semester instead of defaulting", async () => {
+        await expect(
+            fetchAnalyticsData("school-1", "", "school_admin", "", "", ""),
+        ).rejects.toThrow("requires an explicit academic year or semester");
+        expect(mocks.ensureCurrentAcademicYearLifecycle).not.toHaveBeenCalled();
+        expect(mocks.getCombinedAnalytics).not.toHaveBeenCalled();
+    });
+
+    it("never runs the academic-year lifecycle (it executes inside unstable_cache)", async () => {
+        await fetchAnalyticsData("school-1", "", "school_admin", "2569", "1", "1");
+        await fetchAnalyticsData("school-1", "", "school_admin", "2569", "", "");
+
+        expect(mocks.ensureCurrentAcademicYearLifecycle).not.toHaveBeenCalled();
+    });
+
     it("keeps Round 2 screening analytics while avoiding activity queries", async () => {
         const data = await fetchAnalyticsData(
             "school-1",

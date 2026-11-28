@@ -20,6 +20,14 @@ vi.mock("@/lib/actions/analytics/redis-cache", () => ({
     setRedisCachedSystemOverview: vi.fn(),
 }));
 vi.mock("@/lib/utils/logging", () => ({ logError: vi.fn() }));
+vi.mock("@/lib/services/academic-year-lifecycle", () => ({
+    ensureCurrentAcademicYearLifecycle: vi.fn(async () => ({
+        id: "ay-current",
+        year: 2569,
+        semester: 2,
+        isCurrent: true,
+    })),
+}));
 
 const analyticsActions = await import("@/lib/actions/analytics/main");
 const { getAnalyticsSummary, getSystemAnalyticsOverview } = analyticsActions;
