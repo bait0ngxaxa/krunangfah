@@ -338,6 +338,100 @@ describe("student main actions compatibility", () => {
         expect(failed.status).toBe("transient_error");
     });
 
+    describe("class teacher with another class's filter", () => {
+        beforeEach(() => {
+            vi.mocked(getViewerContext).mockResolvedValue({
+                advisoryClass: "ม.1/1",
+                isPrimary: false,
+                role: "class_teacher",
+                schoolId: "school-1",
+                userId: "teacher-1",
+            } satisfies ViewerContext);
+        });
+
+        it("getStudents returns an empty page without querying", async () => {
+            for (const page of [1, 2]) {
+                const result = await getStudents({ classFilter: "ม.1/2", page });
+
+                expect(result).toEqual({
+                    status: "empty",
+                    data: {
+                        students: [],
+                        pagination: { total: 0, page, limit: 100, totalPages: 0 },
+                    },
+                });
+            }
+            expect(getStudentsQuery).not.toHaveBeenCalled();
+        });
+
+        it("getStudents still serves the teacher's own class", async () => {
+            vi.mocked(getStudentsQuery).mockResolvedValue({
+                students: [],
+                total: 0,
+            });
+
+            await getStudents({ classFilter: "ม.1/1", page: 2 });
+
+            expect(getStudentsQuery).toHaveBeenCalledWith(
+                "school-1",
+                "ม.1/1",
+                "class_teacher",
+                "teacher-1",
+                { classFilter: "ม.1/1", page: 2, limit: 100 },
+            );
+        });
+
+        it("getStudentRiskCounts returns zero counts without querying", async () => {
+            const result = await getStudentRiskCounts("ม.1/2");
+
+            expect(result).toEqual({
+                status: "empty",
+                data: {
+                    red: 0,
+                    orange: 0,
+                    yellow: 0,
+                    green: 0,
+                    blue: 0,
+                    total: 0,
+                    classes: [],
+                },
+            });
+            expect(getRiskLevelCountsQuery).not.toHaveBeenCalled();
+            expect(getDistinctClassesQuery).not.toHaveBeenCalled();
+        });
+
+        it("getIncompleteActivityWarning counts only the advisory class", async () => {
+            const noOtherClass = await getIncompleteActivityWarning(
+                "year-1",
+                2,
+                ["ม.1/2"],
+            );
+            expect(noOtherClass).toEqual({
+                status: "success",
+                data: {
+                    hasIncomplete: false,
+                    studentCount: 0,
+                    activityCount: 0,
+                    previousRound: 1,
+                },
+            });
+            expect(prismaMocks.activityProgressFindMany).not.toHaveBeenCalled();
+
+            await getIncompleteActivityWarning("year-1", 2, ["ม.1/1", "ม.1/2"]);
+            expect(prismaMocks.activityProgressFindMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        phqResult: expect.objectContaining({
+                            student: expect.objectContaining({
+                                class: { in: ["ม.1/1"] },
+                            }),
+                        }),
+                    }),
+                }),
+            );
+        });
+    });
+
     it("does not report no incomplete activities when the query fails", async () => {
         prismaMocks.activityProgressFindMany.mockRejectedValue(
             new Error("database unavailable"),

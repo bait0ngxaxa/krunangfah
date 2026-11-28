@@ -19,6 +19,10 @@ import {
     getStudentDetailQuery,
 } from "./queries";
 import { transformRiskCounts } from "./transforms";
+import {
+    filterClassesForViewer,
+    isClassFilterAllowedForViewer,
+} from "./student-scope";
 import { handleQueryError } from "@/lib/actions/error-handler";
 import {
     queryEmpty,
@@ -56,6 +60,9 @@ export async function getStudentRiskCounts(
 
         if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
             return queryForbidden();
+        }
+        if (!isClassFilterAllowedForViewer(classFilter, viewer)) {
+            return queryEmpty(transformRiskCounts([], []));
         }
 
         // Get classes and risk counts in parallel
@@ -147,6 +154,12 @@ export async function getStudents(
 
         if (!viewer.schoolId && !isSystemAdmin(viewer.role)) {
             return queryForbidden();
+        }
+        if (!isClassFilterAllowedForViewer(classFilter, viewer)) {
+            return queryEmpty({
+                students: [],
+                pagination: { total: 0, page, limit, totalPages: 0 },
+            });
         }
 
         if (page === 1 && !classFilter) {
@@ -422,6 +435,10 @@ export async function getIncompleteActivityWarning(
             return queryForbidden();
         }
 
+        // A class teacher's counts never include other classes' activities.
+        const scopedClasses = filterClassesForViewer(classes, viewer);
+        if (scopedClasses.length === 0) return querySuccess(noWarning);
+
         const previousRound = assessmentRound - 1;
         const incompleteActivities = await prisma.activityProgress.findMany({
             where: {
@@ -431,7 +448,7 @@ export async function getIncompleteActivityWarning(
                     assessmentRound: previousRound,
                     student: {
                         ...(viewer.schoolId ? { schoolId: viewer.schoolId } : {}),
-                        class: { in: classes },
+                        class: { in: scopedClasses },
                     },
                 },
             },

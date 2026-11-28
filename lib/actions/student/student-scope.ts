@@ -1,6 +1,33 @@
 import { Prisma } from "@prisma/client";
 import { buildCurrentStudentPopulationWhere } from "@/lib/utils/student-population";
 
+interface ClassScopeViewer {
+    role: string;
+    advisoryClass?: string;
+}
+
+/**
+ * A class teacher may filter only by their own advisory class. Checked at the
+ * action boundary so another class's URL never reaches a query.
+ */
+export function isClassFilterAllowedForViewer(
+    classFilter: string | undefined,
+    viewer: ClassScopeViewer,
+): boolean {
+    if (viewer.role !== "class_teacher") return true;
+    if (!classFilter || classFilter === "all") return true;
+    return classFilter === viewer.advisoryClass;
+}
+
+/** Keeps only the classes a viewer may see (class teacher: advisory class). */
+export function filterClassesForViewer(
+    classes: readonly string[],
+    viewer: ClassScopeViewer,
+): string[] {
+    if (viewer.role !== "class_teacher") return [...classes];
+    return classes.filter((name) => name === viewer.advisoryClass);
+}
+
 export function buildStudentVisibilityWhere(
     schoolId: string | undefined,
     advisoryClass: string | undefined,
