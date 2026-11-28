@@ -7,6 +7,7 @@ interface StudentPageStateInput {
     riskFilter?: string;
     academicYearId?: string;
     assessmentRound?: number;
+    unscreened?: string;
     totalStudents: number;
 }
 
@@ -19,6 +20,7 @@ export function hasActiveStudentDashboardFilters(
         | "riskFilter"
         | "academicYearId"
         | "assessmentRound"
+        | "unscreened"
     >,
 ): boolean {
     return Boolean(
@@ -27,7 +29,8 @@ export function hasActiveStudentDashboardFilters(
             input.referredFilter ||
             input.riskFilter ||
             input.academicYearId ||
-            input.assessmentRound,
+            input.assessmentRound ||
+            input.unscreened,
     );
 }
 

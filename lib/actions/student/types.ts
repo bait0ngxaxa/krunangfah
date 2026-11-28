@@ -73,6 +73,8 @@ export interface StudentDashboardQueryOptions {
     page?: number;
     academicYearId?: string;
     assessmentRound?: number;
+    /** `unscreened=year`; ignored when a term is selected or none is current. */
+    unscreenedThisYear?: boolean;
 }
 
 export interface DashboardPagination {
@@ -107,6 +109,15 @@ export interface StudentDashboardDataResponse {
     availableTerms: AvailableStudentTerm[];
     /** The `year` filter's term, or null in the default (latest result) view. */
     selectedTerm: StudentResultTerm | null;
+    /** Academic year (e.g. 2568) of the current term; null when none. */
+    currentAcademicYear: number | null;
+    /**
+     * Current-population students in scope and class filter with no result in
+     * the current academic year. 0 when a term is selected (default view only).
+     */
+    unscreenedThisYearCount: number;
+    /** Whether the `unscreened` filter was applied to this response. */
+    unscreenedFilterApplied: boolean;
 }
 
 // Import result type

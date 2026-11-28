@@ -47,6 +47,7 @@ export interface StudentDashboardFilters {
     referredOnly?: string;
     academicYearId?: string;
     assessmentRound?: number;
+    unscreened?: string;
 }
 
 export interface StudentDashboardProps {
@@ -72,6 +73,16 @@ export interface StudentDashboardProps {
     currentAcademicYearId?: string | null;
     availableTerms?: AvailableStudentTerm[];
     selectedTerm?: StudentResultTerm | null;
+    currentAcademicYear?: number | null;
+    unscreenedThisYearCount?: number;
+    unscreenedFilterApplied?: boolean;
+}
+
+/** The "no result this academic year" chip; absent when it must not show. */
+export interface UnscreenedChip {
+    academicYear: number;
+    count: number;
+    active: boolean;
 }
 
 export interface PieChartDataItem {

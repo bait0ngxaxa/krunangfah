@@ -1,9 +1,11 @@
-import { SlidersHorizontal, ArrowRightLeft } from "lucide-react";
+import { SlidersHorizontal, ArrowRightLeft, CalendarX } from "lucide-react";
 import { getRiskLevelConfig } from "@/lib/constants/risk-levels";
+import { formatUnscreenedThisYearLabel } from "@/lib/constants/student-filters";
 import type {
     DashboardRiskFilter,
     RiskLevel,
     StudentGroupCounts,
+    UnscreenedChip,
 } from "../types";
 
 interface StudentFilterBarProps {
@@ -14,6 +16,8 @@ interface StudentFilterBarProps {
     riskLevels: readonly RiskLevel[];
     onRiskFilterChange: (level: DashboardRiskFilter) => void;
     onReferredToggle: () => void;
+    unscreenedChip?: UnscreenedChip | null;
+    onUnscreenedToggle?: () => void;
 }
 
 function getRiskChipColors(level: RiskLevel): {
@@ -88,9 +92,13 @@ export function StudentFilterBar({
     riskLevels,
     onRiskFilterChange,
     onReferredToggle,
+    unscreenedChip = null,
+    onUnscreenedToggle,
 }: StudentFilterBarProps) {
     const isAllSelected =
-        selectedRiskFilter === "all" && !showReferredOnly;
+        selectedRiskFilter === "all" &&
+        !showReferredOnly &&
+        unscreenedChip?.active !== true;
 
     return (
         <div className="relative overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5">
@@ -177,6 +185,27 @@ export function StudentFilterBar({
                                 }`}
                             >
                                 {formatCount(referredCount)}
+                            </span>
+                        </button>
+                    ) : null}
+
+                    {unscreenedChip ? (
+                        <button
+                            type="button"
+                            onClick={onUnscreenedToggle}
+                            aria-pressed={unscreenedChip.active}
+                            className={`inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold shadow-xs transition-base duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 ${
+                                unscreenedChip.active
+                                    ? "bg-amber-100 text-amber-700 border-amber-300 ring-1 ring-amber-200"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700"
+                            }`}
+                        >
+                            <CalendarX className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            <span className="min-w-0 break-words">
+                                {formatUnscreenedThisYearLabel(
+                                    unscreenedChip.academicYear,
+                                    unscreenedChip.count,
+                                )}
                             </span>
                         </button>
                     ) : null}

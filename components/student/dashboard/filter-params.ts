@@ -1,4 +1,5 @@
 import { isRiskLevel } from "@/lib/constants/risk-levels";
+import { UNSCREENED_THIS_YEAR_PARAM } from "@/lib/constants/student-filters";
 import type { DashboardRiskFilter } from "./types";
 
 export type DashboardParamKey =
@@ -8,7 +9,8 @@ export type DashboardParamKey =
     | "risk"
     | "referred"
     | "year"
-    | "round";
+    | "round"
+    | "unscreened";
 export type DashboardFilterUpdates = Partial<
     Record<DashboardParamKey, string | null>
 >;
@@ -22,6 +24,8 @@ export interface DashboardFilterState {
     termId: string;
     /** "1" / "2", or "" for every round. */
     round: string;
+    /** `unscreened=year`; only meaningful without a selected term. */
+    unscreenedOnly: boolean;
 }
 
 function resolveOptionalFilter(value: string | null): string {
@@ -62,6 +66,11 @@ export function applyDashboardFilterUpdates(
         ),
         termId: pick(updates.year, current.termId, resolveOptionalFilter),
         round: pick(updates.round, current.round, resolveOptionalFilter),
+        unscreenedOnly: pick(
+            updates.unscreened,
+            current.unscreenedOnly,
+            (value) => value === UNSCREENED_THIS_YEAR_PARAM,
+        ),
     };
 }
 
@@ -93,15 +102,33 @@ export function buildDashboardQueryString(
     setOptionalParam(params, "referred", filters.referredOnly ? "true" : "");
     setOptionalParam(params, "year", filters.termId);
     setOptionalParam(params, "round", filters.round);
+    // Mutually exclusive with a term: never emit both.
+    setOptionalParam(
+        params,
+        "unscreened",
+        filters.unscreenedOnly && !filters.termId ? UNSCREENED_THIS_YEAR_PARAM : "",
+    );
     if (updates.page !== undefined) {
         setOptionalParam(params, "page", updates.page ?? "");
     }
     return params.toString();
 }
 
-/** Changing the term resets the round and page; other filters stay. */
+/**
+ * Changing the term resets the round and page; other filters stay, except
+ * `unscreened`, which only exists in the latest-result view.
+ */
 export function termChangeUpdates(termId: string): DashboardFilterUpdates {
-    return { year: termId || null, round: null, page: null };
+    return { year: termId || null, round: null, page: null, unscreened: null };
+}
+
+export function unscreenedToggleUpdates(
+    isActive: boolean,
+): DashboardFilterUpdates {
+    return {
+        page: null,
+        unscreened: isActive ? null : UNSCREENED_THIS_YEAR_PARAM,
+    };
 }
 
 export function roundChangeUpdates(round: string): DashboardFilterUpdates {

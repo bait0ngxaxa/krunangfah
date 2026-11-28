@@ -12,6 +12,7 @@ import {
     buildDashboardQueryString,
     roundChangeUpdates,
     termChangeUpdates,
+    unscreenedToggleUpdates,
     type DashboardFilterState,
     type DashboardFilterUpdates,
 } from "./filter-params";
@@ -23,6 +24,7 @@ import type {
     SchoolOption,
     StudentGroupCounts,
     StudentResultTerm,
+    UnscreenedChip,
 } from "./types";
 
 interface StudentDashboardFiltersProps {
@@ -44,6 +46,7 @@ interface StudentDashboardFiltersProps {
     selectedTermId?: string;
     selectedRound?: string;
     selectedTerm?: StudentResultTerm | null;
+    unscreenedChip?: UnscreenedChip | null;
 }
 
 export function StudentDashboardFilters({
@@ -65,6 +68,7 @@ export function StudentDashboardFilters({
     selectedTermId = "",
     selectedRound = "",
     selectedTerm = null,
+    unscreenedChip = null,
 }: StudentDashboardFiltersProps) {
     const pathname = usePathname();
     const router = useRouter();
@@ -77,6 +81,7 @@ export function StudentDashboardFilters({
         referredOnly: showReferredOnly,
         termId: selectedTermId,
         round: selectedRound,
+        unscreenedOnly: unscreenedChip?.active === true,
     };
     const [optimisticFilters, setOptimisticFilters] = useOptimistic(
         selectedFilters,
@@ -112,6 +117,7 @@ export function StudentDashboardFilters({
             page: null,
             risk: null,
             referred: null,
+            unscreened: null,
         });
     }
 
@@ -121,12 +127,18 @@ export function StudentDashboardFilters({
             page: null,
             risk: null,
             referred: null,
+            unscreened: null,
         });
     }
 
     function handleRiskFilterChange(level: DashboardRiskFilter): void {
         if (level === "all") {
-            updateSearchParams({ page: null, risk: null, referred: null });
+            updateSearchParams({
+                page: null,
+                risk: null,
+                referred: null,
+                unscreened: null,
+            });
             return;
         }
 
@@ -134,6 +146,12 @@ export function StudentDashboardFilters({
             page: null,
             risk: optimisticFilters.riskFilter === level ? null : level,
         });
+    }
+
+    function handleUnscreenedToggle(): void {
+        updateSearchParams(
+            unscreenedToggleUpdates(optimisticFilters.unscreenedOnly),
+        );
     }
 
     function handleReferredToggle(): void {
@@ -196,6 +214,15 @@ export function StudentDashboardFilters({
                     riskLevels={riskLevels}
                     selectedRiskFilter={scopedRiskFilter}
                     showReferredOnly={scopedReferredOnly}
+                    unscreenedChip={
+                        unscreenedChip && isSameSchool
+                            ? {
+                                  ...unscreenedChip,
+                                  active: optimisticFilters.unscreenedOnly,
+                              }
+                            : unscreenedChip
+                    }
+                    onUnscreenedToggle={handleUnscreenedToggle}
                 />
             ) : null}
         </>

@@ -24,6 +24,10 @@ vi.mock("@/lib/database/prisma", () => ({
     },
 }));
 
+const { Prisma } = await import("@prisma/client");
+const { buildNoResultInAcademicYearSql } = await import(
+    "@/lib/actions/student/unscreened-filter"
+);
 const {
     getClassCountsQuery,
     getReferredStudentCountQuery,
@@ -31,6 +35,7 @@ const {
     getStudentDetailQuery,
     getStudentsQuery,
     getStudentsForDashboardQuery,
+    getUnscreenedStudentCountQuery,
     searchStudentsQuery,
 } = await import("@/lib/actions/student/queries");
 
@@ -281,6 +286,58 @@ describe("class_teacher student scope policy", () => {
             );
         },
     );
+
+    it("adds the unscreened condition through AND and keeps the advisory class", async () => {
+        const noResultThisYear = {
+            AND: [
+                { phqResults: { some: {} } },
+                { phqResults: { none: { academicYear: { year: 2568 } } } },
+            ],
+        };
+
+        await getStudentsForDashboardQuery(
+            "school-1", "ม.1/1", "class_teacher", "teacher-1",
+            { unscreenedYear: 2568, referredOnly: true },
+        );
+        await getClassCountsQuery(
+            "school-1", "ม.1/1", "class_teacher", "teacher-1",
+            { unscreenedYear: 2568 },
+        );
+        await getReferredStudentCountQuery(
+            "school-1", "ม.1/1", "class_teacher", "teacher-1",
+            { unscreenedYear: 2568 },
+        );
+        await getUnscreenedStudentCountQuery(
+            "school-1", "ม.1/1", "class_teacher",
+            { classFilter: "ม.1/1", academicYear: 2568 },
+        );
+        await getRiskLevelCountsQuery(
+            "school-1", "ม.1/1", "class_teacher", "teacher-1",
+            { unscreenedYear: 2568 },
+        );
+
+        const wheres = [
+            ...mocks.studentCount.mock.calls.map((call) => call[0]?.where),
+            ...mocks.studentGroupBy.mock.calls.map((call) => call[0]?.where),
+        ];
+        // list count, referred count, unscreened count, class counts.
+        expect(wheres).toHaveLength(4);
+        for (const where of wheres) {
+            expect(where.class).toBe("ม.1/1");
+            expect(where.status).toEqual({
+                notIn: ["RESIGNED", "TRANSFERRED", "GRADUATED"],
+            });
+            expect(where.AND).toContainEqual(noResultThisYear);
+        }
+        const sql = collectSql(mocks.queryRaw.mock.calls[0]);
+        expect(sql).toContain("NOT EXISTS");
+        expect(sql).toContain('uay."year" =');
+    });
+
+    it("binds the academic year as a SQL parameter, and adds nothing without one", () => {
+        expect(buildNoResultInAcademicYearSql(2568).values).toEqual([2568]);
+        expect(buildNoResultInAcademicYearSql(undefined)).toBe(Prisma.empty);
+    });
 
     it("does not grant class_teacher scope from an incoming referral", async () => {
         await getStudentDetailQuery(
