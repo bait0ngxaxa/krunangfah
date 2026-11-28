@@ -3,7 +3,6 @@ import { prisma } from "@/lib/database/prisma";
 import { buildAttributedClassWhere, buildAttributedClassSql } from "@/lib/utils/class-attribution";
 import {
     buildActiveStudentSchoolCondition,
-    buildClassConditions,
     buildRoundCondition,
     type AnalyticsClassScope,
 } from "./query-conditions";
@@ -97,18 +96,35 @@ async function getCurrentClassNames(schoolId: string | undefined): Promise<strin
 }
 
 /**
- * A past term lists the classes that existed then: its SchoolClassTerm rows
- * (archived classes included) plus every class its results are attributed
- * to. The current term and multi-term views list today's active classes.
+ * Classes a report over the selected terms can be filtered by:
+ * - each past term contributes its SchoolClassTerm rows (archived classes
+ *   included) and every class its results are attributed to;
+ * - the current term, when selected, contributes today's active classes.
+ * A view with no past term (current term only, or no term filter) lists
+ * today's active classes, as before.
  */
 export async function getAvailableClassNames(
     schoolId: string | undefined,
-    singleTerm: SelectedAnalyticsTerm | undefined,
+    selectedTerms: readonly SelectedAnalyticsTerm[] | undefined,
 ): Promise<string[]> {
-    if (!singleTerm || singleTerm.isCurrent) return getCurrentClassNames(schoolId);
+    const pastTermIds = (selectedTerms ?? [])
+        .filter((term) => !term.isCurrent)
+        .map((term) => term.id);
+    if (pastTermIds.length === 0) return getCurrentClassNames(schoolId);
 
     const classSchoolCondition = schoolId
         ? Prisma.sql`AND sc."schoolId" = ${schoolId}`
+        : Prisma.empty;
+    const activeClasses = selectedTerms?.some((term) => term.isCurrent)
+        ? Prisma.sql`
+            UNION
+            SELECT sc.name
+            FROM school_classes sc
+            JOIN schools sch ON sc."schoolId" = sch.id
+            WHERE sc."archivedAt" IS NULL
+              AND sch."disabledAt" IS NULL
+              AND sch."isTestData" = false
+              ${classSchoolCondition}`
         : Prisma.empty;
     const rows = await prisma.$queryRaw<Array<{ name: string }>>`
         SELECT name FROM (
@@ -116,7 +132,7 @@ export async function getAvailableClassNames(
             FROM school_class_terms sct
             JOIN school_classes sc ON sct."schoolClassId" = sc.id
             JOIN schools sch ON sc."schoolId" = sch.id
-            WHERE sct."academicYearId" = ${singleTerm.id}
+            WHERE sct."academicYearId" IN (${Prisma.join(pastTermIds)})
               AND sch."disabledAt" IS NULL
               AND sch."isTestData" = false
               ${classSchoolCondition}
@@ -127,7 +143,8 @@ export async function getAvailableClassNames(
             JOIN schools sch ON s."schoolId" = sch.id
             JOIN academic_years ay ON pr."academicYearId" = ay.id
             ${buildActiveStudentSchoolCondition(schoolId, false)}
-              AND pr."academicYearId" = ${singleTerm.id}
+              AND pr."academicYearId" IN (${Prisma.join(pastTermIds)})
+            ${activeClasses}
         ) term_classes
         ORDER BY name ASC
     `;
@@ -135,17 +152,20 @@ export async function getAvailableClassNames(
 }
 
 /**
- * True when a past term in scope has results imported before the class
- * snapshot existed; those are reported under the student's current class.
+ * True when a single past term has results in the school and round scope
+ * that were imported before the class snapshot existed. The class filter is
+ * deliberately not applied: such a result may have belonged to the selected
+ * class at assessment time, and the fallback to the current class moves it
+ * out of that class, so the note must show for every class of the term.
  */
 export async function hasLegacyClassAttribution(input: {
     schoolId: string | undefined;
-    classes: AnalyticsClassScope;
+    isClassTeacherView: boolean;
     singleTerm: SelectedAnalyticsTerm | undefined;
     assessmentRound: number | undefined;
 }): Promise<boolean> {
     // A class teacher's view always uses the current class, so nothing differs.
-    if (!input.singleTerm || input.singleTerm.isCurrent || input.classes.scopeClass) {
+    if (!input.singleTerm || input.singleTerm.isCurrent || input.isClassTeacherView) {
         return false;
     }
 
@@ -155,11 +175,9 @@ export async function hasLegacyClassAttribution(input: {
             FROM phq_results pr
             JOIN students s ON pr."studentId" = s.id
             JOIN schools sch ON s."schoolId" = sch.id
-            JOIN academic_years ay ON pr."academicYearId" = ay.id
             ${buildActiveStudentSchoolCondition(input.schoolId, false)}
               AND pr."academicYearId" = ${input.singleTerm.id}
               AND pr."className" IS NULL
-              ${buildClassConditions(input.classes)}
               ${buildRoundCondition(input.assessmentRound)}
         ) AS has_legacy
     `;

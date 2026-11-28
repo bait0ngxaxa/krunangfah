@@ -120,7 +120,7 @@ export async function fetchAnalyticsData(
     ] = await Promise.all([
         getExpectedStudentCount(schoolId, selectedClass, academicYearIds),
         showClassFilter
-            ? getAvailableClassNames(schoolId, singleTerm)
+            ? getAvailableClassNames(schoolId, selectedAcademicYears)
             : Promise.resolve([]),
         getAvailableAcademicTerms(schoolId, classes),
         getCombinedAnalytics(
@@ -139,7 +139,12 @@ export async function fetchAnalyticsData(
         ),
         activityDataPromise,
         getAvailableRounds(schoolId, classes, { academicYear, semester }),
-        hasLegacyClassAttribution({ schoolId, classes, singleTerm, assessmentRound }),
+        hasLegacyClassAttribution({
+            schoolId,
+            isClassTeacherView: classes.scopeClass !== undefined,
+            singleTerm,
+            assessmentRound,
+        }),
     ]);
 
     const availableAcademicTerms = availableAcademicTermsRaw.map((term) => ({
