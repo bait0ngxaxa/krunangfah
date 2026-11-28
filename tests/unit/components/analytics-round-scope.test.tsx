@@ -26,6 +26,7 @@ const baseData: AnalyticsData = {
     availableAcademicTerms: [
         { id: "term-1", year: 2569, semester: 1 },
     ],
+    selectableAcademicTerms: [{ id: "term-1", year: 2569, semester: 1 }],
     availableRounds: [1, 2],
     currentClass: "ม.1/1",
     currentAcademicYear: 2569,

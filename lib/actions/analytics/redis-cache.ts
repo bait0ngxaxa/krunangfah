@@ -144,6 +144,7 @@ function isAnalyticsData(value: unknown): value is AnalyticsData {
         typeof value.selectedAcademicTermExists === "boolean" &&
         isStringArray(value.availableClasses) &&
         isAcademicTermArray(value.availableAcademicTerms) &&
+        isAcademicTermArray(value.selectableAcademicTerms) &&
         isNumberArray(value.availableRounds) &&
         (value.currentClass === undefined ||
             typeof value.currentClass === "string") &&
@@ -279,6 +280,7 @@ export function createAnalyticsRedisKeyParts(input: {
 }): string[] {
     return [
         "analytics-data",
+        "term-options:selectable-v1",
         "activity-scope:round-one-v1",
         // Past-term class filter and grouping follow the class at assessment.
         "class-attribution:assessment-v1",

@@ -29,7 +29,7 @@ interface SchoolOption {
 interface AnalyticsFiltersProps {
     schools?: SchoolOption[];
     availableClasses: string[];
-    availableAcademicTerms: AcademicTermOption[];
+    selectableAcademicTerms: AcademicTermOption[];
     availableRounds: number[];
     selectedSchoolId: string;
     selectedClass: string;
@@ -70,7 +70,7 @@ export function getSemestersForYear(
 export function AnalyticsFilters({
     schools,
     availableClasses,
-    availableAcademicTerms,
+    selectableAcademicTerms,
     availableRounds,
     selectedSchoolId,
     selectedClass,
@@ -126,15 +126,11 @@ export function AnalyticsFilters({
         optimisticFilters.semester !== "all" ||
         optimisticFilters.round !== "all";
     const safeAvailableClasses = uniqueStrings(availableClasses);
-    const safeAvailableTerms = availableAcademicTerms.filter(
-        (term, index, terms) =>
-            terms.findIndex((candidate) => candidate.id === term.id) === index,
-    );
     const safeAvailableYears = uniqueNumbers(
-        safeAvailableTerms.map((term) => term.year),
+        selectableAcademicTerms.map((term) => term.year),
     ).sort((left, right) => right - left);
     const safeAvailableSemesters = getSemestersForYear(
-        safeAvailableTerms,
+        selectableAcademicTerms,
         optimisticFilters.year,
     );
     const safeAvailableRounds = uniqueNumbers(availableRounds);

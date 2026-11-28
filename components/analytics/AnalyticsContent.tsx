@@ -106,7 +106,7 @@ export function AnalyticsContent({
                 <StickyAnalyticsFilters
                     schools={schools}
                     availableClasses={[]}
-                    availableAcademicTerms={
+                    selectableAcademicTerms={
                         systemOverview?.availableAcademicTerms ?? []
                     }
                     availableRounds={[]}
@@ -165,7 +165,7 @@ export function AnalyticsContent({
             <StickyAnalyticsFilters
                 schools={schools}
                 availableClasses={data.availableClasses}
-                availableAcademicTerms={data.availableAcademicTerms}
+                selectableAcademicTerms={data.selectableAcademicTerms}
                 availableRounds={data.availableRounds}
                 selectedSchoolId={selectedSchoolId}
                 selectedClass={selectedClass}

@@ -40,6 +40,7 @@ function analyticsData(year: number): AnalyticsData {
         riskLevelSummary: [],
         availableClasses: ["ม.1/1"],
         availableAcademicTerms: [{ id: `term-${year}-1`, year, semester: 1 }],
+        selectableAcademicTerms: [{ id: `term-${year}-1`, year, semester: 1 }],
         availableRounds: [1],
         trendData: [],
         activityAnalyticsApplicable: false,

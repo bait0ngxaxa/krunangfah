@@ -83,6 +83,7 @@ export interface AnalyticsData {
     selectedAcademicTermExists: boolean;
     availableClasses: string[];
     availableAcademicTerms: AcademicTermOption[];
+    selectableAcademicTerms: AcademicTermOption[];
     availableRounds: number[];
     currentClass?: string;
     currentAcademicYear?: number;
