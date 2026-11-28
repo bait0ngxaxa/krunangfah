@@ -7,12 +7,15 @@ import { prisma } from "@/lib/database/prisma";
 import { buildStudentVisibilityWhere } from "./student-scope";
 import type { AvailableStudentTerm } from "./types";
 
-export async function getCurrentAcademicYearIdQuery(): Promise<string | null> {
-    const term = await prisma.academicYear.findFirst({
+/** The `isCurrent` term (id and academic year), or null when none is marked. */
+export async function getCurrentAcademicTermQuery(): Promise<{
+    id: string;
+    year: number;
+} | null> {
+    return prisma.academicYear.findFirst({
         where: { isCurrent: true },
-        select: { id: true },
+        select: { id: true, year: true },
     });
-    return term?.id ?? null;
 }
 
 /**

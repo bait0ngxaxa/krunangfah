@@ -132,6 +132,18 @@ export function StudentDashboard(props: StudentDashboardProps) {
         selectedTerm: props.selectedTerm,
         assessmentRound: props.filters?.assessmentRound,
     });
+    const unscreenedActive = props.unscreenedFilterApplied === true;
+    // Default view only; also kept while active so it can be switched off.
+    const unscreenedChip =
+        !selectedTermId &&
+        typeof props.currentAcademicYear === "number" &&
+        ((props.unscreenedThisYearCount ?? 0) > 0 || unscreenedActive)
+            ? {
+                  academicYear: props.currentAcademicYear,
+                  count: props.unscreenedThisYearCount ?? 0,
+                  active: unscreenedActive,
+              }
+            : null;
     const termFilterProps = {
         availableTerms: props.availableTerms ?? [],
         currentAcademicYearId: props.currentAcademicYearId ?? null,
@@ -140,6 +152,7 @@ export function StudentDashboard(props: StudentDashboardProps) {
             ? String(props.filters.assessmentRound)
             : "",
         selectedTerm: props.selectedTerm ?? null,
+        unscreenedChip,
     };
 
     return (
@@ -219,6 +232,7 @@ export function StudentDashboard(props: StudentDashboardProps) {
                             readOnly={isSystemAdmin}
                             currentAcademicYearId={props.currentAcademicYearId}
                             scopeLabel={scopeLabel}
+                            showUnscreenedHint={unscreenedActive}
                         />
                     )}
 

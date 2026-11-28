@@ -11,6 +11,7 @@ import { shouldShowStudentsImportEmptyState } from "@/components/student/dashboa
 import { PageBanner } from "@/components/ui/PageBanner";
 import { buttonVariants } from "@/components/ui/Button";
 import { isRiskLevel } from "@/lib/constants/risk-levels";
+import { UNSCREENED_THIS_YEAR_PARAM } from "@/lib/constants/student-filters";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { z } from "zod";
@@ -29,6 +30,7 @@ interface StudentsPageProps {
         school?: string;
         year?: string;
         round?: string;
+        unscreened?: string;
     }>;
 }
 
@@ -41,6 +43,7 @@ interface NormalizedStudentFilters {
     school?: string;
     academicYearId?: string;
     assessmentRound?: number;
+    unscreened?: "year";
 }
 
 function normalizeOptionalParam(value: string | undefined): string | undefined {
@@ -90,9 +93,16 @@ function normalizeStudentsFilters(filters: {
     school?: string;
     year?: string;
     round?: string;
+    unscreened?: string;
 }): NormalizedStudentFilters {
     const page = normalizePageParam(filters.page);
     const risk = isRiskLevel(filters.risk) ? filters.risk : undefined;
+    const academicYearId = normalizeAcademicYearId(filters.year);
+    // A selected term wins over `unscreened`, which is a default-view filter.
+    const unscreened =
+        !academicYearId && filters.unscreened === UNSCREENED_THIS_YEAR_PARAM
+            ? UNSCREENED_THIS_YEAR_PARAM
+            : undefined;
 
     return {
         class: normalizeOptionalParam(filters.class),
@@ -101,8 +111,9 @@ function normalizeStudentsFilters(filters: {
         referred: filters.referred === "true" ? "true" : undefined,
         risk,
         school: normalizeOptionalParam(filters.school),
-        academicYearId: normalizeAcademicYearId(filters.year),
+        academicYearId,
         assessmentRound: normalizeAssessmentRound(filters.round),
+        unscreened,
     };
 }
 
@@ -175,6 +186,7 @@ async function StudentsContent({
         school?: string;
         academicYearId?: string;
         assessmentRound?: number;
+        unscreened?: "year";
     };
     userRole: string;
     isAdmin: boolean;
@@ -193,6 +205,7 @@ async function StudentsContent({
             ...(filters.assessmentRound
                 ? { assessmentRound: filters.assessmentRound }
                 : {}),
+            ...(filters.unscreened ? { unscreenedThisYear: true } : {}),
         }),
         isAdmin ? getSchools() : Promise.resolve(null),
         isClassTeacher ? getReferredOutStudents() : Promise.resolve(null),
@@ -264,6 +277,7 @@ async function StudentsContent({
         riskFilter: filters.risk,
         academicYearId: filters.academicYearId,
         assessmentRound: filters.assessmentRound,
+        unscreened: filters.unscreened,
         totalStudents: dashboardData.totalStudents,
     });
 
@@ -314,6 +328,9 @@ async function StudentsContent({
             currentAcademicYearId={dashboardData.currentAcademicYearId}
             availableTerms={dashboardData.availableTerms}
             selectedTerm={dashboardData.selectedTerm}
+            currentAcademicYear={dashboardData.currentAcademicYear}
+            unscreenedThisYearCount={dashboardData.unscreenedThisYearCount}
+            unscreenedFilterApplied={dashboardData.unscreenedFilterApplied}
             schools={isAdmin ? schools : undefined}
             userRole={userRole}
             referredOutStudents={
@@ -327,6 +344,7 @@ async function StudentsContent({
                 referredOnly: filters.referred,
                 academicYearId: filters.academicYearId,
                 assessmentRound: filters.assessmentRound,
+                unscreened: filters.unscreened,
             }}
         />
     );

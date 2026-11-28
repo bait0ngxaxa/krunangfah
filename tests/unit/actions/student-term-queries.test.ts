@@ -16,7 +16,7 @@ vi.mock("@/lib/database/prisma", () => ({
     },
 }));
 
-const { getAvailableTermsQuery, getCurrentAcademicYearIdQuery } = await import(
+const { getAvailableTermsQuery, getCurrentAcademicTermQuery } = await import(
     "@/lib/actions/student/term-queries"
 );
 
@@ -72,14 +72,20 @@ describe("student term queries", () => {
     });
 
     it("reads the current term id without writing", async () => {
-        mocks.academicYearFindFirst.mockResolvedValueOnce({ id: "term-new" });
+        mocks.academicYearFindFirst.mockResolvedValueOnce({
+            id: "term-new",
+            year: 2568,
+        });
         mocks.academicYearFindFirst.mockResolvedValueOnce(null);
 
-        await expect(getCurrentAcademicYearIdQuery()).resolves.toBe("term-new");
-        await expect(getCurrentAcademicYearIdQuery()).resolves.toBeNull();
+        await expect(getCurrentAcademicTermQuery()).resolves.toEqual({
+            id: "term-new",
+            year: 2568,
+        });
+        await expect(getCurrentAcademicTermQuery()).resolves.toBeNull();
         expect(mocks.academicYearFindFirst).toHaveBeenCalledWith({
             where: { isCurrent: true },
-            select: { id: true },
+            select: { id: true, year: true },
         });
     });
 });

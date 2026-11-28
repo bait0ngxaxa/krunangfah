@@ -104,6 +104,7 @@ describe("term filter URLs", () => {
         referredOnly: true,
         termId: "term-previous",
         round: "2",
+        unscreenedOnly: false,
     };
 
     it("changing the term clears round and page and keeps the other filters", () => {

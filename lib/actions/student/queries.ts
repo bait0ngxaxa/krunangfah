@@ -23,6 +23,10 @@ import {
     buildStudentVisibilityWhere,
 } from "./student-scope";
 import { buildCurrentStudentPopulationSql } from "@/lib/utils/student-population";
+import {
+    buildNoResultInAcademicYearSql,
+    buildNoResultInAcademicYearWhere,
+} from "./unscreened-filter";
 
 /** The term a listed result came from, so rows can say which term it is. */
 const RESULT_TERM_SELECT = {
@@ -43,6 +47,8 @@ interface DashboardSummaryFilterOptions {
     academicYearId?: string;
     assessmentRound?: number;
     currentPopulationOnly?: boolean;
+    /** Only students with no result in this academic year (`unscreened`). */
+    unscreenedYear?: number;
 }
 
 interface PhqContextFilterOptions {
@@ -123,6 +129,24 @@ function applyClassFilter(
     }
 
     return andStudentWhere(whereClause, { class: classFilter });
+}
+
+/**
+ * Student-level, like class and referred: it never changes which result is a
+ * student's latest, so the latest-risk id set stays valid without it.
+ */
+function applyUnscreenedFilter(
+    whereClause: Prisma.StudentWhereInput,
+    unscreenedYear?: number,
+): Prisma.StudentWhereInput {
+    if (unscreenedYear === undefined) {
+        return whereClause;
+    }
+
+    return andStudentWhere(
+        whereClause,
+        buildNoResultInAcademicYearWhere(unscreenedYear),
+    );
 }
 
 function applyReferredOnlyFilter(
@@ -262,6 +286,9 @@ export async function getRiskLevelCountsQuery(
         ? buildReferredStudentSql(userRole, userId)
         : Prisma.empty;
     const phqContextCondition = buildPhqContextSql(options);
+    const unscreenedCondition = buildNoResultInAcademicYearSql(
+        options?.unscreenedYear,
+    );
 
     return prisma.$queryRaw<RiskCountRaw[]>`
         WITH ranked_phq AS (
@@ -281,6 +308,7 @@ export async function getRiskLevelCountsQuery(
               ${classCondition}
               ${referredCondition}
               ${phqContextCondition}
+              ${unscreenedCondition}
         )
         SELECT "riskLevel" as risk_level, COUNT(*)::bigint as count
         FROM ranked_phq
@@ -385,6 +413,7 @@ export async function getStudentsForDashboardQuery(
         academicYearId?: string;
         assessmentRound?: number;
         currentPopulationOnly?: boolean;
+        unscreenedYear?: number;
     },
 ): Promise<StudentListResponse> {
     const visibilityWhere = options?.currentPopulationOnly === false
@@ -402,14 +431,17 @@ export async function getStudentsForDashboardQuery(
     const requestedPage = Math.max(1, options?.page ?? 1);
     const limit = Math.max(1, options?.limit ?? 50);
 
-    const filteredWhere = applyPhqContextFilter(
-        applyReferredOnlyFilter(
-            applyClassFilter(visibilityWhere, classFilter),
-            userRole,
-            userId,
-            referredOnly,
+    const filteredWhere = applyUnscreenedFilter(
+        applyPhqContextFilter(
+            applyReferredOnlyFilter(
+                applyClassFilter(visibilityWhere, classFilter),
+                userRole,
+                userId,
+                referredOnly,
+            ),
+            { academicYearId, assessmentRound },
         ),
-        { academicYearId, assessmentRound },
+        options?.unscreenedYear,
     );
 
     const whereClause = await applyRiskFilterToWhereClause(
@@ -499,14 +531,17 @@ export async function getClassCountsQuery(
               userRole,
           );
 
-    const filteredWhere = applyPhqContextFilter(
-        applyReferredOnlyFilter(
-            visibilityWhere,
-            userRole,
-            userId,
-            options?.referredOnly,
+    const filteredWhere = applyUnscreenedFilter(
+        applyPhqContextFilter(
+            applyReferredOnlyFilter(
+                visibilityWhere,
+                userRole,
+                userId,
+                options?.referredOnly,
+            ),
+            options,
         ),
-        options,
+        options?.unscreenedYear,
     );
 
     const whereClause = await applyRiskFilterToWhereClause(
@@ -556,9 +591,12 @@ export async function getReferredStudentCountQuery(
               userRole,
           );
 
-    const filteredWhere = applyPhqContextFilter(
-        applyClassFilter(visibilityWhere, options?.classFilter),
-        options,
+    const filteredWhere = applyUnscreenedFilter(
+        applyPhqContextFilter(
+            applyClassFilter(visibilityWhere, options?.classFilter),
+            options,
+        ),
+        options?.unscreenedYear,
     );
     const whereClause = await applyRiskFilterToWhereClause(
         filteredWhere,
@@ -580,6 +618,32 @@ export async function getReferredStudentCountQuery(
 
     return prisma.student.count({
         where: applyReferredOnlyFilter(whereClause, userRole, userId, true),
+    });
+}
+
+/**
+ * Current-population students in scope (and class) with results but none in
+ * `academicYear`. Independent of risk and referred, so the chip always shows
+ * the whole group the filter can reveal.
+ */
+export async function getUnscreenedStudentCountQuery(
+    schoolId: string | undefined,
+    advisoryClass: string | undefined,
+    userRole: string,
+    options: { classFilter?: string; academicYear: number },
+): Promise<number> {
+    return prisma.student.count({
+        where: applyUnscreenedFilter(
+            applyClassFilter(
+                buildCurrentStudentVisibilityWhere(
+                    schoolId,
+                    advisoryClass,
+                    userRole,
+                ),
+                options.classFilter,
+            ),
+            options.academicYear,
+        ),
     });
 }
 

@@ -23,11 +23,12 @@ vi.mock("@/lib/actions/student/queries", () => ({
     getReferredStudentCountQuery: vi.fn(),
     getRiskLevelCountsQuery: vi.fn(),
     getStudentsForDashboardQuery: vi.fn(),
+    getUnscreenedStudentCountQuery: vi.fn(),
 }));
 
 vi.mock("@/lib/actions/student/term-queries", () => ({
     getAvailableTermsQuery: vi.fn(),
-    getCurrentAcademicYearIdQuery: vi.fn(),
+    getCurrentAcademicTermQuery: vi.fn(),
 }));
 
 vi.mock("@/lib/utils/logging", () => ({
@@ -40,10 +41,11 @@ import {
     getReferredStudentCountQuery,
     getRiskLevelCountsQuery,
     getStudentsForDashboardQuery,
+    getUnscreenedStudentCountQuery,
 } from "@/lib/actions/student/queries";
 import {
     getAvailableTermsQuery,
-    getCurrentAcademicYearIdQuery,
+    getCurrentAcademicTermQuery,
 } from "@/lib/actions/student/term-queries";
 import { getStudentDashboardData } from "@/lib/actions/student/dashboard";
 import type { ViewerContext } from "@/lib/auth/viewer-context";
@@ -103,7 +105,7 @@ describe("getStudentDashboardData", () => {
         prismaMocks.academicYearFindUnique.mockResolvedValue({
             isCurrent: false,
         });
-        vi.mocked(getCurrentAcademicYearIdQuery).mockResolvedValue(null);
+        vi.mocked(getCurrentAcademicTermQuery).mockResolvedValue(null);
         vi.mocked(getAvailableTermsQuery).mockResolvedValue([]);
     });
 
@@ -287,7 +289,10 @@ describe("getStudentDashboardData", () => {
             { id: academicYearId, year: 2568, semester: 2, rounds: [1, 2] },
             { id: "cm999999999999999999999999", year: 2568, semester: 1, rounds: [1] },
         ];
-        vi.mocked(getCurrentAcademicYearIdQuery).mockResolvedValue(academicYearId);
+        vi.mocked(getCurrentAcademicTermQuery).mockResolvedValue({
+            id: academicYearId,
+            year: 2568,
+        });
         vi.mocked(getAvailableTermsQuery).mockResolvedValue(availableTerms);
         prismaMocks.academicYearFindUnique.mockResolvedValue({
             id: academicYearId,
@@ -465,6 +470,101 @@ describe("getStudentDashboardData", () => {
             "user-1",
             expect.objectContaining({ classFilter: "ม.1/1" }),
         );
+    });
+
+    describe("unscreened this academic year", () => {
+        const currentTerm = { id: "cm111111111111111111111111", year: 2568 };
+
+        beforeEach(() => {
+            vi.mocked(getCurrentAcademicTermQuery).mockResolvedValue(currentTerm);
+            vi.mocked(getUnscreenedStudentCountQuery).mockResolvedValue(3);
+        });
+
+        it("applies the current academic year to every dashboard query", async () => {
+            const data = getQueryData(
+                await getStudentDashboardData({
+                    classFilter: "ม.1/1",
+                    riskFilter: "red",
+                    unscreenedThisYear: true,
+                }),
+            );
+
+            const withYear = expect.objectContaining({ unscreenedYear: 2568 });
+            expect(getClassCountsQuery).toHaveBeenNthCalledWith(
+                1, "school-1", "ม.1/1", "school_admin", "user-1", withYear,
+            );
+            expect(getClassCountsQuery).toHaveBeenNthCalledWith(
+                2, "school-1", "ม.1/1", "school_admin", "user-1", withYear,
+            );
+            expect(getRiskLevelCountsQuery).toHaveBeenCalledWith(
+                "school-1", "ม.1/1", "school_admin", "user-1", withYear,
+            );
+            expect(getReferredStudentCountQuery).toHaveBeenCalledWith(
+                "school-1", "ม.1/1", "school_admin", "user-1", withYear,
+            );
+            expect(getStudentsForDashboardQuery).toHaveBeenCalledWith(
+                "school-1", "ม.1/1", "school_admin", "user-1", withYear,
+            );
+            expect(getUnscreenedStudentCountQuery).toHaveBeenCalledWith(
+                "school-1", "ม.1/1", "school_admin",
+                { classFilter: "ม.1/1", academicYear: 2568 },
+            );
+            expect(data.unscreenedFilterApplied).toBe(true);
+            expect(data.unscreenedThisYearCount).toBe(3);
+            expect(data.currentAcademicYear).toBe(2568);
+        });
+
+        it("counts in the default view without filtering when the toggle is off", async () => {
+            const data = getQueryData(
+                await getStudentDashboardData({ classFilter: "ม.1/1" }),
+            );
+
+            const listOptions = vi.mocked(getStudentsForDashboardQuery).mock.calls[0][4];
+            expect(listOptions).not.toHaveProperty("unscreenedYear");
+            expect(data.unscreenedFilterApplied).toBe(false);
+            expect(data.unscreenedThisYearCount).toBe(3);
+        });
+
+        it("is ignored with a selected term, which behaves as the term only", async () => {
+            const academicYearId = "cm123456789012345678901234";
+
+            const data = getQueryData(
+                await getStudentDashboardData({
+                    academicYearId,
+                    classFilter: "ม.1/1",
+                    unscreenedThisYear: true,
+                }),
+            );
+
+            const calls = [
+                ...vi.mocked(getClassCountsQuery).mock.calls,
+                ...vi.mocked(getRiskLevelCountsQuery).mock.calls,
+                ...vi.mocked(getReferredStudentCountQuery).mock.calls,
+                ...vi.mocked(getStudentsForDashboardQuery).mock.calls,
+            ];
+            expect(calls).toHaveLength(5);
+            for (const call of calls) {
+                expect(call[4]).not.toHaveProperty("unscreenedYear");
+            }
+            expect(getUnscreenedStudentCountQuery).not.toHaveBeenCalled();
+            expect(data.unscreenedFilterApplied).toBe(false);
+            expect(data.unscreenedThisYearCount).toBe(0);
+        });
+
+        it("is ignored when no term is current", async () => {
+            vi.mocked(getCurrentAcademicTermQuery).mockResolvedValue(null);
+
+            const data = getQueryData(
+                await getStudentDashboardData({
+                    classFilter: "ม.1/1",
+                    unscreenedThisYear: true,
+                }),
+            );
+
+            expect(getUnscreenedStudentCountQuery).not.toHaveBeenCalled();
+            expect(data.unscreenedFilterApplied).toBe(false);
+            expect(data.currentAcademicYear).toBeNull();
+        });
     });
 
     it("returns transient_error instead of empty dashboard data when a query fails", async () => {

@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { ClipboardCheck } from "lucide-react";
+import {
+    UNSCREENED_THIS_YEAR_HINT,
+    UNSCREENED_THIS_YEAR_PARAM,
+} from "@/lib/constants/student-filters";
 import { RiskGroupSection } from "../../phq/RiskGroupSection";
 import type {
     Student,
@@ -56,6 +60,7 @@ interface ScreeningSummaryProps {
         referredOnly?: string;
         academicYearId?: string;
         assessmentRound?: number;
+        unscreened?: string;
     };
     pagination: {
         page: number;
@@ -67,6 +72,8 @@ interface ScreeningSummaryProps {
     currentAcademicYearId?: string | null;
     /** Same phrase as the pie chart title, e.g. "ผลคัดกรองล่าสุดของนักเรียนแต่ละคน". */
     scopeLabel?: string;
+    /** While the unscreened filter is on, explain what the group may mean. */
+    showUnscreenedHint?: boolean;
 }
 
 function buildPageHref(
@@ -97,6 +104,11 @@ function buildPageHref(
 
     if (filters?.assessmentRound) {
         searchParams.set("round", String(filters.assessmentRound));
+    }
+
+    // Mutually exclusive with a term: never emit both.
+    if (filters?.unscreened && !filters.academicYearId) {
+        searchParams.set("unscreened", UNSCREENED_THIS_YEAR_PARAM);
     }
 
     if (page > 1) {
@@ -160,6 +172,7 @@ export function ScreeningSummary({
     readOnly = false,
     currentAcademicYearId = null,
     scopeLabel,
+    showUnscreenedHint = false,
 }: ScreeningSummaryProps) {
     const studentDetailQuery = buildStudentDetailQuery(filters);
     // A selected term already scopes every result; only "latest" can be stale.
@@ -190,6 +203,11 @@ export function ScreeningSummary({
                                     : `ห้อง ${selectedClass}`}
                                 {scopeLabel ? ` · ${scopeLabel}` : null}
                             </p>
+                            {showUnscreenedHint ? (
+                                <p className="mt-1 break-words text-xs font-medium text-amber-700">
+                                    {UNSCREENED_THIS_YEAR_HINT}
+                                </p>
+                            ) : null}
                         </div>
                     </div>
                     <span className="w-fit rounded-full border border-violet-100 bg-violet-50 px-3.5 py-1.5 text-xs font-bold text-violet-700 shadow-sm">

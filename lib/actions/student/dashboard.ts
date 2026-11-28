@@ -10,11 +10,12 @@ import {
     getReferredStudentCountQuery,
     getRiskLevelCountsQuery,
     getStudentsForDashboardQuery,
+    getUnscreenedStudentCountQuery,
 } from "./queries";
 import { isClassFilterAllowedForViewer } from "./student-scope";
 import {
     getAvailableTermsQuery,
-    getCurrentAcademicYearIdQuery,
+    getCurrentAcademicTermQuery,
 } from "./term-queries";
 import { transformRiskCounts } from "./transforms";
 import type {
@@ -53,6 +54,9 @@ function createEmptyDashboardData(): StudentDashboardDataResponse {
         currentAcademicYearId: null,
         availableTerms: [],
         selectedTerm: null,
+        currentAcademicYear: null,
+        unscreenedThisYearCount: 0,
+        unscreenedFilterApplied: false,
     };
 }
 
@@ -140,17 +144,29 @@ export async function getStudentDashboardData(
         const assessmentRound = normalizeAssessmentRound(
             options?.assessmentRound,
         );
-        const selectedAcademicYear = academicYearId
-            ? await prisma.academicYear.findUnique({
-                  where: { id: academicYearId },
-                  select: {
-                      id: true,
-                      year: true,
-                      semester: true,
-                      isCurrent: true,
-                  },
-              })
-            : null;
+        const [selectedAcademicYear, currentTerm] = await Promise.all([
+            academicYearId
+                ? prisma.academicYear.findUnique({
+                      where: { id: academicYearId },
+                      select: {
+                          id: true,
+                          year: true,
+                          semester: true,
+                          isCurrent: true,
+                      },
+                  })
+                : Promise.resolve(null),
+            getCurrentAcademicTermQuery(),
+        ]);
+        // `unscreened` is a default-view filter: a selected term wins, and with
+        // no current term there is no "this academic year" to compare with.
+        const isDefaultView = !academicYearId;
+        const unscreenedYear =
+            isDefaultView && options?.unscreenedThisYear === true
+                ? currentTerm?.year
+                : undefined;
+        const unscreenedFilter =
+            unscreenedYear !== undefined ? { unscreenedYear } : {};
         const currentPopulationOnly = academicYearId
             ? selectedAcademicYear?.isCurrent === true
             : true;
@@ -167,7 +183,7 @@ export async function getStudentDashboardData(
             filteredClassCounts,
             rawRiskCounts,
             referredCount,
-            currentAcademicYearId,
+            unscreenedThisYearCount,
             availableTerms,
         ] = await Promise.all([
             getClassCountsQuery(
@@ -175,30 +191,52 @@ export async function getStudentDashboardData(
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                { referredOnly, ...contextFilters },
+                { referredOnly, ...unscreenedFilter, ...contextFilters },
             ),
             getClassCountsQuery(
                 scopeSchoolId,
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                { referredOnly, riskFilter, ...contextFilters },
+                {
+                    referredOnly,
+                    riskFilter,
+                    ...unscreenedFilter,
+                    ...contextFilters,
+                },
             ),
             getRiskLevelCountsQuery(
                 scopeSchoolId,
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                { classFilter, referredOnly, ...contextFilters },
+                {
+                    classFilter,
+                    referredOnly,
+                    ...unscreenedFilter,
+                    ...contextFilters,
+                },
             ),
             getReferredStudentCountQuery(
                 scopeSchoolId,
                 viewer.advisoryClass,
                 viewer.role,
                 viewer.userId,
-                { classFilter, riskFilter, ...contextFilters },
+                {
+                    classFilter,
+                    riskFilter,
+                    ...unscreenedFilter,
+                    ...contextFilters,
+                },
             ),
-            getCurrentAcademicYearIdQuery(),
+            isDefaultView && currentTerm
+                ? getUnscreenedStudentCountQuery(
+                      scopeSchoolId,
+                      viewer.advisoryClass,
+                      viewer.role,
+                      { classFilter, academicYear: currentTerm.year },
+                  )
+                : Promise.resolve(0),
             getAvailableTermsQuery(
                 scopeSchoolId,
                 viewer.advisoryClass,
@@ -225,6 +263,7 @@ export async function getStudentDashboardData(
                       referredOnly,
                       page,
                       limit: DASHBOARD_PAGE_SIZE,
+                      ...unscreenedFilter,
                       ...contextFilters,
                   },
               )
@@ -259,8 +298,11 @@ export async function getStudentDashboardData(
                     studentListResponse.pagination.totalPages,
                 hasPreviousPage: studentListResponse.pagination.page > 1,
             },
-            currentAcademicYearId,
+            currentAcademicYearId: currentTerm?.id ?? null,
             availableTerms,
+            currentAcademicYear: currentTerm?.year ?? null,
+            unscreenedThisYearCount,
+            unscreenedFilterApplied: unscreenedYear !== undefined,
             selectedTerm: selectedAcademicYear
                 ? {
                       id: selectedAcademicYear.id,

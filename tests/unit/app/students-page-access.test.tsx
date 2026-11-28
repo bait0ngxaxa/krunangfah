@@ -27,6 +27,7 @@ vi.mock("next/navigation", () => ({
 
 import StudentsPage from "@/app/(protected)/students/page";
 import { buildImportedStudentsHref } from "@/components/student/import/completion";
+import { StudentDashboard } from "@/components/student/dashboard/StudentDashboard";
 
 const emptyDashboardData = {
     students: [],
@@ -146,6 +147,49 @@ describe("Students page system admin access", () => {
             year: 2568,
             semester: 2,
         });
+    });
+
+    async function renderStudentsPage(searchParams: Record<string, string>) {
+        const page = await StudentsPage({ searchParams: Promise.resolve(searchParams) });
+        const suspense = page.props.children[1].props.children;
+        const contentElement = suspense.props.children;
+        return contentElement.type(contentElement.props);
+    }
+
+    it("passes unscreened=year to the dashboard in the default view", async () => {
+        mocks.requireAuth.mockResolvedValue({ user: { role: "school_admin" } });
+
+        const rendered = await renderStudentsPage({ unscreened: "year" });
+
+        expect(mocks.getStudentDashboardData).toHaveBeenCalledWith(
+            expect.objectContaining({ unscreenedThisYear: true }),
+        );
+        // An active filter is not the "no students yet" import state.
+        expect(rendered.type).toBe(StudentDashboard);
+    });
+
+    it("treats unscreened=year&year=<id> as year=<id> only, and ignores other values", async () => {
+        const academicYearId = "cm123456789012345678901234";
+        mocks.requireAuth.mockResolvedValue({ user: { role: "school_admin" } });
+        mocks.getStudentDashboardData.mockResolvedValue({
+            status: "success",
+            data: { ...emptyDashboardData, classes: ["ม.1/1"], totalStudents: 1 },
+        });
+
+        const rendered = await renderStudentsPage({
+            unscreened: "year",
+            year: academicYearId,
+        });
+        await renderStudentsPage({ unscreened: "yes" });
+
+        const [withTerm, invalid] = mocks.getStudentDashboardData.mock.calls.map(
+            (call) => call[0],
+        );
+        expect(withTerm).toEqual(expect.objectContaining({ academicYearId }));
+        expect(withTerm).not.toHaveProperty("unscreenedThisYear");
+        expect(invalid).not.toHaveProperty("unscreenedThisYear");
+        expect(rendered.props.filters.unscreened).toBeUndefined();
+        expect(rendered.props.filters.academicYearId).toBe(academicYearId);
     });
 
     it("renders request ID and never the empty-state copy on backend failure", async () => {
