@@ -41,7 +41,11 @@ interface AnalyticsFiltersProps {
     requireSchoolSelection?: boolean;
     canExportNamedSubmission?: boolean;
     canManageNamedSubmissionExport?: boolean;
+    showLegacyClassNote?: boolean;
 }
+
+export const LEGACY_CLASS_NOTE =
+    "ผลคัดกรองบางส่วนในเทอมนี้นำเข้าก่อนมีการบันทึกห้อง จึงแสดงตามห้องปัจจุบันของนักเรียน";
 
 function uniqueStrings(values: string[]): string[] {
     return Array.from(new Set(values));
@@ -78,6 +82,7 @@ export function AnalyticsFilters({
     requireSchoolSelection = false,
     canExportNamedSubmission = false,
     canManageNamedSubmissionExport = false,
+    showLegacyClassNote = false,
 }: AnalyticsFiltersProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -190,6 +195,10 @@ export function AnalyticsFilters({
                         updateParams({ class: classValue, semester: null, round: null })
                     }
                 />
+            ) : null}
+
+            {showClassFilter && showLegacyClassNote ? (
+                <p className="text-xs text-slate-500">{LEGACY_CLASS_NOTE}</p>
             ) : null}
 
             {safeAvailableYears.length > 1 &&

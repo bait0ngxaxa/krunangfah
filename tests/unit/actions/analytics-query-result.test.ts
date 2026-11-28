@@ -56,6 +56,7 @@ const analyticsData: AnalyticsData = {
     gradeRiskData: [],
     hospitalReferralsByGrade: [],
     totalReferrals: 0,
+    legacyClassAttribution: false,
 };
 
 const overviewData: SystemAnalyticsOverview = {

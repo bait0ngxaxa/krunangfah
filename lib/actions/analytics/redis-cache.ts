@@ -156,7 +156,8 @@ function isAnalyticsData(value: unknown): value is AnalyticsData {
         value.gradeRiskData.every(isGradeRiskData) &&
         Array.isArray(value.hospitalReferralsByGrade) &&
         value.hospitalReferralsByGrade.every(isHospitalReferralByGrade) &&
-        typeof value.totalReferrals === "number"
+        typeof value.totalReferrals === "number" &&
+        typeof value.legacyClassAttribution === "boolean"
     );
 }
 
@@ -265,6 +266,8 @@ export function createAnalyticsRedisKeyParts(input: {
     return [
         "analytics-data",
         "activity-scope:round-one-v1",
+        // Past-term class filter and grouping follow the class at assessment.
+        "class-attribution:assessment-v1",
         `role:${input.role}`,
         `school:${input.schoolId ?? "none"}`,
         `class:${input.targetClass || "all"}`,

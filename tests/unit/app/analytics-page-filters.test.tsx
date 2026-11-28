@@ -52,6 +52,7 @@ const analyticsData: AnalyticsData = {
     gradeRiskData: [],
     hospitalReferralsByGrade: [],
     totalReferrals: 0,
+    legacyClassAttribution: false,
     currentAcademicYear: 2569,
     currentSemester: 1,
 };

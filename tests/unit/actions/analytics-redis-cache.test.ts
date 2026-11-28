@@ -103,6 +103,7 @@ function createAnalyticsData(): AnalyticsData {
             },
         ],
         totalReferrals: 1,
+        legacyClassAttribution: false,
     };
 }
 
@@ -180,6 +181,27 @@ describe("analytics Redis cache", () => {
             .mockResolvedValueOnce("0")
             .mockResolvedValueOnce(JSON.stringify(legacyPayload));
 
+        await expect(readRedisCachedAnalyticsData(keyParts)).resolves.toMatchObject({
+            data: null,
+        });
+    });
+
+    it("rejects cached analytics data from before class attribution and versions the key", async () => {
+        const preAttributionPayload = { ...createAnalyticsData() } as Record<string, unknown>;
+        delete preAttributionPayload.legacyClassAttribution;
+        const keyParts = createAnalyticsRedisKeyParts({
+            role: "school_admin",
+            schoolId: "school-1",
+            targetClass: "ม.1/1",
+            academicYearStr: "2568",
+            semesterStr: "2",
+            roundStr: "",
+        });
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(preAttributionPayload));
+
+        expect(keyParts).toContain("class-attribution:assessment-v1");
         await expect(readRedisCachedAnalyticsData(keyParts)).resolves.toMatchObject({
             data: null,
         });

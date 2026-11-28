@@ -85,6 +85,11 @@ export interface AnalyticsData {
     gradeRiskData: GradeRiskData[];
     hospitalReferralsByGrade: HospitalReferralByGrade[];
     totalReferrals: number;
+    /**
+     * A single past term in scope has results imported before the class
+     * snapshot existed, so they are reported under the current class.
+     */
+    legacyClassAttribution: boolean;
 }
 
 export interface SystemAnalyticsOverview {

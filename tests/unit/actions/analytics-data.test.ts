@@ -19,6 +19,8 @@ vi.mock("@/lib/database/prisma", () => ({
         schoolClass: { findMany: mocks.schoolClassFindMany },
         schoolClassTerm: { aggregate: mocks.schoolClassTermAggregate },
         phqResult: { findMany: mocks.phqResultFindMany },
+        // Past-term class options and the legacy-snapshot check.
+        $queryRaw: vi.fn(async () => []),
     },
 }));
 

@@ -5,7 +5,16 @@ import {
     REQUIRED_ACTIVITY_NUMBERS_BY_RISK,
 } from "./constants";
 import { LATEST_PHQ_SQL_ORDER_BY } from "@/lib/utils/phq-result-selection";
-import { buildCurrentStudentPopulationSql } from "@/lib/utils/student-population";
+import {
+    buildAcademicYearCondition,
+    buildActiveStudentSchoolCondition,
+    buildClassConditions,
+    buildReportClassSql,
+    buildRoundCondition,
+    type AnalyticsClassScope,
+} from "./query-conditions";
+
+export type { AnalyticsClassScope } from "./query-conditions";
 
 // ========================================
 // Type Definitions
@@ -54,64 +63,6 @@ interface HospitalReferralResult {
     referral_count: bigint;
 }
 
-function buildActiveStudentSchoolCondition(
-    schoolId: string | undefined,
-    currentPopulationOnly: boolean,
-): Prisma.Sql {
-    const lifecycleCondition = currentPopulationOnly
-        ? buildCurrentStudentPopulationSql()
-        : Prisma.empty;
-
-    if (schoolId) {
-        return Prisma.sql`
-            WHERE s."schoolId" = ${schoolId}
-              AND s."disabledAt" IS NULL
-              AND s."isTestData" = false
-              AND sch."disabledAt" IS NULL
-              AND sch."isTestData" = false
-              ${lifecycleCondition}
-        `;
-    }
-
-    return Prisma.sql`
-        WHERE s."disabledAt" IS NULL
-          AND s."isTestData" = false
-          AND sch."disabledAt" IS NULL
-          AND sch."isTestData" = false
-          ${lifecycleCondition}
-    `;
-}
-
-/**
- * Two class inputs with different meanings:
- * - scopeClass: a class teacher's visibility, always the student's current
- *   class (`s.class`), in every term.
- * - classFilter: a school/system admin's report selection.
- */
-export interface AnalyticsClassScope {
-    scopeClass?: string;
-    classFilter?: string;
-}
-
-function buildClassConditions(classes: AnalyticsClassScope): Prisma.Sql {
-    const scopeCondition = classes.scopeClass
-        ? Prisma.sql`AND s.class = ${classes.scopeClass}`
-        : Prisma.empty;
-    const filterCondition = classes.classFilter
-        ? Prisma.sql`AND s.class = ${classes.classFilter}`
-        : Prisma.empty;
-    return Prisma.sql`${scopeCondition} ${filterCondition}`;
-}
-
-function buildAcademicYearCondition(
-    academicYearIds: readonly string[] | undefined,
-): Prisma.Sql {
-    if (!academicYearIds) return Prisma.empty;
-    return academicYearIds.length > 0
-        ? Prisma.sql`AND pr."academicYearId" IN (${Prisma.join(academicYearIds)})`
-        : Prisma.sql`AND false`;
-}
-
 /** Combined result from single optimized query */
 export interface CombinedAnalyticsResult {
     riskLevelCounts: RiskLevelCountResult[];
@@ -144,9 +95,7 @@ export async function getCombinedAnalytics(
     const classCondition = buildClassConditions(classes);
     const academicYearCondition = buildAcademicYearCondition(academicYearIds);
 
-    const roundCondition = assessmentRound !== undefined
-        ? Prisma.sql`AND pr."assessmentRound" = ${assessmentRound}`
-        : Prisma.empty;
+    const roundCondition = buildRoundCondition(assessmentRound);
 
     // Single query that computes everything from one table scan
     const result = await prisma.$queryRaw<
@@ -162,7 +111,7 @@ export async function getCombinedAnalytics(
                 pr."studentId",
                 pr."riskLevel",
                 pr."referredToHospital",
-                SPLIT_PART(s.class, '/', 1) as grade,
+                SPLIT_PART(${buildReportClassSql(classes)}, '/', 1) as grade,
                 ROW_NUMBER() OVER (
                     PARTITION BY pr."studentId"
                     ORDER BY ${LATEST_PHQ_SQL_ORDER_BY}
@@ -273,9 +222,7 @@ export async function getTrendData(
     const classCondition = buildClassConditions(classes);
     const academicYearCondition = buildAcademicYearCondition(academicYearIds);
 
-    const roundCondition = assessmentRound !== undefined
-        ? Prisma.sql`AND pr."assessmentRound" = ${assessmentRound}`
-        : Prisma.empty;
+    const roundCondition = buildRoundCondition(assessmentRound);
 
     return prisma.$queryRaw<TrendDataResult[]>`
         WITH ranked_per_period AS (

@@ -50,6 +50,7 @@ const baseData: AnalyticsData = {
     gradeRiskData: [],
     hospitalReferralsByGrade: [],
     totalReferrals: 0,
+    legacyClassAttribution: false,
 };
 
 function createData(overrides: Partial<AnalyticsData> = {}): AnalyticsData {

@@ -171,6 +171,7 @@ export function AnalyticsContent({
                 selectedRound={selectedRound}
                 isSystemAdmin={isSystemAdmin}
                 showClassFilter={showClassFilter}
+                showLegacyClassNote={data.legacyClassAttribution}
                 canExportNamedSubmission={canExportNamedSubmission(
                     userRole,
                     isPrimaryAdmin,

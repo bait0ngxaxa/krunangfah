@@ -7,6 +7,12 @@ import {
     type AnalyticsClassScope,
 } from "./queries";
 import {
+    getAvailableAcademicTerms,
+    getAvailableClassNames,
+    getAvailableRounds,
+    hasLegacyClassAttribution,
+} from "./filter-options";
+import {
     transformRiskLevelCounts,
     transformTrendData,
     transformGradeRiskData,
@@ -66,6 +72,9 @@ export async function fetchAnalyticsData(
         : undefined;
     const academicYearIds = selectedAcademicYears?.map((term) => term.id);
     const selectedAcademicTermExists = (academicYearIds?.length ?? 0) > 0;
+    const singleTerm = selectedAcademicYears?.length === 1
+        ? selectedAcademicYears[0]
+        : undefined;
     const currentPopulationOnly =
         selectedAcademicYears?.length === 1 &&
         selectedAcademicYears[0].isCurrent;
@@ -106,43 +115,14 @@ export async function fetchAnalyticsData(
         combinedData,
         trendDataRaw,
         activityData,
+        availableRounds,
+        legacyClassAttribution,
     ] = await Promise.all([
         getExpectedStudentCount(schoolId, selectedClass, academicYearIds),
         showClassFilter
-            ? prisma.schoolClass
-                  .findMany({
-                      where: {
-                          ...(schoolId ? { schoolId } : {}),
-                          archivedAt: null,
-                          school: { disabledAt: null, isTestData: false },
-                      },
-                      select: { name: true },
-                      orderBy: { name: "asc" },
-                  })
-                  .then((rows) => rows.map((row) => row.name))
+            ? getAvailableClassNames(schoolId, singleTerm)
             : Promise.resolve([]),
-        prisma.academicYear.findMany({
-            where: {
-                phqResults: {
-                    some: {
-                        student: {
-                            ...(schoolId ? { schoolId } : {}),
-                            ...(selectedClass ? { class: selectedClass } : {}),
-                            disabledAt: null,
-                            isTestData: false,
-                            school: { disabledAt: null, isTestData: false },
-                        },
-                    },
-                },
-            },
-            select: {
-                id: true,
-                year: true,
-                semester: true,
-            },
-            distinct: ["year", "semester"],
-            orderBy: [{ year: "desc" }, { semester: "asc" }],
-        }),
+        getAvailableAcademicTerms(schoolId, classes),
         getCombinedAnalytics(
             schoolId,
             classes,
@@ -158,6 +138,8 @@ export async function fetchAnalyticsData(
             currentPopulationOnly,
         ),
         activityDataPromise,
+        getAvailableRounds(schoolId, classes, { academicYear, semester }),
+        hasLegacyClassAttribution({ schoolId, classes, singleTerm, assessmentRound }),
     ]);
 
     const availableAcademicTerms = availableAcademicTermsRaw.map((term) => ({
@@ -165,35 +147,6 @@ export async function fetchAnalyticsData(
         year: term.year,
         semester: term.semester,
     }));
-
-    // Query distinct assessment rounds available for current filter scope
-    const shouldFilterAcademicTerm =
-        academicYear !== undefined || semester !== undefined;
-    const availableRoundsRaw = await prisma.phqResult.findMany({
-        where: {
-            student: {
-                ...(schoolId ? { schoolId } : {}),
-                ...(selectedClass ? { class: selectedClass } : {}),
-                disabledAt: null,
-                isTestData: false,
-                school: { disabledAt: null, isTestData: false },
-            },
-            ...(shouldFilterAcademicTerm
-                ? {
-                      academicYear: {
-                          ...(academicYear !== undefined
-                              ? { year: academicYear }
-                              : {}),
-                          ...(semester !== undefined ? { semester } : {}),
-                      },
-                  }
-                : {}),
-        },
-        select: { assessmentRound: true },
-        distinct: ["assessmentRound"],
-        orderBy: { assessmentRound: "asc" },
-    });
-    const availableRounds = availableRoundsRaw.map((r) => r.assessmentRound);
 
     const {
         riskLevelCounts: riskLevelCountsRaw,
@@ -266,6 +219,7 @@ export async function fetchAnalyticsData(
         gradeRiskData,
         hospitalReferralsByGrade,
         totalReferrals,
+        legacyClassAttribution,
     };
 }
 
