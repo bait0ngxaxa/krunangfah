@@ -32,6 +32,7 @@ export const NAMED_SUBMISSION_COLUMNS: readonly NamedSubmissionColumn[] = [
         width: 24,
     },
     { key: "referralStatus", header: "สถานะส่งต่อ", width: 16 },
+    { key: "classSource", header: "ที่มาของห้อง", width: 34 },
 ];
 
 function getExcelColumnName(index: number): string {

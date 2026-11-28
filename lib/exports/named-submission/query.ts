@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/database/prisma";
+import { buildAttributedClassWhere } from "@/lib/utils/class-attribution";
 
 import {
     namedSubmissionSelect,
@@ -14,12 +15,13 @@ function buildNamedSubmissionWhere(
     filters: NamedSubmissionFilters,
 ): Prisma.PhqResultWhereInput {
     return {
+        // Per result: the class at assessment time (see class-attribution).
+        ...(filters.className ? buildAttributedClassWhere(filters.className) : {}),
         ...(filters.assessmentRound !== undefined
             ? { assessmentRound: filters.assessmentRound }
             : {}),
         student: {
             ...(filters.schoolId ? { schoolId: filters.schoolId } : {}),
-            ...(filters.className ? { class: filters.className } : {}),
         },
         ...(filters.academicYear !== undefined || filters.semester !== undefined
             ? {

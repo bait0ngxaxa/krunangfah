@@ -67,6 +67,27 @@ const { importStudents } = await import("@/lib/actions/student/mutations");
 const { buildAttributedClassSql, buildAttributedClassWhere } = await import(
     "@/lib/utils/class-attribution"
 );
+const { getNamedSubmissionRecords } = await import("@/lib/exports/named-submission/query");
+const { mapNamedSubmissionRecord } = await import("@/lib/exports/named-submission/mapper");
+
+const LEGACY_SOURCE = "ห้องปัจจุบัน (ข้อมูลก่อนมีการบันทึกห้อง)";
+
+async function exportRows(term: AcademicYear, className?: string) {
+    const records = await getNamedSubmissionRecords({
+        schoolId,
+        academicYear: term.year,
+        semester: term.semester,
+        ...(className ? { className } : {}),
+    });
+    return records
+        .map(mapNamedSubmissionRecord)
+        .map(({ studentId, className: rowClass, classSource }) => ({
+            studentId,
+            className: rowClass,
+            classSource,
+        }))
+        .sort((left, right) => left.studentId.localeCompare(right.studentId));
+}
 
 const SCORES_YELLOW = { q1: 2, q2: 2, q3: 2, q4: 1, q5: 1, q6: 1, q7: 1, q8: 0, q9: 0 } as const;
 
@@ -273,5 +294,25 @@ describe("Integration: past terms use the class at assessment time", () => {
             `;
             expect(viaPrisma).toEqual(viaSql);
         }
+    });
+
+    it("exports the past term by the class at assessment and labels the class source", async () => {
+        await expect(exportRows(pastTerm, "ม.1/1")).resolves.toEqual([
+            { studentId: "PA-001", className: "ม.1/1", classSource: "ตอนประเมิน" },
+        ]);
+        await expect(exportRows(pastTerm, "ม.2/1")).resolves.toEqual([]);
+        await expect(exportRows(pastTerm)).resolves.toEqual([
+            { studentId: "PA-001", className: "ม.1/1", classSource: "ตอนประเมิน" },
+            { studentId: "PA-002", className: "ม.2/2", classSource: LEGACY_SOURCE },
+        ]);
+    });
+
+    it("exports the current term by the current class", async () => {
+        await expect(exportRows(currentTerm)).resolves.toEqual([
+            { studentId: "PA-001", className: "ม.2/1", classSource: "ตอนประเมิน" },
+        ]);
+        await expect(exportRows(currentTerm, "ม.2/1")).resolves.toEqual([
+            { studentId: "PA-001", className: "ม.2/1", classSource: "ตอนประเมิน" },
+        ]);
     });
 });
