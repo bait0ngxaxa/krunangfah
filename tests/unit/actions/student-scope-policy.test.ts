@@ -106,6 +106,22 @@ describe("class_teacher student scope policy", () => {
         expect(mocks.studentCount).toHaveBeenCalledWith(referredWhere);
     });
 
+    it("uses the active referral pointer and the same sender scope in the pie chart", async () => {
+        for (const role of ["class_teacher", "school_admin"]) {
+            await getRiskLevelCountsQuery(
+                "school-1", "ม.1/1", role, "teacher-1", { referredOnly: true },
+            );
+        }
+        const [teacherSql, adminSql] = mocks.queryRaw.mock.calls.map(collectSql);
+        for (const sql of [teacherSql, adminSql]) {
+            expect(sql).toContain('sr.id = s."activeReferralId"');
+            expect(sql).not.toContain('sr."revokedAt"');
+            expect(sql).not.toContain('sr."closedAt"');
+        }
+        expect(teacherSql).toContain('sr."fromTeacherUserId"');
+        expect(adminSql).not.toContain('sr."fromTeacherUserId"');
+    });
+
     it("keeps the advisory class when another class is passed to every query helper", async () => {
         mocks.studentCount.mockResolvedValue(1);
         const filters = {

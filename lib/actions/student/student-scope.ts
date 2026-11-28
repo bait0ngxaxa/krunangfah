@@ -95,21 +95,14 @@ export function buildReferredStudentSql(
     userRole: string,
     userId: string | undefined,
 ): Prisma.Sql {
-    if (userRole === "class_teacher") {
-        if (!userId) return Prisma.sql`AND 1 = 0`;
-        return Prisma.sql`AND EXISTS (
-            SELECT 1 FROM student_referrals sr
-            WHERE sr."studentId" = s.id
-              AND sr."fromTeacherUserId" = ${userId}
-              AND sr."revokedAt" IS NULL
-              AND sr."closedAt" IS NULL
-        )`;
-    }
+    if (userRole === "class_teacher" && !userId) return Prisma.sql`AND 1 = 0`;
 
+    const senderCondition = userRole === "class_teacher"
+        ? Prisma.sql`AND sr."fromTeacherUserId" = ${userId}`
+        : Prisma.empty;
     return Prisma.sql`AND EXISTS (
         SELECT 1 FROM student_referrals sr
-        WHERE sr."studentId" = s.id
-          AND sr."revokedAt" IS NULL
-          AND sr."closedAt" IS NULL
+        WHERE sr.id = s."activeReferralId"
+        ${senderCondition}
     )`;
 }

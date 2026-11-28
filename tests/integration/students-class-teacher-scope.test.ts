@@ -28,6 +28,13 @@ const { getStudentsForDashboardQuery, getStudentIdsByLatestRiskQuery } = await i
     "@/lib/actions/student/queries"
 );
 
+const { createActiveStudentReferral, revokeActiveStudentReferral } = await import(
+    "@/lib/services/student-referral-command"
+);
+const { deleteSystemReferral, saveSystemReferral } = await import(
+    "@/lib/actions/system-admin/care-records-admin"
+);
+
 const OWN_CLASS = "ม.1/1";
 const OTHER_CLASS = "ม.1/2";
 
@@ -290,4 +297,74 @@ describe("Integration: class teacher scope on /students", () => {
             }
         }
     });
+
+    it("agrees across chart, count and list after revoke, reactivation and replacement", async () => {
+        const studentId = own[1].id;
+        await createTestTeacher(USERS.schoolAdmin.id);
+        const actor = await createTestUser(USERS.systemAdmin);
+        const referral = await createActiveStudentReferral({
+            studentId,
+            fromTeacherUserId: USERS.classTeacher.id,
+            toTeacherUserId: USERS.schoolAdmin.id,
+        });
+        if (!referral) throw new Error("Expected an active referral");
+
+        async function expectGreenReferral(
+            viewer: typeof USERS.classTeacher | typeof USERS.schoolAdmin,
+            active: boolean,
+        ): Promise<void> {
+            mockSession(viewer);
+            const result = await getStudentDashboardData({
+                classFilter: OWN_CLASS,
+                referredOnly: true,
+                riskFilter: "green",
+            });
+            if (!("data" in result)) throw new Error("Expected dashboard data");
+            expect(result.data.riskCounts.green).toBe(active ? 1 : 0);
+            expect(result.data.referredCount).toBe(active ? 1 : 0);
+            expect(result.data.students.map((student) => student.id)).toEqual(
+                active ? [studentId] : [],
+            );
+        }
+
+        await expectGreenReferral(USERS.classTeacher, true);
+        expect(await revokeActiveStudentReferral({
+            referralId: referral.id,
+            revokedById: USERS.classTeacher.id,
+        })).toBe(true);
+        await expectGreenReferral(USERS.classTeacher, false);
+        await expectGreenReferral(USERS.schoolAdmin, false);
+
+        const input = {
+            studentId,
+            toTeacherUserId: USERS.classTeacher.id,
+            reason: "ทดสอบการส่งต่อ",
+        };
+        const activated = await saveSystemReferral(input, actor);
+        if (!activated.success || !activated.updated) throw new Error("Expected system reactivation");
+        await expectGreenReferral(USERS.schoolAdmin, true);
+        await expectGreenReferral(USERS.classTeacher, false);
+
+        const replaced = await saveSystemReferral({
+            ...input,
+            toTeacherUserId: USERS.schoolAdmin.id,
+            expectedUpdatedAt: new Date(activated.updated.updatedAt),
+        }, actor);
+        if (!replaced.success || !replaced.updated) throw new Error("Expected system replacement");
+        const closed = await prisma.studentReferral.findUniqueOrThrow({
+            where: { id: activated.updated.id },
+            select: { closedAt: true },
+        });
+        expect(closed.closedAt).toBeInstanceOf(Date);
+        await expectGreenReferral(USERS.schoolAdmin, true);
+
+        const deleted = await deleteSystemReferral({
+            id: replaced.updated.id,
+            expectedUpdatedAt: new Date(replaced.updated.updatedAt),
+            reason: input.reason,
+        }, actor);
+        expect(deleted.success).toBe(true);
+        await expectGreenReferral(USERS.schoolAdmin, false);
+    });
+
 });
