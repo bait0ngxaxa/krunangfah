@@ -205,9 +205,9 @@ async function systemStudentClassExists(
 ): Promise<boolean> {
     const schoolClass = await tx.schoolClass.findUnique({
         where: { schoolId_name: { schoolId, name: className } },
-        select: { id: true },
+        select: { archivedAt: true },
     });
-    return schoolClass !== null;
+    return schoolClass !== null && !schoolClass.archivedAt;
 }
 
 async function updateStudentAndCounts(
@@ -293,6 +293,7 @@ const studentEntitySelect = {
             disabledAt: true,
             isTestData: true,
             classes: {
+                where: { archivedAt: null },
                 select: { id: true, name: true },
                 orderBy: { name: "asc" },
             },

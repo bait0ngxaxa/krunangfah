@@ -163,7 +163,11 @@ export async function validateAdvisoryClass(
         return null;
     }
     const schoolClass = await tx.schoolClass.findFirst({
-        where: { schoolId: target.schoolId, name: desired.advisoryClass },
+        where: {
+            schoolId: target.schoolId,
+            name: desired.advisoryClass,
+            archivedAt: null,
+        },
         select: { id: true },
     });
     return schoolClass ? null : "ไม่พบห้องเรียนนี้ในโรงเรียน";

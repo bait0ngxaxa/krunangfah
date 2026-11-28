@@ -74,6 +74,9 @@ export async function hasMissingSchoolClassTermsForAcademicYear(
 ): Promise<boolean> {
     const missingClass = await prisma.schoolClass.findFirst({
         where: {
+            // Archived classes no longer exist in new terms; counting them
+            // would make rollover resurrect them or report "missing" forever.
+            archivedAt: null,
             school: { disabledAt: null, isTestData: false },
             terms: { none: { academicYearId } },
         },
@@ -134,7 +137,7 @@ export async function ensureSchoolClassTermsForAcademicYear(
     if (!targetAcademicYear) return null;
 
     const classes = await prisma.schoolClass.findMany({
-        where: { schoolId },
+        where: { schoolId, archivedAt: null },
         select: {
             id: true,
             expectedStudentCount: true,

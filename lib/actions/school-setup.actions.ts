@@ -275,7 +275,7 @@ export async function updateSchoolClassStudentCount(
         }
 
         const schoolClass = await prisma.schoolClass.findFirst({
-            where: { id, schoolId },
+            where: { id, schoolId, archivedAt: null },
             select: { id: true, name: true },
         });
         if (!schoolClass) {
@@ -389,7 +389,7 @@ export async function getSchoolClasses(
             await ensureSchoolClassTermsForAcademicYear(schoolId, term.id);
         }
         const classes = await prisma.schoolClass.findMany({
-            where: { schoolId },
+            where: { schoolId, archivedAt: null },
             orderBy: { name: "asc" },
             select: {
                 id: true,

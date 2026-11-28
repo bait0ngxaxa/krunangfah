@@ -106,6 +106,7 @@ export async function fetchAnalyticsData(
                   .findMany({
                       where: {
                           ...(schoolId ? { schoolId } : {}),
+                          archivedAt: null,
                           school: { disabledAt: null, isTestData: false },
                       },
                       select: { name: true },
@@ -268,6 +269,9 @@ export async function getExpectedStudentCount(
 ): Promise<number | null> {
     if (!academicYearIds || academicYearIds.length !== 1) return null;
 
+    // Never filter archived classes here: term rows record which classes
+    // existed in each term, so a past term must still count a class that
+    // was archived later.
     const result = await prisma.schoolClassTerm.aggregate({
         where: {
             academicYearId: academicYearIds[0],

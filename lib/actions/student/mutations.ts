@@ -45,6 +45,10 @@ import {
 } from "./import-idempotency";
 import { revalidateStudentsCache } from "./cache";
 import {
+    archivedImportClassMessage,
+    partitionImportClasses,
+} from "./import-class-validation";
+import {
     applyStudentClassCountAdjustments,
     calculateStudentContributionAdjustments,
     calculateStudentStatusState,
@@ -496,13 +500,10 @@ export async function importStudents(
 
         const schoolClasses = await prisma.schoolClass.findMany({
             where: { schoolId },
-            select: { name: true },
+            select: { name: true, archivedAt: true },
         });
-        const validClassSet = new Set(
-            schoolClasses.map((schoolClass) =>
-                normalizeClassName(schoolClass.name),
-            ),
-        );
+        const { validClassSet, archivedClassSet } =
+            partitionImportClasses(schoolClasses);
 
         if (isClassTeacher && !advisoryClass) {
             return finishImport({
@@ -550,7 +551,9 @@ export async function importStudents(
                 failedStudents.push(
                     createImportStudentSummary(
                         studentData,
-                        "ยังไม่มีห้องเรียนดังกล่าวในระบบ",
+                        archivedClassSet.has(studentClass)
+                            ? archivedImportClassMessage(studentClass)
+                            : "ยังไม่มีห้องเรียนดังกล่าวในระบบ",
                     ),
                 );
                 skippedCount++;
