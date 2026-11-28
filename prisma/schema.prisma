@@ -125,6 +125,7 @@ model SchoolClass {
   name      String   // free-form: "ม.1/1", "ป.6/2", อะไรก็ได้
   expectedStudentCount Int @default(0) // จำนวนนักเรียนจริงที่คาดไว้ ใช้คำนวณ coverage การคัดกรอง
   createdAt DateTime @default(now())
+  archivedAt DateTime? // เก็บเข้าคลัง: ไม่มีในเทอมปัจจุบันแล้ว แต่ยังเก็บข้อมูลเทอมก่อนหน้าไว้
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   terms  SchoolClassTerm[]
