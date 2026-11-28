@@ -24,6 +24,9 @@ const USERS = createMockUsers("class-scope");
 const { getStudentDashboardData } = await import(
     "@/lib/actions/student/dashboard"
 );
+const { getStudentsForDashboardQuery } = await import(
+    "@/lib/actions/student/queries"
+);
 
 const OWN_CLASS = "ม.1/1";
 const OTHER_CLASS = "ม.1/2";
@@ -154,6 +157,26 @@ describe("Integration: class teacher scope on /students", () => {
             expectNoOtherClassData(result);
         },
     );
+
+    it("query helpers keep the advisory class even when the boundary is bypassed", async () => {
+        for (const [, buildOptions] of otherClassFilterCases) {
+            const options = buildOptions();
+            const response = await getStudentsForDashboardQuery(
+                schoolId,
+                OWN_CLASS,
+                "class_teacher",
+                USERS.classTeacher.id,
+                {
+                    ...options,
+                    ...(options.academicYearId ? { currentPopulationOnly: false } : {}),
+                },
+            );
+
+            expect(response.students).toEqual([]);
+            expect(response.pagination.total).toBe(0);
+            expectNoOtherClassData(response);
+        }
+    });
 
     it("serves the teacher's own class unchanged, with or without an explicit class", async () => {
         mockSession(USERS.classTeacher);

@@ -7,6 +7,21 @@ interface ClassScopeViewer {
 }
 
 /**
+ * Adds a condition without touching existing keys. Assigning a top-level key
+ * (e.g. `class`) could overwrite a class teacher's `class: advisoryClass`
+ * scope, so every query filter must go through `AND`.
+ */
+export function andStudentWhere(
+    where: Prisma.StudentWhereInput,
+    condition: Prisma.StudentWhereInput,
+): Prisma.StudentWhereInput {
+    const existing = where.AND === undefined
+        ? []
+        : Array.isArray(where.AND) ? where.AND : [where.AND];
+    return { ...where, AND: [...existing, condition] };
+}
+
+/**
  * A class teacher may filter only by their own advisory class. Checked at the
  * action boundary so another class's URL never reaches a query.
  */
