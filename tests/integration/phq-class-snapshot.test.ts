@@ -50,8 +50,6 @@ const USERS = createMockUsers("phq-class-snapshot");
 const { importStudents } = await import("@/lib/actions/student/mutations");
 const { updateSystemStudent } = await import("@/lib/actions/system-admin/mutations");
 
-class RollbackSignal extends Error {}
-
 function row(studentId: string, className: string): ParsedStudent {
     return {
         studentId,
@@ -208,41 +206,47 @@ describe("Integration: PHQ result class snapshot", () => {
         expect(before.map((snapshot) => snapshot.className)).toEqual(["ม.1/1", "ม.1/2", "ม.1/1"]);
     });
 
-    it("migration adds the column without backfilling existing results", async () => {
-        const sql = await readFile(MIGRATION_PATH, "utf8");
-        const student = await findStudent("SNAP-001");
-        const legacyId = "phq-legacy-snapshot-0001";
-        let observed: Array<{ className: string | null }> = [];
+    it("migration adds a nullable column with no default and no backfill", async () => {
+        // The CI role cannot run DDL, so the migration is checked by content
+        // and by the migrated catalog rather than replayed.
+        const statements = (await readFile(MIGRATION_PATH, "utf8"))
+            .split(/\r?\n/)
+            .filter((line) => !line.trim().startsWith("--"))
+            .join(" ")
+            .split(";")
+            .map((statement) => statement.replace(/\s+/g, " ").trim())
+            .filter((statement) => statement.length > 0);
+        expect(statements).toEqual(['ALTER TABLE "phq_results" ADD COLUMN "className" TEXT']);
 
-        // Replays the migration against a pre-migration table, then rolls back.
-        await prisma
-            .$transaction(async (tx) => {
-                await tx.$executeRawUnsafe('ALTER TABLE "phq_results" DROP COLUMN "className"');
-                await tx.$executeRaw`
-                    INSERT INTO "phq_results" (
-                        "id", "studentId", "academicYearId", "assessmentRound",
-                        "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9",
-                        "totalScore", "riskLevel", "updatedAt"
-                    ) VALUES (
-                        ${legacyId}, ${student.id}, ${semesterTwoId}, 2,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 'blue'::"RiskLevel", NOW()
-                    )`;
-                await tx.$executeRawUnsafe(sql);
-                observed = await tx.$queryRaw<Array<{ className: string | null }>>`
-                    SELECT "className" FROM "phq_results"
-                    WHERE "studentId" = ${student.id} OR "id" = ${legacyId}`;
-                throw new RollbackSignal();
-            })
-            .catch((error: unknown) => {
-                if (!(error instanceof RollbackSignal)) throw error;
-            });
+        await expect(
+            prisma.$queryRaw<Array<{ is_nullable: string; column_default: string | null }>>`
+                SELECT is_nullable, column_default FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = 'phq_results' AND column_name = 'className'`,
+        ).resolves.toEqual([{ is_nullable: "YES", column_default: null }]);
+    });
 
-        // Includes SNAP-001's imported row: re-adding the column cannot invent a class.
-        expect(observed).toHaveLength(2);
-        expect(observed.every((snapshot) => snapshot.className === null)).toBe(true);
-        await expect(snapshots(student.id)).resolves.toEqual([
-            { academicYearId: semesterOneId, assessmentRound: 1, className: "ม.1/1" },
-        ]);
+    it("stores NULL for a result written without a class, as before the snapshot", async () => {
+        const student = await findStudent("SNAP-002");
+        const legacyId = `phq-legacy-${student.id}`;
+
+        // The pre-snapshot INSERT shape: it never names "className".
+        await prisma.$executeRaw`
+            INSERT INTO "phq_results" (
+                "id", "studentId", "academicYearId", "assessmentRound",
+                "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9",
+                "totalScore", "riskLevel", "updatedAt"
+            ) VALUES (
+                ${legacyId}, ${student.id}, ${semesterTwoId}, 1,
+                0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 'blue'::"RiskLevel", NOW()
+            )`;
+
+        await expect(
+            prisma.phqResult.findUniqueOrThrow({
+                where: { id: legacyId },
+                select: { className: true },
+            }),
+        ).resolves.toEqual({ className: null });
     });
 });
