@@ -158,15 +158,19 @@ export function AnalyticsFilters({
 
     function handleSchoolChange(school: string): void {
         const { year, semester } = latestFiltersRef.current;
+        const updates = { school, class: null, round: null };
         if ((!school || school === "all") && year !== "all" && semester === "all") {
             // A year-wide school view includes every global term of that year.
             const latestSemester = latestSemesterForYear(year);
-            if (latestSemester === undefined) return;
-            updateParams({ school, semester: latestSemester, class: null, round: null });
+            updateParams({
+                ...updates,
+                year: latestSemester === undefined ? null : year,
+                semester: latestSemester ?? null,
+            });
             return;
         }
 
-        updateParams({ school, class: null, round: null });
+        updateParams(updates);
     }
 
     function handleYearChange(year: string): void {

@@ -177,17 +177,19 @@ describe("system overview filters", () => {
         ]);
     });
 
-    it("does not navigate to an incomplete overview term from a nonexistent bookmarked year", () => {
+    it("opens the current-term overview when clearing the school from a year with no terms", () => {
         renderFilters({
             ...systemAdminProps,
             selectedSchoolId: "school-1",
             selectedAcademicYear: "2600",
             selectedSemester: "all",
+            selectedClass: "ม.1/1",
+            selectedRound: "1",
         });
 
         selectFilter("เลือกโรงเรียน:", "all");
 
-        expect(replace).not.toHaveBeenCalled();
+        expect(replace.mock.calls).toEqual([["/analytics", { scroll: false }]]);
     });
 
     it("resets every filter to the default route", () => {

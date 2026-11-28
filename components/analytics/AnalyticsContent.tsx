@@ -42,7 +42,7 @@ type AnalyticsFiltersProps = ComponentProps<typeof AnalyticsFilters>;
 
 function StickyAnalyticsFilters(props: AnalyticsFiltersProps): ReactElement {
     return (
-        <div className="sticky top-[92px] z-30 sm:top-[96px]">
+        <div className="lg:sticky lg:top-[calc(var(--navbar-height)+1rem)] lg:z-30">
             <AnalyticsFilters {...props} />
         </div>
     );

@@ -40,7 +40,7 @@ export function NavbarGreenBar({
                 style={{
                     background:
                         "linear-gradient(180deg, #00DB87 0%, #00C67A 100%)",
-                    height: "80px",
+                    height: "var(--navbar-height)",
                     borderRadius: "0px 0px 24px 30px",
                     borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
                     boxShadow:

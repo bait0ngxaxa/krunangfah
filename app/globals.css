@@ -4,6 +4,8 @@
 :root {
     --background: #ffffff;
     --foreground: #171717;
+    /* Shared by the navbar, protected page padding, and sticky Analytics filters. */
+    --navbar-height: 80px;
     --ui-text-heading: #1f2937; /* gray-800 */
     --ui-text-body: #4b5563; /* gray-600 */
     --skeleton-base: #e5e7eb;
