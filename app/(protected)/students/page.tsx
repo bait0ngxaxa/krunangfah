@@ -311,6 +311,9 @@ async function StudentsContent({
             totalStudents={dashboardData.totalStudents}
             filteredStudentCount={dashboardData.filteredStudentCount}
             pagination={dashboardData.pagination}
+            currentAcademicYearId={dashboardData.currentAcademicYearId}
+            availableTerms={dashboardData.availableTerms}
+            selectedTerm={dashboardData.selectedTerm}
             schools={isAdmin ? schools : undefined}
             userRole={userRole}
             referredOutStudents={

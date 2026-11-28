@@ -12,6 +12,10 @@ import {
     getStudentsForDashboardQuery,
 } from "./queries";
 import { isClassFilterAllowedForViewer } from "./student-scope";
+import {
+    getAvailableTermsQuery,
+    getCurrentAcademicYearIdQuery,
+} from "./term-queries";
 import { transformRiskCounts } from "./transforms";
 import type {
     StudentDashboardDataResponse,
@@ -46,6 +50,9 @@ function createEmptyDashboardData(): StudentDashboardDataResponse {
             hasNextPage: false,
             hasPreviousPage: false,
         },
+        currentAcademicYearId: null,
+        availableTerms: [],
+        selectedTerm: null,
     };
 }
 
@@ -136,7 +143,12 @@ export async function getStudentDashboardData(
         const selectedAcademicYear = academicYearId
             ? await prisma.academicYear.findUnique({
                   where: { id: academicYearId },
-                  select: { isCurrent: true },
+                  select: {
+                      id: true,
+                      year: true,
+                      semester: true,
+                      isCurrent: true,
+                  },
               })
             : null;
         const currentPopulationOnly = academicYearId
@@ -155,6 +167,8 @@ export async function getStudentDashboardData(
             filteredClassCounts,
             rawRiskCounts,
             referredCount,
+            currentAcademicYearId,
+            availableTerms,
         ] = await Promise.all([
             getClassCountsQuery(
                 scopeSchoolId,
@@ -183,6 +197,12 @@ export async function getStudentDashboardData(
                 viewer.role,
                 viewer.userId,
                 { classFilter, riskFilter, ...contextFilters },
+            ),
+            getCurrentAcademicYearIdQuery(),
+            getAvailableTermsQuery(
+                scopeSchoolId,
+                viewer.advisoryClass,
+                viewer.role,
             ),
         ]);
 
@@ -239,6 +259,15 @@ export async function getStudentDashboardData(
                     studentListResponse.pagination.totalPages,
                 hasPreviousPage: studentListResponse.pagination.page > 1,
             },
+            currentAcademicYearId,
+            availableTerms,
+            selectedTerm: selectedAcademicYear
+                ? {
+                      id: selectedAcademicYear.id,
+                      year: selectedAcademicYear.year,
+                      semester: selectedAcademicYear.semester,
+                  }
+                : null,
         };
         return data.totalStudents === 0 ? queryEmpty(data) : querySuccess(data);
     } catch (error) {

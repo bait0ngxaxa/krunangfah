@@ -8,6 +8,7 @@ import {
     getRiskLevelConfig,
     type RiskLevel,
 } from "@/lib/constants/risk-levels";
+import { ResultTermTags } from "./ResultTermTags";
 
 const MAX_PREVIEW_ROWS = 6;
 
@@ -20,6 +21,8 @@ interface Student {
     phqResults: {
         totalScore: number;
         riskLevel: string;
+        assessmentRound?: number;
+        academicYear?: { id: string; year: number; semester: number };
     }[];
     referral?: {
         id: string;
@@ -35,6 +38,8 @@ interface RiskGroupSectionProps {
     viewAllHref?: string;
     readOnly?: boolean;
     studentDetailQuery?: string;
+    currentAcademicYearId?: string | null;
+    flagNotScreenedThisTerm?: boolean;
 }
 
 function formatCount(count: number): string {
@@ -52,6 +57,8 @@ export function RiskGroupSection({
     viewAllHref,
     readOnly = false,
     studentDetailQuery = "",
+    currentAcademicYearId = null,
+    flagNotScreenedThisTerm = false,
 }: RiskGroupSectionProps): ReactElement | null {
     const config = getRiskLevelConfig(level);
     const [showAllStudents, setShowAllStudents] = useState(false);
@@ -126,17 +133,24 @@ export function RiskGroupSection({
                                     >
                                         {index + 1}
                                     </span>
-                                    <span
-                                        className={`min-w-0 break-words text-sm font-medium text-gray-700 transition-colors ${config.hoverText}`}
-                                    >
-                                        {`${student.firstName} ${student.lastName}`.trim() ||
-                                            "ไม่ระบุชื่อ"}
-                                    </span>
-                                    {student.referral ? (
-                                        <span className="shrink-0 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700">
-                                            ส่งต่อ
+                                    <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                                        <span
+                                            className={`min-w-0 break-words text-sm font-medium text-gray-700 transition-colors ${config.hoverText}`}
+                                        >
+                                            {`${student.firstName} ${student.lastName}`.trim() ||
+                                                "ไม่ระบุชื่อ"}
                                         </span>
-                                    ) : null}
+                                        {student.referral ? (
+                                            <span className="shrink-0 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700">
+                                                ส่งต่อ
+                                            </span>
+                                        ) : null}
+                                        <ResultTermTags
+                                            result={student.phqResults[0]}
+                                            currentAcademicYearId={currentAcademicYearId}
+                                            flagNotScreenedThisTerm={flagNotScreenedThisTerm}
+                                        />
+                                    </span>
                                 </Link>
 
                                 {!readOnly ? (

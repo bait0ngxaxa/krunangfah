@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     getStudentDashboardData: vi.fn(),
     getReferredOutStudents: vi.fn(),
     requireAuth: vi.fn(),
+    redirect: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/session", () => ({ requireAuth: mocks.requireAuth }));
@@ -21,9 +22,11 @@ vi.mock("@/lib/actions/student/dashboard", () => ({
 }));
 vi.mock("next/navigation", () => ({
     useRouter: () => ({ refresh: vi.fn() }),
+    redirect: mocks.redirect,
 }));
 
 import StudentsPage from "@/app/(protected)/students/page";
+import { buildImportedStudentsHref } from "@/components/student/import/completion";
 
 const emptyDashboardData = {
     students: [],
@@ -89,6 +92,60 @@ describe("Students page system admin access", () => {
         const html = renderToStaticMarkup(renderedContent);
 
         expect(html).toContain("ยังไม่มีข้อมูลนักเรียน");
+    });
+
+    it("renders the post-import link's term and round without redirecting", async () => {
+        const academicYearId = "cm123456789012345678901234";
+        const href = buildImportedStudentsHref({
+            academicYearId,
+            academicYearLabel: "2568/2",
+            assessmentRound: 2,
+            classNames: ["ม.1/1"],
+        });
+        const searchParams = Object.fromEntries(
+            new URL(href, "http://localhost").searchParams,
+        );
+        mocks.requireAuth.mockResolvedValue({ user: { role: "school_admin" } });
+        mocks.getStudentDashboardData.mockResolvedValue({
+            status: "success",
+            data: {
+                ...emptyDashboardData,
+                classes: ["ม.1/1"],
+                classOptions: [{ name: "ม.1/1", count: 1 }],
+                totalStudents: 1,
+                currentAcademicYearId: null,
+                availableTerms: [
+                    { id: academicYearId, year: 2568, semester: 2, rounds: [2] },
+                ],
+                selectedTerm: { id: academicYearId, year: 2568, semester: 2 },
+            },
+        });
+
+        const page = await StudentsPage({ searchParams: Promise.resolve(searchParams) });
+        const suspense = page.props.children[1].props.children;
+        const contentElement = suspense.props.children;
+        const renderedContent = await contentElement.type(contentElement.props);
+
+        expect(mocks.redirect).not.toHaveBeenCalled();
+        expect(mocks.getStudentDashboardData).toHaveBeenCalledWith(
+            expect.objectContaining({
+                classFilter: "ม.1/1",
+                academicYearId,
+                assessmentRound: 2,
+            }),
+        );
+        expect(renderedContent.props.filters).toEqual(
+            expect.objectContaining({
+                className: "ม.1/1",
+                academicYearId,
+                assessmentRound: 2,
+            }),
+        );
+        expect(renderedContent.props.selectedTerm).toEqual({
+            id: academicYearId,
+            year: 2568,
+            semester: 2,
+        });
     });
 
     it("renders request ID and never the empty-state copy on backend failure", async () => {

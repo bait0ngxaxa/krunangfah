@@ -24,6 +24,11 @@ import {
 } from "./student-scope";
 import { buildCurrentStudentPopulationSql } from "@/lib/utils/student-population";
 
+/** The term a listed result came from, so rows can say which term it is. */
+const RESULT_TERM_SELECT = {
+    select: { id: true, year: true, semester: true },
+} as const;
+
 interface ClassCountRow {
     class: string;
     _count: {
@@ -343,6 +348,7 @@ export async function getStudentsQuery(
         omit: { nationalId: true },
         include: {
             phqResults: {
+                include: { academicYear: RESULT_TERM_SELECT },
                 orderBy: LATEST_PHQ_ORDER_BY,
                 take: 1,
             },
@@ -450,6 +456,7 @@ export async function getStudentsForDashboardQuery(
         include: {
             phqResults: {
                 ...(phqContextWhere ? { where: phqContextWhere } : {}),
+                include: { academicYear: RESULT_TERM_SELECT },
                 orderBy: LATEST_PHQ_ORDER_BY,
                 take: 1,
             },

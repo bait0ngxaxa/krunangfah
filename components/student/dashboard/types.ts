@@ -1,5 +1,11 @@
 import type { RiskLevel } from "@/lib/constants/risk-levels";
 import type { ReferredOutStudent } from "@/types/referral.types";
+import type {
+    AvailableStudentTerm,
+    StudentResultTerm,
+} from "@/lib/actions/student/types";
+
+export type { AvailableStudentTerm, StudentResultTerm };
 
 export interface Student {
     id: string;
@@ -11,6 +17,8 @@ export interface Student {
     phqResults: {
         totalScore: number;
         riskLevel: string;
+        assessmentRound?: number;
+        academicYear?: StudentResultTerm;
     }[];
     referral?: {
         id: string;
@@ -61,6 +69,9 @@ export interface StudentDashboardProps {
     userRole?: string;
     referredOutStudents?: ReferredOutStudent[];
     filters?: StudentDashboardFilters;
+    currentAcademicYearId?: string | null;
+    availableTerms?: AvailableStudentTerm[];
+    selectedTerm?: StudentResultTerm | null;
 }
 
 export interface PieChartDataItem {

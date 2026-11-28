@@ -5,6 +5,7 @@ import {
     isRiskLevel,
 } from "@/lib/constants/risk-levels";
 
+import { buildScreeningScopeLabel } from "@/lib/utils/student-result-term";
 import { ReferredOutSection } from "../referral/ReferredOutSection";
 import { EmptyPrompt } from "./components/EmptyPrompt";
 import { ScreeningSummary } from "./components/ScreeningSummary";
@@ -125,6 +126,21 @@ export function StudentDashboard(props: StudentDashboardProps) {
     const groupedStudents = groupStudentsByRisk(props.students);
     const displayedStudentCount = props.students.length;
     const pieChartData = getPieChartData(props.riskCounts);
+    const selectedTermId = props.filters?.academicYearId ?? "";
+    const scopeLabel = buildScreeningScopeLabel({
+        isTermSelected: selectedTermId.length > 0,
+        selectedTerm: props.selectedTerm,
+        assessmentRound: props.filters?.assessmentRound,
+    });
+    const termFilterProps = {
+        availableTerms: props.availableTerms ?? [],
+        currentAcademicYearId: props.currentAcademicYearId ?? null,
+        selectedTermId,
+        selectedRound: props.filters?.assessmentRound
+            ? String(props.filters.assessmentRound)
+            : "",
+        selectedTerm: props.selectedTerm ?? null,
+    };
 
     return (
         <div className="space-y-6">
@@ -144,6 +160,7 @@ export function StudentDashboard(props: StudentDashboardProps) {
                         showReferredOnly={showReferredOnly}
                         showRiskFilters={showRiskFilters}
                         totalStudents={props.totalStudents}
+                        {...termFilterProps}
                     />
                     <EmptyPrompt
                         icon={School}
@@ -167,11 +184,13 @@ export function StudentDashboard(props: StudentDashboardProps) {
                         showReferredOnly={showReferredOnly}
                         showRiskFilters={showRiskFilters}
                         totalStudents={props.totalStudents}
+                        {...termFilterProps}
                     />
 
                     <StudentRiskPieChart
                         data={pieChartData}
                         totalStudents={props.totalStudents}
+                        scopeLabel={scopeLabel}
                     />
 
                     {selectedClass === "all" && props.classes.length > 1 ? (
@@ -198,6 +217,8 @@ export function StudentDashboard(props: StudentDashboardProps) {
                             pagination={props.pagination}
                             riskLevels={displayedRiskLevels}
                             readOnly={isSystemAdmin}
+                            currentAcademicYearId={props.currentAcademicYearId}
+                            scopeLabel={scopeLabel}
                         />
                     )}
 
