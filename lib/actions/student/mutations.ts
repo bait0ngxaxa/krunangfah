@@ -902,6 +902,9 @@ export async function importStudents(
                     academicYearId: resolvedAcademicYearId,
                     importedById: userId,
                     assessmentRound,
+                    // The file's class at assessment time, never students.class: an
+                    // older-context import keeps newer master data (planImportStudentUpdates).
+                    className: row.class,
                     q1: row.scores.q1,
                     q2: row.scores.q2,
                     q3: row.scores.q3,
