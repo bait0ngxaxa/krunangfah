@@ -62,7 +62,9 @@ describe("school class term service", () => {
         ).resolves.toBe("term-2");
 
         expect(prismaMock.schoolClass.findMany).toHaveBeenCalledWith(
-            expect.objectContaining({ where: { schoolId: "school-1" } }),
+            expect.objectContaining({
+                where: { schoolId: "school-1", archivedAt: null },
+            }),
         );
         expect(prismaMock.schoolClassTerm.createMany).toHaveBeenCalledWith({
             data: [
@@ -87,6 +89,7 @@ describe("school class term service", () => {
 
         expect(prismaMock.schoolClass.findFirst).toHaveBeenCalledWith({
             where: {
+                archivedAt: null,
                 school: { disabledAt: null, isTestData: false },
                 terms: { none: { academicYearId: "term-2" } },
             },

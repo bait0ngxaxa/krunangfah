@@ -83,6 +83,13 @@ describe("Integration: Onboarding Flow", () => {
             endDate: new Date("2025-04-30"),
         });
         nextAcademicYearId = nextAy.id;
+        // The onboarding school is set up in the current term. Without this,
+        // its classes' only rows sit in a non-current term, which counts as
+        // history and makes removal archive instead of delete.
+        await prisma.academicYear.update({
+            where: { id: academicYearId },
+            data: { isCurrent: true },
+        });
 
         // สร้าง user แบบ fresh onboarding (ไม่มี schoolId, ไม่มี teacher profile)
         await prisma.user.create({
@@ -165,6 +172,12 @@ describe("Integration: Onboarding Flow", () => {
                 .catch(() => {});
         }
 
+        await prisma.academicYear
+            .updateMany({
+                where: { id: { in: [academicYearId, nextAcademicYearId] } },
+                data: { isCurrent: false },
+            })
+            .catch(() => {});
         await cleanupAll();
     });
 

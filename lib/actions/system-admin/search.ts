@@ -161,6 +161,7 @@ async function searchStudents(query: string): Promise<StudentEntityResult[]> {
                     disabledAt: true,
                     isTestData: true,
                     classes: {
+                        where: { archivedAt: null },
                         select: { id: true, name: true },
                         orderBy: { name: "asc" },
                     },

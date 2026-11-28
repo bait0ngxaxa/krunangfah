@@ -194,7 +194,7 @@ export function ClassListEditor({
             <ConfirmDialog
                 isOpen={!!pendingDelete}
                 title="ลบห้องเรียน"
-                message={`ต้องการลบห้อง "${pendingDelete?.name}" ใช่หรือไม่?`}
+                message={`ต้องการลบห้อง "${pendingDelete?.name}" ใช่หรือไม่? หากห้องนี้มีข้อมูลเทอมก่อนหน้า ระบบจะเก็บห้องเข้าคลังแทนการลบ`}
                 confirmLabel="ยืนยันลบ"
                 isLoading={isDeleting}
                 onConfirm={handleConfirmRemove}

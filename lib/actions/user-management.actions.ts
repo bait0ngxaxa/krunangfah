@@ -211,7 +211,7 @@ export async function getClassesBySchool(
     await requireAdmin();
 
     return prisma.schoolClass.findMany({
-        where: { schoolId },
+        where: { schoolId, archivedAt: null },
         select: { id: true, name: true },
         orderBy: { name: "asc" },
     });

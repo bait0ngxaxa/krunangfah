@@ -146,6 +146,40 @@ export async function createSchoolClassWithTerms(input: {
 }
 
 /**
+ * Brings an archived class back under the same id, so its earlier-term rows
+ * stay continuous. Missing rows from the selected term through the current
+ * term are created; existing history rows are kept, never overwritten.
+ */
+export async function restoreArchivedSchoolClass(input: {
+    classId: string;
+    name: string;
+    expectedStudentCount: number;
+    termIds: string[];
+}): Promise<CreatedSchoolClass> {
+    return prisma.$transaction(async (tx) => {
+        const restored = await tx.schoolClass.update({
+            where: { id: input.classId },
+            data: {
+                archivedAt: null,
+                expectedStudentCount: input.expectedStudentCount,
+            },
+            select: { id: true, name: true, expectedStudentCount: true },
+        });
+
+        await tx.schoolClassTerm.createMany({
+            data: input.termIds.map((academicYearId) => ({
+                schoolClassId: restored.id,
+                academicYearId,
+                expectedStudentCount: input.expectedStudentCount,
+            })),
+            skipDuplicates: true,
+        });
+
+        return restored;
+    });
+}
+
+/**
  * Sets one term's count. The class-level count follows only the current
  * term, so editing a past term never rewrites today's number.
  */

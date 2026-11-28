@@ -4,6 +4,7 @@ import type { Actor } from "@/lib/actions/system-admin/mutations";
 import { updateSystemStudent } from "@/lib/actions/system-admin/mutations";
 import type { SystemStudentEditInput } from "@/lib/validations/system-admin.validation";
 import type { StudentStatusValue } from "@/lib/constants/student-status";
+import { StudentClassCountIntegrityError } from "@/lib/actions/student/student-class-count";
 
 const prismaMocks = vi.hoisted(() => ({
     transaction: vi.fn(),
@@ -459,6 +460,40 @@ describe("updateSystemStudent", () => {
         await expect(
             updateSystemStudent(createInput({ class: "ม.1/2" }), actor),
         ).rejects.toThrow("count failed");
+        expect(eventMocks.createSystemAdminEditEvent).not.toHaveBeenCalled();
+        expect(cacheMocks.revalidateStudentsCache).not.toHaveBeenCalled();
+    });
+
+    it("fails a move into a class archived after the existence check", async () => {
+        // The existence check (findUnique) still sees class B as active; it is
+        // archived before this transaction locks the row.
+        prismaMocks.schoolClassUpdate.mockImplementation(({ where }) =>
+            Promise.resolve({
+                id: where.id,
+                expectedStudentCount: where.id === "class-a" ? 30 : 24,
+                archivedAt:
+                    where.id === "class-b"
+                        ? new Date("2026-11-28T00:00:00.000Z")
+                        : null,
+            }),
+        );
+
+        await expect(
+            updateSystemStudent(createInput({ class: "ม.1/2" }), actor),
+        ).rejects.toBeInstanceOf(StudentClassCountIntegrityError);
+        expect(prismaMocks.schoolClassTermUpsert).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {
+                    schoolClassId_academicYearId: {
+                        schoolClassId: "class-b",
+                        academicYearId: "ay-1",
+                    },
+                },
+            }),
+        );
+        expect(prismaMocks.schoolClassUpdateMany).not.toHaveBeenCalledWith(
+            expect.objectContaining({ where: { id: "class-b" } }),
+        );
         expect(eventMocks.createSystemAdminEditEvent).not.toHaveBeenCalled();
         expect(cacheMocks.revalidateStudentsCache).not.toHaveBeenCalled();
     });
