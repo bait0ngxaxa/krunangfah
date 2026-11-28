@@ -14,7 +14,7 @@ function render(props: { showClassFilter: boolean; showLegacyClassNote?: boolean
     return renderToStaticMarkup(
         <AnalyticsFilters
             availableClasses={["ม.1/1", "ม.1/9"]}
-            availableAcademicTerms={[{ id: "term-1", year: 2568, semester: 2 }]}
+            selectableAcademicTerms={[{ id: "term-1", year: 2568, semester: 2 }]}
             availableRounds={[1]}
             selectedSchoolId=""
             selectedClass=""

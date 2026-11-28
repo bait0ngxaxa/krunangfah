@@ -47,6 +47,7 @@ function createAnalyticsData(): AnalyticsData {
         selectedAcademicTermExists: true,
         availableClasses: ["ม.1/1"],
         availableAcademicTerms: [{ id: "term-2569-1", year: 2569, semester: 1 }],
+        selectableAcademicTerms: [{ id: "term-2569-1", year: 2569, semester: 1 }],
         availableRounds: [1],
         currentClass: "ม.1/1",
         currentAcademicYear: 2569,
@@ -228,6 +229,27 @@ describe("analytics Redis cache", () => {
             .mockResolvedValueOnce(JSON.stringify(preCoveragePayload));
 
         expect(keyParts).toContain("coverage:per-class-v1");
+        await expect(readRedisCachedAnalyticsData(keyParts)).resolves.toMatchObject({
+            data: null,
+        });
+    });
+
+    it("rejects cached analytics data without selectable terms and versions the key", async () => {
+        const { selectableAcademicTerms, ...oldPayload } = createAnalyticsData();
+        expect(selectableAcademicTerms).toHaveLength(1);
+        const keyParts = createAnalyticsRedisKeyParts({
+            role: "school_admin",
+            schoolId: "school-1",
+            targetClass: "",
+            academicYearStr: "2569",
+            semesterStr: "1",
+            roundStr: "",
+        });
+        mocks.get
+            .mockResolvedValueOnce("0")
+            .mockResolvedValueOnce(JSON.stringify(oldPayload));
+
+        expect(keyParts).toContain("term-options:selectable-v1");
         await expect(readRedisCachedAnalyticsData(keyParts)).resolves.toMatchObject({
             data: null,
         });

@@ -67,7 +67,7 @@ export default async function ProtectedLayout({
                 <Suspense fallback={<NavbarFallback />}>
                     <NavbarWrapper />
                 </Suspense>
-                <main id="main-content" tabIndex={-1} className="pt-[80px]">
+                <main id="main-content" tabIndex={-1} className="pt-[var(--navbar-height)]">
                     {children}
                 </main>
             </div>

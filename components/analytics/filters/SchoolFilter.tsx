@@ -2,7 +2,7 @@
 
 import { School } from "lucide-react";
 import type { ReactElement } from "react";
-import { FilterSelect } from "@/components/ui/FilterSelect";
+import { FilterSelect, type FilterSelectVariant } from "@/components/ui/FilterSelect";
 
 interface SchoolOption {
     id: string;
@@ -15,6 +15,7 @@ interface SchoolFilterProps {
     onSchoolChange: (schoolId: string) => void;
     requireExplicitSelection?: boolean;
     disabled?: boolean;
+    variant?: FilterSelectVariant;
 }
 
 export function SchoolFilter({
@@ -23,6 +24,7 @@ export function SchoolFilter({
     onSchoolChange,
     requireExplicitSelection = false,
     disabled = false,
+    variant,
 }: SchoolFilterProps): ReactElement {
     return (
         <FilterSelect
@@ -32,6 +34,7 @@ export function SchoolFilter({
             value={selectedSchoolId}
             onChange={onSchoolChange}
             disabled={disabled}
+            variant={variant}
         >
             {requireExplicitSelection ? (
                 <option value="">กรุณาเลือกโรงเรียน</option>

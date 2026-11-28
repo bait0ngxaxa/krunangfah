@@ -39,6 +39,7 @@ const analyticsData: AnalyticsData = {
     riskLevelSummary: [],
     availableClasses: ["ม.1/1"],
     availableAcademicTerms: [{ id: "term-2569-1", year: 2569, semester: 1 }],
+    selectableAcademicTerms: [{ id: "term-2569-1", year: 2569, semester: 1 }],
     availableRounds: [1],
     trendData: [],
     activityAnalyticsApplicable: true,
@@ -166,7 +167,11 @@ describe("Analytics page filter validation", () => {
             status: "success",
             data: {
                 ...analyticsData,
-                availableAcademicTerms: [],
+                selectableAcademicTerms: [
+                    ...analyticsData.availableAcademicTerms,
+                    { id: "term-2569-2", year: 2569, semester: 2 },
+                ],
+                currentSemester: 2,
                 selectedAcademicTermExists: true,
             },
         });
@@ -175,7 +180,7 @@ describe("Analytics page filter validation", () => {
         const analyticsContent = page.props.children[1].props.children;
 
         expect(analyticsContent.props.filterWarnings).toEqual([
-            "ยังไม่มีผลคัดกรองในปีการศึกษา 2569 เทอม 1",
+            "ยังไม่มีผลคัดกรองในปีการศึกษา 2569 เทอม 2",
         ]);
     });
 

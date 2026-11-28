@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     academicYearFindMany: vi.fn(),
+    academicYearFindFirst: vi.fn(),
     schoolClassFindMany: vi.fn(),
     schoolClassTermFindMany: vi.fn(),
     phqResultFindMany: vi.fn(),
@@ -15,7 +16,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/database/prisma", () => ({
     prisma: {
-        academicYear: { findMany: mocks.academicYearFindMany },
+        academicYear: {
+            findMany: mocks.academicYearFindMany,
+            findFirst: mocks.academicYearFindFirst,
+        },
         schoolClass: { findMany: mocks.schoolClassFindMany },
         schoolClassTerm: { findMany: mocks.schoolClassTermFindMany },
         phqResult: { findMany: mocks.phqResultFindMany },
@@ -70,6 +74,7 @@ function configureMocks(): void {
     mocks.academicYearFindMany.mockResolvedValue([
         { id: "term-1", year: 2569, semester: 1, isCurrent: false },
     ]);
+    mocks.academicYearFindFirst.mockResolvedValue(null);
     mocks.schoolClassFindMany.mockResolvedValue([]);
     mocks.schoolClassTermFindMany.mockResolvedValue([
         termRow("ม.1/1", 10),
@@ -141,6 +146,28 @@ describe("fetchAnalyticsData activity scope", () => {
         expect(data.studentsWithoutAssessment).toBeNull();
         expect(data.coverageCountMismatches).toEqual([]);
         expect(data.coverageUncountedStudents).toBe(0);
+    });
+
+    it("adds the current and selected terms without changing the terms with screening results", async () => {
+        const pastTerm = { id: "term-2568-2", year: 2568, semester: 2 };
+        const screenedTerm = { id: "term-2568-1", year: 2568, semester: 1 };
+        const currentTerm = { id: "term-2569-2", year: 2569, semester: 2 };
+        mocks.academicYearFindMany
+            .mockResolvedValueOnce([
+                { ...pastTerm, isCurrent: false },
+                { ...screenedTerm, isCurrent: false },
+            ])
+            .mockResolvedValueOnce([screenedTerm]);
+        mocks.academicYearFindFirst.mockResolvedValueOnce(currentTerm);
+
+        const data = await fetchAnalyticsData("school-1", "", "school_admin", "2568", "", "");
+
+        expect(data.availableAcademicTerms).toEqual([screenedTerm]);
+        expect(data.selectableAcademicTerms).toEqual([currentTerm, pastTerm, screenedTerm]);
+        expect(mocks.academicYearFindFirst).toHaveBeenCalledWith({
+            where: { isCurrent: true },
+            select: { id: true, year: true, semester: true },
+        });
     });
 
     it("never runs the academic-year lifecycle (it executes inside unstable_cache)", async () => {

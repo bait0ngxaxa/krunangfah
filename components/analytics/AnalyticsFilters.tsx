@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useOptimistic, useRef, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useTransition, type ReactElement } from "react";
 import { RotateCcw } from "lucide-react";
 
 import type { AcademicTermOption } from "@/lib/actions/analytics/types";
@@ -29,7 +29,7 @@ interface SchoolOption {
 interface AnalyticsFiltersProps {
     schools?: SchoolOption[];
     availableClasses: string[];
-    availableAcademicTerms: AcademicTermOption[];
+    selectableAcademicTerms: AcademicTermOption[];
     availableRounds: number[];
     selectedSchoolId: string;
     selectedClass: string;
@@ -70,7 +70,7 @@ export function getSemestersForYear(
 export function AnalyticsFilters({
     schools,
     availableClasses,
-    availableAcademicTerms,
+    selectableAcademicTerms,
     availableRounds,
     selectedSchoolId,
     selectedClass,
@@ -83,7 +83,7 @@ export function AnalyticsFilters({
     canExportNamedSubmission = false,
     canManageNamedSubmissionExport = false,
     showLegacyClassNote = false,
-}: AnalyticsFiltersProps) {
+}: AnalyticsFiltersProps): ReactElement {
     const router = useRouter();
     const pathname = usePathname();
     const [isPending, startTransition] = useTransition();
@@ -119,6 +119,8 @@ export function AnalyticsFilters({
     const hasSelectedSchool = requireSchoolSelection
         ? optimisticFilters.school.length > 0
         : optimisticFilters.school !== "all";
+    const isOverview = requireSchoolSelection && !hasSelectedSchool;
+    const minimumTermOptions = isOverview ? 1 : 2;
     const hasActiveFilters =
         hasSelectedSchool ||
         optimisticFilters.class !== "all" ||
@@ -126,15 +128,11 @@ export function AnalyticsFilters({
         optimisticFilters.semester !== "all" ||
         optimisticFilters.round !== "all";
     const safeAvailableClasses = uniqueStrings(availableClasses);
-    const safeAvailableTerms = availableAcademicTerms.filter(
-        (term, index, terms) =>
-            terms.findIndex((candidate) => candidate.id === term.id) === index,
-    );
     const safeAvailableYears = uniqueNumbers(
-        safeAvailableTerms.map((term) => term.year),
+        selectableAcademicTerms.map((term) => term.year),
     ).sort((left, right) => right - left);
     const safeAvailableSemesters = getSemestersForYear(
-        safeAvailableTerms,
+        selectableAcademicTerms,
         optimisticFilters.year,
     );
     const safeAvailableRounds = uniqueNumbers(availableRounds);
@@ -154,93 +152,114 @@ export function AnalyticsFilters({
         });
     };
 
+    function latestSemesterForYear(year: string): string | undefined {
+        return getSemestersForYear(selectableAcademicTerms, year).at(-1)?.toString();
+    }
+
+    function handleSchoolChange(school: string): void {
+        const { year, semester } = latestFiltersRef.current;
+        const updates = { school, class: null, round: null };
+        if ((!school || school === "all") && year !== "all" && semester === "all") {
+            // A year-wide school view includes every global term of that year.
+            const latestSemester = latestSemesterForYear(year);
+            updateParams({
+                ...updates,
+                year: latestSemester === undefined ? null : year,
+                semester: latestSemester ?? null,
+            });
+            return;
+        }
+
+        updateParams(updates);
+    }
+
+    function handleYearChange(year: string): void {
+        const semester = isOverview ? latestSemesterForYear(year) : null;
+        if (semester === undefined) return;
+        updateParams({ year, semester, round: null });
+    }
+
     return (
         <div
-            className={
-                isPending
-                    ? "space-y-4 opacity-70 transition-opacity"
-                    : "space-y-4"
-            }
+            className={`rounded-3xl bg-white p-3 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)] transition-opacity sm:p-4${isPending ? " opacity-70" : ""}`}
             aria-busy={isPending}
             aria-live="polite"
         >
-            {isSystemAdmin && schools ? (
-                <SchoolFilter
-                    schools={schools}
-                    selectedSchoolId={optimisticFilters.school}
-                    requireExplicitSelection={requireSchoolSelection}
-                    onSchoolChange={(schoolId) =>
-                        updateParams({
-                            school: schoolId,
-                            class: null,
-                            year: null,
-                            semester: null,
-                            round: null,
-                        })
-                    }
-                />
-            ) : null}
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {isSystemAdmin && schools ? (
+                    <div className="col-span-2">
+                        <SchoolFilter
+                            schools={schools}
+                            selectedSchoolId={optimisticFilters.school}
+                            requireExplicitSelection={requireSchoolSelection}
+                            onSchoolChange={handleSchoolChange}
+                            disabled={isPending}
+                            variant="field"
+                        />
+                    </div>
+                ) : null}
 
-            {showClassFilter &&
-            safeAvailableClasses.length > 0 &&
-            (!requireSchoolSelection || hasSelectedSchool) ? (
-                <ClassFilter
-                    availableClasses={safeAvailableClasses}
-                    currentClass={
-                        optimisticFilters.class === "all"
-                            ? undefined
-                            : optimisticFilters.class
-                    }
-                    onClassChange={(classValue) =>
-                        updateParams({ class: classValue, semester: null, round: null })
-                    }
-                />
-            ) : null}
+                {showClassFilter && safeAvailableClasses.length > 0 && !isOverview ? (
+                    <div className="col-span-2 lg:col-span-1">
+                        <ClassFilter
+                            availableClasses={safeAvailableClasses}
+                            currentClass={
+                                optimisticFilters.class === "all"
+                                    ? undefined
+                                    : optimisticFilters.class
+                            }
+                            onClassChange={(classValue) =>
+                                updateParams({ class: classValue, semester: null, round: null })
+                            }
+                            disabled={isPending}
+                        />
+                    </div>
+                ) : null}
 
-            {showClassFilter && showLegacyClassNote ? (
-                <p className="text-xs text-slate-500">{LEGACY_CLASS_NOTE}</p>
-            ) : null}
+                {safeAvailableYears.length >= minimumTermOptions ? (
+                    <AcademicYearFilter
+                        availableYears={safeAvailableYears}
+                        selectedYear={optimisticFilters.year}
+                        onYearChange={handleYearChange}
+                        disabled={isPending}
+                    />
+                ) : null}
 
-            {safeAvailableYears.length > 1 &&
-            (!requireSchoolSelection || hasSelectedSchool) ? (
-                <AcademicYearFilter
-                    availableYears={safeAvailableYears}
-                    selectedYear={optimisticFilters.year}
-                    onYearChange={(yearValue) =>
-                        updateParams({ year: yearValue, semester: null, round: null })
-                    }
-                />
-            ) : null}
+                {safeAvailableSemesters.length >= minimumTermOptions ? (
+                    <SemesterFilter
+                        availableSemesters={safeAvailableSemesters}
+                        selectedSemester={optimisticFilters.semester}
+                        allowAllSemesters={!isOverview}
+                        onSemesterChange={(semesterValue) =>
+                            updateParams({ semester: semesterValue, round: null })
+                        }
+                        disabled={isPending}
+                    />
+                ) : null}
 
-            {safeAvailableSemesters.length > 1 &&
-            (!requireSchoolSelection || hasSelectedSchool) ? (
-                <SemesterFilter
-                    availableSemesters={safeAvailableSemesters}
-                    selectedSemester={optimisticFilters.semester}
-                    onSemesterChange={(semesterValue) =>
-                        updateParams({ semester: semesterValue, round: null })
-                    }
-                />
-            ) : null}
+                {safeAvailableRounds.length > 1 && !isOverview ? (
+                    <AssessmentRoundFilter
+                        availableRounds={safeAvailableRounds}
+                        selectedRound={optimisticFilters.round}
+                        disabled={isPending}
+                        variant="field"
+                        onRoundChange={(roundValue) =>
+                            updateParams({ round: roundValue })
+                        }
+                    />
+                ) : null}
+            </div>
 
-            {safeAvailableRounds.length > 1 &&
-            (!requireSchoolSelection || hasSelectedSchool) ? (
-                <AssessmentRoundFilter
-                    availableRounds={safeAvailableRounds}
-                    selectedRound={optimisticFilters.round}
-                    disabled={isPending}
-                    onRoundChange={(roundValue) =>
-                        updateParams({ round: roundValue })
-                    }
-                />
+            {showClassFilter && showLegacyClassNote && !isOverview ? (
+                <p className="mt-3 text-xs text-slate-500">{LEGACY_CLASS_NOTE}</p>
             ) : null}
 
             {canManageNamedSubmissionExport || hasActiveFilters ? (
-                <div className="flex flex-wrap justify-end gap-2">
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
                     {canManageNamedSubmissionExport ? (
                         <NamedSubmissionExportButton
                             href={buildNamedSubmissionExportUrl(optimisticFilters)}
-                            disabled={!canExportNamedSubmission}
+                            disabled={isPending || !canExportNamedSubmission}
                         />
                     ) : null}
                     {hasActiveFilters ? (
@@ -248,6 +267,7 @@ export function AnalyticsFilters({
                             type="button"
                             variant="secondary"
                             size="sm"
+                            disabled={isPending}
                             onClick={() =>
                                 updateParams({
                                     school: null,

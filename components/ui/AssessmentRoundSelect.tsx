@@ -1,12 +1,13 @@
 import { ListChecks } from "lucide-react";
 import type { ReactElement } from "react";
-import { FilterSelect } from "./FilterSelect";
+import { FilterSelect, type FilterSelectVariant } from "./FilterSelect";
 
 interface AssessmentRoundSelectProps {
     availableRounds: number[];
     selectedRound: string;
     onRoundChange: (roundValue: string) => void;
     disabled?: boolean;
+    variant?: FilterSelectVariant;
     id?: string;
 }
 
@@ -21,6 +22,7 @@ export function AssessmentRoundSelect({
     selectedRound,
     onRoundChange,
     disabled = false,
+    variant = "card",
     id = "round-filter",
 }: AssessmentRoundSelectProps): ReactElement | null {
     if (availableRounds.length <= 1) return null;
@@ -33,6 +35,7 @@ export function AssessmentRoundSelect({
             value={selectedRound}
             onChange={onRoundChange}
             disabled={disabled}
+            variant={variant}
         >
             <option value="all">ทุกครั้ง</option>
             {availableRounds.map((round) => (

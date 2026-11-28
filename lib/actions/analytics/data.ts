@@ -29,7 +29,7 @@ import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-cla
 import { canGenerateActivitiesForAssessmentRound } from "@/lib/actions/activity/constants";
 import { ACTIVITY_ANALYTICS_ROUND } from "./constants";
 
-import type { AnalyticsData } from "./types";
+import type { AcademicTermOption, AnalyticsData } from "./types";
 import type { CombinedAnalyticsResult } from "./queries";
 
 export { getExpectedStudentCount } from "./expected-counts";
@@ -76,6 +76,17 @@ function buildCoverageFields(
     };
 }
 
+function mergeAcademicTermOptions(
+    terms: readonly AcademicTermOption[],
+): AcademicTermOption[] {
+    const uniqueTerms = new Map(terms.map(({ id, year, semester }) => [
+        id, { id, year, semester },
+    ]));
+    return [...uniqueTerms.values()].sort(
+        (left, right) => right.year - left.year || right.semester - left.semester,
+    );
+}
+
 export async function fetchAnalyticsData(
     schoolId: string | undefined,
     targetClass: string,
@@ -117,7 +128,7 @@ export async function fetchAnalyticsData(
                   year: academicYear,
                   ...(semester !== undefined ? { semester } : {}),
               },
-              select: { id: true, isCurrent: true },
+              select: { id: true, year: true, semester: true, isCurrent: true },
           })
         : undefined;
     const academicYearIds = selectedAcademicYears?.map((term) => term.id);
@@ -167,6 +178,7 @@ export async function fetchAnalyticsData(
         activityData,
         availableRounds,
         legacyClassAttribution,
+        currentAcademicTerm,
     ] = await Promise.all([
         getExpectedClassCounts(schoolId, selectedClass, academicYearIds),
         showClassFilter
@@ -195,6 +207,11 @@ export async function fetchAnalyticsData(
             singleTerm,
             assessmentRound,
         }),
+        selectedCurrentTerm ??
+            prisma.academicYear.findFirst({
+                where: { isCurrent: true },
+                select: { id: true, year: true, semester: true },
+            }),
     ]);
 
     const availableAcademicTerms = availableAcademicTermsRaw.map((term) => ({
@@ -258,6 +275,11 @@ export async function fetchAnalyticsData(
         selectedAcademicTermExists,
         availableClasses,
         availableAcademicTerms,
+        selectableAcademicTerms: mergeAcademicTermOptions([
+            ...availableAcademicTerms,
+            ...(selectedAcademicYears ?? []),
+            ...(currentAcademicTerm ? [currentAcademicTerm] : []),
+        ]),
         availableRounds,
         currentClass: selectedClass,
         currentAcademicYear: academicYear,

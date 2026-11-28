@@ -43,6 +43,7 @@ const analyticsData: AnalyticsData = {
     riskLevelSummary: [],
     availableClasses: [],
     availableAcademicTerms: [],
+    selectableAcademicTerms: [],
     availableRounds: [],
     trendData: [],
     activityAnalyticsApplicable: true,
