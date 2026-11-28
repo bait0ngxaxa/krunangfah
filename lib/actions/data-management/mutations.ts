@@ -18,6 +18,7 @@ import {
     success,
 } from "./mutation-helpers";
 import { getSchoolImpact, getStudentImpact } from "./preview";
+import { provisionCurrentTermForReactivatedSchool } from "@/lib/services/academic-year-lifecycle";
 import type { DataManagementResponse } from "./types";
 import type { MutationInput } from "./mutation-helpers";
 import {
@@ -128,6 +129,7 @@ export async function restoreSchool(
     });
 
     if (result.success) {
+        await provisionCurrentTermForReactivatedSchool(input.id);
         await revalidateAfterSchool(input.id);
     }
     return result;
@@ -339,6 +341,8 @@ async function updateSchoolTestState(
     });
 
     if (result.success) {
+        // Unmarking re-adds the school to the provisioning set; marking removes it.
+        if (!isTestData) await provisionCurrentTermForReactivatedSchool(input.id);
         await revalidateAfterSchool(input.id);
     }
     return result;
