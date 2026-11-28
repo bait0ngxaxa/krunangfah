@@ -24,7 +24,7 @@ const USERS = createMockUsers("class-scope");
 const { getStudentDashboardData } = await import(
     "@/lib/actions/student/dashboard"
 );
-const { getStudentsForDashboardQuery } = await import(
+const { getStudentsForDashboardQuery, getStudentIdsByLatestRiskQuery } = await import(
     "@/lib/actions/student/queries"
 );
 
@@ -161,6 +161,16 @@ describe("Integration: class teacher scope on /students", () => {
     it("query helpers keep the advisory class even when the boundary is bypassed", async () => {
         for (const [, buildOptions] of otherClassFilterCases) {
             const options = buildOptions();
+            const context = options.academicYearId
+                ? { academicYearId: options.academicYearId, assessmentRound: options.assessmentRound, currentPopulationOnly: false }
+                : {};
+            const latestRiskStudentIds = options.riskFilter
+                ? await getStudentIdsByLatestRiskQuery(
+                      { schoolId, advisoryClass: OWN_CLASS, userRole: "class_teacher" },
+                      options.riskFilter,
+                      context,
+                  )
+                : undefined;
             const response = await getStudentsForDashboardQuery(
                 schoolId,
                 OWN_CLASS,
@@ -168,7 +178,8 @@ describe("Integration: class teacher scope on /students", () => {
                 USERS.classTeacher.id,
                 {
                     ...options,
-                    ...(options.academicYearId ? { currentPopulationOnly: false } : {}),
+                    ...context,
+                    latestRiskStudentIds,
                 },
             );
 
@@ -240,4 +251,43 @@ describe("Integration: class teacher scope on /students", () => {
             ]);
         },
     );
+
+    it("matches filtering the unfiltered latest-result list by risk across class, referral and term scopes", async () => {
+        mockSession(USERS.schoolAdmin);
+        const olderTerm = await createTestAcademicYear({ year: 2500, semester: 1 });
+        await createTestPhqResult(own[0].id, olderTerm.id, USERS.schoolAdmin.id, {
+            riskLevel: "blue",
+            assessmentRound: 2,
+        });
+
+        const cases: StudentDashboardQueryOptions[] = [
+            { classFilter: OWN_CLASS },
+            { classFilter: OTHER_CLASS, referredOnly: true },
+            { classFilter: OWN_CLASS, academicYearId: termId, assessmentRound: 1 },
+            { classFilter: OWN_CLASS, academicYearId: olderTerm.id, assessmentRound: 2, referredOnly: true },
+        ];
+        for (const options of cases) {
+            for (const riskFilter of ["red", "blue"] as const) {
+                const withoutRisk = await getStudentDashboardData(options);
+                const filtered = await getStudentDashboardData({ ...options, riskFilter });
+                if (!("data" in withoutRisk) || !("data" in filtered)) {
+                    throw new Error("Expected dashboard data");
+                }
+
+                const matching = withoutRisk.data.students.filter(
+                    (student) => student.phqResults[0]?.riskLevel === riskFilter,
+                );
+                expect(filtered.data.students.map((student) => student.id)).toEqual(
+                    matching.map((student) => student.id),
+                );
+                expect(filtered.data.filteredStudentCount).toBe(matching.length);
+                expect(filtered.data.referredCount).toBe(
+                    matching.filter((student) => student.referral !== null).length,
+                );
+                expect(filtered.data.riskCounts).toEqual(withoutRisk.data.riskCounts);
+                expect(filtered.data.classOptions.find((entry) => entry.name === options.classFilter)?.count)
+                    .toBe(matching.length);
+            }
+        }
+    });
 });

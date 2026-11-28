@@ -9,6 +9,7 @@ import {
     getClassCountsQuery,
     getReferredStudentCountQuery,
     getRiskLevelCountsQuery,
+    getStudentIdsByLatestRiskQuery,
     getStudentsForDashboardQuery,
     getUnscreenedStudentCountQuery,
 } from "./queries";
@@ -178,6 +179,20 @@ export async function getStudentDashboardData(
                 : {}),
         };
 
+        // These student-level filters only decide which students qualify; they
+        // cannot change a student's latest result within the same PHQ context.
+        const riskIdsRequest = riskFilter
+            ? getStudentIdsByLatestRiskQuery(
+                  {
+                      schoolId: scopeSchoolId,
+                      advisoryClass: viewer.advisoryClass,
+                      userRole: viewer.role,
+                  },
+                  riskFilter,
+                  contextFilters,
+              )
+            : Promise.resolve(undefined);
+
         const [
             baseClassCounts,
             filteredClassCounts,
@@ -193,17 +208,19 @@ export async function getStudentDashboardData(
                 viewer.userId,
                 { referredOnly, ...unscreenedFilter, ...contextFilters },
             ),
-            getClassCountsQuery(
-                scopeSchoolId,
-                viewer.advisoryClass,
-                viewer.role,
-                viewer.userId,
-                {
-                    referredOnly,
-                    riskFilter,
-                    ...unscreenedFilter,
-                    ...contextFilters,
-                },
+            riskIdsRequest.then((latestRiskStudentIds) =>
+                getClassCountsQuery(
+                    scopeSchoolId,
+                    viewer.advisoryClass,
+                    viewer.role,
+                    viewer.userId,
+                    {
+                        referredOnly,
+                        latestRiskStudentIds,
+                        ...unscreenedFilter,
+                        ...contextFilters,
+                    },
+                ),
             ),
             getRiskLevelCountsQuery(
                 scopeSchoolId,
@@ -217,17 +234,19 @@ export async function getStudentDashboardData(
                     ...contextFilters,
                 },
             ),
-            getReferredStudentCountQuery(
-                scopeSchoolId,
-                viewer.advisoryClass,
-                viewer.role,
-                viewer.userId,
-                {
-                    classFilter,
-                    riskFilter,
-                    ...unscreenedFilter,
-                    ...contextFilters,
-                },
+            riskIdsRequest.then((latestRiskStudentIds) =>
+                getReferredStudentCountQuery(
+                    scopeSchoolId,
+                    viewer.advisoryClass,
+                    viewer.role,
+                    viewer.userId,
+                    {
+                        classFilter,
+                        latestRiskStudentIds,
+                        ...unscreenedFilter,
+                        ...contextFilters,
+                    },
+                ),
             ),
             isDefaultView && currentTerm
                 ? getUnscreenedStudentCountQuery(
@@ -259,7 +278,7 @@ export async function getStudentDashboardData(
                   viewer.userId,
                   {
                       classFilter,
-                      riskFilter,
+                      latestRiskStudentIds: await riskIdsRequest,
                       referredOnly,
                       page,
                       limit: DASHBOARD_PAGE_SIZE,

@@ -108,10 +108,9 @@ describe("class_teacher student scope policy", () => {
 
     it("keeps the advisory class when another class is passed to every query helper", async () => {
         mocks.studentCount.mockResolvedValue(1);
-        mocks.queryRaw.mockResolvedValue([{ student_id: "student-1" }]);
         const filters = {
             classFilter: "ม.1/2",
-            riskFilter: "red",
+            latestRiskStudentIds: ["student-1"],
             referredOnly: true,
             academicYearId: "term-1",
             assessmentRound: 1,
@@ -148,7 +147,10 @@ describe("class_teacher student scope policy", () => {
             expect(where.AND).toContainEqual({ class: "ม.1/2" });
         }
         expect(groupByWheres[0].class).toBe("ม.1/1");
-        // Both class conditions reach SQL, so the combination matches nothing.
+        await getRiskLevelCountsQuery(
+            "school-1", "ม.1/1", "class_teacher", "teacher-1", filters,
+        );
+        // Both class conditions still reach the chart SQL.
         const rawSql = collectSql(mocks.queryRaw.mock.calls[0]);
         expect(rawSql).toContain('s."class" =');
         expect(rawSql).toContain("s.class =");
