@@ -66,6 +66,7 @@ const overviewData: SystemAnalyticsOverview = {
     totalStudents: 0,
     studentsWithAssessment: 0,
     screeningCoveragePercent: 0,
+    schoolsWithCountMismatch: 0,
     academicYearLabel: "ยังไม่มีข้อมูลปีการศึกษา",
     availableAcademicTerms: [],
 };

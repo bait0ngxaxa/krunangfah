@@ -179,7 +179,9 @@ function isSystemAnalyticsOverview(value: unknown): value is SystemAnalyticsOver
         typeof value.totalSchools === "number" &&
         typeof value.totalStudents === "number" &&
         typeof value.studentsWithAssessment === "number" &&
-        typeof value.screeningCoveragePercent === "number" &&
+        (value.screeningCoveragePercent === null ||
+            typeof value.screeningCoveragePercent === "number") &&
+        typeof value.schoolsWithCountMismatch === "number" &&
         typeof value.academicYearLabel === "string" &&
         isAcademicTermArray(value.availableAcademicTerms) &&
         (value.currentAcademicYear === undefined ||
@@ -297,6 +299,8 @@ export function createSystemOverviewRedisKeyParts(input: {
 }): string[] {
     return [
         "analytics-system-overview",
+        // Coverage is capped per class; null without a planned count.
+        "coverage:per-class-v1",
         `year:${input.academicYear ?? "current"}`,
         `semester:${input.semester ?? "current"}`,
     ];

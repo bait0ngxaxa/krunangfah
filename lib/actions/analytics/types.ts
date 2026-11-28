@@ -107,7 +107,10 @@ export interface SystemAnalyticsOverview {
     totalSchools: number;
     totalStudents: number;
     studentsWithAssessment: number;
-    screeningCoveragePercent: number;
+    /** null when no school has a planned count for the term. */
+    screeningCoveragePercent: number | null;
+    /** Schools with at least one class screened above its planned count. */
+    schoolsWithCountMismatch: number;
     academicYearLabel: string;
     availableAcademicTerms: AcademicTermOption[];
     currentAcademicYear?: number;
