@@ -119,6 +119,8 @@ export function AnalyticsFilters({
     const hasSelectedSchool = requireSchoolSelection
         ? optimisticFilters.school.length > 0
         : optimisticFilters.school !== "all";
+    const isOverview = requireSchoolSelection && !hasSelectedSchool;
+    const minimumTermOptions = isOverview ? 1 : 2;
     const hasActiveFilters =
         hasSelectedSchool ||
         optimisticFilters.class !== "all" ||
@@ -150,6 +152,29 @@ export function AnalyticsFilters({
         });
     };
 
+    function latestSemesterForYear(year: string): string | undefined {
+        return getSemestersForYear(selectableAcademicTerms, year).at(-1)?.toString();
+    }
+
+    function handleSchoolChange(school: string): void {
+        const { year, semester } = latestFiltersRef.current;
+        if ((!school || school === "all") && year !== "all" && semester === "all") {
+            // A year-wide school view includes every global term of that year.
+            const latestSemester = latestSemesterForYear(year);
+            if (latestSemester === undefined) return;
+            updateParams({ school, semester: latestSemester, class: null, round: null });
+            return;
+        }
+
+        updateParams({ school, class: null, round: null });
+    }
+
+    function handleYearChange(year: string): void {
+        const semester = isOverview ? latestSemesterForYear(year) : null;
+        if (semester === undefined) return;
+        updateParams({ year, semester, round: null });
+    }
+
     return (
         <div
             className={
@@ -165,21 +190,13 @@ export function AnalyticsFilters({
                     schools={schools}
                     selectedSchoolId={optimisticFilters.school}
                     requireExplicitSelection={requireSchoolSelection}
-                    onSchoolChange={(schoolId) =>
-                        updateParams({
-                            school: schoolId,
-                            class: null,
-                            year: null,
-                            semester: null,
-                            round: null,
-                        })
-                    }
+                    onSchoolChange={handleSchoolChange}
                 />
             ) : null}
 
             {showClassFilter &&
             safeAvailableClasses.length > 0 &&
-            (!requireSchoolSelection || hasSelectedSchool) ? (
+            !isOverview ? (
                 <ClassFilter
                     availableClasses={safeAvailableClasses}
                     currentClass={
@@ -193,34 +210,30 @@ export function AnalyticsFilters({
                 />
             ) : null}
 
-            {showClassFilter && showLegacyClassNote ? (
+            {showClassFilter && showLegacyClassNote && !isOverview ? (
                 <p className="text-xs text-slate-500">{LEGACY_CLASS_NOTE}</p>
             ) : null}
 
-            {safeAvailableYears.length > 1 &&
-            (!requireSchoolSelection || hasSelectedSchool) ? (
+            {safeAvailableYears.length >= minimumTermOptions ? (
                 <AcademicYearFilter
                     availableYears={safeAvailableYears}
                     selectedYear={optimisticFilters.year}
-                    onYearChange={(yearValue) =>
-                        updateParams({ year: yearValue, semester: null, round: null })
-                    }
+                    onYearChange={handleYearChange}
                 />
             ) : null}
 
-            {safeAvailableSemesters.length > 1 &&
-            (!requireSchoolSelection || hasSelectedSchool) ? (
+            {safeAvailableSemesters.length >= minimumTermOptions ? (
                 <SemesterFilter
                     availableSemesters={safeAvailableSemesters}
                     selectedSemester={optimisticFilters.semester}
+                    allowAllSemesters={!isOverview}
                     onSemesterChange={(semesterValue) =>
                         updateParams({ semester: semesterValue, round: null })
                     }
                 />
             ) : null}
 
-            {safeAvailableRounds.length > 1 &&
-            (!requireSchoolSelection || hasSelectedSchool) ? (
+            {safeAvailableRounds.length > 1 && !isOverview ? (
                 <AssessmentRoundFilter
                     availableRounds={safeAvailableRounds}
                     selectedRound={optimisticFilters.round}

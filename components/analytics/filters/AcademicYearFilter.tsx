@@ -24,9 +24,8 @@ export function resolveSelectedYear(selectedYear: string, currentYear: number): 
     return /^\d{4}$/.test(selectedYear) ? selectedYear : String(currentYear);
 }
 
-export function AcademicYearFilter({ availableYears, selectedYear, onYearChange, disabled = false }: AcademicYearFilterProps): ReactElement | null {
+export function AcademicYearFilter({ availableYears, selectedYear, onYearChange, disabled = false }: AcademicYearFilterProps): ReactElement {
     const [showAllYears, setShowAllYears] = useState(false);
-    if (availableYears.length <= 1) return null;
     const currentYear = getCurrentAcademicYear().year;
     // Absent param (or an optimistic reset) means the current term's year.
     const value = resolveSelectedYear(selectedYear, currentYear);

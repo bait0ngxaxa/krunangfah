@@ -185,10 +185,8 @@ export default async function AnalyticsPage({
     const shouldRequireSchoolSelection = isSystemAdmin && !selectedSchoolId;
 
     if (shouldRequireSchoolSelection) {
-        // The overview shows one full term. A year without a semester only
-        // comes from a hand-edited or bookmarked URL (the UI hides the term
-        // filters here); dropping the year yields the current term instead
-        // of silently showing semester 2.
+        // The overview UI always supplies a semester with a year.
+        // A year-only bookmark or hand-edited URL still resolves to the current term.
         if (parsedYear !== undefined && parsedSemester === undefined) {
             redirect(buildCanonicalFilterUrl(params, new Set(["year"])));
         }

@@ -8,6 +8,7 @@ interface SemesterFilterProps {
     selectedSemester: string;
     onSemesterChange: (semesterValue: string) => void;
     disabled?: boolean;
+    allowAllSemesters?: boolean;
 }
 
 export function SemesterFilter({
@@ -15,11 +16,8 @@ export function SemesterFilter({
     selectedSemester,
     onSemesterChange,
     disabled = false,
-}: SemesterFilterProps): ReactElement | null {
-    if (availableSemesters.length <= 1) {
-        return null;
-    }
-
+    allowAllSemesters = true,
+}: SemesterFilterProps): ReactElement {
     return (
         <div className="relative flex items-center gap-4 overflow-hidden rounded-3xl border border-gray-200/80 bg-linear-to-br from-white via-slate-50/60 to-emerald-50/40 p-4 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)]">
             <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-emerald-200/35 glow-blob-k100" />
@@ -44,7 +42,7 @@ export function SemesterFilter({
                     onChange={(e) => onSemesterChange(e.target.value)}
                     className="w-full min-w-0 cursor-pointer truncate rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 font-medium text-slate-600 outline-none transition-base hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 disabled:cursor-wait disabled:opacity-70 sm:flex-1"
                 >
-                    <option value="all">ทุกเทอม</option>
+                    {allowAllSemesters ? <option value="all">ทุกเทอม</option> : null}
                     {availableSemesters.map((semester) => (
                         <option key={semester} value={String(semester)}>
                             เทอม {semester}
