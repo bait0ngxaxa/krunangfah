@@ -36,9 +36,20 @@ export function AcademicYearFilter({
     const uniqueYears = [
         ...new Set(academicYears.map((year) => year.year)),
     ].sort((a, b) => b - a);
+    const selectedYear =
+        optimisticYearId === "all"
+            ? undefined
+            : academicYears.find(
+                  ({ id, year }) =>
+                      optimisticYearId === id || optimisticYearId === `year:${year}`,
+              )?.year;
+    // Keep the selected year visible so the filter reflects the data being shown.
     const displayedYears = showAllYears
         ? uniqueYears
-        : uniqueYears.slice(0, MAX_RECENT_YEARS);
+        : uniqueYears.filter(
+              (year, index) => index < MAX_RECENT_YEARS || year === selectedYear,
+          );
+    const hiddenYearCount = uniqueYears.length - displayedYears.length;
     const displayedAcademicYears = academicYears.filter((year) =>
         displayedYears.includes(year.year),
     );
@@ -88,9 +99,9 @@ export function AcademicYearFilter({
                     </option>
                 ))}
             </optgroup>
-            {uniqueYears.length > MAX_RECENT_YEARS && !showAllYears ? (
+            {hiddenYearCount > 0 && !showAllYears ? (
                 <option value="__show_all__">
-                    ดูปีก่อนหน้านี้ ({uniqueYears.length - MAX_RECENT_YEARS} ปี)
+                    ดูปีก่อนหน้านี้ ({hiddenYearCount} ปี)
                 </option>
             ) : null}
         </FilterSelect>
