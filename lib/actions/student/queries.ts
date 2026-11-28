@@ -15,6 +15,7 @@ import {
     LATEST_PHQ_SQL_ORDER_BY,
 } from "@/lib/utils/phq-result-selection";
 import {
+    andStudentWhere,
     buildClassTeacherScopeSql,
     buildReferredStudentSql,
     buildReferredStudentWhere,
@@ -45,40 +46,15 @@ interface PhqContextFilterOptions {
     currentPopulationOnly?: boolean;
 }
 
-function appendStudentWhereCondition(
-    whereClause: Prisma.StudentWhereInput,
-    condition: Prisma.StudentWhereInput,
-): void {
-    if (whereClause.AND) {
-        const existingAnd = Array.isArray(whereClause.AND)
-            ? whereClause.AND
-            : [whereClause.AND];
-        whereClause.AND = [...existingAnd, condition];
-        return;
-    }
-
-    if (whereClause.OR) {
-        const existingOr = whereClause.OR;
-        delete whereClause.OR;
-        whereClause.AND = [
-            { OR: Array.isArray(existingOr) ? existingOr : [existingOr] },
-            condition,
-        ];
-        return;
-    }
-
-    Object.assign(whereClause, condition);
-}
-
 function applyPhqContextFilter(
     whereClause: Prisma.StudentWhereInput,
     options?: PhqContextFilterOptions,
-): void {
+): Prisma.StudentWhereInput {
     if (!options?.academicYearId && !options?.assessmentRound) {
-        return;
+        return whereClause;
     }
 
-    appendStudentWhereCondition(whereClause, {
+    return andStudentWhere(whereClause, {
         phqResults: {
             some: {
                 ...(options.academicYearId
@@ -136,22 +112,12 @@ function buildActiveStudentSchoolCondition(
 function applyClassFilter(
     whereClause: Prisma.StudentWhereInput,
     classFilter?: string,
-): void {
+): Prisma.StudentWhereInput {
     if (!classFilter || classFilter === "all") {
-        return;
+        return whereClause;
     }
 
-    if (whereClause.OR) {
-        const existingOR = whereClause.OR;
-        delete whereClause.OR;
-        whereClause.AND = [
-            { OR: existingOR as Prisma.StudentWhereInput[] },
-            { class: classFilter },
-        ];
-        return;
-    }
-
-    whereClause.class = classFilter;
+    return andStudentWhere(whereClause, { class: classFilter });
 }
 
 function applyReferredOnlyFilter(
@@ -159,32 +125,15 @@ function applyReferredOnlyFilter(
     userRole: string,
     userId: string | undefined,
     referredOnly?: boolean,
-): void {
+): Prisma.StudentWhereInput {
     if (!referredOnly) {
-        return;
+        return whereClause;
     }
 
-    const referredCondition = buildReferredStudentWhere(userRole, userId);
-
-    if (whereClause.AND) {
-        whereClause.AND = [
-            ...(whereClause.AND as Prisma.StudentWhereInput[]),
-            referredCondition,
-        ];
-        return;
-    }
-
-    if (whereClause.OR) {
-        const existingOR = whereClause.OR;
-        delete whereClause.OR;
-        whereClause.AND = [
-            { OR: existingOR as Prisma.StudentWhereInput[] },
-            referredCondition,
-        ];
-        return;
-    }
-
-    Object.assign(whereClause, referredCondition);
+    return andStudentWhere(
+        whereClause,
+        buildReferredStudentWhere(userRole, userId),
+    );
 }
 
 async function getStudentIdsByLatestRiskQuery(
@@ -255,9 +204,9 @@ async function applyRiskFilterToWhereClause(
     academicYearId?: string,
     assessmentRound?: number,
     currentPopulationOnly = true,
-): Promise<boolean> {
+): Promise<Prisma.StudentWhereInput | null> {
     if (!riskFilter || riskFilter === "all") {
-        return true;
+        return whereClause;
     }
 
     const studentIds = await getStudentIdsByLatestRiskQuery(
@@ -274,19 +223,10 @@ async function applyRiskFilterToWhereClause(
     );
 
     if (studentIds.length === 0) {
-        return false;
+        return null;
     }
 
-    if (whereClause.AND) {
-        whereClause.AND = [
-            ...(whereClause.AND as Prisma.StudentWhereInput[]),
-            { id: { in: studentIds } },
-        ];
-        return true;
-    }
-
-    whereClause.AND = [{ id: { in: studentIds } }];
-    return true;
+    return andStudentWhere(whereClause, { id: { in: studentIds } });
 }
 
 /**
@@ -389,13 +329,10 @@ export async function getStudentsQuery(
 ) {
     const { classFilter, page, limit } = options;
 
-    const whereClause = buildCurrentStudentVisibilityWhere(
-        schoolId,
-        advisoryClass,
-        userRole,
+    const whereClause = applyClassFilter(
+        buildCurrentStudentVisibilityWhere(schoolId, advisoryClass, userRole),
+        classFilter,
     );
-
-    applyClassFilter(whereClause, classFilter);
 
     // Count first to compute pagination metadata.
     const total = await prisma.student.count({ where: whereClause });
@@ -444,7 +381,7 @@ export async function getStudentsForDashboardQuery(
         currentPopulationOnly?: boolean;
     },
 ): Promise<StudentListResponse> {
-    const whereClause = options?.currentPopulationOnly === false
+    const visibilityWhere = options?.currentPopulationOnly === false
         ? buildStudentVisibilityWhere(schoolId, advisoryClass, userRole)
         : buildCurrentStudentVisibilityWhere(
               schoolId,
@@ -459,12 +396,18 @@ export async function getStudentsForDashboardQuery(
     const requestedPage = Math.max(1, options?.page ?? 1);
     const limit = Math.max(1, options?.limit ?? 50);
 
-    applyClassFilter(whereClause, classFilter);
-    applyReferredOnlyFilter(whereClause, userRole, userId, referredOnly);
-    applyPhqContextFilter(whereClause, { academicYearId, assessmentRound });
+    const filteredWhere = applyPhqContextFilter(
+        applyReferredOnlyFilter(
+            applyClassFilter(visibilityWhere, classFilter),
+            userRole,
+            userId,
+            referredOnly,
+        ),
+        { academicYearId, assessmentRound },
+    );
 
-    const hasMatchingRiskStudents = await applyRiskFilterToWhereClause(
-        whereClause,
+    const whereClause = await applyRiskFilterToWhereClause(
+        filteredWhere,
         schoolId,
         advisoryClass,
         userRole,
@@ -477,7 +420,7 @@ export async function getStudentsForDashboardQuery(
         options?.currentPopulationOnly !== false,
     );
 
-    if (!hasMatchingRiskStudents) {
+    if (!whereClause) {
         return {
             students: [],
             pagination: {
@@ -541,7 +484,7 @@ export async function getClassCountsQuery(
     userId: string | undefined,
     options?: DashboardSummaryFilterOptions,
 ): Promise<ClassCountRow[]> {
-    const whereClause = options?.currentPopulationOnly === false
+    const visibilityWhere = options?.currentPopulationOnly === false
         ? buildStudentVisibilityWhere(schoolId, advisoryClass, userRole)
         : buildCurrentStudentVisibilityWhere(
               schoolId,
@@ -549,16 +492,18 @@ export async function getClassCountsQuery(
               userRole,
           );
 
-    applyReferredOnlyFilter(
-        whereClause,
-        userRole,
-        userId,
-        options?.referredOnly,
+    const filteredWhere = applyPhqContextFilter(
+        applyReferredOnlyFilter(
+            visibilityWhere,
+            userRole,
+            userId,
+            options?.referredOnly,
+        ),
+        options,
     );
-    applyPhqContextFilter(whereClause, options);
 
-    const hasMatchingRiskStudents = await applyRiskFilterToWhereClause(
-        whereClause,
+    const whereClause = await applyRiskFilterToWhereClause(
+        filteredWhere,
         schoolId,
         advisoryClass,
         userRole,
@@ -571,7 +516,7 @@ export async function getClassCountsQuery(
         options?.currentPopulationOnly !== false,
     );
 
-    if (!hasMatchingRiskStudents) {
+    if (!whereClause) {
         return [];
     }
 
@@ -596,7 +541,7 @@ export async function getReferredStudentCountQuery(
     userId: string | undefined,
     options?: DashboardSummaryFilterOptions,
 ): Promise<number> {
-    const whereClause = options?.currentPopulationOnly === false
+    const visibilityWhere = options?.currentPopulationOnly === false
         ? buildStudentVisibilityWhere(schoolId, advisoryClass, userRole)
         : buildCurrentStudentVisibilityWhere(
               schoolId,
@@ -604,10 +549,12 @@ export async function getReferredStudentCountQuery(
               userRole,
           );
 
-    applyClassFilter(whereClause, options?.classFilter);
-    applyPhqContextFilter(whereClause, options);
-    const hasMatchingRiskStudents = await applyRiskFilterToWhereClause(
-        whereClause,
+    const filteredWhere = applyPhqContextFilter(
+        applyClassFilter(visibilityWhere, options?.classFilter),
+        options,
+    );
+    const whereClause = await applyRiskFilterToWhereClause(
+        filteredWhere,
         schoolId,
         advisoryClass,
         userRole,
@@ -620,14 +567,12 @@ export async function getReferredStudentCountQuery(
         options?.currentPopulationOnly !== false,
     );
 
-    if (!hasMatchingRiskStudents) {
+    if (!whereClause) {
         return 0;
     }
 
-    applyReferredOnlyFilter(whereClause, userRole, userId, true);
-
     return prisma.student.count({
-        where: whereClause,
+        where: applyReferredOnlyFilter(whereClause, userRole, userId, true),
     });
 }
 
@@ -665,7 +610,6 @@ export async function searchStudentsQuery(
     };
 
     if (baseWhere.OR) {
-        // class_teacher keeps referral-aware visibility and applies search inside that scope.
         const visibilityOR = baseWhere.OR;
         delete whereClause.OR;
         whereClause.AND = [

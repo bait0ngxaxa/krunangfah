@@ -1,6 +1,48 @@
 import { Prisma } from "@prisma/client";
 import { buildCurrentStudentPopulationWhere } from "@/lib/utils/student-population";
 
+interface ClassScopeViewer {
+    role: string;
+    advisoryClass?: string;
+}
+
+/**
+ * Adds a condition without touching existing keys. Assigning a top-level key
+ * (e.g. `class`) could overwrite a class teacher's `class: advisoryClass`
+ * scope, so every query filter must go through `AND`.
+ */
+export function andStudentWhere(
+    where: Prisma.StudentWhereInput,
+    condition: Prisma.StudentWhereInput,
+): Prisma.StudentWhereInput {
+    const existing = where.AND === undefined
+        ? []
+        : Array.isArray(where.AND) ? where.AND : [where.AND];
+    return { ...where, AND: [...existing, condition] };
+}
+
+/**
+ * A class teacher may filter only by their own advisory class. Checked at the
+ * action boundary so another class's URL never reaches a query.
+ */
+export function isClassFilterAllowedForViewer(
+    classFilter: string | undefined,
+    viewer: ClassScopeViewer,
+): boolean {
+    if (viewer.role !== "class_teacher") return true;
+    if (!classFilter || classFilter === "all") return true;
+    return classFilter === viewer.advisoryClass;
+}
+
+/** Keeps only the classes a viewer may see (class teacher: advisory class). */
+export function filterClassesForViewer(
+    classes: readonly string[],
+    viewer: ClassScopeViewer,
+): string[] {
+    if (viewer.role !== "class_teacher") return [...classes];
+    return classes.filter((name) => name === viewer.advisoryClass);
+}
+
 export function buildStudentVisibilityWhere(
     schoolId: string | undefined,
     advisoryClass: string | undefined,

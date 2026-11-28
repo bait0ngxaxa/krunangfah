@@ -369,6 +369,48 @@ describe("getStudentDashboardData", () => {
         );
     });
 
+    it("returns empty dashboard data when a class teacher requests another class", async () => {
+        vi.mocked(getViewerContext).mockResolvedValue({
+            ...baseViewer,
+            role: "class_teacher",
+        });
+
+        const result = await getStudentDashboardData({
+            classFilter: "ม.1/2",
+            riskFilter: "red",
+            referredOnly: true,
+        });
+
+        expect(result.status).toBe("empty");
+        const data = getQueryData(result);
+        expect(data.students).toEqual([]);
+        expect(data.classes).toEqual([]);
+        expect(data.totalStudents).toBe(0);
+        expect(data.referredCount).toBe(0);
+        expect(getClassCountsQuery).not.toHaveBeenCalled();
+        expect(getRiskLevelCountsQuery).not.toHaveBeenCalled();
+        expect(getReferredStudentCountQuery).not.toHaveBeenCalled();
+        expect(getStudentsForDashboardQuery).not.toHaveBeenCalled();
+        expect(prismaMocks.academicYearFindUnique).not.toHaveBeenCalled();
+    });
+
+    it("lets a class teacher filter by their own advisory class", async () => {
+        vi.mocked(getViewerContext).mockResolvedValue({
+            ...baseViewer,
+            role: "class_teacher",
+        });
+
+        await getStudentDashboardData({ classFilter: "ม.1/1" });
+
+        expect(getStudentsForDashboardQuery).toHaveBeenCalledWith(
+            "school-1",
+            "ม.1/1",
+            "class_teacher",
+            "user-1",
+            expect.objectContaining({ classFilter: "ม.1/1" }),
+        );
+    });
+
     it("returns transient_error instead of empty dashboard data when a query fails", async () => {
         vi.mocked(getRiskLevelCountsQuery).mockRejectedValue(
             new Error("database unavailable"),

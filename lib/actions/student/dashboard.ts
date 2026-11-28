@@ -11,6 +11,7 @@ import {
     getRiskLevelCountsQuery,
     getStudentsForDashboardQuery,
 } from "./queries";
+import { isClassFilterAllowedForViewer } from "./student-scope";
 import { transformRiskCounts } from "./transforms";
 import type {
     StudentDashboardDataResponse,
@@ -119,6 +120,10 @@ export async function getStudentDashboardData(
         }
 
         const classFilter = normalizeClassFilter(options?.classFilter);
+        // Another class in the URL must never reach a query for a class teacher.
+        if (!isClassFilterAllowedForViewer(classFilter, viewer)) {
+            return queryEmpty(createEmptyDashboardData());
+        }
         const riskFilter = normalizeRiskFilter(options?.riskFilter);
         const page = normalizePage(options?.page);
         const referredOnly = options?.referredOnly === true;
