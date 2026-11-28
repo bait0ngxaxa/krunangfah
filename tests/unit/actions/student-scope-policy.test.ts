@@ -106,12 +106,27 @@ describe("class_teacher student scope policy", () => {
         expect(mocks.studentCount).toHaveBeenCalledWith(referredWhere);
     });
 
+    it("uses the active referral pointer and the same sender scope in the pie chart", async () => {
+        for (const role of ["class_teacher", "school_admin"]) {
+            await getRiskLevelCountsQuery(
+                "school-1", "ม.1/1", role, "teacher-1", { referredOnly: true },
+            );
+        }
+        const [teacherSql, adminSql] = mocks.queryRaw.mock.calls.map(collectSql);
+        for (const sql of [teacherSql, adminSql]) {
+            expect(sql).toContain('sr.id = s."activeReferralId"');
+            expect(sql).not.toContain('sr."revokedAt"');
+            expect(sql).not.toContain('sr."closedAt"');
+        }
+        expect(teacherSql).toContain('sr."fromTeacherUserId"');
+        expect(adminSql).not.toContain('sr."fromTeacherUserId"');
+    });
+
     it("keeps the advisory class when another class is passed to every query helper", async () => {
         mocks.studentCount.mockResolvedValue(1);
-        mocks.queryRaw.mockResolvedValue([{ student_id: "student-1" }]);
         const filters = {
             classFilter: "ม.1/2",
-            riskFilter: "red",
+            latestRiskStudentIds: ["student-1"],
             referredOnly: true,
             academicYearId: "term-1",
             assessmentRound: 1,
@@ -148,7 +163,10 @@ describe("class_teacher student scope policy", () => {
             expect(where.AND).toContainEqual({ class: "ม.1/2" });
         }
         expect(groupByWheres[0].class).toBe("ม.1/1");
-        // Both class conditions reach SQL, so the combination matches nothing.
+        await getRiskLevelCountsQuery(
+            "school-1", "ม.1/1", "class_teacher", "teacher-1", filters,
+        );
+        // Both class conditions still reach the chart SQL.
         const rawSql = collectSql(mocks.queryRaw.mock.calls[0]);
         expect(rawSql).toContain('s."class" =');
         expect(rawSql).toContain("s.class =");

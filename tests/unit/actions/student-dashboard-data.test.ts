@@ -22,6 +22,8 @@ vi.mock("@/lib/actions/student/queries", () => ({
     getClassCountsQuery: vi.fn(),
     getReferredStudentCountQuery: vi.fn(),
     getRiskLevelCountsQuery: vi.fn(),
+    getStudentClassExistsQuery: vi.fn(),
+    getStudentIdsByLatestRiskQuery: vi.fn(),
     getStudentsForDashboardQuery: vi.fn(),
     getUnscreenedStudentCountQuery: vi.fn(),
 }));
@@ -40,6 +42,8 @@ import {
     getClassCountsQuery,
     getReferredStudentCountQuery,
     getRiskLevelCountsQuery,
+    getStudentClassExistsQuery,
+    getStudentIdsByLatestRiskQuery,
     getStudentsForDashboardQuery,
     getUnscreenedStudentCountQuery,
 } from "@/lib/actions/student/queries";
@@ -93,6 +97,8 @@ describe("getStudentDashboardData", () => {
             { risk_level: "yellow", count: BigInt(13) },
         ]);
         vi.mocked(getReferredStudentCountQuery).mockResolvedValue(4);
+        vi.mocked(getStudentClassExistsQuery).mockResolvedValue(true);
+        vi.mocked(getStudentIdsByLatestRiskQuery).mockResolvedValue(["001"]);
         vi.mocked(getStudentsForDashboardQuery).mockResolvedValue({
             students: [createStudent("001", "blue"), createStudent("002", "green")],
             pagination: {
@@ -117,8 +123,10 @@ describe("getStudentDashboardData", () => {
             schoolId: undefined,
         });
 
-        const result = await getStudentDashboardData();
+        const result = await getStudentDashboardData({ classFilter: "ม.1/1" });
         const data = getQueryData(result);
+        expect(data.classFilterExists).toBeNull();
+        expect(getStudentClassExistsQuery).not.toHaveBeenCalled();
 
         expect(data.students).toEqual([]);
         expect(data.totalStudents).toBe(0);
@@ -147,7 +155,7 @@ describe("getStudentDashboardData", () => {
             "ม.1/1",
             "school_admin",
             "user-1",
-            { referredOnly: false, riskFilter: undefined },
+            { referredOnly: false, latestRiskStudentIds: undefined },
         );
         expect(getStudentsForDashboardQuery).not.toHaveBeenCalled();
         expect(data.students).toEqual([]);
@@ -193,7 +201,7 @@ describe("getStudentDashboardData", () => {
             "user-1",
             {
                 referredOnly: true,
-                riskFilter: "green",
+                latestRiskStudentIds: ["001"],
             },
         );
         expect(getReferredStudentCountQuery).toHaveBeenCalledWith(
@@ -203,7 +211,7 @@ describe("getStudentDashboardData", () => {
             "user-1",
             {
                 classFilter: "ม.1/1",
-                riskFilter: "green",
+                latestRiskStudentIds: ["001"],
             },
         );
         expect(getStudentsForDashboardQuery).toHaveBeenCalledWith(
@@ -213,7 +221,7 @@ describe("getStudentDashboardData", () => {
             "user-1",
             {
                 classFilter: "ม.1/1",
-                riskFilter: "green",
+                latestRiskStudentIds: ["001"],
                 referredOnly: true,
                 page: 2,
                 limit: 50,
@@ -223,6 +231,12 @@ describe("getStudentDashboardData", () => {
         expect(data.pagination.page).toBe(1);
         expect(data.pagination.hasNextPage).toBe(false);
         expect(data.pagination.hasPreviousPage).toBe(false);
+        expect(getStudentIdsByLatestRiskQuery).toHaveBeenCalledTimes(1);
+        expect(getStudentIdsByLatestRiskQuery).toHaveBeenCalledWith(
+            { schoolId: "school-1", advisoryClass: "ม.1/1", userRole: "school_admin" },
+            "green",
+            {},
+        );
     });
 
     it("passes the selected academic term to every dashboard query", async () => {
@@ -274,7 +288,7 @@ describe("getStudentDashboardData", () => {
                 limit: 50,
                 page: 1,
                 referredOnly: false,
-                riskFilter: undefined,
+                latestRiskStudentIds: undefined,
             },
         );
         expect(prismaMocks.academicYearFindUnique).toHaveBeenCalledWith({
@@ -326,6 +340,7 @@ describe("getStudentDashboardData", () => {
     });
 
     it("keeps class filters available when selected risk has zero matching students", async () => {
+        vi.mocked(getStudentIdsByLatestRiskQuery).mockResolvedValue([]);
         vi.mocked(getClassCountsQuery)
             .mockResolvedValueOnce([
                 { class: "ม.1/1", _count: { class: 30 } },
@@ -367,7 +382,7 @@ describe("getStudentDashboardData", () => {
             "user-1",
             {
                 classFilter: "ม.1/1",
-                riskFilter: "red",
+                latestRiskStudentIds: [],
                 referredOnly: false,
                 page: 1,
                 limit: 50,
@@ -391,7 +406,7 @@ describe("getStudentDashboardData", () => {
             "user-1",
             {
                 classFilter: undefined,
-                riskFilter: undefined,
+                latestRiskStudentIds: undefined,
                 referredOnly: false,
                 page: 1,
                 limit: 50,
@@ -418,7 +433,7 @@ describe("getStudentDashboardData", () => {
             "user-1",
             {
                 classFilter: undefined,
-                riskFilter: undefined,
+                latestRiskStudentIds: undefined,
                 referredOnly: false,
                 page: 1,
                 limit: 50,
@@ -461,8 +476,10 @@ describe("getStudentDashboardData", () => {
             role: "class_teacher",
         });
 
-        await getStudentDashboardData({ classFilter: "ม.1/1" });
+        const data = getQueryData(await getStudentDashboardData({ classFilter: "ม.1/1" }));
 
+        expect(data.classFilterExists).toBe(true);
+        expect(getStudentClassExistsQuery).not.toHaveBeenCalled();
         expect(getStudentsForDashboardQuery).toHaveBeenCalledWith(
             "school-1",
             "ม.1/1",

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
     getHomeVisits: vi.fn(),
     requireAuth: vi.fn(),
     renderProfile: vi.fn(),
+    redirect: vi.fn(),
 }));
 
 vi.mock("@/lib/actions/student/main", () => ({
@@ -24,6 +25,7 @@ vi.mock("@/lib/auth/session", () => ({
 }));
 vi.mock("next/navigation", () => ({
     notFound: vi.fn(),
+    redirect: mocks.redirect,
 }));
 vi.mock("next/dynamic", () => ({
     default: () => () => null,
@@ -154,6 +156,9 @@ const student = {
 describe("Student detail care presentation", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.redirect.mockImplementation((url: string) => {
+            throw new Error(url);
+        });
         mocks.requireAuth.mockResolvedValue({
             user: {
                 id: "teacher-1",
@@ -216,6 +221,35 @@ describe("Student detail care presentation", () => {
         expect(JSON.stringify(props)).not.toContain(nationalId);
     });
 
+    it("redirects invalid year and round filters, keeping the tab and other context", async () => {
+        await expect(renderStudentDetail({
+            year: "unknown",
+            round: "2",
+            school: "school-1",
+            tab: "activities",
+            counselingPage: "2",
+        })).rejects.toThrow("/students/student-1?school=school-1&tab=activities&counselingPage=2");
+        expect(mocks.getCounselingSessions).not.toHaveBeenCalled();
+        expect(mocks.getHomeVisits).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        [academicYear.id, academicYear.id],
+        [`year:${academicYear.year}`, undefined],
+    ])("keeps rendering a valid academic selection %s", async (year, expectedTermId) => {
+        const html = await renderStudentDetail({ year, round: "1" });
+
+        expect(mocks.redirect).not.toHaveBeenCalled();
+        expect(html).toContain("round-1-activity-workflow");
+        expect(html).toContain("counseling-history");
+        const [, filter] = mocks.getCounselingSessions.mock.calls[0];
+        expect(filter.academicYearId).toBe(expectedTermId);
+        expect(filter.dateRange).toEqual({
+            startDate: expect.any(Date),
+            endDate: expect.any(Date),
+        });
+    });
+
     it("keeps the round 1 activity wording and historical activity view read-only", async () => {
         const html = await renderStudentDetail({ round: "1" });
 
@@ -227,7 +261,7 @@ describe("Student detail care presentation", () => {
     });
 });
 
-async function renderStudentDetail(searchParams: { round?: string } = {}) {
+async function renderStudentDetail(searchParams: Record<string, string> = {}) {
     const page = await StudentDetailPage({
         params: Promise.resolve({ id: "student-1" }),
         searchParams: Promise.resolve(searchParams),

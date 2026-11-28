@@ -30,6 +30,7 @@ import { buildImportedStudentsHref } from "@/components/student/import/completio
 import { StudentDashboard } from "@/components/student/dashboard/StudentDashboard";
 
 const emptyDashboardData = {
+    classFilterExists: null,
     students: [],
     classes: [],
     classOptions: [],
@@ -50,6 +51,9 @@ const emptyDashboardData = {
 describe("Students page system admin access", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.redirect.mockImplementation((url: string) => {
+            throw new Error(url);
+        });
         mocks.requireAuth.mockResolvedValue({
             user: { role: "system_admin" },
         });
@@ -111,6 +115,7 @@ describe("Students page system admin access", () => {
             status: "success",
             data: {
                 ...emptyDashboardData,
+                classFilterExists: true,
                 classes: ["ม.1/1"],
                 classOptions: [{ name: "ม.1/1", count: 1 }],
                 totalStudents: 1,
@@ -190,6 +195,73 @@ describe("Students page system admin access", () => {
         expect(invalid).not.toHaveProperty("unscreenedThisYear");
         expect(rendered.props.filters.unscreened).toBeUndefined();
         expect(rendered.props.filters.academicYearId).toBe(academicYearId);
+    });
+
+    it.each(["school_admin", "class_teacher"])(
+        "removes an out-of-scope class and page for %s",
+        async (role) => {
+            mocks.requireAuth.mockResolvedValue({ user: { role } });
+            mocks.getReferredOutStudents.mockResolvedValue({ status: "empty", data: [] });
+            mocks.getStudentDashboardData.mockResolvedValueOnce({
+                status: "empty",
+                data: { ...emptyDashboardData, classFilterExists: false },
+            });
+
+            await expect(renderStudentsPage({
+                class: "ม.1/2",
+                page: "3",
+                risk: "red",
+            })).rejects.toThrow("/students?risk=red");
+
+            mocks.getStudentDashboardData.mockResolvedValueOnce({
+                status: "success",
+                data: { ...emptyDashboardData, classes: ["ม.1/1"], totalStudents: 1 },
+            });
+            const rendered = await renderStudentsPage({ risk: "red" });
+            expect(rendered.props.classes).toEqual(["ม.1/1"]);
+            expect(rendered.props.filters.className).toBeUndefined();
+        },
+    );
+
+    it.each([
+        ["class_teacher", { referred: "true" }, []],
+        ["school_admin", { year: "cm123456789012345678901234", round: "2" }, ["ม.1/2"]],
+    ] as const)(
+        "keeps an existing room selected when its results are empty for %s",
+        async (role, extraParams, classes) => {
+            mocks.requireAuth.mockResolvedValue({ user: { role } });
+            mocks.getReferredOutStudents.mockResolvedValue({ status: "empty", data: [] });
+            mocks.getStudentDashboardData.mockResolvedValue({
+                status: "empty",
+                data: {
+                    ...emptyDashboardData,
+                    classFilterExists: true,
+                    classes,
+                    classOptions: classes.map((name) => ({ name, count: 1 })),
+                },
+            });
+
+            const rendered = await renderStudentsPage({ class: "ม1/1", ...extraParams });
+
+            expect(mocks.redirect).not.toHaveBeenCalled();
+            expect(mocks.getStudentDashboardData).toHaveBeenCalledWith(
+                expect.objectContaining({ classFilter: "ม.1/1" }),
+            );
+            expect(rendered.type).toBe(StudentDashboard);
+            expect(rendered.props.filters.className).toBe("ม.1/1");
+            expect(rendered.props.classOptions).toContainEqual({ name: "ม.1/1", count: 0 });
+            expect(rendered.props.students).toEqual([]);
+        },
+    );
+
+    it("removes a round without a term and resets pagination before loading data", async () => {
+        await expect(renderStudentsPage({
+            round: "2",
+            page: "4",
+            class: "ม.1/1",
+            referred: "true",
+        })).rejects.toThrow("/students?class=%E0%B8%A1.1%2F1&referred=true");
+        expect(mocks.getStudentDashboardData).not.toHaveBeenCalled();
     });
 
     it("renders request ID and never the empty-state copy on backend failure", async () => {

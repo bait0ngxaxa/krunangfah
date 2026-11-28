@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import dynamic from "next/dynamic";
 import { BarChart3, Target, Home, MessageCircle } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
@@ -47,6 +47,7 @@ import {
     resolveAcademicTermScope,
     toCareRecordAcademicTermFilter,
 } from "@/lib/utils/student-detail-filters";
+import { buildStudentFilterUrl } from "@/lib/utils/student-filter-url";
 import { getLatestPhqResult } from "@/lib/utils/phq-result-selection";
 import { ERROR_MESSAGES } from "@/lib/constants/error-messages";
 import { getStudentActionBlockedMessage } from "@/lib/constants/student-status";
@@ -83,7 +84,7 @@ function buildOffsetPagination(
 interface StudentDetailPageProps {
     params: Promise<{ id: string }>;
     searchParams: Promise<{
-        year?: string;
+        year?: string | string[];
         round?: string;
         class?: string;
         school?: string;
@@ -98,15 +99,17 @@ export default async function StudentDetailPage({
     searchParams,
 }: StudentDetailPageProps) {
     const { id } = await params;
+    const rawFilters = await searchParams;
     const {
-        year: selectedYearId,
+        year,
         round,
         class: selectedClass,
         school: selectedSchoolId,
         phqPage,
         counselingPage,
         homeVisitPage,
-    } = await searchParams;
+    } = rawFilters;
+    const selectedYearId = typeof year === "string" ? year : undefined;
     const selectedRound = round === "1" || round === "2" ? round : undefined;
     const backParams = new URLSearchParams();
     if (selectedSchoolId) {
@@ -142,6 +145,7 @@ export default async function StudentDetailPage({
                     <StudentDetailContent
                         studentId={id}
                         selectedYearId={selectedYearId}
+                        rawFilters={rawFilters}
                         selectedRound={selectedRound}
                         phqPage={parsePositiveInt(phqPage)}
                         counselingPage={parsePositiveInt(counselingPage)}
@@ -156,6 +160,7 @@ export default async function StudentDetailPage({
 async function StudentDetailContent({
     studentId,
     selectedYearId,
+    rawFilters,
     selectedRound,
     phqPage,
     counselingPage,
@@ -163,6 +168,7 @@ async function StudentDetailContent({
 }: {
     studentId: string;
     selectedYearId?: string;
+    rawFilters: Awaited<StudentDetailPageProps["searchParams"]>;
     selectedRound?: string;
     phqPage: number;
     counselingPage: number;
@@ -203,6 +209,13 @@ async function StudentDetailContent({
         uniqueYears,
         selectedYearId,
     );
+    if (academicTermScope.kind === "invalid" || Array.isArray(rawFilters.year)) {
+        redirect(buildStudentFilterUrl(
+            `/students/${encodeURIComponent(studentId)}`,
+            rawFilters,
+            ["year", "round"],
+        ));
+    }
     const careRecordFilter =
         toCareRecordAcademicTermFilter(academicTermScope);
     const academicYearFilteredPhqResults = filterByAcademicTermScope(
