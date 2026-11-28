@@ -1,10 +1,9 @@
 "use server";
 
-import { prisma } from "@/lib/database/prisma";
-import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import { getViewerContext } from "@/lib/auth/viewer-context";
-import { fetchAnalyticsData, getExpectedStudentCount } from "./data";
+import { fetchAnalyticsData } from "./data";
+import { fetchSystemAnalyticsOverview } from "./system-overview";
 import {
     ANALYTICS_OVERVIEW_TAG,
     getAnalyticsCacheTags,
@@ -19,13 +18,44 @@ import {
 } from "./redis-cache";
 import { ensureCurrentAcademicYearLifecycle } from "@/lib/services/academic-year-lifecycle";
 
-import type { AcademicTermOption, AnalyticsData, SystemAnalyticsOverview } from "./types";
+import type { AnalyticsData, SystemAnalyticsOverview } from "./types";
 import { handleQueryError } from "@/lib/actions/error-handler";
 import {
     querySuccess,
     type QueryResult,
 } from "@/lib/actions/query-result";
-import { buildCurrentStudentPopulationSql } from "@/lib/utils/student-population";
+
+interface RequestedTerm {
+    academicYear?: number;
+    semester?: number;
+}
+
+/**
+ * Runs the lifecycle before any cache key is built or cache is filled, so
+ * provisioning (and its Redis invalidation) completes first, and the default
+ * view is keyed by the explicit current term: right after rollover it can
+ * never be served the previous term's entry.
+ */
+async function resolveAnalyticsTerm(
+    requested: RequestedTerm,
+): Promise<RequestedTerm> {
+    const currentTerm = await ensureCurrentAcademicYearLifecycle();
+    if (requested.academicYear === undefined && requested.semester === undefined) {
+        return { academicYear: currentTerm.year, semester: currentTerm.semester };
+    }
+    return requested;
+}
+
+/** The overview shows a single term; without a year it shows the current one. */
+async function resolveOverviewTerm(
+    requested: RequestedTerm,
+): Promise<RequestedTerm> {
+    const currentTerm = await ensureCurrentAcademicYearLifecycle();
+    if (requested.academicYear === undefined) {
+        return { academicYear: currentTerm.year, semester: currentTerm.semester };
+    }
+    return requested;
+}
 
 function buildAnalyticsCacheKey(input: {
     role: string;
@@ -36,24 +66,6 @@ function buildAnalyticsCacheKey(input: {
     roundStr: string;
 }): string[] {
     return createAnalyticsRedisKeyParts(input);
-}
-
-async function getOverviewAcademicTermOptions(): Promise<{
-    availableAcademicTerms: AcademicTermOption[];
-}> {
-    const terms = await prisma.academicYear.findMany({
-        select: { id: true, year: true, semester: true },
-        distinct: ["year", "semester"],
-        orderBy: [{ year: "desc" }, { semester: "asc" }],
-    });
-
-    return {
-        availableAcademicTerms: terms.map((term) => ({
-            id: term.id,
-            year: term.year,
-            semester: term.semester,
-        })),
-    };
 }
 
 async function getCachedAnalyticsData(
@@ -134,101 +146,21 @@ export async function getAnalyticsSummary(
                 ? schoolFilter
                 : viewer.schoolId;
 
+        const term = await resolveAnalyticsTerm({ academicYear, semester });
+
         return querySuccess(
             await getCachedAnalyticsData(
                 schoolId,
                 targetClass ?? "",
                 viewer.role,
-                academicYear?.toString() ?? "",
-                semester?.toString() ?? "",
+                term.academicYear?.toString() ?? "",
+                term.semester?.toString() ?? "",
                 assessmentRound?.toString() ?? "",
             ),
         );
     } catch (error) {
         return handleQueryError("Get analytics summary error:", error);
     }
-}
-
-async function fetchSystemAnalyticsOverview(
-    academicYear?: number,
-    semester?: number,
-): Promise<SystemAnalyticsOverview> {
-    const [totalSchools, currentAcademicYear, overviewOptions] = await Promise.all([
-        prisma.school.count({ where: { disabledAt: null, isTestData: false } }),
-        ensureCurrentAcademicYearLifecycle(),
-        getOverviewAcademicTermOptions(),
-    ]);
-
-    const resolvedAcademicYear =
-        academicYear
-            ? await prisma.academicYear.findFirst({
-                  where: {
-                      year: academicYear,
-                      ...(semester !== undefined ? { semester } : {}),
-                  },
-                  orderBy: [{ semester: "desc" }],
-                  select: { id: true, year: true, semester: true, isCurrent: true },
-              })
-            : currentAcademicYear ??
-              (await prisma.academicYear.findFirst({
-                  orderBy: [{ year: "desc" }, { semester: "desc" }],
-                  select: { id: true, year: true, semester: true, isCurrent: true },
-              }));
-
-    if (!resolvedAcademicYear) {
-        return {
-            totalSchools,
-            totalStudents: 0,
-            studentsWithAssessment: 0,
-            screeningCoveragePercent: 0,
-            academicYearLabel: "ยังไม่มีข้อมูลปีการศึกษา",
-            ...overviewOptions,
-        };
-    }
-
-    const totalStudents = await getExpectedStudentCount(
-        undefined,
-        undefined,
-        [resolvedAcademicYear.id],
-    );
-    const resolvedTotalStudents = totalStudents ?? 0;
-    const lifecycleCondition = resolvedAcademicYear.isCurrent
-        ? buildCurrentStudentPopulationSql()
-        : Prisma.empty;
-
-    const assessedStudentsRaw = await prisma.$queryRaw<Array<{ count: bigint }>>`
-        SELECT COUNT(DISTINCT pr."studentId")::bigint as count
-        FROM phq_results pr
-        JOIN students s ON pr."studentId" = s.id
-        JOIN schools sch ON s."schoolId" = sch.id
-        WHERE pr."academicYearId" = ${resolvedAcademicYear.id}
-          AND s."disabledAt" IS NULL
-          AND s."isTestData" = false
-          AND sch."disabledAt" IS NULL
-          AND sch."isTestData" = false
-          ${lifecycleCondition}
-    `;
-    const studentsWithAssessment = Number(
-        assessedStudentsRaw[0]?.count ?? BigInt(0),
-    );
-    const screeningCoveragePercent =
-        resolvedTotalStudents > 0
-            ? Math.min(
-                  100,
-                  Math.round((studentsWithAssessment / resolvedTotalStudents) * 100),
-              )
-            : 0;
-
-    return {
-        totalSchools,
-        totalStudents: resolvedTotalStudents,
-        studentsWithAssessment,
-        screeningCoveragePercent,
-        academicYearLabel: `ปีการศึกษา ${resolvedAcademicYear.year} เทอม ${resolvedAcademicYear.semester}`,
-        availableAcademicTerms: overviewOptions.availableAcademicTerms,
-        currentAcademicYear: resolvedAcademicYear.year,
-        currentSemester: resolvedAcademicYear.semester,
-    };
 }
 
 export async function getSystemAnalyticsOverview(
@@ -241,17 +173,16 @@ export async function getSystemAnalyticsOverview(
             return { status: "forbidden" };
         }
 
-        const overviewCacheKey = createSystemOverviewRedisKeyParts({
-            academicYear,
-            semester,
-        });
+        const term = await resolveOverviewTerm({ academicYear, semester });
+        const overviewCacheKey = createSystemOverviewRedisKeyParts(term);
         const redisCached = await readRedisCachedSystemOverview(overviewCacheKey);
         if (redisCached.data) {
             return querySuccess(redisCached.data);
         }
 
         const cachedOverviewFetcher = unstable_cache(
-            async () => fetchSystemAnalyticsOverview(academicYear, semester),
+            async () =>
+                fetchSystemAnalyticsOverview(term.academicYear, term.semester),
             overviewCacheKey,
             { revalidate: 300, tags: [ANALYTICS_OVERVIEW_TAG] },
         );

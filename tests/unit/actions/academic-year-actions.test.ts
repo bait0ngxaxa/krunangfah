@@ -15,7 +15,10 @@ const mocks = vi.hoisted(() => ({
     logError: vi.fn(),
     ensureSchoolClassTerms: vi.fn(),
     hasMissingSchoolClassTerms: vi.fn(),
-    revalidateAnalyticsCache: vi.fn(),
+    revalidateRedisAnalyticsCache: vi.fn(),
+    updateTag: vi.fn(),
+    revalidateTag: vi.fn(),
+    revalidatePath: vi.fn(),
     acquireRedisLock: vi.fn(),
     releaseRedisLock: vi.fn(),
 }));
@@ -45,8 +48,16 @@ vi.mock("@/lib/services/school-class-term-service", () => ({
     hasMissingSchoolClassTermsForAcademicYear: mocks.hasMissingSchoolClassTerms,
 }));
 
-vi.mock("@/lib/actions/analytics/cache", () => ({
-    revalidateAnalyticsCache: mocks.revalidateAnalyticsCache,
+vi.mock("@/lib/actions/analytics/redis-cache", () => ({
+    revalidateRedisAnalyticsCache: mocks.revalidateRedisAnalyticsCache,
+}));
+
+// Lifecycle runs during render and before cache fills, where Next.js forbids
+// tag/path invalidation; any call here is a regression.
+vi.mock("next/cache", () => ({
+    updateTag: mocks.updateTag,
+    revalidateTag: mocks.revalidateTag,
+    revalidatePath: mocks.revalidatePath,
 }));
 
 vi.mock("@/lib/cache/redis-lock", () => ({
@@ -79,7 +90,7 @@ describe("academic-year.actions", () => {
         ]);
         mocks.ensureSchoolClassTerms.mockResolvedValue("ay-2569-1");
         mocks.hasMissingSchoolClassTerms.mockResolvedValue(true);
-        mocks.revalidateAnalyticsCache.mockResolvedValue(undefined);
+        mocks.revalidateRedisAnalyticsCache.mockResolvedValue(undefined);
         mocks.acquireRedisLock.mockResolvedValue({
             status: "acquired",
             lock: {
@@ -150,7 +161,10 @@ describe("academic-year.actions", () => {
             "school-2",
             "ay-2569-1",
         );
-        expect(mocks.revalidateAnalyticsCache).toHaveBeenCalledTimes(1);
+        expect(mocks.revalidateRedisAnalyticsCache).toHaveBeenCalledTimes(1);
+        expect(mocks.updateTag).not.toHaveBeenCalled();
+        expect(mocks.revalidateTag).not.toHaveBeenCalled();
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
         expect(mocks.acquireRedisLock).toHaveBeenCalledWith(
             "lock:academic-year-lifecycle:2569:1",
             expect.any(Number),
@@ -168,7 +182,7 @@ describe("academic-year.actions", () => {
 
         expect(result.status).toBe("transient_error");
         expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
-        expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
+        expect(mocks.revalidateRedisAnalyticsCache).not.toHaveBeenCalled();
         expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
     });
 
@@ -197,7 +211,7 @@ describe("academic-year.actions", () => {
         expect(result.status).toBe("transient_error");
         expect(mocks.hasMissingSchoolClassTerms).not.toHaveBeenCalled();
         expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
-        expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
+        expect(mocks.revalidateRedisAnalyticsCache).not.toHaveBeenCalled();
         expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
     });
 
@@ -248,7 +262,7 @@ describe("academic-year.actions", () => {
 
         expect(mocks.acquireRedisLock).toHaveBeenCalledTimes(1);
         expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
-        expect(mocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
+        expect(mocks.revalidateRedisAnalyticsCache).not.toHaveBeenCalled();
     });
 
     it("retries provisioning on the next request after the first attempt fails", async () => {
@@ -267,7 +281,7 @@ describe("academic-year.actions", () => {
         });
         expect(mocks.ensureSchoolClassTerms).toHaveBeenCalledTimes(2);
         expect(mocks.releaseRedisLock).toHaveBeenCalledTimes(2);
-        expect(mocks.revalidateAnalyticsCache).toHaveBeenCalledTimes(1);
+        expect(mocks.revalidateRedisAnalyticsCache).toHaveBeenCalledTimes(1);
     });
 
     it("returns every academic year for filters and history views", async () => {
