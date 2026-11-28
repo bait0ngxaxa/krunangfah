@@ -550,7 +550,7 @@ describe("ensureCurrentAcademicYearLifecycle", () => {
     });
 });
 
-describe("provisionCurrentTermForRestoredSchool", () => {
+describe("provisionCurrentTermForReactivatedSchool", () => {
     beforeEach(async () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date(2026, 4, 12));
@@ -564,25 +564,25 @@ describe("provisionCurrentTermForRestoredSchool", () => {
         vi.useRealTimers();
     });
 
-    it("provisions the restored school's current-term rows and keeps the marker", async () => {
+    it("provisions the reactivated school's current-term rows and keeps the marker", async () => {
         mocks.ensureSchoolClassTerms.mockResolvedValue(currentTerm.id);
 
-        await lifecycle.provisionCurrentTermForRestoredSchool("school-1");
+        await lifecycle.provisionCurrentTermForReactivatedSchool("school-1");
 
         expect(mocks.ensureSchoolClassTerms).toHaveBeenCalledWith("school-1");
         expect(mocks.deleteRedisMarker).not.toHaveBeenCalled();
     });
 
-    it("drops the marker instead of failing the restore when provisioning fails", async () => {
+    it("drops the marker instead of failing the school change when provisioning fails", async () => {
         mocks.ensureSchoolClassTerms.mockRejectedValue(new Error("db down"));
 
         await expect(
-            lifecycle.provisionCurrentTermForRestoredSchool("school-1"),
+            lifecycle.provisionCurrentTermForReactivatedSchool("school-1"),
         ).resolves.toBeUndefined();
 
         expect(mocks.deleteRedisMarker).toHaveBeenCalledWith(MARKER_KEY);
         expect(mocks.logError).toHaveBeenCalledWith(
-            "Restored school term provisioning error:",
+            "Reactivated school term provisioning error:",
             expect.any(Error),
         );
     });

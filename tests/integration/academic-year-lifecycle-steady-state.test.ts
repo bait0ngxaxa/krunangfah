@@ -1,6 +1,8 @@
 /**
  * Integration Test: the current-term lifecycle stays read-only in a steady
- * term and provisions exactly once on rollover.
+ * term and provisions exactly once on rollover. A school that re-enters the
+ * provisioning set after the rollover (unmarked as test data) gets its
+ * current-term rows immediately, even though the provisioned marker is set.
  *
  * Real Postgres. CI has no Redis, so the lock and the provisioned marker use
  * in-memory fakes with the same contract; only the clock is moved to a
@@ -8,6 +10,8 @@
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+// Registers the shared next/cache and session mocks used by the mutations.
+import { createMockUsers } from "./helpers/auth-mock";
 import { createTestAcademicYear, createTestSchool } from "./helpers/seed";
 import { cleanupAll } from "./helpers/cleanup";
 import { prisma } from "@/lib/database/prisma";
@@ -46,13 +50,22 @@ vi.mock("@/lib/cache/redis-marker", () => ({
         fakes.markers.delete(key);
     }),
 }));
-vi.mock("@/lib/actions/analytics/redis-cache", () => ({
+vi.mock("@/lib/actions/analytics/redis-cache", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/lib/actions/analytics/redis-cache")>()),
     revalidateRedisAnalyticsCache: vi.fn(async () => {}),
+}));
+vi.mock("@/lib/actions/analytics/cache", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/lib/actions/analytics/cache")>()),
+    revalidateAnalyticsCache: vi.fn(async () => {}),
 }));
 
 const { ensureCurrentAcademicYearLifecycle } = await import(
     "@/lib/services/academic-year-lifecycle"
 );
+const { unmarkSchoolTestData } = await import(
+    "@/lib/actions/data-management/mutations"
+);
+const USERS = createMockUsers("aylife");
 
 async function readTerm(semester: number): Promise<{
     id: string;
@@ -71,6 +84,8 @@ async function countTermRows(academicYearId: string): Promise<number> {
 
 describe("Integration: current-term lifecycle steady state and rollover", () => {
     let classId = "";
+    let testDataSchoolId = "";
+    let testDataClassId = "";
     let previousCurrentIds: string[] = [];
 
     beforeAll(async () => {
@@ -106,6 +121,26 @@ describe("Integration: current-term lifecycle steady state and rollover", () => 
             },
         });
 
+        // Marked as test data across the rollover, so provisioning skips it.
+        testDataSchoolId = (
+            await createTestSchool({ name: "โรงเรียนสังเคราะห์ข้อมูลทดสอบ" })
+        ).id;
+        await prisma.school.update({
+            where: { id: testDataSchoolId },
+            data: { isTestData: true, testDataMarkedAt: new Date() },
+        });
+        const testDataClass = await prisma.schoolClass.create({
+            data: { schoolId: testDataSchoolId, name: "ม.3/1", expectedStudentCount: 31 },
+        });
+        testDataClassId = testDataClass.id;
+        await prisma.schoolClassTerm.create({
+            data: {
+                schoolClassId: testDataClassId,
+                academicYearId: semesterOne.id,
+                expectedStudentCount: 31,
+            },
+        });
+
         vi.useFakeTimers({ toFake: ["Date"] });
     });
 
@@ -115,6 +150,9 @@ describe("Integration: current-term lifecycle steady state and rollover", () => 
 
     afterAll(async () => {
         vi.useRealTimers();
+        await prisma.dataManagementEvent
+            .deleteMany({ where: { targetId: testDataSchoolId } })
+            .catch(() => {});
         await prisma.academicYear
             .deleteMany({ where: { year: LIFECYCLE_YEAR, semester: 2 } })
             .catch(() => {});
@@ -193,5 +231,37 @@ describe("Integration: current-term lifecycle steady state and rollover", () => 
         expect(fakes.acquireRedisLock).not.toHaveBeenCalled();
         expect((await readTerm(2)).updatedAt).toEqual(semesterTwo.updatedAt);
         expect(await countTermRows(semesterTwo.id)).toBe(rowsAfterRollover);
+    });
+
+    it("provisions a school unmarked as test data immediately while the marker is set", async () => {
+        const semesterTwo = await readTerm(2);
+        const termRow = (): Promise<{ expectedStudentCount: number } | null> =>
+            prisma.schoolClassTerm.findUnique({
+                where: {
+                    schoolClassId_academicYearId: {
+                        schoolClassId: testDataClassId,
+                        academicYearId: semesterTwo.id,
+                    },
+                },
+                select: { expectedStudentCount: true },
+            });
+        await expect(termRow()).resolves.toBeNull();
+        expect(fakes.markers.get(ROLLOVER_MARKER_KEY)).toBe(semesterTwo.id);
+
+        const result = await unmarkSchoolTestData({
+            id: testDataSchoolId,
+            reason: "ยกเลิกข้อมูลทดสอบสังเคราะห์",
+            actor: {
+                id: USERS.systemAdmin.id,
+                email: USERS.systemAdmin.email,
+                name: USERS.systemAdmin.name,
+                role: "system_admin",
+            },
+        });
+
+        expect(result.success).toBe(true);
+        await expect(termRow()).resolves.toEqual({ expectedStudentCount: 31 });
+        // The marker stays valid: nothing is missing for the current term now.
+        expect(fakes.markers.get(ROLLOVER_MARKER_KEY)).toBe(semesterTwo.id);
     });
 });

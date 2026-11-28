@@ -293,18 +293,19 @@ export async function ensureCurrentAcademicYearLifecycle(): Promise<AcademicYear
 }
 
 /**
- * A restored school's classes may have missed a rollover while it was
- * disabled. The provisioned marker would hide them from the lazy lifecycle
- * until it expires, so provision this school's current-term rows now.
+ * Call after a school re-enters the provisioning set (restored from disabled,
+ * or unmarked as test data). Its classes may have missed a rollover while it
+ * was excluded, and the provisioned marker would hide them from the lazy
+ * lifecycle until it expires, so provision this school's current-term rows now.
  */
-export async function provisionCurrentTermForRestoredSchool(
+export async function provisionCurrentTermForReactivatedSchool(
     schoolId: string,
 ): Promise<void> {
     try {
         await ensureSchoolClassTermsForAcademicYear(schoolId);
     } catch (error) {
-        logError("Restored school term provisioning error:", error);
-        // The school is already restored; let the next lifecycle call retry.
+        logError("Reactivated school term provisioning error:", error);
+        // The school change is already committed; let the next lifecycle call retry.
         await forgetTermProvisioned(getCurrentAcademicYear());
     }
 }
