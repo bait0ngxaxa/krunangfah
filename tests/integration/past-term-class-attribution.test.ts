@@ -104,7 +104,8 @@ function importRow(studentId: string, className: string): ParsedStudent {
 
 async function createStudent(code: string, className: string): Promise<string> {
     const student = await prisma.student.create({
-        data: { schoolId, studentId: code, firstName: "นักเรียน", lastName: "สังเคราะห์", class: className, gender: "FEMALE", age: 14 },
+        // Same identity as importRow, so A's CURRENT import matches the stored student.
+        data: { schoolId, studentId: code, firstName: "เอ", lastName: "สังเคราะห์", class: className, gender: "MALE", age: 14 },
     });
     return student.id;
 }
