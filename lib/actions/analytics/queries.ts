@@ -82,6 +82,36 @@ function buildActiveStudentSchoolCondition(
     `;
 }
 
+/**
+ * Two class inputs with different meanings:
+ * - scopeClass: a class teacher's visibility, always the student's current
+ *   class (`s.class`), in every term.
+ * - classFilter: a school/system admin's report selection.
+ */
+export interface AnalyticsClassScope {
+    scopeClass?: string;
+    classFilter?: string;
+}
+
+function buildClassConditions(classes: AnalyticsClassScope): Prisma.Sql {
+    const scopeCondition = classes.scopeClass
+        ? Prisma.sql`AND s.class = ${classes.scopeClass}`
+        : Prisma.empty;
+    const filterCondition = classes.classFilter
+        ? Prisma.sql`AND s.class = ${classes.classFilter}`
+        : Prisma.empty;
+    return Prisma.sql`${scopeCondition} ${filterCondition}`;
+}
+
+function buildAcademicYearCondition(
+    academicYearIds: readonly string[] | undefined,
+): Prisma.Sql {
+    if (!academicYearIds) return Prisma.empty;
+    return academicYearIds.length > 0
+        ? Prisma.sql`AND pr."academicYearId" IN (${Prisma.join(academicYearIds)})`
+        : Prisma.sql`AND false`;
+}
+
 /** Combined result from single optimized query */
 export interface CombinedAnalyticsResult {
     riskLevelCounts: RiskLevelCountResult[];
@@ -101,7 +131,7 @@ export interface CombinedAnalyticsResult {
  */
 export async function getCombinedAnalytics(
     schoolId: string | undefined,
-    classFilter?: string,
+    classes: AnalyticsClassScope = {},
     academicYearIds?: readonly string[],
     assessmentRound?: number,
     currentPopulationOnly = true,
@@ -111,15 +141,8 @@ export async function getCombinedAnalytics(
         currentPopulationOnly,
     );
 
-    const classCondition = classFilter
-        ? Prisma.sql`AND s.class = ${classFilter}`
-        : Prisma.empty;
-
-    const academicYearCondition = academicYearIds
-        ? academicYearIds.length > 0
-            ? Prisma.sql`AND pr."academicYearId" IN (${Prisma.join(academicYearIds)})`
-            : Prisma.sql`AND false`
-        : Prisma.empty;
+    const classCondition = buildClassConditions(classes);
+    const academicYearCondition = buildAcademicYearCondition(academicYearIds);
 
     const roundCondition = assessmentRound !== undefined
         ? Prisma.sql`AND pr."assessmentRound" = ${assessmentRound}`
@@ -237,7 +260,7 @@ export async function getCombinedAnalytics(
  */
 export async function getTrendData(
     schoolId: string | undefined,
-    classFilter?: string,
+    classes: AnalyticsClassScope = {},
     academicYearIds?: readonly string[],
     assessmentRound?: number,
     currentPopulationOnly = true,
@@ -247,15 +270,8 @@ export async function getTrendData(
         currentPopulationOnly,
     );
 
-    const classCondition = classFilter
-        ? Prisma.sql`AND s.class = ${classFilter}`
-        : Prisma.empty;
-
-    const academicYearCondition = academicYearIds
-        ? academicYearIds.length > 0
-            ? Prisma.sql`AND pr."academicYearId" IN (${Prisma.join(academicYearIds)})`
-            : Prisma.sql`AND false`
-        : Prisma.empty;
+    const classCondition = buildClassConditions(classes);
+    const academicYearCondition = buildAcademicYearCondition(academicYearIds);
 
     const roundCondition = assessmentRound !== undefined
         ? Prisma.sql`AND pr."assessmentRound" = ${assessmentRound}`
@@ -315,7 +331,7 @@ function assertRoundOneActivityAnalytics(
  */
 export async function getActivityProgressByRisk(
     schoolId: string | undefined,
-    classFilter?: string,
+    classes: AnalyticsClassScope = {},
     academicYearIds?: readonly string[],
     assessmentRound?: number,
     currentPopulationOnly = true,
@@ -327,15 +343,8 @@ export async function getActivityProgressByRisk(
         currentPopulationOnly,
     );
 
-    const classCondition = classFilter
-        ? Prisma.sql`AND s.class = ${classFilter}`
-        : Prisma.empty;
-
-    const academicYearCondition = academicYearIds
-        ? academicYearIds.length > 0
-            ? Prisma.sql`AND pr."academicYearId" IN (${Prisma.join(academicYearIds)})`
-            : Prisma.sql`AND false`
-        : Prisma.empty;
+    const classCondition = buildClassConditions(classes);
+    const academicYearCondition = buildAcademicYearCondition(academicYearIds);
 
     // Activity ownership is structurally tied to Round 1. The optional argument
     // is retained for existing internal callers, but cannot change this filter.
@@ -395,7 +404,7 @@ export async function getActivityProgressByRisk(
 
 export async function getActivityCompletionSummary(
     schoolId: string | undefined,
-    classFilter?: string,
+    classes: AnalyticsClassScope = {},
     academicYearIds?: readonly string[],
     assessmentRound?: number,
     currentPopulationOnly = true,
@@ -407,15 +416,8 @@ export async function getActivityCompletionSummary(
         currentPopulationOnly,
     );
 
-    const classCondition = classFilter
-        ? Prisma.sql`AND s.class = ${classFilter}`
-        : Prisma.empty;
-
-    const academicYearCondition = academicYearIds
-        ? academicYearIds.length > 0
-            ? Prisma.sql`AND pr."academicYearId" IN (${Prisma.join(academicYearIds)})`
-            : Prisma.sql`AND false`
-        : Prisma.empty;
+    const classCondition = buildClassConditions(classes);
+    const academicYearCondition = buildAcademicYearCondition(academicYearIds);
 
     // Activity ownership is structurally tied to Round 1. The optional argument
     // is retained for existing internal callers, but cannot change this filter.

@@ -4,6 +4,7 @@ import {
     getTrendData,
     getActivityProgressByRisk,
     getActivityCompletionSummary,
+    type AnalyticsClassScope,
 } from "./queries";
 import {
     transformRiskLevelCounts,
@@ -27,7 +28,12 @@ export async function fetchAnalyticsData(
     semesterStr: string,
     roundStr: string,
 ): Promise<AnalyticsData> {
-    const classFilter = targetClass || undefined;
+    const selectedClass = targetClass || undefined;
+    // A class teacher's class is visibility (current class), never a report
+    // filter; only admins choose a report class.
+    const classes: AnalyticsClassScope = role === "class_teacher"
+        ? { scopeClass: selectedClass }
+        : { classFilter: selectedClass };
     const academicYear = academicYearStr ? parseInt(academicYearStr, 10) : undefined;
     const semester = semesterStr ? parseInt(semesterStr, 10) : undefined;
     const assessmentRound = roundStr ? parseInt(roundStr, 10) : undefined;
@@ -78,14 +84,14 @@ export async function fetchAnalyticsData(
         ? Promise.all([
               getActivityProgressByRisk(
                   schoolId,
-                  classFilter,
+                  classes,
                   academicYearIds,
                   activityAnalyticsRound,
                   currentPopulationOnly,
               ),
               getActivityCompletionSummary(
                   schoolId,
-                  classFilter,
+                  classes,
                   academicYearIds,
                   activityAnalyticsRound,
                   currentPopulationOnly,
@@ -101,7 +107,7 @@ export async function fetchAnalyticsData(
         trendDataRaw,
         activityData,
     ] = await Promise.all([
-        getExpectedStudentCount(schoolId, classFilter, academicYearIds),
+        getExpectedStudentCount(schoolId, selectedClass, academicYearIds),
         showClassFilter
             ? prisma.schoolClass
                   .findMany({
@@ -113,7 +119,7 @@ export async function fetchAnalyticsData(
                       select: { name: true },
                       orderBy: { name: "asc" },
                   })
-                  .then((classes) => classes.map((c) => c.name))
+                  .then((rows) => rows.map((row) => row.name))
             : Promise.resolve([]),
         prisma.academicYear.findMany({
             where: {
@@ -121,7 +127,7 @@ export async function fetchAnalyticsData(
                     some: {
                         student: {
                             ...(schoolId ? { schoolId } : {}),
-                            ...(classFilter ? { class: classFilter } : {}),
+                            ...(selectedClass ? { class: selectedClass } : {}),
                             disabledAt: null,
                             isTestData: false,
                             school: { disabledAt: null, isTestData: false },
@@ -139,14 +145,14 @@ export async function fetchAnalyticsData(
         }),
         getCombinedAnalytics(
             schoolId,
-            classFilter,
+            classes,
             academicYearIds,
             assessmentRound,
             currentPopulationOnly,
         ),
         getTrendData(
             schoolId,
-            classFilter,
+            classes,
             academicYearIds,
             assessmentRound,
             currentPopulationOnly,
@@ -167,7 +173,7 @@ export async function fetchAnalyticsData(
         where: {
             student: {
                 ...(schoolId ? { schoolId } : {}),
-                ...(classFilter ? { class: classFilter } : {}),
+                ...(selectedClass ? { class: selectedClass } : {}),
                 disabledAt: null,
                 isTestData: false,
                 school: { disabledAt: null, isTestData: false },
@@ -248,7 +254,7 @@ export async function fetchAnalyticsData(
         availableClasses,
         availableAcademicTerms,
         availableRounds,
-        currentClass: classFilter,
+        currentClass: selectedClass,
         currentAcademicYear: academicYear,
         currentSemester: semester,
         currentRound: assessmentRound,

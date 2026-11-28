@@ -57,14 +57,14 @@ describe("Integration: current analytics student population", () => {
                 ),
                 getCombinedAnalytics(
                     scenario.schoolId,
-                    scenario.className,
+                    { classFilter: scenario.className },
                     [scenario.academicYearId],
                     undefined,
                     true,
                 ),
                 getCombinedAnalytics(
                     scenario.schoolId,
-                    scenario.className,
+                    { classFilter: scenario.className },
                     [scenario.academicYearId],
                     undefined,
                     false,
@@ -108,14 +108,14 @@ describe("Integration: current analytics student population", () => {
                 await Promise.all([
                     getCombinedAnalytics(
                         scenario.schoolId,
-                        scenario.className,
+                        { classFilter: scenario.className },
                         [scenario.academicYearId],
                         undefined,
                         true,
                     ),
                     getCombinedAnalytics(
                         scenario.schoolId,
-                        scenario.className,
+                        { classFilter: scenario.className },
                         [scenario.academicYearId],
                         undefined,
                         false,
