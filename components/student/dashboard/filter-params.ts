@@ -1,0 +1,109 @@
+import { isRiskLevel } from "@/lib/constants/risk-levels";
+import type { DashboardRiskFilter } from "./types";
+
+export type DashboardParamKey =
+    | "school"
+    | "class"
+    | "page"
+    | "risk"
+    | "referred"
+    | "year"
+    | "round";
+export type DashboardFilterUpdates = Partial<
+    Record<DashboardParamKey, string | null>
+>;
+
+export interface DashboardFilterState {
+    schoolId: string;
+    className: string;
+    riskFilter: DashboardRiskFilter;
+    referredOnly: boolean;
+    /** Academic-year id, or "" for the latest-result view. */
+    termId: string;
+    /** "1" / "2", or "" for every round. */
+    round: string;
+}
+
+function resolveOptionalFilter(value: string | null): string {
+    if (!value || value === "all") {
+        return "";
+    }
+    return value;
+}
+
+function resolveRiskFilter(value: string | null): DashboardRiskFilter {
+    if (!value || value === "all") {
+        return "all";
+    }
+
+    return isRiskLevel(value) ? value : "all";
+}
+
+function pick<T>(update: string | null | undefined, current: T, resolve: (value: string | null) => T): T {
+    return update === undefined ? current : resolve(update);
+}
+
+export function applyDashboardFilterUpdates(
+    current: DashboardFilterState,
+    updates: DashboardFilterUpdates,
+): DashboardFilterState {
+    return {
+        schoolId: pick(updates.school, current.schoolId, resolveOptionalFilter),
+        className: pick(
+            updates.class,
+            current.className,
+            (value) => resolveOptionalFilter(value) || "all",
+        ),
+        riskFilter: pick(updates.risk, current.riskFilter, resolveRiskFilter),
+        referredOnly: pick(
+            updates.referred,
+            current.referredOnly,
+            (value) => value === "true",
+        ),
+        termId: pick(updates.year, current.termId, resolveOptionalFilter),
+        round: pick(updates.round, current.round, resolveOptionalFilter),
+    };
+}
+
+function setOptionalParam(
+    params: URLSearchParams,
+    key: DashboardParamKey,
+    value: string,
+): void {
+    if (!value || value === "all") {
+        params.delete(key);
+        return;
+    }
+    params.set(key, value);
+}
+
+/**
+ * Next query string for the students page. Unrelated params already in the
+ * URL are kept; `page` changes only when the update names it.
+ */
+export function buildDashboardQueryString(
+    currentParams: URLSearchParams,
+    filters: DashboardFilterState,
+    updates: DashboardFilterUpdates,
+): string {
+    const params = new URLSearchParams(currentParams.toString());
+    setOptionalParam(params, "school", filters.schoolId);
+    setOptionalParam(params, "class", filters.className);
+    setOptionalParam(params, "risk", filters.riskFilter);
+    setOptionalParam(params, "referred", filters.referredOnly ? "true" : "");
+    setOptionalParam(params, "year", filters.termId);
+    setOptionalParam(params, "round", filters.round);
+    if (updates.page !== undefined) {
+        setOptionalParam(params, "page", updates.page ?? "");
+    }
+    return params.toString();
+}
+
+/** Changing the term resets the round and page; other filters stay. */
+export function termChangeUpdates(termId: string): DashboardFilterUpdates {
+    return { year: termId || null, round: null, page: null };
+}
+
+export function roundChangeUpdates(round: string): DashboardFilterUpdates {
+    return { round: round || null, page: null };
+}

@@ -6,13 +6,23 @@ import { useOptimistic, useTransition } from "react";
 import { ClassFilter } from "./components/ClassFilter";
 import { SchoolSelector } from "./components/SchoolSelector";
 import { StudentFilterBar } from "./components/StudentFilterBar";
-import { isRiskLevel } from "@/lib/constants/risk-levels";
+import { TermFilter } from "./components/TermFilter";
+import {
+    applyDashboardFilterUpdates,
+    buildDashboardQueryString,
+    roundChangeUpdates,
+    termChangeUpdates,
+    type DashboardFilterState,
+    type DashboardFilterUpdates,
+} from "./filter-params";
 import type {
+    AvailableStudentTerm,
     ClassOption,
     DashboardRiskFilter,
     RiskLevel,
     SchoolOption,
     StudentGroupCounts,
+    StudentResultTerm,
 } from "./types";
 
 interface StudentDashboardFiltersProps {
@@ -29,91 +39,11 @@ interface StudentDashboardFiltersProps {
     showReferredOnly: boolean;
     showRiskFilters: boolean;
     totalStudents: number;
-}
-
-type DashboardParamKey = "school" | "class" | "page" | "risk" | "referred";
-type DashboardFilterUpdates = Partial<Record<DashboardParamKey, string | null>>;
-
-interface DashboardFilterState {
-    schoolId: string;
-    className: string;
-    riskFilter: DashboardRiskFilter;
-    referredOnly: boolean;
-}
-
-function buildDashboardFilterState(input: {
-    selectedSchoolId: string;
-    selectedClass: string;
-    selectedRiskFilter: DashboardRiskFilter;
-    showReferredOnly: boolean;
-}): DashboardFilterState {
-    return {
-        schoolId: input.selectedSchoolId,
-        className: input.selectedClass,
-        riskFilter: input.selectedRiskFilter,
-        referredOnly: input.showReferredOnly,
-    };
-}
-
-function resolveOptionalFilter(value: string | null): string {
-    if (!value || value === "all") {
-        return "";
-    }
-    return value;
-}
-
-function resolveRiskFilter(value: string | null): DashboardRiskFilter {
-    if (!value || value === "all") {
-        return "all";
-    }
-
-    return isRiskLevel(value) ? value : "all";
-}
-
-function applyDashboardFilterUpdates(
-    current: DashboardFilterState,
-    updates: DashboardFilterUpdates,
-): DashboardFilterState {
-    return {
-        schoolId:
-            updates.school === undefined
-                ? current.schoolId
-                : resolveOptionalFilter(updates.school),
-        className:
-            updates.class === undefined
-                ? current.className
-                : (resolveOptionalFilter(updates.class) || "all"),
-        riskFilter:
-            updates.risk === undefined
-                ? current.riskFilter
-                : resolveRiskFilter(updates.risk),
-        referredOnly:
-            updates.referred === undefined
-                ? current.referredOnly
-                : updates.referred === "true",
-    };
-}
-
-function setOptionalParam(
-    params: URLSearchParams,
-    key: DashboardParamKey,
-    value: string,
-): void {
-    if (!value || value === "all") {
-        params.delete(key);
-        return;
-    }
-    params.set(key, value);
-}
-
-function setDashboardFilterParams(
-    params: URLSearchParams,
-    filters: DashboardFilterState,
-): void {
-    setOptionalParam(params, "school", filters.schoolId);
-    setOptionalParam(params, "class", filters.className);
-    setOptionalParam(params, "risk", filters.riskFilter);
-    setOptionalParam(params, "referred", filters.referredOnly ? "true" : "");
+    availableTerms?: AvailableStudentTerm[];
+    currentAcademicYearId?: string | null;
+    selectedTermId?: string;
+    selectedRound?: string;
+    selectedTerm?: StudentResultTerm | null;
 }
 
 export function StudentDashboardFilters({
@@ -130,17 +60,24 @@ export function StudentDashboardFilters({
     showReferredOnly,
     showRiskFilters,
     totalStudents,
+    availableTerms = [],
+    currentAcademicYearId = null,
+    selectedTermId = "",
+    selectedRound = "",
+    selectedTerm = null,
 }: StudentDashboardFiltersProps) {
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [, startTransition] = useTransition();
-    const selectedFilters = buildDashboardFilterState({
-        selectedSchoolId,
-        selectedClass,
-        selectedRiskFilter,
-        showReferredOnly,
-    });
+    const selectedFilters: DashboardFilterState = {
+        schoolId: selectedSchoolId,
+        className: selectedClass,
+        riskFilter: selectedRiskFilter,
+        referredOnly: showReferredOnly,
+        termId: selectedTermId,
+        round: selectedRound,
+    };
     const [optimisticFilters, setOptimisticFilters] = useOptimistic(
         selectedFilters,
         (
@@ -154,14 +91,11 @@ export function StudentDashboardFilters({
             optimisticFilters,
             updates,
         );
-        const nextParams = new URLSearchParams(searchParams.toString());
-
-        setDashboardFilterParams(nextParams, nextFilters);
-        if (updates.page !== undefined) {
-            setOptionalParam(nextParams, "page", updates.page ?? "");
-        }
-
-        const queryString = nextParams.toString();
+        const queryString = buildDashboardQueryString(
+            new URLSearchParams(searchParams.toString()),
+            nextFilters,
+            updates,
+        );
         startTransition(() => {
             setOptimisticFilters(nextFilters);
             router.replace(
@@ -210,18 +144,16 @@ export function StudentDashboardFilters({
     }
 
     const shouldShowScopedFilters = !isSystemAdmin || selectedSchoolId.length > 0;
-    const scopedClassName =
-        optimisticFilters.schoolId === selectedSchoolId
-            ? optimisticFilters.className
-            : selectedClass;
-    const scopedRiskFilter =
-        optimisticFilters.schoolId === selectedSchoolId
-            ? optimisticFilters.riskFilter
-            : selectedRiskFilter;
-    const scopedReferredOnly =
-        optimisticFilters.schoolId === selectedSchoolId
-            ? optimisticFilters.referredOnly
-            : showReferredOnly;
+    const isSameSchool = optimisticFilters.schoolId === selectedSchoolId;
+    const scopedClassName = isSameSchool
+        ? optimisticFilters.className
+        : selectedClass;
+    const scopedRiskFilter = isSameSchool
+        ? optimisticFilters.riskFilter
+        : selectedRiskFilter;
+    const scopedReferredOnly = isSameSchool
+        ? optimisticFilters.referredOnly
+        : showReferredOnly;
 
     return (
         <>
@@ -230,6 +162,18 @@ export function StudentDashboardFilters({
                     schools={schools}
                     selectedSchoolId={optimisticFilters.schoolId}
                     onSchoolChange={handleSchoolChange}
+                />
+            ) : null}
+
+            {shouldShowScopedFilters ? (
+                <TermFilter
+                    availableTerms={availableTerms}
+                    currentAcademicYearId={currentAcademicYearId}
+                    selectedTermId={optimisticFilters.termId}
+                    selectedRound={optimisticFilters.round}
+                    selectedTerm={selectedTerm}
+                    onTermChange={(termId) => updateSearchParams(termChangeUpdates(termId))}
+                    onRoundChange={(round) => updateSearchParams(roundChangeUpdates(round))}
                 />
             ) : null}
 

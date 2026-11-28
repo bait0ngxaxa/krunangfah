@@ -29,3 +29,19 @@ export function isNotScreenedThisTerm(
     if (!currentAcademicYearId || !result?.academicYear) return false;
     return result.academicYear.id !== currentAcademicYearId;
 }
+
+/**
+ * Which results the page summarises: the pie chart title and the summary
+ * subtitle use the same phrase.
+ */
+export function buildScreeningScopeLabel(input: {
+    isTermSelected: boolean;
+    selectedTerm: { year: number; semester: number } | null | undefined;
+    assessmentRound?: number;
+}): string {
+    if (!input.isTermSelected) return "ผลคัดกรองล่าสุดของนักเรียนแต่ละคน";
+    if (!input.selectedTerm) return "ผลคัดกรองเทอมที่เลือก";
+    const { year, semester } = input.selectedTerm;
+    const round = input.assessmentRound ? ` รอบ ${input.assessmentRound}` : "";
+    return `ผลคัดกรอง ปีการศึกษา ${year} เทอม ${semester}${round}`;
+}

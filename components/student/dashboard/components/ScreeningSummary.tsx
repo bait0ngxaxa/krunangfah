@@ -65,6 +65,8 @@ interface ScreeningSummaryProps {
     };
     readOnly?: boolean;
     currentAcademicYearId?: string | null;
+    /** Same phrase as the pie chart title, e.g. "ผลคัดกรองล่าสุดของนักเรียนแต่ละคน". */
+    scopeLabel?: string;
 }
 
 function buildPageHref(
@@ -157,6 +159,7 @@ export function ScreeningSummary({
     pagination,
     readOnly = false,
     currentAcademicYearId = null,
+    scopeLabel,
 }: ScreeningSummaryProps) {
     const studentDetailQuery = buildStudentDetailQuery(filters);
     // A selected term already scopes every result; only "latest" can be stale.
@@ -185,6 +188,7 @@ export function ScreeningSummary({
                                         ? `ห้อง ${classes[0]}`
                                         : "ทุกห้องเรียน"
                                     : `ห้อง ${selectedClass}`}
+                                {scopeLabel ? ` · ${scopeLabel}` : null}
                             </p>
                         </div>
                     </div>

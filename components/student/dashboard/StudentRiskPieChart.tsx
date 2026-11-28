@@ -27,16 +27,19 @@ const RiskPieChart = dynamic(
 interface StudentRiskPieChartProps {
     data: PieChartDataItem[];
     totalStudents: number;
+    /** e.g. "ผลคัดกรองล่าสุดของนักเรียนแต่ละคน"; says which results are counted. */
+    scopeLabel: string;
 }
 
 export function StudentRiskPieChart({
     data,
     totalStudents,
+    scopeLabel,
 }: StudentRiskPieChartProps) {
     return (
         <RiskPieChart
             data={data}
-            title={`สรุปภาพรวมนักเรียน (${totalStudents} คน)`}
+            title={`${scopeLabel} (${totalStudents} คน)`}
             height={280}
             outerRadius={85}
         />

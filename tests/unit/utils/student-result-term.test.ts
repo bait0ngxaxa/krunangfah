@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    buildScreeningScopeLabel,
     formatResultTermLabel,
     isNotScreenedThisTerm,
 } from "@/lib/utils/student-result-term";
@@ -28,5 +29,33 @@ describe("student result term", () => {
         expect(isNotScreenedThisTerm(result, null)).toBe(false);
         expect(isNotScreenedThisTerm(undefined, "term-1")).toBe(false);
         expect(isNotScreenedThisTerm({ assessmentRound: 1 }, "term-1")).toBe(false);
+    });
+});
+
+describe("buildScreeningScopeLabel", () => {
+    it("names the latest-result view when no term is selected", () => {
+        expect(
+            buildScreeningScopeLabel({ isTermSelected: false, selectedTerm: null }),
+        ).toBe("ผลคัดกรองล่าสุดของนักเรียนแต่ละคน");
+    });
+
+    it("names the selected term, and the round when one is selected", () => {
+        const selectedTerm = { year: 2568, semester: 2 };
+        expect(
+            buildScreeningScopeLabel({ isTermSelected: true, selectedTerm }),
+        ).toBe("ผลคัดกรอง ปีการศึกษา 2568 เทอม 2");
+        expect(
+            buildScreeningScopeLabel({
+                isTermSelected: true,
+                selectedTerm,
+                assessmentRound: 1,
+            }),
+        ).toBe("ผลคัดกรอง ปีการศึกษา 2568 เทอม 2 รอบ 1");
+    });
+
+    it("never claims the latest-result view for an unknown selected term", () => {
+        expect(
+            buildScreeningScopeLabel({ isTermSelected: true, selectedTerm: null }),
+        ).toBe("ผลคัดกรองเทอมที่เลือก");
     });
 });
