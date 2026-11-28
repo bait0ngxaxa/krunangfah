@@ -7,6 +7,52 @@ export type SchoolClassRemovalResult =
     | { kind: "deleted"; name: string }
     | { kind: "archived"; name: string };
 
+/**
+ * advisoryClass is a plain string on Teacher, roster and invite rows (no FK),
+ * so removing a class they name would leave class teachers pointing at
+ * nothing and their analytics empty.
+ */
+async function countAdvisoryReferences(
+    tx: Prisma.TransactionClient,
+    schoolId: string,
+    className: string,
+): Promise<{ teachers: number; roster: number; invites: number }> {
+    const [teachers, roster, invites] = await Promise.all([
+        tx.teacher.count({
+            where: {
+                advisoryClass: className,
+                user: { schoolId, deletedAt: null },
+            },
+        }),
+        tx.schoolTeacherRoster.count({
+            where: { schoolId, advisoryClass: className },
+        }),
+        tx.teacherInvite.count({
+            where: {
+                schoolId,
+                advisoryClass: className,
+                acceptedAt: null,
+                expiresAt: { gt: new Date() },
+            },
+        }),
+    ]);
+    return { teachers, roster, invites };
+}
+
+function describeAdvisoryReferences(counts: {
+    teachers: number;
+    roster: number;
+    invites: number;
+}): string[] {
+    return [
+        counts.teachers > 0 ? `ครูที่ปรึกษา ${counts.teachers} คน` : null,
+        counts.roster > 0 ? `รายชื่อครูใน roster ${counts.roster} รายการ` : null,
+        counts.invites > 0
+            ? `คำเชิญครูที่ยังไม่หมดอายุ ${counts.invites} รายการ`
+            : null,
+    ].filter((part): part is string => part !== null);
+}
+
 async function findRemovalBlocker(
     tx: Prisma.TransactionClient,
     schoolId: string,
@@ -17,6 +63,13 @@ async function findRemovalBlocker(
     });
     if (studentCount > 0) {
         return `ไม่สามารถลบห้อง "${className}" ได้ เพราะมีนักเรียนอยู่ ${studentCount} คน `;
+    }
+
+    const references = describeAdvisoryReferences(
+        await countAdvisoryReferences(tx, schoolId, className),
+    );
+    if (references.length > 0) {
+        return `ไม่สามารถลบห้อง "${className}" ได้ เพราะยังมี${references.join(" และ ")} กรุณาเปลี่ยนห้องที่ปรึกษาก่อน`;
     }
     return null;
 }
