@@ -92,17 +92,18 @@ function toSerializable(args: unknown[]): JsonValue {
     return args.map((arg) => sanitizeValue(arg));
 }
 
-/**
- * Log sanitized error payloads to avoid leaking sensitive internals.
- */
-export function logError(...args: unknown[]): void {
+function writeSanitizedLog(
+    write: (line: string) => void,
+    fallbackContext: string,
+    args: unknown[],
+): void {
     const payload = toSerializable(args);
 
     if (IS_PRODUCTION) {
         const context =
             typeof args[0] === "string"
                 ? redactSensitiveString(args[0])
-                : "Application error";
+                : fallbackContext;
         const productionPayload = {
             context,
             details:
@@ -110,9 +111,23 @@ export function logError(...args: unknown[]): void {
                     ? payload.slice(1)
                     : payload,
         };
-        console.error(JSON.stringify(productionPayload));
+        write(JSON.stringify(productionPayload));
         return;
     }
 
-    console.error(JSON.stringify(payload));
+    write(JSON.stringify(payload));
+}
+
+/**
+ * Log sanitized error payloads to avoid leaking sensitive internals.
+ */
+export function logError(...args: unknown[]): void {
+    writeSanitizedLog(console.error, "Application error", args);
+}
+
+/**
+ * Log sanitized warnings for degraded-but-working states.
+ */
+export function logWarn(...args: unknown[]): void {
+    writeSanitizedLog(console.warn, "Application warning", args);
 }

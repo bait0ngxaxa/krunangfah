@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
     upsert: vi.fn(),
     transaction: vi.fn(),
     logError: vi.fn(),
+    logWarn: vi.fn(),
     ensureSchoolClassTerms: vi.fn(),
     hasMissingSchoolClassTerms: vi.fn(),
     revalidateRedisAnalyticsCache: vi.fn(),
@@ -37,6 +38,7 @@ vi.mock("@/lib/database/prisma", () => ({
 
 vi.mock("@/lib/utils/logging", () => ({
     logError: mocks.logError,
+    logWarn: mocks.logWarn,
 }));
 
 vi.mock("@/lib/services/school-class-term-service", () => ({
@@ -252,9 +254,12 @@ describe("ensureCurrentAcademicYearLifecycle", () => {
             );
         });
 
-        it("syncs the current term dates while activating the current semester", async () => {
+        it("deactivates the previous term and activates the current one in one transaction on rollover", async () => {
+            mocks.findMany.mockResolvedValue([previousTerm]);
+
             await lifecycle.ensureCurrentAcademicYearLifecycle();
 
+            expect(mocks.transaction).toHaveBeenCalledTimes(1);
             expect(mocks.updateMany).toHaveBeenCalledWith({
                 where: {
                     isCurrent: true,
@@ -272,6 +277,59 @@ describe("ensureCurrentAcademicYearLifecycle", () => {
                     },
                 }),
             );
+        });
+
+        it("syncs stale term dates without touching other rows when no other term is current", async () => {
+            mocks.findMany.mockResolvedValue([
+                { ...currentTerm, endDate: new Date("2026-10-14T17:00:00.000Z") },
+            ]);
+
+            await lifecycle.ensureCurrentAcademicYearLifecycle();
+
+            expect(mocks.upsert).toHaveBeenCalledTimes(1);
+            expect(mocks.updateMany).not.toHaveBeenCalled();
+            expect(mocks.transaction).not.toHaveBeenCalled();
+        });
+
+        it("reactivates an existing current-term row that is not marked current", async () => {
+            mocks.findUnique.mockResolvedValue({ ...currentTerm, isCurrent: false });
+
+            await lifecycle.ensureCurrentAcademicYearLifecycle();
+
+            expect(mocks.upsert).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    update: expect.objectContaining({ isCurrent: true }),
+                }),
+            );
+        });
+
+        it("performs no term write when the current row already equals the clock", async () => {
+            // Marker absent (e.g. expired): slow path, but the row is in sync.
+            mocks.findMany.mockResolvedValue([currentTerm]);
+            mocks.hasMissingSchoolClassTerms.mockResolvedValue(false);
+
+            await expect(
+                lifecycle.ensureCurrentAcademicYearLifecycle(),
+            ).resolves.toEqual(currentTerm);
+
+            expectNoWrites();
+            expect(mocks.findUnique).not.toHaveBeenCalled();
+            expect(mocks.acquireRedisLock).toHaveBeenCalledTimes(1);
+            expect(mocks.writeRedisMarker).toHaveBeenCalledWith(
+                MARKER_KEY,
+                currentTerm.id,
+                24 * 60 * 60,
+            );
+        });
+
+        it("only clears the other current row when the current row is already in sync", async () => {
+            mocks.findMany.mockResolvedValue([currentTerm, previousTerm]);
+
+            await lifecycle.ensureCurrentAcademicYearLifecycle();
+
+            expect(mocks.updateMany).toHaveBeenCalledTimes(1);
+            expect(mocks.upsert).not.toHaveBeenCalled();
+            expect(mocks.transaction).not.toHaveBeenCalled();
         });
 
         it("provisions every active school, invalidates Redis once, sets the marker, then releases the lock", async () => {
@@ -380,49 +438,113 @@ describe("ensureCurrentAcademicYearLifecycle", () => {
         });
     });
 
-    describe("slow path without the lock", () => {
-        it("does not report success while terms are missing and another request holds the lock", async () => {
+    describe("slow path while another request holds the lock", () => {
+        beforeEach(() => {
             mocks.acquireRedisLock.mockResolvedValue({ status: "contended" });
+        });
 
-            await expect(
-                lifecycle.ensureCurrentAcademicYearLifecycle(),
-            ).rejects.toThrow(
+        it("waits for the lock holder's marker and then returns the record", async () => {
+            mocks.readRedisMarker
+                .mockResolvedValueOnce({ status: "absent" })
+                .mockResolvedValueOnce({ status: "absent" })
+                .mockResolvedValue({ status: "present", value: currentTerm.id });
+
+            const pending = lifecycle.ensureCurrentAcademicYearLifecycle();
+            await vi.advanceTimersByTimeAsync(1_000);
+
+            await expect(pending).resolves.toEqual(currentTerm);
+            expect(mocks.hasMissingSchoolClassTerms).toHaveBeenCalledTimes(1);
+            expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
+            expect(mocks.writeRedisMarker).not.toHaveBeenCalled();
+            expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
+        });
+
+        it("throws the existing error when terms are still missing after about 3 seconds", async () => {
+            const pending = lifecycle.ensureCurrentAcademicYearLifecycle();
+            const assertion = expect(pending).rejects.toThrow(
                 "Academic year school class term provisioning is not complete",
             );
 
+            await vi.advanceTimersByTimeAsync(2_900);
+            expect(mocks.hasMissingSchoolClassTerms).toHaveBeenCalledTimes(1);
+            await vi.advanceTimersByTimeAsync(200);
+
+            await assertion;
+            expect(mocks.hasMissingSchoolClassTerms).toHaveBeenCalledTimes(2);
             expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
             expect(mocks.revalidateRedisAnalyticsCache).not.toHaveBeenCalled();
             expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
             expect(mocks.writeRedisMarker).not.toHaveBeenCalled();
         });
 
-        it("returns the record without setting the marker when another request holds the lock and nothing is missing", async () => {
-            mocks.acquireRedisLock.mockResolvedValue({ status: "contended" });
+        it("returns once the rows exist at the deadline even if the marker never appeared", async () => {
+            mocks.hasMissingSchoolClassTerms
+                .mockResolvedValueOnce(true)
+                .mockResolvedValue(false);
+
+            const pending = lifecycle.ensureCurrentAcademicYearLifecycle();
+            await vi.advanceTimersByTimeAsync(3_100);
+
+            await expect(pending).resolves.toEqual(currentTerm);
+            expect(mocks.writeRedisMarker).not.toHaveBeenCalled();
+        });
+
+        it("returns the record immediately without setting the marker when nothing is missing", async () => {
+            mocks.findMany.mockResolvedValue([currentTerm]);
             mocks.hasMissingSchoolClassTerms.mockResolvedValue(false);
 
             await expect(
                 lifecycle.ensureCurrentAcademicYearLifecycle(),
             ).resolves.toEqual(currentTerm);
 
+            expect(mocks.readRedisMarker).toHaveBeenCalledTimes(1); // fast-path check only
             expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
             expect(mocks.releaseRedisLock).not.toHaveBeenCalled();
             expect(mocks.writeRedisMarker).not.toHaveBeenCalled();
+            expectNoNextCacheInvalidation();
         });
+    });
 
-        it("fails closed when the lifecycle lock service is unavailable", async () => {
+    describe("slow path when the lock service is unavailable", () => {
+        beforeEach(() => {
             mocks.acquireRedisLock.mockResolvedValue({
                 status: "unavailable",
                 reason: "client_unavailable",
             });
+        });
 
+        it("serves the term when nothing is missing and warns only once", async () => {
+            mocks.hasMissingSchoolClassTerms.mockResolvedValue(false);
+
+            await expect(
+                lifecycle.ensureCurrentAcademicYearLifecycle(),
+            ).resolves.toEqual(currentTerm);
+            await expect(
+                lifecycle.ensureCurrentAcademicYearLifecycle(),
+            ).resolves.toEqual(currentTerm);
+
+            expect(mocks.logWarn).toHaveBeenCalledTimes(1);
+            expect(mocks.logError).not.toHaveBeenCalled();
+            expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
+            expect(mocks.writeRedisMarker).not.toHaveBeenCalled();
+            expectNoNextCacheInvalidation();
+        });
+
+        it("fails closed without provisioning when rows are missing", async () => {
             await expect(
                 lifecycle.ensureCurrentAcademicYearLifecycle(),
             ).rejects.toThrow("Academic year lifecycle lock service is unavailable");
 
-            expect(mocks.hasMissingSchoolClassTerms).not.toHaveBeenCalled();
+            expect(mocks.hasMissingSchoolClassTerms).toHaveBeenCalledWith(
+                currentTerm.id,
+            );
             expect(mocks.ensureSchoolClassTerms).not.toHaveBeenCalled();
             expect(mocks.revalidateRedisAnalyticsCache).not.toHaveBeenCalled();
             expect(mocks.writeRedisMarker).not.toHaveBeenCalled();
+            expect(mocks.logError).toHaveBeenCalledWith(
+                "Academic year lifecycle lock unavailable:",
+                expect.any(Error),
+            );
             expectNoNextCacheInvalidation();
         });
     });
