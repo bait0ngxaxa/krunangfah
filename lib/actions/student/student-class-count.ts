@@ -177,8 +177,14 @@ async function applyClassCountAdjustment(
     const lockedClass = await tx.schoolClass.update({
         where: { id: schoolClass.id },
         data: { expectedStudentCount: { increment: 0 } },
-        select: { id: true, expectedStudentCount: true },
+        select: { id: true, expectedStudentCount: true, archivedAt: true },
     });
+    // Checked on the locked row, not the earlier read: callers validate the
+    // class before their transaction, and removeSchoolClass may archive it in
+    // between (its student check cannot see this transaction's uncommitted
+    // students). Writing on would put students into an archived class and
+    // recreate its current-term row.
+    if (lockedClass.archivedAt) throw new StudentClassCountIntegrityError();
 
     const term = await tx.schoolClassTerm.upsert({
         where: {

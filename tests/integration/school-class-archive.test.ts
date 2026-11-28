@@ -78,6 +78,9 @@ const {
     hasMissingSchoolClassTermsForAcademicYear,
 } = await import("@/lib/services/school-class-term-service");
 const { importStudents } = await import("@/lib/actions/student/mutations");
+const { applyStudentClassCountAdjustments, StudentClassCountIntegrityError } =
+    await import("@/lib/actions/student/student-class-count");
+const { updateSystemStudent } = await import("@/lib/actions/system-admin/mutations");
 
 let semesterOne: AcademicYear;
 let semesterTwo: AcademicYear;
@@ -113,6 +116,22 @@ async function termRowIds(classId: string): Promise<string[]> {
         select: { academicYearId: true },
     });
     return rows.map((row) => row.academicYearId).sort();
+}
+
+async function classCountSnapshot(classId: string): Promise<{
+    expectedStudentCount: number;
+    terms: Array<{ academicYearId: string; expectedStudentCount: number }>;
+}> {
+    return prisma.schoolClass.findUniqueOrThrow({
+        where: { id: classId },
+        select: {
+            expectedStudentCount: true,
+            terms: {
+                select: { academicYearId: true, expectedStudentCount: true },
+                orderBy: { academicYearId: "asc" },
+            },
+        },
+    });
 }
 
 function importRow(className: string): ParsedStudent {
@@ -325,6 +344,123 @@ describe("Integration: school class archive", () => {
                 await prisma.teacherInvite.deleteMany({ where: { schoolId } });
                 await prisma.teacher.deleteMany({ where: { userId: USERS.otherTeacher.id } });
             }
+        });
+    });
+
+    describe("class-count adjustments reject archived classes", () => {
+        it("throws on an archived class and writes nothing", async () => {
+            mockSession(USERS.schoolAdmin);
+            const name = uniqueClassName(7);
+            const classId = await createClass(name, [semesterOne, semesterTwo], 30);
+            await removeSchoolClass(classId);
+            const before = await classCountSnapshot(classId);
+            expect(before.terms.map((t) => t.academicYearId)).toEqual([semesterOne.id]);
+
+            await expect(
+                prisma.$transaction((tx) =>
+                    applyStudentClassCountAdjustments(tx, {
+                        schoolId,
+                        academicYearId: semesterTwo.id,
+                        adjustments: [{ className: name, delta: 1 }],
+                    }),
+                ),
+            ).rejects.toBeInstanceOf(StudentClassCountIntegrityError);
+
+            // No current-term row recreated, no count changed.
+            await expect(classCountSnapshot(classId)).resolves.toEqual(before);
+        });
+
+        it("fails a system-admin move into a class archived after the existence check", async () => {
+            const fromName = uniqueClassName(8);
+            const toName = uniqueClassName(8);
+            const fromId = await createClass(fromName, [semesterOne, semesterTwo], 30);
+            const toId = await createClass(toName, [semesterOne, semesterTwo], 24);
+            const student = await createTestStudent(schoolId, {
+                studentId: `ARC-MOVE-${Date.now()}`,
+                class: fromName,
+            });
+            const fromBefore = await classCountSnapshot(fromId);
+            const toBefore = await classCountSnapshot(toId);
+
+            // Reproduce the race deterministically: archive the destination
+            // inside the same transaction right after the existence check
+            // read it as active, exactly as a concurrent removeSchoolClass
+            // committing between the check and the row lock would.
+            const realTransaction = prisma.$transaction.bind(prisma);
+            const spy = vi.spyOn(prisma, "$transaction").mockImplementationOnce(((
+                run: (tx: unknown) => Promise<unknown>,
+            ) =>
+                realTransaction(async (tx) => {
+                    let archived = false;
+                    const classes = new Proxy(tx.schoolClass, {
+                        get(target, property, receiver) {
+                            if (property !== "findUnique") {
+                                return Reflect.get(target, property, receiver);
+                            }
+                            return async (args: Parameters<typeof tx.schoolClass.findUnique>[0]) => {
+                                const found = await target.findUnique(args);
+                                const checkedName = args.where.schoolId_name?.name;
+                                if (!archived && checkedName === toName) {
+                                    archived = true;
+                                    await target.update({
+                                        where: { id: toId },
+                                        data: { archivedAt: new Date() },
+                                    });
+                                    await tx.schoolClassTerm.deleteMany({
+                                        where: { schoolClassId: toId, academicYearId: semesterTwo.id },
+                                    });
+                                }
+                                return found;
+                            };
+                        },
+                    });
+                    const racingTx = new Proxy(tx, {
+                        get(target, property, receiver) {
+                            return property === "schoolClass"
+                                ? classes
+                                : Reflect.get(target, property, receiver);
+                        },
+                    });
+                    return run(racingTx);
+                })) as unknown as typeof prisma.$transaction);
+
+            try {
+                await expect(
+                    updateSystemStudent(
+                        {
+                            id: student.id,
+                            expectedUpdatedAt: student.updatedAt,
+                            studentId: student.studentId,
+                            // undefined keeps the stored identifier unchanged.
+                            nationalId: undefined,
+                            firstName: student.firstName,
+                            lastName: student.lastName,
+                            gender: "",
+                            age: "",
+                            class: toName,
+                            status: "ACTIVE",
+                            reason: "ย้ายห้องสังเคราะห์",
+                        },
+                        {
+                            id: USERS.systemAdmin.id,
+                            email: USERS.systemAdmin.email,
+                            name: USERS.systemAdmin.name,
+                            role: "system_admin",
+                        },
+                    ),
+                ).rejects.toBeInstanceOf(StudentClassCountIntegrityError);
+            } finally {
+                spy.mockRestore();
+            }
+
+            await expect(
+                prisma.student.findUniqueOrThrow({
+                    where: { id: student.id },
+                    select: { class: true },
+                }),
+            ).resolves.toEqual({ class: fromName });
+            await expect(classCountSnapshot(fromId)).resolves.toEqual(fromBefore);
+            await expect(classCountSnapshot(toId)).resolves.toEqual(toBefore);
         });
     });
 

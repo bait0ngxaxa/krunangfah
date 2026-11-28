@@ -30,10 +30,31 @@ function createTransactionMocks() {
         },
     } as unknown as Prisma.TransactionClient;
 
-    return { tx, classUpdateMany, termUpsert, termUpdateMany };
+    return { tx, classUpdate, classUpdateMany, termUpsert, termUpdateMany };
 }
 
 describe("applyStudentClassCountAdjustments", () => {
+    it("rejects a class archived before the row lock and writes nothing", async () => {
+        const mocks = createTransactionMocks();
+        // The pre-lock read still sees an active class; only the locked row is current.
+        mocks.classUpdate.mockResolvedValue({
+            id: "class-1",
+            expectedStudentCount: 30,
+            archivedAt: new Date("2026-11-28T00:00:00.000Z"),
+        });
+
+        await expect(
+            applyStudentClassCountAdjustments(mocks.tx, {
+                schoolId: "school-1",
+                academicYearId: "academic-year-1",
+                adjustments: [{ className: "ม.1/1", delta: 1 }],
+            }),
+        ).rejects.toBeInstanceOf(StudentClassCountIntegrityError);
+        expect(mocks.termUpsert).not.toHaveBeenCalled();
+        expect(mocks.classUpdateMany).not.toHaveBeenCalled();
+        expect(mocks.termUpdateMany).not.toHaveBeenCalled();
+    });
+
     it("uses guarded atomic decrements for class and current-year term", async () => {
         const mocks = createTransactionMocks();
 
