@@ -15,21 +15,36 @@ interface AcademicYearFilterProps {
 
 const MAX_RECENT_YEARS = 3;
 
+/**
+ * A year is always selected. There is no "all years" option: it could never be
+ * applied (no year param means the current term), and across years it would
+ * mix students' latest-ever results, graduated students and activities.
+ */
+export function resolveSelectedYear(selectedYear: string, currentYear: number): string {
+    return /^\d{4}$/.test(selectedYear) ? selectedYear : String(currentYear);
+}
+
 export function AcademicYearFilter({ availableYears, selectedYear, onYearChange, disabled = false }: AcademicYearFilterProps): ReactElement | null {
     const [showAllYears, setShowAllYears] = useState(false);
     if (availableYears.length <= 1) return null;
     const currentYear = getCurrentAcademicYear().year;
-    const sortedYears = [...availableYears].sort((a, b) => b - a);
-    const displayedYears = showAllYears ? sortedYears : sortedYears.slice(0, MAX_RECENT_YEARS);
+    // Absent param (or an optimistic reset) means the current term's year.
+    const value = resolveSelectedYear(selectedYear, currentYear);
+    // Keep the selected year listed even when it has no screening data or is
+    // older than the recent-years window, so the select is never blank.
+    const sortedYears = Array.from(new Set([...availableYears, Number(value)])).sort((a, b) => b - a);
+    const displayedYears = showAllYears
+        ? sortedYears
+        : sortedYears.filter((year, index) => index < MAX_RECENT_YEARS || String(year) === value);
+    const hiddenYearCount = sortedYears.length - displayedYears.length;
 
-    function handleChange(value: string): void {
-        if (value === "__show_all__") { setShowAllYears(true); return; }
-        onYearChange(value);
+    function handleChange(nextValue: string): void {
+        if (nextValue === "__show_all__") { setShowAllYears(true); return; }
+        onYearChange(nextValue);
     }
 
-    return <FilterSelect icon={CalendarDays} label="ปีการศึกษา:" id="year-filter-analytics" value={selectedYear} onChange={handleChange} disabled={disabled}>
-        <option value="all">ทุกปีการศึกษา</option>
+    return <FilterSelect icon={CalendarDays} label="ปีการศึกษา:" id="year-filter-analytics" value={value} onChange={handleChange} disabled={disabled}>
         {displayedYears.map((year) => <option key={year} value={String(year)}>ปี {year}{year === currentYear ? " (ปัจจุบัน)" : ""}</option>)}
-        {sortedYears.length > MAX_RECENT_YEARS && !showAllYears ? <option value="__show_all__">ดูปีก่อนหน้านี้ ({sortedYears.length - MAX_RECENT_YEARS} ปี)</option> : null}
+        {hiddenYearCount > 0 && !showAllYears ? <option value="__show_all__">ดูปีก่อนหน้านี้ ({hiddenYearCount} ปี)</option> : null}
     </FilterSelect>;
 }

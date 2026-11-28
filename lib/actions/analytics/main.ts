@@ -46,12 +46,15 @@ async function resolveAnalyticsTerm(
     return requested;
 }
 
-/** The overview shows a single term; without a year it shows the current one. */
+/**
+ * The overview supports full terms only: a year needs its semester. Anything
+ * less resolves to the current term, matching the page's canonical URL.
+ */
 async function resolveOverviewTerm(
     requested: RequestedTerm,
 ): Promise<RequestedTerm> {
     const currentTerm = await ensureCurrentAcademicYearLifecycle();
-    if (requested.academicYear === undefined) {
+    if (requested.academicYear === undefined || requested.semester === undefined) {
         return { academicYear: currentTerm.year, semester: currentTerm.semester };
     }
     return requested;

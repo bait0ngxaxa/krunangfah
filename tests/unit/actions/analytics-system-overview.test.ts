@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
     schoolCount: vi.fn(),
     academicYearFindMany: vi.fn(),
-    academicYearFindFirst: vi.fn(),
+    academicYearFindUnique: vi.fn(),
     queryRaw: vi.fn(),
     getExpectedStudentCount: vi.fn(),
     lifecycle: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("@/lib/database/prisma", () => ({
         school: { count: mocks.schoolCount },
         academicYear: {
             findMany: mocks.academicYearFindMany,
-            findFirst: mocks.academicYearFindFirst,
+            findUnique: mocks.academicYearFindUnique,
         },
         $queryRaw: mocks.queryRaw,
     },
@@ -35,7 +35,7 @@ describe("fetchSystemAnalyticsOverview", () => {
         vi.clearAllMocks();
         mocks.schoolCount.mockResolvedValue(3);
         mocks.academicYearFindMany.mockResolvedValue([]);
-        mocks.academicYearFindFirst.mockResolvedValue({
+        mocks.academicYearFindUnique.mockResolvedValue({
             id: "ay-2569-1",
             year: 2569,
             semester: 1,
@@ -45,22 +45,28 @@ describe("fetchSystemAnalyticsOverview", () => {
         mocks.queryRaw.mockResolvedValue([{ count: BigInt(40) }]);
     });
 
-    it("throws when called without a term instead of defaulting", async () => {
+    it("throws without a full term instead of defaulting or guessing a semester", async () => {
         await expect(fetchSystemAnalyticsOverview()).rejects.toThrow(
-            "requires an explicit academic year",
+            "requires an explicit academic year and semester",
         );
         await expect(
             fetchSystemAnalyticsOverview(undefined, 2),
-        ).rejects.toThrow("requires an explicit academic year");
-        expect(mocks.academicYearFindFirst).not.toHaveBeenCalled();
+        ).rejects.toThrow("requires an explicit academic year and semester");
+        // A year alone used to fall back to its latest semester (A1).
+        await expect(
+            fetchSystemAnalyticsOverview(2569),
+        ).rejects.toThrow("requires an explicit academic year and semester");
+        expect(mocks.academicYearFindUnique).not.toHaveBeenCalled();
     });
 
     it("reads the explicit term without running the lifecycle", async () => {
         const overview = await fetchSystemAnalyticsOverview(2569, 1);
 
         expect(mocks.lifecycle).not.toHaveBeenCalled();
-        expect(mocks.academicYearFindFirst).toHaveBeenCalledWith(
-            expect.objectContaining({ where: { year: 2569, semester: 1 } }),
+        expect(mocks.academicYearFindUnique).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { year_semester: { year: 2569, semester: 1 } },
+            }),
         );
         expect(overview).toMatchObject({
             totalSchools: 3,
