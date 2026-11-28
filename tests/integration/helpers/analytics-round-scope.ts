@@ -190,12 +190,12 @@ export async function readActivityAnalytics(
     const [summary, progress] = await Promise.all([
         getActivityCompletionSummary(
             scenario.schoolId,
-            classFilter,
+            { classFilter },
             [scenario.academicYearId],
         ),
         getActivityProgressByRisk(
             scenario.schoolId,
-            classFilter,
+            { classFilter },
             [scenario.academicYearId],
         ),
     ]);

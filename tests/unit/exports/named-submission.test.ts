@@ -17,7 +17,8 @@ const sampleRecord: NamedSubmissionRecord = {
     riskLevel: "yellow",
     referredToHospital: true,
     createdAt: new Date("2026-06-24T08:00:00.000Z"),
-    academicYear: { year: 2569, semester: 1 },
+    className: "ม.2/5",
+    academicYear: { year: 2569, semester: 1, isCurrent: true },
     student: {
         studentId: "000123",
         firstName: "สมชาย",
@@ -173,7 +174,53 @@ describe("named submission export", () => {
         expect(worksheet?.getRow(2).getCell(15).value).toBe(4);
         expect(worksheet?.getRow(2).getCell(16).value).toBe(2);
         expect(worksheet?.getRow(2).getCell(17).value).toBe("ส่งต่อแล้ว");
+        expect(worksheet?.getRow(1).getCell(18).value).toBe("ที่มาของห้อง");
+        expect(worksheet?.getRow(2).getCell(18).value).toBe("ตอนประเมิน");
         expect(worksheet?.columnCount).toBe(NAMED_SUBMISSION_COLUMNS.length);
+    });
+
+    it.each([
+        ["a current-term result uses the current class", true, "ม.1/1", "ม.2/5", "ตอนประเมิน"],
+        ["a past-term result uses its snapshot", false, "ม.1/1", "ม.1/1", "ตอนประเมิน"],
+        [
+            "a past-term legacy result falls back to the current class",
+            false,
+            null,
+            "ม.2/5",
+            "ห้องปัจจุบัน (ข้อมูลก่อนมีการบันทึกห้อง)",
+        ],
+    ] as const)("%s", (_name, isCurrent, className, expectedClass, expectedSource) => {
+        const row = mapNamedSubmissionRecord({
+            ...sampleRecord,
+            className,
+            academicYear: { ...sampleRecord.academicYear, isCurrent },
+        });
+
+        expect(row.className).toBe(expectedClass);
+        expect(row.classSource).toBe(expectedSource);
+    });
+
+    it("keeps the existing column order and appends the class source last", () => {
+        expect(NAMED_SUBMISSION_COLUMNS.map(({ key }) => key)).toEqual([
+            "schoolName",
+            "province",
+            "studentId",
+            "firstName",
+            "lastName",
+            "nationalId",
+            "className",
+            "studentStatus",
+            "academicYear",
+            "semester",
+            "assessmentRound",
+            "assessmentDate",
+            "totalScore",
+            "riskGroup",
+            "requiredActivityCount",
+            "completedActivityCount",
+            "referralStatus",
+            "classSource",
+        ]);
     });
 
     it("preserves a G national ID as text", async () => {

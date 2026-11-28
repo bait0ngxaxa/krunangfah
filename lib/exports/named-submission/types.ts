@@ -15,8 +15,9 @@ export const namedSubmissionSelect = {
     riskLevel: true,
     referredToHospital: true,
     createdAt: true,
+    className: true,
     academicYear: {
-        select: { year: true, semester: true },
+        select: { year: true, semester: true, isCurrent: true },
     },
     student: {
         select: {
@@ -62,4 +63,5 @@ export interface NamedSubmissionRow {
     requiredActivityCount: number | null;
     completedActivityCount: number | null;
     referralStatus: string;
+    classSource: string;
 }

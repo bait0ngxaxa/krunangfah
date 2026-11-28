@@ -4,7 +4,14 @@ import {
     getTrendData,
     getActivityProgressByRisk,
     getActivityCompletionSummary,
+    type AnalyticsClassScope,
 } from "./queries";
+import {
+    getAvailableAcademicTerms,
+    getAvailableClassNames,
+    getAvailableRounds,
+    hasLegacyClassAttribution,
+} from "./filter-options";
 import {
     transformRiskLevelCounts,
     transformTrendData,
@@ -27,7 +34,12 @@ export async function fetchAnalyticsData(
     semesterStr: string,
     roundStr: string,
 ): Promise<AnalyticsData> {
-    const classFilter = targetClass || undefined;
+    const selectedClass = targetClass || undefined;
+    // A class teacher's class is visibility (current class), never a report
+    // filter; only admins choose a report class.
+    const classes: AnalyticsClassScope = role === "class_teacher"
+        ? { scopeClass: selectedClass }
+        : { classFilter: selectedClass };
     const academicYear = academicYearStr ? parseInt(academicYearStr, 10) : undefined;
     const semester = semesterStr ? parseInt(semesterStr, 10) : undefined;
     const assessmentRound = roundStr ? parseInt(roundStr, 10) : undefined;
@@ -60,6 +72,9 @@ export async function fetchAnalyticsData(
         : undefined;
     const academicYearIds = selectedAcademicYears?.map((term) => term.id);
     const selectedAcademicTermExists = (academicYearIds?.length ?? 0) > 0;
+    const singleTerm = selectedAcademicYears?.length === 1
+        ? selectedAcademicYears[0]
+        : undefined;
     const currentPopulationOnly =
         selectedAcademicYears?.length === 1 &&
         selectedAcademicYears[0].isCurrent;
@@ -78,14 +93,14 @@ export async function fetchAnalyticsData(
         ? Promise.all([
               getActivityProgressByRisk(
                   schoolId,
-                  classFilter,
+                  classes,
                   academicYearIds,
                   activityAnalyticsRound,
                   currentPopulationOnly,
               ),
               getActivityCompletionSummary(
                   schoolId,
-                  classFilter,
+                  classes,
                   academicYearIds,
                   activityAnalyticsRound,
                   currentPopulationOnly,
@@ -100,58 +115,36 @@ export async function fetchAnalyticsData(
         combinedData,
         trendDataRaw,
         activityData,
+        availableRounds,
+        legacyClassAttribution,
     ] = await Promise.all([
-        getExpectedStudentCount(schoolId, classFilter, academicYearIds),
+        getExpectedStudentCount(schoolId, selectedClass, academicYearIds),
         showClassFilter
-            ? prisma.schoolClass
-                  .findMany({
-                      where: {
-                          ...(schoolId ? { schoolId } : {}),
-                          archivedAt: null,
-                          school: { disabledAt: null, isTestData: false },
-                      },
-                      select: { name: true },
-                      orderBy: { name: "asc" },
-                  })
-                  .then((classes) => classes.map((c) => c.name))
+            ? getAvailableClassNames(schoolId, selectedAcademicYears)
             : Promise.resolve([]),
-        prisma.academicYear.findMany({
-            where: {
-                phqResults: {
-                    some: {
-                        student: {
-                            ...(schoolId ? { schoolId } : {}),
-                            ...(classFilter ? { class: classFilter } : {}),
-                            disabledAt: null,
-                            isTestData: false,
-                            school: { disabledAt: null, isTestData: false },
-                        },
-                    },
-                },
-            },
-            select: {
-                id: true,
-                year: true,
-                semester: true,
-            },
-            distinct: ["year", "semester"],
-            orderBy: [{ year: "desc" }, { semester: "asc" }],
-        }),
+        getAvailableAcademicTerms(schoolId, classes),
         getCombinedAnalytics(
             schoolId,
-            classFilter,
+            classes,
             academicYearIds,
             assessmentRound,
             currentPopulationOnly,
         ),
         getTrendData(
             schoolId,
-            classFilter,
+            classes,
             academicYearIds,
             assessmentRound,
             currentPopulationOnly,
         ),
         activityDataPromise,
+        getAvailableRounds(schoolId, classes, { academicYear, semester }),
+        hasLegacyClassAttribution({
+            schoolId,
+            isClassTeacherView: classes.scopeClass !== undefined,
+            singleTerm,
+            assessmentRound,
+        }),
     ]);
 
     const availableAcademicTerms = availableAcademicTermsRaw.map((term) => ({
@@ -159,35 +152,6 @@ export async function fetchAnalyticsData(
         year: term.year,
         semester: term.semester,
     }));
-
-    // Query distinct assessment rounds available for current filter scope
-    const shouldFilterAcademicTerm =
-        academicYear !== undefined || semester !== undefined;
-    const availableRoundsRaw = await prisma.phqResult.findMany({
-        where: {
-            student: {
-                ...(schoolId ? { schoolId } : {}),
-                ...(classFilter ? { class: classFilter } : {}),
-                disabledAt: null,
-                isTestData: false,
-                school: { disabledAt: null, isTestData: false },
-            },
-            ...(shouldFilterAcademicTerm
-                ? {
-                      academicYear: {
-                          ...(academicYear !== undefined
-                              ? { year: academicYear }
-                              : {}),
-                          ...(semester !== undefined ? { semester } : {}),
-                      },
-                  }
-                : {}),
-        },
-        select: { assessmentRound: true },
-        distinct: ["assessmentRound"],
-        orderBy: { assessmentRound: "asc" },
-    });
-    const availableRounds = availableRoundsRaw.map((r) => r.assessmentRound);
 
     const {
         riskLevelCounts: riskLevelCountsRaw,
@@ -248,7 +212,7 @@ export async function fetchAnalyticsData(
         availableClasses,
         availableAcademicTerms,
         availableRounds,
-        currentClass: classFilter,
+        currentClass: selectedClass,
         currentAcademicYear: academicYear,
         currentSemester: semester,
         currentRound: assessmentRound,
@@ -260,6 +224,7 @@ export async function fetchAnalyticsData(
         gradeRiskData,
         hospitalReferralsByGrade,
         totalReferrals,
+        legacyClassAttribution,
     };
 }
 

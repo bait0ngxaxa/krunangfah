@@ -19,6 +19,8 @@ vi.mock("@/lib/database/prisma", () => ({
         schoolClass: { findMany: mocks.schoolClassFindMany },
         schoolClassTerm: { aggregate: mocks.schoolClassTermAggregate },
         phqResult: { findMany: mocks.phqResultFindMany },
+        // Past-term class options and the legacy-snapshot check.
+        $queryRaw: vi.fn(async () => []),
     },
 }));
 
@@ -101,7 +103,7 @@ describe("fetchAnalyticsData activity scope", () => {
         });
         expect(mocks.getCombinedAnalytics).toHaveBeenCalledWith(
             "school-1",
-            undefined,
+            { classFilter: undefined },
             ["term-1", "term-2"],
             undefined,
             false,
@@ -130,14 +132,14 @@ describe("fetchAnalyticsData activity scope", () => {
 
         expect(mocks.getCombinedAnalytics).toHaveBeenCalledWith(
             "school-1",
-            undefined,
+            { classFilter: undefined },
             ["term-1"],
             2,
             false,
         );
         expect(mocks.getTrendData).toHaveBeenCalledWith(
             "school-1",
-            undefined,
+            { classFilter: undefined },
             ["term-1"],
             2,
             false,
@@ -168,21 +170,21 @@ describe("fetchAnalyticsData activity scope", () => {
 
             expect(mocks.getCombinedAnalytics).toHaveBeenCalledWith(
                 "school-1",
-                undefined,
+                { classFilter: undefined },
                 ["term-1"],
                 screeningRound,
                 false,
             );
             expect(mocks.getActivityProgressByRisk).toHaveBeenCalledWith(
                 "school-1",
-                undefined,
+                { classFilter: undefined },
                 ["term-1"],
                 1,
                 false,
             );
             expect(mocks.getActivityCompletionSummary).toHaveBeenCalledWith(
                 "school-1",
-                undefined,
+                { classFilter: undefined },
                 ["term-1"],
                 1,
                 false,
@@ -196,6 +198,44 @@ describe("fetchAnalyticsData activity scope", () => {
                 requiringActivityStudents: 4,
                 notRequiringActivityStudents: 2,
             });
+        },
+    );
+});
+
+describe("fetchAnalyticsData class scope", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        configureMocks();
+    });
+
+    it("passes a class teacher's class as visibility scope, never as a report filter", async () => {
+        await fetchAnalyticsData("school-1", "ม.2/1", "class_teacher", "2569", "1", "");
+
+        for (const query of [mocks.getCombinedAnalytics, mocks.getTrendData]) {
+            expect(query).toHaveBeenCalledWith(
+                "school-1",
+                { scopeClass: "ม.2/1" },
+                ["term-1"],
+                undefined,
+                false,
+            );
+        }
+        expect(mocks.getActivityProgressByRisk.mock.calls[0]?.[1]).toEqual({ scopeClass: "ม.2/1" });
+        expect(mocks.getActivityCompletionSummary.mock.calls[0]?.[1]).toEqual({ scopeClass: "ม.2/1" });
+    });
+
+    it.each(["school_admin", "system_admin"])(
+        "passes a %s class selection as the report filter",
+        async (role) => {
+            await fetchAnalyticsData("school-1", "ม.1/1", role, "2569", "1", "");
+
+            expect(mocks.getCombinedAnalytics).toHaveBeenCalledWith(
+                "school-1",
+                { classFilter: "ม.1/1" },
+                ["term-1"],
+                undefined,
+                false,
+            );
         },
     );
 });
