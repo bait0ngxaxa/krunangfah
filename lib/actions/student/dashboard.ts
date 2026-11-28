@@ -9,6 +9,7 @@ import {
     getClassCountsQuery,
     getReferredStudentCountQuery,
     getRiskLevelCountsQuery,
+    getStudentClassExistsQuery,
     getStudentIdsByLatestRiskQuery,
     getStudentsForDashboardQuery,
     getUnscreenedStudentCountQuery,
@@ -37,6 +38,7 @@ interface ClassCount {
 
 function createEmptyDashboardData(): StudentDashboardDataResponse {
     return {
+        classFilterExists: null,
         students: [],
         classes: [],
         classOptions: [],
@@ -134,7 +136,7 @@ export async function getStudentDashboardData(
         const classFilter = normalizeClassFilter(options?.classFilter);
         // Another class in the URL must never reach a query for a class teacher.
         if (!isClassFilterAllowedForViewer(classFilter, viewer)) {
-            return queryEmpty(createEmptyDashboardData());
+            return queryEmpty({ ...createEmptyDashboardData(), classFilterExists: false });
         }
         const riskFilter = normalizeRiskFilter(options?.riskFilter);
         const page = normalizePage(options?.page);
@@ -200,6 +202,7 @@ export async function getStudentDashboardData(
             referredCount,
             unscreenedThisYearCount,
             availableTerms,
+            classFilterExists,
         ] = await Promise.all([
             getClassCountsQuery(
                 scopeSchoolId,
@@ -261,6 +264,9 @@ export async function getStudentDashboardData(
                 viewer.advisoryClass,
                 viewer.role,
             ),
+            classFilter && scopeSchoolId && viewer.role !== "class_teacher"
+                ? getStudentClassExistsQuery(scopeSchoolId, classFilter)
+                : Promise.resolve(classFilter ? true : null),
         ]);
 
         const classes = baseClassCounts.map((item) => item.class);
@@ -297,6 +303,7 @@ export async function getStudentDashboardData(
               };
 
         const data: StudentDashboardDataResponse = {
+            classFilterExists,
             students: studentListResponse.students,
             classes,
             classOptions,

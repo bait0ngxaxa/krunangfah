@@ -22,6 +22,7 @@ vi.mock("@/lib/actions/student/queries", () => ({
     getClassCountsQuery: vi.fn(),
     getReferredStudentCountQuery: vi.fn(),
     getRiskLevelCountsQuery: vi.fn(),
+    getStudentClassExistsQuery: vi.fn(),
     getStudentIdsByLatestRiskQuery: vi.fn(),
     getStudentsForDashboardQuery: vi.fn(),
     getUnscreenedStudentCountQuery: vi.fn(),
@@ -41,6 +42,7 @@ import {
     getClassCountsQuery,
     getReferredStudentCountQuery,
     getRiskLevelCountsQuery,
+    getStudentClassExistsQuery,
     getStudentIdsByLatestRiskQuery,
     getStudentsForDashboardQuery,
     getUnscreenedStudentCountQuery,
@@ -95,6 +97,7 @@ describe("getStudentDashboardData", () => {
             { risk_level: "yellow", count: BigInt(13) },
         ]);
         vi.mocked(getReferredStudentCountQuery).mockResolvedValue(4);
+        vi.mocked(getStudentClassExistsQuery).mockResolvedValue(true);
         vi.mocked(getStudentIdsByLatestRiskQuery).mockResolvedValue(["001"]);
         vi.mocked(getStudentsForDashboardQuery).mockResolvedValue({
             students: [createStudent("001", "blue"), createStudent("002", "green")],
@@ -120,8 +123,10 @@ describe("getStudentDashboardData", () => {
             schoolId: undefined,
         });
 
-        const result = await getStudentDashboardData();
+        const result = await getStudentDashboardData({ classFilter: "ม.1/1" });
         const data = getQueryData(result);
+        expect(data.classFilterExists).toBeNull();
+        expect(getStudentClassExistsQuery).not.toHaveBeenCalled();
 
         expect(data.students).toEqual([]);
         expect(data.totalStudents).toBe(0);
@@ -471,8 +476,10 @@ describe("getStudentDashboardData", () => {
             role: "class_teacher",
         });
 
-        await getStudentDashboardData({ classFilter: "ม.1/1" });
+        const data = getQueryData(await getStudentDashboardData({ classFilter: "ม.1/1" }));
 
+        expect(data.classFilterExists).toBe(true);
+        expect(getStudentClassExistsQuery).not.toHaveBeenCalled();
         expect(getStudentsForDashboardQuery).toHaveBeenCalledWith(
             "school-1",
             "ม.1/1",

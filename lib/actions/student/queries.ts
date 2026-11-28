@@ -277,6 +277,20 @@ export async function getRiskLevelCountsQuery(
 /**
  * Build Prisma where clause for class_teacher visibility
  */
+export async function getStudentClassExistsQuery(
+    schoolId: string,
+    className: string,
+): Promise<boolean> {
+    const student = await prisma.student.findFirst({
+        where: andStudentWhere(
+            buildStudentVisibilityWhere(schoolId, undefined, "school_admin"),
+            { class: className },
+        ),
+        select: { id: true },
+    });
+    return student !== null;
+}
+
 /**
  * Get distinct classes for a school
  * Used for class filter dropdown

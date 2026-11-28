@@ -367,4 +367,29 @@ describe("Integration: class teacher scope on /students", () => {
         await expectGreenReferral(USERS.schoolAdmin, false);
     });
 
+
+    it("validates class names independently of matching results in the selected term and round", async () => {
+        await createTestPhqResult(other[0].id, termId, USERS.schoolAdmin.id, {
+            riskLevel: "red",
+            assessmentRound: 2,
+        });
+        mockSession(USERS.schoolAdmin);
+
+        const result = await getStudentDashboardData({
+            classFilter: OWN_CLASS,
+            academicYearId: termId,
+            assessmentRound: 2,
+        });
+        if (result.status !== "empty") throw new Error("Expected filtered empty data");
+        expect(result.data.classFilterExists).toBe(true);
+        expect(result.data.classes).toEqual([OTHER_CLASS]);
+        expect(result.data.students).toEqual([]);
+        expect(result.data.filteredStudentCount).toBe(0);
+        expect(result.data.totalStudents).toBe(0);
+
+        const unknown = await getStudentDashboardData({ classFilter: "ม.1/99" });
+        if (unknown.status !== "empty") throw new Error("Expected unknown class to be empty");
+        expect(unknown.data.classFilterExists).toBe(false);
+    });
+
 });

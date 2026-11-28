@@ -12,7 +12,10 @@ import { PageBanner } from "@/components/ui/PageBanner";
 import { buttonVariants } from "@/components/ui/Button";
 import { isRiskLevel } from "@/lib/constants/risk-levels";
 import { UNSCREENED_THIS_YEAR_PARAM } from "@/lib/constants/student-filters";
+import { normalizeClassName } from "@/lib/utils/class-normalizer";
+import { buildStudentFilterUrl } from "@/lib/utils/student-filter-url";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { z } from "zod";
 
@@ -47,7 +50,7 @@ interface NormalizedStudentFilters {
 }
 
 function normalizeOptionalParam(value: string | undefined): string | undefined {
-    const trimmed = value?.trim();
+    const trimmed = typeof value === "string" ? value.trim() : undefined;
     if (!trimmed || trimmed.length > 100) {
         return undefined;
     }
@@ -68,7 +71,7 @@ function normalizePageParam(value: string | undefined): {
 }
 
 function normalizeAcademicYearId(value: string | undefined): string | undefined {
-    const trimmed = value?.trim();
+    const trimmed = typeof value === "string" ? value.trim() : undefined;
     if (!trimmed) {
         return undefined;
     }
@@ -96,6 +99,7 @@ function normalizeStudentsFilters(filters: {
     unscreened?: string;
 }): NormalizedStudentFilters {
     const page = normalizePageParam(filters.page);
+    const classFilter = normalizeOptionalParam(filters.class);
     const risk = isRiskLevel(filters.risk) ? filters.risk : undefined;
     const academicYearId = normalizeAcademicYearId(filters.year);
     // A selected term wins over `unscreened`, which is a default-view filter.
@@ -105,7 +109,7 @@ function normalizeStudentsFilters(filters: {
             : undefined;
 
     return {
-        class: normalizeOptionalParam(filters.class),
+        class: classFilter ? normalizeClassName(classFilter) : undefined,
         page: page.page,
         pageParam: page.pageParam,
         referred: filters.referred === "true" ? "true" : undefined,
@@ -121,7 +125,11 @@ export default async function MyStudentsPage({
     searchParams,
 }: StudentsPageProps) {
     const session = await requireAuth();
-    const params = normalizeStudentsFilters(await searchParams);
+    const rawFilters = await searchParams;
+    const params = normalizeStudentsFilters(rawFilters);
+    if (rawFilters.round !== undefined && !params.academicYearId) {
+        redirect(buildStudentFilterUrl("/students", rawFilters, ["round", "page"]));
+    }
     const userRole = session.user.role;
     const isAdmin = userRole === "system_admin";
 
@@ -163,6 +171,7 @@ export default async function MyStudentsPage({
                 <Suspense fallback={<StudentDashboardSkeleton />}>
                     <StudentsContent
                         filters={params}
+                        rawFilters={rawFilters}
                         userRole={userRole}
                         isAdmin={isAdmin}
                     />
@@ -174,20 +183,12 @@ export default async function MyStudentsPage({
 
 async function StudentsContent({
     filters,
+    rawFilters,
     userRole,
     isAdmin,
 }: {
-    filters: {
-        class?: string;
-        page: number;
-        pageParam?: string;
-        referred?: "true";
-        risk?: string;
-        school?: string;
-        academicYearId?: string;
-        assessmentRound?: number;
-        unscreened?: "year";
-    };
+    filters: NormalizedStudentFilters;
+    rawFilters: Awaited<StudentsPageProps["searchParams"]>;
     userRole: string;
     isAdmin: boolean;
 }) {
@@ -265,6 +266,9 @@ async function StudentsContent({
         );
     }
     const dashboardData = dashboardResult.data;
+    if (dashboardData.classFilterExists === false) {
+        redirect(buildStudentFilterUrl("/students", rawFilters, ["class", "page"]));
+    }
     const schools = schoolsResult?.data ?? [];
     const referredOutStudents = referredOutResult?.data ?? [];
     const students = dashboardData.students;
@@ -315,11 +319,22 @@ async function StudentsContent({
         );
     }
 
+    // Keep the selected room visible even when the other filters match nobody there.
+    const emptySelectedClass =
+        filters.class && dashboardData.classFilterExists === true &&
+        !dashboardData.classes.includes(filters.class)
+            ? filters.class
+            : undefined;
+
     return (
         <StudentDashboard
             students={students}
-            classes={dashboardData.classes}
-            classOptions={dashboardData.classOptions}
+            classes={emptySelectedClass
+                ? [...dashboardData.classes, emptySelectedClass]
+                : dashboardData.classes}
+            classOptions={emptySelectedClass
+                ? [...dashboardData.classOptions, { name: emptySelectedClass, count: 0 }]
+                : dashboardData.classOptions}
             riskCounts={dashboardData.riskCounts}
             referredCount={dashboardData.referredCount}
             totalStudents={dashboardData.totalStudents}

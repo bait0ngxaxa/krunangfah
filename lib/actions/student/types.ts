@@ -87,6 +87,8 @@ export interface DashboardPagination {
 }
 
 export interface StudentDashboardDataResponse {
+    /** null when no class filter was checked (e.g. no school selected). */
+    classFilterExists: boolean | null;
     students: StudentWithLatestPhq[];
     classes: string[];
     classOptions: {
