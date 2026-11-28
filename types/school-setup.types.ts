@@ -5,7 +5,8 @@ export type RosterEntryStatus = "draft" | "pending" | "accepted";
 export interface SchoolClassItem {
     id: string;
     name: string;
-    expectedStudentCount: number;
+    /** Count for the selected term; null when the class has no row in it. */
+    expectedStudentCount: number | null;
 }
 
 export interface TeacherOption {

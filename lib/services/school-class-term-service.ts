@@ -28,29 +28,44 @@ async function resolveAcademicYearId(
     return latestAcademicYear?.id ?? null;
 }
 
-export async function upsertCurrentSchoolClassTerm(
-    schoolClassId: string,
-    expectedStudentCount: number,
-    academicYearId?: string,
-): Promise<void> {
-    const resolvedAcademicYearId = await resolveAcademicYearId(academicYearId);
-    if (!resolvedAcademicYearId) return;
+export interface SchoolClassTermRef {
+    id: string;
+    year: number;
+    semester: number;
+    isCurrent: boolean;
+}
 
-    await prisma.schoolClassTerm.upsert({
-        where: {
-            schoolClassId_academicYearId: {
-                schoolClassId,
-                academicYearId: resolvedAcademicYearId,
-            },
-        },
-        create: {
-            schoolClassId,
-            academicYearId: resolvedAcademicYearId,
-            expectedStudentCount,
-        },
-        update: {
-            expectedStudentCount,
-        },
+const TERM_REF_SELECT = {
+    id: true,
+    year: true,
+    semester: true,
+    isCurrent: true,
+} as const;
+
+/**
+ * Resolves the term a class read/write targets. Omitted means the current
+ * term, falling back to the latest term (same rule as provisioning).
+ */
+export async function resolveSchoolClassTerm(
+    academicYearId?: string,
+): Promise<SchoolClassTermRef | null> {
+    if (academicYearId) {
+        return prisma.academicYear.findUnique({
+            where: { id: academicYearId },
+            select: TERM_REF_SELECT,
+        });
+    }
+
+    const current = await prisma.academicYear.findFirst({
+        where: { isCurrent: true },
+        orderBy: [{ year: "desc" }, { semester: "desc" }],
+        select: TERM_REF_SELECT,
+    });
+    if (current) return current;
+
+    return prisma.academicYear.findFirst({
+        orderBy: [{ year: "desc" }, { semester: "desc" }],
+        select: TERM_REF_SELECT,
     });
 }
 
@@ -68,7 +83,7 @@ export async function hasMissingSchoolClassTermsForAcademicYear(
     return missingClass !== null;
 }
 
-function compareAcademicYearOrder(
+export function compareAcademicYearOrder(
     left: { year: number; semester: number },
     right: { year: number; semester: number },
 ): number {
@@ -98,6 +113,13 @@ function findPreviousTermCount(
     return previousTerms[0]?.expectedStudentCount ?? null;
 }
 
+/**
+ * A term row means "this class existed in that term" and is the coverage
+ * denominator. Call this only for the current term or from an intentional
+ * write path (rollover, import). Calling it for a past term from a read path
+ * would invent rows for classes created later and silently lower that term's
+ * coverage.
+ */
 export async function ensureSchoolClassTermsForAcademicYear(
     schoolId: string,
     academicYearId?: string,

@@ -2,6 +2,11 @@
 
 import { ChevronDown, LayoutGrid, X } from "lucide-react";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
+import {
+    CLASS_NOT_IN_TERM_LABEL,
+    formatClassStudentCount,
+    sumExpectedStudentCounts,
+} from "@/lib/utils/school-class-count";
 import type { ClassGroupListProps } from "../types";
 import type { SchoolClassItem } from "../types";
 
@@ -17,10 +22,7 @@ export function ClassGroupList({
     onRemove,
     onStudentCountChange,
 }: ClassGroupListProps) {
-    const totalExpectedStudents = classes.reduce(
-        (sum, c) => sum + c.expectedStudentCount,
-        0,
-    );
+    const totalExpectedStudents = sumExpectedStudentCounts(classes);
 
     const groups = groupClassesByGrade(classes);
 
@@ -80,10 +82,7 @@ function groupClassesByGrade(classes: SchoolClassItem[]): ClassGroup[] {
         .map(([grade, items]) => ({
             grade,
             items,
-            expectedStudentCount: items.reduce(
-                (sum, item) => sum + item.expectedStudentCount,
-                0,
-            ),
+            expectedStudentCount: sumExpectedStudentCounts(items),
         }));
 }
 
@@ -185,19 +184,28 @@ function StudentCountControl({
     if (readOnly) {
         return (
             <span className="text-xs font-semibold text-gray-500">
-                {schoolClass.expectedStudentCount} คน
+                {formatClassStudentCount(schoolClass.expectedStudentCount)}
             </span>
         );
     }
 
+    const isAbsentFromTerm = schoolClass.expectedStudentCount === null;
+
     return (
         <div className="flex items-center gap-1">
+            {isAbsentFromTerm && (
+                <span className="text-xs font-semibold text-gray-400">
+                    {CLASS_NOT_IN_TERM_LABEL}
+                </span>
+            )}
+            {/* Saving a count for an absent class is the explicit way to add it to this term. */}
             <input
-                key={`${schoolClass.id}-${schoolClass.expectedStudentCount}`}
+                key={`${schoolClass.id}-${schoolClass.expectedStudentCount ?? "none"}`}
                 type="number"
                 min={1}
                 max={INPUT_LIMITS.school.classStudentCount}
-                defaultValue={schoolClass.expectedStudentCount}
+                defaultValue={schoolClass.expectedStudentCount ?? undefined}
+                placeholder={isAbsentFromTerm ? "-" : undefined}
                 aria-label={`จำนวนนักเรียน ${schoolClass.name}`}
                 onBlur={(event) =>
                     saveStudentCount(

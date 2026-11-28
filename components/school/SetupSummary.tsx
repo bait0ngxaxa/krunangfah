@@ -6,6 +6,10 @@ import type {
     TeacherRosterItem,
 } from "@/types/school-setup.types";
 import { USER_ROLE_LABELS, PROJECT_ROLE_LABELS } from "@/lib/constants/roles";
+import {
+    formatClassStudentCount,
+    sumExpectedStudentCounts,
+} from "@/lib/utils/school-class-count";
 
 interface SetupSummaryProps {
     schoolName: string;
@@ -38,10 +42,7 @@ export function SetupSummary({
     roster,
 }: SetupSummaryProps) {
     const groupedClasses = groupClassesByGrade(classes);
-    const totalExpectedStudents = classes.reduce(
-        (sum, c) => sum + c.expectedStudentCount,
-        0,
-    );
+    const totalExpectedStudents = sumExpectedStudentCounts(classes);
 
     return (
         <div className="space-y-5">
@@ -104,7 +105,7 @@ export function SetupSummary({
                                                 key={c.id}
                                                 className="min-w-0 break-words rounded-lg border-2 border-gray-100 bg-gray-50 px-2.5 py-1 text-xs font-bold text-gray-700"
                                             >
-                                                {c.name} ({c.expectedStudentCount} คน)
+                                                {c.name} ({formatClassStudentCount(c.expectedStudentCount)})
                                             </span>
                                         ))}
                                     </div>
