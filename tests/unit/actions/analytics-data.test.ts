@@ -88,6 +88,29 @@ describe("fetchAnalyticsData activity scope", () => {
         expect(mocks.getCombinedAnalytics).not.toHaveBeenCalled();
     });
 
+    it("aggregates both semesters for a year-only school view with coverage null", async () => {
+        mocks.academicYearFindMany.mockResolvedValueOnce([
+            { id: "term-1", year: 2569, semester: 1, isCurrent: false },
+            { id: "term-2", year: 2569, semester: 2, isCurrent: true },
+        ]);
+
+        const data = await fetchAnalyticsData("school-1", "", "school_admin", "2569", "", "");
+
+        expect(mocks.academicYearFindMany.mock.calls[0][0]).toMatchObject({
+            where: { year: 2569 },
+        });
+        expect(mocks.getCombinedAnalytics).toHaveBeenCalledWith(
+            "school-1",
+            undefined,
+            ["term-1", "term-2"],
+            undefined,
+            false,
+        );
+        expect(mocks.schoolClassTermAggregate).not.toHaveBeenCalled();
+        expect(data.totalStudents).toBeNull();
+        expect(data.screeningCoveragePercent).toBeNull();
+    });
+
     it("never runs the academic-year lifecycle (it executes inside unstable_cache)", async () => {
         await fetchAnalyticsData("school-1", "", "school_admin", "2569", "1", "1");
         await fetchAnalyticsData("school-1", "", "school_admin", "2569", "", "");

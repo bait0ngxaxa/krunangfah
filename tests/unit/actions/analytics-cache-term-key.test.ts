@@ -116,6 +116,19 @@ describe("analytics cache keys use the resolved current term", () => {
         expect(mocks.fetchSystemAnalyticsOverview).toHaveBeenCalledWith(2569, 2);
     });
 
+    it("resolves a year-only overview request to the current term", async () => {
+        mocks.getViewerContext.mockResolvedValue({ role: "system_admin" });
+
+        await getSystemAnalyticsOverview(2568);
+
+        expect(mocks.readOverview.mock.calls[0][0]).toEqual([
+            "analytics-system-overview",
+            "year:2569",
+            "semester:2",
+        ]);
+        expect(mocks.fetchSystemAnalyticsOverview).toHaveBeenCalledWith(2569, 2);
+    });
+
     it("runs the lifecycle before the cache on every call, never inside it", async () => {
         await getAnalyticsSummary(undefined, undefined, 2568, 1);
         mocks.getViewerContext.mockResolvedValue({ role: "system_admin" });

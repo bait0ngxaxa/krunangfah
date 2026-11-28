@@ -205,7 +205,23 @@ describe("Analytics page filter validation", () => {
         expect(analyticsContent.props.selectedSemester).toBe("2");
     });
 
-    it("shows the latest resolved semester when only a year is selected", async () => {
+    it("redirects a year-only system overview URL to the current term", async () => {
+        mocks.requireAuth.mockResolvedValue({
+            user: { role: "system_admin" },
+        });
+        mocks.getSchools.mockResolvedValue({ status: "empty", data: [] });
+
+        await expect(
+            AnalyticsPage({
+                searchParams: Promise.resolve({ year: "2568", round: "1" }),
+            }),
+        ).rejects.toThrow("REDIRECT:/analytics?round=1");
+
+        // Previously it silently showed semester 2 of that year.
+        expect(mocks.getSystemAnalyticsOverview).not.toHaveBeenCalled();
+    });
+
+    it("renders the requested full term on the system overview", async () => {
         mocks.requireAuth.mockResolvedValue({
             user: { role: "system_admin" },
         });
@@ -221,15 +237,49 @@ describe("Analytics page filter validation", () => {
         });
 
         const page = await AnalyticsPage({
+            searchParams: Promise.resolve({ year: "2568", semester: "1" }),
+        });
+        const analyticsContent = page.props.children[1].props.children;
+
+        expect(mocks.getSystemAnalyticsOverview).toHaveBeenCalledWith(2568, 1);
+        expect(analyticsContent.props.selectedAcademicYear).toBe("2568");
+        expect(analyticsContent.props.selectedSemester).toBe("1");
+        expect(analyticsContent.props.systemOverview.academicYearLabel).toBe(
+            "ปีการศึกษา 2568 เทอม 1",
+        );
+    });
+
+    it("keeps a year-only school view across both semesters", async () => {
+        mocks.getAnalyticsSummary.mockResolvedValue({
+            status: "success",
+            data: {
+                ...analyticsData,
+                availableAcademicTerms: [
+                    { id: "term-2568-1", year: 2568, semester: 1 },
+                    { id: "term-2568-2", year: 2568, semester: 2 },
+                ],
+                totalStudents: null,
+                screeningCoveragePercent: null,
+                // fetchAnalyticsData echoes the queried term: no semester here.
+                currentAcademicYear: 2568,
+                currentSemester: undefined,
+            },
+        });
+
+        const page = await AnalyticsPage({
             searchParams: Promise.resolve({ year: "2568" }),
         });
         const analyticsContent = page.props.children[1].props.children;
 
-        expect(mocks.getSystemAnalyticsOverview).toHaveBeenCalledWith(
+        expect(mocks.redirect).not.toHaveBeenCalled();
+        expect(mocks.getAnalyticsSummary).toHaveBeenCalledWith(
+            undefined,
+            "all",
             2568,
+            undefined,
             undefined,
         );
         expect(analyticsContent.props.selectedAcademicYear).toBe("2568");
-        expect(analyticsContent.props.selectedSemester).toBe("1");
+        expect(analyticsContent.props.selectedSemester).toBe("all");
     });
 });

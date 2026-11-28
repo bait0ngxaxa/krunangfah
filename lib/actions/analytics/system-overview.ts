@@ -31,9 +31,9 @@ export async function fetchSystemAnalyticsOverview(
 ): Promise<SystemAnalyticsOverview> {
     // Runs inside unstable_cache, which must not run the lifecycle (it may
     // invalidate caches). The caller resolves the current term first.
-    if (academicYear === undefined) {
+    if (academicYear === undefined || semester === undefined) {
         throw new Error(
-            "fetchSystemAnalyticsOverview requires an explicit academic year",
+            "fetchSystemAnalyticsOverview requires an explicit academic year and semester",
         );
     }
 
@@ -42,12 +42,8 @@ export async function fetchSystemAnalyticsOverview(
         getOverviewAcademicTermOptions(),
     ]);
 
-    const resolvedAcademicYear = await prisma.academicYear.findFirst({
-        where: {
-            year: academicYear,
-            ...(semester !== undefined ? { semester } : {}),
-        },
-        orderBy: [{ semester: "desc" }],
+    const resolvedAcademicYear = await prisma.academicYear.findUnique({
+        where: { year_semester: { year: academicYear, semester } },
         select: { id: true, year: true, semester: true, isCurrent: true },
     });
 
