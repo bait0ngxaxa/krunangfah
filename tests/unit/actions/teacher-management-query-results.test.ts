@@ -5,6 +5,7 @@ import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-cla
 
 const mocks = vi.hoisted(() => ({
     ensureTerms: vi.fn(),
+    resolveTerm: vi.fn(),
     rosterFindMany: vi.fn(),
     inviteFindMany: vi.fn(),
     schoolClassFindMany: vi.fn(),
@@ -23,7 +24,7 @@ vi.mock("@/lib/database/prisma", () => ({
 }));
 vi.mock("@/lib/services/school-class-term-service", () => ({
     ensureSchoolClassTermsForAcademicYear: mocks.ensureTerms,
-    upsertCurrentSchoolClassTerm: vi.fn(),
+    resolveSchoolClassTerm: mocks.resolveTerm,
 }));
 vi.mock("@/lib/utils/logging", () => ({ logError: mocks.logError }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -62,6 +63,12 @@ describe("teacher management list queries", () => {
         vi.mocked(ensureSchoolClassTermsForAcademicYear).mockResolvedValue(
             "year-1",
         );
+        mocks.resolveTerm.mockResolvedValue({
+            id: "year-1",
+            year: 2569,
+            semester: 2,
+            isCurrent: true,
+        });
         vi.mocked(prisma.schoolTeacherRoster.findMany).mockResolvedValue([]);
         vi.mocked(prisma.teacherInvite.findMany).mockResolvedValue([]);
         vi.mocked(prisma.schoolClass.findMany).mockResolvedValue([]);
@@ -156,6 +163,39 @@ describe("teacher management list queries", () => {
                     },
                 ],
             });
+        });
+
+        it("does not provision rows for a past term and reports absent classes as null", async () => {
+            mocks.resolveTerm.mockResolvedValue({
+                id: "year-past",
+                year: 2569,
+                semester: 1,
+                isCurrent: false,
+            });
+            vi.mocked(prisma.schoolClass.findMany).mockResolvedValue([
+                { id: "class-1", name: "ม.1/1", terms: [{ expectedStudentCount: 28 }] },
+                { id: "class-2", name: "ม.1/5", terms: [] },
+            ] as never);
+
+            const result = await getSchoolClasses("year-past");
+
+            expect(ensureSchoolClassTermsForAcademicYear).not.toHaveBeenCalled();
+            expect(result).toEqual({
+                status: "success",
+                data: [
+                    { id: "class-1", name: "ม.1/1", expectedStudentCount: 28 },
+                    { id: "class-2", name: "ม.1/5", expectedStudentCount: null },
+                ],
+            });
+        });
+
+        it("self-heals the current term before reading it", async () => {
+            await getSchoolClasses();
+
+            expect(ensureSchoolClassTermsForAcademicYear).toHaveBeenCalledWith(
+                "school-1",
+                "year-1",
+            );
         });
 
         it("returns transient_error when ensuring the term rejects", async () => {

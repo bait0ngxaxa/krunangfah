@@ -9,8 +9,13 @@ import {
 } from "@/lib/auth/teacher-management-policy";
 import {
     ensureSchoolClassTermsForAcademicYear,
-    upsertCurrentSchoolClassTerm,
+    resolveSchoolClassTerm,
 } from "@/lib/services/school-class-term-service";
+import {
+    createSchoolClassWithTerms,
+    resolveClassTermWritePlan,
+    updateSchoolClassTermCount,
+} from "@/lib/services/school-class-term-writes";
 import { revalidatePath } from "next/cache";
 import { INPUT_LIMITS } from "@/lib/constants/input-limits";
 import { normalizeClassName } from "@/lib/utils/class-normalizer";
@@ -200,18 +205,17 @@ export async function addSchoolClass(
             };
         }
 
-        const schoolClass = await prisma.schoolClass.create({
-            data: {
-                schoolId,
-                name: normalizedName,
-                expectedStudentCount: parsedCount.data,
-            },
+        const termPlan = await resolveClassTermWritePlan(academicYearId);
+        if (!termPlan.ok) {
+            return { success: false, message: termPlan.message };
+        }
+
+        const schoolClass = await createSchoolClassWithTerms({
+            schoolId,
+            name: normalizedName,
+            expectedStudentCount: parsedCount.data,
+            termIds: termPlan.plan.newClassTermIds,
         });
-        await upsertCurrentSchoolClassTerm(
-            schoolClass.id,
-            parsedCount.data,
-            academicYearId,
-        );
 
         revalidatePath(CLASSES_PATH);
         await revalidateAnalyticsCache(schoolId);
@@ -219,11 +223,7 @@ export async function addSchoolClass(
         return {
             success: true,
             message: "เพิ่มห้องเรียนสำเร็จ",
-            data: {
-                id: schoolClass.id,
-                name: schoolClass.name,
-                expectedStudentCount: schoolClass.expectedStudentCount,
-            },
+            data: schoolClass,
         };
     } catch (error) {
         return handleActionError({
@@ -270,18 +270,22 @@ export async function updateSchoolClassStudentCount(
 
         const schoolClass = await prisma.schoolClass.findFirst({
             where: { id, schoolId },
-            select: { id: true },
+            select: { id: true, name: true },
         });
         if (!schoolClass) {
             return { success: false, message: "ไม่พบห้องเรียนที่ต้องการแก้ไข" };
         }
 
-        const updated = await prisma.schoolClass.update({
-            where: { id },
-            data: { expectedStudentCount: parsedCount.data },
-            select: { id: true, name: true, expectedStudentCount: true },
+        const termPlan = await resolveClassTermWritePlan(academicYearId);
+        if (!termPlan.ok) {
+            return { success: false, message: termPlan.message };
+        }
+
+        await updateSchoolClassTermCount({
+            schoolClassId: id,
+            expectedStudentCount: parsedCount.data,
+            plan: termPlan.plan,
         });
-        await upsertCurrentSchoolClassTerm(id, parsedCount.data, academicYearId);
 
         revalidatePath(CLASSES_PATH);
         await revalidateAnalyticsCache(schoolId);
@@ -289,7 +293,7 @@ export async function updateSchoolClassStudentCount(
         return {
             success: true,
             message: "อัปเดตจำนวนนักเรียนสำเร็จ",
-            data: updated,
+            data: { ...schoolClass, expectedStudentCount: parsedCount.data },
         };
     } catch (error) {
         return handleActionError({
@@ -382,20 +386,20 @@ export async function getSchoolClasses(
 
         if (!schoolId) return queryEmpty([]);
 
-        const resolvedAcademicYearId =
-            await ensureSchoolClassTermsForAcademicYear(
-                schoolId,
-                academicYearId,
-            );
+        const term = await resolveSchoolClassTerm(academicYearId);
+        // Self-heal only the current term. A past term with no row means the
+        // class did not exist then; creating one would corrupt its coverage.
+        if (term?.isCurrent) {
+            await ensureSchoolClassTermsForAcademicYear(schoolId, term.id);
+        }
         const classes = await prisma.schoolClass.findMany({
             where: { schoolId },
             orderBy: { name: "asc" },
             select: {
                 id: true,
                 name: true,
-                expectedStudentCount: true,
                 terms: {
-                    where: { academicYearId: resolvedAcademicYearId ?? "" },
+                    where: { academicYearId: term?.id ?? "" },
                     select: { expectedStudentCount: true },
                     take: 1,
                 },
@@ -406,8 +410,7 @@ export async function getSchoolClasses(
             id: schoolClass.id,
             name: schoolClass.name,
             expectedStudentCount:
-                schoolClass.terms?.[0]?.expectedStudentCount ??
-                schoolClass.expectedStudentCount,
+                schoolClass.terms[0]?.expectedStudentCount ?? null,
         }));
 
         return schoolClasses.length === 0

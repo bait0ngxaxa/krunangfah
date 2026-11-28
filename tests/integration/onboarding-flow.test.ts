@@ -12,7 +12,7 @@
  * ใช้ real Prisma + mocked auth
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import {
     setupAuthMocks,
     mockSession,
@@ -35,6 +35,22 @@ function expectQueryData<T>(result: QueryResult<T>): T {
 // ── Setup mocks BEFORE dynamic imports ──
 setupAuthMocks();
 
+// ปีการศึกษาที่สงวนให้ fixture ของ onboarding
+const { FIXTURE_YEAR } = vi.hoisted(() => ({ FIXTURE_YEAR: 2650 }));
+
+// Class writes accept only the current academic year; the clock year is not
+// the synthetic fixture year, so treat the fixture year as current.
+vi.mock("@/lib/services/current-year-term-policy", async (importOriginal) => {
+    const actual = await importOriginal<
+        typeof import("@/lib/services/current-year-term-policy")
+    >();
+    return {
+        ...actual,
+        checkCurrentYearTerm: (academicYearId: string, currentYear?: number) =>
+            actual.checkCurrentYearTerm(academicYearId, currentYear ?? FIXTURE_YEAR),
+    };
+});
+
 const USERS = createMockUsers("ob");
 
 // Dynamic import ต้องมาหลัง setupAuthMocks()
@@ -53,9 +69,6 @@ const { saveOnboardingProgress, completeOnboarding } = await import(
 );
 
 describe("Integration: Onboarding Flow", () => {
-    // ปีการศึกษาที่สงวนให้ fixture ของ onboarding
-    const FIXTURE_YEAR = 2650;
-
     let academicYearId: string;
     let nextAcademicYearId: string;
     let createdSchoolId: string | null = null;
@@ -461,10 +474,24 @@ describe("Integration: Onboarding Flow", () => {
             );
             expect(updated.success).toBe(true);
 
-            const nextTermClasses = expectQueryData(
-                await getSchoolClasses(nextAcademicYearId),
-            );
-            const nextTermClass = nextTermClasses.find(
+            // Rollover: the next term becomes current, so reading it self-heals
+            // the missing row from the latest term. A non-current term is never
+            // provisioned by a read.
+            await prisma.academicYear.update({
+                where: { id: nextAcademicYearId },
+                data: { isCurrent: true },
+            });
+            let nextTermClasses: Awaited<ReturnType<typeof getSchoolClasses>>;
+            try {
+                nextTermClasses = await getSchoolClasses(nextAcademicYearId);
+            } finally {
+                await prisma.academicYear.update({
+                    where: { id: nextAcademicYearId },
+                    data: { isCurrent: false },
+                });
+            }
+            const nextTermClassList = expectQueryData(nextTermClasses);
+            const nextTermClass = nextTermClassList.find(
                 (schoolClass) => schoolClass.id === added.data!.id,
             );
 

@@ -17,7 +17,6 @@ import {
     setRedisCachedAnalyticsData,
     setRedisCachedSystemOverview,
 } from "./redis-cache";
-import { ensureSchoolClassTermsForAcademicYear } from "@/lib/services/school-class-term-service";
 import { ensureCurrentAcademicYearLifecycle } from "@/lib/services/academic-year-lifecycle";
 
 import type { AcademicTermOption, AnalyticsData, SystemAnalyticsOverview } from "./types";
@@ -186,19 +185,6 @@ async function fetchSystemAnalyticsOverview(
             ...overviewOptions,
         };
     }
-
-    const schools = await prisma.school.findMany({
-        where: { disabledAt: null, isTestData: false },
-        select: { id: true },
-    });
-    await Promise.all(
-        schools.map((school) =>
-            ensureSchoolClassTermsForAcademicYear(
-                school.id,
-                resolvedAcademicYear.id,
-            ),
-        ),
-    );
 
     const totalStudents = await getExpectedStudentCount(
         undefined,
