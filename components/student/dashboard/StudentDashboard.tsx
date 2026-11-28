@@ -198,6 +198,7 @@ export function StudentDashboard(props: StudentDashboardProps) {
                             pagination={props.pagination}
                             riskLevels={displayedRiskLevels}
                             readOnly={isSystemAdmin}
+                            currentAcademicYearId={props.currentAcademicYearId}
                         />
                     )}
 
