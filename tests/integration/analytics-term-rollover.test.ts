@@ -8,7 +8,6 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 import { createMockUsers, mockSession } from "./helpers/auth-mock";
 import {
     createTestAcademicYear,
@@ -24,6 +23,20 @@ const ROLLOVER_NOW = new Date("2197-12-01T05:00:00.000Z");
 
 const redisMocks = vi.hoisted(() => ({
     revalidateRedisAnalyticsCache: vi.fn(async () => {}),
+}));
+const nextCacheMocks = vi.hoisted(() => ({
+    updateTag: vi.fn(),
+    revalidateTag: vi.fn(),
+    revalidatePath: vi.fn(),
+}));
+
+// Owned here (not via auth-mock) so the invalidation calls are observable spies.
+vi.mock("next/cache", () => ({
+    ...nextCacheMocks,
+    unstable_cache:
+        (fn: (...args: unknown[]) => unknown) =>
+        (...args: unknown[]) =>
+            fn(...args),
 }));
 
 vi.mock("@/lib/cache/redis-lock", () => ({
@@ -142,8 +155,8 @@ describe("Integration: analytics after a term rollover", () => {
         expect(result.data.totalStudents).toBe(33);
 
         expect(redisMocks.revalidateRedisAnalyticsCache).toHaveBeenCalledTimes(1);
-        expect(updateTag).not.toHaveBeenCalled();
-        expect(revalidateTag).not.toHaveBeenCalled();
-        expect(revalidatePath).not.toHaveBeenCalled();
+        expect(nextCacheMocks.updateTag).not.toHaveBeenCalled();
+        expect(nextCacheMocks.revalidateTag).not.toHaveBeenCalled();
+        expect(nextCacheMocks.revalidatePath).not.toHaveBeenCalled();
     });
 });
