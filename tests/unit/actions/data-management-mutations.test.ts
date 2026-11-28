@@ -58,6 +58,15 @@ vi.mock("@/lib/auth/session-store", () => ({
     invalidateUserSessionCaches: cacheMocks.invalidateUserSessionCaches,
 }));
 
+const lifecycleMocks = vi.hoisted(() => ({
+    provisionCurrentTermForRestoredSchool: vi.fn(),
+}));
+
+vi.mock("@/lib/services/academic-year-lifecycle", () => ({
+    provisionCurrentTermForRestoredSchool:
+        lifecycleMocks.provisionCurrentTermForRestoredSchool,
+}));
+
 vi.mock("@/lib/actions/data-management/preview", () => ({
     getSchoolImpact: vi.fn(),
     getStudentImpact: vi.fn(),
@@ -68,6 +77,7 @@ import {
     disableStudent,
     markSchoolAsTestData,
     markStudentAsTestData,
+    restoreSchool,
     restoreStudent,
 } from "@/lib/actions/data-management/mutations";
 import {
@@ -154,6 +164,43 @@ describe("data management mutations", () => {
         expect(cacheMocks.revalidateStudentsCache).not.toHaveBeenCalled();
         expect(cacheMocks.revalidateAnalyticsCache).not.toHaveBeenCalled();
         expect(cacheMocks.revalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("provisions a restored school's current-term rows before invalidating caches", async () => {
+        prismaMocks.tx.school.findUnique.mockResolvedValue({
+            id: input.id,
+            name: "โรงเรียนสังเคราะห์",
+            province: "เชียงใหม่",
+            disabledAt: new Date("2026-04-01T00:00:00.000Z"),
+            isTestData: false,
+        });
+        lifecycleMocks.provisionCurrentTermForRestoredSchool.mockResolvedValue(
+            undefined,
+        );
+
+        const result = await restoreSchool(input);
+
+        expect(result).toEqual({ success: true, message: "กู้คืนโรงเรียนสำเร็จ" });
+        expect(
+            lifecycleMocks.provisionCurrentTermForRestoredSchool,
+        ).toHaveBeenCalledWith(input.id);
+        expect(
+            lifecycleMocks.provisionCurrentTermForRestoredSchool.mock
+                .invocationCallOrder[0],
+        ).toBeLessThan(
+            cacheMocks.revalidateAnalyticsCache.mock.invocationCallOrder[0] ?? 0,
+        );
+    });
+
+    it("does not provision terms when restore school is rejected", async () => {
+        prismaMocks.tx.school.findUnique.mockResolvedValue(null);
+
+        const result = await restoreSchool(input);
+
+        expect(result).toEqual({ success: false, message: "ไม่พบโรงเรียน" });
+        expect(
+            lifecycleMocks.provisionCurrentTermForRestoredSchool,
+        ).not.toHaveBeenCalled();
     });
 
     it("rejects disabling a test-data school before changing state", async () => {
