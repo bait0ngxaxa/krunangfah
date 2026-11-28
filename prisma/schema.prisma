@@ -402,6 +402,7 @@ model PhqResult {
   importedById    String?  // FK to User (ครูที่ import); nullable เมื่อบัญชีถูกลบถาวร
   importedBySnapshot Json? // snapshot ผู้ import สำหรับรักษาประวัติ
   assessmentRound Int      @default(1) // ครั้งที่ 1 หรือ 2
+  className       String?  // ห้องของนักเรียน ณ ตอนนำเข้าผลนี้; null = ข้อมูลก่อนมี snapshot
   
   // คะแนนแต่ละข้อ (0-3)
   q1              Int
