@@ -24,20 +24,6 @@ const ROLLOVER_NOW = new Date("2197-12-01T05:00:00.000Z");
 const redisMocks = vi.hoisted(() => ({
     revalidateRedisAnalyticsCache: vi.fn(async () => {}),
 }));
-const nextCacheMocks = vi.hoisted(() => ({
-    updateTag: vi.fn(),
-    revalidateTag: vi.fn(),
-    revalidatePath: vi.fn(),
-}));
-
-// Owned here (not via auth-mock) so the invalidation calls are observable spies.
-vi.mock("next/cache", () => ({
-    ...nextCacheMocks,
-    unstable_cache:
-        (fn: (...args: unknown[]) => unknown) =>
-        (...args: unknown[]) =>
-            fn(...args),
-}));
 
 vi.mock("@/lib/cache/redis-lock", () => ({
     acquireRedisLock: vi.fn(async (key: string) => ({
@@ -63,6 +49,9 @@ vi.mock("@/lib/actions/analytics/redis-cache", async (importOriginal) => {
 
 const USERS = createMockUsers("rollover");
 const { getAnalyticsSummary } = await import("@/lib/actions/analytics/main");
+// Imported after every mock is registered, so these are the same auth-mock
+// spies the code under test receives (a static import resolves too early).
+const nextCache = await import("next/cache");
 
 describe("Integration: analytics after a term rollover", () => {
     let schoolId = "";
@@ -129,6 +118,7 @@ describe("Integration: analytics after a term rollover", () => {
 
     it("provisions the new term and serves its data on the default request", async () => {
         mockSession(USERS.schoolAdmin);
+        expect(vi.isMockFunction(nextCache.updateTag)).toBe(true);
 
         const result = await getAnalyticsSummary();
 
@@ -155,8 +145,8 @@ describe("Integration: analytics after a term rollover", () => {
         expect(result.data.totalStudents).toBe(33);
 
         expect(redisMocks.revalidateRedisAnalyticsCache).toHaveBeenCalledTimes(1);
-        expect(nextCacheMocks.updateTag).not.toHaveBeenCalled();
-        expect(nextCacheMocks.revalidateTag).not.toHaveBeenCalled();
-        expect(nextCacheMocks.revalidatePath).not.toHaveBeenCalled();
+        expect(vi.mocked(nextCache.updateTag)).not.toHaveBeenCalled();
+        expect(vi.mocked(nextCache.revalidateTag)).not.toHaveBeenCalled();
+        expect(vi.mocked(nextCache.revalidatePath)).not.toHaveBeenCalled();
     });
 });
